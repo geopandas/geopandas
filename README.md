@@ -17,6 +17,8 @@ Examples
     2    POLYGON ((2.0000000000000000 0.000000000000000...
     dtype: object
 
+![Example 1](examples/test.png)
+
 Some geographic operations return normal pandas object.  Calling the `area()` method of a `GeoSeries` will generate a `pandas.Series` containing the area of each item in the `GeoSeries`:
 
     >>> print g.area
@@ -33,6 +35,8 @@ Other operations return GeoPandas objects:
     1    POLYGON ((-0.5000000000000000 0.00000000000000...
     2    POLYGON ((1.5000000000000000 0.000000000000000...
     dtype: object
+
+![Example 2](examples/test.png)
 
 GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](https://pypi.python.org/pypi/descartes) to generate a [matplotlib](http://matplotlib.org) plot. To generate a plot of our GeoSeries, use:
 
