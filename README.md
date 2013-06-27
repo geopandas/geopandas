@@ -55,6 +55,16 @@ GeoPandas also implements an alternate constructor that can read any data format
 
 ![New York City boroughs](examples/nyc.png)
  
+    >>> boros.convex_hull
+    0    POLYGON ((915517.6877458114176989 120121.88125...
+    1    POLYGON ((1000721.5317993164062500 136681.7761...
+    2    POLYGON ((988872.8212280273437500 146772.03179...
+    3    POLYGON ((977855.4451904296875000 188082.32238...
+    4    POLYGON ((1017949.9776000976562500 225426.8845...
+    dtype: object
+
+![Convex hulls of New York City boroughs](examples/nyc_hull.png)
+
 TODO
 ----
 
