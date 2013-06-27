@@ -90,6 +90,10 @@ class GeoSeries(Series):
     def geom_type(self):
         return Series([geom.geom_type for geom in self], index=self.index)
 
+    @property
+    def length(self):
+        return Series([geom.length for geom in self], index=self.index)
+
     def contains(self, other):
         """
         Return a Series of boolean values.
