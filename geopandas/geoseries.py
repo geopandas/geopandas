@@ -28,6 +28,12 @@ def _plot_multipolygon(ax, geom, facecolor='red'):
             _plot_polygon(ax, poly, facecolor)
 
 
+def _plot_point(ex, geom):
+    """ TODO
+    """
+    pass
+
+
 def _gencolor(N, colormap='Accent'):
     """
     Color generator
@@ -175,6 +181,8 @@ class GeoSeries(Series):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 _plot_multipolygon(ax, geom, facecolor=color.next(),
                                    *args, **kwargs)
+            elif geom.type == 'Point':
+                _plot_point(ax, geom)
         return ax
 
 if __name__ == '__main__':
