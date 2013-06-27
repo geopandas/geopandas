@@ -8,7 +8,7 @@ import fiona
 from descartes.patch import PolygonPatch
 
 
-def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.3):
+def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
