@@ -94,7 +94,6 @@ class GeoSeries(Series):
     def length(self):
         return Series([geom.length for geom in self], index=self.index)
 
-    @property
     def simplify(self, *args, **kwargs):
         return Series([geom.simplify(*args, **kwargs) for geom in self],
                       index=self.index)
