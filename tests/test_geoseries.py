@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from shapely.geometry import Polygon, Point
-from geopandas.series import GeoSeries
+from geopandas import GeoSeries
 
 
 class TestSeries(unittest.TestCase):
@@ -22,3 +22,7 @@ class TestSeries(unittest.TestCase):
     def test_contains(self):
         assert np.alltrue(self.g1.contains(self.p1))
         assert not np.alltrue(self.g1.contains(Point([5, 5])))
+
+    def test_length(self):
+        l = np.array([2 + np.sqrt(2), 4])
+        assert np.allclose(self.g1.length.values, l)
