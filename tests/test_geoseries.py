@@ -26,3 +26,15 @@ class TestSeries(unittest.TestCase):
     def test_length(self):
         l = np.array([2 + np.sqrt(2), 4])
         assert np.allclose(self.g1.length.values, l)
+
+    def test_is_valid(self):
+        assert np.alltrue(self.g1.is_valid)
+
+    def test_is_empty(self):
+        assert np.alltrue(np.logical_not(self.g1.is_empty))
+
+    def test_is_ring(self):
+        assert np.alltrue(self.g1.is_ring)
+
+    def test_is_simple(self):
+        assert np.alltrue(self.g1.is_simple)
