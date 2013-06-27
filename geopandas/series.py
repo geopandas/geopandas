@@ -37,6 +37,17 @@ class GeoSeries(Series):
         arr = Series.__new__(cls, *args, **kwargs)
         return arr.view(GeoSeries)
 
+    @classmethod
+    def from_file(cls, filename):
+        """
+        Alternate constructor to create a GeoSeries from a file
+        """
+        geoms = []
+        with fiona.open(filename) as f:
+            for rec in f:
+                geoms.append(shape(rec['geometry']))
+        return GeoSeries(geoms)
+
     @property
     def area(self):
         """
