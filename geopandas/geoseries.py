@@ -98,6 +98,18 @@ class GeoSeries(Series):
     def is_valid(self):
         return Series([geom.is_valid for geom in self], index=self.index)
 
+    @property
+    def is_empty(self):
+        return Series([geom.is_empty for geom in self], index=self.index)
+
+    @property
+    def is_ring(self):
+        return Series([geom.is_ring for geom in self], index=self.index)
+
+    @property
+    def is_simple(self):
+        return Series([geom.is_simple for geom in self], index=self.index)
+
     def simplify(self, *args, **kwargs):
         return Series([geom.simplify(*args, **kwargs) for geom in self],
                       index=self.index)
