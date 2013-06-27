@@ -87,6 +87,10 @@ class GeoSeries(Series):
         return GeoSeries([geom.centroid for geom in self], index=self.index)
 
     @property
+    def convex_hull(self):
+        return GeoSeries([geom.convex_hull for geom in self], index=self.index)
+
+    @property
     def geom_type(self):
         return Series([geom.geom_type for geom in self], index=self.index)
 
