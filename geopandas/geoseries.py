@@ -94,6 +94,10 @@ class GeoSeries(Series):
     def length(self):
         return Series([geom.length for geom in self], index=self.index)
 
+    @property
+    def is_valid(self):
+        return Series([geom.is_valid for geom in self], index=self.index)
+
     def simplify(self, *args, **kwargs):
         return Series([geom.simplify(*args, **kwargs) for geom in self],
                       index=self.index)
