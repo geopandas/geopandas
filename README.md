@@ -53,6 +53,8 @@ GeoPandas also implements an alternate constructor that can read any data format
     4    1186805996
     dtype: int64
 
+![New York City boroughs](examples/nyc.png)
+ 
 TODO
 ----
 
