@@ -1,6 +1,7 @@
 import numpy as np
 from pandas import Series, DataFrame
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 from shapely.geometry import shape, Polygon, Point
 import fiona
@@ -26,6 +27,15 @@ def _plot_multipolygon(ax, geom, facecolor='red'):
         for poly in geom.geoms:
             _plot_polygon(ax, poly, facecolor)
 
+
+def _gencolor(N, colormap='Accent'):
+    """
+    Color generator
+    """
+    cmap = cm.get_cmap(colormap, N)
+    colors = cmap(range(N))
+    for color in colors:
+        yield color
 
 class GeoSeries(Series):
     """
@@ -90,9 +100,11 @@ class GeoSeries(Series):
         fig = plt.figure()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
+        color = _gencolor(len(self))
         for geom in self:
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                _plot_multipolygon(ax, geom, *args, **kwargs)
+                _plot_multipolygon(ax, geom, facecolor=color.next(),
+                                   *args, **kwargs)
         plt.show()
 
 if __name__ == '__main__':
