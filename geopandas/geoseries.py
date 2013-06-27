@@ -91,6 +91,10 @@ class GeoSeries(Series):
         return Series([geom.geom_type for geom in self], index=self.index)
 
     @property
+    def type(self):
+        return self.geom_type
+
+    @property
     def length(self):
         return Series([geom.length for geom in self], index=self.index)
 
