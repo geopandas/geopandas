@@ -1,5 +1,30 @@
 import numpy as np
 from pandas import Series, DataFrame
+import matplotlib.pyplot as plt
+
+from shapely.geometry import shape, Polygon, Point
+import fiona
+from descartes.patch import PolygonPatch
+
+
+def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.3):
+    a = np.asarray(poly.exterior)
+    # without Descartes, we could make a Patch of exterior
+    ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
+    ax.plot(a[:, 0], a[:, 1], color=edgecolor)
+    for p in poly.interiors:
+        x, y = zip(*p.coords)
+        ax.plot(x, y, color=edgecolor)
+
+
+def _plot_multipolygon(ax, geom, facecolor='red'):
+    """ Can safely call with either Polygon or Multipolygon geometry
+    """
+    if geom.type == 'Polygon':
+        _plot_polygon(ax, geom, facecolor)
+    elif geom.type == 'MultiPolygon':
+        for poly in geom.geoms:
+            _plot_polygon(ax, poly, facecolor)
 
 
 class GeoSeries(Series):
@@ -49,3 +74,20 @@ class GeoSeries(Series):
         else:
             return Series([s.contains(other) for s in self],
                           index=self.index)
+
+    def plot(self, *args, **kwargs):
+        fig = plt.figure()
+        fig.add_subplot(111, aspect='equal')
+        ax = plt.gca()
+        for geom in self:
+            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                _plot_multipolygon(ax, geom, *args, **kwargs)
+        plt.show()
+
+if __name__ == '__main__':
+    p1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    p2 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    p3 = Polygon([(2, 0), (3, 0), (3, 1), (2, 1)])
+    g = GeoSeries([p1, p2, p3])
+    print g.area
+    g.plot()
