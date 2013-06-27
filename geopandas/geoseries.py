@@ -104,7 +104,7 @@ class GeoSeries(Series):
 
     @property
     def is_ring(self):
-        return Series([geom.is_ring for geom in self], index=self.index)
+        return Series([geom.exterior.is_ring for geom in self], index=self.index)
 
     @property
     def is_simple(self):
