@@ -140,14 +140,20 @@ class GeoSeries(Series):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 _plot_multipolygon(ax, geom, facecolor=color.next(),
                                    *args, **kwargs)
-        plt.show()
+        return ax
 
 if __name__ == '__main__':
-    """ A simple example when run as a script
+    """ Generate simple examples
     """
+    dpi = 300
     p1 = Polygon([(0, 0), (1, 0), (1, 1)])
     p2 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     p3 = Polygon([(2, 0), (3, 0), (3, 1), (2, 1)])
     g = GeoSeries([p1, p2, p3])
-    print g.area
-    g.plot()
+    ax = g.plot()
+    ax.set_xlim([-0.5, 3.5])
+    ax.set_ylim([-0.5, 1.5])
+    plt.savefig('test.png', dpi=dpi)
+    g.buffer(0.5).plot()
+    plt.savefig('test_buffer.png', dpi=dpi)
+    plt.show()
