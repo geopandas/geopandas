@@ -80,6 +80,13 @@ class GeoSeries(Series):
                          index=self.index)
 
     @property
+    def centroid(self):
+        """
+        Return the centroid of each geometry in the GeoSeries
+        """
+        return GeoSeries([geom.centroid for geom in self], index=self.index)
+
+    @property
     def geom_type(self):
         return Series([geom.geom_type for geom in self], index=self.index)
 
