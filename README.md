@@ -36,7 +36,7 @@ Other operations return GeoPandas objects:
     2    POLYGON ((1.5000000000000000 0.000000000000000...
     dtype: object
 
-![Example 2](examples/test.png)
+![Example 2](examples/test_buffer.png)
 
 GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](https://pypi.python.org/pypi/descartes) to generate a [matplotlib](http://matplotlib.org) plot. To generate a plot of our GeoSeries, use:
 
