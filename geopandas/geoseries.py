@@ -103,6 +103,10 @@ class GeoSeries(Series):
             return Series([s.contains(other) for s in self],
                           index=self.index)
 
+    def buffer(self, distance, resolution=16):
+        return GeoSeries([geom.buffer(distance, resolution) for geom in self],
+                         index=self.index)
+
     def plot(self, *args, **kwargs):
         fig = plt.figure()
         fig.add_subplot(111, aspect='equal')
