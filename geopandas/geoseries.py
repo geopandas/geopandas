@@ -34,7 +34,7 @@ def _plot_point(ex, geom):
     pass
 
 
-def _gencolor(N, colormap='Accent'):
+def _gencolor(N, colormap='Set1'):
     """
     Color generator intended to work with one of the ColorBrewer
     qualitative color scales.
@@ -182,7 +182,7 @@ class GeoSeries(Series):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
                          index=self.index)
 
-    def plot(self, colormap='Accent'):
+    def plot(self, colormap='Set1'):
         fig = plt.figure()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
