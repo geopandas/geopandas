@@ -25,7 +25,7 @@ def _plot_multipolygon(ax, geom, facecolor='red'):
         _plot_polygon(ax, geom, facecolor)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            _plot_polygon(ax, poly, facecolor)
+            _plot_polygon(ax, poly, facecolor=facecolor)
 
 
 def _plot_point(ex, geom):
@@ -36,12 +36,22 @@ def _plot_point(ex, geom):
 
 def _gencolor(N, colormap='Accent'):
     """
-    Color generator
+    Color generator intended to work with one of the ColorBrewer
+    qualitative color scales.
+
+    Suggested values of colormap are the following:
+
+        Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
+
+    (although any matplotlib colormap will work).
     """
-    cmap = cm.get_cmap(colormap, N)
-    colors = cmap(range(N))
-    for color in colors:
-        yield color
+    # don't use more than 9 discrete colors
+    n_colors = min(N, 9)
+    cmap = cm.get_cmap(colormap, n_colors)
+    colors = cmap(range(n_colors))
+    for i in xrange(N):
+        yield colors[i % n_colors]
+
 
 class GeoSeries(Series):
     """
@@ -172,15 +182,14 @@ class GeoSeries(Series):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
                          index=self.index)
 
-    def plot(self, *args, **kwargs):
+    def plot(self, colormap='Accent'):
         fig = plt.figure()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
-        color = _gencolor(len(self))
+        color = _gencolor(len(self), colormap=colormap)
         for geom in self:
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                _plot_multipolygon(ax, geom, facecolor=color.next(),
-                                   *args, **kwargs)
+                _plot_multipolygon(ax, geom, facecolor=color.next())
             elif geom.type == 'Point':
                 _plot_point(ax, geom)
         return ax
