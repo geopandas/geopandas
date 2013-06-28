@@ -1,7 +1,12 @@
 Introduction
 ------------
 
-GeoPandas is a project to add support for geographic data to [pandas](http://pandas.pydata.org) objects.  It currently implements `GeoSeries` and `GeoDataFrame` types which is are subclasses of `pandas.Series` and `pandas.DataFrame`.  GeoPandas objects can act on [shapely](http://toblerity.github.io/shapely) geometry objects and perform geometric operations.
+GeoPandas is a project to add support for geographic data to
+[pandas](http://pandas.pydata.org) objects.  It currently implements
+`GeoSeries` and `GeoDataFrame` types which is are subclasses of `pandas.Series`
+and `pandas.DataFrame` respectively.  GeoPandas objects can act on
+[shapely](http://toblerity.github.io/shapely) geometry objects and perform geometric
+operations.
 
 Examples
 --------
@@ -44,8 +49,8 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 GeoPandas also implements a alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip):
 
     >>> boros = GeoDataFrame.from_file('nybb.shp')
-    boros.set_index('BoroCode', inplace=True)
-    boros.sort()
+    >>> boros.set_index('BoroCode', inplace=True)
+    >>> boros.sort()
     >>> boros
                    BoroName    Shape_Area     Shape_Leng  \
     BoroCode
