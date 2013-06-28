@@ -1,8 +1,7 @@
 Introduction
 ------------
 
-GeoPandas is a project to add support for geographic to [pandas](http://pandas.pydata.org) objects.  It currently implements a `GeoSeries` type which is a subclass of `pandas.Series`.
-GeoPandas objects can act on [shapely](http://toblerity.github.io/shapely) geometry objects and perform geometric operations.
+GeoPandas is a project to add support for geographic data to [pandas](http://pandas.pydata.org) objects.  It currently implements `GeoSeries` and `GeoDataFrame` types which is are subclasses of `pandas.Series` and `pandas.DataFrame`.  GeoPandas objects can act on [shapely](http://toblerity.github.io/shapely) geometry objects and perform geometric operations.
 
 Examples
 --------
@@ -42,20 +41,31 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements an alternate constructor that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroghs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip):
+GeoPandas also implements a alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip):
 
-    >>> boros = GeoSeries.from_file('nybb.shp')
-    >>> boros.area.astype(int)
-    0    1623855479
-    1    3049948268
-    2    1959433450
-    3     636441882
-    4    1186805996
-    dtype: int64
+    >>> boros = GeoDataFrame.from_file('nybb.shp')
+    boros.set_index('BoroCode', inplace=True)
+    boros.sort()
+    >>> boros
+                   BoroName    Shape_Area     Shape_Leng  \
+    BoroCode
+    1             Manhattan  6.364422e+08  358532.956418
+    2                 Bronx  1.186804e+09  464517.890553
+    3              Brooklyn  1.959432e+09  726568.946340
+    4                Queens  3.049947e+09  861038.479299
+    5         Staten Island  1.623853e+09  330385.036974
+    
+                                                       geometry
+    BoroCode
+    1         (POLYGON ((981219.0557861328125000 188655.3157...
+    2         (POLYGON ((1012821.8057861328125000 229228.264...
+    3         (POLYGON ((1021176.4790039062500000 151374.796...
+    4         (POLYGON ((1029606.0765991210937500 156073.814...
+    5         (POLYGON ((970217.0223999023437500 145643.3322...
 
 ![New York City boroughs](examples/nyc.png)
  
-    >>> boros.convex_hull
+    >>> boros['geometry'].convex_hull
     0    POLYGON ((915517.6877458114176989 120121.88125...
     1    POLYGON ((1000721.5317993164062500 136681.7761...
     2    POLYGON ((988872.8212280273437500 146772.03179...
@@ -69,5 +79,5 @@ TODO
 ----
 
 - Not all Shapely operations are yet exposed to a GeoSeries
-- Implement a GeoDataFrame and GeoPanel
-- spatial joins and more...
+- The current GeoDataFrame does not do very much.
+- spatial joins, grouping and more...
