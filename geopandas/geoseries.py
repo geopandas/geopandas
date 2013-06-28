@@ -167,7 +167,7 @@ class GeoSeries(Series):
 
     def union(self, other):
         """
-        Return a GeoSeries of differences
+        Return a GeoSeries of unions
         Operates on either a GeoSeries or a Shapely geometry
         """
         if isinstance(other, GeoSeries):
