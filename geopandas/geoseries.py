@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 from shapely.geometry import shape, Polygon, Point
+from shapely.ops import cascaded_union, unary_union
 import fiona
 from descartes.patch import PolygonPatch
 
@@ -160,6 +161,15 @@ class GeoSeries(Series):
     @property
     def is_simple(self):
         return Series([geom.is_simple for geom in self], index=self.index)
+
+    @property
+    def cascaded_union(self):
+        # Deprecated - use unary_union instead
+        return cascaded_union(self.values)
+
+    @property
+    def unary_union(self):
+        return unary_union(self.values)
 
     def simplify(self, *args, **kwargs):
         return Series([geom.simplify(*args, **kwargs) for geom in self],
