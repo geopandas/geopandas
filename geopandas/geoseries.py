@@ -75,12 +75,30 @@ class GeoSeries(Series):
         return GeoSeries(geoms)
 
     def _geo_op(self, other, op):
+        """
+        Operation that returns a GeoSeries
+        """
         if isinstance(other, GeoSeries):
             # TODO: align series
             return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(self, other)],
                           index=self.index)
         else:
             return GeoSeries([getattr(s, op)(other) for s in self],
+                          index=self.index)
+
+    # TODO: think about merging with _geo_op
+    def _series_op(self, other, op):
+        """
+        Geometric operation that returns a pandas Series
+        """
+        print type(op), op
+        if isinstance(other, GeoSeries):
+            # TODO: align series
+            print [getattr(s[0], op)(s[1]) for s in zip(self, other)]
+            return Series([getattr(s[0], op)(s[1]) for s in zip(self, other)],
+                          index=self.index)
+        else:
+            return Series([getattr(s, op)(other) for s in self],
                           index=self.index)
 
     @property
@@ -147,19 +165,6 @@ class GeoSeries(Series):
         return Series([geom.simplify(*args, **kwargs) for geom in self],
                       index=self.index)
 
-    def contains(self, other):
-        """
-        Return a Series of boolean values.
-        Operates on either a GeoSeries or a Shapely geometry
-        """
-        if isinstance(other, GeoSeries):
-            # TODO: align series
-            return Series([s[0].contains(s[1]) for s in zip(self, other)],
-                          index=self.index)
-        else:
-            return Series([s.contains(other) for s in self],
-                          index=self.index)
-
     def difference(self, other):
         """
         Return a GeoSeries of differences
@@ -188,35 +193,42 @@ class GeoSeries(Series):
         """
         return self._geo_op(other, 'intersection')
 
+    def contains(self, other):
+        """
+        Return a Series of boolean values.
+        Operates on either a GeoSeries or a Shapely geometry
+        """
+        return self._series_op(other, 'contains')
+
     def equals(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'equals')
 
     def almost_equals(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'almost_equals')
 
     def equals_exact(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'equals_exact')
 
     def crosses(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'crosses')
 
     def disjoint(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'disjoint')
 
     def intersects(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'intersects')
 
     def overlaps(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'overlaps')
 
     def touches(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'touches')
 
     def within(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'within')
 
     def distance(self, other):
-        raise NotImplementedError
+        return self._series_op(other, 'distance')
 
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
@@ -237,10 +249,10 @@ class GeoSeries(Series):
     def interpolate(self):
         raise NotImplementedError
 
-    def relate(self):
+    def relate(self, other):
         raise NotImplementedError
 
-    def project(self):
+    def project(self, *args, **kwargs):
         raise NotImplementedError
 
     def plot(self, colormap='Set1'):
