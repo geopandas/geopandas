@@ -74,6 +74,16 @@ class GeoSeries(Series):
                 geoms.append(shape(rec['geometry']))
         return GeoSeries(geoms)
 
+    def _geo_op(self, other, op):
+        if isinstance(other, GeoSeries):
+            # TODO: align series
+            return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(self, other)],
+                          index=self.index)
+        else:
+            return GeoSeries([getattr(s, op)(other) for s in self],
+                          index=self.index)
+
+
     @property
     def area(self):
         """
