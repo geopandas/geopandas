@@ -42,6 +42,30 @@ class TestSeries(unittest.TestCase):
         assert np.alltrue(self.g1.equals(self.g1))
         assert np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool))
 
+    def test_crosses(self):
+        # TODO
+        pass
+
+    def test_disjoint(self):
+        # TODO
+        pass
+
+    def test_intersects(self):
+        # TODO
+        pass
+
+    def test_overlaps(self):
+        # TODO
+        pass
+
+    def test_touches(self):
+        # TODO
+        pass
+
+    def test_within(self):
+        # TODO
+        pass
+
     def test_union_series(self):
         u = self.g1.union(self.g2)
         assert u[0].equals(self.sq)
