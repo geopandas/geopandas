@@ -83,7 +83,6 @@ class GeoSeries(Series):
             return GeoSeries([getattr(s, op)(other) for s in self],
                           index=self.index)
 
-
     @property
     def area(self):
         """
@@ -182,9 +181,63 @@ class GeoSeries(Series):
         """
         return self._geo_op(other, 'union')
 
+    def intersection(self, other):
+        raise NotImplementedError
+
+    def equals(self, other):
+        raise NotImplementedError
+
+    def almost_equals(self, other):
+        raise NotImplementedError
+
+    def equals_exact(self, other):
+        raise NotImplementedError
+
+    def crosses(self, other):
+        raise NotImplementedError
+
+    def disjoint(self, other):
+        raise NotImplementedError
+
+    def intersects(self, other):
+        raise NotImplementedError
+
+    def overlaps(self, other):
+        raise NotImplementedError
+
+    def touches(self, other):
+        raise NotImplementedError
+
+    def within(self, other):
+        raise NotImplementedError
+
+    def distance(self, other):
+        raise NotImplementedError
+
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
                          index=self.index)
+
+    def envelope(self):
+        raise NotImplementedError
+
+    def exterior(self):
+        raise NotImplementedError
+
+    def interiors(self):
+        raise NotImplementedError
+
+    def representative_point(self):
+        raise NotImplementedError
+
+    def interpolate(self):
+        raise NotImplementedError
+
+    def relate(self):
+        raise NotImplementedError
+
+    def project(self):
+        raise NotImplementedError
 
     def plot(self, colormap='Set1'):
         fig = plt.figure()
