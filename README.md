@@ -3,10 +3,16 @@ Introduction
 
 GeoPandas is a project to add support for geographic data to
 [pandas](http://pandas.pydata.org) objects.  It currently implements
-`GeoSeries` and `GeoDataFrame` types which is are subclasses of `pandas.Series`
-and `pandas.DataFrame` respectively.  GeoPandas objects can act on
-[shapely](http://toblerity.github.io/shapely) geometry objects and perform geometric
-operations.
+`GeoSeries` and `GeoDataFrame` types which is are subclasses of
+`pandas.Series` and `pandas.DataFrame` respectively.  GeoPandas
+objects can act on [shapely](http://toblerity.github.io/shapely)
+geometry objects and perform geometric operations.
+
+GeoPandas geometry operations are cartesian.  Objects are naive with
+respect to coordinate systems, although the coordinate reference
+system (crs) is stored on an instance when loading from a file.  In
+the future, enforcement of like coordinates for operations and
+projection into other reference systems may be implemented.
 
 Examples
 --------
