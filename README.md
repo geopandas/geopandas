@@ -23,7 +23,7 @@ Examples
 
 ![Example 1](examples/test.png)
 
-Some geographic operations return normal pandas object.  Calling the `area()` method of a `GeoSeries` will generate a `pandas.Series` containing the area of each item in the `GeoSeries`:
+Some geographic operations return normal pandas object.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
 
     >>> print g.area
     0    0.5
@@ -46,7 +46,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements a alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip):
 
     >>> boros = GeoDataFrame.from_file('nybb.shp')
     >>> boros.set_index('BoroCode', inplace=True)
