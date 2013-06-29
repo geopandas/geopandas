@@ -11,6 +11,10 @@ class GeoDataFrame(DataFrame):
     named 'geometry' which is a GeoSeries.
     """
 
+    def __init__(self, *args, **kwargs):
+        super(GeoDataFrame, self).__init__(*args, **kwargs)
+        self.crs = None
+
     @classmethod
     def from_file(cls, filename):
         """
@@ -23,6 +27,7 @@ class GeoDataFrame(DataFrame):
         geoms = []
         columns = defaultdict(lambda: [])
         with fiona.open(filename) as f:
+            crs = f.crs
             for rec in f:
                 geoms.append(shape(rec['geometry']))
                 for key, value in rec['properties'].iteritems():
@@ -30,6 +35,7 @@ class GeoDataFrame(DataFrame):
         geom = GeoSeries(geoms)
         df = GeoDataFrame(columns)
         df['geometry'] = geom
+        df.crs = crs
         return df
 
     def __getitem__(self, key):

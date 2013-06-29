@@ -64,6 +64,10 @@ class GeoSeries(Series):
         arr = Series.__new__(cls, *args, **kwargs)
         return arr.view(GeoSeries)
 
+    def __init__(self, *args, **kwargs):
+        super(GeoSeries, self).__init__(*args, **kwargs)
+        self.crs = None
+
     @classmethod
     def from_file(cls, filename):
         """
@@ -71,9 +75,12 @@ class GeoSeries(Series):
         """
         geoms = []
         with fiona.open(filename) as f:
+            crs = f.crs
             for rec in f:
                 geoms.append(shape(rec['geometry']))
-        return GeoSeries(geoms)
+        g = GeoSeries(geoms)
+        g.crs = crs
+        return g
 
     def _geo_op(self, other, op):
         """
