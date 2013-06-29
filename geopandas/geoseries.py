@@ -182,7 +182,11 @@ class GeoSeries(Series):
         return self._geo_op(other, 'union')
 
     def intersection(self, other):
-        raise NotImplementedError
+        """
+        Return a GeoSeries of intersections
+        Operates on either a GeoSeries or a Shapely geometry
+        """
+        return self._geo_op(other, 'intersection')
 
     def equals(self, other):
         raise NotImplementedError
