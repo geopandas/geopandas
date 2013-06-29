@@ -10,7 +10,7 @@ geometry objects and perform geometric operations.
 
 GeoPandas geometry operations are cartesian.  Objects are naive with
 respect to coordinate systems, although the coordinate reference
-system (crs) is stored on an instance when loading from a file.  In
+system (crs) is stored as an attribute when loading from a file.  In
 the future, enforcement of like coordinates for operations and
 projection into other reference systems may be implemented.
 
