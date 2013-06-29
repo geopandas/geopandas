@@ -161,32 +161,26 @@ class GeoSeries(Series):
             return Series([s.contains(other) for s in self],
                           index=self.index)
 
-    # TODO: refactor to eliminate replications
     def difference(self, other):
         """
         Return a GeoSeries of differences
         Operates on either a GeoSeries or a Shapely geometry
         """
-        if isinstance(other, GeoSeries):
-            # TODO: align series
-            return GeoSeries([s[0].difference(s[1]) for s in zip(self, other)],
-                          index=self.index)
-        else:
-            return GeoSeries([s.difference(other) for s in self],
-                          index=self.index)
+        return self._geo_op(other, 'difference')
+
+    def symmetric_difference(self, other):
+        """
+        Return a GeoSeries of differences
+        Operates on either a GeoSeries or a Shapely geometry
+        """
+        return self._geo_op(other, 'symmetric_difference')
 
     def union(self, other):
         """
         Return a GeoSeries of unions
         Operates on either a GeoSeries or a Shapely geometry
         """
-        if isinstance(other, GeoSeries):
-            # TODO: align series
-            return GeoSeries([s[0].union(s[1]) for s in zip(self, other)],
-                          index=self.index)
-        else:
-            return GeoSeries([s.union(other) for s in self],
-                          index=self.index)
+        return self._geo_op(other, 'union')
 
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],

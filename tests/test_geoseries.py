@@ -12,6 +12,8 @@ class TestSeries(unittest.TestCase):
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
+        self.g3 = GeoSeries([self.t1, self.t2])
+        self.g4 = GeoSeries([self.t2, self.t1])
 
     def test_area(self):
         assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
@@ -42,6 +44,16 @@ class TestSeries(unittest.TestCase):
         u = self.g1.difference(self.g2)
         assert u[0].is_empty
         assert u[1].equals(self.t2)
+
+    def test_symmetric_difference_series(self):
+        u = self.g3.symmetric_difference(self.g4)
+        assert u[0].equals(self.sq)
+        assert u[1].equals(self.sq)
+
+    def test_symmetric_difference_poly(self):
+        u = self.g3.symmetric_difference(self.t1)
+        assert u[0].is_empty
+        assert u[1].equals(self.sq)
 
     def test_difference_poly(self):
         u = self.g1.difference(self.t2)
