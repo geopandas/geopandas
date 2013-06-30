@@ -109,6 +109,13 @@ class GeoSeries(Series):
             return Series([getattr(s, op)(other) for s in self],
                           index=self.index)
 
+    def _geo_unary_op(self, op):
+        """
+        Unary operation that returns a GeoSeries
+        """
+        return GeoSeries([getattr(geom, op) for geom in self],
+                         index=self.index)
+
     @property
     def area(self):
         """
@@ -251,8 +258,9 @@ class GeoSeries(Series):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
                          index=self.index)
 
+    @property
     def envelope(self):
-        raise NotImplementedError
+        return self._geo_unary_op('envelope')
 
     def exterior(self):
         raise NotImplementedError
