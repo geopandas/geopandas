@@ -1,0 +1,11 @@
+Installation
+============
+
+GeoPandas is pre-alpha software.  Please install the latest source from `GitHub`_.
+
+.. _GitHub: https://github.com/kjordahl/geopandas
+
+
+.. toctree::
+   :maxdepth: 2
+
