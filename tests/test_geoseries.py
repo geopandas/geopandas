@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, LineString
 from geopandas import GeoSeries
 
 
@@ -17,6 +17,13 @@ class TestSeries(unittest.TestCase):
 
     def test_area(self):
         assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
+
+    def test_boundary(self):
+        l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
+        l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        b = self.g1.boundary
+        assert b[0].equals(l1)
+        assert b[1].equals(l2)
 
     def test_bounds(self):
         assert np.allclose(self.g1.bounds.values, np.array([[0, 0, 1, 1],
