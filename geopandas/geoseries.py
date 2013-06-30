@@ -125,7 +125,7 @@ class GeoSeries(Series):
 
     @property
     def boundary(self):
-        return GeoSeries([geom.boundary for geom in self], index=self.index)
+        return self._geo_unary_op('boundary')
 
     @property
     def bounds(self):
