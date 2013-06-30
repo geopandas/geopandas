@@ -107,3 +107,7 @@ class TestSeries(unittest.TestCase):
 
     def test_is_simple(self):
         assert np.alltrue(self.g1.is_simple)
+
+    def test_envelope(self):
+        e = self.g3.envelope
+        assert np.alltrue(e.equals(self.sq))
