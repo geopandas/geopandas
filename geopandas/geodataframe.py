@@ -44,7 +44,10 @@ class GeoDataFrame(DataFrame):
         """
         col = super(GeoDataFrame, self).__getitem__(key)
         if key == 'geometry':
-            return GeoSeries(col)
+            g = GeoSeries(col)
+            # TODO: set crs in GeoSeries constructor rather than here
+            g.crs = self.crs
+            return g
         else:
             return col
 
