@@ -271,7 +271,8 @@ class GeoSeries(Series):
         return self._geo_unary_op('interiors')
 
     def representative_point(self):
-        raise NotImplementedError
+        return GeoSeries([geom.representative_point() for geom in self],
+                         index=self.index)
 
     def interpolate(self):
         raise NotImplementedError
