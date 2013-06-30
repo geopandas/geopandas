@@ -111,3 +111,17 @@ class TestSeries(unittest.TestCase):
     def test_envelope(self):
         e = self.g3.envelope
         assert np.alltrue(e.equals(self.sq))
+
+    def test_exterior(self):
+        # TODO
+        pass
+
+    def test_interiors(self):
+        # TODO
+        pass
+
+    def test_representative_point(self):
+        assert np.alltrue(self.g1.contains(self.g1.representative_point()))
+        assert np.alltrue(self.g2.contains(self.g2.representative_point()))
+        assert np.alltrue(self.g3.contains(self.g3.representative_point()))
+        assert np.alltrue(self.g4.contains(self.g4.representative_point()))
