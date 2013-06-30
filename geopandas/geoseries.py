@@ -262,11 +262,13 @@ class GeoSeries(Series):
     def envelope(self):
         return self._geo_unary_op('envelope')
 
+    @property
     def exterior(self):
-        raise NotImplementedError
+        return self._geo_unary_op('exterior')
 
+    @property
     def interiors(self):
-        raise NotImplementedError
+        return self._geo_unary_op('interiors')
 
     def representative_point(self):
         raise NotImplementedError
