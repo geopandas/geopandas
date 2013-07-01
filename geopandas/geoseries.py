@@ -116,6 +116,17 @@ class GeoSeries(Series):
         return GeoSeries([getattr(geom, op) for geom in self],
                          index=self.index)
 
+    def _series_unary_op(self, op):
+        """
+        Unary operation that returns a Series
+        """
+        return GeoSeries([getattr(geom, op) for geom in self],
+                         index=self.index)
+
+    #
+    # Unary operations that return a DataFrame
+    #
+
     @property
     def bounds(self):
         """
@@ -135,11 +146,11 @@ class GeoSeries(Series):
         """
         Return the area of each member of the GeoSeries
         """
-        return Series([geom.area for geom in self], index=self.index)
+        return self._series_unary_op('area')
 
     @property
     def geom_type(self):
-        return Series([geom.geom_type for geom in self], index=self.index)
+        return self._series_unary_op('geom_type')
 
     @property
     def type(self):
@@ -147,23 +158,25 @@ class GeoSeries(Series):
 
     @property
     def length(self):
-        return Series([geom.length for geom in self], index=self.index)
+        return self._series_unary_op('length')
 
     @property
     def is_valid(self):
-        return Series([geom.is_valid for geom in self], index=self.index)
+        return self._series_unary_op('is_valid')
 
     @property
     def is_empty(self):
-        return Series([geom.is_empty for geom in self], index=self.index)
-
-    @property
-    def is_ring(self):
-        return Series([geom.exterior.is_ring for geom in self], index=self.index)
+        return self._series_unary_op('is_empty')
 
     @property
     def is_simple(self):
-        return Series([geom.is_simple for geom in self], index=self.index)
+        return self._series_unary_op('is_simple')
+
+    @property
+    def is_ring(self):
+        # operates on the exterior, so can't use _series_unary_op()
+        return Series([geom.exterior.is_ring for geom in self],
+                      index=self.index)
 
     #
     # Unary operations that return a GeoSeries
