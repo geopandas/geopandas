@@ -82,6 +82,10 @@ class GeoSeries(Series):
         g.crs = crs
         return g
 
+    #
+    # Internal methods
+    #
+
     def _geo_op(self, other, op):
         """
         Operation that returns a GeoSeries
@@ -99,7 +103,6 @@ class GeoSeries(Series):
         """
         Geometric operation that returns a pandas Series
         """
-        print type(op), op
         if isinstance(other, GeoSeries):
             # TODO: align series
             print [getattr(s[0], op)(s[1]) for s in zip(self, other)]
@@ -124,18 +127,8 @@ class GeoSeries(Series):
                          index=self.index)
 
     #
-    # Unary operations that return a DataFrame
+    # Implementation of Shapely methods
     #
-
-    @property
-    def bounds(self):
-        """
-        Return a DataFrame of minx, miny, maxx, maxy values of geometry objects
-        """
-        bounds = np.array([geom.bounds for geom in self])
-        return DataFrame(bounds,
-                         columns=['minx', 'miny', 'maxx', 'maxy'],
-                         index=self.index)
 
     #
     # Unary operations that return a Series
@@ -302,6 +295,17 @@ class GeoSeries(Series):
     #
     # Other operations
     #
+
+    # should this return bounds for entire series, or elementwise?
+    @property
+    def bounds(self):
+        """
+        Return a DataFrame of minx, miny, maxx, maxy values of geometry objects
+        """
+        bounds = np.array([geom.bounds for geom in self])
+        return DataFrame(bounds,
+                         columns=['minx', 'miny', 'maxx', 'maxy'],
+                         index=self.index)
 
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
