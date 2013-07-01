@@ -178,11 +178,11 @@ class GeoSeries(Series):
         """
         Return the centroid of each geometry in the GeoSeries
         """
-        return GeoSeries([geom.centroid for geom in self], index=self.index)
+        return self._geo_unary_op('centroid')
 
     @property
     def convex_hull(self):
-        return GeoSeries([geom.convex_hull for geom in self], index=self.index)
+        return self._geo_unary_op('convex_hull')
 
     @property
     def envelope(self):
