@@ -117,17 +117,6 @@ class GeoSeries(Series):
                          index=self.index)
 
     @property
-    def area(self):
-        """
-        Return the area of each member of the GeoSeries
-        """
-        return Series([geom.area for geom in self], index=self.index)
-
-    @property
-    def boundary(self):
-        return self._geo_unary_op('boundary')
-
-    @property
     def bounds(self):
         """
         Return a DataFrame of minx, miny, maxx, maxy values of geometry objects
@@ -137,16 +126,16 @@ class GeoSeries(Series):
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
 
-    @property
-    def centroid(self):
-        """
-        Return the centroid of each geometry in the GeoSeries
-        """
-        return GeoSeries([geom.centroid for geom in self], index=self.index)
+    #
+    # Unary operations that return a Series
+    #
 
     @property
-    def convex_hull(self):
-        return GeoSeries([geom.convex_hull for geom in self], index=self.index)
+    def area(self):
+        """
+        Return the area of each member of the GeoSeries
+        """
+        return Series([geom.area for geom in self], index=self.index)
 
     @property
     def geom_type(self):
@@ -176,6 +165,45 @@ class GeoSeries(Series):
     def is_simple(self):
         return Series([geom.is_simple for geom in self], index=self.index)
 
+    #
+    # Unary operations that return a GeoSeries
+    #
+
+    @property
+    def boundary(self):
+        return self._geo_unary_op('boundary')
+
+    @property
+    def centroid(self):
+        """
+        Return the centroid of each geometry in the GeoSeries
+        """
+        return GeoSeries([geom.centroid for geom in self], index=self.index)
+
+    @property
+    def convex_hull(self):
+        return GeoSeries([geom.convex_hull for geom in self], index=self.index)
+
+    @property
+    def envelope(self):
+        return self._geo_unary_op('envelope')
+
+    @property
+    def exterior(self):
+        return self._geo_unary_op('exterior')
+
+    @property
+    def interiors(self):
+        return self._geo_unary_op('interiors')
+
+    def representative_point(self):
+        return GeoSeries([geom.representative_point() for geom in self],
+                         index=self.index)
+
+    #
+    # Reduction operations that return a Shapely geometry
+    #
+
     @property
     def cascaded_union(self):
         # Deprecated - use unary_union instead
@@ -185,9 +213,9 @@ class GeoSeries(Series):
     def unary_union(self):
         return unary_union(self.values)
 
-    def simplify(self, *args, **kwargs):
-        return Series([geom.simplify(*args, **kwargs) for geom in self],
-                      index=self.index)
+    #
+    # Binary operations that return a GeoSeries
+    #
 
     def difference(self, other):
         """
@@ -216,6 +244,10 @@ class GeoSeries(Series):
         Operates on either a GeoSeries or a Shapely geometry
         """
         return self._geo_op(other, 'intersection')
+
+    #
+    # Binary operations that return a pandas Series
+    #
 
     def contains(self, other):
         """
@@ -254,25 +286,17 @@ class GeoSeries(Series):
     def distance(self, other):
         return self._series_op(other, 'distance')
 
+    #
+    # Other operations
+    #
+
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
                          index=self.index)
 
-    @property
-    def envelope(self):
-        return self._geo_unary_op('envelope')
-
-    @property
-    def exterior(self):
-        return self._geo_unary_op('exterior')
-
-    @property
-    def interiors(self):
-        return self._geo_unary_op('interiors')
-
-    def representative_point(self):
-        return GeoSeries([geom.representative_point() for geom in self],
-                         index=self.index)
+    def simplify(self, *args, **kwargs):
+        return Series([geom.simplify(*args, **kwargs) for geom in self],
+                      index=self.index)
 
     def interpolate(self):
         raise NotImplementedError
@@ -282,6 +306,10 @@ class GeoSeries(Series):
 
     def project(self, *args, **kwargs):
         raise NotImplementedError
+
+    #
+    # Implement pandas methods
+    #
 
     def plot(self, colormap='Set1'):
         fig = plt.figure()
