@@ -22,6 +22,12 @@ class TestSeries(unittest.TestCase):
     def test_area(self):
         assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
 
+    def test_in(self):
+        assert self.t1 in self.g1
+        assert self.sq in self.g1
+        assert self.t1 in self.a1
+        assert self.t2 in self.g3
+
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
         l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
