@@ -357,15 +357,13 @@ class GeoSeries(Series):
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
-    def fillna(self, value=None, method=None, inplace=False,
+    def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
                limit=None):
         """
         Fill NA/NaN values using the specified method
 
         Default value is an empty geometry collection.
         """
-        if value is None:
-            value = EMPTY_POLYGON
         if isinstance(value, BaseGeometry):
             if method is not None:
                 raise ValueError('Cannot specify both a fill value and method')
