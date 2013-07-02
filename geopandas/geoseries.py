@@ -62,9 +62,9 @@ def _gencolor(N, colormap='Set1'):
 
 
 def _is_empty(x):
-    if isinstance(x, BaseGeometry):
+    try:
         return x.is_empty
-    else:
+    except:
         return False
 
 
