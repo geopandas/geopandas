@@ -1,12 +1,19 @@
 import numpy as np
 from pandas import Series, DataFrame
+from pandas.core.common import isnull
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
 from shapely.geometry import shape, Polygon, Point
+from shapely.geometry.collection import GeometryCollection
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 import fiona
 from descartes.patch import PolygonPatch
+
+EMPTY_COLLECTION = GeometryCollection()
+EMPTY_POLYGON = Polygon()
+EMPTY_POINT = Point()
 
 
 def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -54,6 +61,17 @@ def _gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
+def _is_empty(x):
+    try:
+        return x.is_empty
+    except:
+        return False
+
+
+def _is_geometry(x):
+    return isinstance(x, BaseGeometry)
+
+
 class GeoSeries(Series):
     """
     A Series object designed to store shapely geometry objects.
@@ -91,9 +109,9 @@ class GeoSeries(Series):
         Operation that returns a GeoSeries
         """
         if isinstance(other, GeoSeries):
-            # TODO: align series
-            return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(self, other)],
-                          index=self.index)
+            this, other = self.align(other)
+            return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
+                          index=this.index)
         else:
             return GeoSeries([getattr(s, op)(other) for s in self],
                           index=self.index)
@@ -104,10 +122,9 @@ class GeoSeries(Series):
         Geometric operation that returns a pandas Series
         """
         if isinstance(other, GeoSeries):
-            # TODO: align series
-            print [getattr(s[0], op)(s[1]) for s in zip(self, other)]
-            return Series([getattr(s[0], op)(s[1]) for s in zip(self, other)],
-                          index=self.index)
+            this, other = self.align(other)
+            return Series([getattr(s[0], op)(s[1]) for s in zip(this, other)],
+                          index=this.index)
         else:
             return Series([getattr(s, op)(other) for s in self],
                           index=self.index)
@@ -327,6 +344,56 @@ class GeoSeries(Series):
     #
     # Implement pandas methods
     #
+
+    @property
+    def _can_hold_na(self):
+        return False
+
+    def copy(self, order='C'):
+        """
+        Return new GeoSeries with copy of underlying values
+
+        Returns
+        -------
+        cp : GeoSeries
+        """
+        return GeoSeries(self.values.copy(order), index=self.index,
+                      name=self.name)
+
+    def isnull(self):
+        """
+        Null values in a GeoSeries are represented by empty geometric objects
+        """
+        non_geo_null = super(GeoSeries, self).isnull()
+        val = self.apply(_is_empty)
+        return np.logical_or(non_geo_null, val)
+
+    def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
+               limit=None):
+        """
+        Fill NA/NaN values with a geometry (empty polygon by default).
+
+        "method" is currently not implemented for GeoSeries.
+        """
+        if method is not None:
+            raise NotImplementedError('Fill method is currently not implemented for GeoSeries')
+        if isinstance(value, BaseGeometry):
+            result = self.copy() if not inplace else self
+            mask = self.isnull()
+            np.putmask(result, mask, value)
+            if not inplace:
+                return GeoSeries(result)
+        else:
+            raise ValueError('Non-geometric fill values not allowed for GeoSeries')
+
+    def align(self, other, join='outer', level=None, copy=True,
+              fill_value=EMPTY_POLYGON, method=None, limit=None):
+        left, right = super(GeoSeries, self).align(other, join=join,
+                                                   level=level, copy=copy,
+                                                   fill_value=fill_value,
+                                                   method=method,
+                                                   limit=limit)
+        return GeoSeries(left), GeoSeries(right)
 
     def plot(self, colormap='Set1'):
         fig = plt.figure()
