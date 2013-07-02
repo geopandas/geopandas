@@ -14,6 +14,10 @@ class TestSeries(unittest.TestCase):
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
         self.g4 = GeoSeries([self.t2, self.t1])
+        self.a1 = self.g1.copy()
+        self.a1.index = ['A', 'B']
+        self.a2 = self.g2.copy()
+        self.a2.index = ['B', 'C']
 
     def test_area(self):
         assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
@@ -40,6 +44,18 @@ class TestSeries(unittest.TestCase):
     def test_equals(self):
         assert np.alltrue(self.g1.equals(self.g1))
         assert np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool))
+
+    def test_equals_align(self):
+        a = self.a1.equals(self.a2)
+        assert a['A'] == False
+        assert a['B'] == True
+        assert a['C'] == False
+
+    def test_align(self):
+        a1, a2 = self.a1.align(self.a2)
+        assert a2['A'].is_empty
+        assert a1['B'].equals(a2['B'])
+        assert a1['C'].is_empty
 
     def test_almost_equals(self):
         assert np.alltrue(self.g1.equals(self.g1))
