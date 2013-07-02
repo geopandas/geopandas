@@ -342,6 +342,22 @@ class GeoSeries(Series):
         raise NotImplementedError
 
     #
+    # Implement standard operators for GeoSeries
+    #
+
+    def __contains__(self, other):
+        """
+        Allow tests of the form "geom in s" to test whether a GeoSeries
+        contains a geometry.
+
+        Note: This is not the same as the geometric method "contains".
+        """
+        if isinstance(other, BaseGeometry):
+            return np.any(self.equals(other))
+        else:
+            return False
+
+    #
     # Implement pandas methods
     #
 
