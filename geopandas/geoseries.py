@@ -108,9 +108,9 @@ class GeoSeries(Series):
         Operation that returns a GeoSeries
         """
         if isinstance(other, GeoSeries):
-            # TODO: align series
-            return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(self, other)],
-                          index=self.index)
+            this, other = self.align(other)
+            return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
+                          index=this.index)
         else:
             return GeoSeries([getattr(s, op)(other) for s in self],
                           index=self.index)
@@ -121,10 +121,9 @@ class GeoSeries(Series):
         Geometric operation that returns a pandas Series
         """
         if isinstance(other, GeoSeries):
-            # TODO: align series
-            print [getattr(s[0], op)(s[1]) for s in zip(self, other)]
-            return Series([getattr(s[0], op)(s[1]) for s in zip(self, other)],
-                          index=self.index)
+            this, other = self.align(other)
+            return Series([getattr(s[0], op)(s[1]) for s in zip(this, other)],
+                          index=this.index)
         else:
             return Series([getattr(s, op)(other) for s in self],
                           index=self.index)
