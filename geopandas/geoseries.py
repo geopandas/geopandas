@@ -354,7 +354,6 @@ class GeoSeries(Series):
         Null values in a GeoSeries are represented by empty geometric objects
         """
         non_geo_null = super(GeoSeries, self).isnull()
-        #geom = self.apply(_is_geometry)
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
