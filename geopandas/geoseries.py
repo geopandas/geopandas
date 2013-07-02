@@ -12,7 +12,8 @@ import fiona
 from descartes.patch import PolygonPatch
 
 EMPTY_COLLECTION = GeometryCollection()
-EMPTY_POLYGON = EMPTY_COLLECTION.buffer(0)
+EMPTY_POLYGON = Polygon()
+EMPTY_POINT = Point()
 
 
 def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
