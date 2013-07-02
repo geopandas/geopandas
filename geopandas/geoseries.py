@@ -360,23 +360,20 @@ class GeoSeries(Series):
     def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
                limit=None):
         """
-        Fill NA/NaN values using the specified method
+        Fill NA/NaN values with a geometry (empty polygon by default).
 
-        Default value is an empty geometry collection.
+        "method" is currently not implemented for GeoSeries.
         """
+        if method is not None:
+            raise NotImplementedError('Fill method is currently not implemented for GeoSeries')
         if isinstance(value, BaseGeometry):
-            if method is not None:
-                raise ValueError('Cannot specify both a fill value and method')
             result = self.copy() if not inplace else self
             mask = self.isnull()
             np.putmask(result, mask, value)
             if not inplace:
                 return GeoSeries(result)
         else:
-            result = super(GeoSeries, self).fillna(value, method,
-                                                   inplace, limit)
-            if not inplace:
-                return GeoSeries(result)
+            raise ValueError('Non-geometric fill values not allowed for GeoSeries')
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=EMPTY_POLYGON, method=None, limit=None):
