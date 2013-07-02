@@ -1,12 +1,18 @@
 import numpy as np
 from pandas import Series, DataFrame
+from pandas.core.common import isnull
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
 from shapely.geometry import shape, Polygon, Point
+from shapely.geometry.collection import GeometryCollection
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 import fiona
 from descartes.patch import PolygonPatch
+
+EMPTY_COLLECTION = GeometryCollection()
+EMPTY_POLYGON = EMPTY_COLLECTION.buffer(0)
 
 
 def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -52,6 +58,17 @@ def _gencolor(N, colormap='Set1'):
     colors = cmap(range(n_colors))
     for i in xrange(N):
         yield colors[i % n_colors]
+
+
+def _is_empty(x):
+    if isinstance(x, BaseGeometry):
+        return x.is_empty
+    else:
+        return False
+
+
+def _is_geometry(x):
+    return isinstance(x, BaseGeometry)
 
 
 class GeoSeries(Series):
@@ -327,6 +344,51 @@ class GeoSeries(Series):
     #
     # Implement pandas methods
     #
+
+    @property
+    def _can_hold_na(self):
+        return False
+
+    def isnull(self):
+        """
+        Null values in a GeoSeries are represented by empty geometric objects
+        """
+        non_geo_null = super(GeoSeries, self).isnull()
+        #geom = self.apply(_is_geometry)
+        val = self.apply(_is_empty)
+        return np.logical_or(non_geo_null, val)
+
+    def fillna(self, value=None, method=None, inplace=False,
+               limit=None):
+        """
+        Fill NA/NaN values using the specified method
+
+        Default value is an empty geometry collection.
+        """
+        if value is None:
+            value = EMPTY_POLYGON
+        if isinstance(value, BaseGeometry):
+            if method is not None:
+                raise ValueError('Cannot specify both a fill value and method')
+            result = self.copy() if not inplace else self
+            mask = self.isnull()
+            np.putmask(result, mask, value)
+            if not inplace:
+                return GeoSeries(result)
+        else:
+            result = super(GeoSeries, self).fillna(value, method,
+                                                   inplace, limit)
+            if not inplace:
+                return GeoSeries(result)
+
+    def align(self, other, join='outer', level=None, copy=True,
+              fill_value=EMPTY_POLYGON, method=None, limit=None):
+        left, right = super(GeoSeries, self).align(other, join=join,
+                                                   level=level, copy=copy,
+                                                   fill_value=fill_value,
+                                                   method=method,
+                                                   limit=limit)
+        return GeoSeries(left), GeoSeries(right)
 
     def plot(self, colormap='Set1'):
         fig = plt.figure()
