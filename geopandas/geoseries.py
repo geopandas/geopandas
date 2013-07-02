@@ -349,6 +349,17 @@ class GeoSeries(Series):
     def _can_hold_na(self):
         return False
 
+    def copy(self, order='C'):
+        """
+        Return new GeoSeries with copy of underlying values
+
+        Returns
+        -------
+        cp : GeoSeries
+        """
+        return GeoSeries(self.values.copy(order), index=self.index,
+                      name=self.name)
+
     def isnull(self):
         """
         Null values in a GeoSeries are represented by empty geometric objects
