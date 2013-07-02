@@ -51,6 +51,12 @@ class TestSeries(unittest.TestCase):
         assert a['B'] == True
         assert a['C'] == False
 
+    def test_align(self):
+        a1, a2 = self.a1.align(self.a2)
+        assert a2['A'].is_empty
+        assert a1['B'].equals(a2['B'])
+        assert a1['C'].is_empty
+
     def test_almost_equals(self):
         assert np.alltrue(self.g1.equals(self.g1))
         assert np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool))
