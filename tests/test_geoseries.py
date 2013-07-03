@@ -4,6 +4,15 @@ from shapely.geometry import Polygon, Point, LineString
 from geopandas import GeoSeries
 
 
+def geom_equals(this, that):
+    """
+    Test for geometric equality, allowing all empty geometries to be considered equal
+    """
+    empty = np.logical_and(this.is_empty, that.is_empty)
+    eq = this.equals(that)
+    return np.all(np.logical_or(eq, empty))
+
+
 class TestSeries(unittest.TestCase):
 
     def setUp(self):
@@ -99,26 +108,29 @@ class TestSeries(unittest.TestCase):
         u = self.g1.union(self.g2)
         assert u[0].equals(self.sq)
         assert u[1].equals(self.sq)
+        assert geom_equals(u, self.g1 | self.g2)
 
     def test_union_polgon(self):
         u = self.g1.union(self.t2)
         assert u[0].equals(self.sq)
         assert u[1].equals(self.sq)
 
-    def test_difference_series(self):
-        u = self.g1.difference(self.g2)
-        assert u[0].is_empty
-        assert u[1].equals(self.t2)
-
     def test_symmetric_difference_series(self):
         u = self.g3.symmetric_difference(self.g4)
         assert u[0].equals(self.sq)
         assert u[1].equals(self.sq)
+        assert geom_equals(u, self.g3 ^ self.g4)
 
     def test_symmetric_difference_poly(self):
         u = self.g3.symmetric_difference(self.t1)
         assert u[0].is_empty
         assert u[1].equals(self.sq)
+
+    def test_difference_series(self):
+        u = self.g1.difference(self.g2)
+        assert u[0].is_empty
+        assert u[1].equals(self.t2)
+        assert geom_equals(u, self.g1 - self.g2)
 
     def test_difference_poly(self):
         u = self.g1.difference(self.t2)
