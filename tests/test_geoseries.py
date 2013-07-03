@@ -104,6 +104,9 @@ class TestSeries(unittest.TestCase):
         # TODO
         pass
 
+    def test_intersection(self):
+        assert geom_equals(self.g1 & self.g2, self.t1)
+
     def test_union_series(self):
         u = self.g1.union(self.g2)
         assert u[0].equals(self.sq)
