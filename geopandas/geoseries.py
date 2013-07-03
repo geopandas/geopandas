@@ -357,6 +357,34 @@ class GeoSeries(Series):
         else:
             return False
 
+    def __xor__(self, other):
+        """
+        The ^ operator implements symmetric_difference() as it does
+        for the builtin set type.
+        """
+        return self.symmetric_difference(other)
+
+    def __or__(self, other):
+        """
+        The | operator implements union() as it does
+        for the builtin set type.
+        """
+        return self.union(other)
+
+    def __and__(self, other):
+        """
+        The & operator implements intersection() as it does
+        for the builtin set type.
+        """
+        return self.intersection(other)
+
+    def __sub__(self, other):
+        """
+        The - operator implements difference() as it does
+        for the builtin set type.
+        """
+        return self.difference(other)
+
     #
     # Implement pandas methods
     #
