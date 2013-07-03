@@ -4,6 +4,15 @@ from shapely.geometry import Polygon, Point, LineString
 from geopandas import GeoSeries
 
 
+def geom_equals(this, that):
+    """
+    Test for geometric equality, allowing all empty geometries to be considered equal
+    """
+    empty = np.logical_and(this.is_empty, that.is_empty)
+    eq = this.equals(that)
+    return np.all(np.logical_or(eq, empty))
+
+
 class TestSeries(unittest.TestCase):
 
     def setUp(self):
@@ -21,6 +30,12 @@ class TestSeries(unittest.TestCase):
 
     def test_area(self):
         assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
+
+    def test_in(self):
+        assert self.t1 in self.g1
+        assert self.sq in self.g1
+        assert self.t1 in self.a1
+        assert self.t2 in self.g3
 
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
@@ -89,30 +104,36 @@ class TestSeries(unittest.TestCase):
         # TODO
         pass
 
+    def test_intersection(self):
+        assert geom_equals(self.g1 & self.g2, self.t1)
+
     def test_union_series(self):
         u = self.g1.union(self.g2)
         assert u[0].equals(self.sq)
         assert u[1].equals(self.sq)
+        assert geom_equals(u, self.g1 | self.g2)
 
     def test_union_polgon(self):
         u = self.g1.union(self.t2)
         assert u[0].equals(self.sq)
         assert u[1].equals(self.sq)
 
-    def test_difference_series(self):
-        u = self.g1.difference(self.g2)
-        assert u[0].is_empty
-        assert u[1].equals(self.t2)
-
     def test_symmetric_difference_series(self):
         u = self.g3.symmetric_difference(self.g4)
         assert u[0].equals(self.sq)
         assert u[1].equals(self.sq)
+        assert geom_equals(u, self.g3 ^ self.g4)
 
     def test_symmetric_difference_poly(self):
         u = self.g3.symmetric_difference(self.t1)
         assert u[0].is_empty
         assert u[1].equals(self.sq)
+
+    def test_difference_series(self):
+        u = self.g1.difference(self.g2)
+        assert u[0].is_empty
+        assert u[1].equals(self.t2)
+        assert geom_equals(u, self.g1 - self.g2)
 
     def test_difference_poly(self):
         u = self.g1.difference(self.t2)
