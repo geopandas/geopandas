@@ -51,6 +51,6 @@ class GeoDataFrame(DataFrame):
         else:
             return col
 
-    def plot(self, colormap='Accent'):
+    def plot(self, *args, **kwargs):
         # TODO: pass in argument to color geometries
-        return self['geometry'].plot(colormap)
+        return self['geometry'].plot(*args, **kwargs)
