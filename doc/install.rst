@@ -2,7 +2,7 @@ Installation
 ============
 
 GeoPandas is pre-alpha software.  Please install the latest source
-from `GitHub`_ and us the setup script::
+from `GitHub`_ and use the setup script::
 
     python setup.py install
 
