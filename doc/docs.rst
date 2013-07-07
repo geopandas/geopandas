@@ -1,12 +1,204 @@
 Documentation
 =============
 
+GeoPandas implements two main data structures, a ``GeoSeries`` and a
+``GeoDataFrame``.  These are subclasses of pandas ``Series`` and
+``DataFrame``, respectively.
+
 GeoSeries
 ---------
+
+A ``GeoSeries`` contains a sequence of geometries.
+
+The ``GeoSeries`` class implements nearly all of the attributes and
+methods of Shapely objects.  When applied to a ``GeoSeries``, they
+will apply elementwise to all geometries in the series.  Binary
+operations can be applied between two ``GeoSeries``, in which case the
+operation is carried out elementwise.  The two series will be aligned
+by matching indices.  Binary operations can also be applied to a
+single geometry, in which case the operation is carried out for each
+element of the series with that geometry.  In either case, a
+``Series`` or a ``GeoSeries`` will be returned, as appropriate.
+
+The following Shapely methods and attributes are available on
+``GeoSeries`` objects:
+
+.. attribute:: GeoSeries.area
+
+  Returns a ``Series`` containing the area of each geometry in the ``GeoSeries``.
+
+.. attribute:: GeoSeries.bounds
+
+  Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
+  ``maxy`` values containing the bounds for each geometry.
+  NOTE: This behavior may change in future versions.
+
+.. attribute:: GeoSeries.length
+
+  Returns a ``Series`` containing the length of each geometry.
+
+.. attribute:: GeoSeries.geom_type
+
+  Returns a ``Series`` of strings specifying the `Geometry Type` of
+  each object.
+
+.. method:: GeoSeries.distance(other)
+
+  Returns a ``Series`` containing the minimum distance to the `other`
+  ``GeoSeries`` (elementwise) or geometric object.
+
+.. method:: GeoSeries.representative_point()
+
+  Returns a ``GeoSeries`` of (cheaply computed) points that are
+  guaranteed to be within each geometry.
+
+`Unary Predicates`
+
+.. attribute:: GeoSeries.is_empty
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+  empty geometries.
+
+.. attribute:: GeoSeries.is_ring
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+  features that are closed.
+
+.. attribute:: GeoSeries.is_simple
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+  geometries that do not cross themselves (meaningful only for
+  `LineStrings` and `LinearRings`).
+
+.. attribute:: GeoSeries.is_valid
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+  geometries that are valid.
+
+`Binary Predicates`
+
+.. method:: GeoSeries.almost_equals(other[, decimal=6])
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  each object is approximately equal to the `other` at all
+  points to specified `decimal` place precision.  (See also :meth:`equals`)
+
+.. method:: GeoSeries.contains(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  each object's `interior` contains the `boundary` and
+  `interior` of the other object and their boundaries do not touch at all.
+
+.. method:: GeoSeries.crosses(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  the `interior` of each object intersects the `interior` of
+  the other but does not contain it, and the dimension of the intersection is
+  less than the dimension of the one or the other.
+
+.. method:: GeoSeries.disjoint(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  the `boundary` and `interior` of each object does not
+  intersect at all with those of the other.
+
+.. method:: GeoSeries.equals(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  if the set-theoretic `boundary`, `interior`, and `exterior`
+  of each object coincides with those of the other.
+
+.. method:: GeoSeries.intersects(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  if the `boundary` and `interior` of each object intersects in
+  any way with those of the other.
+
+.. method:: GeoSeries.touches(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  the objects have at least one point in common and their
+  interiors do not intersect with any part of the other.
+
+.. method:: GeoSeries.within(other)
+
+  Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+  each object's `boundary` and `interior` intersect only
+  with the `interior` of the other (not its `boundary` or `exterior`).
+  (Inverse of :meth:`contains`)
+
+`Set-theoretic Methods`
+
+.. attribute:: GeoSeries.boundary
+
+  Returns a ``GeoSeries`` of lower dimensional objects representing
+  each geometries's set-theoretic `boundary`.
+
+.. attribute:: GeoSeries.centroid
+
+  Returns a ``GeoSeries`` of points for each geometric centroid.
+
+.. method:: GeoSeries.difference(other)
+
+  Returns a ``GeoSeries`` of the points in each geometry that
+  are not in the *other* object.
+
+.. method:: GeoSeries.intersection(other)
+
+  Returns a ``GeoSeries`` of the intersection of each object with the `other`
+  geometric object.
+
+.. method:: GeoSeries.symmetric_difference(other)
+
+  Returns a ``GeoSeries`` of the points in each object not in the `other`
+  geometric object, and the points in the `other` not in this object.
+
+.. method:: GeoSeries.union(other)
+
+  Returns a ``GeoSeries`` of the union of points from each object and the
+  `other` geometric object.
+
+
+Additionally, the following methods are implemented:
+
+.. method:: GeoSeries.plot(colormap='Set1')
+
+  Generate a plot of the geometries in the ``GeoSeries``.
+  ``colormap`` can be any recognized by matplotlib, but discrete
+  colormaps such as ``Accent``, ``Dark2``, ``Paired``, ``Pastel1``,
+  ``Pastel2``, ``Set1``, ``Set2``, or ``Set3`` are recommended.
+
+Methods of pandas ``Series`` objects are also available, although not
+all are applicable to geometric objects and some may return a
+``Series`` rather than a ``GeoSeries`` result.  The methods
+``copy()``, ``align()``, ``isnull()`` and ``fillna()`` have been
+implemented specifically for ``GeoSeries`` and are expected to work
+correctly.
 
 GeoDataFrame
 ------------
 
+A ``GeoDataFrame`` is a tablular data structure that contains a column
+called ``geometry`` which contains a `GeoSeries``.
+
+Currently only the following methods are implemented for a ``GeoDataFrame``:
+
+.. method:: GeoDataFrame.from_file()
+
+  Load a ``GeoDataFrame`` from a file from any format recognized by
+  `fiona`_.
+
+.. method:: GeoDataFrame.plot()
+
+  Generate a plot of the geometries in the ``GeoDataFrame``.
+  Currently calls ``GeoSeries.plot()`` on the ``geometry`` column,
+  though in the future this will be able to color the geometries by
+  data values from another column.
+
+All pandas ``DataFrame`` methods are also available, although they may
+not operate in a meaningful way on the ``geometry`` column and may not
+return a ``GeoDataFrame`` result even when it would be appropriate to
+do so.
 
 Examples
 --------
