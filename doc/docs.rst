@@ -203,6 +203,11 @@ The following Shapely methods and attributes are available on
 
 Additionally, the following methods are implemented:
 
+.. method:: GeoSeries.from_file()
+
+  Load a ``GeoSeries`` from a file from any format recognized by
+  `fiona`_.
+
 .. method:: GeoSeries.plot(colormap='Set1')
 
   Generate a plot of the geometries in the ``GeoSeries``.
