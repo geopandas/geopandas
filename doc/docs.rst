@@ -52,6 +52,18 @@ The following Shapely methods and attributes are available on
   Returns a ``GeoSeries`` of (cheaply computed) points that are
   guaranteed to be within each geometry.
 
+.. attribute:: GeoSeries.exterior
+
+  Returns a ``GeoSeries`` of LinearRings representing the outer
+  boundary of each polygon in the GeoSeries.  (Applies to GeoSeries
+  containing only Polygons).
+
+.. attribute:: GeoSeries.interiors
+
+  Returns a ``GeoSeries`` of InteriorRingSequences representing the
+  inner rings of each polygon in the GeoSeries.  (Applies to GeoSeries
+  containing only Polygons).
+
 `Unary Predicates`
 
 .. attribute:: GeoSeries.is_empty
@@ -158,6 +170,36 @@ The following Shapely methods and attributes are available on
   Returns a ``GeoSeries`` of the union of points from each object and the
   `other` geometric object.
 
+`Constructive Methods`
+
+.. method:: GeoSeries.buffer(distance, resolution=16)
+
+  Returns a ``GeoSeries`` of geometries representing all points within a given `distance`
+  of each geometric object.
+
+.. attribute:: GeoSeries.convex_hull
+
+  Returns a ``GeoSeries`` of geometries representing the smallest
+  convex `Polygon` containing all the points in each object unless the
+  number of points in the object is less than three. For two points,
+  the convex hull collapses to a `LineString`; for 1, a `Point`.
+
+.. attribute:: GeoSeries.envelope
+
+  Returns a ``GeoSeries`` of geometries representing the point or
+  smallest rectangular polygon (with sides parallel to the coordinate
+  axes) that contains each object.
+
+.. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
+
+  Returns a ``GeoSeries`` containing a simplified representation of
+  each object.
+
+`Aggregating methods`
+
+.. attribute:: GeoSeries.unary_union
+
+  Return a geometry containing the union of all geometries in the ``GeoSeries``.
 
 Additionally, the following methods are implemented:
 
