@@ -331,6 +331,67 @@ GeoPandas also implements alternate constructors that can read any data format r
 
 .. image:: _static/nyc_hull.png
 
+To demonstrate a more complex operation, we'll generate a
+``GeoSeries`` containing 2000 random points:
+
+.. sourcecode:: python
+
+    >>> from shapely.geometry import Point
+    >>> xmin, xmax, ymin, ymax = 900000, 1080000, 120000, 280000
+    >>> xc = (xmax - xmin) * np.random.random(2000) + xmin
+    >>> yc = (ymax - ymin) * np.random.random(2000) + ymin
+    >>> pts = GeoSeries([Point(x, y) for x, y in zip(xc, yc)])
+
+Now draw a circle with fixed radius around each point:
+
+.. sourcecode:: python
+
+    >>> circles = pts.buffer(2000)
+
+We can collapse these circles into a single shapely MultiPolygon
+geometry with
+
+.. sourcecode:: python
+
+    >>> mp = circles.unary_union
+
+To extract the part of this geometry contained in each borough, we can
+just use:
+
+.. sourcecode:: python
+
+    >>> holes = boros['geometry'].intersection(mp)
+
+.. image:: _static/holes.png
+ 
+and to get the area outside of the holes:
+
+.. sourcecode:: python
+
+    >>> boros_with_holes = boros['geometry'].difference(mp)
+
+.. image:: _static/boros_with_holes.png
+ 
+Note that this can be simplified a bit, since ``geometry`` is
+available as an attribute on a ``GeoDataFrame``, and the
+``intersection`` and ``difference`` methods are implemented with the
+"&" and "-" operators, respectively.  For example, the latter could
+have been expressed simply as ``boros.geometry - mp``.
+
+It's easy to do things like calculate the fractional area in each
+borough that are in the holes:
+
+.. sourcecode:: python
+
+    >>> holes.area / boros.geometry.area
+    BoroCode
+    1           0.602015
+    2           0.523457
+    3           0.585901
+    4           0.577020
+    5           0.559507
+    dtype: float64
+
 .. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://toblerity.github.io/fiona
