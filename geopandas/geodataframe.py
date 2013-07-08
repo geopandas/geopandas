@@ -16,9 +16,13 @@ class GeoDataFrame(DataFrame):
         self.crs = None
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, **kwargs):
         """
-        Alternate constructor to create a GeoDataFrame from a file
+        Alternate constructor to create a GeoDataFrame from a file.
+
+        *filename* is either the absolute or relative path to the file to be
+        opened and *kwargs* are keyword args to be passed to the method when
+        opening the file.
 
         Note: This method does not attempt to align rows.
         Properties that are not present in all features of the source
@@ -26,7 +30,8 @@ class GeoDataFrame(DataFrame):
         """
         geoms = []
         columns = defaultdict(lambda: [])
-        with fiona.open(filename) as f:
+        
+        with fiona.open(filename, **kwargs) as f:
             crs = f.crs
             for rec in f:
                 geoms.append(shape(rec['geometry']))
