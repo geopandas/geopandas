@@ -23,6 +23,11 @@ def plot_multipolygon(ax, geom, facecolor='red'):
             plot_polygon(ax, poly, facecolor=facecolor)
 
 
+def plot_linestring(ax, geom, color='black', linewidth=1):
+    a = np.array(geom)
+    plt.plot(a[:,0], a[:,1], color=color, linewidth=linewidth)
+
+
 def plot_point(ex, pt, marker='o', markersize=2):
     """ Plot a single Point geometry
     """
@@ -55,6 +60,8 @@ def plot_series(s, colormap='Set1'):
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
             plot_multipolygon(ax, geom, facecolor=color.next())
+        elif geom.type == 'LineString':
+            plot_linestring(ax, geom)
         elif geom.type == 'Point':
             plot_point(ax, geom)
     return ax
