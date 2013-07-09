@@ -17,37 +17,37 @@ EMPTY_POINT = Point()
 EMPTY_LINE = LineString()
 
 
-def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
+def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, label=""):
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
     ax.plot(a[:, 0], a[:, 1], color=edgecolor)
     for p in poly.interiors:
         x, y = zip(*p.coords)
-        ax.plot(x, y, color=edgecolor)
+        ax.plot(x, y, color=edgecolor, label=label)
 
 
-def _plot_multipolygon(ax, geom, facecolor='red'):
+def _plot_multipolygon(ax, geom, facecolor='red', label=''):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
         _plot_polygon(ax, geom, facecolor)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            _plot_polygon(ax, poly, facecolor=facecolor)
+            _plot_polygon(ax, poly, facecolor=facecolor, label=label)
 
 
-def _plot_point(ax, geom, facecolor='blue', edgecolor='black', alpha=1.0):
+def _plot_point(ax, geom, facecolor='blue', edgecolor='black', alpha=1.0, label=''):
     """ Plot Shapely Point geometries
     """
     x, y = geom.xy
-    ax.plot(x, y, markerfacecolor=facecolor, color=edgecolor, marker='o')
+    ax.plot(x, y, markerfacecolor=facecolor, color=edgecolor, linestyle='None', marker='o', label=label)
 
-def _plot_line(ax, geom, edgecolor='black', alpha=1.0):
+def _plot_line(ax, geom, edgecolor='black', alpha=1.0, label=''):
     """ Plot Shapley LineString geometries
     """
     x, y = geom.xy
-    ax.plot(x, y, color=edgecolor, solid_capstyle='round')
+    ax.plot(x, y, color=edgecolor, solid_capstyle='round', label=label)
 
 def _gencolor(N, colormap='Set1'):
     """
@@ -446,7 +446,7 @@ class GeoSeries(Series):
                                                    limit=limit)
         return GeoSeries(left), GeoSeries(right)
 
-    def plot(self, colormap='Set1', axes=None):
+    def plot(self, colormap='Set1', axes=None, label=None):
         if axes == None:
             fig = plt.figure()
             fig.add_subplot(111, aspect='equal')
@@ -454,13 +454,19 @@ class GeoSeries(Series):
         else:
             ax = axes
         color = _gencolor(len(self), colormap=colormap)
-        for geom in self:
+        for i, geom in enumerate(self):
+            if type(label) == str and i>0:
+                thislabel = None
+            elif type(label) != str and label != None:
+                thislabel = label[i]
+            else:
+                thislabel = label
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                _plot_multipolygon(ax, geom, facecolor=color.next())
+                _plot_multipolygon(ax, geom, facecolor=color.next(), label=thislabel)
             elif geom.type == 'Point':
-                _plot_point(ax, geom, facecolor=color.next())
+                _plot_point(ax, geom, facecolor=color.next(), label=thislabel)
             elif geom.type == 'LineString':
-                _plot_line(ax, geom, edgecolor=color.next())
+                _plot_line(ax, geom, edgecolor=color.next(), label=thislabel)
         return ax
 
 if __name__ == '__main__':
