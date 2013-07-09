@@ -445,10 +445,13 @@ class GeoSeries(Series):
                                                    limit=limit)
         return GeoSeries(left), GeoSeries(right)
 
-    def plot(self, colormap='Set1'):
-        fig = plt.figure()
-        fig.add_subplot(111, aspect='equal')
-        ax = plt.gca()
+    def plot(self, colormap='Set1', axes=None):
+        if axes == None:
+            fig = plt.figure()
+            fig.add_subplot(111, aspect='equal')
+            ax = plt.gca()
+        else:
+            ax = axes
         color = _gencolor(len(self), colormap=colormap)
         for geom in self:
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
