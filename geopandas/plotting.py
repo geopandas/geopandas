@@ -48,7 +48,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 def plot_series(s, colormap='Set1'):
-    fig = plt.figure()
+    fig = plt.gcf()
     fig.add_subplot(111, aspect='equal')
     ax = plt.gca()
     color = gencolor(len(s), colormap=colormap)
