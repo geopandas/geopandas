@@ -47,16 +47,18 @@ class GeoDataFrame(DataFrame):
         return df
 
     def to_json(self, **kwargs):
-        """Returns a GeoJSON formatted representation of the GeoDataFrame.
+        """Returns a GeoJSON representation of the GeoDataFrame.
         
-        *kwargs* are passed to json.dumps().
+        The *kwargs* are passed to json.dumps().
         """
         def feature(i, row):
             return {
                 'id': str(i),
                 'type': 'Feature',
-                'properties': {k: v for k, v in row.iteritems() if k != 'geometry'},
+                'properties': {
+                    k: v for k, v in row.iteritems() if k != 'geometry'},
                 'geometry': mapping(row['geometry']) }
+
         return json.dumps(
             {'type': 'FeatureCollection',
              'features': [feature(i, row) for i, row in self.iterrows()]},
