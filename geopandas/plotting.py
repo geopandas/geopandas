@@ -23,10 +23,10 @@ def plot_multipolygon(ax, geom, facecolor='red'):
             plot_polygon(ax, poly, facecolor=facecolor)
 
 
-def plot_point(ex, geom):
-    """ TODO
+def plot_point(ex, pt, marker='o', markersize=2):
+    """ Plot a single Point geometry
     """
-    pass
+    plt.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
 
 
 def gencolor(N, colormap='Set1'):
