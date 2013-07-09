@@ -37,16 +37,17 @@ def _plot_multipolygon(ax, geom, facecolor='red'):
             _plot_polygon(ax, poly, facecolor=facecolor)
 
 
-def _plot_point(ex, geom):
-    """ TODO
+def _plot_point(ax, geom, facecolor='blue', edgecolor='black', alpha=1.0):
+    """ Plot Shapely Point geometries
     """
-    pass
+    x, y = geom.xy
+    ax.plot(x, y, markerfacecolor=facecolor, color=edgecolor, marker='o')
 
-def _plot_line(ax, geom, edgecolor="black", alpha=1.0):
+def _plot_line(ax, geom, edgecolor='black', alpha=1.0):
     """ Plot Shapley LineString geometries
     """
     x, y = geom.xy
-    ax.plot(x, y, color=edgecolor, solid_capstyle='round', zorder=1)
+    ax.plot(x, y, color=edgecolor, solid_capstyle='round')
 
 def _gencolor(N, colormap='Set1'):
     """
@@ -457,7 +458,7 @@ class GeoSeries(Series):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 _plot_multipolygon(ax, geom, facecolor=color.next())
             elif geom.type == 'Point':
-                _plot_point(ax, geom)
+                _plot_point(ax, geom, facecolor=color.next())
             elif geom.type == 'LineString':
                 _plot_line(ax, geom, edgecolor=color.next())
         return ax
