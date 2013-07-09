@@ -30,10 +30,15 @@ class GeoDataFrame(DataFrame):
         """
         geoms = []
         columns = defaultdict(lambda: [])
-        
+        bbox = kwargs.pop('bbox', None)
         with fiona.open(filename, **kwargs) as f:
             crs = f.crs
-            for rec in f:
+            if bbox != None:
+                assert len(bbox)==4
+                f_filt = f.filter(bbox=bbox)
+            else:
+                f_filt = f
+            for rec in f_filt:
                 geoms.append(shape(rec['geometry']))
                 for key, value in rec['properties'].iteritems():
                     columns[key].append(value)
