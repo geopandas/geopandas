@@ -17,7 +17,7 @@ EMPTY_POINT = Point()
 EMPTY_LINE = LineString()
 
 
-def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, label=""):
+def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, label=None):
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
@@ -27,7 +27,7 @@ def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, label
         ax.plot(x, y, color=edgecolor, label=label)
 
 
-def _plot_multipolygon(ax, geom, facecolor='red', label=''):
+def _plot_multipolygon(ax, geom, facecolor='red', label=None):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
@@ -37,13 +37,13 @@ def _plot_multipolygon(ax, geom, facecolor='red', label=''):
             _plot_polygon(ax, poly, facecolor=facecolor, label=label)
 
 
-def _plot_point(ax, geom, facecolor='blue', edgecolor='black', alpha=1.0, label=''):
+def _plot_point(ax, geom, facecolor='blue', edgecolor='black', alpha=1.0, label=None):
     """ Plot Shapely Point geometries
     """
     x, y = geom.xy
     ax.plot(x, y, markerfacecolor=facecolor, color=edgecolor, linestyle='None', marker='o', label=label)
 
-def _plot_line(ax, geom, edgecolor='black', alpha=1.0, label=''):
+def _plot_line(ax, geom, edgecolor='black', alpha=1.0, label=None):
     """ Plot Shapley LineString geometries
     """
     x, y = geom.xy
@@ -447,20 +447,22 @@ class GeoSeries(Series):
         return GeoSeries(left), GeoSeries(right)
 
     def plot(self, colormap='Set1', axes=None, label=None):
+        color = _gencolor(len(self), colormap=colormap)
+        # If axes are supplied, don't create new 
         if axes == None:
             fig = plt.figure()
             fig.add_subplot(111, aspect='equal')
             ax = plt.gca()
         else:
             ax = axes
-        color = _gencolor(len(self), colormap=colormap)
-        for i, geom in enumerate(self):
-            if type(label) == str and i>0:
-                thislabel = None
-            elif type(label) != str and label != None:
-                thislabel = label[i]
-            else:
-                thislabel = label
+        for i, geom in enumerate(self): 
+            # Rough label for legends functionality
+            if type(label) == str and i>0:             # Don't label elements after first
+                thislabel = None 
+            elif type(label) != str and label != None: # Label all with labels in sequence
+                thislabel = label[i] 
+            else:                                      # Label only first element or set to None
+                thislabel = label 
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 _plot_multipolygon(ax, geom, facecolor=color.next(), label=thislabel)
             elif geom.type == 'Point':
