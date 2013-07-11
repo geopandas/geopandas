@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.colors import Normalize
 from matplotlib import cm
 from descartes.patch import PolygonPatch
@@ -68,7 +69,8 @@ def plot_series(s, colormap='Set1'):
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, alpha=0.5, categorical=False):
+def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
+                   categorical=False, legend=False):
     if column is None:
         return s['geometry'].plot()
     else:
@@ -97,3 +99,10 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5, categorical=False):
                 plot_linestring(ax, geom)
             elif geom.type == 'Point':
                 plot_point(ax, geom)
+        if legend and categorical:
+            patches = []
+            for value, cat in enumerate(categories):
+                patches.append(Line2D([0], [0], linestyle="none",
+                                      marker="o", alpha=alpha,
+                                      markersize=10, markerfacecolor=cmap.to_rgba(value)))
+            ax.legend(patches, categories, numpoints=1, loc='best')
