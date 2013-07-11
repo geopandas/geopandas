@@ -68,17 +68,28 @@ def plot_series(s, colormap='Set1'):
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, alpha=0.5):
+def plot_dataframe(s, column=None, colormap=None, alpha=0.5, categorical=False):
     if column is None:
         return s['geometry'].plot()
     else:
-        mn, mx = s[column].min(), s[column].max()
+        if s[column].dtype is np.dtype('O'):
+            categorical = True
+        if categorical:
+            if colormap is None:
+                colormap = 'Set1'
+            categories = list(set(s[column].values))
+            categories.sort()
+            valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
+            values = [valuemap[k] for k in s[column]]
+        else:
+            values = s[column]
+        mn, mx = min(values), max(values)
         norm = Normalize(vmin=mn, vmax=mx)
         cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
         fig = plt.gcf()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
-        for geom, value in zip(s['geometry'], s[column]):
+        for geom, value in zip(s['geometry'], values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
             # TODO: color non-polygon geometries
