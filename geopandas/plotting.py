@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.colors import Normalize
-from matplotlib import cm
+from matplotlib import cm, colorbar
 from descartes.patch import PolygonPatch
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -99,10 +99,14 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                 plot_linestring(ax, geom)
             elif geom.type == 'Point':
                 plot_point(ax, geom)
-        if legend and categorical:
-            patches = []
-            for value, cat in enumerate(categories):
-                patches.append(Line2D([0], [0], linestyle="none",
-                                      marker="o", alpha=alpha,
-                                      markersize=10, markerfacecolor=cmap.to_rgba(value)))
-            ax.legend(patches, categories, numpoints=1, loc='best')
+        if legend:
+            if categorical:
+                patches = []
+                for value, cat in enumerate(categories):
+                    patches.append(Line2D([0], [0], linestyle="none",
+                                          marker="o", alpha=alpha,
+                                          markersize=10, markerfacecolor=cmap.to_rgba(value)))
+                ax.legend(patches, categories, numpoints=1, loc='best')
+            else:
+                # TODO: show a colorbar
+                raise NotImplementedError
