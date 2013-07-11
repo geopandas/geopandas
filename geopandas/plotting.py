@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 from matplotlib import cm
 from descartes.patch import PolygonPatch
 
@@ -67,8 +68,21 @@ def plot_series(s, colormap='Set1'):
     return ax
 
 
-def plot_dataframe(s, column=None, colormap='Set1'):
+def plot_dataframe(s, column=None, colormap=None, alpha=0.5):
     if column is None:
         return s['geometry'].plot()
     else:
-        raise NotImplementedError
+        mn, mx = s[column].min(), s[column].max()
+        norm = Normalize(vmin=mn, vmax=mx)
+        cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
+        fig = plt.gcf()
+        fig.add_subplot(111, aspect='equal')
+        ax = plt.gca()
+        for geom, value in zip(s['geometry'], s[column]):
+            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
+                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
+            # TODO: color non-polygon geometries
+            elif geom.type == 'LineString':
+                plot_linestring(ax, geom)
+            elif geom.type == 'Point':
+                plot_point(ax, geom)
