@@ -65,3 +65,10 @@ def plot_series(s, colormap='Set1'):
         elif geom.type == 'Point':
             plot_point(ax, geom)
     return ax
+
+
+def plot_dataframe(s, column=None, colormap='Set1'):
+    if column is None:
+        return s['geometry'].plot()
+    else:
+        raise NotImplementedError
