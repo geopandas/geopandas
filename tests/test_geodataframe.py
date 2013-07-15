@@ -1,9 +1,10 @@
 import unittest
 import json
+import numpy as np
 
 from geopandas import GeoDataFrame
 
-class TestSeries(unittest.TestCase):
+class TestDataFrame(unittest.TestCase):
 
     def setUp(self):
         # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
@@ -14,6 +15,8 @@ class TestSeries(unittest.TestCase):
     def test_from_file_(self):
         self.assertTrue('geometry' in self.df)
         self.assertTrue(len(self.df) == 5)
+        self.assertTrue(np.alltrue(self.df['BoroName'].values == np.array(['Staten Island',
+                                   'Queens', 'Brooklyn', 'Manhattan', 'Bronx'])))
     
     def test_to_json(self):
         text = self.df.to_json()
