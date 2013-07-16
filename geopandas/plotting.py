@@ -54,10 +54,13 @@ def gencolor(N, colormap='Set1'):
     for i in xrange(N):
         yield colors[i % n_colors]
 
-def plot_series(s, colormap='Set1'):
-    fig = plt.gcf()
-    fig.add_subplot(111, aspect='equal')
-    ax = plt.gca()
+def plot_series(s, colormap='Set1', axes=None):
+    if axes == None:
+        fig = plt.figure()
+        fig.add_subplot(111, aspect='equal')
+        ax = plt.gca()
+    else:
+        ax = axesfig = plt.gcf()
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
@@ -70,7 +73,7 @@ def plot_series(s, colormap='Set1'):
 
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
-                   categorical=False, legend=False):
+                   categorical=False, legend=False, axes=None):
     if column is None:
         return s['geometry'].plot()
     else:
@@ -88,9 +91,12 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         mn, mx = min(values), max(values)
         norm = Normalize(vmin=mn, vmax=mx)
         cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
-        fig = plt.gcf()
-        fig.add_subplot(111, aspect='equal')
-        ax = plt.gca()
+        if axes == None:
+            fig = plt.figure()
+            fig.add_subplot(111, aspect='equal')
+            ax = plt.gca()
+        else:
+            ax = axes
         for geom, value in zip(s['geometry'], values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
