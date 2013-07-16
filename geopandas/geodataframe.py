@@ -1,8 +1,12 @@
 from collections import defaultdict
-from pandas import DataFrame
-from shapely.geometry import shape
+import json
+
 import fiona
+from pandas import DataFrame
+from shapely.geometry import mapping, shape
+
 from geopandas import GeoSeries
+from plotting import plot_dataframe
 
 
 class GeoDataFrame(DataFrame):
@@ -48,6 +52,24 @@ class GeoDataFrame(DataFrame):
         df.crs = crs
         return df
 
+    def to_json(self, **kwargs):
+        """Returns a GeoJSON representation of the GeoDataFrame.
+        
+        The *kwargs* are passed to json.dumps().
+        """
+        def feature(i, row):
+            return {
+                'id': str(i),
+                'type': 'Feature',
+                'properties': {
+                    k: v for k, v in row.iteritems() if k != 'geometry'},
+                'geometry': mapping(row['geometry']) }
+
+        return json.dumps(
+            {'type': 'FeatureCollection',
+             'features': [feature(i, row) for i, row in self.iterrows()]},
+            **kwargs )
+
     def __getitem__(self, key):
         """
         The geometry column is not stored as a GeoSeries, so need to convert it back
@@ -62,5 +84,4 @@ class GeoDataFrame(DataFrame):
             return col
 
     def plot(self, *args, **kwargs):
-        # TODO: pass in argument to color geometries
-        return self['geometry'].plot(*args, **kwargs)
+        return plot_dataframe(self, *args, **kwargs)

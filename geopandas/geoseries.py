@@ -1,64 +1,19 @@
 import numpy as np
 from pandas import Series, DataFrame
-from pandas.core.common import isnull
-import matplotlib.pyplot as plt
-from matplotlib import cm
 
 from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 import fiona
-from descartes.patch import PolygonPatch
+
+from plotting import plot_series
 
 EMPTY_COLLECTION = GeometryCollection()
 EMPTY_POLYGON = Polygon()
 EMPTY_POINT = Point()
 
 
-def _plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
-    a = np.asarray(poly.exterior)
-    # without Descartes, we could make a Patch of exterior
-    ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
-    ax.plot(a[:, 0], a[:, 1], color=edgecolor)
-    for p in poly.interiors:
-        x, y = zip(*p.coords)
-        ax.plot(x, y, color=edgecolor)
-
-
-def _plot_multipolygon(ax, geom, facecolor='red'):
-    """ Can safely call with either Polygon or Multipolygon geometry
-    """
-    if geom.type == 'Polygon':
-        _plot_polygon(ax, geom, facecolor)
-    elif geom.type == 'MultiPolygon':
-        for poly in geom.geoms:
-            _plot_polygon(ax, poly, facecolor=facecolor)
-
-
-def _plot_point(ex, geom):
-    """ TODO
-    """
-    pass
-
-
-def _gencolor(N, colormap='Set1'):
-    """
-    Color generator intended to work with one of the ColorBrewer
-    qualitative color scales.
-
-    Suggested values of colormap are the following:
-
-        Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
-
-    (although any matplotlib colormap will work).
-    """
-    # don't use more than 9 discrete colors
-    n_colors = min(N, 9)
-    cmap = cm.get_cmap(colormap, n_colors)
-    colors = cmap(range(n_colors))
-    for i in xrange(N):
-        yield colors[i % n_colors]
 
 
 def _is_empty(x):
@@ -439,33 +394,5 @@ class GeoSeries(Series):
                                                    limit=limit)
         return GeoSeries(left), GeoSeries(right)
 
-    def plot(self, colormap='Set1', axes=None):
-        if axes == None:
-            fig = plt.figure()
-            fig.add_subplot(111, aspect='equal')
-            ax = plt.gca()
-        else:
-            ax = axes
-        color = _gencolor(len(self), colormap=colormap)
-        for geom in self:
-            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                _plot_multipolygon(ax, geom, facecolor=color.next())
-            elif geom.type == 'Point':
-                _plot_point(ax, geom)
-        return ax
-
-if __name__ == '__main__':
-    """ Generate simple examples
-    """
-    dpi = 300
-    p1 = Polygon([(0, 0), (1, 0), (1, 1)])
-    p2 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-    p3 = Polygon([(2, 0), (3, 0), (3, 1), (2, 1)])
-    g = GeoSeries([p1, p2, p3])
-    ax = g.plot()
-    ax.set_xlim([-0.5, 3.5])
-    ax.set_ylim([-0.5, 1.5])
-    plt.savefig('test.png', dpi=dpi, bbox_inches='tight')
-    g.buffer(0.5).plot()
-    plt.savefig('test_buffer.png', dpi=dpi, bbox_inches='tight')
-    plt.show()
+    def plot(self, *args, **kwargs):
+        return plot_series(self, *args, **kwargs)
