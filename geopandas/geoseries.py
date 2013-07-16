@@ -33,14 +33,14 @@ class GeoSeries(Series):
     """
 
     def __new__(cls, *args, **kwargs):
-        parent_kw = kwargs.copy()
-        parent_kw.pop('crs', None)
-        arr = Series.__new__(cls, *args, **parent_kw)
+        kwargs.pop('crs', None)
+        arr = Series.__new__(cls, *args, **kwargs)
         return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
-        self.crs = kwargs.pop('crs', None)
+        crs = kwargs.pop('crs', None)
         super(GeoSeries, self).__init__(*args, **kwargs)
+        self.crs = crs
 
     @classmethod
     def from_file(cls, filename):
