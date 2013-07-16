@@ -396,4 +396,3 @@ class GeoSeries(Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
-
