@@ -72,16 +72,14 @@ class GeoDataFrame(DataFrame):
 
     def __getitem__(self, key):
         """
-        The geometry column is not stored as a GeoSeries, so need to convert it back
+        The geometry column is not stored as a GeoSeries, so need to make sure
+        that it is returned as one
         """
         col = super(GeoDataFrame, self).__getitem__(key)
         if key == 'geometry':
-            g = GeoSeries(col)
-            # TODO: set crs in GeoSeries constructor rather than here
-            g.crs = self.crs
-            return g
-        else:
-            return col
+            col.__class__ = GeoSeries
+            col.crs = self.crs
+        return col
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
