@@ -1,13 +1,16 @@
 from warnings import warn
+from functools import partial
 
 import numpy as np
 from pandas import Series, DataFrame
 
+import pyproj
 from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union, unary_union, transform
 import fiona
+from fiona.crs import from_epsg
 
 from plotting import plot_series
 
@@ -380,3 +383,31 @@ class GeoSeries(Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
+
+    #
+    # Additional methods
+    #
+
+    def to_crs(self, crs=None, epsg=None):
+        """Transform geometries to a new coordinate reference system
+
+        This method will transform all points in all objects.  It has
+        no notion or projecting entire geometries.  All segments
+        joining points are assumed to be lines in the current
+        projection, not geodesics.  Objects crossing the dateline (or
+        other projection boundary) will have undesirable behavior.
+        """
+        if self.crs is None:
+            raise ValueError('Cannot transform naive geometries.  '
+                             'Please set a crs on the object first.')
+        if crs is None:
+            try:
+                crs = from_epsg(epsg)
+            except TypeError:
+                raise TypeError('Must set either crs or epsg for output.')
+        proj_in = pyproj.Proj(**self.crs)
+        proj_out = pyproj.Proj(**crs)
+        project = partial(pyproj.transform, proj_in, proj_out)
+        result = self.apply(lambda geom: transform(project, geom))
+        result.__class__ = GeoSeries
+        return result
