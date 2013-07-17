@@ -67,10 +67,10 @@ class GeoSeries(Series):
         if isinstance(other, GeoSeries):
             this, other = self.align(other)
             return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
-                          index=this.index)
+                          index=this.index, crs=self.crs)
         else:
             return GeoSeries([getattr(s, op)(other) for s in self],
-                          index=self.index)
+                          index=self.index, crs=self.crs)
 
     # TODO: think about merging with _geo_op
     def _series_op(self, other, op):
@@ -90,7 +90,7 @@ class GeoSeries(Series):
         Unary operation that returns a GeoSeries
         """
         return GeoSeries([getattr(geom, op) for geom in self],
-                         index=self.index)
+                         index=self.index, crs=self.crs)
 
     def _series_unary_op(self, op):
         """
