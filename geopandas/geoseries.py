@@ -273,9 +273,7 @@ class GeoSeries(Series):
     # should this return bounds for entire series, or elementwise?
     @property
     def bounds(self):
-        """
-        Return a DataFrame of minx, miny, maxx, maxy values of geometry objects
-        """
+        """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
         bounds = np.array([geom.bounds for geom in self])
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
@@ -303,9 +301,9 @@ class GeoSeries(Series):
     #
 
     def __contains__(self, other):
-        """
-        Allow tests of the form "geom in s" to test whether a GeoSeries
-        contains a geometry.
+        """Allow tests of the form "geom in s"
+
+        Tests whether a GeoSeries contains a geometry.
 
         Note: This is not the same as the geometric method "contains".
         """
@@ -315,31 +313,19 @@ class GeoSeries(Series):
             return False
 
     def __xor__(self, other):
-        """
-        The ^ operator implements symmetric_difference() as it does
-        for the builtin set type.
-        """
+        """Implement ^ operator as for builtin set type"""
         return self.symmetric_difference(other)
 
     def __or__(self, other):
-        """
-        The | operator implements union() as it does
-        for the builtin set type.
-        """
+        """Implement | operator as for builtin set type"""
         return self.union(other)
 
     def __and__(self, other):
-        """
-        The & operator implements intersection() as it does
-        for the builtin set type.
-        """
+        """Implement & operator as for builtin set type"""
         return self.intersection(other)
 
     def __sub__(self, other):
-        """
-        The - operator implements difference() as it does
-        for the builtin set type.
-        """
+        """Implement - operator as for builtin set type"""
         return self.difference(other)
 
     #
@@ -351,8 +337,7 @@ class GeoSeries(Series):
         return False
 
     def copy(self, order='C'):
-        """
-        Return new GeoSeries with copy of underlying values
+        """Return new GeoSeries with copy of underlying values
 
         Returns
         -------
@@ -362,17 +347,14 @@ class GeoSeries(Series):
                       name=self.name)
 
     def isnull(self):
-        """
-        Null values in a GeoSeries are represented by empty geometric objects
-        """
+        """Null values in a GeoSeries are represented by empty geometric objects"""
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
     def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
                limit=None):
-        """
-        Fill NA/NaN values with a geometry (empty polygon by default).
+        """Fill NA/NaN values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for GeoSeries.
         """
