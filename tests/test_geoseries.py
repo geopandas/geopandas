@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from numpy.testing import assert_array_equal
 from shapely.geometry import Polygon, Point, LineString
 from geopandas import GeoSeries
 
@@ -22,6 +23,7 @@ class TestSeries(unittest.TestCase):
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
+        self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
         self.a1 = self.g1.copy()
         self.a1.index = ['A', 'B']
@@ -29,7 +31,7 @@ class TestSeries(unittest.TestCase):
         self.a2.index = ['B', 'C']
 
     def test_area(self):
-        assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
+        assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
 
     def test_in(self):
         assert self.t1 in self.g1
@@ -41,12 +43,12 @@ class TestSeries(unittest.TestCase):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
         l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
         b = self.g1.boundary
-        assert b[0].equals(l1)
-        assert b[1].equals(l2)
+        self.assertTrue(b[0].equals(l1))
+        self.assertTrue(b[1].equals(l2))
 
     def test_bounds(self):
-        self.assertTrue(np.allclose(self.g1.bounds.values, np.array([[0, 0, 1, 1],
-                                                            [0, 0, 1, 1]])))
+        assert_array_equal(self.g1.bounds.values, np.array([[0, 0, 1, 1],
+                                                            [0, 0, 1, 1]]))
 
     def test_contains(self):
         self.assertTrue(np.alltrue(self.g1.contains(self.t1)))
@@ -54,11 +56,11 @@ class TestSeries(unittest.TestCase):
 
     def test_length(self):
         l = np.array([2 + np.sqrt(2), 4])
-        self.assertTrue(np.allclose(self.g1.length.values, l))
+        assert_array_equal(self.g1.length.values, l)
 
     def test_equals(self):
         self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
+        assert_array_equal(self.g1.equals(self.sq), [False, True])
 
     def test_equals_align(self):
         a = self.a1.equals(self.a2)
@@ -73,12 +75,14 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(a1['C'].is_empty)
 
     def test_almost_equals(self):
-        self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
+        # TODO: test decimal parameter
+        self.assertTrue(np.alltrue(self.g1.almost_equals(self.g1)))
+        assert_array_equal(self.g1.almost_equals(self.sq), [False, True])
 
     def test_equals_exact(self):
-        self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
+        # TODO: test tolerance parameter
+        self.assertTrue(np.alltrue(self.g1.equals_exact(self.g1, 0.001)))
+        assert_array_equal(self.g1.equals_exact(self.sq, 0.001), [False, True])
 
     def test_crosses(self):
         # TODO
@@ -123,11 +127,13 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(u[0].equals(self.sq))
         self.assertTrue(u[1].equals(self.sq))
         self.assertTrue(geom_equals(u, self.g3 ^ self.g4))
+        self.assertEqual(self.g3.crs, u.crs)
 
     def test_symmetric_difference_poly(self):
         u = self.g3.symmetric_difference(self.t1)
         self.assertTrue(u[0].is_empty)
         self.assertTrue(u[1].equals(self.sq))
+        self.assertEqual(self.g3.crs, u.crs)
 
     def test_difference_series(self):
         u = self.g1.difference(self.g2)
@@ -155,6 +161,8 @@ class TestSeries(unittest.TestCase):
     def test_envelope(self):
         e = self.g3.envelope
         self.assertTrue(np.alltrue(e.equals(self.sq)))
+        self.assertIsInstance(e, GeoSeries)
+        self.assertEqual(self.g3.crs, e.crs)
 
     def test_exterior(self):
         # TODO
