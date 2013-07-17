@@ -30,9 +30,7 @@ def _is_geometry(x):
 
 
 class GeoSeries(Series):
-    """
-    A Series object designed to store shapely geometry objects.
-    """
+    """A Series object designed to store shapely geometry objects."""
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -46,9 +44,7 @@ class GeoSeries(Series):
 
     @classmethod
     def from_file(cls, filename):
-        """
-        Alternate constructor to create a GeoSeries from a file
-        """
+        """Alternate constructor to create a GeoSeries from a file"""
         geoms = []
         with fiona.open(filename) as f:
             crs = f.crs
@@ -63,9 +59,7 @@ class GeoSeries(Series):
     #
 
     def _geo_op(self, other, op):
-        """
-        Operation that returns a GeoSeries
-        """
+        """Operation that returns a GeoSeries"""
         if isinstance(other, GeoSeries):
             if self.crs != other.crs:
                 warn('GeoSeries crs mismatch: {} and {}'.format(self.crs, other.crs))
@@ -78,9 +72,7 @@ class GeoSeries(Series):
 
     # TODO: think about merging with _geo_op
     def _series_op(self, other, op):
-        """
-        Geometric operation that returns a pandas Series
-        """
+        """Geometric operation that returns a pandas Series"""
         if isinstance(other, GeoSeries):
             this, other = self.align(other)
             return Series([getattr(s[0], op)(s[1]) for s in zip(this, other)],
@@ -90,16 +82,12 @@ class GeoSeries(Series):
                           index=self.index)
 
     def _geo_unary_op(self, op):
-        """
-        Unary operation that returns a GeoSeries
-        """
+        """Unary operation that returns a GeoSeries"""
         return GeoSeries([getattr(geom, op) for geom in self],
                          index=self.index, crs=self.crs)
 
     def _series_unary_op(self, op):
-        """
-        Unary operation that returns a Series
-        """
+        """Unary operation that returns a Series"""
         return GeoSeries([getattr(geom, op) for geom in self],
                          index=self.index)
 
@@ -113,37 +101,42 @@ class GeoSeries(Series):
 
     @property
     def area(self):
-        """
-        Return the area of each member of the GeoSeries
-        """
+        """Return the area of each geometry in the GeoSeries"""
         return self._series_unary_op('area')
 
     @property
     def geom_type(self):
+        """Return the geometry type of each geometry in the GeoSeries"""
         return self._series_unary_op('geom_type')
 
     @property
     def type(self):
+        """Return the geometry type of each geometry in the GeoSeries"""
         return self.geom_type
 
     @property
     def length(self):
+        """Return the length of each geometry in the GeoSeries"""
         return self._series_unary_op('length')
 
     @property
     def is_valid(self):
+        """Return True for each valid geometry, else False"""
         return self._series_unary_op('is_valid')
 
     @property
     def is_empty(self):
+        """Return True for each empty geometry, False for non-empty"""
         return self._series_unary_op('is_empty')
 
     @property
     def is_simple(self):
+        """Return True for each simple geometry, else False"""
         return self._series_unary_op('is_simple')
 
     @property
     def is_ring(self):
+        """Return True for each geometry that is a closed ring, else False"""
         # operates on the exterior, so can't use _series_unary_op()
         return Series([geom.exterior.is_ring for geom in self],
                       index=self.index)
@@ -154,32 +147,36 @@ class GeoSeries(Series):
 
     @property
     def boundary(self):
+        """Return the bounding geometry for each geometry"""
         return self._geo_unary_op('boundary')
 
     @property
     def centroid(self):
-        """
-        Return the centroid of each geometry in the GeoSeries
-        """
+        """Return the centroid of each geometry in the GeoSeries"""
         return self._geo_unary_op('centroid')
 
     @property
     def convex_hull(self):
+        """Return the convex hull of each geometry"""
         return self._geo_unary_op('convex_hull')
 
     @property
     def envelope(self):
+        """Return a bounding rectangle for each geometry"""
         return self._geo_unary_op('envelope')
 
     @property
     def exterior(self):
+        """Return the outer boundary of each polygon"""
         return self._geo_unary_op('exterior')
 
     @property
     def interiors(self):
+        """Return the interior rings of each polygon"""
         return self._geo_unary_op('interiors')
 
     def representative_point(self):
+        """Return a GeoSeries of points guaranteed to be in each geometry"""
         return GeoSeries([geom.representative_point() for geom in self],
                          index=self.index)
 
@@ -189,11 +186,12 @@ class GeoSeries(Series):
 
     @property
     def cascaded_union(self):
-        # Deprecated - use unary_union instead
+        """Deprecated: Return the unary_union of all geometries"""
         return cascaded_union(self.values)
 
     @property
     def unary_union(self):
+        """Return the union of all geometries"""
         return unary_union(self.values)
 
     #
