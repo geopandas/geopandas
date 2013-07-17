@@ -22,6 +22,7 @@ class TestSeries(unittest.TestCase):
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
+        self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
         self.a1 = self.g1.copy()
         self.a1.index = ['A', 'B']
@@ -123,11 +124,13 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(u[0].equals(self.sq))
         self.assertTrue(u[1].equals(self.sq))
         self.assertTrue(geom_equals(u, self.g3 ^ self.g4))
+        self.assertEqual(self.g3.crs, u.crs)
 
     def test_symmetric_difference_poly(self):
         u = self.g3.symmetric_difference(self.t1)
         self.assertTrue(u[0].is_empty)
         self.assertTrue(u[1].equals(self.sq))
+        self.assertEqual(self.g3.crs, u.crs)
 
     def test_difference_series(self):
         u = self.g1.difference(self.g2)
@@ -155,6 +158,8 @@ class TestSeries(unittest.TestCase):
     def test_envelope(self):
         e = self.g3.envelope
         self.assertTrue(np.alltrue(e.equals(self.sq)))
+        self.assertIsInstance(e, GeoSeries)
+        self.assertEqual(self.g3.crs, e.crs)
 
     def test_exterior(self):
         # TODO
