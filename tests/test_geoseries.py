@@ -74,12 +74,14 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(a1['C'].is_empty)
 
     def test_almost_equals(self):
+        # TODO: test decimal parameter
         self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
         self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
 
     def test_equals_exact(self):
-        self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
+        # TODO: test tolerance parameter
+        self.assertTrue(np.alltrue(self.g1.equals_exact(self.g1, 0.001)))
+        self.assertTrue(np.all(self.g1.equals_exact(self.sq, 0.001).values == np.array([0, 1], dtype=bool)))
 
     def test_crosses(self):
         # TODO

@@ -71,14 +71,14 @@ class GeoSeries(Series):
                           index=self.index, crs=self.crs)
 
     # TODO: think about merging with _geo_op
-    def _series_op(self, other, op):
+    def _series_op(self, other, op, **kwargs):
         """Geometric operation that returns a pandas Series"""
         if isinstance(other, GeoSeries):
             this, other = self.align(other)
-            return Series([getattr(s[0], op)(s[1]) for s in zip(this, other)],
+            return Series([getattr(s[0], op)(s[1], **kwargs) for s in zip(this, other)],
                           index=this.index)
         else:
-            return Series([getattr(s, op)(other) for s in self],
+            return Series([getattr(s, op)(other, **kwargs) for s in self],
                           index=self.index)
 
     def _geo_unary_op(self, op):
@@ -168,11 +168,13 @@ class GeoSeries(Series):
     @property
     def exterior(self):
         """Return the outer boundary of each polygon"""
+        # TODO: return empty geometry for non-polygons
         return self._geo_unary_op('exterior')
 
     @property
     def interiors(self):
         """Return the interior rings of each polygon"""
+        # TODO: return empty list or None for non-polygons
         return self._geo_unary_op('interiors')
 
     def representative_point(self):
@@ -199,31 +201,19 @@ class GeoSeries(Series):
     #
 
     def difference(self, other):
-        """
-        Return a GeoSeries of differences
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the set-theoretic difference of each geometry with *other*"""
         return self._geo_op(other, 'difference')
 
     def symmetric_difference(self, other):
-        """
-        Return a GeoSeries of differences
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the symmetric difference of each geometry with *other*"""
         return self._geo_op(other, 'symmetric_difference')
 
     def union(self, other):
-        """
-        Return a GeoSeries of unions
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the set-theoretic union of each geometry with *other*"""
         return self._geo_op(other, 'union')
 
     def intersection(self, other):
-        """
-        Return a GeoSeries of intersections
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the set-theoretic intersection of each geometry with *other*"""
         return self._geo_op(other, 'intersection')
 
     #
@@ -231,40 +221,49 @@ class GeoSeries(Series):
     #
 
     def contains(self, other):
-        """
-        Return a Series of boolean values.
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return True for all geometries that contain *other*, else False"""
         return self._series_op(other, 'contains')
 
     def equals(self, other):
+        """Return True for all geometries that equal *other*, else False"""
         return self._series_op(other, 'equals')
 
-    def almost_equals(self, other):
-        return self._series_op(other, 'almost_equals')
+    def almost_equals(self, other, decimal=6):
+        """Return True for all geometries that is approximately equal to *other*, else False"""
+        # TODO: pass precision argument
+        return self._series_op(other, 'almost_equals', decimal=decimal)
 
-    def equals_exact(self, other):
-        return self._series_op(other, 'equals_exact')
+    def equals_exact(self, other, tolerance):
+        """Return True for all geometries that equal *other* to a given tolerance, else False"""
+        # TODO: pass tolerance argument.
+        return self._series_op(other, 'equals_exact', tolerance=tolerance)
 
     def crosses(self, other):
+        """Return True for all geometries that cross *other*, else False"""
         return self._series_op(other, 'crosses')
 
     def disjoint(self, other):
+        """Return True for all geometries that are disjoint with *other*, else False"""
         return self._series_op(other, 'disjoint')
 
     def intersects(self, other):
+        """Return True for all geometries that intersect *other*, else False"""
         return self._series_op(other, 'intersects')
 
     def overlaps(self, other):
+        """Return True for all geometries that overlap *other*, else False"""
         return self._series_op(other, 'overlaps')
 
     def touches(self, other):
+        """Return True for all geometries that touch *other*, else False"""
         return self._series_op(other, 'touches')
 
     def within(self, other):
+        """Return True for all geometries that are within *other*, else False"""
         return self._series_op(other, 'within')
 
     def distance(self, other):
+        """Return distance of each geometry to *other*"""
         return self._series_op(other, 'distance')
 
     #
