@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from numpy.testing import assert_array_equal
 from shapely.geometry import Polygon, Point, LineString
 from geopandas import GeoSeries
 
@@ -30,7 +31,7 @@ class TestSeries(unittest.TestCase):
         self.a2.index = ['B', 'C']
 
     def test_area(self):
-        assert np.allclose(self.g1.area.values, np.array([0.5, 1.0]))
+        assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
 
     def test_in(self):
         assert self.t1 in self.g1
@@ -42,12 +43,12 @@ class TestSeries(unittest.TestCase):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
         l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
         b = self.g1.boundary
-        assert b[0].equals(l1)
-        assert b[1].equals(l2)
+        self.assertTrue(b[0].equals(l1))
+        self.assertTrue(b[1].equals(l2))
 
     def test_bounds(self):
-        self.assertTrue(np.allclose(self.g1.bounds.values, np.array([[0, 0, 1, 1],
-                                                            [0, 0, 1, 1]])))
+        assert_array_equal(self.g1.bounds.values, np.array([[0, 0, 1, 1],
+                                                            [0, 0, 1, 1]]))
 
     def test_contains(self):
         self.assertTrue(np.alltrue(self.g1.contains(self.t1)))
@@ -55,11 +56,11 @@ class TestSeries(unittest.TestCase):
 
     def test_length(self):
         l = np.array([2 + np.sqrt(2), 4])
-        self.assertTrue(np.allclose(self.g1.length.values, l))
+        assert_array_equal(self.g1.length.values, l)
 
     def test_equals(self):
         self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
+        assert_array_equal(self.g1.equals(self.sq), [False, True])
 
     def test_equals_align(self):
         a = self.a1.equals(self.a2)
@@ -75,13 +76,13 @@ class TestSeries(unittest.TestCase):
 
     def test_almost_equals(self):
         # TODO: test decimal parameter
-        self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        self.assertTrue(np.all(self.g1.equals(self.sq).values == np.array([0, 1], dtype=bool)))
+        self.assertTrue(np.alltrue(self.g1.almost_equals(self.g1)))
+        assert_array_equal(self.g1.almost_equals(self.sq), [False, True])
 
     def test_equals_exact(self):
         # TODO: test tolerance parameter
         self.assertTrue(np.alltrue(self.g1.equals_exact(self.g1, 0.001)))
-        self.assertTrue(np.all(self.g1.equals_exact(self.sq, 0.001).values == np.array([0, 1], dtype=bool)))
+        assert_array_equal(self.g1.equals_exact(self.sq, 0.001), [False, True])
 
     def test_crosses(self):
         # TODO
