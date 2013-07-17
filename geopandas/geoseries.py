@@ -1,3 +1,5 @@
+from warnings import warn
+
 import numpy as np
 from pandas import Series, DataFrame
 
@@ -65,6 +67,8 @@ class GeoSeries(Series):
         Operation that returns a GeoSeries
         """
         if isinstance(other, GeoSeries):
+            if self.crs != other.crs:
+                warn('GeoSeries crs mismatch: {} and {}'.format(self.crs, other.crs))
             this, other = self.align(other)
             return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
                           index=this.index, crs=self.crs)
