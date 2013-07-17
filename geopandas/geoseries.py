@@ -410,4 +410,5 @@ class GeoSeries(Series):
         project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
+        result.crs = crs
         return result
