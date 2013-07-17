@@ -1,3 +1,5 @@
+from warnings import warn
+
 import numpy as np
 from pandas import Series, DataFrame
 
@@ -28,24 +30,21 @@ def _is_geometry(x):
 
 
 class GeoSeries(Series):
-    """
-    A Series object designed to store shapely geometry objects.
-    """
+    """A Series object designed to store shapely geometry objects."""
 
     def __new__(cls, *args, **kwargs):
-        # http://stackoverflow.com/a/11982602/1220158
+        kwargs.pop('crs', None)
         arr = Series.__new__(cls, *args, **kwargs)
         return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
+        crs = kwargs.pop('crs', None)
         super(GeoSeries, self).__init__(*args, **kwargs)
-        self.crs = None
+        self.crs = crs
 
     @classmethod
     def from_file(cls, filename):
-        """
-        Alternate constructor to create a GeoSeries from a file
-        """
+        """Alternate constructor to create a GeoSeries from a file"""
         geoms = []
         with fiona.open(filename) as f:
             crs = f.crs
@@ -60,41 +59,35 @@ class GeoSeries(Series):
     #
 
     def _geo_op(self, other, op):
-        """
-        Operation that returns a GeoSeries
-        """
+        """Operation that returns a GeoSeries"""
         if isinstance(other, GeoSeries):
+            if self.crs != other.crs:
+                warn('GeoSeries crs mismatch: {} and {}'.format(self.crs, other.crs))
             this, other = self.align(other)
             return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
-                          index=this.index)
+                          index=this.index, crs=self.crs)
         else:
             return GeoSeries([getattr(s, op)(other) for s in self],
-                          index=self.index)
+                          index=self.index, crs=self.crs)
 
     # TODO: think about merging with _geo_op
-    def _series_op(self, other, op):
-        """
-        Geometric operation that returns a pandas Series
-        """
+    def _series_op(self, other, op, **kwargs):
+        """Geometric operation that returns a pandas Series"""
         if isinstance(other, GeoSeries):
             this, other = self.align(other)
-            return Series([getattr(s[0], op)(s[1]) for s in zip(this, other)],
+            return Series([getattr(s[0], op)(s[1], **kwargs) for s in zip(this, other)],
                           index=this.index)
         else:
-            return Series([getattr(s, op)(other) for s in self],
+            return Series([getattr(s, op)(other, **kwargs) for s in self],
                           index=self.index)
 
     def _geo_unary_op(self, op):
-        """
-        Unary operation that returns a GeoSeries
-        """
+        """Unary operation that returns a GeoSeries"""
         return GeoSeries([getattr(geom, op) for geom in self],
-                         index=self.index)
+                         index=self.index, crs=self.crs)
 
     def _series_unary_op(self, op):
-        """
-        Unary operation that returns a Series
-        """
+        """Unary operation that returns a Series"""
         return GeoSeries([getattr(geom, op) for geom in self],
                          index=self.index)
 
@@ -108,37 +101,42 @@ class GeoSeries(Series):
 
     @property
     def area(self):
-        """
-        Return the area of each member of the GeoSeries
-        """
+        """Return the area of each geometry in the GeoSeries"""
         return self._series_unary_op('area')
 
     @property
     def geom_type(self):
+        """Return the geometry type of each geometry in the GeoSeries"""
         return self._series_unary_op('geom_type')
 
     @property
     def type(self):
+        """Return the geometry type of each geometry in the GeoSeries"""
         return self.geom_type
 
     @property
     def length(self):
+        """Return the length of each geometry in the GeoSeries"""
         return self._series_unary_op('length')
 
     @property
     def is_valid(self):
+        """Return True for each valid geometry, else False"""
         return self._series_unary_op('is_valid')
 
     @property
     def is_empty(self):
+        """Return True for each empty geometry, False for non-empty"""
         return self._series_unary_op('is_empty')
 
     @property
     def is_simple(self):
+        """Return True for each simple geometry, else False"""
         return self._series_unary_op('is_simple')
 
     @property
     def is_ring(self):
+        """Return True for each geometry that is a closed ring, else False"""
         # operates on the exterior, so can't use _series_unary_op()
         return Series([geom.exterior.is_ring for geom in self],
                       index=self.index)
@@ -149,32 +147,38 @@ class GeoSeries(Series):
 
     @property
     def boundary(self):
+        """Return the bounding geometry for each geometry"""
         return self._geo_unary_op('boundary')
 
     @property
     def centroid(self):
-        """
-        Return the centroid of each geometry in the GeoSeries
-        """
+        """Return the centroid of each geometry in the GeoSeries"""
         return self._geo_unary_op('centroid')
 
     @property
     def convex_hull(self):
+        """Return the convex hull of each geometry"""
         return self._geo_unary_op('convex_hull')
 
     @property
     def envelope(self):
+        """Return a bounding rectangle for each geometry"""
         return self._geo_unary_op('envelope')
 
     @property
     def exterior(self):
+        """Return the outer boundary of each polygon"""
+        # TODO: return empty geometry for non-polygons
         return self._geo_unary_op('exterior')
 
     @property
     def interiors(self):
+        """Return the interior rings of each polygon"""
+        # TODO: return empty list or None for non-polygons
         return self._geo_unary_op('interiors')
 
     def representative_point(self):
+        """Return a GeoSeries of points guaranteed to be in each geometry"""
         return GeoSeries([geom.representative_point() for geom in self],
                          index=self.index)
 
@@ -184,11 +188,12 @@ class GeoSeries(Series):
 
     @property
     def cascaded_union(self):
-        # Deprecated - use unary_union instead
+        """Deprecated: Return the unary_union of all geometries"""
         return cascaded_union(self.values)
 
     @property
     def unary_union(self):
+        """Return the union of all geometries"""
         return unary_union(self.values)
 
     #
@@ -196,31 +201,19 @@ class GeoSeries(Series):
     #
 
     def difference(self, other):
-        """
-        Return a GeoSeries of differences
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the set-theoretic difference of each geometry with *other*"""
         return self._geo_op(other, 'difference')
 
     def symmetric_difference(self, other):
-        """
-        Return a GeoSeries of differences
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the symmetric difference of each geometry with *other*"""
         return self._geo_op(other, 'symmetric_difference')
 
     def union(self, other):
-        """
-        Return a GeoSeries of unions
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the set-theoretic union of each geometry with *other*"""
         return self._geo_op(other, 'union')
 
     def intersection(self, other):
-        """
-        Return a GeoSeries of intersections
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return the set-theoretic intersection of each geometry with *other*"""
         return self._geo_op(other, 'intersection')
 
     #
@@ -228,40 +221,49 @@ class GeoSeries(Series):
     #
 
     def contains(self, other):
-        """
-        Return a Series of boolean values.
-        Operates on either a GeoSeries or a Shapely geometry
-        """
+        """Return True for all geometries that contain *other*, else False"""
         return self._series_op(other, 'contains')
 
     def equals(self, other):
+        """Return True for all geometries that equal *other*, else False"""
         return self._series_op(other, 'equals')
 
-    def almost_equals(self, other):
-        return self._series_op(other, 'almost_equals')
+    def almost_equals(self, other, decimal=6):
+        """Return True for all geometries that is approximately equal to *other*, else False"""
+        # TODO: pass precision argument
+        return self._series_op(other, 'almost_equals', decimal=decimal)
 
-    def equals_exact(self, other):
-        return self._series_op(other, 'equals_exact')
+    def equals_exact(self, other, tolerance):
+        """Return True for all geometries that equal *other* to a given tolerance, else False"""
+        # TODO: pass tolerance argument.
+        return self._series_op(other, 'equals_exact', tolerance=tolerance)
 
     def crosses(self, other):
+        """Return True for all geometries that cross *other*, else False"""
         return self._series_op(other, 'crosses')
 
     def disjoint(self, other):
+        """Return True for all geometries that are disjoint with *other*, else False"""
         return self._series_op(other, 'disjoint')
 
     def intersects(self, other):
+        """Return True for all geometries that intersect *other*, else False"""
         return self._series_op(other, 'intersects')
 
     def overlaps(self, other):
+        """Return True for all geometries that overlap *other*, else False"""
         return self._series_op(other, 'overlaps')
 
     def touches(self, other):
+        """Return True for all geometries that touch *other*, else False"""
         return self._series_op(other, 'touches')
 
     def within(self, other):
+        """Return True for all geometries that are within *other*, else False"""
         return self._series_op(other, 'within')
 
     def distance(self, other):
+        """Return distance of each geometry to *other*"""
         return self._series_op(other, 'distance')
 
     #
@@ -271,9 +273,7 @@ class GeoSeries(Series):
     # should this return bounds for entire series, or elementwise?
     @property
     def bounds(self):
-        """
-        Return a DataFrame of minx, miny, maxx, maxy values of geometry objects
-        """
+        """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
         bounds = np.array([geom.bounds for geom in self])
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
@@ -301,9 +301,9 @@ class GeoSeries(Series):
     #
 
     def __contains__(self, other):
-        """
-        Allow tests of the form "geom in s" to test whether a GeoSeries
-        contains a geometry.
+        """Allow tests of the form "geom in s"
+
+        Tests whether a GeoSeries contains a geometry.
 
         Note: This is not the same as the geometric method "contains".
         """
@@ -313,31 +313,19 @@ class GeoSeries(Series):
             return False
 
     def __xor__(self, other):
-        """
-        The ^ operator implements symmetric_difference() as it does
-        for the builtin set type.
-        """
+        """Implement ^ operator as for builtin set type"""
         return self.symmetric_difference(other)
 
     def __or__(self, other):
-        """
-        The | operator implements union() as it does
-        for the builtin set type.
-        """
+        """Implement | operator as for builtin set type"""
         return self.union(other)
 
     def __and__(self, other):
-        """
-        The & operator implements intersection() as it does
-        for the builtin set type.
-        """
+        """Implement & operator as for builtin set type"""
         return self.intersection(other)
 
     def __sub__(self, other):
-        """
-        The - operator implements difference() as it does
-        for the builtin set type.
-        """
+        """Implement - operator as for builtin set type"""
         return self.difference(other)
 
     #
@@ -349,8 +337,7 @@ class GeoSeries(Series):
         return False
 
     def copy(self, order='C'):
-        """
-        Return new GeoSeries with copy of underlying values
+        """Return new GeoSeries with copy of underlying values
 
         Returns
         -------
@@ -360,17 +347,14 @@ class GeoSeries(Series):
                       name=self.name)
 
     def isnull(self):
-        """
-        Null values in a GeoSeries are represented by empty geometric objects
-        """
+        """Null values in a GeoSeries are represented by empty geometric objects"""
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
     def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
                limit=None):
-        """
-        Fill NA/NaN values with a geometry (empty polygon by default).
+        """Fill NA/NaN values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for GeoSeries.
         """
