@@ -308,6 +308,20 @@ each object.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="GeoSeries.to_crs">
+<tt class="descclassname">GeoSeries.</tt><tt class="descname">to_crs</tt><big>(</big><em>crs=None</em>, <em>epsg=None</em><big>)</big><a class="headerlink" href="#GeoSeries.to_crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform all geometries in a GeoSeries to a different coordinate
+reference system.  The <tt class="docutils literal"><span class="pre">crs</span></tt> attribute on the current GeoSeries
+must be set.  Either <tt class="docutils literal"><span class="pre">crs</span></tt> in dictionary form or an EPSG code may
+be specified for output.</p>
+<p>This method will transform all points in all objects.  It has no
+notion or projecting entire geometries.  All segments joining points
+are assumed to be lines in the current projection, not geodesics.
+Objects crossing the dateline (or other projection boundary) will
+have undesirable behavior.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GeoSeries.plot">
 <tt class="descclassname">GeoSeries.</tt><tt class="descname">plot</tt><big>(</big><em>colormap='Set1'</em><big>)</big><a class="headerlink" href="#GeoSeries.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a plot of the geometries in the <tt class="docutils literal"><span class="pre">GeoSeries</span></tt>.
@@ -333,6 +347,22 @@ called <tt class="docutils literal"><span class="pre">geometry</span></tt> which
 <tt class="descclassname">GeoDataFrame.</tt><tt class="descname">from_file</tt><big>(</big><big>)</big><a class="headerlink" href="#GeoDataFrame.from_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a <tt class="docutils literal"><span class="pre">GeoDataFrame</span></tt> from a file from any format recognized by
 <a class="reference external" href="http://toblerity.github.io/fiona">fiona</a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descclassname">GeoSeries.</tt><tt class="descname">to_crs</tt><big>(</big><em>crs=None</em>, <em>epsg=None</em>, <em>inplace=False</em><big>)</big></dt>
+<dd><p>Transform all geometries in the <tt class="docutils literal"><span class="pre">geometry</span></tt> column of a
+GeoDataFrame to a different coordinate reference system.  The
+<tt class="docutils literal"><span class="pre">crs</span></tt> attribute on the current GeoSeries must be set.  Either
+<tt class="docutils literal"><span class="pre">crs</span></tt> in dictionary form or an EPSG code may be specified for
+output.  If <tt class="docutils literal"><span class="pre">inplace=True</span></tt> the geometry column will be replaced in
+the current dataframe, otherwise a new GeoDataFrame will be returned.</p>
+<p>This method will transform all points in all objects.  It has no
+notion or projecting entire geometries.  All segments joining points
+are assumed to be lines in the current projection, not geodesics.
+Objects crossing the dateline (or other projection boundary) will
+have undesirable behavior.</p>
 </dd></dl>
 
 <dl class="method">

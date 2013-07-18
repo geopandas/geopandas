@@ -208,6 +208,19 @@ Additionally, the following methods are implemented:
   Load a ``GeoSeries`` from a file from any format recognized by
   `fiona`_.
 
+.. method:: GeoSeries.to_crs(crs=None, epsg=None)
+
+  Transform all geometries in a GeoSeries to a different coordinate
+  reference system.  The ``crs`` attribute on the current GeoSeries
+  must be set.  Either ``crs`` in dictionary form or an EPSG code may
+  be specified for output.
+
+  This method will transform all points in all objects.  It has no
+  notion or projecting entire geometries.  All segments joining points
+  are assumed to be lines in the current projection, not geodesics.
+  Objects crossing the dateline (or other projection boundary) will
+  have undesirable behavior.
+
 .. method:: GeoSeries.plot(colormap='Set1')
 
   Generate a plot of the geometries in the ``GeoSeries``.
@@ -234,6 +247,21 @@ Currently only the following methods are implemented for a ``GeoDataFrame``:
 
   Load a ``GeoDataFrame`` from a file from any format recognized by
   `fiona`_.
+
+.. method:: GeoSeries.to_crs(crs=None, epsg=None, inplace=False)
+
+  Transform all geometries in the ``geometry`` column of a
+  GeoDataFrame to a different coordinate reference system.  The
+  ``crs`` attribute on the current GeoSeries must be set.  Either
+  ``crs`` in dictionary form or an EPSG code may be specified for
+  output.  If ``inplace=True`` the geometry column will be replaced in
+  the current dataframe, otherwise a new GeoDataFrame will be returned.
+
+  This method will transform all points in all objects.  It has no
+  notion or projecting entire geometries.  All segments joining points
+  are assumed to be lines in the current projection, not geodesics.
+  Objects crossing the dateline (or other projection boundary) will
+  have undesirable behavior.
 
 .. method:: GeoDataFrame.plot()
 
