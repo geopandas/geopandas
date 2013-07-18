@@ -29,6 +29,10 @@ class TestSeries(unittest.TestCase):
         self.a1.index = ['A', 'B']
         self.a2 = self.g2.copy()
         self.a2.index = ['B', 'C']
+        self.esb = Point(-73.9847, 40.7484)
+        self.sol = Point(-74.0446, 40.6893)
+        self.landmarks = GeoSeries([self.esb, self.sol],
+                                   crs={'init': 'epsg:4326', 'no_defs': True})
 
     def test_area(self):
         assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
@@ -177,3 +181,8 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(np.alltrue(self.g2.contains(self.g2.representative_point())))
         self.assertTrue(np.alltrue(self.g3.contains(self.g3.representative_point())))
         self.assertTrue(np.alltrue(self.g4.contains(self.g4.representative_point())))
+
+    def test_transform(self):
+        utm18n = self.landmarks.to_crs(epsg=26918)
+        lonlat = utm18n.to_crs(epsg=4326)
+        self.assertTrue(np.alltrue(self.landmarks.almost_equals(lonlat)))
