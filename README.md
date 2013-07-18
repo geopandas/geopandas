@@ -8,11 +8,11 @@ GeoPandas is a project to add support for geographic data to
 objects can act on [shapely](http://toblerity.github.io/shapely)
 geometry objects and perform geometric operations.
 
-GeoPandas geometry operations are cartesian.  Objects are naive with
-respect to coordinate systems, although the coordinate reference
-system (crs) is stored as an attribute when loading from a file.  In
-the future, enforcement of like coordinates for operations and
-projection into other reference systems may be implemented.
+GeoPandas geometry operations are cartesian.  The coordinate reference
+system (crs) can stored as an attribute on an object, and is
+automatically set when loading from a file.  Objects may be
+transformed to new coordinate systems with the `to_crs()` method.
+There is currently no enforcement of like coordinates for operations, but that may change in the future.
 
 Examples
 --------
