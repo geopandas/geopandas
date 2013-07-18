@@ -71,6 +71,25 @@ class GeoDataFrame(DataFrame):
              'features': [feature(i, row) for i, row in self.iterrows()]},
             **kwargs )
 
+    def to_crs(self, crs=None, epsg=None, inplace=False):
+        """Transform geometries to a new coordinate reference system
+
+        This method will transform all points in all objects.  It has
+        no notion or projecting entire geometries.  All segments
+        joining points are assumed to be lines in the current
+        projection, not geodesics.  Objects crossing the dateline (or
+        other projection boundary) will have undesirable behavior.
+        """
+        if inplace:
+            df = self
+        else:
+            df = self.copy()
+            df.crs = self.crs
+        geom = df.geometry.to_crs(crs=crs, epsg=epsg)
+        df.geometry = geom
+        if not inplace:
+            return df
+
     def __getitem__(self, key):
         """
         The geometry column is not stored as a GeoSeries, so need to make sure
