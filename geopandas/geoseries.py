@@ -405,8 +405,8 @@ class GeoSeries(Series):
                 crs = from_epsg(epsg)
             except TypeError:
                 raise TypeError('Must set either crs or epsg for output.')
-        proj_in = pyproj.Proj(**self.crs)
-        proj_out = pyproj.Proj(**crs)
+        proj_in = pyproj.Proj(preserve_units=True, **self.crs)
+        proj_out = pyproj.Proj(preserve_units=True, **crs)
         project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
