@@ -1,18 +1,22 @@
 from warnings import warn
-from functools import partial
+#from functools import partial
 
 import numpy as np
 from pandas import Series, DataFrame
 
-import pyproj
+#import pyproj
 from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union, transform
+from shapely.ops import cascaded_union, unary_union#, transform
 import fiona
-from fiona.crs import from_epsg
+from fiona.crs import from_string, to_string
 
 from plotting import plot_series
+
+from shapely import wkb
+from osgeo.osr import SpatialReference, CoordinateTransformation
+import ogr
 
 EMPTY_COLLECTION = GeometryCollection()
 EMPTY_POLYGON = Polygon()
@@ -449,19 +453,52 @@ class GeoSeries(Series):
         joining points are assumed to be lines in the current
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
+        
+        Parameters
+        ----------
+        
+        crs : dict or string
+            Proj4 parameters of desired output coordinate reference system
+        epsg: int
+            EPSG code of desired output coordinate reference system
+        If both crs and epsg are provided, the crs parameter is used
         """
         if self.crs is None:
             raise ValueError('Cannot transform naive geometries.  '
                              'Please set a crs on the object first.')
+        def create_crs(crs):
+            _crs = SpatialReference()
+            if type(crs) in (str, unicode):
+                if _crs.ImportFromProj4(crs):
+                    raise TypeError('Invalid proj4 string.')
+            elif isinstance(crs, dict):
+                if "init" in crs: # pyproj-style EPSG initialization?
+                    epsg = int(crs["init"].split(":")[1])
+                    if _crs.ImportFromEPSG(epsg):
+                        raise TypeError('Unknown initialisation parameter.')
+                elif _crs.ImportFromProj4(to_string(crs)):
+                    raise TypeError('Invalid proj4 params.')
+            elif isinstance(crs, int):
+                if _crs.ImportFromEPSG(crs):
+                    raise TypeError('Invalid EPSG code.')
+            else:
+                raise TypeError("Unnkown crs input type.")
+            return _crs
+
         if crs is None:
-            try:
-                crs = from_epsg(epsg)
-            except TypeError:
-                raise TypeError('Must set either crs or epsg for output.')
-        proj_in = pyproj.Proj(preserve_units=True, **self.crs)
-        proj_out = pyproj.Proj(preserve_units=True, **crs)
-        project = partial(pyproj.transform, proj_in, proj_out)
-        result = self.apply(lambda geom: transform(project, geom))
+            target_crs = create_crs(epsg)
+        else:
+            target_crs = create_crs(crs)            
+        origin_crs = create_crs(self.crs)
+        transformer = CoordinateTransformation(origin_crs, target_crs)
+        def trans(geom):
+            g = ogr.CreateGeometryFromWkb(geom.wkb)
+            if g.Transform(transformer):
+                raise RuntimeError('Could not transform geometry.')
+            g = wkb.loads(g.ExportToWkb())
+            return g
+        result = self.apply(trans)
         result.__class__ = GeoSeries
-        result.crs = crs
+        result.crs = from_string(target_crs.ExportToProj4())
         return result
+
