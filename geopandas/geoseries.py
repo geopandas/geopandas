@@ -46,10 +46,26 @@ class GeoSeries(Series):
         self.crs = crs
 
     @classmethod
-    def from_file(cls, filename):
-        """Alternate constructor to create a GeoSeries from a file"""
+    def from_file(cls, filename, **kwargs):
+        """
+        Alternate constructor to create a GeoSeries from a file
+        
+        Parameters
+        ----------
+        
+        filename : str
+            File path or file handle to read from. Depending on which kwargs
+            are included, the content of filename may vary, see:
+            http://toblerity.github.io/fiona/README.html#usage
+            for usage details.
+        kwargs : key-word arguments
+            These arguments are passed to fiona.open, and can be used to 
+            access multi-layer data, data stored within archives (zip files),
+            etc.
+        
+        """
         geoms = []
-        with fiona.open(filename) as f:
+        with fiona.open(filename, **kwargs) as f:
             crs = f.crs
             for rec in f:
                 geoms.append(shape(rec['geometry']))
@@ -57,6 +73,14 @@ class GeoSeries(Series):
         g.crs = crs
         return g
 
+    def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
+        from geopandas import GeoDataFrame
+        data = GeoDataFrame({"geometry": self,
+                          "id":self.index.values},
+                          index=self.index)
+        data.crs = self.crs
+        data.to_file(filename, driver, **kwargs)
+        
     #
     # Internal methods
     #
