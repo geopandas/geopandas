@@ -75,8 +75,7 @@ class GeoDataFrame(DataFrame):
             
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         """
-        Write GeoSeries geometries (and optionally a DataFrame) to an OGR 
-        data source
+        Write this GeoDataFrame to an OGR data source
         
         A dictionary of supported OGR providers is available via:
         >>> import fiona
@@ -89,7 +88,7 @@ class GeoDataFrame(DataFrame):
         driver : string, default 'ESRI Shapefile'
             The OGR format driver used to write the vector file.
 
-        The *kwargs* are passed to fiona.open, and can be used to write 
+        The *kwargs* are passed to fiona.open and can be used to write 
         to multi-layer data, store data within archives (zip files), etc.
         """
         def convert_type(in_type):
