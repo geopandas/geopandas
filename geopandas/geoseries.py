@@ -8,7 +8,12 @@ import pyproj
 from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union, transform
+from shapely.ops import cascaded_union, unary_union
+try:
+    from shapely.ops import transform
+except ImportError:
+    print("Geopandas currently requires a development version of Shapely: https://github.com/sgillies/shapely")
+    raise
 import fiona
 from fiona.crs import from_epsg
 
