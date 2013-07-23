@@ -2,6 +2,8 @@ import unittest
 import json
 import numpy as np
 
+import tempfile
+
 from geopandas import GeoDataFrame
 
 class TestDataFrame(unittest.TestCase):
@@ -23,3 +25,13 @@ class TestDataFrame(unittest.TestCase):
         data = json.loads(text)
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
+        
+    def test_to_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.shp') as t:
+            self.df.to_file(t.name)
+            # Read layer back in?
+            df = GeoDataFrame.from_file(t.name)
+            self.assertTrue('geometry' in df)
+            self.assertTrue(len(df) == 5)
+            self.assertTrue(np.alltrue(df['BoroName'].values == np.array(['Staten Island',
+                                   'Queens', 'Brooklyn', 'Manhattan', 'Bronx'])))

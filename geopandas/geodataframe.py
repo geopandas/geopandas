@@ -1,5 +1,5 @@
-from collections import defaultdict
-import json
+from collections import defaultdict, OrderedDict
+import json, os
 
 import fiona
 from pandas import DataFrame
@@ -7,6 +7,8 @@ from shapely.geometry import mapping, shape
 
 from geopandas import GeoSeries
 from plotting import plot_dataframe
+
+import numpy as np
 
 
 class GeoDataFrame(DataFrame):
@@ -70,6 +72,55 @@ class GeoDataFrame(DataFrame):
             {'type': 'FeatureCollection',
              'features': [feature(i, row) for i, row in self.iterrows()]},
             **kwargs )
+            
+    def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
+        """
+        Write this GeoDataFrame to an OGR data source
+        
+        A dictionary of supported OGR providers is available via:
+        >>> import fiona
+        >>> fiona.supported_drivers
+
+        Parameters
+        ----------
+        filename : string 
+            File path or file handle to write to.
+        driver : string, default 'ESRI Shapefile'
+            The OGR format driver used to write the vector file.
+
+        The *kwargs* are passed to fiona.open and can be used to write 
+        to multi-layer data, store data within archives (zip files), etc.
+        """
+        def convert_type(in_type):
+            if in_type == object:
+                return 'str'
+            return type(np.asscalar(np.zeros(1, in_type))).__name__
+            
+        def feature(i, row):
+            return {
+                'id': str(i),
+                'type': 'Feature',
+                'properties': {
+                    k: v for k, v in row.iteritems() if k != 'geometry'},
+                'geometry': mapping(row['geometry']) }
+        
+        properties = OrderedDict([(col, convert_type(_type)) for col, _type 
+            in zip(self.columns, self.dtypes) if col!='geometry'])
+        # Need to check geom_types before we write to file... 
+        # Some (most?) providers expect a single geometry type: 
+        # Point, LineString, or Polygon
+        geom_types = self['geometry'].geom_type.unique()
+        from os.path import commonprefix # To find longest common prefix
+        geom_type = commonprefix([g[::-1] for g in geom_types])[::-1]  # Reverse
+        if geom_type == '': # No common suffix = mixed geometry types
+            raise ValueError("Geometry column cannot contains mutiple "
+                             "geometry types when writing to file.")
+        schema = {'geometry': geom_type, 'properties': properties}
+        filename = os.path.abspath(os.path.expanduser(filename))
+        with fiona.open(filename, 'w', driver=driver, crs=self.crs, 
+                        schema=schema, **kwargs) as c:
+            for i, row in self.iterrows():
+                c.write(feature(i, row))
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system
