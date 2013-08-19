@@ -38,7 +38,10 @@ class GeoSeries(Series):
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
         arr = Series.__new__(cls, *args, **kwargs)
-        return arr.view(GeoSeries)
+        if type(arr) is GeoSeries:
+            return arr
+        else:
+            return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
