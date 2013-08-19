@@ -393,7 +393,7 @@ class GeoSeries(Series):
         if isinstance(value, BaseGeometry):
             result = self.copy() if not inplace else self
             mask = self.isnull()
-            np.putmask(result, mask, value)
+            result[mask] = value
             if not inplace:
                 return GeoSeries(result)
         else:
