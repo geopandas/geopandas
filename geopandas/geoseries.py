@@ -38,7 +38,10 @@ class GeoSeries(Series):
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
         arr = Series.__new__(cls, *args, **kwargs)
-        return arr.view(GeoSeries)
+        if type(arr) is GeoSeries:
+            return arr
+        else:
+            return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
@@ -390,7 +393,7 @@ class GeoSeries(Series):
         if isinstance(value, BaseGeometry):
             result = self.copy() if not inplace else self
             mask = self.isnull()
-            np.putmask(result, mask, value)
+            result[mask] = value
             if not inplace:
                 return GeoSeries(result)
         else:
