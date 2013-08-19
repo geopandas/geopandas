@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 from shapely.geometry import Polygon, Point, LineString
+from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
 
 
@@ -25,6 +26,8 @@ class TestSeries(unittest.TestCase):
         self.g3 = GeoSeries([self.t1, self.t2])
         self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
+        self.na = GeoSeries([self.t1, self.t2, Polygon()])
+        self.na_none = GeoSeries([self.t1, self.t2, None])
         self.a1 = self.g1.copy()
         self.a1.index = ['A', 'B']
         self.a2 = self.g2.copy()
@@ -186,3 +189,8 @@ class TestSeries(unittest.TestCase):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
         self.assertTrue(np.alltrue(self.landmarks.almost_equals(lonlat)))
+
+    def test_fillna(self):
+        na = self.na_none.fillna()
+        self.assertTrue(isinstance(na[2], BaseGeometry))
+        self.assertTrue(na[2].is_empty)
