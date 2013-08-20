@@ -362,6 +362,32 @@ class GeoSeries(Series):
     # Implement pandas methods
     #
 
+    def _wrapped_pandas_method(self, mtd, *args, **kwargs):
+        """Wrap a generic pandas method to ensure it returns a GeoSeries"""
+        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
+        if type(val) == Series:
+            val.__class__ = GeoSeries
+            val.crs = self.crs
+        return val
+
+    def __getitem__(self, key):
+        return self._wrapped_pandas_method('__getitem__', key)
+
+    def __getslice__(self, i, j):
+        return self._wrapped_pandas_method('__getslice__', i, j)
+
+    def order(self, *args, **kwargs):
+        return self._wrapped_pandas_method('order', *args, **kwargs)
+
+    def sort_index(self, *args, **kwargs):
+        return self._wrapped_pandas_method('sort_index', *args, **kwargs)
+
+    def take(self, *args, **kwargs):
+        return self._wrapped_pandas_method('take', *args, **kwargs)
+
+    def select(self, *args, **kwargs):
+        return self._wrapped_pandas_method('select', *args, **kwargs)
+
     @property
     def _can_hold_na(self):
         return False
