@@ -376,6 +376,18 @@ class GeoSeries(Series):
     def __getslice__(self, i, j):
         return self._wrapped_pandas_method('__getslice__', i, j)
 
+    def order(self, *args, **kwargs):
+        return self._wrapped_pandas_method('order', *args, **kwargs)
+
+    def sort_index(self, *args, **kwargs):
+        return self._wrapped_pandas_method('sort_index', *args, **kwargs)
+
+    def take(self, *args, **kwargs):
+        return self._wrapped_pandas_method('take', *args, **kwargs)
+
+    def select(self, *args, **kwargs):
+        return self._wrapped_pandas_method('select', *args, **kwargs)
+
     @property
     def _can_hold_na(self):
         return False
