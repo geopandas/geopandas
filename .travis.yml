@@ -5,7 +5,8 @@ python:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install gdal-bin libgdal1
+  - apt-cache search gdal
+  - sudo apt-get install gdal-bin libgdal
 
 install:
   - pip install -r requirements.txt --use-mirrors
