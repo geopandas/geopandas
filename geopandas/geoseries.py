@@ -362,19 +362,19 @@ class GeoSeries(Series):
     # Implement pandas methods
     #
 
-    def __getitem__(self, key):
-        val = super(GeoSeries, self).__getitem__(key)
+    def _wrapped_pandas_method(self, mtd, *args, **kwargs):
+        """Wrap a generic pandas method to ensure it returns a GeoSeries"""
+        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
         return val
 
+    def __getitem__(self, key):
+        return self._wrapped_pandas_method('__getitem__', key)
+
     def __getslice__(self, i, j):
-        val = super(GeoSeries, self).__getslice__(i, j)
-        if type(val) == Series:
-            val.__class__ = GeoSeries
-            val.crs = self.crs
-        return val
+        return self._wrapped_pandas_method('__getslice__', i, j)
 
     @property
     def _can_hold_na(self):
