@@ -3,3 +3,4 @@ shapely>=1.2.18
 fiona>=1.0.1
 descartes>=1.0
 pyproj>=1.9.3
+matplotlib>=1.2.1
