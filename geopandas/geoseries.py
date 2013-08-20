@@ -362,6 +362,20 @@ class GeoSeries(Series):
     # Implement pandas methods
     #
 
+    def __getitem__(self, key):
+        val = super(GeoSeries, self).__getitem__(key)
+        if type(val) == Series:
+            val.__class__ = GeoSeries
+            val.crs = self.crs
+        return val
+
+    def __getslice__(self, i, j):
+        val = super(GeoSeries, self).__getslice__(i, j)
+        if type(val) == Series:
+            val.__class__ = GeoSeries
+            val.crs = self.crs
+        return val
+
     @property
     def _can_hold_na(self):
         return False
