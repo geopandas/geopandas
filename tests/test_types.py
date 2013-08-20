@@ -26,12 +26,13 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts.sort_index()) is GeoSeries
 
     def test_sort_order(self):
-        """It's not clear this would be meaningful for GeoSeries"""
         assert type(self.pts.order()) is GeoSeries
 
+    @unittest.skip('not yet implemented')
     def test_loc(self):
         assert type(self.pts.loc[5:]) is GeoSeries
 
+    @unittest.skip('not yet implemented')
     def test_iloc(self):
         assert type(self.pts.iloc[5:]) is GeoSeries
 
@@ -43,9 +44,9 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts.take(range(0, self.N, 2))) is GeoSeries
 
     def test_select(self):
-        # this method is actually entirely broken
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
+    @unittest.skip('not yet implemented')
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
