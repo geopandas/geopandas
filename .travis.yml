@@ -12,4 +12,4 @@ install:
   - pip install -r requirements.txt --use-mirrors
 
 script:
-  - nosetests
+  - nosetests -v
