@@ -4,8 +4,8 @@ python:
   - "2.7"
 
 before_install:
+  - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-stable
   - sudo apt-get update
-  - apt-cache search gdal
   - sudo apt-get install gdal-bin libgdal
 
 install:
