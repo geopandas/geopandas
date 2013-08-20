@@ -1,6 +1,8 @@
 Introduction
 ------------
 
+[![build status](https://secure.travis-ci.org/kjordahl/geopandas.png?branch=master)](https://travis-ci.org/kjordahl/geopandas)
+
 GeoPandas is a project to add support for geographic data to
 [pandas](http://pandas.pydata.org) objects.  It currently implements
 `GeoSeries` and `GeoDataFrame` types which is are subclasses of

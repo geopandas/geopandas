@@ -1,0 +1,7 @@
+.coverage
+*.pyc
+build
+dist
+doc/_build
+geopandas.egg-info
+geopandas/version.py
