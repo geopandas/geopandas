@@ -1,20 +1,24 @@
+GeoPandas [![build status](https://secure.travis-ci.org/kjordahl/geopandas.png?branch=master)](https://travis-ci.org/kjordahl/geopandas)
+=========
+
+Python tools for geographic data
+
 Introduction
 ------------
 
-[![build status](https://secure.travis-ci.org/kjordahl/geopandas.png?branch=master)](https://travis-ci.org/kjordahl/geopandas)
-
 GeoPandas is a project to add support for geographic data to
 [pandas](http://pandas.pydata.org) objects.  It currently implements
-`GeoSeries` and `GeoDataFrame` types which is are subclasses of
+`GeoSeries` and `GeoDataFrame` types which are subclasses of
 `pandas.Series` and `pandas.DataFrame` respectively.  GeoPandas
 objects can act on [shapely](http://toblerity.github.io/shapely)
 geometry objects and perform geometric operations.
 
 GeoPandas geometry operations are cartesian.  The coordinate reference
-system (crs) can stored as an attribute on an object, and is
+system (crs) can be stored as an attribute on an object, and is
 automatically set when loading from a file.  Objects may be
 transformed to new coordinate systems with the `to_crs()` method.
-There is currently no enforcement of like coordinates for operations, but that may change in the future.
+There is currently no enforcement of like coordinates for operations,
+but that may change in the future.
 
 Examples
 --------
@@ -91,6 +95,6 @@ GeoPandas also implements alternate constructors that can read any data format r
 TODO
 ----
 
-- Not all Shapely operations are yet exposed to a GeoSeries
+- Finish implementing and testing pandas methods on GeoPandas objects
 - The current GeoDataFrame does not do very much.
 - spatial joins, grouping and more...
