@@ -147,7 +147,7 @@ class GeoDataFrame(DataFrame):
         that it is returned as one
         """
         col = super(GeoDataFrame, self).__getitem__(key)
-        if key == 'geometry':
+        if isinstance(key, basestring) and key == 'geometry':
             col.__class__ = GeoSeries
             col.crs = self.crs
         return col
