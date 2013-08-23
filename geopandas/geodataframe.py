@@ -143,14 +143,18 @@ class GeoDataFrame(DataFrame):
 
     def __getitem__(self, key):
         """
-        The geometry column is not stored as a GeoSeries, so need to make sure
-        that it is returned as one
+        If the result is a column containing only 'geometry', return a
+        GeoSeries. If it's a DataFrame with a 'geometry' column, return a
+        GeoDataFrame.
         """
-        col = super(GeoDataFrame, self).__getitem__(key)
-        if key == 'geometry':
-            col.__class__ = GeoSeries
-            col.crs = self.crs
-        return col
+        result = super(GeoDataFrame, self).__getitem__(key)
+        if isinstance(key, basestring) and key == 'geometry':
+            result.__class__ = GeoSeries
+            result.crs = self.crs
+        elif isinstance(result, DataFrame) and 'geometry' in result:
+            result.__class__ = GeoDataFrame
+            result.crs = self.crs
+        return result
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
