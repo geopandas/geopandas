@@ -20,7 +20,7 @@ class GeoDataFrame(DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
-        self.crs = None
+        self.crs = crs
 
     @classmethod
     def from_file(cls, filename, **kwargs):
