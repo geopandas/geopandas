@@ -55,3 +55,5 @@ class TestDataFrame(unittest.TestCase):
         boros = df['BoroName'].values
         self.assertTrue('Brooklyn' in boros)
         self.assertTrue('Bronx' in boros)
+
+        self.assertTrue(type(df) is GeoDataFrame)

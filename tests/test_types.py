@@ -56,8 +56,7 @@ class TestSeries(unittest.TestCase):
 class TestDataFrame(unittest.TestCase):
 
     def setUp(self):
-        N = self.N = 10
-        r = 0.5
+        N = 10
         self.df = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x*y}
             for x, y in zip(range(N), range(N))])
@@ -73,3 +72,11 @@ class TestDataFrame(unittest.TestCase):
 
     def test_nongeometry_multiple(self):
         assert type(self.df[['value1', 'value2']]) is DataFrame
+
+    def test_slice(self):
+        assert type(self.df[:2]) is GeoDataFrame
+        assert type(self.df[::2]) is GeoDataFrame
+
+    def test_fancy(self):
+        idx = (self.df.index % 2).astype(bool)
+        assert type(self.df[idx]) is GeoDataFrame
