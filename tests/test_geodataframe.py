@@ -47,3 +47,13 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue('geometry' in df)
         self.assertTrue(len(df) == 5)
         self.assertTrue(np.alltrue(df['BoroName'].values == self.boros))
+
+    def test_bool_index(self):
+        # Find boros with 'B' in their name
+        df = self.df[self.df['BoroName'].str.contains('B')]
+        self.assertTrue(len(df) == 2)
+        boros = df['BoroName'].values
+        self.assertTrue('Brooklyn' in boros)
+        self.assertTrue('Bronx' in boros)
+
+        self.assertTrue(type(df) is GeoDataFrame)
