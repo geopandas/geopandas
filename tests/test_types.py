@@ -1,6 +1,7 @@
 import unittest
 from shapely.geometry import Point
-from geopandas import GeoSeries
+from pandas import Series, DataFrame
+from geopandas import GeoSeries, GeoDataFrame
 
 
 class TestSeries(unittest.TestCase):
@@ -50,3 +51,25 @@ class TestSeries(unittest.TestCase):
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
+
+
+class TestDataFrame(unittest.TestCase):
+
+    def setUp(self):
+        N = self.N = 10
+        r = 0.5
+        self.df = GeoDataFrame([
+            {'geometry' : Point(x, y), 'value1': x + y, 'value2': x*y}
+            for x, y in zip(range(N), range(N))])
+
+    def test_geometry(self):
+        assert type(self.df['geometry']) is GeoSeries
+
+    def test_nongeometry(self):
+        assert type(self.df['value1']) is Series
+
+    def test_geometry_multiple(self):
+        assert type(self.df[['geometry', 'value1']]) is GeoDataFrame
+
+    def test_nongeometry_multiple(self):
+        assert type(self.df[['value1', 'value2']]) is DataFrame
