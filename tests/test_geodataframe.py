@@ -6,6 +6,7 @@ import shutil
 import urllib2
 
 import numpy as np
+from shapely.geometry import Point
 
 from geopandas import GeoDataFrame
 
@@ -13,6 +14,7 @@ from geopandas import GeoDataFrame
 class TestDataFrame(unittest.TestCase):
 
     def setUp(self):
+        N = 10
         # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
         # saved as geopandas/examples/nybb_13a.zip.
         if not os.path.exists(os.path.join('examples', 'nybb_13a.zip')):
@@ -24,9 +26,17 @@ class TestDataFrame(unittest.TestCase):
         self.tempdir = tempfile.mkdtemp()
         self.boros = np.array(['Staten Island', 'Queens', 'Brooklyn',
                                'Manhattan', 'Bronx'])
+        self.crs = {'init': 'epsg:4326'}
+        self.df2 = GeoDataFrame([
+            {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
+            for x, y in zip(range(N), range(N))], crs=self.crs)
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
+
+    def test_df_init(self):
+        self.assertTrue(type(self.df2) is GeoDataFrame)
+        self.assertTrue(self.df2.crs == self.crs)
 
     def test_from_file_(self):
         self.assertTrue('geometry' in self.df)
