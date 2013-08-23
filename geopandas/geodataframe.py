@@ -143,8 +143,9 @@ class GeoDataFrame(DataFrame):
 
     def __getitem__(self, key):
         """
-        The geometry column is not stored as a GeoSeries, so need to make sure
-        that it is returned as one
+        If the result is a column containing only 'geometry', return a
+        GeoSeries. If it's a DataFrame with a 'geometry' column, return a
+        GeoDataFrame.
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         if isinstance(key, basestring) and key == 'geometry':
