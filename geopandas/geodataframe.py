@@ -4,8 +4,9 @@ import os
 
 import fiona
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, read_sql
 from shapely.geometry import mapping, shape
+from shapely.wkb import loads
 
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
@@ -55,6 +56,24 @@ class GeoDataFrame(DataFrame):
         df['geometry'] = geom
         df.crs = crs
         return df
+
+    @classmethod
+    def read_postgis(cls, sql, con, crs=None, geom_col='geom', index_col=None,
+                     coerce_float=True, params=None):
+
+        df = read_sql(sql, con, index_col, coerce_float, params)
+        if geom_col not in df:
+            raise ValueError("Query missing geometry column '{}'".format(
+                geom_col))
+
+        wkb_geoms = df[geom_col]
+
+        s = wkb_geoms.apply(lambda x: loads(x.decode('hex')))
+
+        df = df.drop(geom_col, axis=1)
+        df['geometry'] = GeoSeries(s)
+
+        return GeoDataFrame(df, crs=crs)
 
     def to_json(self, **kwargs):
         """Returns a GeoJSON representation of the GeoDataFrame.
