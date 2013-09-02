@@ -47,7 +47,6 @@ class TestSeries(unittest.TestCase):
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
