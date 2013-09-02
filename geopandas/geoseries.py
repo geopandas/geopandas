@@ -3,6 +3,7 @@ from functools import partial
 
 import numpy as np
 from pandas import Series, DataFrame
+from pandas.core.groupby import SeriesGroupBy
 
 import pyproj
 from shapely.geometry import shape, Polygon, Point
@@ -31,6 +32,37 @@ def _is_empty(x):
 def _is_geometry(x):
     return isinstance(x, BaseGeometry)
 
+
+class GeoSeriesGroupBy(SeriesGroupBy):
+    """
+    Wrap Series grouping operations for GeoSeries
+
+    As yet untested.
+
+    TODO: see if this can be accomplished by replacing Series with
+    self.obj.__class__ upstream.
+    """
+
+    def aggregate(self, func_or_funcs, *args, **kwargs):
+        ret = super(GeoSeries, self).aggregate(func_or_funcs, *args, **kwargs)
+        if isinstance(ret, GeoSeries):
+            return GeoSeries(ret)
+        else:
+            return ret
+
+    def _wrap_aggregated_output(self, output, names=None):
+        ret = super(GeoSeries, self)._wrap_aggregated_output(output, names=names)
+        if isinstance(ret, GeoSeries):
+            return GeoSeries(ret)
+        else:
+            return ret
+
+    def _wrap_applied_output(self, keys, values, not_indexed_same=False):
+        ret = super(GeoSeries, self)._wrap_applied_output(output, names=names)
+        if isinstance(ret, GeoSeries):
+            return GeoSeries(ret)
+        else:
+            return ret
 
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
@@ -424,6 +456,13 @@ class GeoSeries(Series):
                 return GeoSeries(result)
         else:
             raise ValueError('Non-geometric fill values not allowed for GeoSeries')
+
+    def groupby(self, by=None, axis=0, level=None, as_index=True, sort=True,
+                group_keys=True, squeeze=False):
+        """Altered to use GeoSeries-specific groupby class"""
+        axis = self._get_axis_number(axis)
+        return GeoSeriesGroupBy(self, by, axis=axis, level=level, as_index=as_index,
+                       sort=sort, group_keys=group_keys, squeeze=squeeze)
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=EMPTY_POLYGON, method=None, limit=None):
