@@ -16,7 +16,7 @@ install:
   - pip install -r requirements.txt --use-mirrors
   - git clone git://github.com/pydata/pandas.git
   - cd pandas
-  - git checkout PANDAS_VERSION
+  - git checkout $PANDAS_VERSION
   - sudo /usr/bin/python setup.py install
   - cd ..
 
