@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
+from pandas import Series
 from shapely.geometry import Polygon, Point, LineString
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
@@ -38,6 +39,7 @@ class TestSeries(unittest.TestCase):
                                    crs={'init': 'epsg:4326', 'no_defs': True})
 
     def test_area(self):
+        assert type(self.g1.area) is Series
         assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
 
     def test_in(self):
