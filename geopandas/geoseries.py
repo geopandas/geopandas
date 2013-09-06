@@ -118,7 +118,7 @@ class GeoSeries(Series):
 
     def _series_unary_op(self, op):
         """Unary operation that returns a Series"""
-        return GeoSeries([getattr(geom, op) for geom in self],
+        return Series([getattr(geom, op) for geom in self],
                          index=self.index)
 
     #
