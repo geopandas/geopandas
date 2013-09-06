@@ -29,11 +29,9 @@ class TestSeries(unittest.TestCase):
     def test_sort_order(self):
         assert type(self.pts.order()) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_loc(self):
         assert type(self.pts.loc[5:]) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_iloc(self):
         assert type(self.pts.iloc[5:]) is GeoSeries
 
