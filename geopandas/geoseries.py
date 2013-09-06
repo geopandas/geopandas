@@ -3,6 +3,7 @@ from functools import partial
 
 import numpy as np
 from pandas import Series, DataFrame
+from pandas.core.groupby import SeriesGroupBy
 
 import pyproj
 from shapely.geometry import shape, Polygon, Point
@@ -32,6 +33,37 @@ def _is_geometry(x):
     return isinstance(x, BaseGeometry)
 
 
+class GeoSeriesGroupBy(SeriesGroupBy):
+    """
+    Wrap Series grouping operations for GeoSeries
+
+    As yet untested.
+
+    TODO: see if this can be accomplished by replacing Series with
+    self.obj.__class__ upstream.
+    """
+
+    def aggregate(self, func_or_funcs, *args, **kwargs):
+        ret = super(GeoSeries, self).aggregate(func_or_funcs, *args, **kwargs)
+        if isinstance(ret, Series):
+            return GeoSeries(ret)
+        else:
+            return ret
+
+    def _wrap_aggregated_output(self, output, names=None):
+        ret = super(GeoSeries, self)._wrap_aggregated_output(output, names=names)
+        if isinstance(ret, Series):
+            return GeoSeries(ret)
+        else:
+            return ret
+
+    def _wrap_applied_output(self, keys, values, not_indexed_same=False):
+        ret = super(GeoSeries, self)._wrap_applied_output(keys, values, not_indexed_same=not_indexed_name)
+        if isinstance(ret, Series):
+            return GeoSeries(ret)
+        else:
+            return ret
+
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
 
@@ -46,7 +78,11 @@ class GeoSeries(Series):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         super(GeoSeries, self).__init__(*args, **kwargs)
-        self.crs = crs
+        # if it does not contain any geometries, we want a pandas Series
+        if sum([isinstance(x, BaseGeometry) for x in self.values]):
+            self.crs = crs
+        else:
+            self.__class__ = Series
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -362,6 +398,10 @@ class GeoSeries(Series):
     # Implement pandas methods
     #
 
+    @property
+    def _constructor(self):
+        return GeoSeries
+
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
@@ -424,6 +464,11 @@ class GeoSeries(Series):
                 return GeoSeries(result)
         else:
             raise ValueError('Non-geometric fill values not allowed for GeoSeries')
+
+    def groupby(self, by=None, axis=0, *args, **kwargs):
+        """Altered to use GeoSeries-specific groupby class"""
+        axis = self._get_axis_number(axis)
+        return GeoSeriesGroupBy(self, by, axis=axis, *args, **kwargs)
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=EMPTY_POLYGON, method=None, limit=None):
