@@ -9,6 +9,7 @@ from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union, transform
+import shapely.affinity as affinity
 import fiona
 from fiona.crs import from_epsg
 
@@ -311,20 +312,140 @@ class GeoSeries(Series):
 
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
-                         index=self.index)
+                         index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
-        return Series([geom.simplify(*args, **kwargs) for geom in self],
-                      index=self.index)
-
-    def interpolate(self):
-        raise NotImplementedError
+        return GeoSeries([geom.simplify(*args, **kwargs) for geom in self],
+                      index=self.index, crs=self.crs)
 
     def relate(self, other):
         raise NotImplementedError
 
-    def project(self, *args, **kwargs):
-        raise NotImplementedError
+    def project(self, other, normalized=False):
+        """
+        Return the distance along each geometry nearest to *other*
+        
+        Parameters
+        ----------
+        other : BaseGeometry or GeoSeries
+            The *other* geometry to computed projected point from.
+        normalized : boolean
+            If normalized is True, return the distance normalized to
+            the length of the object.
+        
+        The project method is the inverse of interpolate.
+        """
+        
+        return self._series_op(other, 'project', normalized=normalized)
+
+    def interpolate(self, distance, normalized=False):
+        """
+        Return a point at the specified distance along each geometry
+        
+        Parameters
+        ----------
+        distance : float or Series of floats
+            Distance(s) along the geometries at which a point should be returned
+        normalized : boolean
+            If normalized is True, distance will be interpreted as a fraction 
+            of the geometric object's length.
+        """
+        
+        return GeoSeries([s.interpolate(distance, normalized) for s in self],
+            index=self.index, crs=self.crs)
+        
+    def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
+        """
+        Shift the coordinates of the GeoSeries.
+
+        Parameters
+        ----------
+        xoff, yoff, zoff : float, float, float
+            Amount of offset along each dimension.
+            xoff, yoff, and zoff for translation along the x, y, and z 
+            dimensions respectively.
+
+        See shapely manual for more information:
+        http://toblerity.org/shapely/manual.html#affine-transformations
+        """
+
+        return GeoSeries([affinity.translate(s, xoff, yoff, zoff) for s in self], 
+            index=self.index, crs=self.crs)
+
+    # Shift is simply an alias for translate
+    shift = translate
+
+    def rotate(self, angle, origin='center', use_radians=False):
+        """
+        Rotate the coordinates of the GeoSeries.
+        
+        Parameters
+        ----------
+        angle : float
+            The angle of rotation can be specified in either degrees (default) 
+            or radians by setting use_radians=True. Positive angles are 
+            counter-clockwise and negative are clockwise rotations.
+        origin : string, Point, or tuple (x, y)
+            The point of origin can be a keyword 'center' for the bounding box 
+            center (default), 'centroid' for the geometry's centroid, a Point 
+            object or a coordinate tuple (x, y).
+        use_radians : boolean
+            Whether to interpret the angle of rotation as degrees or radians
+            
+        See shapely manual for more information:
+        http://toblerity.org/shapely/manual.html#affine-transformations
+        """
+
+        return GeoSeries([affinity.rotate(s, angle, origin=origin, 
+            use_radians=use_radians) for s in self], index=self.index, 
+            crs=self.crs)
+
+    def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
+        """
+        Scale the geometries of the GeoSeries along each (x, y, z) dimension.
+
+        Parameters
+        ----------
+        xfact, yfact, zfact : float, float, float
+            Scaling factors for the x, y, and z dimensions respectively.
+        origin : string, Point, or tuple
+            The point of origin can be a keyword 'center' for the 2D bounding 
+            box center (default), 'centroid' for the geometry's 2D centroid, a 
+            Point object or a coordinate tuple (x, y, z).
+
+        Note: Negative scale factors will mirror or reflect coordinates.
+
+        See shapely manual for more information:
+        http://toblerity.org/shapely/manual.html#affine-transformations
+        """
+
+        return GeoSeries([affinity.scale(s, xfact, yfact, zfact, 
+            origin=origin) for s in self], index=self.index, crs=self.crs)
+                           
+    def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
+        """
+        Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
+        
+        Parameters
+        ----------
+        xs, ys : float, float
+            The shear angle(s) for the x and y axes respectively. These can be 
+            specified in either degrees (default) or radians by setting 
+            use_radians=True.
+        origin : string, Point, or tuple (x, y)
+            The point of origin can be a keyword 'center' for the bounding box 
+            center (default), 'centroid' for the geometry's centroid, a Point 
+            object or a coordinate tuple (x, y).
+        use_radians : boolean
+            Whether to interpret the shear angle(s) as degrees or radians
+            
+        See shapely manual for more information:
+        http://toblerity.org/shapely/manual.html#affine-transformations
+        """
+        
+        return GeoSeries([affinity.skew(s, xs, ys, origin=origin, 
+            use_radians=use_radians) for s in self], index=self.index, 
+            crs=self.crs)
 
     #
     # Implement standard operators for GeoSeries
@@ -432,7 +553,10 @@ class GeoSeries(Series):
                                                    fill_value=fill_value,
                                                    method=method,
                                                    limit=limit)
-        return GeoSeries(left), GeoSeries(right)
+        if isinstance(other, GeoSeries):
+            return GeoSeries(left), GeoSeries(right)
+        else: # It is probably a Series, let's keep it that way
+            return GeoSeries(left), right
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
