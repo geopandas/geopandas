@@ -5,6 +5,7 @@ from pandas import Series
 from shapely.geometry import Polygon, Point, LineString
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
+from pandas import Series
 
 
 def geom_equals(this, that):
@@ -15,6 +16,13 @@ def geom_equals(this, that):
     eq = this.equals(that)
     return np.all(np.logical_or(eq, empty))
 
+def geom_almost_equals(this, that):
+    """
+    Test for geometric equality, allowing all empty geometries to be considered almost equal
+    """
+    empty = np.logical_and(this.is_empty, that.is_empty)
+    eq = this.almost_equals(that)
+    return np.all(np.logical_or(eq, empty))
 
 class TestSeries(unittest.TestCase):
 
@@ -37,6 +45,9 @@ class TestSeries(unittest.TestCase):
         self.sol = Point(-74.0446, 40.6893)
         self.landmarks = GeoSeries([self.esb, self.sol],
                                    crs={'init': 'epsg:4326', 'no_defs': True})
+        self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
+        self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
+        self.g5 = GeoSeries([self.l1, self.l2])
 
     def test_area(self):
         assert type(self.g1.area) is Series
@@ -196,3 +207,42 @@ class TestSeries(unittest.TestCase):
         na = self.na_none.fillna()
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)
+        
+    def test_interpolate(self):
+        res = self.g5.interpolate(0.75, normalized=True)
+        geom_equals(res, GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)]))
+        res = self.g5.interpolate(1.5)
+        geom_equals(res, GeoSeries([Point(0.5, 1.0), Point(1.0, 0.5)]))
+        
+    def test_project(self):
+        res = self.g5.project(Point(1.0, 0.5))
+        assert_array_equal(res, [2.0, 1.5])
+        res = self.g5.project(Point(1.0, 0.5), normalized=True)
+        assert_array_equal(res, [1.0, 0.5])
+        
+    def test_translate_tuple(self):
+        trans = self.sol.x - self.esb.x, self.sol.y - self.esb.y
+        self.assertTrue(self.landmarks.translate(*trans)[0].equals(self.sol))
+    
+    def test_rotate(self):
+        angle = 98
+        res = self.g4.rotate(angle, origin=Point(0,0))
+        self.assertTrue(geom_almost_equals(self.g4, res.rotate(-angle, 
+            origin=Point(0,0))))
+
+    def test_scale(self):
+        scale = 2., 1.
+        inv = tuple(1./i for i in scale)
+        res = self.g4.scale(*scale, origin=Point(0,0))
+        self.assertTrue(geom_almost_equals(self.g4, res.scale(*inv, 
+            origin=Point(0,0))))
+        
+    def test_skew(self):
+        skew = 45.
+        res = self.g4.skew(xs=skew, origin=Point(0,0))
+        self.assertTrue(geom_almost_equals(self.g4, res.skew(xs=-skew, 
+            origin=Point(0,0))))
+        res = self.g4.skew(ys=skew, origin=Point(0,0))
+        self.assertTrue(geom_almost_equals(self.g4, res.skew(ys=-skew, 
+            origin=Point(0,0))))
+
