@@ -1,25 +1,22 @@
-from warnings import warn
 from functools import partial
+from warnings import warn
 
+import fiona
+from fiona.crs import from_epsg
 import numpy as np
 from pandas import Series, DataFrame
-
 import pyproj
 from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union, transform
 import shapely.affinity as affinity
-import fiona
-from fiona.crs import from_epsg
 
-from plotting import plot_series
+from geopandas.plotting import plot_series
 
 EMPTY_COLLECTION = GeometryCollection()
 EMPTY_POLYGON = Polygon()
 EMPTY_POINT = Point()
-
-
 
 
 def _is_empty(x):
