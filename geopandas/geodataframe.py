@@ -1,14 +1,14 @@
 from collections import defaultdict, OrderedDict
-import json, os
+import json
+import os
 
 import fiona
+import numpy as np
 from pandas import DataFrame
 from shapely.geometry import mapping, shape
 
 from geopandas import GeoSeries
-from plotting import plot_dataframe
-
-import numpy as np
+from geopandas.plotting import plot_dataframe
 
 
 class GeoDataFrame(DataFrame):
