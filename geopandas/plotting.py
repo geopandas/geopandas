@@ -1,11 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-from matplotlib.colors import Normalize
-from matplotlib import cm, colorbar
-from descartes.patch import PolygonPatch
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
+    from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
@@ -27,13 +23,13 @@ def plot_multipolygon(ax, geom, facecolor='red'):
 
 def plot_linestring(ax, geom, color='black', linewidth=1):
     a = np.array(geom)
-    plt.plot(a[:,0], a[:,1], color=color, linewidth=linewidth)
+    ax.plot(a[:,0], a[:,1], color=color, linewidth=linewidth)
 
 
-def plot_point(ex, pt, marker='o', markersize=2):
+def plot_point(ax, pt, marker='o', markersize=2):
     """ Plot a single Point geometry
     """
-    plt.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
+    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
 
 
 def gencolor(N, colormap='Set1'):
@@ -47,6 +43,7 @@ def gencolor(N, colormap='Set1'):
 
     (although any matplotlib colormap will work).
     """
+    from matplotlib import cm
     # don't use more than 9 discrete colors
     n_colors = min(N, 9)
     cmap = cm.get_cmap(colormap, n_colors)
@@ -55,12 +52,13 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 def plot_series(s, colormap='Set1', axes=None):
+    import matplotlib.pyplot as plt
     if axes == None:
         fig = plt.figure()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
     else:
-        ax = axesfig = plt.gcf()
+        ax = plt.gcf()
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
@@ -74,6 +72,10 @@ def plot_series(s, colormap='Set1', axes=None):
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                    categorical=False, legend=False, axes=None):
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+    from matplotlib.colors import Normalize
+    from matplotlib import cm
     if column is None:
         return s['geometry'].plot()
     else:
