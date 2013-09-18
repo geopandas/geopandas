@@ -3,6 +3,10 @@ language: python
 python:
   - "2.7"
 
+env:
+  - PANDAS_VERSION=v0.12.0
+  - PANDAS_VERSION=master
+
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
   - sudo apt-get update
@@ -10,6 +14,11 @@ before_install:
 
 install:
   - pip install -r requirements.txt --use-mirrors
+  - git clone git://github.com/pydata/pandas.git
+  - cd pandas
+  - git checkout $PANDAS_VERSION
+  - python setup.py install
+  - cd ..
 
 script:
   - nosetests -v
