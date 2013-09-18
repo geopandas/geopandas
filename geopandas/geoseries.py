@@ -527,7 +527,7 @@ class GeoSeries(Series):
         return np.logical_or(non_geo_null, val)
 
     def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
-               limit=None):
+               **kwargs):
         """Fill NA/NaN values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for GeoSeries.
@@ -544,12 +544,11 @@ class GeoSeries(Series):
             raise ValueError('Non-geometric fill values not allowed for GeoSeries')
 
     def align(self, other, join='outer', level=None, copy=True,
-              fill_value=EMPTY_POLYGON, method=None, limit=None):
+              fill_value=EMPTY_POLYGON, **kwargs):
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
-                                                   method=method,
-                                                   limit=limit)
+                                                   **kwargs)
         if isinstance(other, GeoSeries):
             return GeoSeries(left), GeoSeries(right)
         else: # It is probably a Series, let's keep it that way
