@@ -17,7 +17,7 @@ install:
   - git clone git://github.com/pydata/pandas.git
   - cd pandas
   - git checkout $PANDAS_VERSION
-  - sudo /usr/bin/python setup.py install
+  - python setup.py install
   - cd ..
 
 script:
