@@ -26,10 +26,6 @@ def _is_empty(x):
         return False
 
 
-def _is_geometry(x):
-    return isinstance(x, BaseGeometry)
-
-
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
 
