@@ -38,11 +38,6 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
-    def test_from_file_(self):
-        self.assertTrue('geometry' in self.df)
-        self.assertTrue(len(self.df) == 5)
-        self.assertTrue(np.alltrue(self.df['BoroName'].values == self.boros))
-
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
@@ -50,6 +45,7 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(len(data['features']) == 5)
 
     def test_to_file(self):
+        """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
         # Read layer back in?
