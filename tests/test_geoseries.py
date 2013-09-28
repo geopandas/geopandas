@@ -228,9 +228,11 @@ class TestSeries(unittest.TestCase):
         
     def test_interpolate(self):
         res = self.g5.interpolate(0.75, normalized=True)
-        geom_equals(res, GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)]))
+        self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),
+                                                    Point(0.75, 1.0)])))
         res = self.g5.interpolate(1.5)
-        geom_equals(res, GeoSeries([Point(0.5, 1.0), Point(1.0, 0.5)]))
+        self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),
+                                                    Point(1.0, 0.5)])))
         
     def test_project(self):
         res = self.g5.project(Point(1.0, 0.5))
