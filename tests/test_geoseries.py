@@ -1,3 +1,6 @@
+import os
+import shutil
+import tempfile
 import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -27,6 +30,7 @@ def geom_almost_equals(this, that):
 class TestSeries(unittest.TestCase):
 
     def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
@@ -48,6 +52,9 @@ class TestSeries(unittest.TestCase):
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
 
     def test_area(self):
         assert type(self.g1.area) is Series
@@ -123,6 +130,15 @@ class TestSeries(unittest.TestCase):
     def test_touches(self):
         # TODO
         pass
+
+    def test_to_file(self):
+        """ Test to_file and from_file """
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        self.g3.to_file(tempfilename)
+        # Read layer back in?
+        s = GeoSeries.from_file(tempfilename)
+        self.assertTrue(all(self.g3.equals(s)))
+        # TODO: compare crs
 
     def test_within(self):
         # TODO
