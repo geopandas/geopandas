@@ -65,6 +65,8 @@ class TestSeries(unittest.TestCase):
         assert self.sq in self.g1
         assert self.t1 in self.a1
         assert self.t2 in self.g3
+        assert self.sq not in self.g3
+        assert 5 not in self.g3
 
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
