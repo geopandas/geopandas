@@ -113,22 +113,27 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(np.alltrue(self.g1.equals_exact(self.g1, 0.001)))
         assert_array_equal(self.g1.equals_exact(self.sq, 0.001), [False, True])
 
+    @unittest.skip('TODO')
     def test_crosses(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_disjoint(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_intersects(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_overlaps(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_touches(self):
         # TODO
         pass
@@ -142,6 +147,7 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(all(self.g3.equals(s)))
         # TODO: compare crs
 
+    @unittest.skip('TODO')
     def test_within(self):
         # TODO
         pass
@@ -202,10 +208,12 @@ class TestSeries(unittest.TestCase):
         self.assertIsInstance(e, GeoSeries)
         self.assertEqual(self.g3.crs, e.crs)
 
+    @unittest.skip('TODO')
     def test_exterior(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_interiors(self):
         # TODO
         pass
