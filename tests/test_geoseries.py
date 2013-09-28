@@ -228,11 +228,17 @@ class TestSeries(unittest.TestCase):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
         self.assertTrue(np.alltrue(self.landmarks.almost_equals(lonlat)))
+        with self.assertRaises(ValueError):
+            self.g1.to_crs(epsg=4326)
+        with self.assertRaises(TypeError):
+            self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
         na = self.na_none.fillna()
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)
+        with self.assertRaises(NotImplementedError):
+            self.na_none.fillna(method='backfill')
         
     def test_interpolate(self):
         res = self.g5.interpolate(0.75, normalized=True)
