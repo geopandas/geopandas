@@ -57,16 +57,16 @@ class TestSeries(unittest.TestCase):
         shutil.rmtree(self.tempdir)
 
     def test_area(self):
-        assert type(self.g1.area) is Series
+        self.assertTrue(type(self.g1.area) is Series)
         assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
 
     def test_in(self):
-        assert self.t1 in self.g1
-        assert self.sq in self.g1
-        assert self.t1 in self.a1
-        assert self.t2 in self.g3
-        assert self.sq not in self.g3
-        assert 5 not in self.g3
+        self.assertTrue(self.t1 in self.g1)
+        self.assertTrue(self.sq in self.g1)
+        self.assertTrue(self.t1 in self.a1)
+        self.assertTrue(self.t2 in self.g3)
+        self.assertTrue(self.sq not in self.g3)
+        self.assertTrue(5 not in self.g3)
 
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
