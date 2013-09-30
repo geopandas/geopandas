@@ -44,6 +44,11 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
 
+    def test_copy(self):
+        df2 = self.df.copy()
+        self.assertTrue(type(df2) is GeoDataFrame)
+        self.assertEqual(self.df.crs, df2.crs)
+
     def test_to_file(self):
         """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'boros.shp')

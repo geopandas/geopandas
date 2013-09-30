@@ -28,6 +28,7 @@ def _is_empty(x):
 
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
+    _prop_attributes = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -506,15 +507,24 @@ class GeoSeries(Series):
     def _can_hold_na(self):
         return False
 
-    def copy(self, order='C'):
-        """Return new GeoSeries with copy of underlying values
+    def copy(self, deep=True):
+        """
+        Make a copy of this GeoSeries object
+
+        Parameters
+        ----------
+        deep : boolean, default True
+            Make a deep copy, i.e. also copy data
 
         Returns
         -------
-        cp : GeoSeries
+        copy : GeoSeries
         """
-        return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name)
+        # FIXME: this will likely be unnecessary in pandas >= 0.13
+        data = self._data
+        if deep:
+            data = data.copy()
+        return GeoSeries(data)._propogate_attributes(self)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""

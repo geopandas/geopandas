@@ -60,6 +60,12 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(type(self.g1.area) is Series)
         assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
 
+    def test_copy(self):
+        gc = self.g3.copy()
+        self.assertTrue(type(gc) is GeoSeries)
+        self.assertEqual(self.g3.name, gc.name)
+        self.assertEqual(self.g3.crs, gc.crs)
+
     def test_in(self):
         self.assertTrue(self.t1 in self.g1)
         self.assertTrue(self.sq in self.g1)
