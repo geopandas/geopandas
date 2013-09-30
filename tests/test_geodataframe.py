@@ -6,7 +6,7 @@ import shutil
 import urllib2
 
 import numpy as np
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame
 
@@ -53,6 +53,14 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue('geometry' in df)
         self.assertTrue(len(df) == 5)
         self.assertTrue(np.alltrue(df['BoroName'].values == self.boros))
+
+    def test_mixed_types_to_file(self):
+        """ Test that mixed geometry types raise error when writing to file """
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        s = GeoDataFrame({'geometry' : [Point(0, 0),
+                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
+        with self.assertRaises(ValueError):
+            s.to_file(tempfilename)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
