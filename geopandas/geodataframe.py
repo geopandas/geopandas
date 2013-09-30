@@ -136,9 +136,9 @@ class GeoDataFrame(DataFrame):
             df = self
         else:
             df = self.copy()
-            df.crs = self.crs
         geom = df.geometry.to_crs(crs=crs, epsg=epsg)
         df.geometry = geom
+        df.crs = geom.crs
         if not inplace:
             return df
 
