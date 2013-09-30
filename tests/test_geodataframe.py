@@ -74,5 +74,11 @@ class TestDataFrame(unittest.TestCase):
         boros = df['BoroName'].values
         self.assertTrue('Brooklyn' in boros)
         self.assertTrue('Bronx' in boros)
-
         self.assertTrue(type(df) is GeoDataFrame)
+
+    def test_transform(self):
+        df2 = self.df2.copy()
+        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
+        lonlat = df2.to_crs(epsg=4326)
+        utm = lonlat.to_crs(epsg=26918)
+        self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
