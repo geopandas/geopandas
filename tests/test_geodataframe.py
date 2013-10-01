@@ -6,7 +6,7 @@ import shutil
 import urllib2
 
 import numpy as np
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame
 
@@ -38,18 +38,19 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
-    def test_from_file_(self):
-        self.assertTrue('geometry' in self.df)
-        self.assertTrue(len(self.df) == 5)
-        self.assertTrue(np.alltrue(self.df['BoroName'].values == self.boros))
-
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
 
+    def test_copy(self):
+        df2 = self.df.copy()
+        self.assertTrue(type(df2) is GeoDataFrame)
+        self.assertEqual(self.df.crs, df2.crs)
+
     def test_to_file(self):
+        """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
         # Read layer back in?
@@ -58,6 +59,14 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(len(df) == 5)
         self.assertTrue(np.alltrue(df['BoroName'].values == self.boros))
 
+    def test_mixed_types_to_file(self):
+        """ Test that mixed geometry types raise error when writing to file """
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        s = GeoDataFrame({'geometry' : [Point(0, 0),
+                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
+        with self.assertRaises(ValueError):
+            s.to_file(tempfilename)
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df['BoroName'].str.contains('B')]
@@ -65,5 +74,11 @@ class TestDataFrame(unittest.TestCase):
         boros = df['BoroName'].values
         self.assertTrue('Brooklyn' in boros)
         self.assertTrue('Bronx' in boros)
-
         self.assertTrue(type(df) is GeoDataFrame)
+
+    def test_transform(self):
+        df2 = self.df2.copy()
+        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
+        lonlat = df2.to_crs(epsg=4326)
+        utm = lonlat.to_crs(epsg=26918)
+        self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
