@@ -514,7 +514,7 @@ class GeoSeries(Series):
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
-    def copy(self, deep=True):
+    def copy(self, order='C'):
         """
         Make a copy of this GeoSeries object
 
@@ -528,10 +528,8 @@ class GeoSeries(Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        data = self._data
-        if deep:
-            data = data.copy()
-        return GeoSeries(data)._propogate_attributes(self)
+        return GeoSeries(self.values.copy(order), index=self.index,
+                      name=self.name)._propogate_attributes(self)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
