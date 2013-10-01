@@ -507,6 +507,13 @@ class GeoSeries(Series):
     def _can_hold_na(self):
         return False
 
+    def _propogate_attributes(self, other):
+        """ propogate [sic] attributes from other to self"""
+        # NOTE: backported from pandas master (commit 4493bf36)
+        for name in self._prop_attributes:
+            object.__setattr__(self, name, getattr(other, name, None))
+        return self
+
     def copy(self, deep=True):
         """
         Make a copy of this GeoSeries object
