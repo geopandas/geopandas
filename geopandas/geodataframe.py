@@ -16,6 +16,7 @@ class GeoDataFrame(DataFrame):
     A GeoDataFrame object is a pandas.DataFrame that has a column
     named 'geometry' which is a GeoSeries.
     """
+    _prop_attributes = ['crs']
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
@@ -135,9 +136,9 @@ class GeoDataFrame(DataFrame):
             df = self
         else:
             df = self.copy()
-            df.crs = self.crs
         geom = df.geometry.to_crs(crs=crs, epsg=epsg)
         df.geometry = geom
+        df.crs = geom.crs
         if not inplace:
             return df
 
@@ -155,6 +156,36 @@ class GeoDataFrame(DataFrame):
             result.__class__ = GeoDataFrame
             result.crs = self.crs
         return result
+
+    #
+    # Implement pandas methods
+    #
+
+    def _propogate_attributes(self, other):
+        """ propogate [sic] attributes from other to self"""
+        # NOTE: backported from pandas master (commit 4493bf36)
+        for name in self._prop_attributes:
+            object.__setattr__(self, name, getattr(other, name, None))
+        return self
+
+    def copy(self, deep=True):
+        """
+        Make a copy of this GeoDataFrame object
+
+        Parameters
+        ----------
+        deep : boolean, default True
+            Make a deep copy, i.e. also copy data
+
+        Returns
+        -------
+        copy : GeoDataFrame
+        """
+        # FIXME: this will likely be unnecessary in pandas >= 0.13
+        data = self._data
+        if deep:
+            data = data.copy()
+        return GeoDataFrame(data)._propogate_attributes(self)
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)

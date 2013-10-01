@@ -1,3 +1,6 @@
+import os
+import shutil
+import tempfile
 import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -27,6 +30,7 @@ def geom_almost_equals(this, that):
 class TestSeries(unittest.TestCase):
 
     def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
@@ -49,15 +53,26 @@ class TestSeries(unittest.TestCase):
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
 
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
     def test_area(self):
-        assert type(self.g1.area) is Series
+        self.assertTrue(type(self.g1.area) is Series)
         assert_array_equal(self.g1.area.values, np.array([0.5, 1.0]))
 
+    def test_copy(self):
+        gc = self.g3.copy()
+        self.assertTrue(type(gc) is GeoSeries)
+        self.assertEqual(self.g3.name, gc.name)
+        self.assertEqual(self.g3.crs, gc.crs)
+
     def test_in(self):
-        assert self.t1 in self.g1
-        assert self.sq in self.g1
-        assert self.t1 in self.a1
-        assert self.t2 in self.g3
+        self.assertTrue(self.t1 in self.g1)
+        self.assertTrue(self.sq in self.g1)
+        self.assertTrue(self.t1 in self.a1)
+        self.assertTrue(self.t2 in self.g3)
+        self.assertTrue(self.sq not in self.g3)
+        self.assertTrue(5 not in self.g3)
 
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
@@ -104,26 +119,41 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(np.alltrue(self.g1.equals_exact(self.g1, 0.001)))
         assert_array_equal(self.g1.equals_exact(self.sq, 0.001), [False, True])
 
+    @unittest.skip('TODO')
     def test_crosses(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_disjoint(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_intersects(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_overlaps(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_touches(self):
         # TODO
         pass
 
+    def test_to_file(self):
+        """ Test to_file and from_file """
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        self.g3.to_file(tempfilename)
+        # Read layer back in?
+        s = GeoSeries.from_file(tempfilename)
+        self.assertTrue(all(self.g3.equals(s)))
+        # TODO: compare crs
+
+    @unittest.skip('TODO')
     def test_within(self):
         # TODO
         pass
@@ -184,10 +214,12 @@ class TestSeries(unittest.TestCase):
         self.assertIsInstance(e, GeoSeries)
         self.assertEqual(self.g3.crs, e.crs)
 
+    @unittest.skip('TODO')
     def test_exterior(self):
         # TODO
         pass
 
+    @unittest.skip('TODO')
     def test_interiors(self):
         # TODO
         pass
@@ -202,17 +234,25 @@ class TestSeries(unittest.TestCase):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
         self.assertTrue(np.alltrue(self.landmarks.almost_equals(lonlat)))
+        with self.assertRaises(ValueError):
+            self.g1.to_crs(epsg=4326)
+        with self.assertRaises(TypeError):
+            self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
         na = self.na_none.fillna()
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)
+        with self.assertRaises(NotImplementedError):
+            self.na_none.fillna(method='backfill')
         
     def test_interpolate(self):
         res = self.g5.interpolate(0.75, normalized=True)
-        geom_equals(res, GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)]))
+        self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),
+                                                    Point(0.75, 1.0)])))
         res = self.g5.interpolate(1.5)
-        geom_equals(res, GeoSeries([Point(0.5, 1.0), Point(1.0, 0.5)]))
+        self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),
+                                                    Point(1.0, 0.5)])))
         
     def test_project(self):
         res = self.g5.project(Point(1.0, 0.5))
