@@ -14,12 +14,6 @@ before_install:
   - sudo -u postgres psql -c "drop database if exists test_geopandas"
   - sudo -u postgres psql -c "create database test_geopandas"
   - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
-  - ogrinfo --version
-  - ogrinfo --formats
-  - wget http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
-  - unzip nybb_13a.zip
-  - sudo -u postgres ogr2ogr -nlt MULTIPOLYGON -f "PostgreSQL" PG:"user=postgres dbname=test_geopandas" -lco PRECISION=NO -lco GEOMETRY_NAME="geom" nybb_13a/nybb.shp
-
 
 install:
   - pip install -r requirements.txt --use-mirrors
