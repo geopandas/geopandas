@@ -5,9 +5,15 @@ import tempfile
 import shutil
 import urllib2
 
+try:
+    import psycopg2
+    from psycopg2 import OperationalError
+except ImportError:
+    class OperationalError(Exception):
+        pass
+
 import numpy as np
 from shapely.geometry import Point, Polygon
-import psycopg2
 
 from geopandas import GeoDataFrame
 
@@ -31,6 +37,17 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
+
+        # Check to see psycopg2 was imported and if we can connect to the
+        # test_geopandas database
+        try:
+            con = psycopg2.connect(dbname='test_geopandas')
+            con.close()
+            self.run_db_test = True
+        except (NameError, OperationalError):
+            # NameError is thrown if psycopg2 fails to import at top of file
+            # OperationalError is thrown if we can't connect to the database
+            self.run_db_test = False
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -93,12 +110,18 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(all(df['geometry'].type == 'MultiPolygon'))
 
     def test_read_postgis_default(self):
+        if not self.run_db_test:
+            raise unittest.case.SkipTest()
+
         con = psycopg2.connect(dbname='test_geopandas')
         sql = "SELECT * FROM nybb;"
         df = GeoDataFrame.read_postgis(sql, con)
         self._validate_sql(df)
 
     def test_read_postgis_custom_geom_col(self):
+        if not self.run_db_test:
+            raise unittest.case.SkipTest()
+
         con = psycopg2.connect(dbname='test_geopandas')
         sql = """SELECT
                   borocode, boroname, shape_leng, shape_area,
