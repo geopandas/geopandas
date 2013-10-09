@@ -4,8 +4,9 @@ import os
 
 import fiona
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, read_sql
 from shapely.geometry import mapping, shape
+from shapely.wkb import loads
 
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
@@ -55,6 +56,45 @@ class GeoDataFrame(DataFrame):
         df['geometry'] = geom
         df.crs = crs
         return df
+
+    @classmethod
+    def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
+                     coerce_float=True, params=None):
+        """
+        Returns a GeoDataFrame corresponding to the result of the query 
+        string, which must contain a geometry column.
+
+        Examples:
+        sql = "SELECT geom, kind FROM polygons;"
+        df = GeoDataFrame.from_postgis(sql, con)
+
+        Parameters
+        ----------
+        sql: string
+        con: DB connection object
+        geom_col: string, default 'geom'
+            column name to convert to shapely geometries
+        crs: optional
+            CRS to use for the returned GeoDataFrame      
+
+        See the documentation for pandas.read_sql for further explanation 
+        of the following parameters:
+        index_col, coerce_float, params
+
+        """
+        df = read_sql(sql, con, index_col, coerce_float, params)
+        if geom_col not in df:
+            raise ValueError("Query missing geometry column '{}'".format(
+                geom_col))
+
+        wkb_geoms = df[geom_col]
+
+        s = wkb_geoms.apply(lambda x: loads(x.decode('hex')))
+
+        df = df.drop(geom_col, axis=1)
+        df['geometry'] = GeoSeries(s)
+
+        return GeoDataFrame(df, crs=crs)
 
     def to_json(self, **kwargs):
         """Returns a GeoJSON representation of the GeoDataFrame.
