@@ -142,17 +142,17 @@ class TestDataFrame(unittest.TestCase):
             self.assertTrue(col in df.columns, 'Column {} missing'.format(col))
         self.assertTrue(all(df['geometry'].type == 'MultiPolygon'))
 
-    def test_read_postgis_default(self):
+    def test_from_postgis_default(self):
         if not self.run_db_test:
             raise unittest.case.SkipTest()
 
         with psycopg2.connect(dbname='test_geopandas') as con:
             sql = "SELECT * FROM nybb;"
-            df = GeoDataFrame.read_postgis(sql, con)
+            df = GeoDataFrame.from_postgis(sql, con)
 
         self._validate_sql(df)
 
-    def test_read_postgis_custom_geom_col(self):
+    def test_from_postgis_custom_geom_col(self):
         if not self.run_db_test:
             raise unittest.case.SkipTest()
 
@@ -161,6 +161,6 @@ class TestDataFrame(unittest.TestCase):
                      borocode, boroname, shape_leng, shape_area,
                      geom AS __geometry__
                      FROM nybb;"""
-            df = GeoDataFrame.read_postgis(sql, con, geom_col='__geometry__')
+            df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
 
         self._validate_sql(df)

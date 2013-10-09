@@ -58,7 +58,7 @@ class GeoDataFrame(DataFrame):
         return df
 
     @classmethod
-    def read_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
+    def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
                      coerce_float=True, params=None):
         """
         Returns a GeoDataFrame corresponding to the result of the query 
@@ -66,7 +66,7 @@ class GeoDataFrame(DataFrame):
 
         Examples:
         sql = "SELECT geom, kind FROM polygons;"
-        df = GeoDataFrame.read_postgis(sql, con)
+        df = GeoDataFrame.from_postgis(sql, con)
 
         Parameters
         ----------
