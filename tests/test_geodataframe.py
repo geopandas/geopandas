@@ -40,6 +40,10 @@ class TestDataFrame(unittest.TestCase):
 
         # Try to create the database, skip the db tests if something goes
         # wrong
+        # If you'd like these tests to run, create a database called
+        # 'test_geopandas' and enable postgis in it:
+        # > createdb test_geopandas
+        # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
         try:
             self._create_db()
             self.run_db_test = True
