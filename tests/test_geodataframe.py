@@ -5,6 +5,13 @@ import tempfile
 import shutil
 import urllib2
 
+try:
+    import psycopg2
+    from psycopg2 import OperationalError
+except ImportError:
+    class OperationalError(Exception):
+        pass
+
 import numpy as np
 from shapely.geometry import Point, Polygon
 
@@ -30,6 +37,49 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
+
+        # Try to create the database, skip the db tests if something goes
+        # wrong
+        # If you'd like these tests to run, create a database called
+        # 'test_geopandas' and enable postgis in it:
+        # > createdb test_geopandas
+        # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
+        try:
+            self._create_db()
+            self.run_db_test = True
+        except (NameError, OperationalError):
+            # NameError is thrown if psycopg2 fails to import at top of file
+            # OperationalError is thrown if we can't connect to the database
+            self.run_db_test = False
+
+    def _create_db(self):
+        con = psycopg2.connect(dbname='test_geopandas')
+        cursor = con.cursor()
+        cursor.execute("DROP TABLE IF EXISTS nybb;")
+
+        sql = """CREATE TABLE nybb (
+            geom        geometry,
+            borocode    integer,
+            boroname    varchar(40),
+            shape_leng  float,
+            shape_area  float
+        );"""
+        cursor.execute(sql)
+
+        for i, row in self.df.iterrows():
+            sql = """INSERT INTO nybb VALUES (
+                ST_GeometryFromText(%s), %s, %s, %s, %s 
+            );"""
+            cursor.execute(sql, (row['geometry'].wkt, 
+                                 row['BoroCode'],
+                                 row['BoroName'],
+                                 row['Shape_Leng'],
+                                 row['Shape_Area']))
+
+        cursor.close()
+        con.commit()
+        con.close()
+
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -82,3 +132,35 @@ class TestDataFrame(unittest.TestCase):
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
         self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
+
+    def _validate_sql(self, df):
+        # Make sure all the columns are there and the geometries
+        # were properly loaded as MultiPolygons
+        self.assertEqual(len(df), 5)
+        columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
+        for col in columns:
+            self.assertTrue(col in df.columns, 'Column {} missing'.format(col))
+        self.assertTrue(all(df['geometry'].type == 'MultiPolygon'))
+
+    def test_from_postgis_default(self):
+        if not self.run_db_test:
+            raise unittest.case.SkipTest()
+
+        with psycopg2.connect(dbname='test_geopandas') as con:
+            sql = "SELECT * FROM nybb;"
+            df = GeoDataFrame.from_postgis(sql, con)
+
+        self._validate_sql(df)
+
+    def test_from_postgis_custom_geom_col(self):
+        if not self.run_db_test:
+            raise unittest.case.SkipTest()
+
+        with psycopg2.connect(dbname='test_geopandas') as con:
+            sql = """SELECT
+                     borocode, boroname, shape_leng, shape_area,
+                     geom AS __geometry__
+                     FROM nybb;"""
+            df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
+
+        self._validate_sql(df)
