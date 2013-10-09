@@ -142,19 +142,21 @@ class TestDataFrame(unittest.TestCase):
         if not self.run_db_test:
             raise unittest.case.SkipTest()
 
-        con = psycopg2.connect(dbname='test_geopandas')
-        sql = "SELECT * FROM nybb;"
-        df = GeoDataFrame.read_postgis(sql, con)
+        with psycopg2.connect(dbname='test_geopandas') as con:
+            sql = "SELECT * FROM nybb;"
+            df = GeoDataFrame.read_postgis(sql, con)
+
         self._validate_sql(df)
 
     def test_read_postgis_custom_geom_col(self):
         if not self.run_db_test:
             raise unittest.case.SkipTest()
 
-        con = psycopg2.connect(dbname='test_geopandas')
-        sql = """SELECT
-                  borocode, boroname, shape_leng, shape_area,
-                  geom AS __geometry__
-                  FROM nybb;"""
-        df = GeoDataFrame.read_postgis(sql, con, geom_col='__geometry__')
+        with psycopg2.connect(dbname='test_geopandas') as con:
+            sql = """SELECT
+                     borocode, boroname, shape_leng, shape_area,
+                     geom AS __geometry__
+                     FROM nybb;"""
+            df = GeoDataFrame.read_postgis(sql, con, geom_col='__geometry__')
+
         self._validate_sql(df)
