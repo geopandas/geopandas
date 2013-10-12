@@ -4,12 +4,12 @@ import os
 
 import fiona
 import numpy as np
-from pandas import DataFrame, read_sql
-from shapely.geometry import mapping, shape
-from shapely.wkb import loads
+from pandas import DataFrame
+from shapely.geometry import mapping
 
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
+import geopandas.io
 
 
 class GeoDataFrame(DataFrame):
@@ -28,73 +28,32 @@ class GeoDataFrame(DataFrame):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoDataFrame from a file.
+        
+        Example:
+            df = geopandas.GeoDataFrame.from_file('nybb.shp')
 
-        *filename* is either the absolute or relative path to the file to be
-        opened and *kwargs* are keyword args to be passed to the method when
-        opening the file.
+        Wraps geopandas.read_file(). For additional help, see read_file()
 
-        Note: This method does not attempt to align rows.
-        Properties that are not present in all features of the source
-        file will not be properly aligned.  This should be fixed.
         """
-        geoms = []
-        columns = defaultdict(lambda: [])
-        bbox = kwargs.pop('bbox', None)
-        with fiona.open(filename, **kwargs) as f:
-            crs = f.crs
-            if bbox != None:
-                assert len(bbox)==4
-                f_filt = f.filter(bbox=bbox)
-            else:
-                f_filt = f
-            for rec in f_filt:
-                geoms.append(shape(rec['geometry']))
-                for key, value in rec['properties'].iteritems():
-                    columns[key].append(value)
-        geom = GeoSeries(geoms)
-        df = GeoDataFrame(columns)
-        df['geometry'] = geom
-        df.crs = crs
-        return df
+        return geopandas.io.ogr.read_file(filename, **kwargs)
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
                      coerce_float=True, params=None):
         """
-        Returns a GeoDataFrame corresponding to the result of the query 
-        string, which must contain a geometry column.
+        Alternate constructor to create a GeoDataFrame from a sql query
+        containing a geometry column.
 
-        Examples:
-        sql = "SELECT geom, kind FROM polygons;"
-        df = GeoDataFrame.from_postgis(sql, con)
+        Example:
+            df = geopandas.GeoDataFrame.from_postgis(con,
+                "SELECT geom, highway FROM roads;")
 
-        Parameters
-        ----------
-        sql: string
-        con: DB connection object
-        geom_col: string, default 'geom'
-            column name to convert to shapely geometries
-        crs: optional
-            CRS to use for the returned GeoDataFrame      
-
-        See the documentation for pandas.read_sql for further explanation 
-        of the following parameters:
-        index_col, coerce_float, params
+        Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
-        df = read_sql(sql, con, index_col, coerce_float, params)
-        if geom_col not in df:
-            raise ValueError("Query missing geometry column '{}'".format(
-                geom_col))
+        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col, 
+                     coerce_float, params)
 
-        wkb_geoms = df[geom_col]
-
-        s = wkb_geoms.apply(lambda x: loads(x.decode('hex')))
-
-        df = df.drop(geom_col, axis=1)
-        df['geometry'] = GeoSeries(s)
-
-        return GeoDataFrame(df, crs=crs)
 
     def to_json(self, **kwargs):
         """Returns a GeoJSON representation of the GeoDataFrame.
