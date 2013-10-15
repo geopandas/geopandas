@@ -5,5 +5,5 @@ except ImportError:
 from geoseries import GeoSeries
 from geodataframe import GeoDataFrame
 
-from geopandas.io.ogr import read_file
+from geopandas.io.file import read_file
 from geopandas.io.sql import read_postgis

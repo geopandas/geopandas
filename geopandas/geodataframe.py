@@ -1,4 +1,4 @@
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 import json
 import os
 
@@ -35,7 +35,7 @@ class GeoDataFrame(DataFrame):
         Wraps geopandas.read_file(). For additional help, see read_file()
 
         """
-        return geopandas.io.ogr.read_file(filename, **kwargs)
+        return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
