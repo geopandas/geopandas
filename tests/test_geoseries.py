@@ -81,8 +81,8 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(b[0].equals(l1))
         self.assertTrue(b[1].equals(l2))
 
-    def test_bounds(self):
-        assert_array_equal(self.g1.bounds.values, np.array([[0, 0, 1, 1],
+    def test_element_bounds(self):
+        assert_array_equal(self.g1.element_bounds.values, np.array([[0, 0, 1, 1],
                                                             [0, 0, 1, 1]]))
 
     def test_contains(self):
@@ -285,4 +285,9 @@ class TestSeries(unittest.TestCase):
         res = self.g4.skew(ys=skew, origin=Point(0,0))
         self.assertTrue(geom_almost_equals(self.g4, res.skew(ys=-skew, 
             origin=Point(0,0))))
+            
+    def test_bounds(self):
+        bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
+        self.assertEqual(self.landmarks.bounds, bbox)
+        self.assertEqual(self.g1.bounds, (0, 0, 1, 1))
 

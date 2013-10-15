@@ -295,14 +295,28 @@ class GeoSeries(Series):
     # Other operations
     #
 
-    # should this return bounds for entire series, or elementwise?
     @property
-    def bounds(self):
+    def element_bounds(self):
         """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
         bounds = np.array([geom.bounds for geom in self])
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
+                         
+    @property      
+    def bounds(self):
+        """Return a single bounding box (minx, miny, maxx, maxy) for all geometries
+
+        This is a shortcut for the following:
+        >>> aggregator = dict(minx=np.nanmin, miny=np.nanmin,
+                              maxx=np.nanmax, maxy=np.nanmax)
+        >>> series.bounds.groupby(lambda x: 1).agg(aggregator)
+        
+        """
+        aggregator = dict(minx=np.nanmin, miny=np.nanmin,
+                          maxx=np.nanmax, maxy=np.nanmax)
+        bbox = self.element_bounds.groupby(lambda x: 1).agg(aggregator)
+        return tuple(bbox.values[0].tolist())
 
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
