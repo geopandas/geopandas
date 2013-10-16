@@ -1,0 +1,84 @@
+from collections import defaultdict
+
+import fiona
+import geopy
+import numpy as np
+import pandas as pd
+from shapely.geometry import Point
+
+import geopandas as gpd
+
+def geocode(strings, provider='googlev3', **kwargs):
+    """
+    Geocode a set of strings and get a GeoDataFrame of the resulting points
+
+    Parameters
+    ----------
+    strings : list or Series of addresses to geocode
+    provider : geopy geocoder to use, default 'googlev3'
+        Some providers require additional arguments such as access keys
+        * googlev3
+        * bing
+        * google
+        * yahoo
+        * mapquest
+        * openmapquest
+    
+    Consult the terms of service for each provider to ensure proper use
+    of the results.
+
+    Example
+    -------
+    >>> df = geocode(['boston, ma', '1600 pennsylvania ave. washington, dc'])
+    address                                               geometry
+    0                                    Boston, MA, USA  POINT (-71.0597731999999951 42.3584308000000007)
+    1  1600 Pennsylvania Avenue Northwest, President'...  POINT (-77.0365122999999983 38.8978377999999978)
+
+    """
+    if not isinstance(strings, pd.Series):
+        strings = pd.Series(strings)
+
+    coders = {'googlev3': geopy.geocoders.GoogleV3,
+              'bing': geopy.geocoders.Bing,
+              'google': geopy.geocoders.Google,
+              'yahoo': geopy.geocoders.Yahoo,
+              'mapquest': geopy.geocoders.MapQuest,
+              'openmapquest': geopy.geocoders.OpenMapQuest}
+
+    if provider not in coders:
+        raise ValueError('Unknown geocoding provider: {}'.format(provider))
+
+    coder = coders[provider](**kwargs)
+    results = {}
+    for i, s in strings.iteritems():
+        # Probably want some try/catch here, but what to do on exception?
+        results[i] = coder.geocode(s)
+
+    df = _prepare_geocode_result(results)
+    return df
+
+def _prepare_geocode_result(results):
+    """
+    Helper function for the geocode function
+
+    Takes a dict where keys are index entries, values are tuples containing:
+    (address, (lat, lon))
+
+    """
+    # Prepare the data for the DataFrame as a dict of lists
+    d = defaultdict(list)
+    index = []
+
+    for i, s in results.iteritems():
+        address, loc = s
+
+        # loc is lat, lon and we want lon, lat
+        p = Point(loc[1], loc[0])
+        d['geometry'].append(p)
+        d['address'].append(address)
+        index.append(i)
+
+    df = gpd.GeoDataFrame(d, index=index)
+    df.crs = fiona.crs.from_epsg(4326)
+
+    return df
