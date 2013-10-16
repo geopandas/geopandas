@@ -1,5 +1,5 @@
-Documentation
-=============
+User Guide
+==========
 
 GeoPandas implements two main data structures, a ``GeoSeries`` and a
 ``GeoDataFrame``.  These are subclasses of pandas ``Series`` and
