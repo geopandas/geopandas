@@ -54,7 +54,7 @@ def gencolor(N, colormap='Set1'):
 def plot_series(s, colormap='Set1', axes=None):
     import matplotlib.pyplot as plt
     if axes == None:
-        fig = plt.figure()
+        fig = plt.gcf()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
     else:
@@ -94,7 +94,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         norm = Normalize(vmin=mn, vmax=mx)
         cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
         if axes == None:
-            fig = plt.figure()
+            fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
             ax = plt.gca()
         else:
