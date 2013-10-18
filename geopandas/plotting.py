@@ -58,7 +58,7 @@ def plot_series(s, colormap='Set1', axes=None):
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
     else:
-        ax = plt.gcf()
+        ax = axes
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
@@ -77,7 +77,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib.colors import Normalize
     from matplotlib import cm
     if column is None:
-        return s['geometry'].plot()
+        return plot_series(s['geometry'], colormap=colormap, axes=axes)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
