@@ -5,6 +5,7 @@ import fiona
 from fiona.crs import from_epsg
 import numpy as np
 from pandas import Series, DataFrame
+from pandas.util.decorators import cache_readonly
 import pyproj
 from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
@@ -296,23 +297,23 @@ class GeoSeries(Series):
     #
 
     @property
-    def element_bounds(self):
+    def bounds(self):
         """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
         bounds = np.array([geom.bounds for geom in self])
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
                          
-    @property      
-    def bounds(self):
+    @cache_readonly
+    def total_bounds(self):
         """Return a single bounding box (minx, miny, maxx, maxy) for all geometries
 
         This is a shortcut for the following:
         >>> aggregator = dict(minx=np.nanmin, miny=np.nanmin,
                               maxx=np.nanmax, maxy=np.nanmax)
         >>> series.bounds.groupby(lambda x: 1).agg(aggregator)
-        
         """
+
         aggregator = dict(minx=np.nanmin, miny=np.nanmin,
                           maxx=np.nanmax, maxy=np.nanmax)
         bbox = self.element_bounds.groupby(lambda x: 1).agg(aggregator)
