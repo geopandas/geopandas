@@ -316,7 +316,7 @@ class GeoSeries(Series):
 
         aggregator = dict(minx=np.nanmin, miny=np.nanmin,
                           maxx=np.nanmax, maxy=np.nanmax)
-        bbox = self.element_bounds.groupby(lambda x: 1).agg(aggregator)
+        bbox = self.bounds.groupby(lambda x: 1).agg(aggregator)
         return tuple(bbox.values[0].tolist())
 
     def buffer(self, distance, resolution=16):
