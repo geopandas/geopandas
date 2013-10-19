@@ -104,7 +104,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
             # TODO: color non-polygon geometries
             elif geom.type == 'LineString':
-                plot_linestring(ax, geom)
+                plot_linestring(ax, geom, color=cmap.to_rgba(value))
             elif geom.type == 'Point':
                 plot_point(ax, geom)
         if legend:
