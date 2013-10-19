@@ -1,6 +1,7 @@
 import numpy as np
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
+    """ Plot a single Polygon geometry """
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
@@ -22,13 +23,23 @@ def plot_multipolygon(ax, geom, facecolor='red'):
 
 
 def plot_linestring(ax, geom, color='black', linewidth=1):
+    """ Plot a single LineString geometry """
     a = np.array(geom)
     ax.plot(a[:,0], a[:,1], color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, marker='o', markersize=2):
-    """ Plot a single Point geometry
+def plot_multilinestring(ax, geom, color='red', linewidth=1):
+    """ Can safely call with either LineString or MultiLineString geometry
     """
+    if geom.type == 'LineString':
+        plot_linestring(ax, geom, color=color, linewidth=linewidth)
+    elif geom.type == 'MultiLineString':
+        for line in geom.geoms:
+            plot_linestring(ax, line, color=color, linewidth=linewidth)
+
+
+def plot_point(ax, pt, marker='o', markersize=2):
+    """ Plot a single Point geometry """
     ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
 
 
@@ -63,8 +74,8 @@ def plot_series(s, colormap='Set1', axes=None):
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
             plot_multipolygon(ax, geom, facecolor=color.next())
-        elif geom.type == 'LineString':
-            plot_linestring(ax, geom, color=color.next())
+        elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+            plot_multilinestring(ax, geom, color=color.next())
         elif geom.type == 'Point':
             plot_point(ax, geom)
     return ax
@@ -102,9 +113,9 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         for geom, value in zip(s['geometry'], values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
-            # TODO: color non-polygon geometries
-            elif geom.type == 'LineString':
-                plot_linestring(ax, geom, color=cmap.to_rgba(value))
+            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
+            # TODO: color point geometries
             elif geom.type == 'Point':
                 plot_point(ax, geom)
         if legend:
