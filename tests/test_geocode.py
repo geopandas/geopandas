@@ -19,7 +19,7 @@ class TestGeocode(unittest.TestCase):
         assert type(df) is gpd.GeoDataFrame
         self.assertEqual(fiona.crs.from_epsg(4326), df.crs)
         self.assertEqual(len(df), 2)
-        self.assertIn('address', df)
+        self.assert_('address' in df)
 
         coords = df.loc['a']['geometry'].coords[0]
         test = p0.coords[0]
