@@ -78,6 +78,7 @@ def plot_series(s, colormap='Set1', axes=None):
             plot_multilinestring(ax, geom, color=color.next())
         elif geom.type == 'Point':
             plot_point(ax, geom)
+    plt.draw()
     return ax
 
 
@@ -129,3 +130,5 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             else:
                 # TODO: show a colorbar
                 raise NotImplementedError
+    plt.draw()
+    return ax
