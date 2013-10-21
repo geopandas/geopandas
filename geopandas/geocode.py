@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import fiona
 import geopy
+from geopy.geocoders.base import GeocoderResultError
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
@@ -51,8 +52,10 @@ def geocode(strings, provider='googlev3', **kwargs):
     coder = coders[provider](**kwargs)
     results = {}
     for i, s in strings.iteritems():
-        # Probably want some try/catch here, but what to do on exception?
-        results[i] = coder.geocode(s)
+        try:
+            results[i] = coder.geocode(s)
+        except (GeocoderResultError, ValueError):
+            results[i] = (None, None)
 
     df = _prepare_geocode_result(results)
     return df
@@ -73,7 +76,14 @@ def _prepare_geocode_result(results):
         address, loc = s
 
         # loc is lat, lon and we want lon, lat
-        p = Point(loc[1], loc[0])
+        if loc is None:
+            p = Point()
+        else:
+            p = Point(loc[1], loc[0])
+
+        if address is None:
+            address = pd.np.nan
+
         d['geometry'].append(p)
         d['address'].append(address)
         index.append(i)

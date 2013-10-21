@@ -1,6 +1,7 @@
 import unittest
 
 import fiona
+import pandas as pd
 from shapely.geometry import Point
 import geopandas as gpd
 
@@ -32,5 +33,20 @@ class TestGeocode(unittest.TestCase):
         self.assertAlmostEqual(coords[0], test[1])
         self.assertAlmostEqual(coords[1], test[0])
 
+    def test_prepare_result_none(self):
+        p0 = Point(12.3, -45.6) # Treat these as lat/lon
+        d = {'a': ('address0', p0.coords[0]),
+             'b': (None, None)}
+
+        df = _prepare_geocode_result(d)
+        assert type(df) is gpd.GeoDataFrame
+        self.assertEqual(fiona.crs.from_epsg(4326), df.crs)
+        self.assertEqual(len(df), 2)
+        self.assert_('address' in df)
+
+        row = df.loc['b']
+        self.assertEqual(len(row['geometry'].coords), 0)
+        self.assert_(pd.np.isnan(row['address']))
+    
     def test_bad_provider(self):
         self.assertRaises(ValueError, geocode, ['cambridge, ma'], 'badprovider')
