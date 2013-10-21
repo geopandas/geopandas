@@ -11,22 +11,26 @@ import geopandas as gpd
 
 def geocode(strings, provider='googlev3', **kwargs):
     """
-    Geocode a set of strings and get a GeoDataFrame of the resulting points
+    Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
     Parameters
     ----------
     strings : list or Series of addresses to geocode
     provider : geopy geocoder to use, default 'googlev3'
         Some providers require additional arguments such as access keys
-        * googlev3
+        See each geocoder's specific parameters in geopy.geocoders
+        * googlev3, default
         * bing
         * google
         * yahoo
         * mapquest
         * openmapquest
     
-    Consult the terms of service for each provider to ensure proper use
-    of the results.
+    Ensure proper use of the results by consulting the Terms of Service for
+    your provider.
+
+    Geocoding requires geopy. Install it using 'pip install geopy'. See also
+    https://github.com/geopy/geopy
 
     Example
     -------
