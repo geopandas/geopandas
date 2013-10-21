@@ -12,14 +12,14 @@ def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
         ax.plot(x, y, color=edgecolor)
 
 
-def plot_multipolygon(ax, geom, facecolor='red'):
+def plot_multipolygon(ax, geom, facecolor='red', alpha=0.5):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
-        plot_polygon(ax, geom, facecolor)
+        plot_polygon(ax, geom, facecolor=facecolor, alpha=alpha)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            plot_polygon(ax, poly, facecolor=facecolor)
+            plot_polygon(ax, poly, facecolor=facecolor, alpha=alpha)
 
 
 def plot_linestring(ax, geom, color='black', linewidth=1):
@@ -112,7 +112,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             ax = axes
         for geom, value in zip(s['geometry'], values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
+                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), alpha=alpha)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
                 plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
             # TODO: color point geometries
