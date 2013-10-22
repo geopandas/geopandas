@@ -63,6 +63,34 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 def plot_series(s, colormap='Set1', axes=None):
+    """ Plot a GeoSeries
+
+        Generate a plot of a GeoSeries geometry with matplotlib.
+
+        Parameters
+        ----------
+
+        Series
+            The GeoSeries to be plotted.  Currently Polygon,
+            MultiPolygon, LineString, MultiLineString and Point
+            geometries can be plotted.
+
+        colormap : str (default 'Set1')
+            The name of a colormap recognized by matplotlib.  Any
+            colormap will work, but categorical colormaps are
+            generally recommended.  Examples of useful discrete
+            colormaps include:
+
+                Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
+
+        axes : matplotlib.pyplot.Artist (default None)
+            axes on which to draw the plot
+
+        Returns
+        -------
+
+        matplotlib axes instance
+    """
     import matplotlib.pyplot as plt
     if axes == None:
         fig = plt.gcf()
@@ -84,6 +112,48 @@ def plot_series(s, colormap='Set1', axes=None):
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                    categorical=False, legend=False, axes=None):
+    """ Plot a GeoDataFrame
+
+        Generate a plot of a GeoDataFrame with matplotlib.  If a
+        column is specified, the plot coloring will be based on values
+        in that column.  Otherwise, a categorical plot of the
+        geometries in the `geometry` column will be generated.
+
+        Parameters
+        ----------
+
+        GeoDataFrame
+            The GeoDataFrame to be plotted.  Currently Polygon,
+            MultiPolygon, LineString, MultiLineString and Point
+            geometries can be plotted.
+
+        column : str (default None)
+            The name of the column to be plotted.
+
+        categorical : bool (default False)
+            If False, colormap will reflect numerical values of the
+            column being plotted.  For non-numerical columns (or if
+            column=None), this will be set to True.
+
+        colormap : str (default 'Set1')
+            The name of a colormap recognized by matplotlib.
+
+        alpha : float (default 0.5)
+            Alpha value for polygon fill regions.  Has no effect for
+            lines or points.
+
+        legend : bool (default False)
+            Plot a legend (Experimental; currently for categorical
+            plots only)
+
+        axes : matplotlib.pyplot.Artist (default None)
+            axes on which to draw the plot
+
+        Returns
+        -------
+
+        matplotlib axes instance
+    """
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
     from matplotlib.colors import Normalize
