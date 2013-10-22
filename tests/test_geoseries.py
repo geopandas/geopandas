@@ -285,4 +285,9 @@ class TestSeries(unittest.TestCase):
         res = self.g4.skew(ys=skew, origin=Point(0,0))
         self.assertTrue(geom_almost_equals(self.g4, res.skew(ys=-skew, 
             origin=Point(0,0))))
+            
+    def test_total_bounds(self):
+        bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
+        self.assertEqual(self.landmarks.total_bounds, bbox)
+        self.assertEqual(self.g1.total_bounds, (0, 0, 1, 1))
 
