@@ -62,7 +62,7 @@ def gencolor(N, colormap='Set1'):
     for i in xrange(N):
         yield colors[i % n_colors]
 
-def plot_series(s, colormap='Set1', axes=None):
+def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -83,6 +83,10 @@ def plot_series(s, colormap='Set1', axes=None):
 
                 Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
 
+        alpha : float (default 0.5)
+            Alpha value for polygon fill regions.  Has no effect for
+            lines or points.
+
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
 
@@ -101,9 +105,9 @@ def plot_series(s, colormap='Set1', axes=None):
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=color.next())
+            plot_multipolygon(ax, geom, facecolor=color.next(), alpha=alpha)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=color.next())
+            plot_multilinestring(ax, geom, color=color.next(), alpha=alpha)
         elif geom.type == 'Point':
             plot_point(ax, geom)
     plt.draw()
@@ -159,7 +163,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib.colors import Normalize
     from matplotlib import cm
     if column is None:
-        return plot_series(s['geometry'], colormap=colormap, axes=axes)
+        return plot_series(s['geometry'], colormap=colormap, alpha=alpha, axes=axes)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
