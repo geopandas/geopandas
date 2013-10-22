@@ -1,6 +1,7 @@
 import numpy as np
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
+    """ Plot a single Polygon geometry """
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
@@ -11,24 +12,34 @@ def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
         ax.plot(x, y, color=edgecolor)
 
 
-def plot_multipolygon(ax, geom, facecolor='red'):
+def plot_multipolygon(ax, geom, facecolor='red', alpha=0.5):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
-        plot_polygon(ax, geom, facecolor)
+        plot_polygon(ax, geom, facecolor=facecolor, alpha=alpha)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            plot_polygon(ax, poly, facecolor=facecolor)
+            plot_polygon(ax, poly, facecolor=facecolor, alpha=alpha)
 
 
 def plot_linestring(ax, geom, color='black', linewidth=1):
+    """ Plot a single LineString geometry """
     a = np.array(geom)
     ax.plot(a[:,0], a[:,1], color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, marker='o', markersize=2):
-    """ Plot a single Point geometry
+def plot_multilinestring(ax, geom, color='red', linewidth=1):
+    """ Can safely call with either LineString or MultiLineString geometry
     """
+    if geom.type == 'LineString':
+        plot_linestring(ax, geom, color=color, linewidth=linewidth)
+    elif geom.type == 'MultiLineString':
+        for line in geom.geoms:
+            plot_linestring(ax, line, color=color, linewidth=linewidth)
+
+
+def plot_point(ax, pt, marker='o', markersize=2):
+    """ Plot a single Point geometry """
     ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
 
 
@@ -51,33 +62,108 @@ def gencolor(N, colormap='Set1'):
     for i in xrange(N):
         yield colors[i % n_colors]
 
-def plot_series(s, colormap='Set1', axes=None):
+def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
+    """ Plot a GeoSeries
+
+        Generate a plot of a GeoSeries geometry with matplotlib.
+
+        Parameters
+        ----------
+
+        Series
+            The GeoSeries to be plotted.  Currently Polygon,
+            MultiPolygon, LineString, MultiLineString and Point
+            geometries can be plotted.
+
+        colormap : str (default 'Set1')
+            The name of a colormap recognized by matplotlib.  Any
+            colormap will work, but categorical colormaps are
+            generally recommended.  Examples of useful discrete
+            colormaps include:
+
+                Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
+
+        alpha : float (default 0.5)
+            Alpha value for polygon fill regions.  Has no effect for
+            lines or points.
+
+        axes : matplotlib.pyplot.Artist (default None)
+            axes on which to draw the plot
+
+        Returns
+        -------
+
+        matplotlib axes instance
+    """
     import matplotlib.pyplot as plt
     if axes == None:
-        fig = plt.figure()
+        fig = plt.gcf()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
     else:
-        ax = plt.gcf()
+        ax = axes
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=color.next())
-        elif geom.type == 'LineString':
-            plot_linestring(ax, geom)
+            plot_multipolygon(ax, geom, facecolor=color.next(), alpha=alpha)
+        elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+            plot_multilinestring(ax, geom, color=color.next(), alpha=alpha)
         elif geom.type == 'Point':
             plot_point(ax, geom)
+    plt.draw()
     return ax
 
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                    categorical=False, legend=False, axes=None):
+    """ Plot a GeoDataFrame
+
+        Generate a plot of a GeoDataFrame with matplotlib.  If a
+        column is specified, the plot coloring will be based on values
+        in that column.  Otherwise, a categorical plot of the
+        geometries in the `geometry` column will be generated.
+
+        Parameters
+        ----------
+
+        GeoDataFrame
+            The GeoDataFrame to be plotted.  Currently Polygon,
+            MultiPolygon, LineString, MultiLineString and Point
+            geometries can be plotted.
+
+        column : str (default None)
+            The name of the column to be plotted.
+
+        categorical : bool (default False)
+            If False, colormap will reflect numerical values of the
+            column being plotted.  For non-numerical columns (or if
+            column=None), this will be set to True.
+
+        colormap : str (default 'Set1')
+            The name of a colormap recognized by matplotlib.
+
+        alpha : float (default 0.5)
+            Alpha value for polygon fill regions.  Has no effect for
+            lines or points.
+
+        legend : bool (default False)
+            Plot a legend (Experimental; currently for categorical
+            plots only)
+
+        axes : matplotlib.pyplot.Artist (default None)
+            axes on which to draw the plot
+
+        Returns
+        -------
+
+        matplotlib axes instance
+    """
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
     from matplotlib.colors import Normalize
     from matplotlib import cm
     if column is None:
-        return s['geometry'].plot()
+        return plot_series(s['geometry'], colormap=colormap, alpha=alpha, axes=axes)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -94,17 +180,17 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         norm = Normalize(vmin=mn, vmax=mx)
         cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
         if axes == None:
-            fig = plt.figure()
+            fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
             ax = plt.gca()
         else:
             ax = axes
         for geom, value in zip(s['geometry'], values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value, alpha=0.5))
-            # TODO: color non-polygon geometries
-            elif geom.type == 'LineString':
-                plot_linestring(ax, geom)
+                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), alpha=alpha)
+            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
+                plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
+            # TODO: color point geometries
             elif geom.type == 'Point':
                 plot_point(ax, geom)
         if legend:
@@ -118,3 +204,5 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             else:
                 # TODO: show a colorbar
                 raise NotImplementedError
+    plt.draw()
+    return ax
