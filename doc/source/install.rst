@@ -6,6 +6,9 @@ from `GitHub`_ and use the setup script::
 
     python setup.py install
 
+GeoPandas is also available on `PyPI`_, so ``pip install geopandas``
+should work as well.
+
 Dependencies
 ------------
 
@@ -15,6 +18,7 @@ Dependencies
 - `fiona`_
 - `descartes`_
 - `matplotlib`_
+- `geopy`_ (optional; for geocoding)
 
 Testing
 -------
@@ -28,6 +32,7 @@ from a command line.
 Tests are automatically run on all commits on the GitHub repository,
 including pull requests, on `Travis CI`_.
 
+.. _PyPI: https://pypi.python.org/pypi/geopandas
 .. _GitHub: https://github.com/kjordahl/geopandas
 .. _numpy: http://www.numpy.org
 .. _pandas: http://pandas.pydata.org
@@ -35,6 +40,7 @@ including pull requests, on `Travis CI`_.
 .. _fiona: http://toblerity.github.io/fiona
 .. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
+.. _geopy: https://github.com/geopy/geopy
 .. _Travis CI: https://travis-ci.org/kjordahl/geopandas
 
 .. toctree::
