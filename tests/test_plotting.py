@@ -1,38 +1,32 @@
-from contextlib import contextmanager
 import os
-import tempfile
 import unittest
 
 from matplotlib.pyplot import Artist, savefig
+from matplotlib.testing.decorators import image_comparison
 from shapely.geometry import Polygon, LineString, Point
 
 from geopandas import GeoSeries
 
+# If set to True, generate images rather than perform tests (all tests will pass!)
+GENERATE_BASELINE = False
 
-@contextmanager
-def get_tempfile():
-    f, path = tempfile.mkstemp()
-    try:
-        yield path
-    finally:
-        try:
-            os.remove(path)
-        except:
-            pass
+BASELINE_DIR = os.path.join(os.path.dirname(__file__), 'baseline_images', 'test_plotting')
 
-class TestSeriesPlot(unittest.TestCase):
+def save_baseline_image(filename):
+    """ save a baseline image """
+    savefig(os.path.join(BASELINE_DIR, filename))
 
-    def setUp(self):
-        self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        self.t2 = Polygon([(1, 0), (2, 1), (2, 1)])
-        self.polys = GeoSeries([self.t1, self.t2])
-
-    def test_poly_plot(self):
-        """ Test plotting a simple series of polygons """
-        ax = self.polys.plot()
-        self.assertIsInstance(ax, Artist)
-        with get_tempfile() as file:
-            savefig(file)
+@image_comparison(baseline_images=['poly_plot'], extensions=['png'])
+def test_poly_plot():
+    """ Test plotting a simple series of polygons """
+    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    t2 = Polygon([(1, 0), (2, 1), (2, 1)])
+    polys = GeoSeries([t1, t2])
+    ax = polys.plot()
+    assert isinstance(ax, Artist)
+    if GENERATE_BASELINE:
+        save_baseline_image('poly_plot.png')
 
 if __name__ == '__main__':
-    unittest.main()
+    import nose
+    nose.runmodule(argv=['-s', '--with-doctest'])
