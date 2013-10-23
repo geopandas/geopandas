@@ -4,6 +4,11 @@ Guidelines
 Contributions to GeoPandas are very welcome.  They are likely to
 be accepted more quickly if they follow these guidelines.
 
+At this stage of GeoPandas development, the priorities are to define a
+simple, usable, and stable API and to have clean, maintainable,
+readable code.  Performance matters, but not at the expense of those
+goals.
+
 In general, GeoPandas follows the conventions of the pandas project
 where applicable.  Please read [pandas contributing
 guidelines](https://github.com/pydata/pandas/blob/master/CONTRIBUTING.md).
@@ -30,6 +35,8 @@ is a great way to get started if you'd like to make a contribution.
 
 Style
 -----
+
+- Follow PEP 8 when possible.
 
 - Imports should be grouped with standard library imports first,
   3rd-party libraries next, and geopandas imports third.  Within each
