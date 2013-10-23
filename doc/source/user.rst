@@ -1,5 +1,5 @@
-User Guide
-==========
+GeoPandas User Guide
+====================
 
 GeoPandas implements two main data structures, a ``GeoSeries`` and a
 ``GeoDataFrame``.  These are subclasses of pandas ``Series`` and
@@ -31,7 +31,7 @@ The following Shapely methods and attributes are available on
 
   Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
   ``maxy`` values containing the bounds for each geometry.
-  NOTE: This behavior may change in future versions.
+  (see ``GeoSeries.total_bounds`` for the limits of the entire series).
 
 .. attribute:: GeoSeries.length
 
@@ -195,6 +195,24 @@ The following Shapely methods and attributes are available on
   Returns a ``GeoSeries`` containing a simplified representation of
   each object.
 
+`Affine transformations`
+
+.. method:: GeoSeries.rotate(self, angle, origin='center', use_radians=False)
+
+  Rotate the coordinates of the GeoSeries.
+
+.. method:: GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
+
+ Scale the geometries of the GeoSeries along each (x, y, z) dimensio.
+
+.. method:: GeoSeries.skew(self, angle, origin='center', use_radians=False)
+
+  Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
+
+.. method:: GeoSeries.translate(self, angle, origin='center', use_radians=False)
+
+  Shift the coordinates of the GeoSeries.
+
 `Aggregating methods`
 
 .. attribute:: GeoSeries.unary_union
@@ -221,12 +239,21 @@ Additionally, the following methods are implemented:
   Objects crossing the dateline (or other projection boundary) will
   have undesirable behavior.
 
-.. method:: GeoSeries.plot(colormap='Set1')
+.. method:: GeoSeries.plot(colormap='Set1', alpha=0.5, axes=None)
 
   Generate a plot of the geometries in the ``GeoSeries``.
   ``colormap`` can be any recognized by matplotlib, but discrete
   colormaps such as ``Accent``, ``Dark2``, ``Paired``, ``Pastel1``,
   ``Pastel2``, ``Set1``, ``Set2``, or ``Set3`` are recommended.
+  Wraps the ``plot_series()`` function.
+
+.. attribute:: GeoSeries.total_bounds
+
+  Returns a tuple containing ``minx``, ``miny``, ``maxx``,
+  ``maxy`` values for the bounds of the series as a whole.
+  See ``GeoSeries.bounds`` for the bounds of the geometries contained
+  in the series.
+
 
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
@@ -241,12 +268,17 @@ GeoDataFrame
 A ``GeoDataFrame`` is a tablular data structure that contains a column
 called ``geometry`` which contains a `GeoSeries``.
 
-Currently only the following methods are implemented for a ``GeoDataFrame``:
+Currently, the following methods are implemented for a ``GeoDataFrame``:
 
-.. method:: GeoDataFrame.from_file()
+.. classmethod:: GeoDataFrame.from_file(filename, **kwargs)
 
   Load a ``GeoDataFrame`` from a file from any format recognized by
-  `fiona`_.
+  `fiona`_.  See ``read_file()``.
+
+.. classmethod:: GeoDataFrame.from_postgis(sql, con, geom_col='geom', crs=None, index_col=None, coerce_float=True, params=None)
+
+  Load a ``GeoDataFrame`` from a file from a PostGIS database.
+  See ``read_postgis()``.
 
 .. method:: GeoSeries.to_crs(crs=None, epsg=None, inplace=False)
 
@@ -263,17 +295,41 @@ Currently only the following methods are implemented for a ``GeoDataFrame``:
   Objects crossing the dateline (or other projection boundary) will
   have undesirable behavior.
 
-.. method:: GeoDataFrame.plot()
+.. method:: GeoSeries.to_file(filename, driver="ESRI Shapefile", **kwargs)
 
-  Generate a plot of the geometries in the ``GeoDataFrame``.
-  Currently calls ``GeoSeries.plot()`` on the ``geometry`` column,
-  though in the future this will be able to color the geometries by
-  data values from another column.
+  Write the ``GeoDataFrame`` to a file.  By default, an ESRI shapefile
+  is written, but any OGR data source supported by Fiona can be
+  written.  ``**kwargs`` are passed to the Fiona driver.
+
+.. method:: GeoSeries.to_json(**kwargs)
+
+  Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
+
+.. method:: GeoDataFrame.plot(column=None, colormap=None, alpha=0.5, categorical=False, legend=False, axes=None)
+
+  Generate a plot of the geometries in the ``GeoDataFrame``.  If the
+  ``column`` parameter is given, colors plot according to values in
+  that column, otherwise calls ``GeoSeries.plot()`` on the
+  ``geometry`` column.  Wraps the ``plot_dataframe()`` function.
 
 All pandas ``DataFrame`` methods are also available, although they may
 not operate in a meaningful way on the ``geometry`` column and may not
 return a ``GeoDataFrame`` result even when it would be appropriate to
 do so.
+
+Geopandas functions
+-------------------
+
+.. function:: geopandas.geocode.geocode(strings, provider='googlev3', **kwargs)
+
+  Geocode a list of strings and return a GeoDataFrame containing the
+  resulting points in its ``geometry`` column.  Available
+  ``provider``s include ``googlev3``, ``bing``, ``google``, ``yahoo``,
+  ``mapquest``, and ``openmapquest``.  ``**kwargs`` will be passed as
+  parameters to the appropriate geocoder.
+
+  Requires `geopy`_.  Please consult the Terms of Service for the
+  chosen provider.
 
 Examples
 --------
@@ -423,6 +479,7 @@ borough that are in the holes:
 .. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://toblerity.github.io/fiona
+.. _geopy: https://github.com/geopy/geopy
 .. _file containing the boroughs of New York City: http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
 
 .. toctree::
