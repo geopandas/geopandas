@@ -3,7 +3,7 @@ import shutil
 import tempfile
 import unittest
 
-from matplotlib.pyplot import Artist, savefig
+from matplotlib.pyplot import Artist, savefig, clf
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from shapely.geometry import Polygon, LineString, Point
@@ -42,11 +42,30 @@ class PlotTests(unittest.TestCase):
 
     def test_poly_plot(self):
         """ Test plotting a simple series of polygons """
+        clf()
         filename = 'poly_plot.png'
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
         polys = GeoSeries([t1, t2])
         ax = polys.plot()
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_point_plot(self):
+        """ Test plotting a simple series of points """
+        clf()
+        filename = 'points_plot.png'
+        N = 10
+        points = GeoSeries(Point(i, i) for i in xrange(N))
+        ax = points.plot()
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_line_plot(self):
+        """ Test plotting a simple series of lines """
+        clf()
+        filename = 'lines_plot.png'
+        N = 10
+        lines = GeoSeries([LineString([(0, i), (1, i)]) for i in xrange(N)])
+        ax = lines.plot()
         self._compare_images(ax=ax, filename=filename)
 
 if __name__ == '__main__':
