@@ -64,7 +64,7 @@ class PlotTests(unittest.TestCase):
         clf()
         filename = 'lines_plot.png'
         N = 10
-        lines = GeoSeries([LineString([(0, i), (1, i)]) for i in xrange(N)])
+        lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(N)])
         ax = lines.plot()
         self._compare_images(ax=ax, filename=filename)
 
