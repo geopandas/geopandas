@@ -17,9 +17,11 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts[::2]) is GeoSeries
         assert type(self.polys[:2]) is GeoSeries
 
+    @unittest.skip('not yet implemented')
     def test_head(self):
         assert type(self.pts.head()) is GeoSeries
 
+    @unittest.skip('not yet implemented')
     def test_tail(self):
         assert type(self.pts.tail()) is GeoSeries
 
