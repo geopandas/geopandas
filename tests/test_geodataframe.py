@@ -35,6 +35,43 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
+    def test_set_geometry(self):
+        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        df2 = self.df.set_geometry(geom)
+        self.assert_(self.df is not df2)
+        for x, y in zip(df2.geometry.values, geom):
+            self.assertEqual(x, y)
+
+    def test_set_geometry_col(self):
+        g = self.df.geometry
+        g_simplified = g.simplify(100)
+        self.df['simplified_geometry'] = g_simplified
+        df2 = self.df.set_geometry('simplified_geometry')
+
+        # Drop is true by default
+        self.assert_('simplified_geometry' not in df2)
+
+        for x, y in zip(df2.geometry.values, g_simplified):
+            self.assertEqual(x, y)
+
+    def test_set_geometry_col_no_drop(self):
+        g = self.df.geometry
+        g_simplified = g.simplify(100)
+        self.df['simplified_geometry'] = g_simplified
+        df2 = self.df.set_geometry('simplified_geometry', drop=False)
+
+        self.assert_('simplified_geometry' in df2)
+
+        for x, y in zip(df2.geometry.values, g_simplified):
+            self.assertEqual(x, y)
+
+    def test_set_geometry_inplace(self):
+        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        ret = self.df.set_geometry(geom, inplace=True)
+        self.assert_(ret is None)
+        for x, y in zip(self.df['geometry'].values, geom):
+            self.assertEqual(x, y)
+
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)

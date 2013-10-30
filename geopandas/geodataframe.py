@@ -4,7 +4,7 @@ import os
 
 import fiona
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from shapely.geometry import mapping
 
 from geopandas import GeoSeries
@@ -23,6 +23,58 @@ class GeoDataFrame(DataFrame):
         crs = kwargs.pop('crs', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
+
+    @property
+    def geometry(self):
+        return self['geometry']
+
+    def set_geometry(self, col, drop=True, inplace=False):
+        """
+        Set the GeoDataFrame geometry using either an existing column or 
+        the specified input. By default yields a new object.
+
+        The original geometry column is replaced with the input.
+
+        Parameters
+        ----------
+        keys : column label or array
+        drop : boolean, default True
+            Delete column to be used as the new geometry
+        inplace : boolean, default False
+            Modify the GeoDataFrame in place (do not create a new object)
+
+        Examples
+        --------
+        >>> df1 = df.set_geometry([Point(0,0), Point(1,1), Point(2,2)])
+        >>> df2 = df.set_geometry('geom1')
+
+        Returns
+        -------
+        geodataframe : GeoDataFrame
+        """
+        # Most of the code here is taken from DataFrame.set_index()
+        if inplace:
+            frame = self
+        else:
+            frame = self.copy()
+
+        to_remove = None
+        if isinstance(col, Series):
+            level = col.values
+        elif isinstance(col, (list, np.ndarray)):
+            level = col
+        else:
+            level = frame[col].values
+            if drop:
+                to_remove = col
+
+        if to_remove:
+            del frame[to_remove]
+
+        frame['geometry'] = level
+
+        if not inplace:
+            return frame
 
     @classmethod
     def from_file(cls, filename, **kwargs):
