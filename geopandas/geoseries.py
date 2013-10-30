@@ -29,7 +29,7 @@ def _is_empty(x):
 
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
-    _prop_attributes = ['name', 'crs']
+    _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -522,10 +522,10 @@ class GeoSeries(Series):
     def _can_hold_na(self):
         return False
 
-    def _propogate_attributes(self, other):
-        """ propogate [sic] attributes from other to self"""
-        # NOTE: backported from pandas master (commit 4493bf36)
-        for name in self._prop_attributes:
+    def __finalize__(self, other, method=None, **kwargs):
+        """ propagate metadata from other to self """
+        # NOTE: backported from pandas master (upcoming v0.13)
+        for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
@@ -544,7 +544,7 @@ class GeoSeries(Series):
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
         return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name)._propogate_attributes(self)
+                      name=self.name).__finalize__(self)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
