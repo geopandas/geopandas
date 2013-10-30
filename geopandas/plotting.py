@@ -107,7 +107,7 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
             plot_multipolygon(ax, geom, facecolor=color.next(), alpha=alpha)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=color.next(), alpha=alpha)
+            plot_multilinestring(ax, geom, color=color.next())
         elif geom.type == 'Point':
             plot_point(ax, geom)
     plt.draw()
