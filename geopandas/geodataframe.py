@@ -206,11 +206,18 @@ class GeoDataFrame(DataFrame):
         elif isinstance(result, DataFrame) and 'geometry' in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
+        elif isinstance(result, DataFrame) and 'geometry' not in result:
+            result.__class__ = DataFrame
+            result.crs = self.crs
         return result
 
     #
     # Implement pandas methods
     #
+
+    @property
+    def _constructor(self):
+        return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """

@@ -492,6 +492,10 @@ class GeoSeries(Series):
     # Implement pandas methods
     #
 
+    @property
+    def _constructor(self):
+        return GeoSeries
+
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
@@ -499,6 +503,14 @@ class GeoSeries(Series):
             val.__class__ = GeoSeries
             val.crs = self.crs
         return val
+
+    def _wrapped_pandas_method_series(self, mtd, *args, **kwargs):
+        """Wrap a generic pandas method to ensure it returns a Series"""
+        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
+        return val.view(Series)
+
+    def where(self, *args, **kwargs):
+        return self._wrapped_pandas_method_series('where', *args, **kwargs)
 
     def __getitem__(self, key):
         return self._wrapped_pandas_method('__getitem__', key)
@@ -551,23 +563,6 @@ class GeoSeries(Series):
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
-
-    def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
-               **kwargs):
-        """Fill NA/NaN values with a geometry (empty polygon by default).
-
-        "method" is currently not implemented for GeoSeries.
-        """
-        if method is not None:
-            raise NotImplementedError('Fill method is currently not implemented for GeoSeries')
-        if isinstance(value, BaseGeometry):
-            result = self.copy() if not inplace else self
-            mask = self.isnull()
-            result[mask] = value
-            if not inplace:
-                return GeoSeries(result)
-        else:
-            raise ValueError('Non-geometric fill values not allowed for GeoSeries')
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=EMPTY_POLYGON, **kwargs):
