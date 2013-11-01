@@ -308,16 +308,14 @@ class GeoSeries(Series):
     def total_bounds(self):
         """Return a single bounding box (minx, miny, maxx, maxy) for all geometries
 
-        This is a shortcut for the following:
-        >>> aggregator = dict(minx=np.nanmin, miny=np.nanmin,
-                              maxx=np.nanmax, maxy=np.nanmax)
-        >>> series.bounds.groupby(lambda x: 1).agg(aggregator)
+        This is a shortcut for calculating the min/max x and y bounds individually.
         """
 
-        aggregator = dict(minx=np.nanmin, miny=np.nanmin,
-                          maxx=np.nanmax, maxy=np.nanmax)
-        bbox = self.bounds.groupby(lambda x: 1).agg(aggregator)
-        return tuple(bbox.values[0].tolist())
+        b = self.bounds
+        return (b['minx'].min(),
+                b['miny'].min(),
+                b['maxx'].max(),
+                b['maxy'].max())
 
     def buffer(self, distance, resolution=16):
         return GeoSeries([geom.buffer(distance, resolution) for geom in self],
