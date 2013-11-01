@@ -107,12 +107,22 @@ class GeoDataFrame(DataFrame):
                      coerce_float, params)
 
 
-    def to_json(self, **kwargs):
+    def to_json(self, omitna=False, **kwargs):
         """Returns a GeoJSON representation of the GeoDataFrame.
+
+        Parameters
+        ----------
+        omitna : boolean, default False
+            Indicates whether null properties should be included in the 
+            output. This applies to each feature individually so that
+            some features may have different numbers of features if some
+            have null elements
         
         The *kwargs* are passed to json.dumps().
         """
         def feature(i, row):
+            if omitna:
+                row = row.dropna()
             return {
                 'id': str(i),
                 'type': 'Feature',

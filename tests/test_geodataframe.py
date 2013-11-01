@@ -78,6 +78,41 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
 
+    def test_to_json_na(self):
+        # Set a value as nan and make sure it's written
+        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+
+        text = self.df.to_json()
+        data = json.loads(text)
+        self.assertTrue(len(data['features']) == 5)
+        for f in data['features']:
+            props = f['properties']
+            self.assertEqual(len(props), 4)
+            if props['BoroName'] == 'Queens':
+                self.assertTrue(np.isnan(props['Shape_Area']))
+
+    def test_to_json_omitna(self):
+        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+
+        text = self.df.to_json(omitna=True)
+        data = json.loads(text)
+        self.assertEqual(len(data['features']), 5)
+        for f in data['features']:
+            props = f['properties']
+            if props['BoroName'] == 'Queens':
+                self.assertEqual(len(props), 3)
+                self.assertTrue('Shape_Area' not in props)
+                # Just make sure setting it to nan in a different row
+                # doesn't affect this one
+                self.assertTrue('Shape_Leng' in props)
+            elif props['BoroName'] == 'Bronx':
+                self.assertEqual(len(props), 3)
+                self.assertTrue('Shape_Leng' not in props)
+                self.assertTrue('Shape_Area' in props)
+            else:
+                self.assertEqual(len(props), 4)
+
     def test_copy(self):
         df2 = self.df.copy()
         self.assertTrue(type(df2) is GeoDataFrame)
