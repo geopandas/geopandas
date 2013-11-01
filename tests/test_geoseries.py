@@ -243,8 +243,10 @@ class TestSeries(unittest.TestCase):
         na = self.na_none.fillna(Point())
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)
-        self.na_none.fillna(method='backfill')
-        
+        self.assertTrue(geom_equals(self.na_none[:2], na[:2]))
+        # XXX: method works inconsistently for different pandas versions
+        #self.na_none.fillna(method='backfill')
+
     def test_interpolate(self):
         res = self.g5.interpolate(0.75, normalized=True)
         self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),

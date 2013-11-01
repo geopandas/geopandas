@@ -1,7 +1,12 @@
 import unittest
+
+import numpy as np
 from shapely.geometry import Point
 from pandas import Series, DataFrame
+
 from geopandas import GeoSeries, GeoDataFrame
+
+OLD_PANDAS = issubclass(Series, np.ndarray)
 
 
 class TestSeries(unittest.TestCase):
@@ -45,6 +50,7 @@ class TestSeries(unittest.TestCase):
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
+    @unittest.skipIf(OLD_PANDAS, 'Groupby not supported on pandas <= 0.12')
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
