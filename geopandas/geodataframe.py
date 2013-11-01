@@ -107,22 +107,44 @@ class GeoDataFrame(DataFrame):
                      coerce_float, params)
 
 
-    def to_json(self, omitna=False, **kwargs):
+    def to_json(self, na='null', **kwargs):
         """Returns a GeoJSON representation of the GeoDataFrame.
 
         Parameters
         ----------
-        omitna : boolean, default False
-            Indicates whether null properties should be included in the 
-            output. This applies to each feature individually so that
-            some features may have different numbers of features if some
-            have null elements
+        na : {'null', 'drop', 'keep'}, default 'null'
+            Indicates how to output missing (NaN) values in the GeoDataFrame
+            * null: ouput the missing entries as JSON null
+            * drop: remove the property from the feature. This applies to
+                    each feature individually so that features may have
+                    different properties
+            * keep: output the missing entries as NaN
         
-        The *kwargs* are passed to json.dumps().
+        The remaining *kwargs* are passed to json.dumps().
         """
+        def fill_none(row):
+            """
+            Takes in a Series, converts to a dictionary with null values
+            set to None
+
+            """
+            na_keys = row.index[row.isnull()]
+            d = row.to_dict()
+            for k in na_keys:
+                d[k] = None
+            return d
+
+        # na_methods must take in a Series and return dict-like
+        na_methods = {'null': fill_none,
+                      'drop': lambda row: row.dropna(),
+                      'keep': lambda row: row}
+
+        if na not in na_methods:
+            raise ValueError('Unknown na method {}'.format(na))
+        f = na_methods[na]
+
         def feature(i, row):
-            if omitna:
-                row = row.dropna()
+            row = f(row)
             return {
                 'id': str(i),
                 'type': 'Feature',
