@@ -1,5 +1,5 @@
-GeoPandas
-=========
+GeoPandas |version|
+===================
 
 GeoPandas is an open source project to make working with geospatial
 data in python easier.  GeoPandas extends the datatypes used by
@@ -25,4 +25,15 @@ such as PostGIS.
 
 .. toctree::
    :maxdepth: 2
+
+  Installation <install>
+  User Guide <user>
+  About <about>
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 

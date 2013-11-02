@@ -3,33 +3,23 @@ import json
 import os
 import tempfile
 import shutil
-import urllib2
-
-try:
-    import psycopg2
-    from psycopg2 import OperationalError
-except ImportError:
-    class OperationalError(Exception):
-        pass
 
 import numpy as np
 from shapely.geometry import Point, Polygon
 
-from geopandas import GeoDataFrame
+
+from geopandas import GeoDataFrame, read_file
+import tests.util
 
 
 class TestDataFrame(unittest.TestCase):
 
     def setUp(self):
         N = 10
-        # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
-        # saved as geopandas/examples/nybb_13a.zip.
-        if not os.path.exists(os.path.join('examples', 'nybb_13a.zip')):
-            with open(os.path.join('examples', 'nybb_13a.zip'), 'w') as f:
-                response = urllib2.urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
-                f.write(response.read())
-        self.df = GeoDataFrame.from_file(
-            '/nybb_13a/nybb.shp', vfs='zip://examples/nybb_13a.zip')
+
+        nybb_filename = tests.util.download_nybb()
+
+        self.df = read_file('/nybb_13a/nybb.shp', vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.boros = np.array(['Staten Island', 'Queens', 'Brooklyn',
                                'Manhattan', 'Bronx'])
@@ -38,49 +28,6 @@ class TestDataFrame(unittest.TestCase):
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
 
-        # Try to create the database, skip the db tests if something goes
-        # wrong
-        # If you'd like these tests to run, create a database called
-        # 'test_geopandas' and enable postgis in it:
-        # > createdb test_geopandas
-        # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
-        try:
-            self._create_db()
-            self.run_db_test = True
-        except (NameError, OperationalError):
-            # NameError is thrown if psycopg2 fails to import at top of file
-            # OperationalError is thrown if we can't connect to the database
-            self.run_db_test = False
-
-    def _create_db(self):
-        con = psycopg2.connect(dbname='test_geopandas')
-        cursor = con.cursor()
-        cursor.execute("DROP TABLE IF EXISTS nybb;")
-
-        sql = """CREATE TABLE nybb (
-            geom        geometry,
-            borocode    integer,
-            boroname    varchar(40),
-            shape_leng  float,
-            shape_area  float
-        );"""
-        cursor.execute(sql)
-
-        for i, row in self.df.iterrows():
-            sql = """INSERT INTO nybb VALUES (
-                ST_GeometryFromText(%s), %s, %s, %s, %s 
-            );"""
-            cursor.execute(sql, (row['geometry'].wkt, 
-                                 row['BoroCode'],
-                                 row['BoroName'],
-                                 row['Shape_Leng'],
-                                 row['Shape_Area']))
-
-        cursor.close()
-        con.commit()
-        con.close()
-
-
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
@@ -88,11 +35,102 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
+    def test_set_geometry(self):
+        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        df2 = self.df.set_geometry(geom)
+        self.assert_(self.df is not df2)
+        for x, y in zip(df2.geometry.values, geom):
+            self.assertEqual(x, y)
+
+    def test_set_geometry_col(self):
+        g = self.df.geometry
+        g_simplified = g.simplify(100)
+        self.df['simplified_geometry'] = g_simplified
+        df2 = self.df.set_geometry('simplified_geometry')
+
+        # Drop is true by default
+        self.assert_('simplified_geometry' not in df2)
+
+        for x, y in zip(df2.geometry.values, g_simplified):
+            self.assertEqual(x, y)
+
+    def test_set_geometry_col_no_drop(self):
+        g = self.df.geometry
+        g_simplified = g.simplify(100)
+        self.df['simplified_geometry'] = g_simplified
+        df2 = self.df.set_geometry('simplified_geometry', drop=False)
+
+        self.assert_('simplified_geometry' in df2)
+
+        for x, y in zip(df2.geometry.values, g_simplified):
+            self.assertEqual(x, y)
+
+    def test_set_geometry_inplace(self):
+        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        ret = self.df.set_geometry(geom, inplace=True)
+        self.assert_(ret is None)
+        for x, y in zip(self.df['geometry'].values, geom):
+            self.assertEqual(x, y)
+
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
+
+    def test_to_json_na(self):
+        # Set a value as nan and make sure it's written
+        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+
+        text = self.df.to_json()
+        data = json.loads(text)
+        self.assertTrue(len(data['features']) == 5)
+        for f in data['features']:
+            props = f['properties']
+            self.assertEqual(len(props), 4)
+            if props['BoroName'] == 'Queens':
+                self.assertTrue(props['Shape_Area'] is None)
+
+    def test_to_json_dropna(self):
+        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+
+        text = self.df.to_json(na='drop')
+        data = json.loads(text)
+        self.assertEqual(len(data['features']), 5)
+        for f in data['features']:
+            props = f['properties']
+            if props['BoroName'] == 'Queens':
+                self.assertEqual(len(props), 3)
+                self.assertTrue('Shape_Area' not in props)
+                # Just make sure setting it to nan in a different row
+                # doesn't affect this one
+                self.assertTrue('Shape_Leng' in props)
+            elif props['BoroName'] == 'Bronx':
+                self.assertEqual(len(props), 3)
+                self.assertTrue('Shape_Leng' not in props)
+                self.assertTrue('Shape_Area' in props)
+            else:
+                self.assertEqual(len(props), 4)
+
+    def test_to_json_keepna(self):
+        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+
+        text = self.df.to_json(na='keep')
+        data = json.loads(text)
+        self.assertEqual(len(data['features']), 5)
+        for f in data['features']:
+            props = f['properties']
+            self.assertEqual(len(props), 4)
+            if props['BoroName'] == 'Queens':
+                self.assertTrue(np.isnan(props['Shape_Area']))
+                # Just make sure setting it to nan in a different row
+                # doesn't affect this one
+                self.assertTrue('Shape_Leng' in props)
+            elif props['BoroName'] == 'Bronx':
+                self.assertTrue(np.isnan(props['Shape_Leng']))
+                self.assertTrue('Shape_Area' in props)
 
     def test_copy(self):
         df2 = self.df.copy()
@@ -133,34 +171,31 @@ class TestDataFrame(unittest.TestCase):
         utm = lonlat.to_crs(epsg=26918)
         self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
 
-    def _validate_sql(self, df):
-        # Make sure all the columns are there and the geometries
-        # were properly loaded as MultiPolygons
-        self.assertEqual(len(df), 5)
-        columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
-        for col in columns:
-            self.assertTrue(col in df.columns, 'Column {} missing'.format(col))
-        self.assertTrue(all(df['geometry'].type == 'MultiPolygon'))
-
     def test_from_postgis_default(self):
-        if not self.run_db_test:
+        con = tests.util.connect('test_geopandas')
+        if con is None or not tests.util.create_db(self.df):
             raise unittest.case.SkipTest()
 
-        with psycopg2.connect(dbname='test_geopandas') as con:
+        try:
             sql = "SELECT * FROM nybb;"
             df = GeoDataFrame.from_postgis(sql, con)
+        finally:
+            con.close()
 
-        self._validate_sql(df)
+        tests.util.validate_boro_df(self, df)
 
     def test_from_postgis_custom_geom_col(self):
-        if not self.run_db_test:
+        con = tests.util.connect('test_geopandas')
+        if con is None or not tests.util.create_db(self.df):
             raise unittest.case.SkipTest()
 
-        with psycopg2.connect(dbname='test_geopandas') as con:
+        try:
             sql = """SELECT
                      borocode, boroname, shape_leng, shape_area,
                      geom AS __geometry__
                      FROM nybb;"""
             df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
+        finally:
+            con.close()
 
-        self._validate_sql(df)
+        tests.util.validate_boro_df(self, df)

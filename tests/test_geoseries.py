@@ -240,12 +240,13 @@ class TestSeries(unittest.TestCase):
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
-        na = self.na_none.fillna()
+        na = self.na_none.fillna(Point())
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)
-        with self.assertRaises(NotImplementedError):
-            self.na_none.fillna(method='backfill')
-        
+        self.assertTrue(geom_equals(self.na_none[:2], na[:2]))
+        # XXX: method works inconsistently for different pandas versions
+        #self.na_none.fillna(method='backfill')
+
     def test_interpolate(self):
         res = self.g5.interpolate(0.75, normalized=True)
         self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),
@@ -285,4 +286,9 @@ class TestSeries(unittest.TestCase):
         res = self.g4.skew(ys=skew, origin=Point(0,0))
         self.assertTrue(geom_almost_equals(self.g4, res.skew(ys=-skew, 
             origin=Point(0,0))))
+            
+    def test_total_bounds(self):
+        bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
+        self.assertEqual(self.landmarks.total_bounds, bbox)
+        self.assertEqual(self.g1.total_bounds, (0, 0, 1, 1))
 

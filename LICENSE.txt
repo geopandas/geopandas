@@ -1,4 +1,4 @@
-Copyright (c) 2013, Enthought, Inc.
+Copyright (c) 2013, GeoPandas developers.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
