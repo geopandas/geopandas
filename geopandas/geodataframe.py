@@ -17,7 +17,7 @@ class GeoDataFrame(DataFrame):
     A GeoDataFrame object is a pandas.DataFrame that has a column
     named 'geometry' which is a GeoSeries.
     """
-    _prop_attributes = ['crs']
+    _metadata = ['crs']
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
@@ -238,16 +238,23 @@ class GeoDataFrame(DataFrame):
         elif isinstance(result, DataFrame) and 'geometry' in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
+        elif isinstance(result, DataFrame) and 'geometry' not in result:
+            result.__class__ = DataFrame
+            result.crs = self.crs
         return result
 
     #
     # Implement pandas methods
     #
 
-    def _propogate_attributes(self, other):
-        """ propogate [sic] attributes from other to self"""
-        # NOTE: backported from pandas master (commit 4493bf36)
-        for name in self._prop_attributes:
+    @property
+    def _constructor(self):
+        return GeoDataFrame
+
+    def __finalize__(self, other, method=None, **kwargs):
+        """ propagate metadata from other to self """
+        # NOTE: backported from pandas master (upcoming v0.13)
+        for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
@@ -268,7 +275,7 @@ class GeoDataFrame(DataFrame):
         data = self._data
         if deep:
             data = data.copy()
-        return GeoDataFrame(data)._propogate_attributes(self)
+        return GeoDataFrame(data).__finalize__(self)
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)

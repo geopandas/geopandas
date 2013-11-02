@@ -15,6 +15,8 @@ import shapely.affinity as affinity
 
 from geopandas.plotting import plot_series
 
+OLD_PANDAS = issubclass(Series, np.ndarray)
+
 EMPTY_COLLECTION = GeometryCollection()
 EMPTY_POLYGON = Polygon()
 EMPTY_POINT = Point()
@@ -29,7 +31,7 @@ def _is_empty(x):
 
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
-    _prop_attributes = ['name', 'crs']
+    _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -490,6 +492,10 @@ class GeoSeries(Series):
     # Implement pandas methods
     #
 
+    @property
+    def _constructor(self):
+        return GeoSeries
+
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
@@ -520,10 +526,10 @@ class GeoSeries(Series):
     def _can_hold_na(self):
         return False
 
-    def _propogate_attributes(self, other):
-        """ propogate [sic] attributes from other to self"""
-        # NOTE: backported from pandas master (commit 4493bf36)
-        for name in self._prop_attributes:
+    def __finalize__(self, other, method=None, **kwargs):
+        """ propagate metadata from other to self """
+        # NOTE: backported from pandas master (upcoming v0.13)
+        for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
@@ -542,7 +548,7 @@ class GeoSeries(Series):
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
         return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name)._propogate_attributes(self)
+                      name=self.name).__finalize__(self)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
@@ -554,18 +560,23 @@ class GeoSeries(Series):
                **kwargs):
         """Fill NA/NaN values with a geometry (empty polygon by default).
 
-        "method" is currently not implemented for GeoSeries.
+        "method" is currently not implemented for pandas <= 0.12.
         """
-        if method is not None:
-            raise NotImplementedError('Fill method is currently not implemented for GeoSeries')
-        if isinstance(value, BaseGeometry):
-            result = self.copy() if not inplace else self
-            mask = self.isnull()
-            result[mask] = value
-            if not inplace:
-                return GeoSeries(result)
+        if not OLD_PANDAS:
+            return super(GeoSeries, self).fillna(value=value, method=method,
+                                                 inplace=inplace, **kwargs)
         else:
-            raise ValueError('Non-geometric fill values not allowed for GeoSeries')
+            # FIXME: this is an ugly way to support pandas <= 0.12
+            if method is not None:
+                raise NotImplementedError('Fill method is currently not implemented for GeoSeries')
+            if isinstance(value, BaseGeometry):
+                result = self.copy() if not inplace else self
+                mask = self.isnull()
+                result[mask] = value
+                if not inplace:
+                    return GeoSeries(result)
+            else:
+                raise ValueError('Non-geometric fill values not allowed for GeoSeries')
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=EMPTY_POLYGON, **kwargs):

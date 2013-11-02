@@ -1,7 +1,12 @@
 import unittest
+
+import numpy as np
 from shapely.geometry import Point
 from pandas import Series, DataFrame
+
 from geopandas import GeoSeries, GeoDataFrame
+
+OLD_PANDAS = issubclass(Series, np.ndarray)
 
 
 class TestSeries(unittest.TestCase):
@@ -17,11 +22,9 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts[::2]) is GeoSeries
         assert type(self.polys[:2]) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_head(self):
         assert type(self.pts.head()) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_tail(self):
         assert type(self.pts.tail()) is GeoSeries
 
@@ -31,11 +34,9 @@ class TestSeries(unittest.TestCase):
     def test_sort_order(self):
         assert type(self.pts.order()) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_loc(self):
         assert type(self.pts.loc[5:]) is GeoSeries
 
-    @unittest.skip('not yet implemented')
     def test_iloc(self):
         assert type(self.pts.iloc[5:]) is GeoSeries
 
@@ -49,7 +50,7 @@ class TestSeries(unittest.TestCase):
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
-    @unittest.skip('not yet implemented')
+    @unittest.skipIf(OLD_PANDAS, 'Groupby not supported on pandas <= 0.12')
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries

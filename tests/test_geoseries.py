@@ -240,12 +240,13 @@ class TestSeries(unittest.TestCase):
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
-        na = self.na_none.fillna()
+        na = self.na_none.fillna(Point())
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)
-        with self.assertRaises(NotImplementedError):
-            self.na_none.fillna(method='backfill')
-        
+        self.assertTrue(geom_equals(self.na_none[:2], na[:2]))
+        # XXX: method works inconsistently for different pandas versions
+        #self.na_none.fillna(method='backfill')
+
     def test_interpolate(self):
         res = self.g5.interpolate(0.75, normalized=True)
         self.assertTrue(geom_equals(res, GeoSeries([Point(0.5, 1.0),
