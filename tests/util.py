@@ -1,6 +1,10 @@
 import os.path
 import urllib2
 
+from geopandas import GeoDataFrame, GeoSeries
+import numpy as np
+
+
 try:
     import psycopg2
     from psycopg2 import OperationalError
@@ -8,7 +12,6 @@ except ImportError:
     class OperationalError(Exception):
         pass
 
-from geopandas import GeoDataFrame
 
 def download_nybb():
     """ Returns the path to the NYC boroughs file. Downloads if necessary. """
@@ -20,7 +23,8 @@ def download_nybb():
             response = urllib2.urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
             f.write(response.read())
     return filename
-    
+
+
 def validate_boro_df(test, df):
     """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
     test.assertTrue(isinstance(df, GeoDataFrame))
@@ -32,6 +36,7 @@ def validate_boro_df(test, df):
         test.assertTrue(col in df.columns, 'Column {} missing'.format(col))
     test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
 
+
 def connect(dbname):
     try:
         con = psycopg2.connect(dbname=dbname)
@@ -40,12 +45,13 @@ def connect(dbname):
 
     return con
 
+
 def create_db(df):
     """
     Create a nybb table in the test_geopandas PostGIS database.
-    Returns a boolean indicating whether the database table was successfully 
+    Returns a boolean indicating whether the database table was successfully
     created
-    
+
     """
     # Try to create the database, skip the db tests if something goes
     # wrong
@@ -72,9 +78,9 @@ def create_db(df):
 
         for i, row in df.iterrows():
             sql = """INSERT INTO nybb VALUES (
-                ST_GeometryFromText(%s), %s, %s, %s, %s 
+                ST_GeometryFromText(%s), %s, %s, %s, %s
             );"""
-            cursor.execute(sql, (row['geometry'].wkt, 
+            cursor.execute(sql, (row['geometry'].wkt,
                                  row['BoroCode'],
                                  row['BoroName'],
                                  row['Shape_Leng'],
@@ -94,3 +100,21 @@ def assert_seq_equal(left, right):
     for elem_left, elem_right in zip(left, right):
         assert elem_left == elem_right, "%r != %r" % (left, right)
     return True
+
+
+def geom_equals(this, that):
+    """
+    Test for geometric equality, allowing all empty geometries to be considered equal
+    """
+    empty = np.logical_and(this.is_empty, that.is_empty)
+    eq = this.equals(that)
+    return np.all(np.logical_or(eq, empty))
+
+
+def geom_almost_equals(this, that):
+    """
+    Test for geometric equality, allowing all empty geometries to be considered almost equal
+    """
+    empty = np.logical_and(this.is_empty, that.is_empty)
+    eq = this.almost_equals(that)
+    return np.all(np.logical_or(eq, empty))

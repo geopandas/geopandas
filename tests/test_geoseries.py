@@ -9,23 +9,8 @@ from shapely.geometry import Polygon, Point, LineString
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
 from pandas import Series
+from tests.util import geom_equals, geom_almost_equals
 
-
-def geom_equals(this, that):
-    """
-    Test for geometric equality, allowing all empty geometries to be considered equal
-    """
-    empty = np.logical_and(this.is_empty, that.is_empty)
-    eq = this.equals(that)
-    return np.all(np.logical_or(eq, empty))
-
-def geom_almost_equals(this, that):
-    """
-    Test for geometric equality, allowing all empty geometries to be considered almost equal
-    """
-    empty = np.logical_and(this.is_empty, that.is_empty)
-    eq = this.almost_equals(that)
-    return np.all(np.logical_or(eq, empty))
 
 class TestSeries(unittest.TestCase):
 
