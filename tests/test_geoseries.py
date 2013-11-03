@@ -292,3 +292,9 @@ class TestSeries(unittest.TestCase):
         self.assertEqual(self.landmarks.total_bounds, bbox)
         self.assertEqual(self.g1.total_bounds, (0, 0, 1, 1))
 
+    def test_coord_slice(self):
+        """ Test CoordinateSlicer """
+        # need some better test cases
+        self.assertTrue(geom_equals(self.g3, self.g3.cx[:, :]))
+        self.assertTrue(geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1]))
+        self.assertTrue(geom_equals(self.g3[[False, True]], self.g3.cx[0:0.1, 0.9:1.0]))
