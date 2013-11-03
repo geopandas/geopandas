@@ -163,7 +163,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib.colors import Normalize
     from matplotlib import cm
     if column is None:
-        return plot_series(s['geometry'], colormap=colormap, alpha=alpha, axes=axes)
+        return plot_series(s.geometry, colormap=colormap, alpha=alpha, axes=axes)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -185,7 +185,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             ax = plt.gca()
         else:
             ax = axes
-        for geom, value in zip(s['geometry'], values):
+        for geom, value in zip(s.geometry, values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), alpha=alpha)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':

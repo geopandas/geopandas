@@ -17,16 +17,32 @@ class GeoDataFrame(DataFrame):
     A GeoDataFrame object is a pandas.DataFrame that has a column
     named 'geometry' which is a GeoSeries.
     """
-    _metadata = ['crs']
+    _metadata = ['crs', '_geometry_column_name']
+    _geometry_column_name = 'geometry'
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
 
-    @property
-    def geometry(self):
-        return self['geometry']
+    def _get_geometry(self):
+        if self._geometry_column_name not in self:
+            raise AttributeError("No geometry data set yet (expected in"
+                                 " column '%s'." % self._geometry_column_name)
+        return self[self._geometry_column_name]
+
+    def _set_geometry(self, col):
+        try:
+            if col in self:
+                raise ValueError("Can't set a column name via the geometry"
+                                 " property")
+        except TypeError: # hashing issues
+            pass
+
+        self.set_geometry(self, col, inplace=True)
+
+    geometry = property(fget=_get_geometry, fset=_set_geometry,
+                        doc="Geometry data for GeoDataFrame")
 
     def set_geometry(self, col, drop=True, inplace=False):
         """

@@ -30,7 +30,7 @@ def validate_boro_df(test, df):
     columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
     for col in columns:
         test.assertTrue(col in df.columns, 'Column {} missing'.format(col))
-    test.assertTrue(all(df['geometry'].type == 'MultiPolygon'))
+    test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
 
 def connect(dbname):
     try:
@@ -84,4 +84,13 @@ def create_db(df):
         con.commit()
         con.close()
 
+    return True
+
+
+def assert_seq_equal(left, right):
+    """Poor man's version of assert_almost_equal which isn't working with Shapely
+    objects right now"""
+    assert len(left) == len(right), "Mismatched lengths: %d != %d" % (len(left), len(right))
+    for elem_left, elem_right in zip(left, right):
+        assert elem_left == elem_right, "%r != %r" % (left, right)
     return True

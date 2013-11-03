@@ -35,12 +35,40 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
+    def test_geometry_property(self):
+        tests.util.assert_seq_equal(self.df.geometry, self.df['geometry'])
+        df = self.df.copy()
+        new_geom = [Point(x,y) for x, y in zip(range(len(self.df)),
+                                               range(len(self.df)))]
+
+        df.geometry = new_geom
+        tests.util.assert_seq_equal(df.geometry, new_geom)
+        # should this be tested here?
+        tests.util.assert_seq_equal(df['geometry'], new_geom)
+
+        def _should_raise_att_error():
+            df = self.df.copy()
+            del df['geometry']
+            df.geometry
+
+        self.assertRaises(AttributeError, _should_raise_att_error)
+
+        def _should_raise_key_error():
+            df = self.df.copy()
+            del df['geometry']
+            df['geometry']
+
+        self.assertRaises(KeyError, _should_raise_key_error)
+
     def test_set_geometry(self):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        original_geom = self.df.geometry
+
         df2 = self.df.set_geometry(geom)
         self.assert_(self.df is not df2)
-        for x, y in zip(df2.geometry.values, geom):
-            self.assertEqual(x, y)
+        tests.util.assert_seq_equal(df2.geometry, geom)
+        tests.util.assert_seq_equal(self.df.geometry, original_geom)
+        tests.util.assert_seq_equal(self.df['geometry'], self.df.geometry)
 
     def test_set_geometry_col(self):
         g = self.df.geometry
@@ -51,8 +79,7 @@ class TestDataFrame(unittest.TestCase):
         # Drop is true by default
         self.assert_('simplified_geometry' not in df2)
 
-        for x, y in zip(df2.geometry.values, g_simplified):
-            self.assertEqual(x, y)
+        tests.util.assert_seq_equal(df2.geometry, g_simplified)
 
     def test_set_geometry_col_no_drop(self):
         g = self.df.geometry
@@ -61,16 +88,14 @@ class TestDataFrame(unittest.TestCase):
         df2 = self.df.set_geometry('simplified_geometry', drop=False)
 
         self.assert_('simplified_geometry' in df2)
-
-        for x, y in zip(df2.geometry.values, g_simplified):
-            self.assertEqual(x, y)
+        tests.util.assert_seq_equal(df2.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]
         ret = self.df.set_geometry(geom, inplace=True)
         self.assert_(ret is None)
-        for x, y in zip(self.df['geometry'].values, geom):
-            self.assertEqual(x, y)
+        tests.util.assert_seq_equal(self.df['geometry'], geom)
+        tests.util.assert_seq_equal(self.df.geometry, geom)
 
     def test_to_json(self):
         text = self.df.to_json()
