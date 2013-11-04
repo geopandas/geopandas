@@ -8,8 +8,8 @@ import numpy as np
 from shapely.geometry import Point, Polygon
 
 
-from geopandas import GeoDataFrame, read_file
-import tests.util
+from geopandas import GeoDataFrame, read_file, GeoSeries
+import tests.util as tu
 
 
 class TestDataFrame(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename = tests.util.download_nybb()
+        nybb_filename = tu.download_nybb()
 
         self.df = read_file('/nybb_13a/nybb.shp', vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
@@ -36,15 +36,17 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(self.df2.crs == self.crs)
 
     def test_geometry_property(self):
-        tests.util.assert_seq_equal(self.df.geometry, self.df['geometry'])
+        tu.assert_geoseries_equal(self.df.geometry, self.df['geometry'],
+                                  check_dtype=True, check_index_type=True)
+
         df = self.df.copy()
         new_geom = [Point(x,y) for x, y in zip(range(len(self.df)),
                                                range(len(self.df)))]
-
         df.geometry = new_geom
-        tests.util.assert_seq_equal(df.geometry, new_geom)
-        # should this be tested here?
-        tests.util.assert_seq_equal(df['geometry'], new_geom)
+
+        new_geom = GeoSeries(new_geom, index=df.index)
+        tu.assert_geoseries_equal(df.geometry, new_geom)
+        tu.assert_geoseries_equal(df['geometry'], new_geom)
 
         def _should_raise_att_error():
             df = self.df.copy()
@@ -61,14 +63,14 @@ class TestDataFrame(unittest.TestCase):
         self.assertRaises(KeyError, _should_raise_key_error)
 
     def test_set_geometry(self):
-        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        geom = GeoSeries([Point(x,y) for x,y in zip(range(5), range(5))])
         original_geom = self.df.geometry
 
         df2 = self.df.set_geometry(geom)
         self.assert_(self.df is not df2)
-        tests.util.assert_seq_equal(df2.geometry, geom)
-        tests.util.assert_seq_equal(self.df.geometry, original_geom)
-        tests.util.assert_seq_equal(self.df['geometry'], self.df.geometry)
+        tu.assert_geoseries_equal(df2.geometry, geom)
+        tu.assert_geoseries_equal(self.df.geometry, original_geom)
+        tu.assert_geoseries_equal(self.df['geometry'], self.df.geometry)
 
     def test_set_geometry_col(self):
         g = self.df.geometry
@@ -79,23 +81,22 @@ class TestDataFrame(unittest.TestCase):
         # Drop is true by default
         self.assert_('simplified_geometry' not in df2)
 
-        tests.util.assert_seq_equal(df2.geometry, g_simplified)
+        tu.assert_geoseries_equal(df2.geometry, g_simplified)
 
     def test_set_geometry_col_no_drop(self):
         g = self.df.geometry
         g_simplified = g.simplify(100)
         self.df['simplified_geometry'] = g_simplified
         df2 = self.df.set_geometry('simplified_geometry', drop=False)
-
         self.assert_('simplified_geometry' in df2)
-        tests.util.assert_seq_equal(df2.geometry, g_simplified)
+        tu.assert_geoseries_equal(df2.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]
         ret = self.df.set_geometry(geom, inplace=True)
         self.assert_(ret is None)
-        tests.util.assert_seq_equal(self.df['geometry'], geom)
-        tests.util.assert_seq_equal(self.df.geometry, geom)
+        geom = GeoSeries(geom, index=self.df.index)
+        tu.assert_geoseries_equal(self.df.geometry, geom)
 
     def test_to_json(self):
         text = self.df.to_json()
@@ -197,8 +198,8 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
 
     def test_from_postgis_default(self):
-        con = tests.util.connect('test_geopandas')
-        if con is None or not tests.util.create_db(self.df):
+        con = tu.connect('test_geopandas')
+        if con is None or not tu.create_db(self.df):
             raise unittest.case.SkipTest()
 
         try:
@@ -207,11 +208,11 @@ class TestDataFrame(unittest.TestCase):
         finally:
             con.close()
 
-        tests.util.validate_boro_df(self, df)
+        tu.validate_boro_df(self, df)
 
     def test_from_postgis_custom_geom_col(self):
-        con = tests.util.connect('test_geopandas')
-        if con is None or not tests.util.create_db(self.df):
+        con = tu.connect('test_geopandas')
+        if con is None or not tu.create_db(self.df):
             raise unittest.case.SkipTest()
 
         try:
@@ -223,4 +224,4 @@ class TestDataFrame(unittest.TestCase):
         finally:
             con.close()
 
-        tests.util.validate_boro_df(self, df)
+        tu.validate_boro_df(self, df)

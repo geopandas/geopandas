@@ -2,7 +2,6 @@ import os.path
 import urllib2
 
 from geopandas import GeoDataFrame, GeoSeries
-import numpy as np
 
 
 try:
@@ -97,24 +96,91 @@ def assert_seq_equal(left, right):
     """Poor man's version of assert_almost_equal which isn't working with Shapely
     objects right now"""
     assert len(left) == len(right), "Mismatched lengths: %d != %d" % (len(left), len(right))
+
     for elem_left, elem_right in zip(left, right):
         assert elem_left == elem_right, "%r != %r" % (left, right)
-    return True
 
 
 def geom_equals(this, that):
+    """Test for geometric equality. Empty geometries are considered equal.
+
+    Parameters
+    ----------
+    this, that : arrays of Geo objects (or anything that has an `is_empty`
+                 attribute)
     """
-    Test for geometric equality, allowing all empty geometries to be considered equal
-    """
-    empty = np.logical_and(this.is_empty, that.is_empty)
-    eq = this.equals(that)
-    return np.all(np.logical_or(eq, empty))
+
+    return (this.equals(that) | (this.is_empty & that.is_empty)).all()
 
 
 def geom_almost_equals(this, that):
+    """Test for 'almost' geometric equality. Empty geometries considered equal.
+
+    Parameters
+    ----------
+    this, that : arrays of Geo objects (or anything that has an `is_empty`
+                 property)
     """
-    Test for geometric equality, allowing all empty geometries to be considered almost equal
+
+    return (this.almost_equals(that) | (this.is_empty & that.is_empty)).all()
+
+# TODO: Remove me when standardizing on pandas 0.13, which already includes
+#       this test util.
+def assert_isinstance(obj, klass_or_tuple):
+    assert isinstance(obj, klass_or_tuple), "type: %r != %r" % (
+                                           type(obj).__name__,
+                                           getattr(klass_or_tuple, '__name__',
+                                                   klass_or_tuple))
+
+def assert_geoseries_equal(left, right, check_dtype=False,
+                           check_index_type=False,
+                           check_series_type=True,
+                           check_less_precise=False,
+                           check_geom_type=False):
+    """Test util for checking that two GeoSeries are equal.
+
+    Parameters
+    ----------
+    left, right : two GeoSeries
+    check_dtype : bool, default False
+        if True, check geo dtype [only included so it's a drop-in replacement
+        for assert_series_equal]
+    check_index_type : bool, default False
+        check that index types are equal
+    check_series_type : bool, default True
+        check that both are same type (*and* are GeoSeries). If False,
+        will attempt to convert both into GeoSeries.
+    check_less_precise : bool, default False
+        if True, use geom_almost_equals. if False, use geom_equals.
+    check_geom_type : bool, default False
+        if True, check that all the geom types are equal.
     """
-    empty = np.logical_and(this.is_empty, that.is_empty)
-    eq = this.almost_equals(that)
-    return np.all(np.logical_or(eq, empty))
+    assert len(left) == len(right), "%d != %d" % (len(left), len(right))
+
+    if check_index_type:
+        assert_isinstance(left.index, type(right.index))
+
+    if check_dtype:
+        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype,
+                                                               right.dtype)
+
+    if check_series_type:
+        assert isinstance(left, GeoSeries)
+        assert_isinstance(left, type(right))
+    else:
+        if not isinstance(left, GeoSeries):
+            left = GeoSeries(left)
+        if not isinstance(right, GeoSeries):
+            right = GeoSeries(right, index=left.index)
+
+    assert left.index.equals(right.index), "index: %s != %s" % (left.index,
+                                                                right.index)
+
+    if check_geom_type:
+        assert (left.type == right.type).all(), "type: %s != %s" % (left.type,
+                                                                    right.type)
+
+    if check_less_precise:
+        assert geom_almost_equals(left, right)
+    else:
+        assert geom_equals(left, right)
