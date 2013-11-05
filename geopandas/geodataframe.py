@@ -25,6 +25,13 @@ class GeoDataFrame(DataFrame):
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
 
+    def __setattr__(self, attr, val):
+        # have to special case geometry b/c pandas tries to use as column...
+        if attr == 'geometry':
+            object.__setattr__(self, attr, val)
+        else:
+            super(GeoDataFrame, self).__setattr__(attr, val)
+
     def _get_geometry(self):
         if self._geometry_column_name not in self:
             raise AttributeError("No geometry data set yet (expected in"
@@ -32,14 +39,12 @@ class GeoDataFrame(DataFrame):
         return self[self._geometry_column_name]
 
     def _set_geometry(self, col):
-        try:
-            if col in self:
-                raise ValueError("Can't set a column name via the geometry"
-                                 " property")
-        except TypeError: # hashing issues
-            pass
+        # TODO: Use pandas' core.common.is_list_like() here.
+        if not isinstance(col, (list, np.ndarray, Series)):
+            raise ValueError("Must use a list-like to set the geometry"
+                             " property")
 
-        self.set_geometry(self, col, inplace=True)
+        self.set_geometry(col, inplace=True)
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
@@ -79,8 +84,16 @@ class GeoDataFrame(DataFrame):
             level = col.values
         elif isinstance(col, (list, np.ndarray)):
             level = col
+        elif hasattr(col, 'ndim') and col.ndim != 1:
+            raise ValueError("Must pass array with one dimension only")
         else:
-            level = frame[col].values
+            try:
+                level = frame[col].values
+            except KeyError:
+                raise ValueError("Unknown column %s" % col)
+            except:
+                print col
+                raise
             if drop:
                 to_remove = col
 
