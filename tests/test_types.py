@@ -65,7 +65,7 @@ class TestDataFrame(unittest.TestCase):
             for x, y in zip(range(N), range(N))])
 
     def test_geometry(self):
-        assert type(self.df['geometry']) is GeoSeries
+        assert type(self.df.geometry) is GeoSeries
 
     def test_nongeometry(self):
         assert type(self.df['value1']) is Series
