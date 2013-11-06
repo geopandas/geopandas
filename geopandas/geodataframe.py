@@ -64,7 +64,7 @@ class GeoDataFrame(DataFrame):
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
 
-    def set_geometry(self, col, drop=False, inplace=False):
+    def set_geometry(self, col, drop=False, inplace=False, crs=None):
         """
         Set the GeoDataFrame geometry using either an existing column or 
         the specified input. By default yields a new object.
@@ -94,6 +94,8 @@ class GeoDataFrame(DataFrame):
         else:
             frame = self.copy()
 
+        crs = crs or self.crs
+
         to_remove = None
         geo_column_name = DEFAULT_GEO_COLUMN_NAME
         if isinstance(col, Series):
@@ -120,6 +122,7 @@ class GeoDataFrame(DataFrame):
 
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
+        frame.crs = crs
 
         if not inplace:
             return frame

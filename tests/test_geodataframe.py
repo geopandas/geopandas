@@ -47,9 +47,13 @@ class TestDataFrame(unittest.TestCase):
         self.assertEqual(df._geometry_column_name, 'location')
 
         geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
-        df2 = df.set_geometry(geom2)
+        df2 = df.set_geometry(geom2, crs='dummy_crs')
         self.assert_('geometry' in df2)
         self.assert_('location' in df2)
+        self.assertEqual(df2.crs, 'dummy_crs')
+        self.assertEqual(df2.geometry.crs, 'dummy_crs')
+        # reset so it outputs okay
+        df2.crs = df.crs
         tu.assert_geoseries_equal(df2.geometry, GeoSeries(geom2))
         tu.assert_geoseries_equal(df2['location'], df['location'])
 
