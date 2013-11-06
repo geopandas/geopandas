@@ -1,7 +1,6 @@
 from collections import OrderedDict
 import json
 import os
-import warnings
 
 import fiona
 import numpy as np
@@ -37,12 +36,6 @@ class GeoDataFrame(DataFrame):
         self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
-        else:
-            if not 'geometry' in self:
-                warnings.warn("No geometry set in constructor. Geometric funcs"
-                              " may not work. You can set geometry via the"
-                              " geometry property or with the geometry"
-                              " keyword argument")
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -291,6 +284,7 @@ class GeoDataFrame(DataFrame):
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
+            result._geometry_column_name = geo_col
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
             result.crs = self.crs

@@ -36,10 +36,11 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(self.df2.crs == self.crs)
 
     def test_different_geo_colname(self):
-        data = {"A": range(5), "B": range(-5, 1),
+        data = {"A": range(5), "B": range(-5, 0),
                 "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
         df = GeoDataFrame(data, crs=self.crs, geometry='location')
-        tu.assert_geoseries_equal(df.geometry, data['location'])
+        locs = GeoSeries(data['location'])
+        tu.assert_geoseries_equal(df.geometry, locs)
         self.assert_('geometry' not in df)
         self.assertEqual(df.geometry.name, 'location')
         # internal implementation detail
@@ -49,7 +50,7 @@ class TestDataFrame(unittest.TestCase):
         df2 = df.set_geometry(geom2)
         self.assert_('geometry' in df)
         self.assert_('location' in df)
-        tu.assert_geoseries_equal(df2.geometry, geom2)
+        tu.assert_geoseries_equal(df2.geometry, GeoSeries(geom2))
         tu.assert_geoseries_equal(df2['location'], df['location'])
 
     def test_geometry_property(self):
@@ -122,19 +123,14 @@ class TestDataFrame(unittest.TestCase):
         self.df['simplified_geometry'] = g_simplified
         df2 = self.df.set_geometry('simplified_geometry')
 
-        # Drop is true by default
-        self.assert_('simplified_geometry' not in df2)
-
-        tu.assert_geoseries_equal(df2.geometry, g_simplified)
-
-    def test_set_geometry_col_no_drop(self):
-        g = self.df.geometry
-        g_simplified = g.simplify(100)
-        self.df['simplified_geometry'] = g_simplified
-        df2 = self.df.set_geometry('simplified_geometry')
+        # Drop is false by default
         self.assert_('simplified_geometry' in df2)
         tu.assert_geoseries_equal(df2.geometry, g_simplified)
-        self.assert_(df2.geometry.name == 'simplified_geometry')
+
+        # If True, drops column and renames to geometry
+        df3 = self.df.set_geometry('simplified_geometry', drop=True)
+        self.assert_('simplified_geometry' not in df3)
+        tu.assert_geoseries_equal(df3.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]
