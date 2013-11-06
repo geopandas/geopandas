@@ -1,8 +1,6 @@
 from collections import defaultdict
 
 import fiona
-import geopy
-from geopy.geocoders.base import GeocoderResultError
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
@@ -40,6 +38,9 @@ def geocode(strings, provider='googlev3', **kwargs):
     1  1600 Pennsylvania Avenue Northwest, President'...  POINT (-77.0365122999999983 38.8978377999999978)
 
     """
+    import geopy
+    from geopy.geocoders.base import GeocoderResultError
+
     if not isinstance(strings, pd.Series):
         strings = pd.Series(strings)
 
