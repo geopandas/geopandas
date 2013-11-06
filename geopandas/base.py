@@ -19,12 +19,14 @@ def _geo_op(this, other, op):
         if crs != other.crs:
             warn('GeoSeries crs mismatch: {} and {}'.format(this.crs, 
                                                             other.crs))
-        this, other = this.align(other)
-        return gpd.GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
-                      index=this.index, crs=crs)
+        this, other = this.align(other.geometry)
+        return gpd.GeoSeries([getattr(s[0], op)(s[1])
+                             for s in zip(this, other)],
+                             index=this.index, crs=crs)
     else:
-        return gpd.GeoSeries([getattr(s, op)(other) for s in this],
-                      index=this.index, crs=this.crs)
+        return gpd.GeoSeries([getattr(s, op)(other)
+                             for s in this.geometry],
+                             index=this.index, crs=this.crs)
 
 
 # TODO: think about merging with _geo_op
@@ -32,21 +34,21 @@ def _series_op(this, other, op, **kwargs):
     """Geometric operation that returns a pandas Series"""
     if isinstance(other, GeoPandasBase):
         this = this.geometry
-        this, other = this.align(other)
+        this, other = this.align(other.geometry)
         return Series([getattr(s[0], op)(s[1], **kwargs) 
                       for s in zip(this, other)], index=this.index)
     else:
-        return Series([getattr(s, op)(other, **kwargs) for s in this],
-                      index=this.index)
+        return Series([getattr(s, op)(other, **kwargs)
+                      for s in this.geometry], index=this.index)
 
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""
-    return gpd.GeoSeries([getattr(geom, op) for geom in this],
+    return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
                      index=this.index, crs=this.crs)
 
 def _series_unary_op(this, op):
     """Unary operation that returns a Series"""
-    return Series([getattr(geom, op) for geom in this],
+    return Series([getattr(geom, op) for geom in this.geometry],
                      index=this.index)
 
 
