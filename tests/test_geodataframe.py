@@ -35,6 +35,23 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
+    def test_different_geo_colname(self):
+        data = {"A": range(5), "B": range(-5, 1),
+                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=self.crs, geometry='location')
+        tu.assert_geoseries_equal(df.geometry, data['location'])
+        self.assert_('geometry' not in df)
+        self.assertEqual(df.geometry.name, 'location')
+        # internal implementation detail
+        self.assertEqual(df._geometry_column_name, 'location')
+
+        geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
+        df2 = df.set_geometry(geom2)
+        self.assert_('geometry' in df)
+        self.assert_('location' in df)
+        tu.assert_geoseries_equal(df2.geometry, geom2)
+        tu.assert_geoseries_equal(df2['location'], df['location'])
+
     def test_geometry_property(self):
         tu.assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                   check_dtype=True, check_index_type=True)
@@ -114,9 +131,10 @@ class TestDataFrame(unittest.TestCase):
         g = self.df.geometry
         g_simplified = g.simplify(100)
         self.df['simplified_geometry'] = g_simplified
-        df2 = self.df.set_geometry('simplified_geometry', drop=False)
+        df2 = self.df.set_geometry('simplified_geometry')
         self.assert_('simplified_geometry' in df2)
         tu.assert_geoseries_equal(df2.geometry, g_simplified)
+        self.assert_(df2.geometry.name == 'simplified_geometry')
 
     def test_set_geometry_inplace(self):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]

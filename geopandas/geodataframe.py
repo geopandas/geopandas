@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import json
 import os
+import warnings
 
 import fiona
 import numpy as np
@@ -15,15 +16,33 @@ import geopandas.io
 class GeoDataFrame(DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
-    named 'geometry' which is a GeoSeries.
+    with geometry. In addition to the standard DataFrame constructor arguments,
+    GeoDataFrame also accepts the following keyword arguments:
+
+    Keyword Arguments
+    -----------------
+    crs : str (optional)
+        Coordinate system
+    geometry : str or array (optional)
+        If str, column to use as geometry. If array, will be set as 'geometry'
+        column on GeoDataFrame.
     """
     _metadata = ['crs', '_geometry_column_name']
     _geometry_column_name = 'geometry'
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
+        geometry = kwargs.pop('geometry', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
+        if geometry is not None:
+            self.set_geometry(geometry, inplace=True)
+        else:
+            if not 'geometry' in self:
+                warnings.warn("No geometry set in constructor. Geometric funcs"
+                              " may not work. You can set geometry via the"
+                              " geometry property or with the geometry"
+                              " keyword argument")
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -49,7 +68,7 @@ class GeoDataFrame(DataFrame):
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
 
-    def set_geometry(self, col, drop=True, inplace=False):
+    def set_geometry(self, col, drop=False, inplace=False):
         """
         Set the GeoDataFrame geometry using either an existing column or 
         the specified input. By default yields a new object.
@@ -80,6 +99,7 @@ class GeoDataFrame(DataFrame):
             frame = self.copy()
 
         to_remove = None
+        geo_column_name = 'geometry'
         if isinstance(col, Series):
             level = col.values
         elif isinstance(col, (list, np.ndarray)):
@@ -96,11 +116,14 @@ class GeoDataFrame(DataFrame):
                 raise
             if drop:
                 to_remove = col
+            else:
+                geo_column_name = col
 
         if to_remove:
             del frame[to_remove]
 
-        frame['geometry'] = level
+        frame[geo_column_name] = level
+        frame._geometry_column_name = geo_column_name
 
         if not inplace:
             return frame
@@ -261,13 +284,14 @@ class GeoDataFrame(DataFrame):
         GeoDataFrame.
         """
         result = super(GeoDataFrame, self).__getitem__(key)
-        if isinstance(key, basestring) and key == 'geometry':
+        geo_col = self._geometry_column_name
+        if isinstance(key, basestring) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
-        elif isinstance(result, DataFrame) and 'geometry' in result:
+        elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
-        elif isinstance(result, DataFrame) and 'geometry' not in result:
+        elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
             result.crs = self.crs
         return result

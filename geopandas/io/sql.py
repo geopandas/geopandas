@@ -21,7 +21,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     geom_col: string, default 'geom'
         column name to convert to shapely geometries
     crs: optional
-        CRS to use for the returned GeoDataFrame      
+        CRS to use for the returned GeoDataFrame
 
     See the documentation for pandas.read_sql for further explanation 
     of the following parameters:
@@ -37,7 +37,6 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
 
     s = wkb_geoms.apply(lambda x: shapely.wkb.loads(x.decode('hex')))
 
-    df = df.drop(geom_col, axis=1)
-    df['geometry'] = GeoSeries(s)
+    df[geom_col] = GeoSeries(s)
 
-    return GeoDataFrame(df, crs=crs)
+    return GeoDataFrame(df, crs=crs, geometry=geom_col)
