@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import json
 import os
+import sys
 
 import fiona
 import numpy as np
@@ -13,6 +14,7 @@ import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
+PY3 = sys.version[0] == 3
 
 
 class GeoDataFrame(DataFrame):
@@ -332,3 +334,18 @@ class GeoDataFrame(DataFrame):
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
+
+def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+    if inplace:
+        raise ValueError("Can't do inplace setting when converting from"
+                         " DataFrame to GeoDataFrame")
+    gf = GeoDataFrame(self)
+    # this will copy so that BlockManager gets copied
+    return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
+
+if PY3:
+    DataFrame.set_geometry = _dataframe_set_geometry
+else:
+    import types
+    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
+                                              DataFrame)

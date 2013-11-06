@@ -5,6 +5,7 @@ import tempfile
 import shutil
 
 import numpy as np
+import pandas as pd
 from shapely.geometry import Point, Polygon
 
 
@@ -55,7 +56,9 @@ class TestDataFrame(unittest.TestCase):
         # reset so it outputs okay
         df2.crs = df.crs
         tu.assert_geoseries_equal(df2.geometry, GeoSeries(geom2))
-        tu.assert_geoseries_equal(df2['location'], df['location'])
+        # for right now, non-geometry comes back as series
+        tu.assert_geoseries_equal(df2['location'], df['location'],
+                                  check_series_type=False, check_dtype=False)
 
     def test_geometry_property(self):
         tu.assert_geoseries_equal(self.df.geometry, self.df['geometry'],
@@ -270,3 +273,29 @@ class TestDataFrame(unittest.TestCase):
             con.close()
 
         tu.validate_boro_df(self, df)
+
+    def test_dataframe_to_geodataframe(self):
+        df = pd.DataFrame({"A": range(len(self.df)), "location":
+                           list(self.df.geometry)}, index=self.df.index)
+        gf = df.set_geometry('location', crs=self.df.crs)
+        tu.assert_isinstance(df, pd.DataFrame)
+        tu.assert_isinstance(gf, GeoDataFrame)
+        tu.assert_geoseries_equal(gf.geometry, self.df.geometry)
+        self.assertEqual(gf.geometry.name, 'location')
+        self.assert_('geometry' not in gf)
+
+        gf2 = df.set_geometry('location', crs=self.df.crs, drop=True)
+        tu.assert_isinstance(df, pd.DataFrame)
+        tu.assert_isinstance(gf2, GeoDataFrame)
+        self.assertEqual(gf2.geometry.name, 'geometry')
+        self.assert_('geometry' in gf2)
+        self.assert_('location' not in gf2)
+        self.assert_('location' in df)
+
+        # should be a copy
+        df.ix[0, "A"] = 100
+        self.assertEqual(gf.ix[0, "A"], 0)
+        self.assertEqual(gf2.ix[0, "A"], 0)
+
+        self.assertRaises(ValueError, df.set_geometry, 'location',
+                          inplace=True)
