@@ -15,6 +15,7 @@ from six import string_types
 from six import string_types, iteritems
 
 from geopandas import GeoSeries
+from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
@@ -23,7 +24,7 @@ DEFAULT_GEO_COLUMN_NAME = 'geometry'
 PY3 = sys.version_info[0] == 3
 
 
-class GeoDataFrame(DataFrame):
+class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
     with geometry. In addition to the standard DataFrame constructor arguments,

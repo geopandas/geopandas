@@ -53,6 +53,10 @@ class GeoSeries(GeoPandasBase, Series):
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
 
+    @property
+    def geometry(self):
+        return self
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """
@@ -190,6 +194,20 @@ class GeoSeries(GeoPandasBase, Series):
             return GeoSeries(left), GeoSeries(right)
         else: # It is probably a Series, let's keep it that way
             return GeoSeries(left), right
+
+
+    def __contains__(self, other):
+        """Allow tests of the form "geom in s"
+
+        Tests whether a GeoSeries contains a geometry.
+
+        Note: This is not the same as the geometric method "contains".
+        """
+        if isinstance(other, BaseGeometry):
+            return np.any(self.equals(other))
+        else:
+            return False
+
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)

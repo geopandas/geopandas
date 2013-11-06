@@ -13,7 +13,8 @@ import geopandas as gpd
 
 def _geo_op(this, other, op):
     """Operation that returns a GeoSeries"""
-    if isinstance(other, gpd.GeoSeries):
+    if isinstance(other, GeoPandasBase):
+        this = this.geometry
         crs = this.crs
         if crs != other.crs:
             warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
@@ -30,7 +31,8 @@ def _geo_op(this, other, op):
 # TODO: think about merging with _geo_op
 def _series_op(this, other, op, **kwargs):
     """Geometric operation that returns a pandas Series"""
-    if isinstance(other, gpd.GeoSeries):
+    if isinstance(other, GeoPandasBase):
+        this = this.geometry
         this, other = this.align(other)
         return Series([getattr(this_elem, op)(other_elem, **kwargs)
                       for this_elem, other_elem in zip(this, other)],
@@ -390,18 +392,6 @@ class GeoPandasBase(object):
     #
     # Implement standard operators for GeoSeries
     #
-
-    def __contains__(self, other):
-        """Allow tests of the form "geom in s"
-
-        Tests whether a GeoSeries contains a geometry.
-
-        Note: This is not the same as the geometric method "contains".
-        """
-        if isinstance(other, BaseGeometry):
-            return np.any(self.equals(other))
-        else:
-            return False
 
     def __xor__(self, other):
         """Implement ^ operator as for builtin set type"""
