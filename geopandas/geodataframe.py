@@ -9,6 +9,7 @@ from pandas import DataFrame, Series
 from shapely.geometry import mapping
 
 from geopandas import GeoSeries
+from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
@@ -17,7 +18,7 @@ DEFAULT_GEO_COLUMN_NAME = 'geometry'
 PY3 = sys.version[0] == 3
 
 
-class GeoDataFrame(DataFrame):
+class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
     with geometry. In addition to the standard DataFrame constructor arguments,
