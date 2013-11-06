@@ -48,8 +48,8 @@ class TestDataFrame(unittest.TestCase):
 
         geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
         df2 = df.set_geometry(geom2)
-        self.assert_('geometry' in df)
-        self.assert_('location' in df)
+        self.assert_('geometry' in df2)
+        self.assert_('location' in df2)
         tu.assert_geoseries_equal(df2.geometry, GeoSeries(geom2))
         tu.assert_geoseries_equal(df2['location'], df['location'])
 

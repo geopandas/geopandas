@@ -12,6 +12,9 @@ from geopandas.plotting import plot_dataframe
 import geopandas.io
 
 
+DEFAULT_GEO_COLUMN_NAME = 'geometry'
+
+
 class GeoDataFrame(DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
@@ -27,7 +30,7 @@ class GeoDataFrame(DataFrame):
         column on GeoDataFrame.
     """
     _metadata = ['crs', '_geometry_column_name']
-    _geometry_column_name = 'geometry'
+    _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
@@ -92,7 +95,7 @@ class GeoDataFrame(DataFrame):
             frame = self.copy()
 
         to_remove = None
-        geo_column_name = 'geometry'
+        geo_column_name = DEFAULT_GEO_COLUMN_NAME
         if isinstance(col, Series):
             level = col.values
         elif isinstance(col, (list, np.ndarray)):
@@ -105,10 +108,10 @@ class GeoDataFrame(DataFrame):
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
             except:
-                print col
                 raise
             if drop:
                 to_remove = col
+                geo_column_name = DEFAULT_GEO_COLUMN_NAME
             else:
                 geo_column_name = col
 
