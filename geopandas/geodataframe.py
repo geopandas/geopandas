@@ -68,7 +68,7 @@ class GeoDataFrame(DataFrame):
 
     def set_geometry(self, col, drop=False, inplace=False, crs=None):
         """
-        Set the GeoDataFrame geometry using either an existing column or 
+        Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
 
         The original geometry column is replaced with the input.
@@ -80,6 +80,10 @@ class GeoDataFrame(DataFrame):
             Delete column to be used as the new geometry
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
+        crs : str/result of fion.get_crs (optional)
+            Coordinate system to use. If passed, overrides both DataFrame and
+            col's crs. Otherwise, tries to get crs from passed col values or
+            DataFrame.
 
         Examples
         --------
@@ -96,7 +100,8 @@ class GeoDataFrame(DataFrame):
         else:
             frame = self.copy()
 
-        crs = crs or self.crs
+        if not crs:
+            crs = getattr(col, 'crs', self.crs)
 
         to_remove = None
         geo_column_name = DEFAULT_GEO_COLUMN_NAME
@@ -121,6 +126,11 @@ class GeoDataFrame(DataFrame):
 
         if to_remove:
             del frame[to_remove]
+
+        if isinstance(level, GeoSeries) and level.crs != crs:
+            # avoids caching issues/crs sharing issues
+            level = level.copy()
+            level.crs = crs
 
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name

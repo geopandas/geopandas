@@ -73,6 +73,11 @@ class TestDataFrame(unittest.TestCase):
         tu.assert_geoseries_equal(df.geometry, new_geom)
         tu.assert_geoseries_equal(df['geometry'], new_geom)
 
+        # new crs
+        gs = GeoSeries(new_geom, crs="epsg:26018")
+        df.geometry = gs
+        self.assertEqual(df.crs, "epsg:26018")
+
     def test_geometry_property_errors(self):
         # TODO: Much cleaner if we use pandas test options (since assertRaises
         # contextmanager and friends not available in 2.6), but need 0.13 for
@@ -123,6 +128,21 @@ class TestDataFrame(unittest.TestCase):
         # ndim error
         self.assertRaises(ValueError, self.df.set_geometry,
                           self.df)
+
+        # new crs - setting should default to GeoSeries' crs
+        gs = GeoSeries(geom, crs="epsg:26018")
+        new_df = self.df.set_geometry(gs)
+        self.assertEqual(new_df.crs, "epsg:26018")
+
+        # explicit crs overrides self and dataframe
+        new_df = self.df.set_geometry(gs, crs="epsg:27159")
+        self.assertEqual(new_df.crs, "epsg:27159")
+        self.assertEqual(new_df.geometry.crs, "epsg:27159")
+
+        # Series should use dataframe's
+        new_df = self.df.set_geometry(geom.values)
+        self.assertEqual(new_df.crs, self.df.crs)
+        self.assertEqual(new_df.geometry.crs, self.df.crs)
 
     def test_set_geometry_col(self):
         g = self.df.geometry
