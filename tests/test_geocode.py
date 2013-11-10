@@ -4,10 +4,20 @@ import fiona
 import pandas as pd
 from shapely.geometry import Point
 import geopandas as gpd
+import nose
 
 from geopandas.geocode import geocode, _prepare_geocode_result
 
+def _skip_if_no_geopy():
+    try:
+        import geopy
+    except ImportError:
+        raise nose.SkipTest("Geopy not installed. Skipping")
+
 class TestGeocode(unittest.TestCase):
+    def setUp(self):
+        _skip_if_no_geopy()
+
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
         # loop

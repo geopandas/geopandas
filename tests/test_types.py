@@ -65,7 +65,13 @@ class TestDataFrame(unittest.TestCase):
             for x, y in zip(range(N), range(N))])
 
     def test_geometry(self):
-        assert type(self.df['geometry']) is GeoSeries
+        assert type(self.df.geometry) is GeoSeries
+        # still GeoSeries if different name
+        df2 = GeoDataFrame({"coords": [Point(x,y) for x, y in zip(range(5),
+                                                                  range(5))],
+                            "nums": range(5)}, geometry="coords")
+        assert type(df2.geometry) is GeoSeries
+        assert type(df2['coords']) is GeoSeries
 
     def test_nongeometry(self):
         assert type(self.df['value1']) is Series

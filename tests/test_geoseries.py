@@ -9,23 +9,8 @@ from shapely.geometry import Polygon, Point, LineString
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
 from pandas import Series
+from tests.util import geom_equals, geom_almost_equals
 
-
-def geom_equals(this, that):
-    """
-    Test for geometric equality, allowing all empty geometries to be considered equal
-    """
-    empty = np.logical_and(this.is_empty, that.is_empty)
-    eq = this.equals(that)
-    return np.all(np.logical_or(eq, empty))
-
-def geom_almost_equals(this, that):
-    """
-    Test for geometric equality, allowing all empty geometries to be considered almost equal
-    """
-    empty = np.logical_and(this.is_empty, that.is_empty)
-    eq = this.almost_equals(that)
-    return np.all(np.logical_or(eq, empty))
 
 class TestSeries(unittest.TestCase):
 
@@ -291,4 +276,8 @@ class TestSeries(unittest.TestCase):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
         self.assertEqual(self.landmarks.total_bounds, bbox)
         self.assertEqual(self.g1.total_bounds, (0, 0, 1, 1))
+        s = GeoSeries(Point(x, x) for x in xrange(5))
+        self.assertEqual(s.total_bounds, (0.0, 0.0, 4.0, 4.0))
+        s[0] = Point(10, 10)
+        self.assertEqual(s.total_bounds, (1.0, 1.0, 10.0, 10.0))
 
