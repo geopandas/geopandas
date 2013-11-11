@@ -8,9 +8,9 @@ env:
   - PANDAS_VERSION=master
 
 before_install:
-  - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+  - sudo add-apt-repository -y ppa:ubuntugis/ppa
   - sudo apt-get update
-  - sudo apt-get install gdal-bin libgdal-dev postgresql-9.1-postgis-2.0
+  - sudo apt-get install gdal-bin libgdal-dev postgis
   - sudo -u postgres psql -c "drop database if exists test_geopandas"
   - sudo -u postgres psql -c "create database test_geopandas"
   - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
