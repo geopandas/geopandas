@@ -1,3 +1,4 @@
+unittest2
 psycopg2>=2.5.1
 geopy>=0.95.1
 matplotlib>=1.2.1

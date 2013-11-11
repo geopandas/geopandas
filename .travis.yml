@@ -1,7 +1,8 @@
 language: python
 
 python:
-  - "2.7"
+  - 2.6
+  - 2.7
 
 env:
   - PANDAS_VERSION=v0.12.0
