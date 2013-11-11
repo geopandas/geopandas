@@ -1,4 +1,3 @@
-import unittest
 import json
 import os
 import tempfile
@@ -10,6 +9,7 @@ from shapely.geometry import Point, Polygon
 
 
 from geopandas import GeoDataFrame, read_file, GeoSeries
+from tests.util import unittest
 import tests.util as tu
 
 
