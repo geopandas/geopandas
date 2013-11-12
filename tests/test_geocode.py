@@ -1,5 +1,3 @@
-import unittest
-
 import fiona
 import pandas as pd
 from shapely.geometry import Point
@@ -7,6 +5,8 @@ import geopandas as gpd
 import nose
 
 from geopandas.geocode import geocode, _prepare_geocode_result
+from tests.util import unittest
+
 
 def _skip_if_no_geopy():
     try:
