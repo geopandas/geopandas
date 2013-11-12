@@ -101,8 +101,9 @@ class GeoSeries(Series):
             if self.crs != other.crs:
                 warn('GeoSeries crs mismatch: {0} and {1}'.format(self.crs, other.crs))
             this, other = self.align(other)
-            return GeoSeries([getattr(s[0], op)(s[1]) for s in zip(this, other)],
-                          index=this.index, crs=self.crs)
+            return GeoSeries([getattr(this_elem, op)(other_elem)
+                              for this_elem, other_elem in zip(this, other)],
+                             index=this.index, crs=self.crs)
         else:
             return GeoSeries([getattr(s, op)(other) for s in self],
                           index=self.index, crs=self.crs)
@@ -112,7 +113,8 @@ class GeoSeries(Series):
         """Geometric operation that returns a pandas Series"""
         if isinstance(other, GeoSeries):
             this, other = self.align(other)
-            return Series([getattr(s[0], op)(s[1], **kwargs) for s in zip(this, other)],
+            return Series([getattr(this_elem, op)(other_elem, **kwargs) for
+                           this_elem, other_elem in zip(this, other)],
                           index=this.index)
         else:
             return Series([getattr(s, op)(other, **kwargs) for s in self],
