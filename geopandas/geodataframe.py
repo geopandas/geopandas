@@ -9,6 +9,7 @@ from pandas import DataFrame, Series
 from shapely.geometry import mapping
 
 from geopandas import GeoSeries
+from geopandas.base import GeometryMethods
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
@@ -138,6 +139,10 @@ class GeoDataFrame(DataFrame):
 
         if not inplace:
             return frame
+
+    @property
+    def geo(self):
+        return GeometryMethods(self)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
