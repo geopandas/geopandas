@@ -42,7 +42,7 @@ def validate_boro_df(test, df):
     test.assertEqual(len(df), 5)
     columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
     for col in columns:
-        test.assertTrue(col in df.columns, 'Column {} missing'.format(col))
+        test.assertTrue(col in df.columns, 'Column {0} missing'.format(col))
     test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
 
 
