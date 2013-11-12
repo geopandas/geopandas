@@ -136,7 +136,8 @@ def assert_geoseries_equal(left, right, check_dtype=False,
                            check_index_type=False,
                            check_series_type=True,
                            check_less_precise=False,
-                           check_geom_type=False):
+                           check_geom_type=False,
+                           check_crs=True):
     """Test util for checking that two GeoSeries are equal.
 
     Parameters
@@ -154,6 +155,9 @@ def assert_geoseries_equal(left, right, check_dtype=False,
         if True, use geom_almost_equals. if False, use geom_equals.
     check_geom_type : bool, default False
         if True, check that all the geom types are equal.
+    check_crs: bool, default True
+        if check_series_type is True, then also check that the
+        crs matches
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
@@ -167,6 +171,9 @@ def assert_geoseries_equal(left, right, check_dtype=False,
     if check_series_type:
         assert isinstance(left, GeoSeries)
         assert_isinstance(left, type(right))
+
+        if check_crs:
+            assert(left.crs == right.crs)
     else:
         if not isinstance(left, GeoSeries):
             left = GeoSeries(left)

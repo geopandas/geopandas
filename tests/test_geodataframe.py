@@ -40,7 +40,7 @@ class TestDataFrame(unittest.TestCase):
         data = {"A": range(5), "B": range(-5, 0),
                 "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
         df = GeoDataFrame(data, crs=self.crs, geometry='location')
-        locs = GeoSeries(data['location'])
+        locs = GeoSeries(data['location'], crs=self.crs)
         tu.assert_geoseries_equal(df.geometry, locs)
         self.assert_('geometry' not in df)
         self.assertEqual(df.geometry.name, 'location')
@@ -55,7 +55,7 @@ class TestDataFrame(unittest.TestCase):
         self.assertEqual(df2.geometry.crs, 'dummy_crs')
         # reset so it outputs okay
         df2.crs = df.crs
-        tu.assert_geoseries_equal(df2.geometry, GeoSeries(geom2))
+        tu.assert_geoseries_equal(df2.geometry, GeoSeries(geom2, crs=df2.crs))
         # for right now, non-geometry comes back as series
         tu.assert_geoseries_equal(df2['location'], df['location'],
                                   check_series_type=False, check_dtype=False)
@@ -69,7 +69,7 @@ class TestDataFrame(unittest.TestCase):
                                                range(len(self.df)))]
         df.geometry = new_geom
 
-        new_geom = GeoSeries(new_geom, index=df.index)
+        new_geom = GeoSeries(new_geom, index=df.index, crs=df.crs)
         tu.assert_geoseries_equal(df.geometry, new_geom)
         tu.assert_geoseries_equal(df['geometry'], new_geom)
 
@@ -163,7 +163,7 @@ class TestDataFrame(unittest.TestCase):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]
         ret = self.df.set_geometry(geom, inplace=True)
         self.assert_(ret is None)
-        geom = GeoSeries(geom, index=self.df.index)
+        geom = GeoSeries(geom, index=self.df.index, crs=self.df.crs)
         tu.assert_geoseries_equal(self.df.geometry, geom)
 
     def test_to_json(self):
