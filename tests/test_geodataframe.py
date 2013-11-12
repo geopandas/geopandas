@@ -79,39 +79,30 @@ class TestDataFrame(unittest.TestCase):
         self.assertEqual(df.crs, "epsg:26018")
 
     def test_geometry_property_errors(self):
-        # TODO: Much cleaner if we use pandas test options (since assertRaises
-        # contextmanager and friends not available in 2.6), but need 0.13 for
-        # that.
-        def _should_raise_att_error():
+        with self.assertRaises(AttributeError):
             df = self.df.copy()
             del df['geometry']
             df.geometry
-        self.assertRaises(AttributeError, _should_raise_att_error)
 
         # list-like error
-        def _should_raise_value_error_on_set_with_col():
+        with self.assertRaises(ValueError):
             df = self.df2.copy()
             df.geometry = 'value1'
-        self.assertRaises(ValueError, _should_raise_value_error_on_set_with_col)
 
         # list-like error
-        def _should_raise_value_error_with_string():
+        with self.assertRaises(ValueError):
             df = self.df.copy()
             df.geometry = 'apple'
-        self.assertRaises(ValueError, _should_raise_value_error_with_string)
 
-        def _should_raise_key_error():
+        with self.assertRaises(KeyError):
             df = self.df.copy()
             del df['geometry']
             df['geometry']
-        self.assertRaises(KeyError, _should_raise_key_error)
 
         # ndim error
-        def _setting_with_df_should_raise_value_error():
+        with self.assertRaises(ValueError):
             df = self.df.copy()
             df.geometry = df
-        self.assertRaises(ValueError,
-                          _setting_with_df_should_raise_value_error)
 
     def test_set_geometry(self):
         geom = GeoSeries([Point(x,y) for x,y in zip(range(5), range(5))])
@@ -123,11 +114,12 @@ class TestDataFrame(unittest.TestCase):
         tu.assert_geoseries_equal(self.df.geometry, original_geom)
         tu.assert_geoseries_equal(self.df['geometry'], self.df.geometry)
         # unknown column
-        self.assertRaises(ValueError, self.df.set_geometry,
-                          'nonexistent-column')
+        with self.assertRaises(ValueError):
+            self.df.set_geometry('nonexistent-column')
+
         # ndim error
-        self.assertRaises(ValueError, self.df.set_geometry,
-                          self.df)
+        with self.assertRaises(ValueError):
+            self.df.set_geometry(self.df)
 
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:26018")
@@ -317,5 +309,6 @@ class TestDataFrame(unittest.TestCase):
         self.assertEqual(gf.ix[0, "A"], 0)
         self.assertEqual(gf2.ix[0, "A"], 0)
 
-        self.assertRaises(ValueError, df.set_geometry, 'location',
-                          inplace=True)
+        with self.assertRaises(ValueError):
+            df.set_geometry('location', inplace=True)
+
