@@ -12,7 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase
+from geopandas.base import GeometryMethods
 
 OLD_PANDAS = issubclass(Series, np.ndarray)
 
@@ -28,7 +28,7 @@ def _is_empty(x):
         return False
 
 
-class GeoSeries(GeoPandasBase, Series):
+class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
     _metadata = ['name', 'crs']
 
@@ -44,6 +44,10 @@ class GeoSeries(GeoPandasBase, Series):
         crs = kwargs.pop('crs', None)
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
+
+    @property
+    def geo(self):
+        return GeometryMethods(self)
 
     @property
     def geometry(self):
