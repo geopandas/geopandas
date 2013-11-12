@@ -50,9 +50,8 @@ class TestSeries(unittest.TestCase):
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
+    @unittest.skipIf(OLD_PANDAS, 'Groupby not supported on pandas <= 0.12')
     def test_groupby(self):
-        if OLD_PANDAS:
-            raise unittest.SkipTest
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
 
