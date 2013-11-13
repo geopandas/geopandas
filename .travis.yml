@@ -1,7 +1,8 @@
 language: python
 
 python:
-  - "2.7"
+  - 2.6
+  - 2.7
 
 env:
   - PANDAS_VERSION=v0.12.0
@@ -18,6 +19,7 @@ before_install:
 install:
   - pip install -r requirements.txt --use-mirrors
   - pip install -r requirements.test.txt --use-mirrors
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install -r .requirements-2.6.txt --use-mirrors; fi
   - git clone git://github.com/pydata/pandas.git
   - cd pandas
   - git checkout $PANDAS_VERSION

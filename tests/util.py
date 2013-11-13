@@ -3,6 +3,16 @@ import urllib2
 
 from geopandas import GeoDataFrame, GeoSeries
 
+# Compatibility layer for Python 2.6: try loading unittest2
+import sys
+if sys.version_info[:2] == (2, 6):
+    try:
+        import unittest2 as unittest
+    except ImportError:
+        import unittest
+
+else:
+    import unittest
 
 try:
     import psycopg2
@@ -32,7 +42,7 @@ def validate_boro_df(test, df):
     test.assertEqual(len(df), 5)
     columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
     for col in columns:
-        test.assertTrue(col in df.columns, 'Column {} missing'.format(col))
+        test.assertTrue(col in df.columns, 'Column {0} missing'.format(col))
     test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
 
 

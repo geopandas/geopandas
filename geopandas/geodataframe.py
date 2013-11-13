@@ -1,4 +1,8 @@
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    # Python 2.6
+    from ordereddict import OrderedDict
 import json
 import os
 import sys
@@ -211,8 +215,8 @@ class GeoDataFrame(DataFrame):
             return {
                 'id': str(i),
                 'type': 'Feature',
-                'properties': {
-                    k: v for k, v in row.iteritems() if k != 'geometry'},
+                'properties':
+                    dict((k, v) for k, v in row.iteritems() if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
 
         return json.dumps(
@@ -247,8 +251,8 @@ class GeoDataFrame(DataFrame):
             return {
                 'id': str(i),
                 'type': 'Feature',
-                'properties': {
-                    k: v for k, v in row.iteritems() if k != 'geometry'},
+                'properties':
+                    dict((k, v) for k, v in row.iteritems() if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
         
         properties = OrderedDict([(col, convert_type(_type)) for col, _type 

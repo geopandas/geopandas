@@ -1,15 +1,13 @@
 import os
 import shutil
 import tempfile
-import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 from pandas import Series
 from shapely.geometry import Polygon, Point, LineString
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
-from pandas import Series
-from tests.util import geom_equals, geom_almost_equals
+from .util import unittest, geom_equals, geom_almost_equals
 
 
 class TestSeries(unittest.TestCase):
