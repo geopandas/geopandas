@@ -3,7 +3,7 @@ from shapely.geometry import Point
 from pandas import Series, DataFrame
 
 from geopandas import GeoSeries, GeoDataFrame
-from tests.util import unittest
+from .util import unittest
 
 OLD_PANDAS = issubclass(Series, np.ndarray)
 

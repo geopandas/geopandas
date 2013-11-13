@@ -5,7 +5,7 @@ import geopandas as gpd
 import nose
 
 from geopandas.geocode import geocode, _prepare_geocode_result
-from tests.util import unittest
+from .util import unittest
 
 
 def _skip_if_no_geopy():
