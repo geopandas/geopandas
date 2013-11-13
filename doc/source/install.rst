@@ -12,6 +12,9 @@ should work as well.
 Dependencies
 ------------
 
+Requires Python version 2.6 or 2.7 (Python 3.x support is planned
+soon).
+
 - `numpy`_
 - `pandas`_
 - `shapely`_
