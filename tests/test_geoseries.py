@@ -4,7 +4,8 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
 from pandas import Series
-from shapely.geometry import Polygon, Point, LineString
+from shapely.geometry import (Polygon, Point, LineString,
+                              MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
 from .util import unittest, geom_equals, geom_almost_equals
@@ -38,6 +39,31 @@ class TestSeries(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
+
+    def test_single_geom_constructor(self):
+        p = Point(1,2)
+        line = LineString([(2, 3), (4, 5), (5, 6)])
+        poly = Polygon([(0, 0), (1, 0), (1, 1)],
+                          [[(.1, .1), (.9, .1), (.9, .9)]])
+        mp = MultiPoint([(1, 2), (3, 4), (5, 6)])
+        mline = MultiLineString([[(1, 2), (3, 4), (5, 6)], [(7, 8), (9, 10)]])
+
+        poly2 = Polygon([(1, 1), (1, -1), (-1, -1), (-1, 1)],
+                        [[(.5, .5), (.5, -.5), (-.5, -.5), (-.5, .5)]])
+        mpoly = MultiPolygon([poly, poly2])
+
+        geoms = [p, line, poly, mp, mline, mpoly]
+        index = ['a', 'b', 'c', 'd']
+
+        for g in geoms:
+            gs = GeoSeries(g)
+            self.assert_(len(gs) == 1)
+            self.assert_(gs.iloc[0] is g)
+
+            gs = GeoSeries(g, index=index)
+            self.assert_(len(gs) == len(index))
+            for x in gs:
+                self.assert_(x is g)
 
     def test_area(self):
         self.assertTrue(type(self.g1.area) is Series)

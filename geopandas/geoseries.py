@@ -27,13 +27,20 @@ def _is_empty(x):
     except:
         return False
 
+def _convert_array_args(args):
+    if len(args) == 1 and isinstance(args[0], BaseGeometry):
+        args = ([args[0]],)
+    return args
 
 class GeoSeries(Series):
     """A Series object designed to store shapely geometry objects."""
     _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
+        if OLD_PANDAS:
+            args = _convert_array_args(args)
         kwargs.pop('crs', None)
+
         arr = Series.__new__(cls, *args, **kwargs)
         if type(arr) is GeoSeries:
             return arr
@@ -41,7 +48,10 @@ class GeoSeries(Series):
             return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
+        if not OLD_PANDAS:
+            args = _convert_array_args(args)
         crs = kwargs.pop('crs', None)
+
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
 
