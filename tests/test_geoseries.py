@@ -55,11 +55,17 @@ class TestSeries(unittest.TestCase):
         mpoly = MultiPolygon([poly, poly2])
 
         geoms = [p, line, poly, mp, mline, mpoly]
+        index = ['a', 'b', 'c', 'd']
 
         for g in geoms:
             gs = GeoSeries(g)
             self.assert_(len(gs) == 1)
             self.assert_(gs.iloc[0] is g)
+
+            gs = GeoSeries(g, index=index)
+            self.assert_(len(gs) == len(index))
+            for x in gs:
+                self.assert_(x is g)
 
     def test_area(self):
         self.assertTrue(type(self.g1.area) is Series)
