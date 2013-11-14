@@ -59,6 +59,25 @@ class TestDataFrame(unittest.TestCase):
         assert_geoseries_equal(df2['location'], df['location'],
                                   check_series_type=False, check_dtype=False)
 
+    def test_geo_getitem(self):
+        data = {"A": range(5), "B": range(-5, 0),
+                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=self.crs, geometry='location')
+        self.assert_(isinstance(df.geometry, GeoSeries))
+        df['geometry'] = df["A"]
+        self.assert_(isinstance(df.geometry, GeoSeries))
+        self.assertEqual(df.geometry[0], data['location'][0])
+        # good if this changed in the future
+        self.assert_(not isinstance(df['geometry'], GeoSeries))
+        self.assert_(isinstance(df['location'], GeoSeries))
+
+        data["geometry"] = [Point(x + 1, y - 1) for x, y in zip(range(5), range(5))]
+        df = GeoDataFrame(data, crs=self.crs)
+        self.assert_(isinstance(df.geometry, GeoSeries))
+        self.assert_(isinstance(df['geometry'], GeoSeries))
+        # good if this changed in the future
+        self.assert_(not isinstance(df['location'], GeoSeries))
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                   check_dtype=True, check_index_type=True)
