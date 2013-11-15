@@ -241,3 +241,23 @@ class GeoSeries(GeoPandasBase, Series):
         result.__class__ = GeoSeries
         result.crs = crs
         return result
+
+    #
+    # Implement standard operators for GeoSeries
+    #
+
+    def __xor__(self, other):
+        """Implement ^ operator as for builtin set type"""
+        return self.symmetric_difference(other)
+
+    def __or__(self, other):
+        """Implement | operator as for builtin set type"""
+        return self.union(other)
+
+    def __and__(self, other):
+        """Implement & operator as for builtin set type"""
+        return self.intersection(other)
+
+    def __sub__(self, other):
+        """Implement - operator as for builtin set type"""
+        return self.difference(other)
