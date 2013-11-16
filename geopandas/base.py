@@ -160,16 +160,16 @@ class GeoPandasBase(object):
         """Return True for all geometries that contain *other*, else False"""
         return _series_op(self, other, 'contains')
 
-    def equals(self, other):
+    def geom_equals(self, other):
         """Return True for all geometries that equal *other*, else False"""
         return _series_op(self, other, 'equals')
 
-    def almost_equals(self, other, decimal=6):
+    def geom_almost_equals(self, other, decimal=6):
         """Return True for all geometries that is approximately equal to *other*, else False"""
         # TODO: pass precision argument
         return _series_op(self, other, 'almost_equals', decimal=decimal)
 
-    def equals_exact(self, other, tolerance):
+    def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given tolerance, else False"""
         # TODO: pass tolerance argument.
         return _series_op(self, other, 'equals_exact', tolerance=tolerance)

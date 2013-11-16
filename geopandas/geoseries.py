@@ -204,7 +204,7 @@ class GeoSeries(GeoPandasBase, Series):
         Note: This is not the same as the geometric method "contains".
         """
         if isinstance(other, BaseGeometry):
-            return np.any(self.equals(other))
+            return np.any(self.geom_equals(other))
         else:
             return False
 

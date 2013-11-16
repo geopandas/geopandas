@@ -306,7 +306,7 @@ class TestGeomMethods(unittest.TestCase):
 
     def test_envelope(self):
         e = self.g3.envelope
-        self.assertTrue(np.alltrue(e.equals(self.sq)))
+        self.assertTrue(np.alltrue(e.geom_equals(self.sq)))
         self.assertIsInstance(e, GeoSeries)
         self.assertEqual(self.g3.crs, e.crs)
 

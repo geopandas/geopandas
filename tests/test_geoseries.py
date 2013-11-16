@@ -79,12 +79,12 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(self.sq not in self.g3)
         self.assertTrue(5 not in self.g3)
 
-    def test_equals(self):
-        self.assertTrue(np.alltrue(self.g1.equals(self.g1)))
-        assert_array_equal(self.g1.equals(self.sq), [False, True])
+    def test_geom_equals(self):
+        self.assertTrue(np.alltrue(self.g1.geom_equals(self.g1)))
+        assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
-    def test_equals_align(self):
-        a = self.a1.equals(self.a2)
+    def test_geom_equals_align(self):
+        a = self.a1.geom_equals(self.a2)
         self.assertFalse(a['A'])
         self.assertTrue(a['B'])
         self.assertFalse(a['C'])
@@ -95,15 +95,15 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(a1['B'].equals(a2['B']))
         self.assertTrue(a1['C'].is_empty)
 
-    def test_almost_equals(self):
+    def test_geom_almost_equals(self):
         # TODO: test decimal parameter
-        self.assertTrue(np.alltrue(self.g1.almost_equals(self.g1)))
-        assert_array_equal(self.g1.almost_equals(self.sq), [False, True])
+        self.assertTrue(np.alltrue(self.g1.geom_almost_equals(self.g1)))
+        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
 
-    def test_equals_exact(self):
+    def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
-        self.assertTrue(np.alltrue(self.g1.equals_exact(self.g1, 0.001)))
-        assert_array_equal(self.g1.equals_exact(self.sq, 0.001), [False, True])
+        self.assertTrue(np.alltrue(self.g1.geom_equals_exact(self.g1, 0.001)))
+        assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
 
     def test_to_file(self):
         """ Test to_file and from_file """
@@ -111,7 +111,7 @@ class TestSeries(unittest.TestCase):
         self.g3.to_file(tempfilename)
         # Read layer back in?
         s = GeoSeries.from_file(tempfilename)
-        self.assertTrue(all(self.g3.equals(s)))
+        self.assertTrue(all(self.g3.geom_equals(s)))
         # TODO: compare crs
 
     def test_representative_point(self):
@@ -123,7 +123,7 @@ class TestSeries(unittest.TestCase):
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
-        self.assertTrue(np.alltrue(self.landmarks.almost_equals(lonlat)))
+        self.assertTrue(np.alltrue(self.landmarks.geom_almost_equals(lonlat)))
         with self.assertRaises(ValueError):
             self.g1.to_crs(epsg=4326)
         with self.assertRaises(TypeError):
