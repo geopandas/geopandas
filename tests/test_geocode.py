@@ -1,4 +1,4 @@
-import fiona
+from fiona.crs import from_epsg
 import pandas as pd
 from shapely.geometry import Point
 import geopandas as gpd
@@ -28,7 +28,7 @@ class TestGeocode(unittest.TestCase):
 
         df = _prepare_geocode_result(d)
         assert type(df) is gpd.GeoDataFrame
-        self.assertEqual(fiona.crs.from_epsg(4326), df.crs)
+        self.assertEqual(from_epsg(4326), df.crs)
         self.assertEqual(len(df), 2)
         self.assert_('address' in df)
 
@@ -50,7 +50,7 @@ class TestGeocode(unittest.TestCase):
 
         df = _prepare_geocode_result(d)
         assert type(df) is gpd.GeoDataFrame
-        self.assertEqual(fiona.crs.from_epsg(4326), df.crs)
+        self.assertEqual(from_epsg(4326), df.crs)
         self.assertEqual(len(df), 2)
         self.assert_('address' in df)
 
