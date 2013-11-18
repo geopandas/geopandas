@@ -11,7 +11,7 @@ import fiona
 import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping
-
+from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
@@ -114,7 +114,7 @@ class GeoDataFrame(DataFrame):
         elif isinstance(col, (list, np.ndarray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
-            raise ValueError("Must pass array with one dimension only")
+            raise ValueError("Must pass array with one dimension only.")
         else:
             try:
                 level = frame[col].values
@@ -132,10 +132,13 @@ class GeoDataFrame(DataFrame):
             del frame[to_remove]
 
         if isinstance(level, GeoSeries) and level.crs != crs:
-            # avoids caching issues/crs sharing issues
+            # Avoids caching issues/crs sharing issues
             level = level.copy()
             level.crs = crs
 
+        # Check that we are using a listlike of geometries
+        if not all(isinstance(item, BaseGeometry) for item in level):
+            raise TypeError("Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
