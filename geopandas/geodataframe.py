@@ -11,6 +11,8 @@ import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
+from six import string_types
+
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
@@ -303,7 +305,7 @@ class GeoDataFrame(DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, basestring) and key == geo_col:
+        if isinstance(key, string_types) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
         elif isinstance(result, DataFrame) and geo_col in result:
