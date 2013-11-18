@@ -8,7 +8,7 @@ from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
-from .util import unittest, geom_equals, geom_almost_equals
+from util import unittest, geom_equals, geom_almost_equals
 
 
 class TestSeries(unittest.TestCase):
@@ -305,3 +305,5 @@ class TestSeries(unittest.TestCase):
         s[0] = Point(10, 10)
         self.assertEqual(s.total_bounds, (1.0, 1.0, 10.0, 10.0))
 
+if __name__ == '__main__':
+    unittest.main()
