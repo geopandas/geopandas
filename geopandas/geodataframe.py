@@ -12,6 +12,7 @@ from pandas import DataFrame, Series
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 from six import string_types
+from six import string_types, iteritems
 
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
@@ -220,7 +221,7 @@ class GeoDataFrame(DataFrame):
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
-                    dict((k, v) for k, v in row.iteritems() if k != 'geometry'),
+                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
 
         return json.dumps(
@@ -257,7 +258,7 @@ class GeoDataFrame(DataFrame):
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
-                    dict((k, v) for k, v in row.iteritems() if k != 'geometry'),
+                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
         
         properties = OrderedDict([(col, convert_type(_type)) for col, _type 
