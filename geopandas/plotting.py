@@ -115,7 +115,8 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
 
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
-                   categorical=False, legend=False, axes=None):
+                   categorical=False, legend=False, axes=None, scheme=None,
+                   k=5):
     """ Plot a GeoDataFrame
 
         Generate a plot of a GeoDataFrame with matplotlib.  If a
@@ -153,6 +154,13 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
 
+        scheme : pysal.esda.mapclassify.Map_Classifier
+            Choropleth classification schemes
+
+        k   : int (default 5)
+            Number of classes (ignored if scheme is None)
+
+
         Returns
         -------
 
@@ -162,6 +170,12 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib.lines import Line2D
     from matplotlib.colors import Normalize
     from matplotlib import cm
+    from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
+    schemes = {}
+    schemes['equal_interval'] = Equal_Interval
+    schemes['quantiles'] = Quantiles
+    schemes['fisher_jenks'] = Fisher_Jenks
+
     if column is None:
         return plot_series(s.geometry, colormap=colormap, alpha=alpha, axes=axes)
     else:
@@ -176,9 +190,18 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             values = [valuemap[k] for k in s[column]]
         else:
             values = s[column]
-        mn, mx = min(values), max(values)
-        norm = Normalize(vmin=mn, vmax=mx)
-        cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
+        if scheme is None:
+            mn, mx = min(values), max(values)
+            norm = Normalize(vmin=mn, vmax=mx)
+            cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
+        else:
+            scheme = scheme.lower()
+            if scheme in schemes:
+                binning = schemes[scheme](values,k)
+                values = binning.yb
+                mn, mx = min(values), max(values)
+                norm = Normalize(vmin=mn, vmax=mx)
+                cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
         if axes == None:
             fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
