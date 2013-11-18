@@ -17,7 +17,7 @@ import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
-PY3 = sys.version[0] == 3
+PY3 = sys.version_info[0] == 3
 
 
 class GeoDataFrame(DataFrame):
