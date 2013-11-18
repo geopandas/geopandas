@@ -119,7 +119,7 @@ class TestDataFrame(unittest.TestCase):
         def _should_raise_type_error_with_non_geo():
             df = self.df.copy()
             df.geometry = range(df.shape[0])
-        self.assertRaises(TypeError, _should_raise_value_error_with_non_geo)
+        self.assertRaises(TypeError, _should_raise_type_error_with_non_geo)
 
         def _should_raise_key_error():
 >>>>>>> BUG: Check that set_geometry will set valid geometry column
