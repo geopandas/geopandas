@@ -28,7 +28,10 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
-
+        self.df3 = GeoDataFrame([
+            {'geometry' : Point(x, y), 'x_value': x, 'y_value': y}
+            for x, y in zip(range(N), range(N))], crs=self.crs)
+            
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
@@ -165,6 +168,19 @@ class TestDataFrame(unittest.TestCase):
         self.assert_(ret is None)
         geom = GeoSeries(geom, index=self.df.index)
         tu.assert_geoseries_equal(self.df.geometry, geom)
+        
+    def test_set_geometry_point(self):
+        # Test inplace
+        ret1 = self.df3.set_geometry(["x_value", "y_value"], inplace=True)
+        self.assert_(ret1 is None)
+        # Do it 'manaully' for comparison
+        sr = GeoSeries([Point(x, y) for x, y in zip(self.df3['x_value'], self.df3['y_value'])])
+        # Should now contain 'geometry' column
+        tu.assert_geoseries_equal(self.df3.geometry, sr)
+        # Test drop (drops two fields)
+        ret2 = self.df3.set_geometry(["x_value", "y_value"], drop=True)
+        self.assert_(all([col not in ret2 for col in ["x_value", "y_value"]]))
+        tu.assert_geoseries_equal(ret2.geometry, self.df3.geometry)
 
     def test_to_json(self):
         text = self.df.to_json()

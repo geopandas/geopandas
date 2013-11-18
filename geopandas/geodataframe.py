@@ -6,7 +6,7 @@ import sys
 import fiona
 import numpy as np
 from pandas import DataFrame, Series
-from shapely.geometry import mapping
+from shapely.geometry import mapping, Point
 
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
@@ -75,7 +75,7 @@ class GeoDataFrame(DataFrame):
 
         Parameters
         ----------
-        keys : column label or array
+        keys : column label, list of 2 columns, or array
         drop : boolean, default True
             Delete column to be used as the new geometry
         inplace : boolean, default False
@@ -108,14 +108,24 @@ class GeoDataFrame(DataFrame):
         if isinstance(col, Series):
             level = col.values
         elif isinstance(col, (list, np.ndarray)):
-            level = col
+            if len(col) == 2 and all(isinstance(c, str) for c in col):
+                try:
+                    level = [Point(*row) for i, row in frame[col].iterrows()]
+                except KeyError:
+                    raise ValueError("Unknown column %s" % str(col))
+                except:
+                    raise
+                if drop:
+                    to_remove = col
+            else:
+                level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only")
         else:
             try:
                 level = frame[col].values
             except KeyError:
-                raise ValueError("Unknown column %s" % col)
+                raise ValueError("Unknown column %s" % str(col))
             except:
                 raise
             if drop:
@@ -125,7 +135,11 @@ class GeoDataFrame(DataFrame):
                 geo_column_name = col
 
         if to_remove:
-            del frame[to_remove]
+            if isinstance(to_remove, list):
+                for remove in to_remove:
+                    del frame[remove]
+            else:
+                del frame[to_remove]
 
         if isinstance(level, GeoSeries) and level.crs != crs:
             # avoids caching issues/crs sharing issues
