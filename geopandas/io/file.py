@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from shapely.geometry import shape
-import fiona
 
 from geopandas import GeoSeries, GeoDataFrame
 
@@ -17,6 +16,7 @@ def read_file(filename, **kwargs):
     Properties that are not present in all features of the source
     file will not be properly aligned.  This should be fixed.
     """
+    import fiona
     geoms = []
     columns = defaultdict(lambda: [])
     bbox = kwargs.pop('bbox', None)

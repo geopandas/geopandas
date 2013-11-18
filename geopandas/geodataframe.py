@@ -7,7 +7,6 @@ import json
 import os
 import sys
 
-import fiona
 import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping
@@ -245,6 +244,7 @@ class GeoDataFrame(DataFrame):
         The *kwargs* are passed to fiona.open and can be used to write 
         to multi-layer data, store data within archives (zip files), etc.
         """
+        import fiona
         def convert_type(in_type):
             if in_type == object:
                 return 'str'
