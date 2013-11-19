@@ -170,11 +170,6 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib.lines import Line2D
     from matplotlib.colors import Normalize
     from matplotlib import cm
-    from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
-    schemes = {}
-    schemes['equal_interval'] = Equal_Interval
-    schemes['quantiles'] = Quantiles
-    schemes['fisher_jenks'] = Fisher_Jenks
 
     if column is None:
         return plot_series(s.geometry, colormap=colormap, alpha=alpha, axes=axes)
@@ -195,10 +190,30 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             norm = Normalize(vmin=mn, vmax=mx)
             cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
         else:
-            scheme = scheme.lower()
-            if scheme in schemes:
+            try:
+                from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
+                schemes = {}
+                schemes['equal_interval'] = Equal_Interval
+                schemes['quantiles'] = Quantiles
+                schemes['fisher_jenks'] = Fisher_Jenks
+                s0 = scheme
+                scheme = scheme.lower()
+                if scheme not in schemes:
+                    scheme = 'quantiles'
+                    print 'Unrecognized scheme: ', s0
+                    print 'Using Quantiles instead'
+                if k<2 or k>9:
+                    print 'Invalid k: ', k
+                    print '2<=k<=9, setting k=5 (default)'
+                    k = 5
                 binning = schemes[scheme](values,k)
                 values = binning.yb
+                mn, mx = min(values), max(values)
+                norm = Normalize(vmin=mn, vmax=mx)
+                cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
+            except:
+                print 'PySAL not available, setting map to default'
+                # fall back to default
                 mn, mx = min(values), max(values)
                 norm = Normalize(vmin=mn, vmax=mx)
                 cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
