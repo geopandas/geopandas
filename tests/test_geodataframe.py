@@ -112,17 +112,12 @@ class TestDataFrame(unittest.TestCase):
             df = self.df.copy()
             df.geometry = 'apple'
 
-<<<<<<< HEAD
-        with self.assertRaises(KeyError):
-=======
         # non-geometry error
-        def _should_raise_type_error_with_non_geo():
+        with self.assertRaises(TypeError):
             df = self.df.copy()
             df.geometry = range(df.shape[0])
-        self.assertRaises(TypeError, _should_raise_type_error_with_non_geo)
 
-        def _should_raise_key_error():
->>>>>>> BUG: Check that set_geometry will set valid geometry column
+        with self.assertRaises(KeyError):
             df = self.df.copy()
             del df['geometry']
             df['geometry']
