@@ -66,7 +66,7 @@ class GeoDataFrame(DataFrame):
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None):
+    def set_geometry(self, col=None, drop=False, inplace=False, **kwargs):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -75,7 +75,10 @@ class GeoDataFrame(DataFrame):
 
         Parameters
         ----------
-        keys : column label, list of 2 columns, or array
+        col, x, y, z : column label, list, or array
+            Both x and y must be given to create valid Point geometries. If col 
+            is given, it will take priority over x and y. z is optional (and 
+            only applies when x and y are given).
         drop : boolean, default True
             Delete column to be used as the new geometry
         inplace : boolean, default False
@@ -83,12 +86,13 @@ class GeoDataFrame(DataFrame):
         crs : str/result of fion.get_crs (optional)
             Coordinate system to use. If passed, overrides both DataFrame and
             col's crs. Otherwise, tries to get crs from passed col values or
-            DataFrame.
+            DataFrame.            
 
         Examples
         --------
         >>> df1 = df.set_geometry([Point(0,0), Point(1,1), Point(2,2)])
         >>> df2 = df.set_geometry('geom1')
+        >>> df3 = df.set_geometry(x="LONG", y="LAT")
 
         Returns
         -------
@@ -100,49 +104,62 @@ class GeoDataFrame(DataFrame):
         else:
             frame = self.copy()
 
+        crs = kwargs.pop('crs', None)
         if not crs:
             crs = getattr(col, 'crs', self.crs)
+        x = kwargs.pop('x', None)
+        y = kwargs.pop('y', None)
+        z = kwargs.pop('z', None)
+        if col is None and (x is None or y is None):
+            raise ValueError("If col is not given, both x and y must be "
+                "specified.")
+
+        def _get_listlike(val, parent):
+            if isinstance(val, Series):
+                level = val.values
+            elif isinstance(val, (list, np.ndarray)):
+                level = val
+            elif hasattr(val, 'ndim') and val.ndim != 1:
+                raise ValueError("Must pass array with one dimension only.")
+            else:
+                try:
+                    level = parent[val].values
+                except KeyError:
+                    raise ValueError("Unknown column %s." % str(val))
+                except:
+                    raise
+            return level
 
         to_remove = None
         geo_column_name = DEFAULT_GEO_COLUMN_NAME
-        if isinstance(col, Series):
-            level = col.values
-        elif isinstance(col, (list, np.ndarray)):
-            if len(col) == 2 and all(isinstance(c, str) for c in col):
-                try:
-                    level = [Point(*row) for i, row in frame[col].iterrows()]
-                except KeyError:
-                    raise ValueError("Unknown column %s" % str(col))
-                except:
-                    raise
-                if drop:
-                    to_remove = col
+        if col is None:
+            X = _get_listlike(x, frame)
+            Y = _get_listlike(y, frame)
+            if not len(X) == len(Y):
+                raise ValueError("x and y arrays must be equal length.")
+            if z:
+                Z = _get_listlike(z, frame)
+                if not len(Z) == len(X):
+                    raise ValueError("z array must be same length as x and y.")
+                level = [Point(i, j, k) for i, j, k in zip(X, Y, Z)]
             else:
-                level = col
-        elif hasattr(col, 'ndim') and col.ndim != 1:
-            raise ValueError("Must pass array with one dimension only")
+                level = [Point(i, j) for i, j in zip(X, Y)]
+            if drop and isinstance(x, str) and isinstance(y, str):
+                to_remove = [x, y]
         else:
-            try:
-                level = frame[col].values
-            except KeyError:
-                raise ValueError("Unknown column %s" % str(col))
-            except:
-                raise
-            if drop:
-                to_remove = col
-                geo_column_name = DEFAULT_GEO_COLUMN_NAME
-            else:
-                geo_column_name = col
+            level = _get_listlike(col, frame)
+            if isinstance(col, str):
+                if drop:
+                    to_remove = [col]
+                else:
+                    geo_column_name = col
 
-        if to_remove:
-            if isinstance(to_remove, list):
-                for remove in to_remove:
-                    del frame[remove]
-            else:
-                del frame[to_remove]
+        if not to_remove is None:
+            for remove in to_remove:
+                del frame[remove]
 
         if isinstance(level, GeoSeries) and level.crs != crs:
-            # avoids caching issues/crs sharing issues
+            # Avoids caching issues/crs sharing issues
             level = level.copy()
             level.crs = crs
 

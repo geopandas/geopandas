@@ -169,18 +169,39 @@ class TestDataFrame(unittest.TestCase):
         geom = GeoSeries(geom, index=self.df.index)
         tu.assert_geoseries_equal(self.df.geometry, geom)
         
-    def test_set_geometry_point(self):
+    def test_set_geometry_xy(self):
         # Test inplace
-        ret1 = self.df3.set_geometry(["x_value", "y_value"], inplace=True)
+        ret1 = self.df3.set_geometry(x="x_value", y="y_value", inplace=True)
         self.assert_(ret1 is None)
         # Do it 'manaully' for comparison
         sr = GeoSeries([Point(x, y) for x, y in zip(self.df3['x_value'], self.df3['y_value'])])
         # Should now contain 'geometry' column
         tu.assert_geoseries_equal(self.df3.geometry, sr)
         # Test drop (drops two fields)
-        ret2 = self.df3.set_geometry(["x_value", "y_value"], drop=True)
+        ret2 = self.df3.set_geometry(x="x_value", y="y_value", drop=True)
         self.assert_(all([col not in ret2 for col in ["x_value", "y_value"]]))
         tu.assert_geoseries_equal(ret2.geometry, self.df3.geometry)
+        # Test arrays
+        ret3 = self.df3.set_geometry(x=self.df3.x_value, y=self.df3.y_value)
+        tu.assert_geoseries_equal(ret3.geometry, sr)
+
+    def test_set_geometry_error(self):
+        def _should_raise_value_error_with_none():
+            df = self.df.copy()
+            df.set_geometry() # All defaults are None
+        self.assertRaises(ValueError, _should_raise_value_error_with_none)
+
+        def _should_raise_value_error_without_x():
+            df = self.df.copy()
+            df['Y'] = df.geometry.centroid.apply(lambda geo: geo.y)
+            df.set_geometry(y='Y') # All defaults are None
+        self.assertRaises(ValueError, _should_raise_value_error_without_x)
+
+        def _should_raise_value_error_without_y():
+            df = self.df.copy()
+            df['X'] = df.geometry.centroid.apply(lambda geo: geo.x)
+            df.set_geometry(x='X') # All defaults are None
+        self.assertRaises(ValueError, _should_raise_value_error_without_y)
 
     def test_to_json(self):
         text = self.df.to_json()
