@@ -47,7 +47,6 @@ def geocode(strings, provider='googlev3', **kwargs):
 
     coders = {'googlev3': geopy.geocoders.GoogleV3,
               'bing': geopy.geocoders.Bing,
-              'google': geopy.geocoders.Google,
               'yahoo': geopy.geocoders.Yahoo,
               'mapquest': geopy.geocoders.MapQuest,
               'openmapquest': geopy.geocoders.OpenMapQuest}
