@@ -1,8 +1,6 @@
 from functools import partial
 from warnings import warn
 
-import fiona
-from fiona.crs import from_epsg
 import numpy as np
 from pandas import Series, DataFrame
 import pyproj
@@ -74,6 +72,7 @@ class GeoSeries(Series):
             etc.
         
         """
+        import fiona
         geoms = []
         with fiona.open(filename, **kwargs) as f:
             crs = f.crs
@@ -616,6 +615,7 @@ class GeoSeries(Series):
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
         """
+        from fiona.crs import from_epsg
         if self.crs is None:
             raise ValueError('Cannot transform naive geometries.  '
                              'Please set a crs on the object first.')

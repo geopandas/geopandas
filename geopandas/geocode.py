@@ -4,6 +4,7 @@ import fiona
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
+from six import iteritems
 
 import geopandas as gpd
 
@@ -56,7 +57,7 @@ def geocode(strings, provider='googlev3', **kwargs):
 
     coder = coders[provider](**kwargs)
     results = {}
-    for i, s in strings.iteritems():
+    for i, s in iteritems(strings):
         try:
             results[i] = coder.geocode(s)
         except (GeocoderResultError, ValueError):
@@ -77,7 +78,7 @@ def _prepare_geocode_result(results):
     d = defaultdict(list)
     index = []
 
-    for i, s in results.iteritems():
+    for i, s in iteritems(results):
         address, loc = s
 
         # loc is lat, lon and we want lon, lat

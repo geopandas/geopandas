@@ -7,18 +7,20 @@ import json
 import os
 import sys
 
-import fiona
 import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
+from six import string_types
+from six import string_types, iteritems
+
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
-PY3 = sys.version[0] == 3
+PY3 = sys.version_info[0] == 3
 
 
 class GeoDataFrame(DataFrame):
@@ -219,7 +221,7 @@ class GeoDataFrame(DataFrame):
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
-                    dict((k, v) for k, v in row.iteritems() if k != 'geometry'),
+                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
 
         return json.dumps(
@@ -245,6 +247,7 @@ class GeoDataFrame(DataFrame):
         The *kwargs* are passed to fiona.open and can be used to write 
         to multi-layer data, store data within archives (zip files), etc.
         """
+        import fiona
         def convert_type(in_type):
             if in_type == object:
                 return 'str'
@@ -255,7 +258,7 @@ class GeoDataFrame(DataFrame):
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
-                    dict((k, v) for k, v in row.iteritems() if k != 'geometry'),
+                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
         
         properties = OrderedDict([(col, convert_type(_type)) for col, _type 
@@ -303,7 +306,7 @@ class GeoDataFrame(DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, basestring) and key == geo_col:
+        if isinstance(key, string_types) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
         elif isinstance(result, DataFrame) and geo_col in result:
