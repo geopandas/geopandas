@@ -93,7 +93,7 @@ def _prepare_geocode_result(results):
             p = Point(loc[1], loc[0])
 
         if address is None:
-            address = pd.np.nan
+            address = np.nan
 
         d['geometry'].append(p)
         d['address'].append(address)
