@@ -45,9 +45,15 @@ def geocode(strings, provider='googlev3', **kwargs):
     if not isinstance(strings, pd.Series):
         strings = pd.Series(strings)
 
+    # workaround changed name in 0.96
+    try:
+        Yahoo = geopy.geocoders.YahooPlaceFinder
+    except AttributeError:
+        Yahoo = geopy.geocoders.Yahoo
+
     coders = {'googlev3': geopy.geocoders.GoogleV3,
               'bing': geopy.geocoders.Bing,
-              'yahoo': geopy.geocoders.Yahoo,
+              'yahoo': Yahoo,
               'mapquest': geopy.geocoders.MapQuest,
               'openmapquest': geopy.geocoders.OpenMapQuest}
 
