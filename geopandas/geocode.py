@@ -55,7 +55,8 @@ def geocode(strings, provider='googlev3', **kwargs):
               'bing': geopy.geocoders.Bing,
               'yahoo': Yahoo,
               'mapquest': geopy.geocoders.MapQuest,
-              'openmapquest': geopy.geocoders.OpenMapQuest}
+              'openmapquest': geopy.geocoders.OpenMapQuest,
+              'nominatim' : geopy.geocoders.Nominatim}
 
     if provider not in coders:
         raise ValueError('Unknown geocoding provider: {}'.format(provider))
