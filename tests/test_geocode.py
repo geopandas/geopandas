@@ -71,3 +71,7 @@ class TestGeocode(unittest.TestCase):
     def test_openmapquest(self):
         g = geocode(self.locations, provider='openmapquest')
         self.assertIsInstance(g, gpd.GeoDataFrame)
+
+    def test_nominatim(self):
+        g = geocode(self.locations, provider='nominatim')
+        self.assertIsInstance(g, gpd.GeoDataFrame)
