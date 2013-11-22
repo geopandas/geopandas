@@ -17,6 +17,8 @@ def _skip_if_no_geopy():
 class TestGeocode(unittest.TestCase):
     def setUp(self):
         _skip_if_no_geopy()
+        self.locations = ['260 Broadway, New York, NY',
+                          '77 Massachusetts Ave, Cambridge, MA']
 
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
@@ -61,3 +63,15 @@ class TestGeocode(unittest.TestCase):
     def test_bad_provider(self):
         with self.assertRaises(ValueError):
             geocode(['cambridge, ma'], 'badprovider')
+
+    def test_googlev3(self):
+        g = geocode(self.locations, provider='googlev3')
+        self.assertIsInstance(g, gpd.GeoDataFrame)
+
+    def test_openmapquest(self):
+        g = geocode(self.locations, provider='openmapquest')
+        self.assertIsInstance(g, gpd.GeoDataFrame)
+
+    def test_nominatim(self):
+        g = geocode(self.locations, provider='nominatim')
+        self.assertIsInstance(g, gpd.GeoDataFrame)

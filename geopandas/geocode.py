@@ -1,12 +1,27 @@
 from collections import defaultdict
+import time
 
-import fiona
+from fiona.crs import from_epsg
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
 from six import iteritems
 
 import geopandas as gpd
+
+
+def _throttle_time(provider):
+    """ Amount of time to wait between requests to a geocoding API.
+
+    Currently implemented for Nominatim, as their terms of service
+    require a maximum of 1 request per second.
+    https://wiki.openstreetmap.org/wiki/Nominatim_usage_policy
+    """
+    if provider == 'nominatim':
+        return 1
+    else:
+        return 0
+
 
 def geocode(strings, provider='googlev3', **kwargs):
     """
@@ -45,15 +60,21 @@ def geocode(strings, provider='googlev3', **kwargs):
     if not isinstance(strings, pd.Series):
         strings = pd.Series(strings)
 
+    # workaround changed name in 0.96
+    try:
+        Yahoo = geopy.geocoders.YahooPlaceFinder
+    except AttributeError:
+        Yahoo = geopy.geocoders.Yahoo
+
     coders = {'googlev3': geopy.geocoders.GoogleV3,
               'bing': geopy.geocoders.Bing,
-              'google': geopy.geocoders.Google,
-              'yahoo': geopy.geocoders.Yahoo,
+              'yahoo': Yahoo,
               'mapquest': geopy.geocoders.MapQuest,
-              'openmapquest': geopy.geocoders.OpenMapQuest}
+              'openmapquest': geopy.geocoders.OpenMapQuest,
+              'nominatim' : geopy.geocoders.Nominatim}
 
     if provider not in coders:
-        raise ValueError('Unknown geocoding provider: {}'.format(provider))
+        raise ValueError('Unknown geocoding provider: {0}'.format(provider))
 
     coder = coders[provider](**kwargs)
     results = {}
@@ -62,6 +83,7 @@ def geocode(strings, provider='googlev3', **kwargs):
             results[i] = coder.geocode(s)
         except (GeocoderResultError, ValueError):
             results[i] = (None, None)
+        time.sleep(_throttle_time(provider))
 
     df = _prepare_geocode_result(results)
     return df
@@ -88,13 +110,13 @@ def _prepare_geocode_result(results):
             p = Point(loc[1], loc[0])
 
         if address is None:
-            address = pd.np.nan
+            address = np.nan
 
         d['geometry'].append(p)
         d['address'].append(address)
         index.append(i)
 
     df = gpd.GeoDataFrame(d, index=index)
-    df.crs = fiona.crs.from_epsg(4326)
+    df.crs = from_epsg(4326)
 
     return df
