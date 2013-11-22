@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-import fiona
+from fiona.crs import from_epsg
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
@@ -100,6 +100,6 @@ def _prepare_geocode_result(results):
         index.append(i)
 
     df = gpd.GeoDataFrame(d, index=index)
-    df.crs = fiona.crs.from_epsg(4326)
+    df.crs = from_epsg(4326)
 
     return df
