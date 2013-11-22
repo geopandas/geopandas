@@ -1,4 +1,5 @@
 from collections import defaultdict
+import time
 
 from fiona.crs import from_epsg
 import numpy as np
@@ -7,6 +8,20 @@ from shapely.geometry import Point
 from six import iteritems
 
 import geopandas as gpd
+
+
+def _throttle_time(provider):
+    """ Amount of time to wait between requests to a geocoding API.
+
+    Currently implemented for Nominatim, as their terms of service
+    require a maximum of 1 request per second.
+    https://wiki.openstreetmap.org/wiki/Nominatim_usage_policy
+    """
+    if provider == 'nominatim':
+        return 1
+    else:
+        return 0
+
 
 def geocode(strings, provider='googlev3', **kwargs):
     """
@@ -68,6 +83,7 @@ def geocode(strings, provider='googlev3', **kwargs):
             results[i] = coder.geocode(s)
         except (GeocoderResultError, ValueError):
             results[i] = (None, None)
+        time.sleep(_throttle_time(provider))
 
     df = _prepare_geocode_result(results)
     return df
