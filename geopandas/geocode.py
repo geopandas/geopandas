@@ -74,7 +74,7 @@ def geocode(strings, provider='googlev3', **kwargs):
               'nominatim' : geopy.geocoders.Nominatim}
 
     if provider not in coders:
-        raise ValueError('Unknown geocoding provider: {}'.format(provider))
+        raise ValueError('Unknown geocoding provider: {0}'.format(provider))
 
     coder = coders[provider](**kwargs)
     results = {}
