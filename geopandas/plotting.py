@@ -115,7 +115,8 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
 
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
-                   categorical=False, legend=False, axes=None):
+                   categorical=False, legend=False, axes=None, scheme=None,
+                   k=5):
     """ Plot a GeoDataFrame
 
         Generate a plot of a GeoDataFrame with matplotlib.  If a
@@ -153,6 +154,13 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
 
+        scheme : pysal.esda.mapclassify.Map_Classifier
+            Choropleth classification schemes
+
+        k   : int (default 5)
+            Number of classes (ignored if scheme is None)
+
+
         Returns
         -------
 
@@ -162,6 +170,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib.lines import Line2D
     from matplotlib.colors import Normalize
     from matplotlib import cm
+
     if column is None:
         return plot_series(s.geometry, colormap=colormap, alpha=alpha, axes=axes)
     else:
@@ -176,9 +185,9 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             values = [valuemap[k] for k in s[column]]
         else:
             values = s[column]
-        mn, mx = min(values), max(values)
-        norm = Normalize(vmin=mn, vmax=mx)
-        cmap = cm.ScalarMappable(norm=norm, cmap=colormap)
+        if scheme is not None:
+            values = __pysal_choro(values, scheme, k=k)
+        cmap = norm_cmap(values, colormap, Normalize, cm)
         if axes == None:
             fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
@@ -206,3 +215,85 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                 raise NotImplementedError
     plt.draw()
     return ax
+
+
+def __pysal_choro(values, scheme, k=5):
+    """ Wrapper for choropleth schemes from PySAL for use with plot_dataframe
+
+        Parameters
+        ----------
+
+        values
+            Series to be plotted
+
+        scheme
+            pysal.esda.mapclassify classificatin scheme ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
+
+        k
+            number of classes (2 <= k <=9)
+
+        Returns
+        -------
+
+        values
+            Series with values replaced with class identifier if PySAL is available, otherwise the original values are used
+    """
+
+    try: 
+        from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
+        schemes = {}
+        schemes['equal_interval'] = Equal_Interval
+        schemes['quantiles'] = Quantiles
+        schemes['fisher_jenks'] = Fisher_Jenks
+        s0 = scheme
+        scheme = scheme.lower()
+        if scheme not in schemes:
+            scheme = 'quantiles'
+            print 'Unrecognized scheme: ', s0
+            print 'Using Quantiles instead'
+        if k<2 or k>9:
+            print 'Invalid k: ', k
+            print '2<=k<=9, setting k=5 (default)'
+            k = 5
+        binning = schemes[scheme](values, k)
+        values = binning.yb
+    except ImportError: 
+        print 'PySAL not installed, setting map to default'
+
+    return values
+
+def norm_cmap(values, cmap, normalize, cm):
+
+    """ Normalize and set colormap
+
+        Parameters
+        ----------
+
+        values
+            Series or array to be normalized
+
+        cmap
+            matplotlib Colormap
+
+        normalize
+            matplotlib.colors.Normalize
+
+        cm
+            matplotlib.cm
+
+        Returns
+        -------
+        n_cmap
+            mapping of normalized values to colormap (cmap)
+            
+    """
+
+    mn, mx = min(values), max(values)
+    norm = normalize(vmin=mn, vmax=mx)
+    n_cmap  = cm.ScalarMappable(norm=norm, cmap=cmap)
+    return n_cmap
+
+
+
+
+
