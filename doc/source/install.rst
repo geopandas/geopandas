@@ -6,8 +6,9 @@ from `GitHub`_ and use the setup script::
 
     python setup.py install
 
-GeoPandas is also available on `PyPI`_, so ``pip install --pre geopandas``
-should work as well.
+GeoPandas is also available on `PyPI`_, so ``pip install geopandas``
+should work as well. You will have to add the ``--pre`` flag
+for pip 1.4 and later.
 
 Dependencies
 ------------
