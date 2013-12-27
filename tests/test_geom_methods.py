@@ -1,3 +1,4 @@
+import string
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -48,6 +49,7 @@ class TestGeomMethods(unittest.TestCase):
 
 
     def _test_unary_real(self, op, expected, a):
+        """ Tests for 'area', 'length', 'is_valid', etc. """
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
@@ -59,37 +61,99 @@ class TestGeomMethods(unittest.TestCase):
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
+        """ Tests for 'intersection', 'union', 'symmetric_difference', etc. """
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
             fcmp = lambda a, b: self.assert_(geom_equals(a, b))
-        self._test_binary(op, expected, a, b, fcmp, *args, **kwargs)
+
+        if isinstance(b, GeoPandasBase):
+            right_df = True
+        else:
+            right_df = False
+
+        self._binary_op_test(op, expected, a, b, fcmp, True, right_df, 
+                        *args, **kwargs)
 
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
         fcmp = assert_series_equal
-        self._test_binary(op, expected, a, b, fcmp, *args, **kwargs)
+        self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
 
-    def _test_binary(self, op, expected, a, b, fcmp, *args, **kwargs):
-        # GeoSeries, (GeoSeries or geometry)
-        result = getattr(a, op)(b, *args, **kwargs)
-        fcmp(result, expected)
+    def _test_binary_operator(self, op, expected, a, b):
+        """
+        The operators only have GeoSeries on the left, but can have
+        GeoSeries or GeoDataFrame on the right.
 
-        # GeoDataFrame, (GeoSeries or geometry)
-        gdf = self.gdf1.set_geometry(a)
-        result = getattr(gdf, op)(b, *args, **kwargs)
-        fcmp(result, expected)
+        """
+        if isinstance(expected, GeoPandasBase):
+            fcmp = assert_geoseries_equal
+        else:
+            fcmp = lambda a, b: self.assert_(geom_equals(a, b))
 
         if isinstance(b, GeoPandasBase):
-            # GeoSeries, GeoDataFrame
-            gdf = self.gdf1.set_geometry(b)
-            result = getattr(a, op)(gdf, *args, **kwargs)
+            right_df = True
+        else:
+            right_df = False
+
+        self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
+
+    def _binary_op_test(self, op, expected, left, right, fcmp, left_df,
+                        right_df, 
+                        *args, **kwargs):
+        """
+        This is a helper to call a function on GeoSeries and GeoDataFrame
+        arguments. For example, 'intersection' is a member of both GeoSeries
+        and GeoDataFrame and can take either GeoSeries or GeoDataFrame inputs.
+        This function has the ability to test all four combinations of input
+        types.
+
+        Parameters
+        ----------
+        
+        expected : str
+            The operation to be tested. e.g., 'intersection'
+        left: GeoSeries
+        right: GeoSeries
+        fcmp: function 
+            Called with the result of the operation and expected. It should
+            assert if the result is incorrect
+        left_df: bool
+            If the left input should also be called with a GeoDataFrame
+        right_df: bool
+            Indicates whether the right input should be called with a
+            GeoDataFrame
+
+        """
+        def _make_gdf(s):
+            n = len(s)
+            col1 = string.lowercase[:n]
+            col2 = range(n)
+            
+            return GeoDataFrame({'geometry': s.values, 
+                                 'col1' : col1, 
+                                 'col2' : col2},
+                                 index=s.index, crs=s.crs)
+
+        # Test GeoSeries.op(GeoSeries)
+        result = getattr(left, op)(right, *args, **kwargs)
+        fcmp(result, expected)
+        
+        if left_df:
+            # Test GeoDataFrame.op(GeoSeries)
+            gdf_left = _make_gdf(left)
+            result = getattr(gdf_left, op)(right, *args, **kwargs)
             fcmp(result, expected)
 
-            # GeoDataFrame, GeoDataFrame
-            gdfa = self.gdf1.set_geometry(a)
-            gdfb = self.gdf2.set_geometry(b)
-            result = getattr(gdfa, op)(gdfb, *args, **kwargs)
+        if right_df:
+            # Test GeoSeries.op(GeoDataFrame)
+            gdf_right = _make_gdf(right)
+            result = getattr(left, op)(gdf_right, *args, **kwargs)
             fcmp(result, expected)
+
+            if left_df:
+                # Test GeoDataFrame.op(GeoDataFrame)
+                result = getattr(gdf_left, op)(gdf_right, *args, **kwargs)
+                fcmp(result, expected)
 
     def _test_unary(self, op, expected, a, fcmp):
         # GeoSeries, (GeoSeries or geometry)
@@ -104,20 +168,16 @@ class TestGeomMethods(unittest.TestCase):
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1, 
                                       self.g1, self.g2)
-        self._test_binary_topological('__and__', self.t1, self.g1, self.g2)
 
     def test_union_series(self):
         self._test_binary_topological('union', self.sq, self.g1, self.g2)
-        self._test_binary_topological('__or__', self.sq, self.g1, self.g2)
 
     def test_union_polygon(self):
         self._test_binary_topological('union', self.sq, self.g1, self.t2)
-        self._test_binary_topological('__or__', self.sq, self.g1, self.t2)
 
     def test_symmetric_difference_series(self):
         self._test_binary_topological('symmetric_difference', self.sq,
                                       self.g3, self.g4)
-        self._test_binary_topological('__xor__', self.sq, self.g3, self.g4)
 
     def test_symmetric_difference_poly(self):
         expected = GeoSeries([GeometryCollection(), self.sq], crs=self.g3.crs)
@@ -128,13 +188,10 @@ class TestGeomMethods(unittest.TestCase):
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological('difference', expected,
                                       self.g1, self.g2)
-        self._test_binary_topological('__sub__', expected, self.g1, self.g2)
 
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological('difference', expected,
-                                      self.g1, self.t2)
-        self._test_binary_topological('__sub__', expected,
                                       self.g1, self.t2)
 
     def test_boundary(self):
@@ -317,3 +374,28 @@ class TestGeomMethods(unittest.TestCase):
         df = GeoDataFrame({'geometry': self.landmarks,
                            'col1': range(len(self.landmarks))})
         self.assert_(df.total_bounds, bbox)
+
+    #
+    # Test '&', '|', '^', and '-'
+    # The left can only be a GeoSeries. The right hand side can be a
+    # GeoSeries, GeoDataFrame or Shapely geometry
+    #
+    def test_intersection_operator(self):
+        self._test_binary_operator('__and__', self.t1, self.g1, self.g2)
+
+    def test_union_operator(self):
+        self._test_binary_operator('__or__', self.sq, self.g1, self.g2)
+
+    def test_union_operator_polygon(self):
+        self._test_binary_operator('__or__', self.sq, self.g1, self.t2)
+
+    def test_symmetric_difference_operator(self):
+        self._test_binary_operator('__xor__', self.sq, self.g3, self.g4)
+
+    def test_difference_series(self):
+        expected = GeoSeries([GeometryCollection(), self.t2])
+        self._test_binary_operator('__sub__', expected, self.g1, self.g2)
+
+    def test_difference_poly(self):
+        expected = GeoSeries([self.t1, self.t1])
+        self._test_binary_operator('__sub__', expected, self.g1, self.t2)
