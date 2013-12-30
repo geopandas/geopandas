@@ -120,7 +120,7 @@ def geom_equals(this, that):
                  attribute)
     """
 
-    return (this.equals(that) | (this.is_empty & that.is_empty)).all()
+    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
 
 
 def geom_almost_equals(this, that):
@@ -132,7 +132,8 @@ def geom_almost_equals(this, that):
                  property)
     """
 
-    return (this.almost_equals(that) | (this.is_empty & that.is_empty)).all()
+    return (this.geom_almost_equals(that) |
+            (this.is_empty & that.is_empty)).all()
 
 # TODO: Remove me when standardizing on pandas 0.13, which already includes
 #       this test util.

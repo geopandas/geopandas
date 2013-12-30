@@ -278,7 +278,7 @@ class TestDataFrame(unittest.TestCase):
         df2.crs = {'init': 'epsg:26918', 'no_defs': True}
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
-        self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
+        self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
