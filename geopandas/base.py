@@ -313,9 +313,6 @@ class GeoPandasBase(object):
                              for s in self.geometry], 
             index=self.index, crs=self.crs)
 
-    # Shift is simply an alias for translate
-    shift = translate
-
     def rotate(self, angle, origin='center', use_radians=False):
         """
         Rotate the coordinates of the GeoSeries.
