@@ -28,7 +28,7 @@ install:
   - cd ..
 
 script:
-  - nosetests -v
+  - py.test --cov geopandas -v --cov-report term-missing
 
 after_success:
   - coveralls
