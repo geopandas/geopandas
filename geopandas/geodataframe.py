@@ -3,13 +3,14 @@ try:
 except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
+from collections import defaultdict
 import json
 import os
 import sys
 
 import numpy as np
 from pandas import DataFrame, Series
-from shapely.geometry import mapping
+from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types
 from six import string_types, iteritems
@@ -161,6 +162,36 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
         return geopandas.io.file.read_file(filename, **kwargs)
+
+    @classmethod
+    def from_features(cls, features, crs=None):
+        """
+        Alternate constructor to create GeoDataFrame from an iterable of
+        features. Each element must be a feature dictionary or implement
+        the __geo_interface__.
+        See: https://gist.github.com/sgillies/2217756
+
+        Note: This method does not attempt to align rows.  Properties that are
+        not present in all features of the source file will not be properly
+        aligned.  This should be fixed.
+
+        """
+        geoms = []
+        columns = defaultdict(lambda: [])
+        for f in features:
+            if hasattr(f, "__geo_interface__"):
+                f = f.__geo_interface__
+            else:
+                f = f
+
+            geoms.append(shape(f['geometry']))
+            for key, value in f['properties'].iteritems():
+                columns[key].append(value)
+        geom = GeoSeries(geoms)
+        df = GeoDataFrame(columns)
+        df['geometry'] = geom
+        df.crs = crs
+        return df
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,

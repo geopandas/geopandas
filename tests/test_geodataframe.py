@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Point, Polygon
 
+import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
                   create_db, validate_boro_df
@@ -279,6 +280,16 @@ class TestDataFrame(unittest.TestCase):
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
         self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
+
+    def test_from_features(self):
+        nybb_filename = download_nybb()
+        with fiona.open('/nybb_13a/nybb.shp',
+                        vfs='zip://' + nybb_filename) as f:
+            features = list(f)
+
+        df = GeoDataFrame.from_features(features, crs=self.df.crs)
+        df.rename(columns=lambda x: x.lower(), inplace=True)
+        validate_boro_df(self, df)
 
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
