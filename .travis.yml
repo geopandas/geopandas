@@ -29,3 +29,6 @@ install:
 
 script:
   - nosetests -v
+
+after_success:
+  - coveralls
