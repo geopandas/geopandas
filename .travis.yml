@@ -28,7 +28,7 @@ install:
   - cd ..
 
 script:
-  - py.test --cov geopandas -v --cov-report term-missing
+  - py.test tests --cov geopandas -v --cov-report term-missing
 
 after_success:
   - coveralls
