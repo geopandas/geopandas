@@ -1,12 +1,18 @@
 import unittest
 
+import fiona
+
 from geopandas import GeoDataFrame, read_postgis, read_file
 import tests.util
 
 class TestIO(unittest.TestCase):
     def setUp(self):
         nybb_filename = tests.util.download_nybb()
-        self.df = read_file('/nybb_13a/nybb.shp', vfs='zip://' + nybb_filename)
+        path = '/nybb_13a/nybb.shp'
+        vfs = 'zip://' + nybb_filename
+        self.df = read_file(path, vfs=vfs)
+        with fiona.open(path, vfs=vfs) as f:
+            self.crs = f.crs
 
     def test_read_postgis_default(self):
         con = tests.util.connect('test_geopandas')
@@ -36,3 +42,8 @@ class TestIO(unittest.TestCase):
             con.close()
 
         tests.util.validate_boro_df(self, df)
+
+    def test_read_file(self):
+        df = self.df.rename(columns=lambda x: x.lower())
+        tests.util.validate_boro_df(self, df)
+        self.assert_(df.crs == self.crs)

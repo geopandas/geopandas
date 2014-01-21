@@ -286,10 +286,12 @@ class TestDataFrame(unittest.TestCase):
         with fiona.open('/nybb_13a/nybb.shp',
                         vfs='zip://' + nybb_filename) as f:
             features = list(f)
+            crs = f.crs
 
-        df = GeoDataFrame.from_features(features, crs=self.df.crs)
+        df = GeoDataFrame.from_features(features, crs=crs)
         df.rename(columns=lambda x: x.lower(), inplace=True)
         validate_boro_df(self, df)
+        self.assert_(df.crs == crs)
 
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
