@@ -28,7 +28,8 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     index_col, coerce_float, params
 
     """
-    df = read_sql(sql, con, index_col, coerce_float, params)
+    df = read_sql(sql, con, index_col=index_col, coerce_float=coerce_float, 
+                  params=params)
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(
             geom_col))
