@@ -253,8 +253,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
-                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
-                'geometry': mapping(row['geometry']) }
+                    dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
+                'geometry': mapping(row[self._geometry_column_name]) }
 
         return json.dumps(
             {'type': 'FeatureCollection',

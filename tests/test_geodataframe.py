@@ -188,6 +188,17 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
 
+    def test_to_json_geom_col(self):
+        df = self.df.copy()
+        df['geom'] = df['geometry']
+        df['geometry'] = np.arange(len(df))
+        df.set_geometry('geom', inplace=True)
+
+        text = df.to_json()
+        data = json.loads(text)
+        self.assertTrue(data['type'] == 'FeatureCollection')
+        self.assertTrue(len(data['features']) == 5)
+
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
         self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
