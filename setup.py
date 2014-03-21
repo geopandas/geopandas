@@ -9,6 +9,11 @@ import os
 import warnings
 
 try:
+    from distutils.command.build_py import build_py_2to3 as build_py
+except ImportError:
+    from distutils.command.build_py import build_py
+
+try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
@@ -78,6 +83,7 @@ short_version = '%s'
 write_version_py()
 
 setup(name='geopandas',
+      cmdclass={'build_py':build_py},
       version=FULLVERSION,
       description='Geographic pandas extensions',
       license='BSD',
