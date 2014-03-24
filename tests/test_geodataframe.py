@@ -182,6 +182,27 @@ class TestDataFrame(unittest.TestCase):
         geom = GeoSeries(geom, index=self.df.index, crs=self.df.crs)
         assert_geoseries_equal(self.df.geometry, geom)
 
+    def test_set_geometry_series(self):
+        # Test when setting geometry with a Series that
+        # alignment will occur
+        #
+        # Reverse the index order
+        # Set the Series to be Point(i,i) where i is the index
+        self.df.index = range(len(self.df)-1, -1, -1)
+
+        d = {}
+        for i in range(len(self.df)):
+            d[i] = Point(i, i)
+        g = GeoSeries(d)
+        # At this point, the DataFrame index is [4,3,2,1,0] and the
+        # GeoSeries index is [0,1,2,3,4]. Make sure set_geometry aligns
+        # them to match indexes
+        df = self.df.set_geometry(g)
+
+        for i, r in df.iterrows():
+            self.assertAlmostEqual(i, r['geometry'].x)
+            self.assertAlmostEqual(i, r['geometry'].y)
+
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
