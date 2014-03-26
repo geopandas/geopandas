@@ -268,6 +268,17 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(len(df) == 5)
         self.assertTrue(np.alltrue(df['BoroName'].values == self.boros))
 
+    def test_to_file_types(self):
+        """ Test various integer type columns (GH#93) """
+        tempfilename = os.path.join(self.tempdir, 'int.shp')
+        int_types = [np.int, np.int8, np.int16, np.int32, np.int64, np.intp,
+                     np.uint8, np.uint16, np.uint32, np.uint64, np.long]
+        geometry = self.df2.geometry
+        data = dict((str(i), np.arange(len(geometry), dtype=dtype))
+                     for i, dtype in enumerate(int_types))
+        df = GeoDataFrame(data, geometry=geometry)
+        df.to_file(tempfilename)
+
     def test_mixed_types_to_file(self):
         """ Test that mixed geometry types raise error when writing to file """
         tempfilename = os.path.join(self.tempdir, 'test.shp')
