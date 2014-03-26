@@ -113,9 +113,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = DEFAULT_GEO_COLUMN_NAME
-        if isinstance(col, Series):
-            level = col.values
-        elif isinstance(col, (list, np.ndarray)):
+        if isinstance(col, (Series, list, np.ndarray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
