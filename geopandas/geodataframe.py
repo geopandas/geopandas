@@ -281,7 +281,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         def convert_type(in_type):
             if in_type == object:
                 return 'str'
-            return type(np.asscalar(np.zeros(1, in_type))).__name__
+            out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
+            if out_type == 'long':
+                out_type = 'int'
+            return out_type
             
         def feature(i, row):
             return {
