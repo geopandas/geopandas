@@ -5,6 +5,7 @@ import shutil
 
 import numpy as np
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 import fiona
@@ -335,6 +336,30 @@ class TestDataFrame(unittest.TestCase):
         df.rename(columns=lambda x: x.lower(), inplace=True)
         validate_boro_df(self, df)
         self.assert_(df.crs == crs)
+
+    def test_from_features_unaligned_properties(self):
+        p1 = Point(1,1)
+        f1 = {'type': 'Feature', 
+                'properties': {'a': 0}, 
+                'geometry': p1.__geo_interface__}
+
+        p2 = Point(2,2)
+        f2 = {'type': 'Feature',
+                'properties': {'b': 1},
+                'geometry': p2.__geo_interface__}
+
+        p3 = Point(3,3)
+        f3 = {'type': 'Feature',
+                'properties': {'a': 2},
+                'geometry': p3.__geo_interface__}
+
+        df = GeoDataFrame.from_features([f1, f2, f3])
+
+        result = df[['a', 'b']]
+        expected = pd.DataFrame.from_dict([{'a': 0, 'b': np.nan},
+                                           {'a': np.nan, 'b': 1},
+                                           {'a': 2, 'b': np.nan}])
+        assert_frame_equal(expected, result)
 
     def test_from_postgis_default(self):
         con = connect('test_geopandas')

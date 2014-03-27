@@ -169,25 +169,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         the __geo_interface__.
         See: https://gist.github.com/sgillies/2217756
 
-        Note: This method does not attempt to align rows.  Properties that are
-        not present in all features of the source file will not be properly
-        aligned.  This should be fixed.
-
         """
-        geoms = []
-        columns = defaultdict(lambda: [])
+        rows = []
         for f in features:
             if hasattr(f, "__geo_interface__"):
                 f = f.__geo_interface__
             else:
                 f = f
 
-            geoms.append(shape(f['geometry']))
-            for key, value in f['properties'].iteritems():
-                columns[key].append(value)
-        geom = GeoSeries(geoms)
-        df = GeoDataFrame(columns)
-        df['geometry'] = geom
+            d = {'geometry': shape(f['geometry'])}
+            d.update(f['properties'])
+            rows.append(d)
+        df = GeoDataFrame.from_dict(rows)
         df.crs = crs
         return df
 
