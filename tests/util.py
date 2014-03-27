@@ -1,5 +1,5 @@
 import os.path
-import urllib2
+from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -29,7 +29,7 @@ def download_nybb():
     filename = os.path.join('examples', 'nybb_13a.zip')
     if not os.path.exists(filename):
         with open(filename, 'w') as f:
-            response = urllib2.urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
+            response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
             f.write(response.read())
     return filename
 
