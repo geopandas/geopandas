@@ -1,3 +1,5 @@
+import binascii
+
 from pandas import read_sql
 import shapely.wkb
 
@@ -36,7 +38,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
 
     wkb_geoms = df[geom_col]
 
-    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(x.decode('hex')))
+    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x)))
 
     df[geom_col] = GeoSeries(s)
 

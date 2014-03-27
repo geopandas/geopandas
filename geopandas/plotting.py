@@ -1,4 +1,6 @@
+from __future__ import print_function
 import numpy as np
+
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
     """ Plot a single Polygon geometry """
@@ -249,16 +251,16 @@ def __pysal_choro(values, scheme, k=5):
         scheme = scheme.lower()
         if scheme not in schemes:
             scheme = 'quantiles'
-            print 'Unrecognized scheme: ', s0
-            print 'Using Quantiles instead'
+            print('Unrecognized scheme: ', s0)
+            print('Using Quantiles instead')
         if k<2 or k>9:
-            print 'Invalid k: ', k
-            print '2<=k<=9, setting k=5 (default)'
+            print('Invalid k: ', k)
+            print('2<=k<=9, setting k=5 (default)')
             k = 5
         binning = schemes[scheme](values, k)
         values = binning.yb
     except ImportError: 
-        print 'PySAL not installed, setting map to default'
+        print('PySAL not installed, setting map to default')
 
     return values
 
