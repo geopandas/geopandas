@@ -44,7 +44,7 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts[idx]) is GeoSeries
 
     def test_take(self):
-        assert type(self.pts.take(range(0, self.N, 2))) is GeoSeries
+        assert type(self.pts.take(list(range(0, self.N, 2)))) is GeoSeries
 
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
