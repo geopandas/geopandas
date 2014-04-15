@@ -117,7 +117,7 @@ class TestDataFrame(unittest.TestCase):
         # non-geometry error
         with self.assertRaises(TypeError):
             df = self.df.copy()
-            df.geometry = range(df.shape[0])
+            df.geometry = list(range(df.shape[0]))
 
         with self.assertRaises(KeyError):
             df = self.df.copy()
