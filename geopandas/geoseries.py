@@ -113,9 +113,6 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method('__getitem__', key)
 
-    def order(self, *args, **kwargs):
-        return self._wrapped_pandas_method('order', *args, **kwargs)
-
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method('sort_index', *args, **kwargs)
 

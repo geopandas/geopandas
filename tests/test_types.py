@@ -30,9 +30,6 @@ class TestSeries(unittest.TestCase):
     def test_sort_index(self):
         assert type(self.pts.sort_index()) is GeoSeries
 
-    def test_sort_order(self):
-        assert type(self.pts.order()) is GeoSeries
-
     def test_loc(self):
         assert type(self.pts.loc[5:]) is GeoSeries
 
