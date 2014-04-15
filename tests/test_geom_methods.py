@@ -126,7 +126,7 @@ class TestGeomMethods(unittest.TestCase):
         """
         def _make_gdf(s):
             n = len(s)
-            col1 = string.lowercase[:n]
+            col1 = string.ascii_lowercase[:n]
             col2 = range(n)
             
             return GeoDataFrame({'geometry': s.values, 
