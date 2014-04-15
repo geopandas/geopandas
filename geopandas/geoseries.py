@@ -39,7 +39,7 @@ class GeoSeries(GeoPandasBase, Series):
             args = _convert_array_args(args)
         kwargs.pop('crs', None)
 
-        arr = Series.__new__(cls, *args, **kwargs)
+        arr = Series.__new__(cls)
         if type(arr) is GeoSeries:
             return arr
         else:
