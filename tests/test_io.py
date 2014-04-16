@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 
-import unittest
-
 import fiona
 
 from geopandas import GeoDataFrame, read_postgis, read_file
 import tests.util
+from .util import unittest
 
 class TestIO(unittest.TestCase):
     def setUp(self):
