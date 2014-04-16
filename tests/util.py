@@ -1,3 +1,4 @@
+import io
 import os.path
 from six.moves.urllib.request import urlopen
 
@@ -28,7 +29,7 @@ def download_nybb():
     # saved as geopandas/examples/nybb_13a.zip.
     filename = os.path.join('examples', 'nybb_13a.zip')
     if not os.path.exists(filename):
-        with open(filename, 'w') as f:
+        with io.open(filename, 'wb') as f:
             response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
             f.write(response.read())
     return filename
