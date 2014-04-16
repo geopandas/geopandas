@@ -1,5 +1,8 @@
 from __future__ import print_function
+
 import numpy as np
+from six import next
+from six.moves import xrange
 
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -107,9 +110,9 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=color.next(), alpha=alpha)
+            plot_multipolygon(ax, geom, facecolor=next(color), alpha=alpha)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=color.next())
+            plot_multilinestring(ax, geom, color=next(color))
         elif geom.type == 'Point':
             plot_point(ax, geom)
     plt.draw()

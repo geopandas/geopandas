@@ -9,6 +9,7 @@ from matplotlib.pyplot import Artist, savefig, clf
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from shapely.geometry import Polygon, LineString, Point
+from six.moves import xrange
 
 from geopandas import GeoSeries
 
