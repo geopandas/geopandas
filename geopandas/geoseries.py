@@ -35,11 +35,12 @@ class GeoSeries(GeoPandasBase, Series):
     _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
+        kwargs.pop('crs', None)
         if OLD_PANDAS:
             args = _convert_array_args(args)
-        kwargs.pop('crs', None)
-
-        arr = Series.__new__(cls)
+            arr = Series.__new__(cls, *args, **kwargs)
+        else:
+            arr = Series.__new__(cls)
         if type(arr) is GeoSeries:
             return arr
         else:
