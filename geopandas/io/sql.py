@@ -38,7 +38,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
 
     wkb_geoms = df[geom_col]
 
-    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x)))
+    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x.encode())))
 
     df[geom_col] = GeoSeries(s)
 
