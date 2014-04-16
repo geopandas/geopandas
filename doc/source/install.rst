@@ -1,8 +1,8 @@
 Installation
 ============
 
-GeoPandas is pre-alpha software.  Please install the latest source
-from `GitHub`_ and use the setup script::
+GeoPandas is continuous-release software.  You may install the latest
+source from `GitHub`_ and use the setup script::
 
     python setup.py install
 
@@ -13,16 +13,20 @@ for pip 1.4 and later.
 Dependencies
 ------------
 
-Requires Python version 2.6 or 2.7 (Python 3.x support is planned
-soon).
+Supports Python versions 2.6, 2.7, and 3.2+.
 
 - `numpy`_
 - `pandas`_
 - `shapely`_
 - `fiona`_
+- `six`_
+- `geopy`_ 0.96.3 (optional; for geocoding)
+- `psycopg2`_ (optional; for PostGIS connection)
+
+For plotting, these additional packages are required:
 - `descartes`_
 - `matplotlib`_
-- `geopy`_ (optional; for geocoding)
+- `pysal`_
 
 Testing
 -------
@@ -45,6 +49,9 @@ including pull requests, on `Travis CI`_.
 .. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 .. _geopy: https://github.com/geopy/geopy
+.. _six: https://pythonhosted.org/six
+.. _psycopg2: https://pypi.python.org/pypi/psycopg2
+.. _pysal: http://pysal.org
 .. _Travis CI: https://travis-ci.org/kjordahl/geopandas
 
 .. toctree::
