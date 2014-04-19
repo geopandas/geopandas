@@ -1,6 +1,7 @@
 import io
 import os.path
 from six.moves.urllib.request import urlopen
+from sqlalchemy import create_engine
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -48,8 +49,11 @@ def validate_boro_df(test, df):
 
 
 def connect(dbname):
+    driver = 'psycopg2'
     try:
-        con = psycopg2.connect(dbname=dbname)
+        conn_str = 'postgresql+{driver}://localhost/{dbname}'
+        engine = create_engine(conn_str.format(driver=driver, dbname=dbname))
+        con = engine.connect()
     except (NameError, OperationalError):
         return None
 
@@ -74,8 +78,7 @@ def create_db(df):
         return False
 
     try:
-        cursor = con.cursor()
-        cursor.execute("DROP TABLE IF EXISTS nybb;")
+        con.execute("DROP TABLE IF EXISTS nybb;")
 
         sql = """CREATE TABLE nybb (
             geom        geometry,
@@ -84,20 +87,18 @@ def create_db(df):
             shape_leng  float,
             shape_area  float
         );"""
-        cursor.execute(sql)
+        con.execute(sql)
 
         for i, row in df.iterrows():
             sql = """INSERT INTO nybb VALUES (
                 ST_GeometryFromText(%s), %s, %s, %s, %s
             );"""
-            cursor.execute(sql, (row['geometry'].wkt,
+            con.execute(sql, (row['geometry'].wkt,
                                  row['BoroCode'],
                                  row['BoroName'],
                                  row['Shape_Leng'],
                                  row['Shape_Area']))
     finally:
-        cursor.close()
-        con.commit()
         con.close()
 
     return True
