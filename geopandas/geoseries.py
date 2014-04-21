@@ -152,12 +152,14 @@ class GeoSeries(GeoPandasBase, Series):
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
-    def fillna(self, value=Point(), method=None, inplace=False,
+    def fillna(self, value=None, method=None, inplace=False,
                **kwargs):
         """Fill NA/NaN values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
         """
+        if value is None:
+            value = Point()
         if not OLD_PANDAS:
             return super(GeoSeries, self).fillna(value=value, method=method,
                                                  inplace=inplace, **kwargs)
@@ -175,7 +177,9 @@ class GeoSeries(GeoPandasBase, Series):
                 raise ValueError('Non-geometric fill values not allowed for GeoSeries')
 
     def align(self, other, join='outer', level=None, copy=True,
-              fill_value=Point(), **kwargs):
+              fill_value=None, **kwargs):
+        if fill_value is None:
+            fill_value = Point()
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
