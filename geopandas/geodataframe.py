@@ -234,7 +234,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                       'keep': lambda row: row}
 
         if na not in na_methods:
-            raise ValueError('Unknown na method {}'.format(na))
+            raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
         def feature(i, row):
