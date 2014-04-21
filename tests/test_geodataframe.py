@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
-                  create_db, validate_boro_df
+                  create_db, validate_boro_df, PANDAS_NEW_SQL_API
 
 
 class TestDataFrame(unittest.TestCase):
@@ -363,6 +363,8 @@ class TestDataFrame(unittest.TestCase):
                                            {'a': 2, 'b': np.nan}])
         assert_frame_equal(expected, result)
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):
@@ -376,6 +378,8 @@ class TestDataFrame(unittest.TestCase):
 
         validate_boro_df(self, df)
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):

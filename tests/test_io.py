@@ -4,7 +4,8 @@ import fiona
 
 from geopandas import GeoDataFrame, read_postgis, read_file
 import tests.util
-from .util import unittest
+from .util import PANDAS_NEW_SQL_API, unittest
+
 
 class TestIO(unittest.TestCase):
     def setUp(self):
@@ -15,6 +16,8 @@ class TestIO(unittest.TestCase):
         with fiona.open(path, vfs=vfs) as f:
             self.crs = f.crs
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_read_postgis_default(self):
         con = tests.util.connect('test_geopandas')
         if con is None or not tests.util.create_db(self.df):
@@ -28,6 +31,8 @@ class TestIO(unittest.TestCase):
 
         tests.util.validate_boro_df(self, df)
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_read_postgis_custom_geom_col(self):
         con = tests.util.connect('test_geopandas')
         if con is None or not tests.util.create_db(self.df):
