@@ -236,6 +236,11 @@ class TestDataFrame(unittest.TestCase):
             if props['BoroName'] == 'Queens':
                 self.assertTrue(props['Shape_Area'] is None)
 
+    def test_to_json_bad_na(self):
+        # Check that a bad na argument raises error
+        with self.assertRaises(ValueError):
+            text = self.df.to_json(na='garbage')
+
     def test_to_json_dropna(self):
         self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
         self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
