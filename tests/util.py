@@ -1,3 +1,4 @@
+import io
 import os.path
 from six.moves.urllib.request import urlopen
 
@@ -21,6 +22,13 @@ except ImportError:
     class OperationalError(Exception):
         pass
 
+try:
+    from pandas import read_sql_table
+except ImportError:
+    PANDAS_NEW_SQL_API = False
+else:
+    PANDAS_NEW_SQL_API = True
+
 
 def download_nybb():
     """ Returns the path to the NYC boroughs file. Downloads if necessary. """
@@ -28,7 +36,7 @@ def download_nybb():
     # saved as geopandas/examples/nybb_13a.zip.
     filename = os.path.join('examples', 'nybb_13a.zip')
     if not os.path.exists(filename):
-        with open(filename, 'w') as f:
+        with io.open(filename, 'wb') as f:
             response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
             f.write(response.read())
     return filename

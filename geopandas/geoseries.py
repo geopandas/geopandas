@@ -14,11 +14,6 @@ from geopandas.base import GeoPandasBase
 
 OLD_PANDAS = issubclass(Series, np.ndarray)
 
-EMPTY_COLLECTION = GeometryCollection()
-EMPTY_POLYGON = Polygon()
-EMPTY_POINT = Point()
-
-
 def _is_empty(x):
     try:
         return x.is_empty
@@ -35,11 +30,12 @@ class GeoSeries(GeoPandasBase, Series):
     _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
+        kwargs.pop('crs', None)
         if OLD_PANDAS:
             args = _convert_array_args(args)
-        kwargs.pop('crs', None)
-
-        arr = Series.__new__(cls, *args, **kwargs)
+            arr = Series.__new__(cls, *args, **kwargs)
+        else:
+            arr = Series.__new__(cls)
         if type(arr) is GeoSeries:
             return arr
         else:
@@ -113,9 +109,6 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method('__getitem__', key)
 
-    def order(self, *args, **kwargs):
-        return self._wrapped_pandas_method('order', *args, **kwargs)
-
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method('sort_index', *args, **kwargs)
 
@@ -159,12 +152,14 @@ class GeoSeries(GeoPandasBase, Series):
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
-    def fillna(self, value=EMPTY_POLYGON, method=None, inplace=False,
+    def fillna(self, value=None, method=None, inplace=False,
                **kwargs):
         """Fill NA/NaN values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
         """
+        if value is None:
+            value = Point()
         if not OLD_PANDAS:
             return super(GeoSeries, self).fillna(value=value, method=method,
                                                  inplace=inplace, **kwargs)
@@ -182,7 +177,9 @@ class GeoSeries(GeoPandasBase, Series):
                 raise ValueError('Non-geometric fill values not allowed for GeoSeries')
 
     def align(self, other, join='outer', level=None, copy=True,
-              fill_value=EMPTY_POLYGON, **kwargs):
+              fill_value=None, **kwargs):
+        if fill_value is None:
+            fill_value = Point()
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,

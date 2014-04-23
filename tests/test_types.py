@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import numpy as np
 from shapely.geometry import Point
 from pandas import Series, DataFrame
@@ -30,9 +32,6 @@ class TestSeries(unittest.TestCase):
     def test_sort_index(self):
         assert type(self.pts.sort_index()) is GeoSeries
 
-    def test_sort_order(self):
-        assert type(self.pts.order()) is GeoSeries
-
     def test_loc(self):
         assert type(self.pts.loc[5:]) is GeoSeries
 
@@ -44,7 +43,7 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts[idx]) is GeoSeries
 
     def test_take(self):
-        assert type(self.pts.take(range(0, self.N, 2))) is GeoSeries
+        assert type(self.pts.take(list(range(0, self.N, 2)))) is GeoSeries
 
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries

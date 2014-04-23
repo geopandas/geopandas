@@ -12,7 +12,6 @@ import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-from six import string_types
 from six import string_types, iteritems
 
 from geopandas import GeoSeries
@@ -235,7 +234,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                       'keep': lambda row: row}
 
         if na not in na_methods:
-            raise ValueError('Unknown na method {}'.format(na))
+            raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
         def feature(i, row):

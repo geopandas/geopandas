@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import shutil
 import tempfile
@@ -8,7 +10,7 @@ from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
-from util import unittest, geom_equals, geom_almost_equals
+from .util import unittest, geom_equals, geom_almost_equals
 
 
 class TestSeries(unittest.TestCase):

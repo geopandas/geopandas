@@ -33,12 +33,12 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     df = read_sql(sql, con, index_col=index_col, coerce_float=coerce_float, 
                   params=params)
     if geom_col not in df:
-        raise ValueError("Query missing geometry column '{}'".format(
+        raise ValueError("Query missing geometry column '{0}'".format(
             geom_col))
 
     wkb_geoms = df[geom_col]
 
-    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x)))
+    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x.encode())))
 
     df[geom_col] = GeoSeries(s)
 

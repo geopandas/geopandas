@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import json
 import os
 import tempfile
@@ -11,7 +13,7 @@ from shapely.geometry import Point, Polygon
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
-                  create_db, validate_boro_df
+                  create_db, validate_boro_df, PANDAS_NEW_SQL_API
 
 
 class TestDataFrame(unittest.TestCase):
@@ -117,7 +119,7 @@ class TestDataFrame(unittest.TestCase):
         # non-geometry error
         with self.assertRaises(TypeError):
             df = self.df.copy()
-            df.geometry = range(df.shape[0])
+            df.geometry = list(range(df.shape[0]))
 
         with self.assertRaises(KeyError):
             df = self.df.copy()
@@ -233,6 +235,11 @@ class TestDataFrame(unittest.TestCase):
             self.assertEqual(len(props), 4)
             if props['BoroName'] == 'Queens':
                 self.assertTrue(props['Shape_Area'] is None)
+
+    def test_to_json_bad_na(self):
+        # Check that a bad na argument raises error
+        with self.assertRaises(ValueError):
+            text = self.df.to_json(na='garbage')
 
     def test_to_json_dropna(self):
         self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
@@ -361,6 +368,8 @@ class TestDataFrame(unittest.TestCase):
                                            {'a': 2, 'b': np.nan}])
         assert_frame_equal(expected, result)
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):
@@ -374,6 +383,8 @@ class TestDataFrame(unittest.TestCase):
 
         validate_boro_df(self, df)
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):

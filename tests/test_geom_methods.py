@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import string
 
 import numpy as np
@@ -9,7 +11,7 @@ from shapely.geometry.collection import GeometryCollection
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.base import GeoPandasBase
-from util import (
+from .util import (
     unittest, geom_equals, geom_almost_equals, assert_geoseries_equal
 )
 
@@ -126,7 +128,7 @@ class TestGeomMethods(unittest.TestCase):
         """
         def _make_gdf(s):
             n = len(s)
-            col1 = string.lowercase[:n]
+            col1 = string.ascii_lowercase[:n]
             col2 = range(n)
             
             return GeoDataFrame({'geometry': s.values, 
