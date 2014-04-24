@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation &mdash; GeoPandas 0.1.0.dev-53f669a documentation</title>
+    <title>Installation &mdash; GeoPandas 0.1.0.dev-a7b594e documentation</title>
     
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1.0.dev-53f669a',
+        VERSION:     '0.1.0.dev-a7b594e',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +25,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
-    <link rel="top" title="GeoPandas 0.1.0.dev-53f669a documentation" href="index.html" />
+    <link rel="top" title="GeoPandas 0.1.0.dev-a7b594e documentation" href="index.html" />
     <link rel="next" title="GeoPandas User Guide" href="user.html" />
-    <link rel="prev" title="GeoPandas 0.1.0.dev-53f669a" href="index.html" /> 
+    <link rel="prev" title="GeoPandas 0.1.0.dev-a7b594e" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,9 +40,9 @@
           <a href="user.html" title="GeoPandas User Guide"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="GeoPandas 0.1.0.dev-53f669a"
+          <a href="index.html" title="GeoPandas 0.1.0.dev-a7b594e"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">GeoPandas 0.1.0.dev-53f669a documentation</a> &raquo;</li> 
+        <li><a href="index.html">GeoPandas 0.1.0.dev-a7b594e documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,23 +53,29 @@
             
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>GeoPandas is pre-alpha software.  Please install the latest source
-from <a class="reference external" href="https://github.com/kjordahl/geopandas">GitHub</a> and use the setup script:</p>
+<p>GeoPandas is continuous-release software.  You may install the latest
+source from <a class="reference external" href="https://github.com/kjordahl/geopandas">GitHub</a> and use the setup script:</p>
 <div class="highlight-python"><pre>python setup.py install</pre>
 </div>
 <p>GeoPandas is also available on <a class="reference external" href="https://pypi.python.org/pypi/geopandas">PyPI</a>, so <tt class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">geopandas</span></tt>
-should work as well.</p>
+should work as well. You will have to add the <tt class="docutils literal"><span class="pre">--pre</span></tt> flag
+for pip 1.4 and later.</p>
 <div class="section" id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Supports Python versions 2.6, 2.7, and 3.2+.</p>
 <ul class="simple">
 <li><a class="reference external" href="http://www.numpy.org">numpy</a></li>
 <li><a class="reference external" href="http://pandas.pydata.org">pandas</a></li>
 <li><a class="reference external" href="http://toblerity.github.io/shapely">shapely</a></li>
 <li><a class="reference external" href="http://toblerity.github.io/fiona">fiona</a></li>
-<li><a class="reference external" href="https://pypi.python.org/pypi/descartes">descartes</a></li>
-<li><a class="reference external" href="http://matplotlib.org">matplotlib</a></li>
-<li><a class="reference external" href="https://github.com/geopy/geopy">geopy</a> (optional; for geocoding)</li>
+<li><a class="reference external" href="https://pythonhosted.org/six">six</a></li>
+<li><a class="reference external" href="https://github.com/geopy/geopy">geopy</a> 0.96.3 (optional; for geocoding)</li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/psycopg2">psycopg2</a> (optional; for PostGIS connection)</li>
 </ul>
+<p>For plotting, these additional packages are required:
+- <a class="reference external" href="https://pypi.python.org/pypi/descartes">descartes</a>
+- <a class="reference external" href="http://matplotlib.org">matplotlib</a>
+- <a class="reference external" href="http://pysal.org">pysal</a></p>
 </div>
 <div class="section" id="testing">
 <h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
@@ -106,7 +112,7 @@ including pull requests, on <a class="reference external" href="https://travis-c
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">GeoPandas 0.1.0.dev-53f669a</a></p>
+                        title="previous chapter">GeoPandas 0.1.0.dev-a7b594e</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="user.html"
                         title="next chapter">GeoPandas User Guide</a></p>
@@ -142,14 +148,14 @@ including pull requests, on <a class="reference external" href="https://travis-c
           <a href="user.html" title="GeoPandas User Guide"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="GeoPandas 0.1.0.dev-53f669a"
+          <a href="index.html" title="GeoPandas 0.1.0.dev-a7b594e"
              >previous</a> |</li>
-        <li><a href="index.html">GeoPandas 0.1.0.dev-53f669a documentation</a> &raquo;</li> 
+        <li><a href="index.html">GeoPandas 0.1.0.dev-a7b594e documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2013, GeoPandas developers.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>
