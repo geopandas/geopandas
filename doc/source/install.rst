@@ -23,9 +23,10 @@ Supports Python versions 2.6, 2.7, and 3.2+.
 - `geopy`_ 0.96.3 (optional; for geocoding)
 - `psycopg2`_ (optional; for PostGIS connection)
 
-For plotting, these additional packages are required:
-- `descartes`_
+For plotting, these additional packages may be used:
+
 - `matplotlib`_
+- `descartes`_
 - `pysal`_
 
 Testing
