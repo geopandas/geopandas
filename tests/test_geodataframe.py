@@ -25,8 +25,7 @@ class TestDataFrame(unittest.TestCase):
 
         self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
-        self.boros = np.array(['Staten Island', 'Queens', 'Brooklyn',
-                               'Manhattan', 'Bronx'])
+        self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
         self.df2 = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
