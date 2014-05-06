@@ -4,7 +4,7 @@ Generate example images for GeoPandas documentation.
 TODO: autogenerate these from docs themselves
 
 Kelsey Jordahl
-Time-stamp: <Sun Jul  7 17:31:12 IST 2013>
+Time-stamp: <Tue May  6 12:17:29 EDT 2014>
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ from geopandas import GeoSeries, GeoDataFrame
 np.random.seed(1)
 DPI = 100
 
-# http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
+# http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
 boros = GeoDataFrame.from_file('nybb.shp')
 boros.set_index('BoroCode', inplace=True)
 boros.sort()
