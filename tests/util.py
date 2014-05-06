@@ -40,7 +40,7 @@ def download_nybb():
         with io.open(full_path_name, 'wb') as f:
             response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/{0}'.format(filename))
             f.write(response.read())
-    return filename
+    return full_path_name
 
 
 def validate_boro_df(test, df):
