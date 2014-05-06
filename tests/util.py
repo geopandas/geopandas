@@ -32,12 +32,13 @@ else:
 
 def download_nybb():
     """ Returns the path to the NYC boroughs file. Downloads if necessary. """
-    # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
-    # saved as geopandas/examples/nybb_13a.zip.
-    filename = os.path.join('examples', 'nybb_13a.zip')
-    if not os.path.exists(filename):
-        with io.open(filename, 'wb') as f:
-            response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip')
+    # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
+    # saved as geopandas/examples/nybb_14aav.zip.
+    filename = 'nybb_14aav.zip'
+    full_path_name = os.path.join('examples', filename)
+    if not os.path.exists(full_path_name):
+        with io.open(full_path_name, 'wb') as f:
+            response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/{0}'.format(filename))
             f.write(response.read())
     return filename
 

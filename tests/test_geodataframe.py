@@ -23,7 +23,7 @@ class TestDataFrame(unittest.TestCase):
 
         nybb_filename = download_nybb()
 
-        self.df = read_file('/nybb_13a/nybb.shp', vfs='zip://' + nybb_filename)
+        self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.boros = np.array(['Staten Island', 'Queens', 'Brooklyn',
                                'Manhattan', 'Bronx'])
@@ -334,7 +334,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_from_features(self):
         nybb_filename = download_nybb()
-        with fiona.open('/nybb_13a/nybb.shp',
+        with fiona.open('/nybb_14a_av/nybb.shp',
                         vfs='zip://' + nybb_filename) as f:
             features = list(f)
             crs = f.crs
