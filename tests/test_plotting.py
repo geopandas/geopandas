@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import unittest
 
+import matplotlib
 from matplotlib.pyplot import Artist, savefig, clf
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
@@ -12,6 +13,8 @@ from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
 
 from geopandas import GeoSeries
+
+matplotlib.use('Agg', warn=False)
 
 # If set to True, generate images rather than perform tests (all tests will pass!)
 GENERATE_BASELINE = False
