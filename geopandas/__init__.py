@@ -7,7 +7,7 @@ from geopandas.geoseries import GeoSeries
 from geopandas.geodataframe import GeoDataFrame
 
 from geopandas.io.file import read_file
-from geopandas.io.sql import read_postgis
+from geopandas.io.sql import read_postgis, read_sqlite
 
 # make the interactive namespace easier to use
 # for `from geopandas import *` demos.
