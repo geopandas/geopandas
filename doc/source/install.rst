@@ -16,7 +16,7 @@ Dependencies
 Supports Python versions 2.6, 2.7, and 3.2+.
 
 - `numpy`_
-- `pandas`_
+- `pandas`_ (version 0.13 or later)
 - `shapely`_
 - `fiona`_
 - `six`_
