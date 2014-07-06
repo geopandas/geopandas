@@ -10,7 +10,7 @@ from .util import PANDAS_NEW_SQL_API, unittest
 class TestIO(unittest.TestCase):
     def setUp(self):
         nybb_filename = tests.util.download_nybb()
-        path = '/nybb_13a/nybb.shp'
+        path = '/nybb_14a_av/nybb.shp'
         vfs = 'zip://' + nybb_filename
         self.df = read_file(path, vfs=vfs)
         with fiona.open(path, vfs=vfs) as f:

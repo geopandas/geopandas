@@ -5,19 +5,25 @@ python:
   - 2.7
   - 3.2
   - 3.3
+  - 3.4
 
 env:
-  - PANDAS_VERSION=v0.12.0
   - PANDAS_VERSION=v0.13.1
+  - PANDAS_VERSION=v0.14.0
   - PANDAS_VERSION=master
+
+matrix:
+  exclude:
+    - python: 2.6
+      env: PANDAS_VERSION=v0.14.0
 
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ppa
   - sudo apt-get update
-  - sudo apt-get install gdal-bin libgdal-dev postgis
-  - sudo -u postgres psql -c "drop database if exists test_geopandas"
-  - sudo -u postgres psql -c "create database test_geopandas"
-  - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
+  - sudo apt-get install gdal-bin libgdal-dev
+#  - sudo -u postgres psql -c "drop database if exists test_geopandas"
+#  - sudo -u postgres psql -c "create database test_geopandas"
+#  - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
 
 install:
   - pip install -r requirements.txt --use-mirrors
