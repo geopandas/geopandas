@@ -12,6 +12,11 @@ env:
   - PANDAS_VERSION=v0.14.0
   - PANDAS_VERSION=master
 
+matrix:
+  exclude:
+    - python: 2.6
+      env: PANDAS_VERSION=v0.14.0
+
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ppa
   - sudo apt-get update
