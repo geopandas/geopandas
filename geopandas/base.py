@@ -10,6 +10,12 @@ from pandas import Series, DataFrame
 
 import geopandas as gpd
 
+try:
+    from sindex import SpatialIndex
+    HAS_SINDEX = True
+except ImportError:
+    HAS_SINDEX = False
+
 
 def _geo_op(this, other, op):
     """Operation that returns a GeoSeries"""
@@ -42,18 +48,33 @@ def _series_op(this, other, op, **kwargs):
         return Series([getattr(s, op)(other, **kwargs)
                       for s in this.geometry], index=this.index)
 
+
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""
     return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
-                     index=this.index, crs=this.crs)
+                         index=this.index, crs=this.crs)
+
 
 def _series_unary_op(this, op):
     """Unary operation that returns a Series"""
     return Series([getattr(geom, op) for geom in this.geometry],
-                     index=this.index)
+                  index=this.index)
 
 
 class GeoPandasBase(object):
+
+    def __init__(self, *args, **kwargs):
+        self._sindex = None
+
+    def _generate_sindex(self):
+        if HAS_SINDEX:
+            gen = ((i, item.bounds, idx) for i, (idx, item) in
+                   enumerate(self.geometry.iteritems()))
+            self._sindex = SpatialIndex(gen)
+        else:
+            warn("Cannot generate spatial index: Missing package `rtree`.")
+            self._sindex = None
+
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
