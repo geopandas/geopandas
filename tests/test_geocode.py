@@ -67,13 +67,13 @@ class TestGeocode(unittest.TestCase):
             geocode(['cambridge, ma'], 'badprovider')
 
     def test_googlev3(self):
-        g = geocode(self.locations, provider='googlev3')
+        g = geocode(self.locations, provider='googlev3', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
     def test_openmapquest(self):
-        g = geocode(self.locations, provider='openmapquest')
+        g = geocode(self.locations, provider='openmapquest', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
     def test_nominatim(self):
-        g = geocode(self.locations, provider='nominatim')
+        g = geocode(self.locations, provider='nominatim', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
