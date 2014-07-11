@@ -54,6 +54,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
+        self._sindex = None
 
     @property
     def geometry(self):

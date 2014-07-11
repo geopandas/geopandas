@@ -46,6 +46,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry = kwargs.pop('geometry', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
+        self._sindex = None
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
 

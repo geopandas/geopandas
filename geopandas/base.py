@@ -11,7 +11,7 @@ from pandas import Series, DataFrame
 import geopandas as gpd
 
 try:
-    from sindex import SpatialIndex
+    from geopandas.sindex import SpatialIndex
     HAS_SINDEX = True
 except ImportError:
     HAS_SINDEX = False
@@ -62,9 +62,6 @@ def _series_unary_op(this, op):
 
 
 class GeoPandasBase(object):
-
-    def __init__(self, *args, **kwargs):
-        self._sindex = None
 
     def _generate_sindex(self):
         if HAS_SINDEX:

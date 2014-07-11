@@ -6,8 +6,8 @@ class SpatialIndex(RTreeIndex):
     A simple wrapper around rtree's RTree Index
     """
 
-    def __init__(self):
-        RTreeIndex.__init__(self)
+    def __init__(self, *args):
+        RTreeIndex.__init__(self, *args)
 
     @property
     def size(self):
