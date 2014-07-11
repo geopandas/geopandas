@@ -5,6 +5,14 @@ from sqlalchemy import create_engine
 
 from geopandas import GeoDataFrame, GeoSeries
 
+try:
+    from pandas import read_sql_table
+except ImportError:
+    PANDAS_NEW_SQL_API = False
+else:
+    PANDAS_NEW_SQL_API = True
+
+
 # Compatibility layer for Python 2.6: try loading unittest2
 import sys
 if sys.version_info[:2] == (2, 6):
@@ -57,15 +65,17 @@ def validate_boro_df(test, df):
 
 
 def connect(dbname):
-    driver = 'psycopg2'
     try:
-        conn_str = 'postgresql+{driver}://localhost/{dbname}'
-        engine = create_engine(conn_str.format(driver=driver, dbname=dbname))
-        con = engine.connect()
+        if PANDAS_NEW_SQL_API:
+            driver = 'psycopg2'
+            conn_str = 'postgresql+{driver}://localhost/{dbname}'
+            engine = create_engine(conn_str.format(driver=driver, dbname=dbname))
+            return engine
+        else:
+            con = psycopg2.connect(dbname=dbname)
+            return con
     except (NameError, OperationalError):
         return None
-
-    return con
 
 
 def create_db(df):
@@ -84,6 +94,10 @@ def create_db(df):
     con = connect('test_geopandas')
     if con is None:
         return False
+    if PANDAS_NEW_SQL_API:
+        con = con.connect()
+    else:
+        con = con.cursor()
 
     try:
         con.execute("DROP TABLE IF EXISTS nybb;")
