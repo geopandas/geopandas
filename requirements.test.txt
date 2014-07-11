@@ -1,5 +1,5 @@
 psycopg2>=2.5.1
-geopy==0.96.3
+geopy==0.99
 matplotlib>=1.2.1
 descartes>=1.0
 pytest-cov
