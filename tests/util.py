@@ -31,13 +31,6 @@ except ImportError:
     class OperationalError(Exception):
         pass
 
-try:
-    from pandas import read_sql_table
-except ImportError:
-    PANDAS_NEW_SQL_API = False
-else:
-    PANDAS_NEW_SQL_API = True
-
 
 def download_nybb():
     """ Returns the path to the NYC boroughs file. Downloads if necessary. """
