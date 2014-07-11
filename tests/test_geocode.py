@@ -17,7 +17,7 @@ def _skip_if_no_geopy():
         import geopy
     except ImportError:
         raise nose.SkipTest("Geopy not installed. Skipping tests.")
-    if sys.version_info[:2] == (3, 2):
+    except SyntaxError:
         raise nose.SkipTest("Geopy is known to be broken on Python 3.2. "
                             "Skipping tests.")
 
