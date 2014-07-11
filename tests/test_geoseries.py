@@ -139,5 +139,10 @@ class TestSeries(unittest.TestCase):
         # XXX: method works inconsistently for different pandas versions
         #self.na_none.fillna(method='backfill')
 
+    def test_geoseries_geointerface(self):
+        self.assertEqual(self.g1.__geo_interface__['type'], 'FeatureCollection')
+        self.assertEqual(len(self.g1.__geo_interface__['features']),
+                         self.g1.shape[0])
+
 if __name__ == '__main__':
     unittest.main()
