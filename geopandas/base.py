@@ -64,13 +64,15 @@ def _series_unary_op(this, op):
 class GeoPandasBase(object):
 
     def _generate_sindex(self):
-        if HAS_SINDEX:
-            gen = ((i, item.bounds, idx) for i, (idx, item) in
-                   enumerate(self.geometry.iteritems()))
-            self._sindex = SpatialIndex(gen)
-        else:
+        self._sindex = None
+        if not HAS_SINDEX:
             warn("Cannot generate spatial index: Missing package `rtree`.")
-            self._sindex = None
+        else:
+            gen = [(i, item.bounds, idx) for i, (idx, item) in
+                   enumerate(self.geometry.iteritems()) if 
+                   hasattr(item, 'bounds')]
+            if len(gen) > 0:
+                self._sindex = SpatialIndex(gen)
 
     @property
     def area(self):
