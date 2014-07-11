@@ -8,7 +8,6 @@ from shapely.geometry import Point
 import geopandas as gpd
 import nose
 
-from geopandas.geocode import geocode, _prepare_geocode_result
 from .util import unittest
 
 
@@ -24,6 +23,7 @@ def _skip_if_no_geopy():
 class TestGeocode(unittest.TestCase):
     def setUp(self):
         _skip_if_no_geopy()
+        from geopandas.geocode import geocode, _prepare_geocode_result
         self.locations = ['260 Broadway, New York, NY',
                           '77 Massachusetts Ave, Cambridge, MA']
 
