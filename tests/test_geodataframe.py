@@ -425,3 +425,9 @@ class TestDataFrame(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             df.set_geometry('location', inplace=True)
+
+    def test_geodataframe_geointerface(self):
+        self.assertEqual(self.df.__geo_interface__['type'], 'FeatureCollection')
+        self.assertEqual(len(self.df.__geo_interface__['features']),
+                         self.df.shape[0])
+
