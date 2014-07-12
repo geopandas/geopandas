@@ -1,7 +1,7 @@
 try:
     from geopandas.version import version as __version__
 except ImportError:
-    __version__ = '0.1.0.dev-unknown'
+    __version__ = '0.1.0'
 
 from geopandas.geoseries import GeoSeries
 from geopandas.geodataframe import GeoDataFrame

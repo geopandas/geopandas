@@ -1,14 +1,23 @@
 Installation
 ============
 
-GeoPandas is continuous-release software.  You may install the latest
-source from `GitHub`_ and use the setup script::
+The released version of GeoPandas is 0.1.  To install the released
+version, use ``pip install geopandas``.
 
+You may install the latest development version by cloning the
+`GitHub`_ repository and using the setup script::
+
+    git clone https://github.com/kjordahl/geopandas.git
+    cd geopandas
     python setup.py install
 
-GeoPandas is also available on `PyPI`_, so ``pip install geopandas``
-should work as well. You will have to add the ``--pre`` flag
-for pip 1.4 and later.
+It is also possible to install the latest development version
+available on PyPI with `pip` by adding the ``--pre`` flag for pip 1.4
+and later, or to use `pip` to install directly from the GitHub
+repository with::
+
+    pip install git+git://github.com/kjordahl/geopandas.git
+
 
 Dependencies
 ------------
