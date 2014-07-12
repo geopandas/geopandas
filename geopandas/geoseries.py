@@ -3,8 +3,10 @@ from warnings import warn
 
 import numpy as np
 from pandas import Series, DataFrame
+from pandas.core.indexing import _NDFrameIndexer
+from pandas.util.decorators import cache_readonly
 import pyproj
-from shapely.geometry import shape, Polygon, Point
+from shapely.geometry import box, shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
@@ -25,6 +27,28 @@ def _convert_array_args(args):
     if len(args) == 1 and isinstance(args[0], BaseGeometry):
         args = ([args[0]],)
     return args
+
+class _CoordinateIndexer(_NDFrameIndexer):
+    """ Indexing by coordinate slices """
+    def _getitem_tuple(self, tup):
+        obj = self.obj
+        xs, ys = tup
+        # handle numeric values as x and/or y coordinate index
+        if type(xs) is not slice:
+            xs = slice(xs, xs)
+        if type(ys) is not slice:
+            ys = slice(ys, ys)
+        # don't know how to handle step; should this raise?
+        if xs.step is not None or ys.step is not None:
+            warn("Ignoring step - full interval is used.")
+        xmin, ymin, xmax, ymax = obj.total_bounds
+        bbox = box(xs.start or xmin,
+                   ys.start or ymin,
+                   xs.stop or xmax,
+                   ys.stop or ymax)
+        idx = obj.intersects(bbox)
+        return obj[idx]
+
 
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
@@ -261,3 +285,5 @@ class GeoSeries(GeoPandasBase, Series):
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
+
+GeoSeries._create_indexer('cx', _CoordinateIndexer)
