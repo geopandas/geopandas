@@ -18,9 +18,9 @@ matrix:
       env: PANDAS_VERSION=v0.14.0
 
 before_install:
-  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
+  - sudo add-apt-repository -y ppa:ubuntugis-unstable/ppa
   - sudo apt-get update
-  - sudo apt-get install python-gdal gdal-bin
+  - sudo apt-get install libgdal-dev gdal-bin postgis
   - sudo -u postgres psql -c "drop database if exists test_geopandas"
   - sudo -u postgres psql -c "create database test_geopandas"
   - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
