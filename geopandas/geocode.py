@@ -55,7 +55,7 @@ def geocode(strings, provider='googlev3', **kwargs):
 
     """
     import geopy
-    from geopy.geocoders.base import GeocoderQueryError
+    from geopy.geocoders.base import GeocoderResultError
 
     if not isinstance(strings, pd.Series):
         strings = pd.Series(strings)
@@ -81,7 +81,7 @@ def geocode(strings, provider='googlev3', **kwargs):
     for i, s in iteritems(strings):
         try:
             results[i] = coder.geocode(s)
-        except (GeocoderQueryError, ValueError):
+        except (GeocoderResultError, ValueError):
             results[i] = (None, None)
         time.sleep(_throttle_time(provider))
 

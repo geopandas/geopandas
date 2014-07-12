@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import sys
-
 from fiona.crs import from_epsg
 import pandas as pd
 from shapely.geometry import Point
@@ -16,10 +14,7 @@ def _skip_if_no_geopy():
     try:
         import geopy
     except ImportError:
-        raise nose.SkipTest("Geopy not installed. Skipping tests.")
-    except SyntaxError:
-        raise nose.SkipTest("Geopy is known to be broken on Python 3.2. "
-                            "Skipping tests.")
+        raise nose.SkipTest("Geopy not installed. Skipping")
 
 class TestGeocode(unittest.TestCase):
     def setUp(self):
@@ -30,7 +25,6 @@ class TestGeocode(unittest.TestCase):
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
         # loop
-        from geopandas.geocode import _prepare_geocode_result
         p0 = Point(12.3, -45.6) # Treat these as lat/lon
         p1 = Point(-23.4, 56.7)
         d = {'a': ('address0', p0.coords[0]),
@@ -54,7 +48,6 @@ class TestGeocode(unittest.TestCase):
         self.assertAlmostEqual(coords[1], test[0])
 
     def test_prepare_result_none(self):
-        from geopandas.geocode import _prepare_geocode_result
         p0 = Point(12.3, -45.6) # Treat these as lat/lon
         d = {'a': ('address0', p0.coords[0]),
              'b': (None, None)}
@@ -70,22 +63,17 @@ class TestGeocode(unittest.TestCase):
         self.assert_(pd.np.isnan(row['address']))
     
     def test_bad_provider(self):
-        from geopandas.geocode import geocode
         with self.assertRaises(ValueError):
             geocode(['cambridge, ma'], 'badprovider')
 
     def test_googlev3(self):
-        from geopandas.geocode import geocode
-        g = geocode(self.locations, provider='googlev3', timeout=2)
+        g = geocode(self.locations, provider='googlev3')
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
     def test_openmapquest(self):
-        from geopandas.geocode import geocode
-        g = geocode(self.locations, provider='openmapquest', timeout=2)
+        g = geocode(self.locations, provider='openmapquest')
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
-    @unittest.skip('Nominatim server is unreliable for tests.')
     def test_nominatim(self):
-        from geopandas.geocode import geocode
-        g = geocode(self.locations, provider='nominatim', timeout=2)
+        g = geocode(self.locations, provider='nominatim')
         self.assertIsInstance(g, gpd.GeoDataFrame)
