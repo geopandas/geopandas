@@ -70,11 +70,11 @@ class GeoPandasBase(object):
         if not HAS_SINDEX:
             warn("Cannot generate spatial index: Missing package `rtree`.")
         else:
-            gen = ((i, item.bounds, idx) for i, (idx, item) in
+            stream = ((i, item.bounds, idx) for i, (idx, item) in
                    enumerate(self.geometry.iteritems()) if 
-                   hasattr(item, 'bounds'))
+                   item and not item.is_empty)
             try:
-                self._sindex = SpatialIndex(gen)
+                self._sindex = SpatialIndex(stream)
             # What we really want here is an empty generator error, or
             # for the bulk loader to log that the generator was empty
             # and move on. See https://github.com/Toblerity/rtree/issues/20.
