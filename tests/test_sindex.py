@@ -2,11 +2,11 @@ import shutil
 import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import Series
+from pandas import Series, read_csv
 from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
-from geopandas import GeoSeries, GeoDataFrame, base
+from geopandas import GeoSeries, GeoDataFrame, base, read_file
 from .util import unittest, geom_equals, geom_almost_equals
 
 
@@ -57,4 +57,30 @@ class TestFrameSindex(unittest.TestCase):
         hits = list(df._sindex.intersection((2.5, 2.5, 4, 4), objects=True))
         self.assertEqual(len(hits), 2)
         self.assertEqual(hits[0].object, 3)
+
+    def test_append(self):
+        crs = {'init': 'epsg:4326'}
+        data = {"A": range(5), "B": range(-5, 0),
+                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=crs, geometry='location')
+        self.assertEqual(df._sindex.size, 5)
+        df = df.append(df)
+        self.assertEqual(len(df), 10)
+        self.assertEqual(df._sindex.size, 10)
+
+
+@unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
+class TestJoinSindex(unittest.TestCase):
+
+    def test_join(self):
+        boros = read_file(
+                    "/nybb_14a_av/nybb.shp",
+                    vfs="zip://examples/nybb_14aav.zip")
+        population = read_csv("examples/population.csv")
+        population.set_index('BoroName', inplace=True)
+        joined = boros.join(population, on='BoroName')
+        self.assertEqual(type(joined), GeoDataFrame)
+        self.assertEqual(len(joined), 5)
+        self.assertEqual(df._sindex.size, 5)
+
 
