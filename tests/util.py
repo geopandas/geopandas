@@ -24,13 +24,6 @@ if sys.version_info[:2] == (2, 6):
 else:
     import unittest
 
-try:
-    import psycopg2
-    from psycopg2 import OperationalError
-except ImportError:
-    class OperationalError(Exception):
-        pass
-
 
 def download_nybb():
     """ Returns the path to the NYC boroughs file. Downloads if necessary. """
@@ -84,14 +77,17 @@ def create_db(df):
     # 'test_geopandas' and enable postgis in it:
     # > createdb test_geopandas
     # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
-    con = connect('test_geopandas')
+    try:
+        con = connect('test_geopandas')
+    except:
+        return False
     if con is None:
         return False
     if PANDAS_NEW_SQL_API:
         try:
             con = con.connect()
-        except OperationalError:
-            return
+        except:
+            return False
     else:
         con = con.cursor()
 
