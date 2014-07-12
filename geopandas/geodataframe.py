@@ -354,8 +354,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
+        obj = other
+        if method is not None and method == 'merge':
+            obj = other.left
         for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+            object.__setattr__(self, name, getattr(obj, name, None))
         return self
 
     def copy(self, deep=True):

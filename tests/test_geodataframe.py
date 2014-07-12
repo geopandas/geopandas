@@ -425,3 +425,11 @@ class TestDataFrame(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             df.set_geometry('location', inplace=True)
+
+    @unittest.skip("Awaiting PR#7737 on pandas to be merged")
+    def test_merge(self):
+        df2 = pd.DataFrame({'BoroCode': self.df.BoroCode,
+                            'BoroName': self.df.BoroName.str.upper()})
+        result = self.df.merge(df2)
+        self.assertIsInstance(result, GeoDataFrame)
+        self.assertTrue(result.crs == self.df.crs)
