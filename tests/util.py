@@ -91,7 +91,7 @@ def create_db(df):
         try:
             con = con.connect()
         except OperationalError:
-            raise unittest.case.SkipTest()
+            return
     else:
         con = con.cursor()
 
