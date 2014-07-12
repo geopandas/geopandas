@@ -1,4 +1,4 @@
-GeoPandas [![build status](https://secure.travis-ci.org/kjordahl/geopandas.png?branch=master)](https://travis-ci.org/kjordahl/geopandas) [![Coverage Status](https://coveralls.io/repos/kjordahl/geopandas/badge.png)](https://coveralls.io/r/kjordahl/geopandas)
+GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://coveralls.io/repos/geopandas/geopandas/badge.png)](https://coveralls.io/r/geopandas/geopandas)
 =========
 
 Python tools for geographic data

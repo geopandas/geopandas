@@ -7,7 +7,7 @@ version, use ``pip install geopandas``.
 You may install the latest development version by cloning the
 `GitHub`_ repository and using the setup script::
 
-    git clone https://github.com/kjordahl/geopandas.git
+    git clone https://github.com/geopandas/geopandas.git
     cd geopandas
     python setup.py install
 
@@ -16,7 +16,7 @@ available on PyPI with `pip` by adding the ``--pre`` flag for pip 1.4
 and later, or to use `pip` to install directly from the GitHub
 repository with::
 
-    pip install git+git://github.com/kjordahl/geopandas.git
+    pip install git+git://github.com/geopandas/geopandas.git
 
 
 Dependencies
@@ -51,7 +51,7 @@ Tests are automatically run on all commits on the GitHub repository,
 including pull requests, on `Travis CI`_.
 
 .. _PyPI: https://pypi.python.org/pypi/geopandas
-.. _GitHub: https://github.com/kjordahl/geopandas
+.. _GitHub: https://github.com/geopandas/geopandas
 .. _numpy: http://www.numpy.org
 .. _pandas: http://pandas.pydata.org
 .. _shapely: http://toblerity.github.io/shapely
@@ -62,7 +62,7 @@ including pull requests, on `Travis CI`_.
 .. _six: https://pythonhosted.org/six
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 .. _pysal: http://pysal.org
-.. _Travis CI: https://travis-ci.org/kjordahl/geopandas
+.. _Travis CI: https://travis-ci.org/geopandas/geopandas
 
 .. toctree::
    :maxdepth: 2
