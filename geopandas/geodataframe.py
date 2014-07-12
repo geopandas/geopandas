@@ -144,7 +144,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
-
+        frame._generate_sindex()
         if not inplace:
             return frame
 
@@ -339,6 +339,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = GeoDataFrame
             result.crs = self.crs
             result._geometry_column_name = geo_col
+            result._generate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
             result.crs = self.crs
@@ -347,6 +348,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     #
     # Implement pandas methods
     #
+
+    def merge(self, *args, **kwargs):
+        result = DataFrame.merge(self, *args, **kwargs)
+        geo_col = self._geometry_column_name
+        if isinstance(result, DataFrame) and geo_col in result:
+            result.__class__ = GeoDataFrame
+            result.crs = self.crs
+            result._geometry_column_name = geo_col
+            result._generate_sindex()
+        elif isinstance(result, DataFrame) and geo_col not in result:
+            result.__class__ = DataFrame
+            result.crs = self.crs
+        return result
 
     @property
     def _constructor(self):
