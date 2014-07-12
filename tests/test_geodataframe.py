@@ -1,15 +1,19 @@
-import unittest
+from __future__ import absolute_import
+
 import json
 import os
 import tempfile
 import shutil
 
 import numpy as np
+import pandas as pd
+from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
-
-from geopandas import GeoDataFrame, read_file
-import tests.util
+import fiona
+from geopandas import GeoDataFrame, read_file, GeoSeries
+from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
+                  create_db, validate_boro_df, PANDAS_NEW_SQL_API
 
 
 class TestDataFrame(unittest.TestCase):
@@ -17,12 +21,11 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename = tests.util.download_nybb()
+        nybb_filename = download_nybb()
 
-        self.df = read_file('/nybb_13a/nybb.shp', vfs='zip://' + nybb_filename)
+        self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
-        self.boros = np.array(['Staten Island', 'Queens', 'Brooklyn',
-                               'Manhattan', 'Bronx'])
+        self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
         self.df2 = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
@@ -35,12 +38,129 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(self.df2) is GeoDataFrame)
         self.assertTrue(self.df2.crs == self.crs)
 
+    def test_different_geo_colname(self):
+        data = {"A": range(5), "B": range(-5, 0),
+                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=self.crs, geometry='location')
+        locs = GeoSeries(data['location'], crs=self.crs)
+        assert_geoseries_equal(df.geometry, locs)
+        self.assert_('geometry' not in df)
+        self.assertEqual(df.geometry.name, 'location')
+        # internal implementation detail
+        self.assertEqual(df._geometry_column_name, 'location')
+
+        geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
+        df2 = df.set_geometry(geom2, crs='dummy_crs')
+        self.assert_('geometry' in df2)
+        self.assert_('location' in df2)
+        self.assertEqual(df2.crs, 'dummy_crs')
+        self.assertEqual(df2.geometry.crs, 'dummy_crs')
+        # reset so it outputs okay
+        df2.crs = df.crs
+        assert_geoseries_equal(df2.geometry, GeoSeries(geom2, crs=df2.crs))
+        # for right now, non-geometry comes back as series
+        assert_geoseries_equal(df2['location'], df['location'],
+                                  check_series_type=False, check_dtype=False)
+
+    def test_geo_getitem(self):
+        data = {"A": range(5), "B": range(-5, 0),
+                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=self.crs, geometry='location')
+        self.assert_(isinstance(df.geometry, GeoSeries))
+        df['geometry'] = df["A"]
+        self.assert_(isinstance(df.geometry, GeoSeries))
+        self.assertEqual(df.geometry[0], data['location'][0])
+        # good if this changed in the future
+        self.assert_(not isinstance(df['geometry'], GeoSeries))
+        self.assert_(isinstance(df['location'], GeoSeries))
+
+        data["geometry"] = [Point(x + 1, y - 1) for x, y in zip(range(5), range(5))]
+        df = GeoDataFrame(data, crs=self.crs)
+        self.assert_(isinstance(df.geometry, GeoSeries))
+        self.assert_(isinstance(df['geometry'], GeoSeries))
+        # good if this changed in the future
+        self.assert_(not isinstance(df['location'], GeoSeries))
+
+    def test_geometry_property(self):
+        assert_geoseries_equal(self.df.geometry, self.df['geometry'],
+                                  check_dtype=True, check_index_type=True)
+
+        df = self.df.copy()
+        new_geom = [Point(x,y) for x, y in zip(range(len(self.df)),
+                                               range(len(self.df)))]
+        df.geometry = new_geom
+
+        new_geom = GeoSeries(new_geom, index=df.index, crs=df.crs)
+        assert_geoseries_equal(df.geometry, new_geom)
+        assert_geoseries_equal(df['geometry'], new_geom)
+
+        # new crs
+        gs = GeoSeries(new_geom, crs="epsg:26018")
+        df.geometry = gs
+        self.assertEqual(df.crs, "epsg:26018")
+
+    def test_geometry_property_errors(self):
+        with self.assertRaises(AttributeError):
+            df = self.df.copy()
+            del df['geometry']
+            df.geometry
+
+        # list-like error
+        with self.assertRaises(ValueError):
+            df = self.df2.copy()
+            df.geometry = 'value1'
+
+        # list-like error
+        with self.assertRaises(ValueError):
+            df = self.df.copy()
+            df.geometry = 'apple'
+
+        # non-geometry error
+        with self.assertRaises(TypeError):
+            df = self.df.copy()
+            df.geometry = list(range(df.shape[0]))
+
+        with self.assertRaises(KeyError):
+            df = self.df.copy()
+            del df['geometry']
+            df['geometry']
+
+        # ndim error
+        with self.assertRaises(ValueError):
+            df = self.df.copy()
+            df.geometry = df
+
     def test_set_geometry(self):
-        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        geom = GeoSeries([Point(x,y) for x,y in zip(range(5), range(5))])
+        original_geom = self.df.geometry
+
         df2 = self.df.set_geometry(geom)
         self.assert_(self.df is not df2)
-        for x, y in zip(df2.geometry.values, geom):
-            self.assertEqual(x, y)
+        assert_geoseries_equal(df2.geometry, geom)
+        assert_geoseries_equal(self.df.geometry, original_geom)
+        assert_geoseries_equal(self.df['geometry'], self.df.geometry)
+        # unknown column
+        with self.assertRaises(ValueError):
+            self.df.set_geometry('nonexistent-column')
+
+        # ndim error
+        with self.assertRaises(ValueError):
+            self.df.set_geometry(self.df)
+
+        # new crs - setting should default to GeoSeries' crs
+        gs = GeoSeries(geom, crs="epsg:26018")
+        new_df = self.df.set_geometry(gs)
+        self.assertEqual(new_df.crs, "epsg:26018")
+
+        # explicit crs overrides self and dataframe
+        new_df = self.df.set_geometry(gs, crs="epsg:27159")
+        self.assertEqual(new_df.crs, "epsg:27159")
+        self.assertEqual(new_df.geometry.crs, "epsg:27159")
+
+        # Series should use dataframe's
+        new_df = self.df.set_geometry(geom.values)
+        self.assertEqual(new_df.crs, self.df.crs)
+        self.assertEqual(new_df.geometry.crs, self.df.crs)
 
     def test_set_geometry_col(self):
         g = self.df.geometry
@@ -48,32 +168,56 @@ class TestDataFrame(unittest.TestCase):
         self.df['simplified_geometry'] = g_simplified
         df2 = self.df.set_geometry('simplified_geometry')
 
-        # Drop is true by default
-        self.assert_('simplified_geometry' not in df2)
-
-        for x, y in zip(df2.geometry.values, g_simplified):
-            self.assertEqual(x, y)
-
-    def test_set_geometry_col_no_drop(self):
-        g = self.df.geometry
-        g_simplified = g.simplify(100)
-        self.df['simplified_geometry'] = g_simplified
-        df2 = self.df.set_geometry('simplified_geometry', drop=False)
-
+        # Drop is false by default
         self.assert_('simplified_geometry' in df2)
+        assert_geoseries_equal(df2.geometry, g_simplified)
 
-        for x, y in zip(df2.geometry.values, g_simplified):
-            self.assertEqual(x, y)
+        # If True, drops column and renames to geometry
+        df3 = self.df.set_geometry('simplified_geometry', drop=True)
+        self.assert_('simplified_geometry' not in df3)
+        assert_geoseries_equal(df3.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
         geom = [Point(x,y) for x,y in zip(range(5), range(5))]
         ret = self.df.set_geometry(geom, inplace=True)
         self.assert_(ret is None)
-        for x, y in zip(self.df['geometry'].values, geom):
-            self.assertEqual(x, y)
+        geom = GeoSeries(geom, index=self.df.index, crs=self.df.crs)
+        assert_geoseries_equal(self.df.geometry, geom)
+
+    def test_set_geometry_series(self):
+        # Test when setting geometry with a Series that
+        # alignment will occur
+        #
+        # Reverse the index order
+        # Set the Series to be Point(i,i) where i is the index
+        self.df.index = range(len(self.df)-1, -1, -1)
+
+        d = {}
+        for i in range(len(self.df)):
+            d[i] = Point(i, i)
+        g = GeoSeries(d)
+        # At this point, the DataFrame index is [4,3,2,1,0] and the
+        # GeoSeries index is [0,1,2,3,4]. Make sure set_geometry aligns
+        # them to match indexes
+        df = self.df.set_geometry(g)
+
+        for i, r in df.iterrows():
+            self.assertAlmostEqual(i, r['geometry'].x)
+            self.assertAlmostEqual(i, r['geometry'].y)
 
     def test_to_json(self):
         text = self.df.to_json()
+        data = json.loads(text)
+        self.assertTrue(data['type'] == 'FeatureCollection')
+        self.assertTrue(len(data['features']) == 5)
+
+    def test_to_json_geom_col(self):
+        df = self.df.copy()
+        df['geom'] = df['geometry']
+        df['geometry'] = np.arange(len(df))
+        df.set_geometry('geom', inplace=True)
+
+        text = df.to_json()
         data = json.loads(text)
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
@@ -90,6 +234,11 @@ class TestDataFrame(unittest.TestCase):
             self.assertEqual(len(props), 4)
             if props['BoroName'] == 'Queens':
                 self.assertTrue(props['Shape_Area'] is None)
+
+    def test_to_json_bad_na(self):
+        # Check that a bad na argument raises error
+        with self.assertRaises(ValueError):
+            text = self.df.to_json(na='garbage')
 
     def test_to_json_dropna(self):
         self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
@@ -147,6 +296,17 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(len(df) == 5)
         self.assertTrue(np.alltrue(df['BoroName'].values == self.boros))
 
+    def test_to_file_types(self):
+        """ Test various integer type columns (GH#93) """
+        tempfilename = os.path.join(self.tempdir, 'int.shp')
+        int_types = [np.int, np.int8, np.int16, np.int32, np.int64, np.intp,
+                     np.uint8, np.uint16, np.uint32, np.uint64, np.long]
+        geometry = self.df2.geometry
+        data = dict((str(i), np.arange(len(geometry), dtype=dtype))
+                     for i, dtype in enumerate(int_types))
+        df = GeoDataFrame(data, geometry=geometry)
+        df.to_file(tempfilename)
+
     def test_mixed_types_to_file(self):
         """ Test that mixed geometry types raise error when writing to file """
         tempfilename = os.path.join(self.tempdir, 'test.shp')
@@ -169,11 +329,49 @@ class TestDataFrame(unittest.TestCase):
         df2.crs = {'init': 'epsg:26918', 'no_defs': True}
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
-        self.assertTrue(all(df2['geometry'].almost_equals(utm['geometry'], decimal=2)))
+        self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
+    def test_from_features(self):
+        nybb_filename = download_nybb()
+        with fiona.open('/nybb_14a_av/nybb.shp',
+                        vfs='zip://' + nybb_filename) as f:
+            features = list(f)
+            crs = f.crs
+
+        df = GeoDataFrame.from_features(features, crs=crs)
+        df.rename(columns=lambda x: x.lower(), inplace=True)
+        validate_boro_df(self, df)
+        self.assert_(df.crs == crs)
+
+    def test_from_features_unaligned_properties(self):
+        p1 = Point(1,1)
+        f1 = {'type': 'Feature', 
+                'properties': {'a': 0}, 
+                'geometry': p1.__geo_interface__}
+
+        p2 = Point(2,2)
+        f2 = {'type': 'Feature',
+                'properties': {'b': 1},
+                'geometry': p2.__geo_interface__}
+
+        p3 = Point(3,3)
+        f3 = {'type': 'Feature',
+                'properties': {'a': 2},
+                'geometry': p3.__geo_interface__}
+
+        df = GeoDataFrame.from_features([f1, f2, f3])
+
+        result = df[['a', 'b']]
+        expected = pd.DataFrame.from_dict([{'a': 0, 'b': np.nan},
+                                           {'a': np.nan, 'b': 1},
+                                           {'a': 2, 'b': np.nan}])
+        assert_frame_equal(expected, result)
+
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_from_postgis_default(self):
-        con = tests.util.connect('test_geopandas')
-        if con is None or not tests.util.create_db(self.df):
+        con = connect('test_geopandas')
+        if con is None or not create_db(self.df):
             raise unittest.case.SkipTest()
 
         try:
@@ -182,11 +380,13 @@ class TestDataFrame(unittest.TestCase):
         finally:
             con.close()
 
-        tests.util.validate_boro_df(self, df)
+        validate_boro_df(self, df)
 
+    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
+                     'not yet supported in SQL API.')
     def test_from_postgis_custom_geom_col(self):
-        con = tests.util.connect('test_geopandas')
-        if con is None or not tests.util.create_db(self.df):
+        con = connect('test_geopandas')
+        if con is None or not create_db(self.df):
             raise unittest.case.SkipTest()
 
         try:
@@ -198,4 +398,30 @@ class TestDataFrame(unittest.TestCase):
         finally:
             con.close()
 
-        tests.util.validate_boro_df(self, df)
+        validate_boro_df(self, df)
+
+    def test_dataframe_to_geodataframe(self):
+        df = pd.DataFrame({"A": range(len(self.df)), "location":
+                           list(self.df.geometry)}, index=self.df.index)
+        gf = df.set_geometry('location', crs=self.df.crs)
+        self.assertIsInstance(df, pd.DataFrame)
+        self.assertIsInstance(gf, GeoDataFrame)
+        assert_geoseries_equal(gf.geometry, self.df.geometry)
+        self.assertEqual(gf.geometry.name, 'location')
+        self.assert_('geometry' not in gf)
+
+        gf2 = df.set_geometry('location', crs=self.df.crs, drop=True)
+        self.assertIsInstance(df, pd.DataFrame)
+        self.assertIsInstance(gf2, GeoDataFrame)
+        self.assertEqual(gf2.geometry.name, 'geometry')
+        self.assert_('geometry' in gf2)
+        self.assert_('location' not in gf2)
+        self.assert_('location' in df)
+
+        # should be a copy
+        df.ix[0, "A"] = 100
+        self.assertEqual(gf.ix[0, "A"], 0)
+        self.assertEqual(gf2.ix[0, "A"], 0)
+
+        with self.assertRaises(ValueError):
+            df.set_geometry('location', inplace=True)

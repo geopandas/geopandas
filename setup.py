@@ -4,6 +4,7 @@
 Version handling borrowed from pandas project.
 """
 
+import sys
 import os
 import warnings
 
@@ -47,6 +48,9 @@ if not ISRELEASED:
                 ["git.cmd", "describe", "HEAD"],
                 stdout=subprocess.PIPE).stdout
         rev = pipe.read().strip()
+        # makes distutils blow up on Python 2.7
+        if sys.version_info[0] >= 3:
+            rev = rev.decode('ascii')
 
         FULLVERSION = '%d.%d.%d.dev-%s' % (MAJOR, MINOR, MICRO, rev)
 
@@ -81,6 +85,6 @@ setup(name='geopandas',
       author_email='kjordahl@enthought.com',
       url='http://geopandas.org',
       long_description=LONG_DESCRIPTION,
-      packages=['geopandas'],
+      packages=['geopandas', 'geopandas.io'],
       install_requires=['pandas', 'shapely', 'fiona', 'descartes', 'pyproj'],
 )

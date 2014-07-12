@@ -1,10 +1,11 @@
-import unittest
+from __future__ import absolute_import
 
 import numpy as np
 from shapely.geometry import Point
 from pandas import Series, DataFrame
 
 from geopandas import GeoSeries, GeoDataFrame
+from .util import unittest
 
 OLD_PANDAS = issubclass(Series, np.ndarray)
 
@@ -31,9 +32,6 @@ class TestSeries(unittest.TestCase):
     def test_sort_index(self):
         assert type(self.pts.sort_index()) is GeoSeries
 
-    def test_sort_order(self):
-        assert type(self.pts.order()) is GeoSeries
-
     def test_loc(self):
         assert type(self.pts.loc[5:]) is GeoSeries
 
@@ -45,7 +43,7 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts[idx]) is GeoSeries
 
     def test_take(self):
-        assert type(self.pts.take(range(0, self.N, 2))) is GeoSeries
+        assert type(self.pts.take(list(range(0, self.N, 2)))) is GeoSeries
 
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
@@ -65,7 +63,13 @@ class TestDataFrame(unittest.TestCase):
             for x, y in zip(range(N), range(N))])
 
     def test_geometry(self):
-        assert type(self.df['geometry']) is GeoSeries
+        assert type(self.df.geometry) is GeoSeries
+        # still GeoSeries if different name
+        df2 = GeoDataFrame({"coords": [Point(x,y) for x, y in zip(range(5),
+                                                                  range(5))],
+                            "nums": range(5)}, geometry="coords")
+        assert type(df2.geometry) is GeoSeries
+        assert type(df2['coords']) is GeoSeries
 
     def test_nongeometry(self):
         assert type(self.df['value1']) is Series

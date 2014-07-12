@@ -36,9 +36,19 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
+- GeoPandas supports python 2 (2.6+) and python 3 (3.2+) with a single
+  code base.  Use modern python idioms when possible that are
+  compatibile with both major versions, and use the
+  [six](https://pythonhosted.org/six) library where helpful to smooth
+  over the differences.  Use `from __future__ import` statements where
+  appropriate.  Test code locally in both python 2 and python 3 when
+  possible (all supported versions will be automatically tested on
+  Travis CI).
+
 - Follow PEP 8 when possible.
 
 - Imports should be grouped with standard library imports first,
   3rd-party libraries next, and geopandas imports third.  Within each
   grouping, imports should be alphabetized.  Always use absolute
-  imports rather than relative imports.
+  imports when possible, and explicit relative imports for local
+  imports when necessary in tests.

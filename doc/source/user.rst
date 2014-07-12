@@ -480,7 +480,7 @@ borough that are in the holes:
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://toblerity.github.io/fiona
 .. _geopy: https://github.com/geopy/geopy
-.. _file containing the boroughs of New York City: http://www.nyc.gov/html/dcp/download/bytes/nybb_13a.zip
+.. _file containing the boroughs of New York City: http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
 
 .. toctree::
    :maxdepth: 2

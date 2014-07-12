@@ -1,36 +1,81 @@
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    # Python 2.6
+    from ordereddict import OrderedDict
+from collections import defaultdict
 import json
 import os
+import sys
 
-import fiona
 import numpy as np
 from pandas import DataFrame, Series
-from shapely.geometry import mapping
+from shapely.geometry import mapping, shape
+from shapely.geometry.base import BaseGeometry
+from six import string_types, iteritems
 
 from geopandas import GeoSeries
+from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
 
-class GeoDataFrame(DataFrame):
+DEFAULT_GEO_COLUMN_NAME = 'geometry'
+PY3 = sys.version_info[0] == 3
+
+
+class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
-    named 'geometry' which is a GeoSeries.
+    with geometry. In addition to the standard DataFrame constructor arguments,
+    GeoDataFrame also accepts the following keyword arguments:
+
+    Keyword Arguments
+    -----------------
+    crs : str (optional)
+        Coordinate system
+    geometry : str or array (optional)
+        If str, column to use as geometry. If array, will be set as 'geometry'
+        column on GeoDataFrame.
     """
-    _metadata = ['crs']
+    _metadata = ['crs', '_geometry_column_name']
+    _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
+        geometry = kwargs.pop('geometry', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
+        if geometry is not None:
+            self.set_geometry(geometry, inplace=True)
 
-    @property
-    def geometry(self):
-        return self['geometry']
+    def __setattr__(self, attr, val):
+        # have to special case geometry b/c pandas tries to use as column...
+        if attr == 'geometry':
+            object.__setattr__(self, attr, val)
+        else:
+            super(GeoDataFrame, self).__setattr__(attr, val)
 
-    def set_geometry(self, col, drop=True, inplace=False):
+    def _get_geometry(self):
+        if self._geometry_column_name not in self:
+            raise AttributeError("No geometry data set yet (expected in"
+                                 " column '%s'." % self._geometry_column_name)
+        return self[self._geometry_column_name]
+
+    def _set_geometry(self, col):
+        # TODO: Use pandas' core.common.is_list_like() here.
+        if not isinstance(col, (list, np.ndarray, Series)):
+            raise ValueError("Must use a list-like to set the geometry"
+                             " property")
+
+        self.set_geometry(col, inplace=True)
+
+    geometry = property(fget=_get_geometry, fset=_set_geometry,
+                        doc="Geometry data for GeoDataFrame")
+
+    def set_geometry(self, col, drop=False, inplace=False, crs=None):
         """
-        Set the GeoDataFrame geometry using either an existing column or 
+        Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
 
         The original geometry column is replaced with the input.
@@ -42,6 +87,10 @@ class GeoDataFrame(DataFrame):
             Delete column to be used as the new geometry
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
+        crs : str/result of fion.get_crs (optional)
+            Coordinate system to use. If passed, overrides both DataFrame and
+            col's crs. Otherwise, tries to get crs from passed col values or
+            DataFrame.
 
         Examples
         --------
@@ -58,20 +107,42 @@ class GeoDataFrame(DataFrame):
         else:
             frame = self.copy()
 
+        if not crs:
+            crs = getattr(col, 'crs', self.crs)
+
         to_remove = None
-        if isinstance(col, Series):
-            level = col.values
-        elif isinstance(col, (list, np.ndarray)):
+        geo_column_name = DEFAULT_GEO_COLUMN_NAME
+        if isinstance(col, (Series, list, np.ndarray)):
             level = col
+        elif hasattr(col, 'ndim') and col.ndim != 1:
+            raise ValueError("Must pass array with one dimension only.")
         else:
-            level = frame[col].values
+            try:
+                level = frame[col].values
+            except KeyError:
+                raise ValueError("Unknown column %s" % col)
+            except:
+                raise
             if drop:
                 to_remove = col
+                geo_column_name = DEFAULT_GEO_COLUMN_NAME
+            else:
+                geo_column_name = col
 
         if to_remove:
             del frame[to_remove]
 
-        frame['geometry'] = level
+        if isinstance(level, GeoSeries) and level.crs != crs:
+            # Avoids caching issues/crs sharing issues
+            level = level.copy()
+            level.crs = crs
+
+        # Check that we are using a listlike of geometries
+        if not all(isinstance(item, BaseGeometry) for item in level):
+            raise TypeError("Input geometry column must contain valid geometry objects.")
+        frame[geo_column_name] = level
+        frame._geometry_column_name = geo_column_name
+        frame.crs = crs
 
         if not inplace:
             return frame
@@ -88,6 +159,29 @@ class GeoDataFrame(DataFrame):
 
         """
         return geopandas.io.file.read_file(filename, **kwargs)
+
+    @classmethod
+    def from_features(cls, features, crs=None):
+        """
+        Alternate constructor to create GeoDataFrame from an iterable of
+        features. Each element must be a feature dictionary or implement
+        the __geo_interface__.
+        See: https://gist.github.com/sgillies/2217756
+
+        """
+        rows = []
+        for f in features:
+            if hasattr(f, "__geo_interface__"):
+                f = f.__geo_interface__
+            else:
+                f = f
+
+            d = {'geometry': shape(f['geometry'])}
+            d.update(f['properties'])
+            rows.append(d)
+        df = GeoDataFrame.from_dict(rows)
+        df.crs = crs
+        return df
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
@@ -140,7 +234,7 @@ class GeoDataFrame(DataFrame):
                       'keep': lambda row: row}
 
         if na not in na_methods:
-            raise ValueError('Unknown na method {}'.format(na))
+            raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
         def feature(i, row):
@@ -148,9 +242,9 @@ class GeoDataFrame(DataFrame):
             return {
                 'id': str(i),
                 'type': 'Feature',
-                'properties': {
-                    k: v for k, v in row.iteritems() if k != 'geometry'},
-                'geometry': mapping(row['geometry']) }
+                'properties':
+                    dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
+                'geometry': mapping(row[self._geometry_column_name]) }
 
         return json.dumps(
             {'type': 'FeatureCollection',
@@ -175,17 +269,21 @@ class GeoDataFrame(DataFrame):
         The *kwargs* are passed to fiona.open and can be used to write 
         to multi-layer data, store data within archives (zip files), etc.
         """
+        import fiona
         def convert_type(in_type):
             if in_type == object:
                 return 'str'
-            return type(np.asscalar(np.zeros(1, in_type))).__name__
+            out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
+            if out_type == 'long':
+                out_type = 'int'
+            return out_type
             
         def feature(i, row):
             return {
                 'id': str(i),
                 'type': 'Feature',
-                'properties': {
-                    k: v for k, v in row.iteritems() if k != 'geometry'},
+                'properties':
+                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
                 'geometry': mapping(row['geometry']) }
         
         properties = OrderedDict([(col, convert_type(_type)) for col, _type 
@@ -232,13 +330,15 @@ class GeoDataFrame(DataFrame):
         GeoDataFrame.
         """
         result = super(GeoDataFrame, self).__getitem__(key)
-        if isinstance(key, basestring) and key == 'geometry':
+        geo_col = self._geometry_column_name
+        if isinstance(key, string_types) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
-        elif isinstance(result, DataFrame) and 'geometry' in result:
+        elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
-        elif isinstance(result, DataFrame) and 'geometry' not in result:
+            result._geometry_column_name = geo_col
+        elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
             result.crs = self.crs
         return result
@@ -279,3 +379,18 @@ class GeoDataFrame(DataFrame):
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
+
+def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+    if inplace:
+        raise ValueError("Can't do inplace setting when converting from"
+                         " DataFrame to GeoDataFrame")
+    gf = GeoDataFrame(self)
+    # this will copy so that BlockManager gets copied
+    return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
+
+if PY3:
+    DataFrame.set_geometry = _dataframe_set_geometry
+else:
+    import types
+    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
+                                              DataFrame)
