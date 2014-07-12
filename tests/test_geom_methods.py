@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_series_equal, assert_frame_equal
 from pandas import Series, DataFrame
-from shapely.geometry import Point, LineString, Polygon
+from shapely.geometry import Point, LinearRing, LineString, Polygon
 from shapely.geometry.collection import GeometryCollection
 
 from geopandas import GeoSeries, GeoDataFrame
@@ -21,6 +21,13 @@ class TestGeomMethods(unittest.TestCase):
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        self.inner_sq = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75),
+                            (0.25, 0.75)])
+        self.nested_squares = Polygon(self.sq.boundary,
+                                      [self.inner_sq.boundary])
+        self.p0 = Point(5, 5)
+        self.g0 = GeoSeries([self.t1, self.t2, self.sq, self.inner_sq,
+                             self.nested_squares, self.p0])
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
@@ -39,6 +46,11 @@ class TestGeomMethods(unittest.TestCase):
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+
+        # Crossed lines
+        self.l3 = LineString([(0, 0), (1, 1)])
+        self.l4 = LineString([(0, 1), (1, 0)])
+        self.crossed_lines = GeoSeries([self.l3, self.l4])
 
         # Placeholder for testing, will just drop in different geometries
         # when needed
@@ -214,7 +226,6 @@ class TestGeomMethods(unittest.TestCase):
                               index=self.g1.index,
                               columns=['minx', 'miny', 'maxx', 'maxy'])
 
-        
         result = self.g1.bounds
         assert_frame_equal(expected, result)
 
@@ -223,46 +234,45 @@ class TestGeomMethods(unittest.TestCase):
         assert_frame_equal(expected, result)
 
     def test_contains(self):
-        expected = np.array([True] * len(self.g1))
-        assert_array_equal(expected, self.g1.contains(self.t1))
-
-        expected = np.array([False] * len(self.g1))
-        assert_array_equal(expected, self.g1.contains(Point(5,5)))
+        expected = [True, False, True, False, False, False]
+        assert_array_equal(expected, self.g0.contains(self.t1))
 
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real('length', expected, self.g1)
 
-
-    @unittest.skip('TODO')
     def test_crosses(self):
-        # TODO
-        pass
+        expected = [False, False, False, False, False, False]
+        assert_array_equal(expected, self.g0.crosses(self.t1))
 
-    @unittest.skip('TODO')
+        expected = [False, True]
+        assert_array_equal(expected, self.crossed_lines.crosses(self.l3))
+
     def test_disjoint(self):
-        # TODO
-        pass
+        expected = [False, False, False, False, False, True]
+        assert_array_equal(expected, self.g0.disjoint(self.t1))
 
-    @unittest.skip('TODO')
     def test_intersects(self):
-        # TODO
-        pass
+        expected = [True, True, True, True, True, False]
+        assert_array_equal(expected, self.g0.intersects(self.t1))
 
-    @unittest.skip('TODO')
     def test_overlaps(self):
-        # TODO
-        pass
+        expected = [True, True, False, False, False, False]
+        assert_array_equal(expected, self.g0.overlaps(self.inner_sq))
 
-    @unittest.skip('TODO')
+        expected = [False, False]
+        assert_array_equal(expected, self.g4.overlaps(self.t1))
+
     def test_touches(self):
-        # TODO
-        pass
+        expected = [False, True, False, False, False, False]
+        assert_array_equal(expected, self.g0.touches(self.t1))
 
-    @unittest.skip('TODO')
     def test_within(self):
-        # TODO
-        pass
+        expected = [True, False, False, False, False, False]
+        assert_array_equal(expected, self.g0.within(self.t1))
+
+        expected = [True, True, True, True, True, False]
+        assert_array_equal(expected, self.g0.within(self.sq))
 
     def test_is_valid(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
@@ -280,15 +290,17 @@ class TestGeomMethods(unittest.TestCase):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real('is_simple', expected, self.g1)
 
-    @unittest.skip('TODO')
     def test_exterior(self):
-        # TODO
-        pass
+        exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
+        for expected, computed in zip(exp_exterior, self.g3.exterior):
+            assert computed.equals(expected)
 
-    @unittest.skip('TODO')
     def test_interiors(self):
-        # TODO
-        pass
+        square_series = GeoSeries(self.nested_squares)
+        exp_interiors = GeoSeries([LinearRing(self.inner_sq.boundary)])
+        for expected, computed in zip(exp_interiors, square_series.interiors):
+            assert computed[0].equals(expected)
+
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
@@ -305,7 +317,7 @@ class TestGeomMethods(unittest.TestCase):
         self._test_binary_real('project', expected, self.g5, p)
 
         expected = Series([1.0, 0.5], index=self.g5.index)
-        self._test_binary_real('project', expected, self.g5, p, 
+        self._test_binary_real('project', expected, self.g5, p,
                                normalized=True)
 
     def test_translate_tuple(self):
