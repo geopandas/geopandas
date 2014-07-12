@@ -88,7 +88,10 @@ def create_db(df):
     if con is None:
         return False
     if PANDAS_NEW_SQL_API:
-        con = con.connect()
+        try:
+            con = con.connect()
+        except OperationalError:
+            raise unittest.case.SkipTest()
     else:
         con = con.cursor()
 
