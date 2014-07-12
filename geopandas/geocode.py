@@ -39,7 +39,7 @@ def geocode(strings, provider='googlev3', **kwargs):
         * yahoo
         * mapquest
         * openmapquest
-    
+
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
 
@@ -49,16 +49,71 @@ def geocode(strings, provider='googlev3', **kwargs):
     Example
     -------
     >>> df = geocode(['boston, ma', '1600 pennsylvania ave. washington, dc'])
-    address                                               geometry
-    0                                    Boston, MA, USA  POINT (-71.0597731999999951 42.3584308000000007)
-    1  1600 Pennsylvania Avenue Northwest, President'...  POINT (-77.0365122999999983 38.8978377999999978)
+
+                                                 address  \
+    0                                    Boston, MA, USA
+    1  1600 Pennsylvania Avenue Northwest, President'...
+
+                             geometry
+    0  POINT (-71.0597732 42.3584308)
+    1  POINT (-77.0365305 38.8977332)
 
     """
+    return _query(strings, True, provider, **kwargs)
+
+
+def reverse(points, provider='googlev3', **kwargs):
+    """
+    Reverse geocode a set of points and get a GeoDataFrame of the resulting
+    addresses.
+
+    The points
+
+    Parameters
+    ----------
+    points : list or Series of Shapely Point objects.
+        x coordinate is longitude
+        y coordinate is latitude
+    provider : geopy geocoder to use, default 'googlev3'
+        These are the same options as the geocode() function
+        Some providers require additional arguments such as access keys
+        See each geocoder's specific parameters in geopy.geocoders
+        * googlev3, default
+        * bing
+        * google
+        * yahoo
+        * mapquest
+        * openmapquest
+
+    Ensure proper use of the results by consulting the Terms of Service for
+    your provider.
+
+    Reverse geocoding requires geopy. Install it using 'pip install geopy'.
+    See also https://github.com/geopy/geopy
+
+    Example
+    -------
+    >>> df = reverse([Point(-71.0594869, 42.3584697),
+                      Point(-77.0365305, 38.8977332)])
+
+                                             address  \
+    0             29 Court Square, Boston, MA 02108, USA
+    1  1600 Pennsylvania Avenue Northwest, President'...
+
+                             geometry
+    0  POINT (-71.0594869 42.3584697)
+    1  POINT (-77.0365305 38.8977332)
+
+    """
+    return _query(points, False, provider, **kwargs)
+
+
+def _query(data, forward, provider, **kwargs):
     import geopy
     from geopy.geocoders.base import GeocoderQueryError
 
-    if not isinstance(strings, pd.Series):
-        strings = pd.Series(strings)
+    if not isinstance(data, pd.Series):
+        data = pd.Series(data)
 
     # workaround changed name in 0.96
     try:
@@ -71,22 +126,26 @@ def geocode(strings, provider='googlev3', **kwargs):
               'yahoo': Yahoo,
               'mapquest': geopy.geocoders.MapQuest,
               'openmapquest': geopy.geocoders.OpenMapQuest,
-              'nominatim' : geopy.geocoders.Nominatim}
+              'nominatim': geopy.geocoders.Nominatim}
 
     if provider not in coders:
         raise ValueError('Unknown geocoding provider: {0}'.format(provider))
 
     coder = coders[provider](**kwargs)
     results = {}
-    for i, s in iteritems(strings):
+    for i, s in iteritems(data):
         try:
-            results[i] = coder.geocode(s)
+            if forward:
+                results[i] = coder.geocode(s)
+            else:
+                results[i] = coder.reverse((s.y, s.x), exactly_one=True)
         except (GeocoderQueryError, ValueError):
             results[i] = (None, None)
         time.sleep(_throttle_time(provider))
 
     df = _prepare_geocode_result(results)
     return df
+
 
 def _prepare_geocode_result(results):
     """
