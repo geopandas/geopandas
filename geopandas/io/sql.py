@@ -3,8 +3,8 @@ import binascii
 from pandas import read_sql
 import shapely.wkb
 
-
 from geopandas import GeoSeries, GeoDataFrame
+
 
 def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
                  coerce_float=True, params=None):
@@ -19,7 +19,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     Parameters
     ----------
     sql: string
-    con: DB connection object
+    con: DB connection object or SQLAlchemy engine
     geom_col: string, default 'geom'
         column name to convert to shapely geometries
     crs: optional
@@ -30,8 +30,9 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     index_col, coerce_float, params
 
     """
-    df = read_sql(sql, con, index_col=index_col, coerce_float=coerce_float, 
+    df = read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
                   params=params)
+
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{0}'".format(
             geom_col))

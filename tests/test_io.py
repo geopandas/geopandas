@@ -16,8 +16,6 @@ class TestIO(unittest.TestCase):
         with fiona.open(path, vfs=vfs) as f:
             self.crs = f.crs
 
-    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
-                     'not yet supported in SQL API.')
     def test_read_postgis_default(self):
         con = tests.util.connect('test_geopandas')
         if con is None or not tests.util.create_db(self.df):
@@ -27,12 +25,13 @@ class TestIO(unittest.TestCase):
             sql = "SELECT * FROM nybb;"
             df = read_postgis(sql, con)
         finally:
+            if PANDAS_NEW_SQL_API:
+                # It's not really a connection, it's an engine
+                con = con.connect()
             con.close()
 
         tests.util.validate_boro_df(self, df)
 
-    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
-                     'not yet supported in SQL API.')
     def test_read_postgis_custom_geom_col(self):
         con = tests.util.connect('test_geopandas')
         if con is None or not tests.util.create_db(self.df):
@@ -45,6 +44,9 @@ class TestIO(unittest.TestCase):
                      FROM nybb;"""
             df = read_postgis(sql, con, geom_col='__geometry__')
         finally:
+            if PANDAS_NEW_SQL_API:
+                # It's not really a connection, it's an engine
+                con = con.connect()
             con.close()
 
         tests.util.validate_boro_df(self, df)

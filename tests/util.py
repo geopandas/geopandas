@@ -1,8 +1,17 @@
 import io
 import os.path
 from six.moves.urllib.request import urlopen
+from sqlalchemy import create_engine
 
 from geopandas import GeoDataFrame, GeoSeries
+
+try:
+    from pandas import read_sql_table
+except ImportError:
+    PANDAS_NEW_SQL_API = False
+else:
+    PANDAS_NEW_SQL_API = True
+
 
 # Compatibility layer for Python 2.6: try loading unittest2
 import sys
@@ -21,13 +30,6 @@ try:
 except ImportError:
     class OperationalError(Exception):
         pass
-
-try:
-    from pandas import read_sql_table
-except ImportError:
-    PANDAS_NEW_SQL_API = False
-else:
-    PANDAS_NEW_SQL_API = True
 
 
 def download_nybb():
@@ -57,11 +59,16 @@ def validate_boro_df(test, df):
 
 def connect(dbname):
     try:
-        con = psycopg2.connect(dbname=dbname)
+        if PANDAS_NEW_SQL_API:
+            driver = 'psycopg2'
+            conn_str = 'postgresql+{driver}://localhost/{dbname}'
+            engine = create_engine(conn_str.format(driver=driver, dbname=dbname))
+            return engine
+        else:
+            con = psycopg2.connect(dbname=dbname)
+            return con
     except (NameError, OperationalError):
         return None
-
-    return con
 
 
 def create_db(df):
@@ -80,10 +87,13 @@ def create_db(df):
     con = connect('test_geopandas')
     if con is None:
         return False
+    if PANDAS_NEW_SQL_API:
+        con = con.connect()
+    else:
+        con = con.cursor()
 
     try:
-        cursor = con.cursor()
-        cursor.execute("DROP TABLE IF EXISTS nybb;")
+        con.execute("DROP TABLE IF EXISTS nybb;")
 
         sql = """CREATE TABLE nybb (
             geom        geometry,
@@ -92,20 +102,18 @@ def create_db(df):
             shape_leng  float,
             shape_area  float
         );"""
-        cursor.execute(sql)
+        con.execute(sql)
 
         for i, row in df.iterrows():
             sql = """INSERT INTO nybb VALUES (
                 ST_GeometryFromText(%s), %s, %s, %s, %s
             );"""
-            cursor.execute(sql, (row['geometry'].wkt,
+            con.execute(sql, (row['geometry'].wkt,
                                  row['BoroCode'],
                                  row['BoroName'],
                                  row['Shape_Leng'],
                                  row['Shape_Area']))
     finally:
-        cursor.close()
-        con.commit()
         con.close()
 
     return True

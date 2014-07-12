@@ -367,8 +367,6 @@ class TestDataFrame(unittest.TestCase):
                                            {'a': 2, 'b': np.nan}])
         assert_frame_equal(expected, result)
 
-    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
-                     'not yet supported in SQL API.')
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):
@@ -378,12 +376,13 @@ class TestDataFrame(unittest.TestCase):
             sql = "SELECT * FROM nybb;"
             df = GeoDataFrame.from_postgis(sql, con)
         finally:
+            if PANDAS_NEW_SQL_API:
+                # It's not really a connection, it's an engine
+                con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
 
-    @unittest.skipIf(PANDAS_NEW_SQL_API, 'Development version of pandas '
-                     'not yet supported in SQL API.')
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):
@@ -396,6 +395,9 @@ class TestDataFrame(unittest.TestCase):
                      FROM nybb;"""
             df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
         finally:
+            if PANDAS_NEW_SQL_API:
+                # It's not really a connection, it's an engine
+                con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
