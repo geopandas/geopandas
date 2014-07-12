@@ -12,11 +12,6 @@ from shapely.ops import transform
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase
 
-# try:
-#     from sindex import SpatialIndex
-#     HAS_SINDEX = True
-# except ImportError:
-#     HAS_SINDEX = False
 
 OLD_PANDAS = issubclass(Series, np.ndarray)
 

@@ -1,3 +1,4 @@
+from rtree.core import RTreeError
 from rtree.index import Index as RTreeIndex
 
 
