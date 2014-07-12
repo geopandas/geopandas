@@ -19,7 +19,9 @@ matrix:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install gdal-bin libgdal-dev postgis
+  - sudo apt-get -y install gdal-bin libgdal-dev postgis
+  - sudo apt-get update --fix-missing
+  - sudo apt-get -y install gdal-bin libgdal-dev postgis
   - sudo -u postgres psql -c "drop database if exists test_geopandas"
   - sudo -u postgres psql -c "create database test_geopandas"
   - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
