@@ -182,6 +182,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
         df.crs = crs
+        df._generate_sindex()
         return df
 
     @classmethod
