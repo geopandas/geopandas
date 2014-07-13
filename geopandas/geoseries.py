@@ -82,6 +82,13 @@ class GeoSeries(GeoPandasBase, Series):
         g.crs = crs
         return g
 
+    @property
+    def __geo_interface__(self):
+        """Returns a GeoSeries as a python feature collection
+        """
+        from geopandas import GeoDataFrame
+        return GeoDataFrame({'geometry': self}).__geo_interface__
+
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         from geopandas import GeoDataFrame
         data = GeoDataFrame({"geometry": self,

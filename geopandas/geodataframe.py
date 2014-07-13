@@ -202,7 +202,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
 
     def to_json(self, na='null', **kwargs):
-        """Returns a GeoJSON representation of the GeoDataFrame.
+        """Returns a GeoJSON string representation of the GeoDataFrame.
 
         Parameters
         ----------
@@ -216,6 +216,33 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         
         The remaining *kwargs* are passed to json.dumps().
         """
+        return json.dumps(self._to_geo(na), **kwargs)
+
+    @property
+    def __geo_interface__(self):
+        """Returns a python feature collection (i.e. the geointerface)
+           representation of the GeoDataFrame.
+
+           This differs from `_to_geo()` only in that it is a property
+           with a default `na` arg instead of a method
+        """
+        return self._to_geo(na='null')
+
+    def _to_geo(self, na='null'):
+        """Returns a python feature collection (i.e. the geointerface)
+           representation of the GeoDataFrame.
+
+        Parameters
+        ----------
+        na : {'null', 'drop', 'keep'}, default 'null'
+            Indicates how to output missing (NaN) values in the GeoDataFrame
+            * null: ouput the missing entries as JSON null
+            * drop: remove the property from the feature. This applies to
+                    each feature individually so that features may have
+                    different properties
+            * keep: output the missing entries as NaN
+        """
+
         def fill_none(row):
             """
             Takes in a Series, converts to a dictionary with null values
@@ -246,10 +273,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
                 'geometry': mapping(row[self._geometry_column_name]) }
 
-        return json.dumps(
-            {'type': 'FeatureCollection',
-             'features': [feature(i, row) for i, row in self.iterrows()]},
-            **kwargs )
+        return {'type': 'FeatureCollection',
+                'features': [feature(i, row) for i, row in self.iterrows()]}
             
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         """
