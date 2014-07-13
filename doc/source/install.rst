@@ -29,7 +29,7 @@ Supports Python versions 2.6, 2.7, and 3.2+.
 - `shapely`_
 - `fiona`_
 - `six`_
-- `geopy`_ 0.96.3 (optional; for geocoding)
+- `geopy`_ 0.99 (optional; for geocoding)
 - `psycopg2`_ (optional; for PostGIS connection)
 
 For plotting, these additional packages may be used:
