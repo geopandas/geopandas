@@ -146,5 +146,10 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1]))
         self.assertTrue(geom_equals(self.g3[[False, True]], self.g3.cx[0:0.1, 0.9:1.0]))
 
+    def test_geoseries_geointerface(self):
+        self.assertEqual(self.g1.__geo_interface__['type'], 'FeatureCollection')
+        self.assertEqual(len(self.g1.__geo_interface__['features']),
+                         self.g1.shape[0])
+
 if __name__ == '__main__':
     unittest.main()

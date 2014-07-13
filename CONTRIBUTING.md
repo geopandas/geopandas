@@ -17,7 +17,7 @@ In particular, when submitting a pull request:
 
 - All existing tests should pass.  Please make sure that the test
   suite passes, both locally and on
-  [Travis CI](https://travis-ci.org/kjordahl/geopandas).  Status on
+  [Travis CI](https://travis-ci.org/geopandas/geopandas).  Status on
   Travis will be visible on a pull request.  If you want to enable
   Travis CI on your own fork, please read the pandas guidelines link
   above or the

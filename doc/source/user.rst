@@ -254,6 +254,12 @@ Additionally, the following methods are implemented:
   See ``GeoSeries.bounds`` for the bounds of the geometries contained
   in the series.
 
+.. attribute:: GeoSeries.__geo_interface__
+
+  Implements the `geo_interface`_. Returns a python data structure
+  to represent the ``GeoSeries`` as a GeoJSON-like ``FeatureCollection``. 
+  Note that the features will have an empty ``properties`` dict as they don't
+  have associated attributes (geometry only).
 
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
@@ -311,6 +317,11 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
   ``column`` parameter is given, colors plot according to values in
   that column, otherwise calls ``GeoSeries.plot()`` on the
   ``geometry`` column.  Wraps the ``plot_dataframe()`` function.
+
+.. attribute:: GeoDataFrame.__geo_interface__
+
+  Implements the `geo_interface`_. Returns a python data structure
+  to represent the ``GeoDataFrame`` as a GeoJSON-like ``FeatureCollection``.
 
 All pandas ``DataFrame`` methods are also available, although they may
 not operate in a meaningful way on the ``geometry`` column and may not
@@ -480,6 +491,7 @@ borough that are in the holes:
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://toblerity.github.io/fiona
 .. _geopy: https://github.com/geopy/geopy
+.. _geo_interface: https://gist.github.com/sgillies/2217756
 .. _file containing the boroughs of New York City: http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
 
 .. toctree::
