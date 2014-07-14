@@ -139,6 +139,13 @@ class TestSeries(unittest.TestCase):
         # XXX: method works inconsistently for different pandas versions
         #self.na_none.fillna(method='backfill')
 
+    def test_coord_slice(self):
+        """ Test CoordinateSlicer """
+        # need some better test cases
+        self.assertTrue(geom_equals(self.g3, self.g3.cx[:, :]))
+        self.assertTrue(geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1]))
+        self.assertTrue(geom_equals(self.g3[[False, True]], self.g3.cx[0:0.1, 0.9:1.0]))
+
     def test_geoseries_geointerface(self):
         self.assertEqual(self.g1.__geo_interface__['type'], 'FeatureCollection')
         self.assertEqual(len(self.g1.__geo_interface__['features']),
