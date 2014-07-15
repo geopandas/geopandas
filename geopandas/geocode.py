@@ -62,7 +62,7 @@ def geocode(strings, provider='googlev3', **kwargs):
     return _query(strings, True, provider, **kwargs)
 
 
-def reverse(points, provider='googlev3', **kwargs):
+def reverse_geocode(points, provider='googlev3', **kwargs):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -93,8 +93,8 @@ def reverse(points, provider='googlev3', **kwargs):
 
     Example
     -------
-    >>> df = reverse([Point(-71.0594869, 42.3584697),
-                      Point(-77.0365305, 38.8977332)])
+    >>> df = reverse_geocode([Point(-71.0594869, 42.3584697),
+                              Point(-77.0365305, 38.8977332)])
 
                                              address  \
     0             29 Court Square, Boston, MA 02108, USA

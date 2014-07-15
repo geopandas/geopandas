@@ -8,7 +8,7 @@ from shapely.geometry import Point
 import geopandas as gpd
 import nose
 
-from geopandas.geocode import geocode, reverse, _prepare_geocode_result
+from geopandas.geocode import geocode, reverse_geocode, _prepare_geocode_result
 from .util import unittest
 
 
@@ -78,7 +78,7 @@ class TestGeocode(unittest.TestCase):
 
     def test_bad_provider_reverse(self):
         with self.assertRaises(ValueError):
-            reverse(['cambridge, ma'], 'badprovider')
+            reverse_geocode(['cambridge, ma'], 'badprovider')
 
     def test_googlev3_forward(self):
         from geopandas.geocode import geocode
@@ -87,7 +87,7 @@ class TestGeocode(unittest.TestCase):
 
     def test_googlev3_reverse(self):
         from geopandas.geocode import geocode
-        g = reverse(self.points, provider='googlev3', timeout=2)
+        g = reverse_geocode(self.points, provider='googlev3', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
     def test_openmapquest_forward(self):
