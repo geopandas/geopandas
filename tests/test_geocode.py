@@ -8,7 +8,7 @@ from shapely.geometry import Point
 import geopandas as gpd
 import nose
 
-from geopandas.geocode import geocode, _prepare_geocode_result
+from geopandas.geocode import geocode, reverse_geocode, _prepare_geocode_result
 from .util import unittest
 
 
@@ -26,6 +26,8 @@ class TestGeocode(unittest.TestCase):
         _skip_if_no_geopy()
         self.locations = ['260 Broadway, New York, NY',
                           '77 Massachusetts Ave, Cambridge, MA']
+        self.points = [Point(-71.0597732, 42.3584308),
+                       Point(-77.0365305, 38.8977332)]
 
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
@@ -69,20 +71,31 @@ class TestGeocode(unittest.TestCase):
         self.assertEqual(len(row['geometry'].coords), 0)
         self.assert_(pd.np.isnan(row['address']))
     
-    def test_bad_provider(self):
+    def test_bad_provider_forward(self):
         from geopandas.geocode import geocode
         with self.assertRaises(ValueError):
             geocode(['cambridge, ma'], 'badprovider')
 
-    def test_googlev3(self):
+    def test_bad_provider_reverse(self):
+        with self.assertRaises(ValueError):
+            reverse_geocode(['cambridge, ma'], 'badprovider')
+
+    def test_googlev3_forward(self):
         from geopandas.geocode import geocode
         g = geocode(self.locations, provider='googlev3', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
-    def test_openmapquest(self):
+    def test_googlev3_reverse(self):
+        from geopandas.geocode import geocode
+        g = reverse_geocode(self.points, provider='googlev3', timeout=2)
+        self.assertIsInstance(g, gpd.GeoDataFrame)
+
+    def test_openmapquest_forward(self):
         from geopandas.geocode import geocode
         g = geocode(self.locations, provider='openmapquest', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
+
+    # openmapquest does not have reverse implemented in geopy
 
     @unittest.skip('Nominatim server is unreliable for tests.')
     def test_nominatim(self):
