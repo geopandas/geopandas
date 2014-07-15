@@ -201,7 +201,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                      coerce_float, params)
 
 
-    def to_json(self, na='null', **kwargs):
+    def to_json(self, na='null', show_bbox=False, **kwargs):
         """Returns a GeoJSON string representation of the GeoDataFrame.
 
         Parameters
@@ -213,10 +213,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     each feature individually so that features may have
                     different properties
             * keep: output the missing entries as NaN
+
+        show_bbox : include bbox (bounds) in the geojson
         
         The remaining *kwargs* are passed to json.dumps().
         """
-        return json.dumps(self._to_geo(na), **kwargs)
+        return json.dumps(self._to_geo(na, show_bbox), **kwargs)
 
     @property
     def __geo_interface__(self):
@@ -224,11 +226,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
            representation of the GeoDataFrame.
 
            This differs from `_to_geo()` only in that it is a property
-           with a default `na` arg instead of a method
+           with default args instead of a method
         """
-        return self._to_geo(na='null')
+        return self._to_geo(na='null', show_bbox=True)
 
-    def _to_geo(self, na='null'):
+    def _to_geo(self, na='null', show_bbox=False):
         """Returns a python feature collection (i.e. the geointerface)
            representation of the GeoDataFrame.
 
@@ -241,6 +243,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     each feature individually so that features may have
                     different properties
             * keep: output the missing entries as NaN
+
+        show_bbox : include bbox (bounds) in the geojson. default False
         """
 
         def fill_none(row):
@@ -265,16 +269,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         f = na_methods[na]
 
         def feature(i, row):
+            bbox = row[self._geometry_column_name].bounds
             row = f(row)
-            return {
+            feat = {
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
                     dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
                 'geometry': mapping(row[self._geometry_column_name]) }
 
-        return {'type': 'FeatureCollection',
-                'features': [feature(i, row) for i, row in self.iterrows()]}
+            if show_bbox:
+                feat['bbox'] = bbox
+
+            return feat
+
+        geo = {'type': 'FeatureCollection',
+               'features': [feature(i, row) for i, row in self.iterrows()]}
+
+        if show_bbox:
+            geo['bbox'] = self.total_bounds
+
+        return geo
             
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         """

@@ -433,3 +433,16 @@ class TestDataFrame(unittest.TestCase):
         self.assertEqual(len(self.df.__geo_interface__['features']),
                          self.df.shape[0])
 
+    def test_geodataframe_geojson_no_bbox(self):
+        geo = self.df._to_geo(na="null", show_bbox=False)
+        self.assertFalse('bbox' in geo.keys())
+        for feature in geo['features']:
+            self.assertFalse('bbox' in feature.keys())
+
+    def test_geodataframe_geojson_bbox(self):
+        geo = self.df._to_geo(na="null", show_bbox=True)
+        self.assertTrue('bbox' in geo.keys())
+        self.assertEqual(len(geo['bbox']), 4)
+        self.assertTrue(isinstance(geo['bbox'], tuple))
+        for feature in geo['features']:
+            self.assertTrue('bbox' in feature.keys())
