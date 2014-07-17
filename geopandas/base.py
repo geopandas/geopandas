@@ -10,6 +10,14 @@ from pandas import Series, DataFrame
 
 import geopandas as gpd
 
+try:
+    from geopandas.sindex import RTreeError, SpatialIndex
+    HAS_SINDEX = True
+except ImportError:
+    class RTreeError(Exception):
+        pass
+    HAS_SINDEX = False
+
 
 def _geo_op(this, other, op):
     """Operation that returns a GeoSeries"""
@@ -54,6 +62,23 @@ def _series_unary_op(this, op):
 
 
 class GeoPandasBase(object):
+
+    def _generate_sindex(self):
+        self._sindex = None
+        if not HAS_SINDEX:
+            warn("Cannot generate spatial index: Missing package `rtree`.")
+        else:
+            stream = ((i, item.bounds, idx) for i, (idx, item) in
+                   enumerate(self.geometry.iteritems()) if 
+                   item and not item.is_empty)
+            try:
+                self._sindex = SpatialIndex(stream)
+            # What we really want here is an empty generator error, or
+            # for the bulk loader to log that the generator was empty
+            # and move on. See https://github.com/Toblerity/rtree/issues/20.
+            except RTreeError:
+                pass
+
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
