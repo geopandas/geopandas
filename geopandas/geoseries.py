@@ -72,6 +72,10 @@ class GeoSeries(GeoPandasBase, Series):
 
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
+        self._generate_sindex()
+
+    def append(self, *args, **kwargs):
+        return self._wrapped_pandas_method('append', *args, **kwargs)
 
     @property
     def geometry(self):
@@ -135,6 +139,7 @@ class GeoSeries(GeoPandasBase, Series):
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
+            val._generate_sindex()
         return val
 
     def __getitem__(self, key):
