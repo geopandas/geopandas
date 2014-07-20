@@ -11,7 +11,7 @@ def _uniquify(columns):
         newcol = col
         while newcol in ucols:
             inc += 1
-            newcol = "{}_{}".format(col, inc)
+            newcol = "{0}_{1}".format(col, inc)
         ucols.append(newcol)
     return ucols
 
