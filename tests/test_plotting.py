@@ -32,7 +32,7 @@ class PlotTests(unittest.TestCase):
         shutil.rmtree(self.tempdir)
         return
 
-    def _compare_images(self, ax, filename, tol=8):
+    def _compare_images(self, ax, filename, tol=10):
         """ Helper method to do the comparisons """
         assert isinstance(ax, Artist)
         if GENERATE_BASELINE:
