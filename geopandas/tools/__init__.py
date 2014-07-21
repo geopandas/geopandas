@@ -1,3 +1,5 @@
-__all__ = ['overlay']
+from __future__ import absolute_import
 
-from overlay import overlay
+from .overlay import overlay
+
+__all__ = ['overlay']
