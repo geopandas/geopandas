@@ -38,6 +38,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_union(self):
         df = overlay(self.polydf, self.polydf2, how="union")
+        self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, self.union_shape)
         self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
 

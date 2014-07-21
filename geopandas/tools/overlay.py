@@ -166,11 +166,6 @@ def overlay(df1, df2, how, use_sindex=True):
 
         # Create a geoseries and add it to the collection
         out_series['geometry'] = newpoly
-
-        # FIXME is there a more idomatic way to append a geometry to a Series 
-        # and get a GeoSeries back? 
-        out_series.__class__ = GeoSeries
-        out_series._geometry_column_name = 'geometry'
         collection.append(out_series)
 
     # Return geodataframe with new indicies
