@@ -173,7 +173,5 @@ def overlay(df1, df2, how, use_sindex=True):
         out_series._geometry_column_name = 'geometry'
         collection.append(out_series)
 
-    # Create geodataframe, clean up indicies and return it
-    gdf = GeoDataFrame(collection).reset_index()
-    gdf.drop('index', axis=1, inplace=True)
-    return gdf
+    # Return geodataframe with new indicies
+    return GeoDataFrame(collection, index=range(len(collection)))
