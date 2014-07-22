@@ -9,7 +9,7 @@ python:
 
 env:
   - PANDAS_VERSION=v0.13.1
-  - PANDAS_VERSION=v0.14.0
+  - PANDAS_VERSION=v0.14.1
   - PANDAS_VERSION=master
 
 matrix:
