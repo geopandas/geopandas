@@ -6,7 +6,7 @@ from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
 import numpy as np
-from pandas import Series, DataFrame
+from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
 
@@ -411,6 +411,47 @@ class GeoPandasBase(object):
             use_radians=use_radians) for s in self.geometry],
             index=self.index, crs=self.crs)
 
+    def explode(self):
+        """
+        Explode multi-part geometries into multiple single geometries.
+
+        Single rows can become multiple rows.
+        This is analogous to PostGIS's ST_Dump(). The 'path' index is the
+        second level of the returned MultiIndex
+
+        Returns
+        ------
+        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
+        original index and an integer.
+
+        Example
+        -------
+        >>> gdf  # gdf is GeoSeries of MultiPoints
+        0                 (POINT (0 0), POINT (1 1))
+        1    (POINT (2 2), POINT (3 3), POINT (4 4))
+
+        >>> gdf.explode()
+        0  0    POINT (0 0)
+           1    POINT (1 1)
+        1  0    POINT (2 2)
+           1    POINT (3 3)
+           2    POINT (4 4)
+        dtype: object
+
+        """
+        index = []
+        geometries = []
+        for idx, s in self.geometry.iteritems():
+            if s.type.startswith('Multi') or s.type == 'GeometryCollection':
+                geoms = s.geoms
+                idxs = [(idx, i) for i in range(len(geoms))]
+            else:
+                geoms = [s]
+                idxs = [(idx, 0)]
+            index.extend(idxs)
+            geometries.extend(geoms)
+        return gpd.GeoSeries(geometries,
+            index=MultiIndex.from_tuples(index)).__finalize__(self)
 
 def _array_input(arr):
     if isinstance(arr, (MultiPoint, MultiLineString, MultiPolygon)):
