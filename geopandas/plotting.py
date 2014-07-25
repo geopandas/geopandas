@@ -281,9 +281,9 @@ def __pysal_choro(values, scheme, k=5):
             k = 5
         binning = imported_module(values, k)
         values = binning.yb
-        return values
     except ImportError: 
         print('PySAL not installed. Setting map to default')
+    return values
 
 def norm_cmap(values, cmap, normalize, cm):
 
