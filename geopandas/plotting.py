@@ -1,4 +1,5 @@
 from __future__ import print_function
+import imp
 
 import numpy as np
 from six import next
@@ -222,6 +223,14 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     return ax
 
 
+def sentence_case(s):
+    """
+    Return title-cased strings for PySAL, because it's fussy
+    """
+    spl = s.split('_')
+    return '_'.join([w.title() for w in spl])
+
+
 def __pysal_choro(values, scheme, k=5):
     """ Wrapper for choropleth schemes from PySAL for use with plot_dataframe
 
@@ -232,7 +241,19 @@ def __pysal_choro(values, scheme, k=5):
             Series to be plotted
 
         scheme
-            pysal.esda.mapclassify classificatin scheme ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
+            pysal.esda.mapclassify scheme:
+                'Equal_Interval'
+                'Fisher_Jenks'
+                'Jenks_Caspall'
+                'Jenks_Caspall_Forced'
+                'Jenks_Caspall_Sampled'
+                'Max_P_Classifier'
+                'Maximum_Breaks'
+                'Natural_Breaks'
+                'Quantiles'
+                'Percentiles'
+                'Std_Mean'
+                'User_Defined'
 
         k
             number of classes (2 <= k <=9)
@@ -244,28 +265,25 @@ def __pysal_choro(values, scheme, k=5):
             Series with values replaced with class identifier if PySAL is available, otherwise the original values are used
     """
 
-    try: 
-        from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
-        schemes = {}
-        schemes['equal_interval'] = Equal_Interval
-        schemes['quantiles'] = Quantiles
-        schemes['fisher_jenks'] = Fisher_Jenks
-        s0 = scheme
-        scheme = scheme.lower()
-        if scheme not in schemes:
-            scheme = 'quantiles'
-            print('Unrecognized scheme: ', s0)
-            print('Using Quantiles instead')
-        if k<2 or k>9:
+    scheme = sentence_case(scheme)
+    try:
+        f, filename, description = imp.find_module('pysal')
+        main_module = imp.load_module('pysal', f, filename, description)
+        sub_module = imp.load_module('pysal.esda.mapclassify', f, filename, description)
+        try:
+            imported_module = getattr(sub_module, scheme)
+        except AttributeError:
+            print("Clasification scheme '%s' not recognised, defaulting to Quantiles" % scheme)
+            imported_module = getattr(sub_module, 'Quantiles')
+        if k < 2 or k > 9:
             print('Invalid k: ', k)
-            print('2<=k<=9, setting k=5 (default)')
+            print('2 <= k <= 9, setting k=5 (default)')
             k = 5
-        binning = schemes[scheme](values, k)
+        binning = imported_module(values, k)
         values = binning.yb
+        return values
     except ImportError: 
-        print('PySAL not installed, setting map to default')
-
-    return values
+        print('PySAL not installed. Setting map to default')
 
 def norm_cmap(values, cmap, normalize, cm):
 
