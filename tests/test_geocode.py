@@ -8,7 +8,9 @@ from shapely.geometry import Point
 import geopandas as gpd
 import nose
 
-from geopandas.geocode import geocode, reverse_geocode, _prepare_geocode_result
+from geopandas.tools import geocode, reverse_geocode
+from geopandas.tools.geocoding import _prepare_geocode_result
+
 from .util import unittest
 
 
@@ -32,7 +34,6 @@ class TestGeocode(unittest.TestCase):
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
         # loop
-        from geopandas.geocode import _prepare_geocode_result
         p0 = Point(12.3, -45.6) # Treat these as lat/lon
         p1 = Point(-23.4, 56.7)
         d = {'a': ('address0', p0.coords[0]),
@@ -56,7 +57,6 @@ class TestGeocode(unittest.TestCase):
         self.assertAlmostEqual(coords[1], test[0])
 
     def test_prepare_result_none(self):
-        from geopandas.geocode import _prepare_geocode_result
         p0 = Point(12.3, -45.6) # Treat these as lat/lon
         d = {'a': ('address0', p0.coords[0]),
              'b': (None, None)}
@@ -72,7 +72,6 @@ class TestGeocode(unittest.TestCase):
         self.assert_(pd.np.isnan(row['address']))
     
     def test_bad_provider_forward(self):
-        from geopandas.geocode import geocode
         with self.assertRaises(ValueError):
             geocode(['cambridge, ma'], 'badprovider')
 
@@ -81,17 +80,14 @@ class TestGeocode(unittest.TestCase):
             reverse_geocode(['cambridge, ma'], 'badprovider')
 
     def test_googlev3_forward(self):
-        from geopandas.geocode import geocode
         g = geocode(self.locations, provider='googlev3', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
     def test_googlev3_reverse(self):
-        from geopandas.geocode import geocode
         g = reverse_geocode(self.points, provider='googlev3', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
     def test_openmapquest_forward(self):
-        from geopandas.geocode import geocode
         g = geocode(self.locations, provider='openmapquest', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
@@ -99,6 +95,5 @@ class TestGeocode(unittest.TestCase):
 
     @unittest.skip('Nominatim server is unreliable for tests.')
     def test_nominatim(self):
-        from geopandas.geocode import geocode
         g = geocode(self.locations, provider='nominatim', timeout=2)
         self.assertIsInstance(g, gpd.GeoDataFrame)
