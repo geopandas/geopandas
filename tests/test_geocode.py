@@ -34,7 +34,6 @@ class TestGeocode(unittest.TestCase):
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
         # loop
-        from geopandas.tools.geocoding import _prepare_geocode_result
         p0 = Point(12.3, -45.6) # Treat these as lat/lon
         p1 = Point(-23.4, 56.7)
         d = {'a': ('address0', p0.coords[0]),
@@ -58,7 +57,6 @@ class TestGeocode(unittest.TestCase):
         self.assertAlmostEqual(coords[1], test[0])
 
     def test_prepare_result_none(self):
-        from geopandas.tools.geocoding import _prepare_geocode_result
         p0 = Point(12.3, -45.6) # Treat these as lat/lon
         d = {'a': ('address0', p0.coords[0]),
              'b': (None, None)}
