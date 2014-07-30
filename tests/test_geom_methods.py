@@ -5,8 +5,10 @@ import string
 import numpy as np
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_series_equal, assert_frame_equal
-from pandas import Series, DataFrame
-from shapely.geometry import Point, LinearRing, LineString, Polygon
+from pandas import Series, DataFrame, MultiIndex
+from shapely.geometry import (
+    Point, LinearRing, LineString, Polygon, MultiPoint
+)
 from shapely.geometry.collection import GeometryCollection
 
 from geopandas import GeoSeries, GeoDataFrame
@@ -388,6 +390,19 @@ class TestGeomMethods(unittest.TestCase):
         df = GeoDataFrame({'geometry': self.landmarks,
                            'col1': range(len(self.landmarks))})
         self.assert_(df.total_bounds, bbox)
+
+    def test_explode(self):
+        s = GeoSeries([MultiPoint([(0,0), (1,1)]),
+                      MultiPoint([(2,2), (3,3), (4,4)])])
+
+        index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
+        expected = GeoSeries([Point(0,0), Point(1,1), Point(2,2), Point(3,3),
+                              Point(4,4)], index=MultiIndex.from_tuples(index))
+
+        assert_geoseries_equal(expected, s.explode())
+
+        df = self.gdf1[:2].set_geometry(s)
+        assert_geoseries_equal(expected, df.explode())
 
     #
     # Test '&', '|', '^', and '-'
