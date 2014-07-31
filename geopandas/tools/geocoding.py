@@ -7,6 +7,13 @@ import pandas as pd
 from shapely.geometry import Point
 from six import iteritems
 
+try:
+
+    from geopy.geocoders import get_geocoder_for_service
+    from geopy.exc import GeocoderNotFound, GeocoderServiceError
+except ImportError:
+    get_geocoder_for_service = GeocoderNotFound = GeocoderServiceError = None
+
 import geopandas as gpd
 
 
@@ -30,15 +37,11 @@ def geocode(strings, provider='googlev3', **kwargs):
     Parameters
     ----------
     strings : list or Series of addresses to geocode
-    provider : geopy geocoder to use, default 'googlev3'
-        Some providers require additional arguments such as access keys
-        See each geocoder's specific parameters in geopy.geocoders
-        * googlev3, default
-        * bing
-        * google
-        * yahoo
-        * mapquest
-        * openmapquest
+    provider : geopy geocoder to use, default 'googlev3'.
+        Some providers require additional arguments such as access keys.
+        See each geocoder's specific parameters in geopy.geocoders.
+        Any geocoder available in the installed version of geopy is available
+        here; see geopy's documentation for more.
 
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
@@ -74,16 +77,12 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
     points : list or Series of Shapely Point objects.
         x coordinate is longitude
         y coordinate is latitude
-    provider : geopy geocoder to use, default 'googlev3'
-        These are the same options as the geocode() function
-        Some providers require additional arguments such as access keys
-        See each geocoder's specific parameters in geopy.geocoders
-        * googlev3, default
-        * bing
-        * google
-        * yahoo
-        * mapquest
-        * openmapquest
+    provider : geopy geocoder to use, default 'googlev3'.
+        These are the same options as the geocode() function.
+        Some providers require additional arguments such as access keys.
+        See each geocoder's specific parameters in geopy.geocoders.
+        Any geocoder available in the installed version of geopy is available
+        here; see geopy's documentation for more.
 
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
@@ -109,38 +108,27 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
 
 
 def _query(data, forward, provider, **kwargs):
-    import geopy
-    from geopy.geocoders.base import GeocoderQueryError
+    if get_geocoder_for_service is None:
+        raise ImportError("`geopy` package must be installed to geocode.")
 
     if not isinstance(data, pd.Series):
         data = pd.Series(data)
 
-    # workaround changed name in 0.96
     try:
-        Yahoo = geopy.geocoders.YahooPlaceFinder
-    except AttributeError:
-        Yahoo = geopy.geocoders.Yahoo
-
-    coders = {'googlev3': geopy.geocoders.GoogleV3,
-              'bing': geopy.geocoders.Bing,
-              'yahoo': Yahoo,
-              'mapquest': geopy.geocoders.MapQuest,
-              'openmapquest': geopy.geocoders.OpenMapQuest,
-              'nominatim': geopy.geocoders.Nominatim}
-
-    if provider not in coders:
+        geocoder_cls = get_geocoder_for_service(provider)
+    except GeocoderNotFound:
         raise ValueError('Unknown geocoding provider: {0}'.format(provider))
 
-    coder = coders[provider](**kwargs)
+    coder = geocoder_cls(**kwargs)
     results = {}
     for i, s in iteritems(data):
         try:
             if forward:
-                results[i] = coder.geocode(s)
+                results[i] = coder.geocode(s, exactly_one=True)
             else:
                 results[i] = coder.reverse((s.y, s.x), exactly_one=True)
-        except (GeocoderQueryError, ValueError):
-            results[i] = (None, None)
+        except GeocoderServiceError:
+            results[i] = None
         time.sleep(_throttle_time(provider))
 
     df = _prepare_geocode_result(results)
@@ -159,20 +147,15 @@ def _prepare_geocode_result(results):
     d = defaultdict(list)
     index = []
 
-    for i, s in iteritems(results):
-        address, loc = s
-
-        # loc is lat, lon and we want lon, lat
-        if loc is None:
-            p = Point()
+    for i, loc in iteritems(results):
+        if loc is not None:
+            d['geometry'].append(
+                Point(loc.longitude, loc.latitude, loc.altitude)
+            )
+            d['address'].append(loc.address)
         else:
-            p = Point(loc[1], loc[0])
-
-        if address is None:
-            address = np.nan
-
-        d['geometry'].append(p)
-        d['address'].append(address)
+            d['geometry'].append(Point())
+            d['address'].append(np.nan)
         index.append(i)
 
     df = gpd.GeoDataFrame(d, index=index)
