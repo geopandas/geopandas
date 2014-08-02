@@ -21,7 +21,7 @@ Standards-Version: 3.9.3
 X-Python-Version: >= 2.7
 Homepage: https://github.com/geopandas/geopandas
 
-Package: python-fiona
+Package: python-geopandas
 Architecture: any
 Section: science
 Depends: ${shlibs:Depends},

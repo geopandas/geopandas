@@ -1,4 +1,4 @@
-geopandas (0.1.0-0~trusty1) trusty; urgency=low
+geopandas (0.1.0-0~trusty2) trusty; urgency=low
 
   * Initial Debian packaging.
 
