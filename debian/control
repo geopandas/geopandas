@@ -1,0 +1,40 @@
+Source: geopandas
+Maintainer: Angelos Tzotsos <gcpp.kalxas@gmail.com>
+Section: science
+Priority: optional
+Build-Depends: debhelper (>= 9),
+               python-setuptools (>= 0.6),
+               python-support (>=0.6), 
+               dpkg-dev (>= 1.16), 
+               cython, 
+               python-shapely, 
+               python-fiona, 
+               python-pyproj, 
+               python-six, 
+               python-rtree, 
+               python-numpy, 
+               python-pandas, 
+               python-setuptools,
+               python-all (>= 2.7),
+               python-all-dev (>= 2.7)
+Standards-Version: 3.9.3
+X-Python-Version: >= 2.7
+Homepage: https://github.com/geopandas/geopandas
+
+Package: python-fiona
+Architecture: any
+Section: science
+Depends: ${shlibs:Depends},
+         ${misc:Depends}, 
+         python (>=2.7), 
+         python-shapely, 
+         python-fiona, 
+         python-pyproj, 
+         python-six, 
+         python-rtree, 
+         python-numpy, 
+         python-pandas,
+         debconf
+Description: This package contains the geopandas library
+ .
+ Python tools for geographic data
