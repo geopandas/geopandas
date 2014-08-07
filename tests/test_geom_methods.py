@@ -246,6 +246,11 @@ class TestGeomMethods(unittest.TestCase):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real('length', expected, self.g1)
 
+        expected = Series(
+                        np.array([2 + np.sqrt(2), np.nan]),
+                        index=self.na_none.index)
+        self._test_unary_real('length', expected, self.na_none)
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False]
         assert_array_equal(expected, self.g0.crosses(self.t1))
