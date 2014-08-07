@@ -218,6 +218,9 @@ class TestGeomMethods(unittest.TestCase):
         self._test_unary_topological('boundary', expected, self.g1)
 
     def test_area(self):
+        expected = Series(np.array([0.5, 1.0]), index=self.g1.index)
+        self._test_unary_real('area', expected, self.g1)
+
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real('area', expected, self.na_none)
 
