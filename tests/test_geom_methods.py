@@ -36,7 +36,7 @@ class TestGeomMethods(unittest.TestCase):
         self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
-        self.na_none = GeoSeries([self.t1, self.t2, None])
+        self.na_none = GeoSeries([self.t1, None])
         self.a1 = self.g1.copy()
         self.a1.index = ['A', 'B']
         self.a2 = self.g2.copy()
@@ -218,8 +218,8 @@ class TestGeomMethods(unittest.TestCase):
         self._test_unary_topological('boundary', expected, self.g1)
 
     def test_area(self):
-        expected = Series(np.array([0.5, 1.0]), index=self.g1.index)
-        self._test_unary_real('area', expected, self.g1)
+        expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
+        self._test_unary_real('area', expected, self.na_none)
 
     def test_bounds(self):
         # Set columns to get the order right

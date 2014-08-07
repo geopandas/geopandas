@@ -4,6 +4,7 @@ except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
 from collections import defaultdict
+from types import NoneType
 import json
 import os
 import sys
@@ -139,7 +140,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) for item in level):
+        if not all(isinstance(item, (BaseGeometry, NoneType)) for item in level):
             raise TypeError("Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name

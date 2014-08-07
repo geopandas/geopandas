@@ -57,7 +57,7 @@ def _geo_unary_op(this, op):
 
 def _series_unary_op(this, op):
     """Unary operation that returns a Series"""
-    return Series([getattr(geom, op) for geom in this.geometry],
+    return Series([getattr(geom, op, np.nan) for geom in this.geometry],
                      index=this.index)
 
 
