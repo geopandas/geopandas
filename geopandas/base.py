@@ -40,14 +40,17 @@ def _geo_op(this, other, op):
 # TODO: think about merging with _geo_op
 def _series_op(this, other, op, **kwargs):
     """Geometric operation that returns a pandas Series"""
+    null_val = False if op != 'distance' else np.nan
+
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs)
-                      for this_elem, other_elem in zip(this, other)],
-                      index=this.index)
+        return Series([getattr(this_elem, op)(other_elem, **kwargs) 
+                    if not this_elem.is_empty | other_elem.is_empty else null_val
+                    for this_elem, other_elem in zip(this, other)],
+                    index=this.index)
     else:
-        return Series([getattr(s, op)(other, **kwargs)
+        return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
 
 def _geo_unary_op(this, op):

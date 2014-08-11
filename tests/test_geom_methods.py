@@ -22,6 +22,7 @@ class TestGeomMethods(unittest.TestCase):
     def setUp(self):
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+        self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.inner_sq = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75),
                             (0.25, 0.75)])
@@ -48,6 +49,7 @@ class TestGeomMethods(unittest.TestCase):
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+        self.g6 = GeoSeries([self.p0, self.t3])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -262,9 +264,23 @@ class TestGeomMethods(unittest.TestCase):
         expected = [False, False, False, False, False, True]
         assert_array_equal(expected, self.g0.disjoint(self.t1))
 
+    def test_distance(self):
+        expected = Series(np.array([
+                          np.sqrt((5 - 1)**2 + (5 - 1)**2),
+                          np.nan]),
+                    self.na_none.index)
+        assert_array_equal(expected, self.na_none.distance(self.p0))
+
+        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]),
+                          self.g6.index)
+        assert_array_equal(expected, self.g6.distance(self.na_none))
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False]
         assert_array_equal(expected, self.g0.intersects(self.t1))
+
+        expected = [True, False]
+        assert_array_equal(expected, self.na_none.intersects(self.t2))
 
     def test_overlaps(self):
         expected = [True, True, False, False, False, False]
