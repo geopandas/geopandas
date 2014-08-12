@@ -28,7 +28,7 @@ class TestDataFrame(unittest.TestCase):
         self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
         self.df2 = GeoDataFrame([
-            {'geometry' : Point(x, y), 'value1': x + y, 'value2': x * y}
+            {'geometry': Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
 
     def tearDown(self):
@@ -86,7 +86,7 @@ class TestDataFrame(unittest.TestCase):
                                   check_dtype=True, check_index_type=True)
 
         df = self.df.copy()
-        new_geom = [Point(x,y) for x, y in zip(range(len(self.df)),
+        new_geom = [Point(x, y) for x, y in zip(range(len(self.df)),
                                                range(len(self.df)))]
         df.geometry = new_geom
 
@@ -131,7 +131,7 @@ class TestDataFrame(unittest.TestCase):
             df.geometry = df
 
     def test_set_geometry(self):
-        geom = GeoSeries([Point(x,y) for x,y in zip(range(5), range(5))])
+        geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
 
         df2 = self.df.set_geometry(geom)
@@ -178,7 +178,7 @@ class TestDataFrame(unittest.TestCase):
         assert_geoseries_equal(df3.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
-        geom = [Point(x,y) for x,y in zip(range(5), range(5))]
+        geom = [Point(x, y) for x, y in zip(range(5), range(5))]
         ret = self.df.set_geometry(geom, inplace=True)
         self.assert_(ret is None)
         geom = GeoSeries(geom, index=self.df.index, crs=self.df.crs)
@@ -224,7 +224,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
-        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+        self.df['Shape_Area'][self.df['BoroName'] == 'Queens'] = np.nan
 
         text = self.df.to_json()
         data = json.loads(text)
@@ -241,8 +241,8 @@ class TestDataFrame(unittest.TestCase):
             text = self.df.to_json(na='garbage')
 
     def test_to_json_dropna(self):
-        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
-        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+        self.df['Shape_Area'][self.df['BoroName'] == 'Queens'] = np.nan
+        self.df['Shape_Leng'][self.df['BoroName'] == 'Bronx'] = np.nan
 
         text = self.df.to_json(na='drop')
         data = json.loads(text)
@@ -263,8 +263,8 @@ class TestDataFrame(unittest.TestCase):
                 self.assertEqual(len(props), 4)
 
     def test_to_json_keepna(self):
-        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
-        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+        self.df['Shape_Area'][self.df['BoroName'] == 'Queens'] = np.nan
+        self.df['Shape_Leng'][self.df['BoroName'] == 'Bronx'] = np.nan
 
         text = self.df.to_json(na='keep')
         data = json.loads(text)
@@ -310,7 +310,7 @@ class TestDataFrame(unittest.TestCase):
     def test_mixed_types_to_file(self):
         """ Test that mixed geometry types raise error when writing to file """
         tempfilename = os.path.join(self.tempdir, 'test.shp')
-        s = GeoDataFrame({'geometry' : [Point(0, 0),
+        s = GeoDataFrame({'geometry': [Point(0, 0),
                                         Polygon([(0, 0), (1, 0), (1, 1)])]})
         with self.assertRaises(ValueError):
             s.to_file(tempfilename)
@@ -344,17 +344,17 @@ class TestDataFrame(unittest.TestCase):
         self.assert_(df.crs == crs)
 
     def test_from_features_unaligned_properties(self):
-        p1 = Point(1,1)
-        f1 = {'type': 'Feature', 
-                'properties': {'a': 0}, 
+        p1 = Point(1, 1)
+        f1 = {'type': 'Feature',
+                'properties': {'a': 0},
                 'geometry': p1.__geo_interface__}
 
-        p2 = Point(2,2)
+        p2 = Point(2, 2)
         f2 = {'type': 'Feature',
                 'properties': {'b': 1},
                 'geometry': p2.__geo_interface__}
 
-        p3 = Point(3,3)
+        p3 = Point(3, 3)
         f3 = {'type': 'Feature',
                 'properties': {'a': 2},
                 'geometry': p3.__geo_interface__}

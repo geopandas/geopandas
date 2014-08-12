@@ -3,7 +3,6 @@ try:
 except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
-from collections import defaultdict
 from types import NoneType
 import json
 import os
@@ -153,7 +152,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoDataFrame from a file.
-        
+
         Example:
             df = geopandas.GeoDataFrame.from_file('nybb.shp')
 
@@ -200,9 +199,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col, 
+        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
-
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
         """Returns a GeoJSON string representation of the GeoDataFrame.
@@ -218,7 +216,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson
-        
+
         The remaining *kwargs* are passed to json.dumps().
         """
         return json.dumps(self._to_geo(na, show_bbox), **kwargs)
@@ -279,7 +277,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 'type': 'Feature',
                 'properties':
                     dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
-                'geometry': mapping(row[self._geometry_column_name]) }
+                'geometry': mapping(row[self._geometry_column_name])}
 
             if show_bbox:
                 feat['bbox'] = bbox
@@ -293,26 +291,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             geo['bbox'] = self.total_bounds
 
         return geo
-            
+
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         """
         Write this GeoDataFrame to an OGR data source
-        
+
         A dictionary of supported OGR providers is available via:
         >>> import fiona
         >>> fiona.supported_drivers
 
         Parameters
         ----------
-        filename : string 
+        filename : string
             File path or file handle to write to.
         driver : string, default 'ESRI Shapefile'
             The OGR format driver used to write the vector file.
 
-        The *kwargs* are passed to fiona.open and can be used to write 
+        The *kwargs* are passed to fiona.open and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         """
         import fiona
+
         def convert_type(in_type):
             if in_type == object:
                 return 'str'
@@ -320,19 +319,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if out_type == 'long':
                 out_type = 'int'
             return out_type
-            
+
         def feature(i, row):
             return {
                 'id': str(i),
                 'type': 'Feature',
                 'properties':
                     dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
-                'geometry': mapping(row['geometry']) }
-        
-        properties = OrderedDict([(col, convert_type(_type)) for col, _type 
-            in zip(self.columns, self.dtypes) if col!='geometry'])
-        # Need to check geom_types before we write to file... 
-        # Some (most?) providers expect a single geometry type: 
+                'geometry': mapping(row['geometry'])}
+
+        properties = OrderedDict([(col, convert_type(_type)) for col, _type
+            in zip(self.columns, self.dtypes) if col != 'geometry'])
+        # Need to check geom_types before we write to file...
+        # Some (most?) providers expect a single geometry type:
         # Point, LineString, or Polygon
         geom_types = self['geometry'].geom_type.unique()
         from os.path import commonprefix # To find longest common prefix
@@ -342,7 +341,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                              "geometry types when writing to file.")
         schema = {'geometry': geom_type, 'properties': properties}
         filename = os.path.abspath(os.path.expanduser(filename))
-        with fiona.open(filename, 'w', driver=driver, crs=self.crs, 
+        with fiona.open(filename, 'w', driver=driver, crs=self.crs,
                         schema=schema, **kwargs) as c:
             for i, row in self.iterrows():
                 c.write(feature(i, row))
@@ -436,6 +435,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
