@@ -30,6 +30,8 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry': Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
+        self.df3 = read_file('examples/null_geom.geojson')
+        self.line_paths = self.df3['Name']
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -290,11 +292,20 @@ class TestDataFrame(unittest.TestCase):
         """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
-        # Read layer back in?
+        # Read layer back in
         df = GeoDataFrame.from_file(tempfilename)
         self.assertTrue('geometry' in df)
         self.assertTrue(len(df) == 5)
         self.assertTrue(np.alltrue(df['BoroName'].values == self.boros))
+
+        # Write layer with null geometry out to file
+        tempfilename = os.path.join(self.tempdir, 'null_geom.shp')
+        self.df3.to_file(tempfilename)
+        # Read layer back in
+        df3 = GeoDataFrame.from_file(tempfilename)
+        self.assertTrue('geometry' in df3)
+        self.assertTrue(len(df3) == 2)
+        self.assertTrue(np.alltrue(df3['Name'].values == self.line_paths))
 
     def test_to_file_types(self):
         """ Test various integer type columns (GH#93) """

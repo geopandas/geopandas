@@ -68,7 +68,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not isinstance(col, (list, np.ndarray, Series)):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
-
         self.set_geometry(col, inplace=True)
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -177,7 +176,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 f = f
 
-            d = {'geometry': shape(f['geometry'])}
+            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
             d.update(f['properties'])
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
@@ -326,8 +325,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 'type': 'Feature',
                 'properties':
                     dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
-                'geometry': mapping(row['geometry'])}
-
+                'geometry': mapping(row['geometry']) if row['geometry']
+                    else None}
         properties = OrderedDict([(col, convert_type(_type)) for col, _type
             in zip(self.columns, self.dtypes) if col != 'geometry'])
         # Need to check geom_types before we write to file...
@@ -335,7 +334,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # Point, LineString, or Polygon
         geom_types = self['geometry'].geom_type.unique()
         from os.path import commonprefix # To find longest common prefix
-        geom_type = commonprefix([g[::-1] for g in geom_types])[::-1]  # Reverse
+        geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
         if geom_type == '': # No common suffix = mixed geometry types
             raise ValueError("Geometry column cannot contains mutiple "
                              "geometry types when writing to file.")
