@@ -58,9 +58,9 @@ def _geo_unary_op(this, op):
     return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
                      index=this.index, crs=this.crs)
 
-def _series_unary_op(this, op):
+def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
-    return Series([getattr(geom, op, np.nan) for geom in this.geometry],
+    return Series([getattr(geom, op, null_value) for geom in this.geometry],
                      index=this.index)
 
 
@@ -85,12 +85,12 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'area')
+        return _series_unary_op(self, 'area', np.nan)
 
     @property
     def geom_type(self):
         """Return the geometry type of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'geom_type')
+        return _series_unary_op(self, 'geom_type', None)
 
     @property
     def type(self):
@@ -100,7 +100,7 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Return the length of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'length')
+        return _series_unary_op(self, 'length', np.nan)
 
     @property
     def is_valid(self):
@@ -115,7 +115,7 @@ class GeoPandasBase(object):
     @property
     def is_simple(self):
         """Return True for each simple geometry, else False"""
-        return _series_unary_op(self, 'is_simple')
+        return _series_unary_op(self, 'is_simple', False)
 
     @property
     def is_ring(self):
