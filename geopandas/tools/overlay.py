@@ -107,15 +107,15 @@ def overlay(df1, df2, how, use_sindex=True):
         # Test intersection with original polys
         # FIXME there should be a higher-level abstraction to search by bounds
         # and fall back in the case of no index?
-        if hasattr(df1, '_sindex') and df1._sindex is not None and use_sindex:
+        if use_sindex and df1.sindex is not None:
             candidates1 = [x.object for x in
-                           df1._sindex.intersection(newpoly.bounds, objects=True)]
+                           df1.sindex.intersection(newpoly.bounds, objects=True)]
         else:
             candidates1 = [i for i, x in df1.iterrows()]
 
-        if hasattr(df2, '_sindex') and df2._sindex is not None and use_sindex:
+        if use_sindex and df2.sindex is not None:
             candidates2 = [x.object for x in
-                           df2._sindex.intersection(newpoly.bounds, objects=True)]
+                           df2.sindex.intersection(newpoly.bounds, objects=True)]
         else:
             candidates2 = [i for i, x in df2.iterrows()]
 
