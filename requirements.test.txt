@@ -1,6 +1,6 @@
 psycopg2>=2.5.1
 SQLAlchemy>=0.8.3
-geopy>=0.99
+geopy==0.99
 matplotlib>=1.2.1
 descartes>=1.0
 pytest-cov

@@ -15,7 +15,7 @@ env:
 before_install:
   - sudo add-apt-repository -y ppa:ubuntugis/ppa
   - sudo apt-get update
-  - sudo apt-get install gdal-bin libgdal-dev libspatialindex-dev libspatialindex1
+  - sudo apt-get install libgdal1h gdal-bin libgdal-dev libspatialindex-dev libspatialindex1
 #  - sudo -u postgres psql -c "drop database if exists test_geopandas"
 #  - sudo -u postgres psql -c "create database test_geopandas"
 #  - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
