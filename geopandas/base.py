@@ -79,14 +79,14 @@ class GeoPandasBase(object):
             except RTreeError:
                 pass
 
-    def _reset_sindex(self):
+    def _invalidate_sindex(self):
         """
         Indicates that the spatial index should be re-built next
         time it's requested.
 
         """
         self._sindex = None
-        self._sindex_built = False
+        self._sindex_valid = False
 
     @property
     def area(self):
@@ -283,9 +283,9 @@ class GeoPandasBase(object):
 
     @property
     def sindex(self):
-        if not self._sindex_built:
+        if not self._sindex_valid:
             self._generate_sindex()
-            self._sindex_built = True
+            self._sindex_valid = True
         return self._sindex
 
     def buffer(self, distance, resolution=16):

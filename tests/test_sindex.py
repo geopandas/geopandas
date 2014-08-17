@@ -77,7 +77,7 @@ class TestFrameSindex(unittest.TestCase):
         self.df.set_geometry(
             [Point(x, y) for x, y in zip(range(5, 10), range(5, 10))],
             inplace=True)
-        self.assert_(self.df._sindex_built == False)
+        self.assert_(self.df._sindex_valid == False)
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
