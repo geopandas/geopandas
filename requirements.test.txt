@@ -3,5 +3,6 @@ SQLAlchemy>=0.8.3
 geopy==0.99
 matplotlib>=1.2.1
 descartes>=1.0
+mock>=1.0.1  # technically not need for python >= 3.3
 pytest-cov
 coveralls
