@@ -26,7 +26,8 @@ uninteresting_tags = set([
 
 
 # http://wiki.openstreetmap.org/wiki/Overpass_API/Language_Guide
-def query_osm(typ, bbox=None, recurse=None, tags='', raw=False, **kwargs):
+def query_osm(typ, bbox=None, recurse=None, tags='', raw=False, 
+              meta=False, **kwargs):
     """
     Query the Overpass API to obtain OpenStreetMap data.
     
@@ -70,6 +71,9 @@ def query_osm(typ, bbox=None, recurse=None, tags='', raw=False, **kwargs):
         Return the raw XML data returned by the request
     render : boolean, default True
         Parse the output and return a final GeoDataFrame
+    meta : boolean, default False
+        Indicates whether to query the metadata with each OSM object. This
+        includes the changeset, timestamp, uid, user, and version.
                 
     Returns
     -------
@@ -80,7 +84,7 @@ def query_osm(typ, bbox=None, recurse=None, tags='', raw=False, **kwargs):
         >>> df = df[df.type == 'LineString']
 
     """
-    url = _build_url(typ, bbox, recurse, tags)
+    url = _build_url(typ, bbox, recurse, tags, meta)
 
     # TODO: Raise on non-200 (or 400-599)
     with urlopen(url) as response:
@@ -91,7 +95,7 @@ def query_osm(typ, bbox=None, recurse=None, tags='', raw=False, **kwargs):
     return read_osm(content, **kwargs)
 
 
-def _build_url(typ, bbox=None, recurse=None, tags=''):
+def _build_url(typ, bbox=None, recurse=None, tags='', meta=False):
     recurse_map = {
         'up': '<',
         'uprel': '<<',
@@ -121,8 +125,13 @@ def _build_url(typ, bbox=None, recurse=None, tags=''):
         bboxstr = "({})".format(
             ','.join(str(b) for b in (bbox[1], bbox[0], bbox[3], bbox[2])))
 
-    query = '({typ}{bbox}{queries};{recurse});out;'.format(
-        typ=typ, bbox=bboxstr, queries=queries, recurse=recursestr)
+    if meta:
+        metastr = 'meta'
+    else:
+        metastr = ''
+
+    query = '({typ}{bbox}{queries};{recurse});out {meta};'.format(
+        typ=typ, bbox=bboxstr, queries=queries, recurse=recursestr, meta=metastr)
 
     url = ''.join(['http://www.overpass-api.de/api/interpreter?', 
                    urlencode({'data': query})])
@@ -146,10 +155,7 @@ def read_osm(content, render=True, **kwargs):
     #   </node>
     nodes = []
     for xmlnode in doc.findall('node'):
-        attrib = xmlnode.attrib
-        node = {'id': attrib['id'],
-                'lon': float(attrib['lon']),
-                'lat': float(attrib['lat'])}
+        node = xmlnode.attrib.copy()
         for t in xmlnode.findall('tag'):
             k = t.attrib['k']
             if k not in uninteresting_tags:
@@ -176,10 +182,9 @@ def read_osm(content, render=True, **kwargs):
     for xmlway in doc.findall('way'):
         wayid = xmlway.attrib['id']
         for i, xmlnd in enumerate(xmlway.findall('nd')):
-            attrib = xmlnd.attrib
-            waynodes.append({'id': wayid,
-                             'ref': attrib['ref'],
-                             'index': i})
+            d = xmlnd.attrib.copy()
+            d['index'] = i
+            waynodes.append(d)
 
         tags = {'id': wayid}
         for t in xmlway.findall('tag'):
@@ -208,12 +213,9 @@ def read_osm(content, render=True, **kwargs):
     for xmlrel in doc.findall('relation'):
         relid = xmlrel.attrib['id']
         for i, xmlmember in enumerate(xmlrel.findall('member')):
-            attrib = xmlmember.attrib
-            relmembers.append({'id': relid,
-                               'ref': attrib['ref'],
-                               'type': attrib['type'],
-                               'role': attrib['role'],
-                               'index': i})
+            d = xmlmember.attrib.copy()
+            d['index'] = i
+            relmembers.append(d)
 
         tags = {'id': relid}
         for t in xmlrel.findall('tag'):
@@ -224,6 +226,16 @@ def read_osm(content, render=True, **kwargs):
 
     data = OSMData(*(pd.DataFrame.from_dict(x)
                      for x in (nodes, waynodes, waytags, relmembers, reltags)))
+    
+    # Put some columns in the right format. Return 'lon', 'lat' in nodes
+    # as floats. If meta is set to True, then convert the 'timestamp'
+    # field to a datetime64 so we can do all the fancy Pandas datetime
+    # operations
+    data.nodes['lon'] = data.nodes['lon'].astype(float)
+    data.nodes['lat'] = data.nodes['lat'].astype(float)
+    for df in data:
+        if 'timestamp' in df:
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
 
     if render:
         data = render_to_gdf(data, **kwargs)
