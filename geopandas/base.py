@@ -6,6 +6,7 @@ from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
 import numpy as np
+import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
@@ -70,7 +71,7 @@ class GeoPandasBase(object):
         else:
             stream = ((i, item.bounds, idx) for i, (idx, item) in
                    enumerate(self.geometry.iteritems()) if 
-                   item and not item.is_empty)
+                   pd.notnull(item) and not item.is_empty)
             try:
                 self._sindex = SpatialIndex(stream)
             # What we really want here is an empty generator error, or
