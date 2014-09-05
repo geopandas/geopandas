@@ -165,7 +165,7 @@ class GeoPandasBase(object):
     def interiors(self):
         """Return the interior rings of each polygon"""
         # TODO: return empty list or None for non-polygons
-        return _geo_unary_op(self, 'interiors')
+        return _series_unary_op(self, 'interiors')
 
     def representative_point(self):
         """Return a GeoSeries of points guaranteed to be in each geometry"""
