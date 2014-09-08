@@ -48,7 +48,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
-            self._generate_sindex()
+        self._invalidate_sindex()
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -144,7 +144,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
-        frame._generate_sindex()
+        frame._invalidate_sindex()
         if not inplace:
             return frame
 
@@ -182,7 +182,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
         df.crs = crs
-        df._generate_sindex()
         return df
 
     @classmethod
@@ -376,14 +375,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(key, string_types) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
+            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
             result._geometry_column_name = geo_col
-            result._generate_sindex()
+            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
-            result.crs = self.crs
         return result
 
     #
@@ -397,10 +396,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = GeoDataFrame
             result.crs = self.crs
             result._geometry_column_name = geo_col
-            result._generate_sindex()
+            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
-            result.crs = self.crs
         return result
 
     @property

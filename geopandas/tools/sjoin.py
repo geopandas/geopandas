@@ -29,9 +29,9 @@ def sjoin(left_df, right_df, how="left", op="intersects", use_sindex=True, **kwa
     for i, feat in left_df.iterrows():
         geom = feat.geometry
 
-        if hasattr(right_df, '_sindex') and right_df._sindex is not None and use_sindex:
+        if use_sindex and right_df.sindex:
             candidates = [x.object for x in
-                           right_df._sindex.intersection(geom.bounds, objects=True)]
+                           right_df.sindex.intersection(geom.bounds, objects=True)]
         else:
             candidates = [i for i, x in right_df.iterrows()]
 

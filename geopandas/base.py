@@ -79,6 +79,15 @@ class GeoPandasBase(object):
             except RTreeError:
                 pass
 
+    def _invalidate_sindex(self):
+        """
+        Indicates that the spatial index should be re-built next
+        time it's requested.
+
+        """
+        self._sindex = None
+        self._sindex_valid = False
+
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
@@ -271,6 +280,13 @@ class GeoPandasBase(object):
                 b['miny'].min(),
                 b['maxx'].max(),
                 b['maxy'].max())
+
+    @property
+    def sindex(self):
+        if not self._sindex_valid:
+            self._generate_sindex()
+            self._sindex_valid = True
+        return self._sindex
 
     def buffer(self, distance, resolution=16):
         return gpd.GeoSeries([geom.buffer(distance, resolution) 
