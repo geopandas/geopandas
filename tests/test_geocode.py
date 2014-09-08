@@ -4,14 +4,16 @@ import sys
 
 from fiona.crs import from_epsg
 import pandas as pd
+import pandas.util.testing as tm
 from shapely.geometry import Point
 import geopandas as gpd
 import nose
 
+from geopandas import GeoSeries
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
-from .util import unittest
+from .util import unittest, mock, assert_geoseries_equal
 
 
 def _skip_if_no_geopy():
@@ -22,6 +24,41 @@ def _skip_if_no_geopy():
     except SyntaxError:
         raise nose.SkipTest("Geopy is known to be broken on Python 3.2. "
                             "Skipping tests.")
+
+
+class ForwardMock(mock.MagicMock):
+    """
+    Mock the forward geocoding function.
+    Returns the passed in address and (p, p+.5) where p increases
+    at each call
+
+    """
+    def __init__(self, *args, **kwargs):
+        super(ForwardMock, self).__init__(*args, **kwargs)
+        self._n = 0.0
+
+    def __call__(self, *args, **kwargs):
+        self.return_value = args[0], (self._n, self._n + 0.5)
+        self._n += 1
+        return super(ForwardMock, self).__call__(*args, **kwargs)
+
+
+class ReverseMock(mock.MagicMock):
+    """
+    Mock the reverse geocoding function.
+    Returns the passed in point and 'address{p}' where p increases
+    at each call
+
+    """
+    def __init__(self, *args, **kwargs):
+        super(ReverseMock, self).__init__(*args, **kwargs)
+        self._n = 0
+
+    def __call__(self, *args, **kwargs):
+        self.return_value = 'address{0}'.format(self._n), args[0]
+        self._n += 1
+        return super(ReverseMock, self).__call__(*args, **kwargs)
+
 
 class TestGeocode(unittest.TestCase):
     def setUp(self):
@@ -79,21 +116,31 @@ class TestGeocode(unittest.TestCase):
         with self.assertRaises(ValueError):
             reverse_geocode(['cambridge, ma'], 'badprovider')
 
-    def test_googlev3_forward(self):
-        g = geocode(self.locations, provider='googlev3', timeout=2)
+    def test_forward(self):
+        with mock.patch('geopy.geocoders.googlev3.GoogleV3.geocode',
+                        ForwardMock()) as m:
+            g = geocode(self.locations, provider='googlev3', timeout=2)
+            self.assertEqual(len(self.locations), m.call_count)
+
+        n = len(self.locations)
+        self.assertIsInstance(g, gpd.GeoDataFrame)
+        expected = GeoSeries([Point(float(x)+0.5, float(x)) for x in range(n)],
+                             crs=from_epsg(4326))
+        assert_geoseries_equal(expected, g['geometry'])
+        tm.assert_series_equal(g['address'],
+                               pd.Series(self.locations, name='address'))
+
+
+    def test_reverse(self):
+        with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
+                        ReverseMock()) as m:
+            g = reverse_geocode(self.points, provider='googlev3', timeout=2)
+            self.assertEqual(len(self.points), m.call_count)
+
         self.assertIsInstance(g, gpd.GeoDataFrame)
 
-    def test_googlev3_reverse(self):
-        g = reverse_geocode(self.points, provider='googlev3', timeout=2)
-        self.assertIsInstance(g, gpd.GeoDataFrame)
-
-    def test_openmapquest_forward(self):
-        g = geocode(self.locations, provider='openmapquest', timeout=2)
-        self.assertIsInstance(g, gpd.GeoDataFrame)
-
-    # openmapquest does not have reverse implemented in geopy
-
-    @unittest.skip('Nominatim server is unreliable for tests.')
-    def test_nominatim(self):
-        g = geocode(self.locations, provider='nominatim', timeout=2)
-        self.assertIsInstance(g, gpd.GeoDataFrame)
+        expected = GeoSeries(self.points, crs=from_epsg(4326))
+        assert_geoseries_equal(expected, g['geometry'])
+        tm.assert_series_equal(g['address'],
+                               pd.Series('address' + str(x) 
+                                    for x in range(len(self.points))))

@@ -23,6 +23,11 @@ except ImportError:
         pass
 
 try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
+
+try:
     from pandas import read_sql_table
 except ImportError:
     PANDAS_NEW_SQL_API = False
