@@ -183,6 +183,7 @@ def read_osm(content, render=True, **kwargs):
         wayid = xmlway.attrib['id']
         for i, xmlnd in enumerate(xmlway.findall('nd')):
             d = xmlnd.attrib.copy()
+            d['id'] = wayid
             d['index'] = i
             waynodes.append(d)
 
@@ -214,6 +215,7 @@ def read_osm(content, render=True, **kwargs):
         relid = xmlrel.attrib['id']
         for i, xmlmember in enumerate(xmlrel.findall('member')):
             d = xmlmember.attrib.copy()
+            d['id'] = relid
             d['index'] = i
             relmembers.append(d)
 
