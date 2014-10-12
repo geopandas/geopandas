@@ -185,7 +185,7 @@ class GeoPandasBase(object):
     @property
     def unary_union(self):
         """Return the union of all geometries"""
-        return unary_union(self.values)
+        return unary_union(self.geometry.values)
 
     #
     # Binary operations that return a pandas Series
