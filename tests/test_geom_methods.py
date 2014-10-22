@@ -10,6 +10,7 @@ from shapely.geometry import (
     Point, LinearRing, LineString, Polygon, MultiPoint
 )
 from shapely.geometry.collection import GeometryCollection
+from shapely.ops import unary_union
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.base import GeoPandasBase
@@ -73,7 +74,7 @@ class TestGeomMethods(unittest.TestCase):
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            fcmp = lambda a, b: self.assert_(geom_equals(a, b))
+            fcmp = lambda a, b: self.assert_(a.equals(b))
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
@@ -234,6 +235,14 @@ class TestGeomMethods(unittest.TestCase):
         gdf = self.gdf1.set_geometry(self.g1)
         result = gdf.bounds
         assert_frame_equal(expected, result)
+
+    def test_unary_union(self):
+        p1 = self.t1
+        p2 = Polygon([(2, 0), (3, 0), (3, 1)])
+        expected = unary_union([p1, p2])
+        g = GeoSeries([p1, p2])
+
+        self._test_unary_topological('unary_union', expected, g)
 
     def test_contains(self):
         expected = [True, False, True, False, False, False]

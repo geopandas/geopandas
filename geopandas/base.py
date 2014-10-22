@@ -6,6 +6,7 @@ from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
 import numpy as np
+import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
@@ -70,7 +71,7 @@ class GeoPandasBase(object):
         else:
             stream = ((i, item.bounds, idx) for i, (idx, item) in
                    enumerate(self.geometry.iteritems()) if 
-                   item and not item.is_empty)
+                   pd.notnull(item) and not item.is_empty)
             try:
                 self._sindex = SpatialIndex(stream)
             # What we really want here is an empty generator error, or
@@ -164,7 +165,7 @@ class GeoPandasBase(object):
     def interiors(self):
         """Return the interior rings of each polygon"""
         # TODO: return empty list or None for non-polygons
-        return _geo_unary_op(self, 'interiors')
+        return _series_unary_op(self, 'interiors')
 
     def representative_point(self):
         """Return a GeoSeries of points guaranteed to be in each geometry"""
@@ -184,7 +185,7 @@ class GeoPandasBase(object):
     @property
     def unary_union(self):
         """Return the union of all geometries"""
-        return unary_union(self.values)
+        return unary_union(self.geometry.values)
 
     #
     # Binary operations that return a pandas Series

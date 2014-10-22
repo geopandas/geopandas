@@ -224,7 +224,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
-        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
+        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
 
         text = self.df.to_json()
         data = json.loads(text)
@@ -241,8 +241,8 @@ class TestDataFrame(unittest.TestCase):
             text = self.df.to_json(na='garbage')
 
     def test_to_json_dropna(self):
-        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
-        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
 
         text = self.df.to_json(na='drop')
         data = json.loads(text)
@@ -263,8 +263,8 @@ class TestDataFrame(unittest.TestCase):
                 self.assertEqual(len(props), 4)
 
     def test_to_json_keepna(self):
-        self.df['Shape_Area'][self.df['BoroName']=='Queens'] = np.nan
-        self.df['Shape_Leng'][self.df['BoroName']=='Bronx'] = np.nan
+        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
 
         text = self.df.to_json(na='keep')
         data = json.loads(text)
