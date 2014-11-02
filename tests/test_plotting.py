@@ -8,6 +8,7 @@ import unittest
 import matplotlib
 matplotlib.use('Agg', warn=False)
 from matplotlib.pyplot import Artist, savefig, clf
+from matplotlib.colorbar import Colorbar
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from shapely.geometry import Polygon, LineString, Point
@@ -105,8 +106,9 @@ class PlotTests(unittest.TestCase):
         """ Test plotting of a noncategorical GeoDataFrame"""
         clf()
         filename = 'df_noncat_leg_plot.png'
-        ax = self.df.plot(column='values', categorical=False, legend=True)
+        ax, cbar = self.df.plot(column='values', categorical=False, legend=True)
         self._compare_images(ax=ax, filename=filename)
+        self.assertTrue(isinstance(cbar, Colorbar))
 
 if __name__ == '__main__':
     unittest.main()

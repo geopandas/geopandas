@@ -153,7 +153,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             lines or points.
 
         legend : bool (default False)
-            Plot a legend (Experimental)
+            Plot a legend or colorbar (Experimental)
 
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
@@ -168,7 +168,11 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         Returns
         -------
 
-        matplotlib axes instance
+        ax : matplotlib axes instance
+            Axes on which the dataframe was plotted
+        cbar : matplotlib.colorbar.Colorbar (optional)
+            Colorbar of the noncategorical plot. Returned only if `categorical`
+            is False and `legend` is True.
     """
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
@@ -206,6 +210,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             # TODO: color point geometries
             elif geom.type == 'Point':
                 plot_point(ax, geom)
+        cbar = None
         if legend:
             if categorical:
                 patches = []
@@ -215,9 +220,12 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
-                ax.get_figure().colorbar(cmap)
+                cbar = ax.get_figure().colorbar(cmap)
     plt.draw()
-    return ax
+    if cbar:
+        return ax, cbar
+    else:
+        return ax
 
 
 def __pysal_choro(values, scheme, k=5):
