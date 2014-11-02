@@ -13,7 +13,8 @@ from matplotlib.testing.compare import compare_images
 from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
 
-from geopandas import GeoSeries
+from geopandas import GeoSeries, read_file
+from .util import download_nybb
 
 
 # If set to True, generate images rather than perform tests (all tests will pass!)
@@ -25,6 +26,11 @@ BASELINE_DIR = os.path.join(os.path.dirname(__file__), 'baseline_images', 'test_
 class PlotTests(unittest.TestCase):
     
     def setUp(self):
+        nybb_filename = download_nybb()
+
+        self.df = read_file('/nybb_14a_av/nybb.shp', 
+                            vfs='zip://' + nybb_filename)
+        self.df['values'] = [0.1, 0.2, 0.1, 0.3, 0.4]
         self.tempdir = tempfile.mkdtemp()
         return
 
@@ -72,6 +78,27 @@ class PlotTests(unittest.TestCase):
         N = 10
         lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(N)])
         ax = lines.plot()
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_plot(self):
+        """ Test plotting of a dataframe """
+        clf()
+        filename = 'df_plot.png'
+        ax = self.df.plot()
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_categorical_plot(self):
+        """ Test plotting of a categorical GeoDataFrame with legend """
+        clf()
+        filename = 'df_cat_leg_plot.png'
+        ax = self.df.plot(column='values', categorical=True, legend=True)
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_noncategorical_plot(self):
+        """ Test plotting of a noncategorical GeoDataFrame"""
+        clf()
+        filename = 'df_noncat_plot.png'
+        ax = self.df.plot(column='values', categorical=False)
         self._compare_images(ax=ax, filename=filename)
 
 if __name__ == '__main__':
