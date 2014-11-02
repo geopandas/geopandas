@@ -153,8 +153,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             lines or points.
 
         legend : bool (default False)
-            Plot a legend (Experimental; currently for categorical
-            plots only)
+            Plot a legend (Experimental)
 
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
@@ -216,8 +215,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
-                # TODO: show a colorbar
-                raise NotImplementedError
+                ax.get_figure().colorbar(cmap)
     plt.draw()
     return ax
 
@@ -296,6 +294,7 @@ def norm_cmap(values, cmap, normalize, cm):
     mn, mx = min(values), max(values)
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap  = cm.ScalarMappable(norm=norm, cmap=cmap)
+    n_cmap.set_array(values)
     return n_cmap
 
 

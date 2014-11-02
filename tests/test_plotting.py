@@ -101,5 +101,12 @@ class PlotTests(unittest.TestCase):
         ax = self.df.plot(column='values', categorical=False)
         self._compare_images(ax=ax, filename=filename)
 
+    def test_dataframe_noncategorical_leg_plot(self):
+        """ Test plotting of a noncategorical GeoDataFrame"""
+        clf()
+        filename = 'df_noncat_leg_plot.png'
+        ax = self.df.plot(column='values', categorical=False, legend=True)
+        self._compare_images(ax=ax, filename=filename)
+
 if __name__ == '__main__':
     unittest.main()
