@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use('Agg', warn=False)
 from matplotlib.pyplot import Artist, savefig, clf
 from matplotlib.colorbar import Colorbar
+from matplotlib.backends import backend_agg
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from shapely.geometry import Polygon, LineString, Point
@@ -23,10 +24,17 @@ GENERATE_BASELINE = False
 
 BASELINE_DIR = os.path.join(os.path.dirname(__file__), 'baseline_images', 'test_plotting')
 
-
 class PlotTests(unittest.TestCase):
     
     def setUp(self):
+        # hardcode settings for comparison tests
+        # settings adapted from ggplot test suite
+        matplotlib.rcdefaults() # Start with all defaults
+        matplotlib.rcParams['text.hinting'] = True
+        matplotlib.rcParams['text.antialiased'] = True
+        matplotlib.rcParams['font.sans-serif'] = 'Bitstream Vera Sans'
+        backend_agg.RendererAgg._fontd.clear()
+
         nybb_filename = download_nybb()
 
         self.df = read_file('/nybb_14a_av/nybb.shp', 
