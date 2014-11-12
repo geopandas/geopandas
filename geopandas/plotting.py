@@ -68,7 +68,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', alpha=0.5, axes=None, edgecolor='black'):
+def plot_series(s, colormap='Set1', axes=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -89,12 +89,11 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None, edgecolor='black'):
 
                 Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
 
-        alpha : float (default 0.5)
-            Alpha value for polygon fill regions.  Has no effect for
-            lines or points.
-
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
+
+        **color_kwds : dict
+            Color options to be passed on to plot_polygon
 
         Returns
         -------
@@ -111,7 +110,7 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None, edgecolor='black'):
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=next(color), edgecolor=edgecolor, alpha=alpha)
+            plot_multipolygon(ax, geom, facecolor=next(color), **color_kwds)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
             plot_multilinestring(ax, geom, color=next(color))
         elif geom.type == 'Point':
@@ -120,10 +119,11 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None, edgecolor='black'):
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
+def plot_dataframe(s, column=None, colormap=None,
                    categorical=False, legend=False, axes=None,
-                   scheme=None, edgecolor='black',
-                   k=5):
+                   scheme=None, k=5,
+                   **color_kwds
+                   ):
     """ Plot a GeoDataFrame
 
         Generate a plot of a GeoDataFrame with matplotlib.  If a
@@ -150,10 +150,6 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         colormap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.
 
-        alpha : float (default 0.5)
-            Alpha value for polygon fill regions.  Has no effect for
-            lines or points.
-
         legend : bool (default False)
             Plot a legend (Experimental; currently for categorical
             plots only)
@@ -167,6 +163,8 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
 
+        **color_kwds : dict
+            Color options to be passed on to plot_polygon
 
         Returns
         -------
@@ -179,7 +177,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, alpha=alpha, axes=axes, edgecolor=edgecolor)
+        return plot_series(s.geometry, colormap=colormap, axes=axes, **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -203,7 +201,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             ax = axes
         for geom, value in zip(s.geometry, values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), edgecolor=edgecolor, alpha=alpha)
+                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
                 plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
             # TODO: color point geometries
@@ -214,7 +212,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                 patches = []
                 for value, cat in enumerate(categories):
                     patches.append(Line2D([0], [0], linestyle="none",
-                                          marker="o", alpha=alpha,
+                                          marker="o", alpha=color_kwds.get('alpha', 0.5),
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
