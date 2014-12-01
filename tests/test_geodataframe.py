@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import collections
 import json
 import os
 import tempfile
@@ -24,6 +25,8 @@ class TestDataFrame(unittest.TestCase):
         nybb_filename = download_nybb()
 
         self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
+        with fiona.open('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename) as f:
+            self.schema = f.schema
         self.tempdir = tempfile.mkdtemp()
         self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
@@ -314,6 +317,29 @@ class TestDataFrame(unittest.TestCase):
                                         Polygon([(0, 0), (1, 0), (1, 1)])]})
         with self.assertRaises(ValueError):
             s.to_file(tempfilename)
+
+    def test_to_file_schema(self):
+        """
+        Ensure that the file is written according to the schema
+        if it is specified
+        
+        """
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        properties = collections.OrderedDict([
+            ('Shape_Leng', 'float:19.11'),
+            ('BoroName', 'str:40'),
+            ('BoroCode', 'int:10'),
+            ('Shape_Area', 'float:19.11'),
+        ])
+        schema = {'geometry': 'Polygon', 'properties': properties}
+
+        # Take the first 2 features to speed things up a bit
+        self.df.iloc[:2].to_file(tempfilename, schema=schema)
+
+        with fiona.open(tempfilename) as f:
+            result_schema = f.schema
+
+        self.assertEqual(result_schema, schema)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
