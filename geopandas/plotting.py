@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 from six import next
 from six.moves import xrange
+from matplotlib.colorbar import make_axes
 
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -220,7 +221,8 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
-                cbar = ax.get_figure().colorbar(cmap)
+                cax = make_axes(ax)[0]
+                cbar = ax.get_figure().colorbar(cmap, cax=cax)
     plt.draw()
     if cbar:
         return ax, cbar
