@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 from six import next
 from six.moves import xrange
+from matplotlib.colorbar import make_axes
 
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -153,8 +154,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             lines or points.
 
         legend : bool (default False)
-            Plot a legend (Experimental; currently for categorical
-            plots only)
+            Plot a legend or colorbar (Experimental)
 
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
@@ -169,7 +169,11 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         Returns
         -------
 
-        matplotlib axes instance
+        ax : matplotlib axes instance
+            Axes on which the dataframe was plotted
+        cbar : matplotlib.colorbar.Colorbar (optional)
+            Colorbar of the noncategorical plot. Returned only if `categorical`
+            is False and `legend` is True.
     """
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
@@ -207,6 +211,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             # TODO: color point geometries
             elif geom.type == 'Point':
                 plot_point(ax, geom)
+        cbar = None
         if legend:
             if categorical:
                 patches = []
@@ -216,10 +221,13 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
-                # TODO: show a colorbar
-                raise NotImplementedError
+                cax = make_axes(ax)[0]
+                cbar = ax.get_figure().colorbar(cmap, cax=cax)
     plt.draw()
-    return ax
+    if cbar:
+        return ax, cbar
+    else:
+        return ax
 
 
 def __pysal_choro(values, scheme, k=5):
@@ -296,6 +304,7 @@ def norm_cmap(values, cmap, normalize, cm):
     mn, mx = min(values), max(values)
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap  = cm.ScalarMappable(norm=norm, cmap=cmap)
+    n_cmap.set_array(values)
     return n_cmap
 
 
