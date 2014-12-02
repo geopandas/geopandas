@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import collections
 import json
 import os
 import tempfile
@@ -12,6 +11,7 @@ from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 import fiona
+from fiona.odict import OrderedDict
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
                   create_db, validate_boro_df, PANDAS_NEW_SQL_API
@@ -325,7 +325,7 @@ class TestDataFrame(unittest.TestCase):
         
         """
         tempfilename = os.path.join(self.tempdir, 'test.shp')
-        properties = collections.OrderedDict([
+        properties = OrderedDict([
             ('Shape_Leng', 'float:19.11'),
             ('BoroName', 'str:40'),
             ('BoroCode', 'int:10'),

@@ -1,7 +1,7 @@
-import collections
 import os
 
 import fiona
+from fiona.odict import OrderedDict
 import numpy as np
 from shapely.geometry import mapping
 
@@ -81,7 +81,7 @@ def infer_schema(df):
             out_type = 'int'
         return out_type
 
-    properties = collections.OrderedDict([
+    properties = OrderedDict([
         (col, convert_type(_type)) for col, _type in
         zip(df.columns, df.dtypes) if col != 'geometry'
     ])
