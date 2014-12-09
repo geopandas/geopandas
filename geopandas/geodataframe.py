@@ -12,7 +12,7 @@ import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-from six import string_types, iteritems
+from six import string_types
 
 from geopandas import GeoSeries
 from geopandas.base import GeoPandasBase
@@ -203,13 +203,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
-        """Returns a GeoJSON string representation of the GeoDataFrame.
+        """
+        Returns a GeoJSON string representation of the GeoDataFrame.
 
         Parameters
         ----------
         na : {'null', 'drop', 'keep'}, default 'null'
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: ouput the missing entries as JSON null
+            * null: output the missing entries as JSON null
             * drop: remove the property from the feature. This applies to
                     each feature individually so that features may have
                     different properties
@@ -218,22 +219,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         show_bbox : include bbox (bounds) in the geojson
         
         The remaining *kwargs* are passed to json.dumps().
+
         """
-        return json.dumps(self._to_geo(na, show_bbox), **kwargs)
+        return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
 
     @property
     def __geo_interface__(self):
-        """Returns a python feature collection (i.e. the geointerface)
-           representation of the GeoDataFrame.
+        """
+        Returns a python feature collection (i.e. the geointerface)
+        representation of the GeoDataFrame.
 
-           This differs from `_to_geo()` only in that it is a property
-           with default args instead of a method
+        This differs from `_to_geo()` only in that it is a property with
+        default args instead of a method
+
         """
         return self._to_geo(na='null', show_bbox=True)
 
-    def _to_geo(self, na='null', show_bbox=False):
-        """Returns a python feature collection (i.e. the geointerface)
-           representation of the GeoDataFrame.
+    def iterfeatures(self, na='null', show_bbox=False):
+        """
+        Returns an iterator that yields feature dictionaries that comply with
+        __geo_interface__
 
         Parameters
         ----------
@@ -246,8 +251,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson. default False
-        """
 
+        """
         def fill_none(row):
             """
             Takes in a Series, converts to a dictionary with null values
@@ -260,34 +265,41 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 d[k] = None
             return d
 
-        # na_methods must take in a Series and return dict-like
+        # na_methods must take in a Series and return dict
         na_methods = {'null': fill_none,
-                      'drop': lambda row: row.dropna(),
-                      'keep': lambda row: row}
+                      'drop': lambda row: row.dropna().to_dict(),
+                      'keep': lambda row: row.to_dict()}
 
         if na not in na_methods:
             raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
-        def feature(i, row):
-            bbox = row[self._geometry_column_name].bounds
-            row = f(row)
-            feat = {
+        for i, row in self.iterrows():
+            properties = f(row)
+            del properties[self._geometry_column_name]
+
+            feature = {
                 'id': str(i),
                 'type': 'Feature',
-                'properties':
-                    dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
-                'geometry': mapping(row[self._geometry_column_name]) }
+                'properties': properties,
+                'geometry': mapping(row[self._geometry_column_name])
+            }
 
             if show_bbox:
-                feat['bbox'] = bbox
+                feature['bbox'] = row.geometry.bounds
 
-            return feat
+            yield feature
 
+    def _to_geo(self, **kwargs):
+        """
+        Returns a python feature collection (i.e. the geointerface)
+        representation of the GeoDataFrame.
+
+        """
         geo = {'type': 'FeatureCollection',
-               'features': [feature(i, row) for i, row in self.iterrows()]}
+               'features': list(self.iterfeatures(**kwargs))}
 
-        if show_bbox:
+        if kwargs.get('show_bbox', False):
             geo['bbox'] = self.total_bounds
 
         return geo

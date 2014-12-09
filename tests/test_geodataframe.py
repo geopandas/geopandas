@@ -11,7 +11,6 @@ from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 import fiona
-from fiona.odict import OrderedDict
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
                   create_db, validate_boro_df, PANDAS_NEW_SQL_API
@@ -324,6 +323,11 @@ class TestDataFrame(unittest.TestCase):
         if it is specified
         
         """
+        try:
+            from collections import OrderedDict
+        except ImportError:
+            from ordereddict import OrderedDict
+
         tempfilename = os.path.join(self.tempdir, 'test.shp')
         properties = OrderedDict([
             ('Shape_Leng', 'float:19.11'),

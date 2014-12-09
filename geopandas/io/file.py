@@ -1,7 +1,6 @@
 import os
 
 import fiona
-from fiona.odict import OrderedDict
 import numpy as np
 from shapely.geometry import mapping
 
@@ -54,25 +53,21 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     """
-    def feature(i, row):
-        return {
-            'id': str(i),
-            'type': 'Feature',
-            'properties':
-                dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
-            'geometry': mapping(row['geometry'])
-        }
-
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
     with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                     schema=schema, **kwargs) as c:
-        for i, row in df.iterrows():
-            c.write(feature(i, row))
+        for feature in df.iterfeatures():
+            c.write(feature)
 
 
 def infer_schema(df):
+    try:
+        from collections import OrderedDict
+    except ImportError:
+        from ordereddict import OrderedDict
+
     def convert_type(in_type):
         if in_type == object:
             return 'str'
@@ -83,17 +78,28 @@ def infer_schema(df):
 
     properties = OrderedDict([
         (col, convert_type(_type)) for col, _type in
-        zip(df.columns, df.dtypes) if col != 'geometry'
+        zip(df.columns, df.dtypes) if col != df._geometry_column_name
     ])
-    # Need to check geom_types before we write to file...
-    # Some (most?) providers expect a single geometry type:
-    # Point, LineString, or Polygon
-    geom_types = df['geometry'].geom_type.unique()
-    from os.path import commonprefix   # To find longest common prefix
-    geom_type = commonprefix([g[::-1] for g in geom_types])[::-1]  # Reverse
-    if geom_type == '':  # No common suffix = mixed geometry types
-        raise ValueError("Geometry column cannot contains mutiple "
+
+    geom_type = _common_geom_type(df)
+    if not geom_type:
+        raise ValueError("Geometry column cannot contain mutiple "
                          "geometry types when writing to file.")
+
     schema = {'geometry': geom_type, 'properties': properties}
 
     return schema
+
+
+def _common_geom_type(df):
+    # Need to check geom_types before we write to file...
+    # Some (most?) providers expect a single geometry type:
+    # Point, LineString, or Polygon
+    geom_types = df.geometry.geom_type.unique()
+
+    from os.path import commonprefix   # To find longest common prefix
+    geom_type = commonprefix([g[::-1] for g in geom_types])[::-1]  # Reverse
+    if not geom_type:
+        geom_type = None
+
+    return geom_type
