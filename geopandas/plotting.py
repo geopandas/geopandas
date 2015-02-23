@@ -121,6 +121,7 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
 
 def plot_dataframe(s, column=None, colormap=None, alpha=0.5, linewidth=1.0,
                    categorical=False, legend=False, axes=None, scheme=None,
+                   vmin=None, vmax=None,
                    k=5):
     """ Plot a GeoDataFrame
 
@@ -161,6 +162,12 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5, linewidth=1.0,
 
         scheme : pysal.esda.mapclassify.Map_Classifier
             Choropleth classification schemes
+            
+        vmin : float
+            Minimum value for color map
+            
+        vmax : float
+            Maximum value for color map
 
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
@@ -193,7 +200,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5, linewidth=1.0,
             values = s[column]
         if scheme is not None:
             values = __pysal_choro(values, scheme, k=k)
-        cmap = norm_cmap(values, colormap, Normalize, cm)
+        cmap = norm_cmap(values, colormap, Normalize, cm, mn=vmin, mx=vmax)
         if axes == None:
             fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
@@ -269,7 +276,7 @@ def __pysal_choro(values, scheme, k=5):
 
     return values
 
-def norm_cmap(values, cmap, normalize, cm):
+def norm_cmap(values, cmap, normalize, cm, mn=None, mx=None):
 
     """ Normalize and set colormap
 
@@ -287,6 +294,12 @@ def norm_cmap(values, cmap, normalize, cm):
 
         cm
             matplotlib.cm
+            
+        mn
+            Minimum value of cmap
+            
+        mx
+            Maximum value of cmap
 
         Returns
         -------
@@ -294,8 +307,8 @@ def norm_cmap(values, cmap, normalize, cm):
             mapping of normalized values to colormap (cmap)
             
     """
-
-    mn, mx = min(values), max(values)
+    if mn is None: mn = min(values)
+    if mx is None: mx = max(values)
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap  = cm.ScalarMappable(norm=norm, cmap=cmap)
     return n_cmap
