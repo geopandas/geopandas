@@ -152,6 +152,9 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5, linewidth=1.0,
         alpha : float (default 0.5)
             Alpha value for polygon fill regions.  Has no effect for
             lines or points.
+            
+        linewidth : float (default 1.0)
+            Line width for geometries.
 
         legend : bool (default False)
             Plot a legend (Experimental; currently for categorical
