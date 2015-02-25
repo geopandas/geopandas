@@ -67,7 +67,7 @@ def gencolor(N, colormap='Set1'):
     for i in xrange(N):
         yield colors[i % n_colors]
 
-def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
+def plot_series(s, colormap='Set1', alpha=0.5, linewidth=1.0, axes=None):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -91,6 +91,9 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
         alpha : float (default 0.5)
             Alpha value for polygon fill regions.  Has no effect for
             lines or points.
+            
+        linewidth : float (default 1.0)
+            Line width for geometries.
 
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
