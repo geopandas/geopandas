@@ -46,6 +46,8 @@ def sjoin(left_df, right_df, how='left', op='intersects', crs_convert=True, lsuf
                 right_df = right_df.to_crs(left_df.crs)
             elif left_df.values.nbytes < right_df.values.nbytes:
                 left_df = left_df.to_crs(right_df.crs)
+	else:
+	    pass
 
     # CONSTRUCT SPATIAL INDEX FOR RIGHT DATAFRAME
     tree_idx = rtree.index.Index()
