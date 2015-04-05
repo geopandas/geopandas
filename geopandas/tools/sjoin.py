@@ -14,8 +14,6 @@ def sjoin(left_df, right_df, how='left', op='intersects', convert_crs=True, lsuf
         inner -> use intersection of keys from both dfs; retain only left_df geometry column
     op: binary predicate {'intersects', 'contains', 'within'}
         see http://toblerity.org/shapely/manual.html#binary-predicates
-    use_sindex : Use the spatial index to speed up operation? Default is True
-    kwargs: passed to op method
     """
 
     # CHECK VALIDITY OF JOIN TYPE
