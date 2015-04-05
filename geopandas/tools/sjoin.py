@@ -4,7 +4,7 @@ import pandas as pd
 import rtree
 from shapely import prepared
 
-def sjoin(left_df, right_df, how='left', op='intersects', crs_convert=True, lsuffix='left', rsuffix='right', **kwargs):
+def sjoin(left_df, right_df, how='left', op='intersects', convert_crs=True, lsuffix='left', rsuffix='right', **kwargs):
     """Spatial join of two GeoDataFrames.
 
     left_df, right_df are GeoDataFrames
@@ -39,9 +39,9 @@ def sjoin(left_df, right_df, how='left', op='intersects', crs_convert=True, lsuf
 
     # CONVERT CRS IF NOT EQUAL
     if left_df.crs != right_df.crs:
-        print 'Warning: CRS does not match!'
-        if crs_convert == True:
-            print 'Converting CRS...'
+        print('Warning: CRS does not match!')
+        if convert_crs == True:
+            print('Converting CRS...')
             if left_df.values.nbytes >= right_df.values.nbytes:
                 right_df = right_df.to_crs(left_df.crs)
             elif left_df.values.nbytes < right_df.values.nbytes:
@@ -76,13 +76,20 @@ def sjoin(left_df, right_df, how='left', op='intersects', crs_convert=True, lsuf
     # CHECK PREDICATES
     result = pd.DataFrame(np.column_stack([l_idx, r_idx, check_predicates(left_df['geometry'].apply(lambda x: prepared.prep(x)).values[l_idx], right_df['geometry'].values[r_idx])]))
     result.columns = ['index_%s' % lsuffix, 'index_%s' % rsuffix, 'match_bool']
-    result = pd.DataFrame(result[result['match_bool']==1].set_index('index_%s' % lsuffix)['index_%s' % rsuffix])
+    result = pd.DataFrame(result[result['match_bool']==1]).drop('match_bool', axis=1)
 
     # IF 'WITHIN', SWAP NAMES AGAIN
     if op == "within":
         # within implemented as the inverse of contains; swap names
         left_df, right_df = right_df, left_df
-        result = result.reset_index().rename(columns={'index_%s' % (lsuffix): 'index_%s' % (rsuffix), 'index_%s' % (rsuffix): 'index_%s' % (lsuffix)}).set_index('index_left').sort_index()    
+        result = result.rename(columns={'index_%s' % (lsuffix): 'index_%s' % (rsuffix), 'index_%s' % (rsuffix): 'index_%s' % (lsuffix)})
 
     # APPLY JOIN
-    return left_df.merge(result, left_index=True, right_index=True).merge(right_df, left_on='index_%s' % rsuffix, right_index=True, how=how, suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+    if how == 'inner':
+        result = result.set_index('index_%s' % lsuffix)
+        return left_df.merge(result, left_index=True, right_index=True).merge(right_df.drop('geometry', axis=1), left_on='index_%s' % rsuffix, right_index=True, suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+    elif how == 'left':
+        result = result.set_index('index_%s' % lsuffix)
+        return left_df.merge(result, left_index=True, right_index=True, how='left').merge(right_df.drop('geometry', axis=1), how='left', left_on='index_%s' % rsuffix, right_index=True, suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+    elif how == 'right':
+        return left_df.drop('geometry', axis=1).merge(result.merge(right_df, left_on='index_%s' % rsuffix, right_index=True, how='right'), left_index=True, right_on='index_%s' % lsuffix, how='right').set_index('index_%s' % rsuffix)

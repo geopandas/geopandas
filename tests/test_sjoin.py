@@ -1,6 +1,8 @@
+
 from __future__ import absolute_import
 import tempfile
 import shutil
+import numpy as np
 from shapely.geometry import Point
 from geopandas import GeoDataFrame, read_file
 from geopandas.tools import sjoin
@@ -25,52 +27,51 @@ class TestSpatialJoin(unittest.TestCase):
         shutil.rmtree(self.tempdir)
 
     def test_sjoin_left(self):
-        df = sjoin(self.pointdf, self.polydf, crs_convert=False)
-        self.assertEquals(df.shape, (11,9))
-#        for i, row in df.iterrows():
-#            self.assertEquals(row.geometry.type, 'Point')
+        df = sjoin(self.pointdf, self.polydf, convert_crs=False)
+        self.assertEquals(df.shape, (21,8))
+        for i, row in df.iterrows():
+            self.assertEquals(row.geometry.type, 'Point')
         self.assertTrue('pointattr1' in df.columns)
         self.assertTrue('BoroCode' in df.columns)
 
     def test_sjoin_right(self):
         # the inverse of left
-        df = sjoin(self.pointdf, self.polydf, how="right", crs_convert=False)
-        df2 = sjoin(self.polydf, self.pointdf, how="left", crs_convert=False)
-        self.assertEquals(df.shape, (12, 9))
-#        self.assertEquals(df.shape, df2.shape)
-#        for i, row in df.iterrows():
-#            self.assertEquals(row.geometry.type, 'MultiPolygon')
-#        for i, row in df2.iterrows():
-#            self.assertEquals(row.geometry.type, 'MultiPolygon')
+        df = sjoin(self.pointdf, self.polydf, how="right", convert_crs=False)
+        df2 = sjoin(self.polydf, self.pointdf, how="left", convert_crs=False)
+        self.assertEquals(df.shape, (12, 8))
+        self.assertEquals(df.shape, df2.shape)
+        for i, row in df.iterrows():
+            self.assertEquals(row.geometry.type, 'MultiPolygon')
+        for i, row in df2.iterrows():
+            self.assertEquals(row.geometry.type, 'MultiPolygon')
 
     def test_sjoin_inner(self):
-        df = sjoin(self.pointdf, self.polydf, how="inner", crs_convert=False)
-        self.assertEquals(df.shape, (11, 9))
+        df = sjoin(self.pointdf, self.polydf, how="inner", convert_crs=False)
+        self.assertEquals(df.shape, (11, 8))
 
     def test_sjoin_op(self):
         # points within polygons
-        df = sjoin(self.pointdf, self.polydf, how="left", op="within", crs_convert=False)
-        self.assertEquals(df.shape, (11,9))
+        df = sjoin(self.pointdf, self.polydf, how="left", op="within", convert_crs=False)
+        self.assertEquals(df.shape, (21,8))
         self.assertAlmostEquals(df.ix[1]['Shape_Leng'], 330454.175933)
 
         # points contain polygons? never happens so we should have nulls
-#        df = sjoin(self.pointdf, self.polydf, how="left", op="contains", crs_convert=False)
-#        self.assertEquals(df.shape, (11, 9))
-#        self.assertEquals(df.ix[1]['Shape_Area'], None)
+        df = sjoin(self.pointdf, self.polydf, how="left", op="contains", convert_crs=False)
+        self.assertEquals(df.shape, (21, 8))
+        self.assertTrue(np.isnan(df.ix[1]['Shape_Area']))
 
-    def test_sjoin_bad_op(self, crs_convert=False):
+    def test_sjoin_bad_op(self):
         # AttributeError: 'Point' object has no attribute 'spandex'
         self.assertRaises(ValueError, sjoin,
-            self.pointdf, self.polydf, how="left", op="spandex")
+            self.pointdf, self.polydf, how="left", op="spandex", convert_crs=False)
 
-    @unittest.skip("Not implemented")
-    def test_sjoin_duplicate_column_name(self, crs_convert=False):
+    def test_sjoin_duplicate_column_name(self):
         pointdf2 = self.pointdf.rename(columns={'pointattr1': 'Shape_Area'})
-        df = sjoin(pointdf2, self.polydf, how="left", crs_convert=False)
-        self.assertTrue('Shape_Area' in df.columns)
-        self.assertTrue('Shape_Area_2' in df.columns)
+        df = sjoin(pointdf2, self.polydf, how="left", convert_crs=False)
+        self.assertTrue('Shape_Area_left' in df.columns)
+        self.assertTrue('Shape_Area_right' in df.columns)
 
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
-        df = sjoin(self.pointdf, self.polydf, how="outer")
-        self.assertEquals(df.shape, (21,9))
+        df = sjoin(self.pointdf, self.polydf, how="outer", convert_crs=False)
+        self.assertEquals(df.shape, (21,8))
