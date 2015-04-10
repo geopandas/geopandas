@@ -1,10 +1,10 @@
-import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rtree
 from shapely import prepared
+import geopandas as gpd
 
-def sjoin(left_df, right_df, how='left', op='intersects', convert_crs=True, lsuffix='left', rsuffix='right', **kwargs):
+def sjoin(left_df, right_df, how='inner', op='intersects', lsuffix='left', rsuffix='right', **kwargs):
     """Spatial join of two GeoDataFrames.
 
     left_df, right_df are GeoDataFrames
@@ -14,6 +14,8 @@ def sjoin(left_df, right_df, how='left', op='intersects', convert_crs=True, lsuf
         inner -> use intersection of keys from both dfs; retain only left_df geometry column
     op: binary predicate {'intersects', 'contains', 'within'}
         see http://toblerity.org/shapely/manual.html#binary-predicates
+    lsuffix: suffix to apply to overlapping column names (left GeoDataFrame)
+    rsuffix: suffix to apply to overlapping column names (right GeoDataFrame)
     """
 
     # CHECK VALIDITY OF JOIN TYPE
@@ -38,12 +40,6 @@ def sjoin(left_df, right_df, how='left', op='intersects', convert_crs=True, lsuf
     # CONVERT CRS IF NOT EQUAL
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
-        if convert_crs == True:
-            print('Converting CRS...')
-            if left_df.values.nbytes >= right_df.values.nbytes:
-                right_df = right_df.to_crs(left_df.crs)
-            elif left_df.values.nbytes < right_df.values.nbytes:
-                left_df = left_df.to_crs(right_df.crs)
 
     # CONSTRUCT SPATIAL INDEX FOR RIGHT DATAFRAME
     tree_idx = rtree.index.Index()

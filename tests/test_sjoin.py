@@ -27,7 +27,7 @@ class TestSpatialJoin(unittest.TestCase):
         shutil.rmtree(self.tempdir)
 
     def test_sjoin_left(self):
-        df = sjoin(self.pointdf, self.polydf, convert_crs=False)
+        df = sjoin(self.pointdf, self.polydf, how='left')
         self.assertEquals(df.shape, (21,8))
         for i, row in df.iterrows():
             self.assertEquals(row.geometry.type, 'Point')
@@ -36,8 +36,8 @@ class TestSpatialJoin(unittest.TestCase):
 
     def test_sjoin_right(self):
         # the inverse of left
-        df = sjoin(self.pointdf, self.polydf, how="right", convert_crs=False)
-        df2 = sjoin(self.polydf, self.pointdf, how="left", convert_crs=False)
+        df = sjoin(self.pointdf, self.polydf, how="right")
+        df2 = sjoin(self.polydf, self.pointdf, how="left")
         self.assertEquals(df.shape, (12, 8))
         self.assertEquals(df.shape, df2.shape)
         for i, row in df.iterrows():
@@ -46,32 +46,32 @@ class TestSpatialJoin(unittest.TestCase):
             self.assertEquals(row.geometry.type, 'MultiPolygon')
 
     def test_sjoin_inner(self):
-        df = sjoin(self.pointdf, self.polydf, how="inner", convert_crs=False)
+        df = sjoin(self.pointdf, self.polydf, how="inner")
         self.assertEquals(df.shape, (11, 8))
 
     def test_sjoin_op(self):
         # points within polygons
-        df = sjoin(self.pointdf, self.polydf, how="left", op="within", convert_crs=False)
+        df = sjoin(self.pointdf, self.polydf, how="left", op="within")
         self.assertEquals(df.shape, (21,8))
         self.assertAlmostEquals(df.ix[1]['Shape_Leng'], 330454.175933)
 
         # points contain polygons? never happens so we should have nulls
-        df = sjoin(self.pointdf, self.polydf, how="left", op="contains", convert_crs=False)
+        df = sjoin(self.pointdf, self.polydf, how="left", op="contains")
         self.assertEquals(df.shape, (21, 8))
         self.assertTrue(np.isnan(df.ix[1]['Shape_Area']))
 
     def test_sjoin_bad_op(self):
         # AttributeError: 'Point' object has no attribute 'spandex'
         self.assertRaises(ValueError, sjoin,
-            self.pointdf, self.polydf, how="left", op="spandex", convert_crs=False)
+            self.pointdf, self.polydf, how="left", op="spandex")
 
     def test_sjoin_duplicate_column_name(self):
         pointdf2 = self.pointdf.rename(columns={'pointattr1': 'Shape_Area'})
-        df = sjoin(pointdf2, self.polydf, how="left", convert_crs=False)
+        df = sjoin(pointdf2, self.polydf, how="left")
         self.assertTrue('Shape_Area_left' in df.columns)
         self.assertTrue('Shape_Area_right' in df.columns)
 
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
-        df = sjoin(self.pointdf, self.polydf, how="outer", convert_crs=False)
+        df = sjoin(self.pointdf, self.polydf, how="outer")
         self.assertEquals(df.shape, (21,8))
