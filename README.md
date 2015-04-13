@@ -20,6 +20,20 @@ transformed to new coordinate systems with the `to_crs()` method.
 There is currently no enforcement of like coordinates for operations,
 but that may change in the future.
 
+Install
+--------
+
+**Requirements**
+
+
+You will need to install [``rtree``](https://github.com/Toblerity/rtree), which requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+
+
+**Install**
+
+Then, installation works as normal: ``pip install geopandas``
+
+
 Examples
 --------
 
