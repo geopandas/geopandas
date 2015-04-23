@@ -39,7 +39,7 @@ class TestSeries(unittest.TestCase):
         assert type(self.pts.iloc[5:]) is GeoSeries
 
     def test_fancy(self):
-        idx = (self.pts.index % 2).astype(bool)
+        idx = (self.pts.index.to_series() % 2).astype(bool)
         assert type(self.pts[idx]) is GeoSeries
 
     def test_take(self):
@@ -85,5 +85,5 @@ class TestDataFrame(unittest.TestCase):
         assert type(self.df[::2]) is GeoDataFrame
 
     def test_fancy(self):
-        idx = (self.df.index % 2).astype(bool)
+        idx = (self.df.index.to_series() % 2).astype(bool)
         assert type(self.df[idx]) is GeoDataFrame

@@ -24,6 +24,8 @@ class TestDataFrame(unittest.TestCase):
         nybb_filename = download_nybb()
 
         self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
+        with fiona.open('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename) as f:
+            self.schema = f.schema
         self.tempdir = tempfile.mkdtemp()
         self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
@@ -226,7 +228,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
-        self.df['Shape_Area'][self.df['BoroName'] == 'Queens'] = np.nan
+        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
 
         text = self.df.to_json()
         data = json.loads(text)
@@ -243,8 +245,8 @@ class TestDataFrame(unittest.TestCase):
             text = self.df.to_json(na='garbage')
 
     def test_to_json_dropna(self):
-        self.df['Shape_Area'][self.df['BoroName'] == 'Queens'] = np.nan
-        self.df['Shape_Leng'][self.df['BoroName'] == 'Bronx'] = np.nan
+        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
 
         text = self.df.to_json(na='drop')
         data = json.loads(text)
@@ -265,8 +267,8 @@ class TestDataFrame(unittest.TestCase):
                 self.assertEqual(len(props), 4)
 
     def test_to_json_keepna(self):
-        self.df['Shape_Area'][self.df['BoroName'] == 'Queens'] = np.nan
-        self.df['Shape_Leng'][self.df['BoroName'] == 'Bronx'] = np.nan
+        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
 
         text = self.df.to_json(na='keep')
         data = json.loads(text)
@@ -325,6 +327,34 @@ class TestDataFrame(unittest.TestCase):
                                         Polygon([(0, 0), (1, 0), (1, 1)])]})
         with self.assertRaises(ValueError):
             s.to_file(tempfilename)
+
+    def test_to_file_schema(self):
+        """
+        Ensure that the file is written according to the schema
+        if it is specified
+        
+        """
+        try:
+            from collections import OrderedDict
+        except ImportError:
+            from ordereddict import OrderedDict
+
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        properties = OrderedDict([
+            ('Shape_Leng', 'float:19.11'),
+            ('BoroName', 'str:40'),
+            ('BoroCode', 'int:10'),
+            ('Shape_Area', 'float:19.11'),
+        ])
+        schema = {'geometry': 'Polygon', 'properties': properties}
+
+        # Take the first 2 features to speed things up a bit
+        self.df.iloc[:2].to_file(tempfilename, schema=schema)
+
+        with fiona.open(tempfilename) as f:
+            result_schema = f.schema
+
+        self.assertEqual(result_schema, schema)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name

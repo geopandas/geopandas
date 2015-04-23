@@ -17,20 +17,20 @@ def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
         ax.plot(x, y, color=edgecolor)
 
 
-def plot_multipolygon(ax, geom, facecolor='red', alpha=0.5):
+def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
-        plot_polygon(ax, geom, facecolor=facecolor, alpha=alpha)
+        plot_polygon(ax, geom, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            plot_polygon(ax, poly, facecolor=facecolor, alpha=alpha)
+            plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
 
 
 def plot_linestring(ax, geom, color='black', linewidth=1):
     """ Plot a single LineString geometry """
     a = np.array(geom)
-    ax.plot(a[:,0], a[:,1], color=color, linewidth=linewidth)
+    ax.plot(a[:, 0], a[:, 1], color=color, linewidth=linewidth)
 
 
 def plot_multilinestring(ax, geom, color='red', linewidth=1):
@@ -67,7 +67,8 @@ def gencolor(N, colormap='Set1'):
     for i in xrange(N):
         yield colors[i % n_colors]
 
-def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
+
+def plot_series(s, colormap='Set1', axes=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -88,12 +89,11 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
 
                 Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
 
-        alpha : float (default 0.5)
-            Alpha value for polygon fill regions.  Has no effect for
-            lines or points.
-
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
+
+        **color_kwds : dict
+            Color options to be passed on to plot_polygon
 
         Returns
         -------
@@ -101,7 +101,7 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
         matplotlib axes instance
     """
     import matplotlib.pyplot as plt
-    if axes == None:
+    if axes is None:
         fig = plt.gcf()
         fig.add_subplot(111, aspect='equal')
         ax = plt.gca()
@@ -110,7 +110,7 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=next(color), alpha=alpha)
+            plot_multipolygon(ax, geom, facecolor=next(color), **color_kwds)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
             plot_multilinestring(ax, geom, color=next(color))
         elif geom.type == 'Point':
@@ -119,9 +119,11 @@ def plot_series(s, colormap='Set1', alpha=0.5, axes=None):
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
-                   categorical=False, legend=False, axes=None, scheme=None,
-                   k=5):
+def plot_dataframe(s, column=None, colormap=None,
+                   categorical=False, legend=False, axes=None,
+                   scheme=None, k=5,
+                   **color_kwds
+                   ):
     """ Plot a GeoDataFrame
 
         Generate a plot of a GeoDataFrame with matplotlib.  If a
@@ -148,10 +150,6 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         colormap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.
 
-        alpha : float (default 0.5)
-            Alpha value for polygon fill regions.  Has no effect for
-            lines or points.
-
         legend : bool (default False)
             Plot a legend (Experimental; currently for categorical
             plots only)
@@ -165,6 +163,8 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
 
+        **color_kwds : dict
+            Color options to be passed on to plot_polygon
 
         Returns
         -------
@@ -177,7 +177,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, alpha=alpha, axes=axes)
+        return plot_series(s.geometry, colormap=colormap, axes=axes, **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -193,7 +193,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
         if scheme is not None:
             values = __pysal_choro(values, scheme, k=k)
         cmap = norm_cmap(values, colormap, Normalize, cm)
-        if axes == None:
+        if axes is None:
             fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
             ax = plt.gca()
@@ -201,7 +201,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
             ax = axes
         for geom, value in zip(s.geometry, values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), alpha=alpha)
+                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
                 plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
             # TODO: color point geometries
@@ -212,7 +212,7 @@ def plot_dataframe(s, column=None, colormap=None, alpha=0.5,
                 patches = []
                 for value, cat in enumerate(categories):
                     patches.append(Line2D([0], [0], linestyle="none",
-                                          marker="o", alpha=alpha,
+                                          marker="o", alpha=color_kwds.get('alpha', 0.5),
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
@@ -244,7 +244,7 @@ def __pysal_choro(values, scheme, k=5):
             Series with values replaced with class identifier if PySAL is available, otherwise the original values are used
     """
 
-    try: 
+    try:
         from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
         schemes = {}
         schemes['equal_interval'] = Equal_Interval
@@ -256,16 +256,17 @@ def __pysal_choro(values, scheme, k=5):
             scheme = 'quantiles'
             print('Unrecognized scheme: ', s0)
             print('Using Quantiles instead')
-        if k<2 or k>9:
+        if k < 2 or k > 9:
             print('Invalid k: ', k)
             print('2<=k<=9, setting k=5 (default)')
             k = 5
         binning = schemes[scheme](values, k)
         values = binning.yb
-    except ImportError: 
+    except ImportError:
         print('PySAL not installed, setting map to default')
 
     return values
+
 
 def norm_cmap(values, cmap, normalize, cm):
 
@@ -290,15 +291,9 @@ def norm_cmap(values, cmap, normalize, cm):
         -------
         n_cmap
             mapping of normalized values to colormap (cmap)
-            
     """
 
     mn, mx = min(values), max(values)
     norm = normalize(vmin=mn, vmax=mx)
-    n_cmap  = cm.ScalarMappable(norm=norm, cmap=cmap)
+    n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
     return n_cmap
-
-
-
-
-

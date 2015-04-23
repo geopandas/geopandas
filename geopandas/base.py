@@ -6,6 +6,7 @@ from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
 import numpy as np
+import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
@@ -73,7 +74,7 @@ class GeoPandasBase(object):
         else:
             stream = ((i, item.bounds, idx) for i, (idx, item) in
                    enumerate(self.geometry.iteritems()) if 
-                   item and not item.is_empty)
+                   pd.notnull(item) and not item.is_empty)
             try:
                 self._sindex = SpatialIndex(stream)
             # What we really want here is an empty generator error, or
@@ -81,6 +82,15 @@ class GeoPandasBase(object):
             # and move on. See https://github.com/Toblerity/rtree/issues/20.
             except RTreeError:
                 pass
+
+    def _invalidate_sindex(self):
+        """
+        Indicates that the spatial index should be re-built next
+        time it's requested.
+
+        """
+        self._sindex = None
+        self._sindex_valid = False
 
     @property
     def area(self):
@@ -158,7 +168,7 @@ class GeoPandasBase(object):
     def interiors(self):
         """Return the interior rings of each polygon"""
         # TODO: return empty list or None for non-polygons
-        return _geo_unary_op(self, 'interiors')
+        return _series_unary_op(self, 'interiors')
 
     def representative_point(self):
         """Return a GeoSeries of points guaranteed to be in each geometry"""
@@ -178,7 +188,7 @@ class GeoPandasBase(object):
     @property
     def unary_union(self):
         """Return the union of all geometries"""
-        return unary_union(self.values)
+        return unary_union(self.geometry.values)
 
     #
     # Binary operations that return a pandas Series
@@ -274,6 +284,13 @@ class GeoPandasBase(object):
                 b['miny'].min(),
                 b['maxx'].max(),
                 b['maxy'].max())
+
+    @property
+    def sindex(self):
+        if not self._sindex_valid:
+            self._generate_sindex()
+            self._sindex_valid = True
+        return self._sindex
 
     def buffer(self, distance, resolution=16):
         return gpd.GeoSeries([geom.buffer(distance, resolution) 
