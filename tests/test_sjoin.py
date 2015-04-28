@@ -76,10 +76,8 @@ class TestSpatialJoin(unittest.TestCase):
         self.polydf.index = [1, 3, 4, 5, 6]
         df = sjoin(self.pointdf, self.polydf, how='left')
         self.assertEquals(df.shape, (21,8))
-        for i, row in df.iterrows():
-            self.assertEquals(row.geometry.type, 'Point')
-        self.assertTrue('pointattr1' in df.columns)
-        self.assertTrue('BoroCode' in df.columns)
+        df = sjoin(self.polydf, self.pointdf, how='left')
+        self.assertEquals(df.shape, (12,8))
 
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
