@@ -79,7 +79,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                        check_predicates(
                            left_df['geometry']
                            .apply(lambda x: prepared.prep(x)).values[l_idx],
-                           right_df['geometry'].values[r_idx])
+                           right_df['geometry'][r_idx])
                        ]))
                )
 
