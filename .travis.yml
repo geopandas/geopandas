@@ -7,8 +7,8 @@ python:
   - 3.4
 
 env:
-  - PANDAS_VERSION=v0.13.1
-  - PANDAS_VERSION=v0.14.1
+  - PANDAS_VERSION=v0.15.2
+  - PANDAS_VERSION=v0.16.0
   - PANDAS_VERSION=master
 
 before_install:
