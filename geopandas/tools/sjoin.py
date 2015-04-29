@@ -20,36 +20,28 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     rsuffix: suffix to apply to overlapping column names (right GeoDataFrame)
     """
 
-    # CHECK VALIDITY OF JOIN TYPE
     allowed_hows = ['left', 'right', 'inner']
-
     if how not in allowed_hows:
         raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
             (how, allowed_hows))
 
-    # CHECK VALIDITY OF PREDICATE OPERATION
     allowed_ops = ['contains', 'within', 'intersects']
-
     if op not in allowed_ops:
         raise ValueError("`op` was \"%s\" but is expected to be in %s" % \
             (op, allowed_ops))
 
-    # IF WITHIN, SWAP NAMES
     if op == "within":
         # within implemented as the inverse of contains; swap names
         left_df, right_df = right_df, left_df
 
-    # CONVERT CRS IF NOT EQUAL
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
-    # CONSTRUCT SPATIAL INDEX FOR RIGHT DATAFRAME
     tree_idx = rtree.index.Index()
     right_df_bounds = right_df['geometry'].apply(lambda x: x.bounds)
     for i in right_df_bounds.index:
         tree_idx.insert(i, right_df_bounds[i])
 
-    # FIND INTERSECTION OF SPATIAL INDEX
     idxmatch = (left_df['geometry'].apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
@@ -57,7 +49,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     r_idx = np.concatenate(idxmatch.values)
     l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
-    # VECTORIZE PREDICATE OPERATIONS
+    # Vectorize predicate operations
     def find_intersects(a1, a2):
         return a1.intersects(a2)
 
@@ -70,7 +62,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
     check_predicates = np.vectorize(predicate_d[op])
 
-    # CHECK PREDICATES
     result = (
               pd.DataFrame(
                   np.column_stack(
@@ -89,7 +80,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
               .drop('match_bool', axis=1)
               )
 
-    # IF 'WITHIN', SWAP NAMES AGAIN
     if op == "within":
         # within implemented as the inverse of contains; swap names
         left_df, right_df = right_df, left_df
@@ -97,7 +87,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                     'index_%s' % (lsuffix): 'index_%s' % (rsuffix),
                     'index_%s' % (rsuffix): 'index_%s' % (lsuffix)})
 
-    # APPLY JOIN
     if how == 'inner':
         result = result.set_index('index_%s' % lsuffix)
         return (
