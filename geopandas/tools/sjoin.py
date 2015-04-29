@@ -52,7 +52,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     # FIND INTERSECTION OF SPATIAL INDEX
     idxmatch = (left_df['geometry'].apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
-    idxmatch = idxmatch[idxmatch.str.len() > 0]
+    idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
     r_idx = np.concatenate(idxmatch.values)
     l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
