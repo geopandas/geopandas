@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import rtree
 from shapely import prepared
-import geopandas as gpd
+
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
           lsuffix='left', rsuffix='right', **kwargs):
@@ -26,7 +26,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if how not in allowed_hows:
         raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
             (how, allowed_hows))
-    
+
     # CHECK VALIDITY OF PREDICATE OPERATION
     allowed_ops = ['contains', 'within', 'intersects']
 
