@@ -55,7 +55,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     idxmatch = idxmatch[idxmatch.str.len() > 0]
 
     r_idx = np.concatenate(idxmatch.values)
-    l_idx = idxmatch.index.values.repeat(idxmatch.str.len().values) 
+    l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
     # VECTORIZE PREDICATE OPERATIONS
     def find_intersects(a1, a2):
