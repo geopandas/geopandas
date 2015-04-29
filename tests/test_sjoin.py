@@ -71,6 +71,14 @@ class TestSpatialJoin(unittest.TestCase):
         self.assertTrue('Shape_Area_left' in df.columns)
         self.assertTrue('Shape_Area_right' in df.columns)
 
+    def test_sjoin_values(self):
+        # GH190
+        self.polydf.index = [1, 3, 4, 5, 6]
+        df = sjoin(self.pointdf, self.polydf, how='left')
+        self.assertEquals(df.shape, (21,8))
+        df = sjoin(self.polydf, self.pointdf, how='left')
+        self.assertEquals(df.shape, (12,8))
+
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
         df = sjoin(self.pointdf, self.polydf, how="outer")
