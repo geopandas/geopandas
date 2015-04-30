@@ -3,7 +3,6 @@ try:
 except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
-from collections import defaultdict
 import json
 import os
 import sys
@@ -68,7 +67,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not isinstance(col, (list, np.ndarray, Series)):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
-
         self.set_geometry(col, inplace=True)
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -139,7 +137,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) for item in level):
+        if not all(isinstance(item, BaseGeometry) or not item for item in level):
             raise TypeError("Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
@@ -152,7 +150,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoDataFrame from a file.
-        
+
         Example:
             df = geopandas.GeoDataFrame.from_file('nybb.shp')
 
@@ -177,7 +175,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 f = f
 
-            d = {'geometry': shape(f['geometry'])}
+            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
             d.update(f['properties'])
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
@@ -198,9 +196,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col, 
+        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
-
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
         """
@@ -217,7 +214,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson
-        
+
         The remaining *kwargs* are passed to json.dumps().
 
         """
@@ -283,6 +280,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 'type': 'Feature',
                 'properties': properties,
                 'geometry': mapping(row[self._geometry_column_name])
+                            if row[self._geometry_column_name] else None
             }
 
             if show_bbox:
@@ -417,6 +415,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:

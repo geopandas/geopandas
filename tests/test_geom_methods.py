@@ -23,6 +23,7 @@ class TestGeomMethods(unittest.TestCase):
     def setUp(self):
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+        self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.inner_sq = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75),
                             (0.25, 0.75)])
@@ -37,7 +38,7 @@ class TestGeomMethods(unittest.TestCase):
         self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
-        self.na_none = GeoSeries([self.t1, self.t2, None])
+        self.na_none = GeoSeries([self.t1, None])
         self.a1 = self.g1.copy()
         self.a1.index = ['A', 'B']
         self.a2 = self.g2.copy()
@@ -49,6 +50,7 @@ class TestGeomMethods(unittest.TestCase):
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+        self.g6 = GeoSeries([self.p0, self.t3])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -222,6 +224,9 @@ class TestGeomMethods(unittest.TestCase):
         expected = Series(np.array([0.5, 1.0]), index=self.g1.index)
         self._test_unary_real('area', expected, self.g1)
 
+        expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
+        self._test_unary_real('area', expected, self.na_none)
+
     def test_bounds(self):
         # Set columns to get the order right
         expected = DataFrame({'minx': [0.0, 0.0], 'miny': [0.0, 0.0],
@@ -252,6 +257,11 @@ class TestGeomMethods(unittest.TestCase):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real('length', expected, self.g1)
 
+        expected = Series(
+                        np.array([2 + np.sqrt(2), np.nan]),
+                        index=self.na_none.index)
+        self._test_unary_real('length', expected, self.na_none)
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False]
         assert_array_equal(expected, self.g0.crosses(self.t1))
@@ -263,9 +273,23 @@ class TestGeomMethods(unittest.TestCase):
         expected = [False, False, False, False, False, True]
         assert_array_equal(expected, self.g0.disjoint(self.t1))
 
+    def test_distance(self):
+        expected = Series(np.array([
+                          np.sqrt((5 - 1)**2 + (5 - 1)**2),
+                          np.nan]),
+                    self.na_none.index)
+        assert_array_equal(expected, self.na_none.distance(self.p0))
+
+        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]),
+                          self.g6.index)
+        assert_array_equal(expected, self.g6.distance(self.na_none))
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False]
         assert_array_equal(expected, self.g0.intersects(self.t1))
+
+        expected = [True, False]
+        assert_array_equal(expected, self.na_none.intersects(self.t2))
 
     def test_overlaps(self):
         expected = [True, True, False, False, False, False]

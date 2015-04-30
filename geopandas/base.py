@@ -41,14 +41,17 @@ def _geo_op(this, other, op):
 # TODO: think about merging with _geo_op
 def _series_op(this, other, op, **kwargs):
     """Geometric operation that returns a pandas Series"""
+    null_val = False if op != 'distance' else np.nan
+
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs)
-                      for this_elem, other_elem in zip(this, other)],
-                      index=this.index)
+        return Series([getattr(this_elem, op)(other_elem, **kwargs) 
+                    if not this_elem.is_empty | other_elem.is_empty else null_val
+                    for this_elem, other_elem in zip(this, other)],
+                    index=this.index)
     else:
-        return Series([getattr(s, op)(other, **kwargs)
+        return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
 
 def _geo_unary_op(this, op):
@@ -56,9 +59,9 @@ def _geo_unary_op(this, op):
     return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
                      index=this.index, crs=this.crs)
 
-def _series_unary_op(this, op):
+def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
-    return Series([getattr(geom, op) for geom in this.geometry],
+    return Series([getattr(geom, op, null_value) for geom in this.geometry],
                      index=this.index)
 
 
@@ -92,12 +95,12 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'area')
+        return _series_unary_op(self, 'area', np.nan)
 
     @property
     def geom_type(self):
         """Return the geometry type of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'geom_type')
+        return _series_unary_op(self, 'geom_type', None)
 
     @property
     def type(self):
@@ -107,7 +110,7 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Return the length of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'length')
+        return _series_unary_op(self, 'length', np.nan)
 
     @property
     def is_valid(self):
@@ -122,7 +125,7 @@ class GeoPandasBase(object):
     @property
     def is_simple(self):
         """Return True for each simple geometry, else False"""
-        return _series_unary_op(self, 'is_simple')
+        return _series_unary_op(self, 'is_simple', False)
 
     @property
     def is_ring(self):
