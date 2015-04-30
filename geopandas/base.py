@@ -95,12 +95,12 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'area', np.nan)
+        return _series_unary_op(self, 'area', null_value=np.nan)
 
     @property
     def geom_type(self):
         """Return the geometry type of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'geom_type', None)
+        return _series_unary_op(self, 'geom_type', null_value=None)
 
     @property
     def type(self):
@@ -110,7 +110,7 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Return the length of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'length', np.nan)
+        return _series_unary_op(self, 'length', null_value=np.nan)
 
     @property
     def is_valid(self):
@@ -125,7 +125,7 @@ class GeoPandasBase(object):
     @property
     def is_simple(self):
         """Return True for each simple geometry, else False"""
-        return _series_unary_op(self, 'is_simple', False)
+        return _series_unary_op(self, 'is_simple', null_value=False)
 
     @property
     def is_ring(self):
