@@ -115,12 +115,12 @@ class GeoPandasBase(object):
     @property
     def is_valid(self):
         """Return True for each valid geometry, else False"""
-        return _series_unary_op(self, 'is_valid')
+        return _series_unary_op(self, 'is_valid', null_value=False)
 
     @property
     def is_empty(self):
         """Return True for each empty geometry, False for non-empty"""
-        return _series_unary_op(self, 'is_empty')
+        return _series_unary_op(self, 'is_empty', null_value=False)
 
     @property
     def is_simple(self):
@@ -168,7 +168,7 @@ class GeoPandasBase(object):
     def interiors(self):
         """Return the interior rings of each polygon"""
         # TODO: return empty list or None for non-polygons
-        return _series_unary_op(self, 'interiors')
+        return _series_unary_op(self, 'interiors', null_value=False)
 
     def representative_point(self):
         """Return a GeoSeries of points guaranteed to be in each geometry"""
