@@ -130,7 +130,6 @@ class TestGeocode(unittest.TestCase):
         tm.assert_series_equal(g['address'],
                                pd.Series(self.locations, name='address'))
 
-
     def test_reverse(self):
         with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
                         ReverseMock()) as m:
