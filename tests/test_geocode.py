@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import sys
-
 from fiona.crs import from_epsg
 import pandas as pd
 import pandas.util.testing as tm
@@ -124,12 +122,11 @@ class TestGeocode(unittest.TestCase):
 
         n = len(self.locations)
         self.assertIsInstance(g, gpd.GeoDataFrame)
-        expected = GeoSeries([Point(float(x)+0.5, float(x)) for x in range(n)],
+        expected = GeoSeries([Point(float(x) + 0.5, float(x)) for x in range(n)],
                              crs=from_epsg(4326))
         assert_geoseries_equal(expected, g['geometry'])
         tm.assert_series_equal(g['address'],
                                pd.Series(self.locations, name='address'))
-
 
     def test_reverse(self):
         with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
@@ -141,6 +138,6 @@ class TestGeocode(unittest.TestCase):
 
         expected = GeoSeries(self.points, crs=from_epsg(4326))
         assert_geoseries_equal(expected, g['geometry'])
-        tm.assert_series_equal(g['address'],
-                               pd.Series('address' + str(x) 
-                                    for x in range(len(self.points))))
+        address = pd.Series(['address' + str(x) for x in range(len(self.points))],
+                            name='address')
+        tm.assert_series_equal(g['address'], address)
