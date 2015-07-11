@@ -124,7 +124,6 @@ def _query(data, forward, provider, **kwargs):
     coders = {'googlev3': geopy.geocoders.GoogleV3,
               'bing': geopy.geocoders.Bing,
               'yahoo': Yahoo,
-              'mapquest': geopy.geocoders.MapQuest,
               'openmapquest': geopy.geocoders.OpenMapQuest,
               'nominatim': geopy.geocoders.Nominatim}
 
