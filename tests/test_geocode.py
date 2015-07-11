@@ -138,6 +138,6 @@ class TestGeocode(unittest.TestCase):
 
         expected = GeoSeries(self.points, crs=from_epsg(4326))
         assert_geoseries_equal(expected, g['geometry'])
-        tm.assert_series_equal(g['address'],
-                               pd.Series('address' + str(x) 
-                                    for x in range(len(self.points))))
+        address = pd.Series(['address' + str(x) for x in range(len(self.points))],
+                            name='address')
+        tm.assert_series_equal(g['address'], address)
