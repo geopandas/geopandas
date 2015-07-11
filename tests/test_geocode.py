@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import sys
-
 from fiona.crs import from_epsg
 import pandas as pd
 import pandas.util.testing as tm
