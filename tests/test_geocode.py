@@ -122,7 +122,7 @@ class TestGeocode(unittest.TestCase):
 
         n = len(self.locations)
         self.assertIsInstance(g, gpd.GeoDataFrame)
-        expected = GeoSeries([Point(float(x)+0.5, float(x)) for x in range(n)],
+        expected = GeoSeries([Point(float(x) + 0.5, float(x)) for x in range(n)],
                              crs=from_epsg(4326))
         assert_geoseries_equal(expected, g['geometry'])
         tm.assert_series_equal(g['address'],
