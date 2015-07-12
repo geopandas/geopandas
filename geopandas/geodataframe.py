@@ -37,7 +37,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
     """
+    _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
+                       'is_copy', '_subtyp', '_index',
+                       '_default_kind', '_default_fill_value', '_metadata',
+                       '__array_struct__', '__array_interface__']
+
     _metadata = ['crs', '_geometry_column_name']
+
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, *args, **kwargs):
