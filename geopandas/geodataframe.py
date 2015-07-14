@@ -37,6 +37,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
     """
+
+    # XXX: This will no longer be necessary in pandas 0.17
     _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
                        'is_copy', '_subtyp', '_index',
                        '_default_kind', '_default_fill_value', '_metadata',
@@ -55,6 +57,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
 
+    # Serialize metadata (will no longer be necessary in pandas 0.17+)
+    # See https://github.com/pydata/pandas/pull/10557
     def __getstate__(self):
         meta = dict((k, getattr(self, k, None)) for k in self._metadata)
         return dict(_data=self._data, _typ=self._typ,
