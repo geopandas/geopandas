@@ -37,7 +37,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
     """
+
+    # XXX: This will no longer be necessary in pandas 0.17
+    _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
+                       'is_copy', '_subtyp', '_index',
+                       '_default_kind', '_default_fill_value', '_metadata',
+                       '__array_struct__', '__array_interface__']
+
     _metadata = ['crs', '_geometry_column_name']
+
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, *args, **kwargs):
@@ -48,6 +56,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
+
+    # Serialize metadata (will no longer be necessary in pandas 0.17+)
+    # See https://github.com/pydata/pandas/pull/10557
+    def __getstate__(self):
+        meta = dict((k, getattr(self, k, None)) for k in self._metadata)
+        return dict(_data=self._data, _typ=self._typ,
+                    _metadata=self._metadata, **meta)
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...

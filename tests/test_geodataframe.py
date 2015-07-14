@@ -487,3 +487,10 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(isinstance(geo['bbox'], tuple))
         for feature in geo['features']:
             self.assertTrue('bbox' in feature.keys())
+
+    def test_pickle(self):
+        filename = os.path.join(self.tempdir, 'df.pkl')
+        self.df.to_pickle(filename)
+        unpickled = pd.read_pickle(filename)
+        assert_frame_equal(self.df, unpickled)
+        self.assertEqual(self.df.crs, unpickled.crs)
