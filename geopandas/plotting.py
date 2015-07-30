@@ -121,7 +121,7 @@ def plot_series(s, colormap='Set1', axes=None, **color_kwds):
 
 def plot_dataframe(s, column=None, colormap=None,
                    categorical=False, legend=False, axes=None,
-                   scheme=None, k=5,
+                   scheme=None, k=5, vmin=None, vmax=None,
                    **color_kwds
                    ):
     """ Plot a GeoDataFrame
@@ -163,6 +163,16 @@ def plot_dataframe(s, column=None, colormap=None,
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
 
+        vmin : None or float (default None)
+
+            Minimum value of colormap. If None, the minimum value of
+            the specified column is used.
+
+        vmax : None or float (default None)
+
+            Maximum value of colormap. If None, the maximum value of
+            the specified column is used.
+
         **color_kwds : dict
             Color options to be passed on to plot_polygon
 
@@ -192,7 +202,7 @@ def plot_dataframe(s, column=None, colormap=None,
             values = s[column]
         if scheme is not None:
             values = __pysal_choro(values, scheme, k=k)
-        cmap = norm_cmap(values, colormap, Normalize, cm)
+        cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
         if axes is None:
             fig = plt.gcf()
             fig.add_subplot(111, aspect='equal')
@@ -268,7 +278,7 @@ def __pysal_choro(values, scheme, k=5):
     return values
 
 
-def norm_cmap(values, cmap, normalize, cm):
+def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
 
     """ Normalize and set colormap
 
@@ -287,13 +297,20 @@ def norm_cmap(values, cmap, normalize, cm):
         cm
             matplotlib.cm
 
+        vmin
+            Minimum value of colormap. If None, uses min(values).
+
+        vmax
+            Maximum value of colormap. If None, uses max(values).
+
         Returns
         -------
         n_cmap
             mapping of normalized values to colormap (cmap)
     """
 
-    mn, mx = min(values), max(values)
+    mn = vmin or min(values)
+    mx = vmax or max(values)
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
     return n_cmap
