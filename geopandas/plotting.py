@@ -68,7 +68,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, **color_kwds):
+def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -95,6 +95,10 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, **color_kwds):
         linewidth : float (default 1.0)
             Line width for geometries.
 
+        figsize : pair of floats (default None)
+            Size of the resulting matplotlib.figure.Figure. If the argument
+            axes is given explicitly, figsize is ignored.
+
         **color_kwds : dict
             Color options to be passed on to plot_polygon
 
@@ -105,9 +109,8 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, **color_kwds):
     """
     import matplotlib.pyplot as plt
     if axes is None:
-        fig = plt.gcf()
-        fig.add_subplot(111, aspect='equal')
-        ax = plt.gca()
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_aspect('equal')
     else:
         ax = axes
     color = gencolor(len(s), colormap=colormap)
@@ -124,7 +127,7 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, **color_kwds):
 
 def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                    categorical=False, legend=False, axes=None,
-                   scheme=None, k=5, vmin=None, vmax=None,
+                   scheme=None, k=5, vmin=None, vmax=None, figsize=None,
                    **color_kwds
                    ):
     """ Plot a GeoDataFrame
@@ -185,6 +188,10 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             Maximum value of colormap. If None, the maximum data value
             in the column to be plotted is used.
 
+        figsize
+            Size of the resulting matplotlib.figure.Figure. If the argument
+            axes is given explicitly, figsize is ignored.
+
         **color_kwds : dict
             Color options to be passed on to plot_polygon
 
@@ -199,7 +206,7 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, axes=axes, linewidth=linewidth, **color_kwds)
+        return plot_series(s.geometry, colormap=colormap, axes=axes, linewidth=linewidth, figsize=figsize, **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -216,9 +223,8 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             values = __pysal_choro(values, scheme, k=k)
         cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
         if axes is None:
-            fig = plt.gcf()
-            fig.add_subplot(111, aspect='equal')
-            ax = plt.gca()
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_aspect('equal')
         else:
             ax = axes
         for geom, value in zip(s.geometry, values):
