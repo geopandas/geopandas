@@ -224,7 +224,13 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
         else:
             values = s[column]
         if scheme is not None:
-            values = __pysal_choro(values, scheme, k=k)
+            binning = __pysal_choro(values, scheme, k=k)
+            values = binning.yb
+            # set categorical to True for creating the legend
+            categorical = True
+            binedges = [binning.yb.min()] + binning.bins.tolist()
+            categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
+                          for i in range(len(binedges)-1)]
         cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
         if axes is None:
             fig, ax = plt.subplots(figsize=figsize)
@@ -293,7 +299,7 @@ def __pysal_choro(values, scheme, k=5):
             print('2<=k<=9, setting k=5 (default)')
             k = 5
         binning = schemes[scheme](values, k)
-        values = binning.yb
+        return binning
     except ImportError:
         print('PySAL not installed, setting map to default')
 
