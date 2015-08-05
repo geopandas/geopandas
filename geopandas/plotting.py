@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import warnings
+
 import numpy as np
 from six import next
 from six.moves import xrange
@@ -171,7 +173,7 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             axes on which to draw the plot
 
         scheme : pysal.esda.mapclassify.Map_Classifier
-            Choropleth classification schemes
+            Choropleth classification schemes (requires PySAL)
 
         vmin : float
             Minimum value for color map.
@@ -270,7 +272,8 @@ def __pysal_choro(values, scheme, k=5):
             Series to be plotted
 
         scheme
-            pysal.esda.mapclassify classificatin scheme ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
+            pysal.esda.mapclassify classificatin scheme
+            ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
 
         k
             number of classes (2 <= k <=9)
@@ -278,8 +281,9 @@ def __pysal_choro(values, scheme, k=5):
         Returns
         -------
 
-        values
-            Series with values replaced with class identifier if PySAL is available, otherwise the original values are used
+        binning
+            Binning objects that holds the Series with values replaced with
+            class identifier and the bins.
     """
 
     try:
@@ -292,18 +296,16 @@ def __pysal_choro(values, scheme, k=5):
         scheme = scheme.lower()
         if scheme not in schemes:
             scheme = 'quantiles'
-            print('Unrecognized scheme: ', s0)
-            print('Using Quantiles instead')
+            warnings.warn('Unrecognized scheme "{0}". Using "Quantiles" '
+                          'instead'.format(s0), UserWarning, stacklevel=3)
         if k < 2 or k > 9:
-            print('Invalid k: ', k)
-            print('2<=k<=9, setting k=5 (default)')
+            warnings.warn('Invalid k: {0} (2 <= k <= 9), setting k=5 '
+                          '(default)'.format(k), UserWarning, stacklevel=3)
             k = 5
         binning = schemes[scheme](values, k)
         return binning
     except ImportError:
-        print('PySAL not installed, setting map to default')
-
-    return values
+        raise ImportError("PySAL is required to use the 'scheme' keyword")
 
 
 def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
