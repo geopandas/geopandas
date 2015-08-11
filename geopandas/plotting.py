@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 from six import next
 from six.moves import xrange
+from shapely.geometry import Polygon
 
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
@@ -10,7 +11,6 @@ def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
     if poly.has_z:
-        from shapely.geometry import Polygon
         poly = Polygon(zip(*poly.exterior.xy))
 
     # without Descartes, we could make a Patch of exterior
