@@ -159,7 +159,12 @@ def _prepare_geocode_result(results):
     index = []
 
     for i, s in iteritems(results):
-        address, loc = s
+        
+        try:
+            address, loc = s
+        except TypeError as e:
+            # geocoder was unable to find a match
+            continue
 
         # loc is lat, lon and we want lon, lat
         if loc is None:
