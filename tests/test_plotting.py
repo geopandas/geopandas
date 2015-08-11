@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import numpy as np
 import os
 import shutil
 import tempfile
@@ -7,13 +8,14 @@ import unittest
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
-from matplotlib.pyplot import Artist, savefig, clf
+from matplotlib.pyplot import Artist, savefig, clf, cm
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
+from numpy import cos, sin, pi
 from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
 
-from geopandas import GeoSeries
+from geopandas import GeoSeries, GeoDataFrame
 
 
 # If set to True, generate images rather than perform tests (all tests will pass!)
@@ -72,6 +74,33 @@ class PlotTests(unittest.TestCase):
         N = 10
         lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(N)])
         ax = lines.plot()
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_plot_GeoDataFrame_with_kwargs(self):
+        """
+        Test plotting a simple GeoDataFrame consisting of a series of polygons
+        with increasing values using various extra kwargs.
+        """
+        clf()
+        filename = 'poly_plot_with_kwargs.png'
+        ts = np.linspace(0, 2*pi, 10, endpoint=False)
+
+        # Build GeoDataFrame from a series of triangles wrapping around in a ring
+        # and a second column containing a list of increasing values.
+        r1 = 1.0  # radius of inner ring boundary
+        r2 = 1.5  # radius of outer ring boundary
+
+        def make_triangle(t0, t1):
+            return Polygon([(r1*cos(t0), r1*sin(t0)),
+                            (r2*cos(t0), r2*sin(t0)),
+                            (r1*cos(t1), r1*sin(t1))])
+
+        polys = GeoSeries([make_triangle(t0, t1) for t0, t1 in zip(ts, ts[1:])])
+        values = np.arange(len(polys))
+        df = GeoDataFrame({'geometry': polys, 'values': values})
+
+        # Plot the GeoDataFrame using various keyword arguments to see if they are honoured
+        ax = df.plot(column='values', colormap=cm.RdBu, vmin=+2, vmax=None, figsize=(8, 4))
         self._compare_images(ax=ax, filename=filename)
 
 if __name__ == '__main__':
