@@ -9,6 +9,10 @@ def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
     """ Plot a single Polygon geometry """
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
+    if poly.has_z:
+        from shapely.geometry import Polygon
+        poly = Polygon(zip(*poly.exterior.xy))
+
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
     ax.plot(a[:, 0], a[:, 1], color=edgecolor)
