@@ -4,7 +4,6 @@ import numpy as np
 import os
 import shutil
 import tempfile
-import unittest
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
@@ -14,6 +13,7 @@ from matplotlib.testing.compare import compare_images
 from numpy import cos, sin, pi
 from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
+from .util import unittest
 
 from geopandas import GeoSeries, GeoDataFrame
 
