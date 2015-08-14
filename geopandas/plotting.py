@@ -3,12 +3,16 @@ from __future__ import print_function
 import numpy as np
 from six import next
 from six.moves import xrange
+from shapely.geometry import Polygon
 
 
 def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
     """ Plot a single Polygon geometry """
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
+    if poly.has_z:
+        poly = Polygon(zip(*poly.exterior.xy))
+
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, linewidth=0, alpha=alpha))  # linewidth=0 because boundaries are drawn separately
     ax.plot(a[:, 0], a[:, 1], color=edgecolor, linewidth=linewidth)
