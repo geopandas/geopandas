@@ -5,35 +5,35 @@ from six import next
 from six.moves import xrange
 
 
-def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5):
+def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
     """ Plot a single Polygon geometry """
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
     # without Descartes, we could make a Patch of exterior
-    ax.add_patch(PolygonPatch(poly, facecolor=facecolor, alpha=alpha))
-    ax.plot(a[:, 0], a[:, 1], color=edgecolor)
+    ax.add_patch(PolygonPatch(poly, facecolor=facecolor, linewidth=0, alpha=alpha))  # linewidth=0 because boundaries are drawn separately
+    ax.plot(a[:, 0], a[:, 1], color=edgecolor, linewidth=linewidth)
     for p in poly.interiors:
         x, y = zip(*p.coords)
-        ax.plot(x, y, color=edgecolor)
+        ax.plot(x, y, color=edgecolor, linewidth=linewidth)
 
 
-def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5):
+def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
-        plot_polygon(ax, geom, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
+        plot_polygon(ax, geom, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
+            plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
 
 
-def plot_linestring(ax, geom, color='black', linewidth=1):
+def plot_linestring(ax, geom, color='black', linewidth=1.0):
     """ Plot a single LineString geometry """
     a = np.array(geom)
     ax.plot(a[:, 0], a[:, 1], color=color, linewidth=linewidth)
 
 
-def plot_multilinestring(ax, geom, color='red', linewidth=1):
+def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
     """ Can safely call with either LineString or MultiLineString geometry
     """
     if geom.type == 'LineString':
@@ -68,7 +68,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', axes=None, **color_kwds):
+def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -92,6 +92,13 @@ def plot_series(s, colormap='Set1', axes=None, **color_kwds):
         axes : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
 
+        linewidth : float (default 1.0)
+            Line width for geometries.
+
+        figsize : pair of floats (default None)
+            Size of the resulting matplotlib.figure.Figure. If the argument
+            axes is given explicitly, figsize is ignored.
+
         **color_kwds : dict
             Color options to be passed on to plot_polygon
 
@@ -102,26 +109,25 @@ def plot_series(s, colormap='Set1', axes=None, **color_kwds):
     """
     import matplotlib.pyplot as plt
     if axes is None:
-        fig = plt.gcf()
-        fig.add_subplot(111, aspect='equal')
-        ax = plt.gca()
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_aspect('equal')
     else:
         ax = axes
     color = gencolor(len(s), colormap=colormap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=next(color), **color_kwds)
+            plot_multipolygon(ax, geom, facecolor=next(color), linewidth=linewidth, **color_kwds)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=next(color))
+            plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
         elif geom.type == 'Point':
             plot_point(ax, geom)
     plt.draw()
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None,
+def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                    categorical=False, legend=False, axes=None,
-                   scheme=None, k=5,
+                   scheme=None, k=5, vmin=None, vmax=None, figsize=None,
                    **color_kwds
                    ):
     """ Plot a GeoDataFrame
@@ -150,6 +156,9 @@ def plot_dataframe(s, column=None, colormap=None,
         colormap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.
 
+        linewidth : float (default 1.0)
+            Line width for geometries.
+
         legend : bool (default False)
             Plot a legend (Experimental; currently for categorical
             plots only)
@@ -160,8 +169,28 @@ def plot_dataframe(s, column=None, colormap=None,
         scheme : pysal.esda.mapclassify.Map_Classifier
             Choropleth classification schemes
 
+        vmin : float
+            Minimum value for color map.
+
+        vmax : float
+            Maximum value for color map.
+
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
+
+        vmin : None or float (default None)
+
+            Minimum value of colormap. If None, the minimum data value
+            in the column to be plotted is used.
+
+        vmax : None or float (default None)
+
+            Maximum value of colormap. If None, the maximum data value
+            in the column to be plotted is used.
+
+        figsize
+            Size of the resulting matplotlib.figure.Figure. If the argument
+            axes is given explicitly, figsize is ignored.
 
         **color_kwds : dict
             Color options to be passed on to plot_polygon
@@ -177,7 +206,7 @@ def plot_dataframe(s, column=None, colormap=None,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, axes=axes, **color_kwds)
+        return plot_series(s.geometry, colormap=colormap, axes=axes, linewidth=linewidth, figsize=figsize, **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
@@ -192,18 +221,17 @@ def plot_dataframe(s, column=None, colormap=None,
             values = s[column]
         if scheme is not None:
             values = __pysal_choro(values, scheme, k=k)
-        cmap = norm_cmap(values, colormap, Normalize, cm)
+        cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
         if axes is None:
-            fig = plt.gcf()
-            fig.add_subplot(111, aspect='equal')
-            ax = plt.gca()
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_aspect('equal')
         else:
             ax = axes
         for geom, value in zip(s.geometry, values):
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), **color_kwds)
+                plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), linewidth=linewidth, **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-                plot_multilinestring(ax, geom, color=cmap.to_rgba(value))
+                plot_multilinestring(ax, geom, color=cmap.to_rgba(value), linewidth=linewidth)
             # TODO: color point geometries
             elif geom.type == 'Point':
                 plot_point(ax, geom)
@@ -268,7 +296,7 @@ def __pysal_choro(values, scheme, k=5):
     return values
 
 
-def norm_cmap(values, cmap, normalize, cm):
+def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
 
     """ Normalize and set colormap
 
@@ -287,13 +315,20 @@ def norm_cmap(values, cmap, normalize, cm):
         cm
             matplotlib.cm
 
+        vmin
+            Minimum value of colormap. If None, uses min(values).
+
+        vmax
+            Maximum value of colormap. If None, uses max(values).
+
         Returns
         -------
         n_cmap
             mapping of normalized values to colormap (cmap)
     """
 
-    mn, mx = min(values), max(values)
+    mn = vmin or min(values)
+    mx = vmax or max(values)
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
     return n_cmap
