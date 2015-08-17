@@ -6,3 +6,4 @@ doc/_build
 geopandas.egg-info
 geopandas/version.py
 *.py~
+.ipynb_checkpoints
