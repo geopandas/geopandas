@@ -47,13 +47,31 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, color='b', marker='o', markersize=2):
-    """ Plot a single Point geometry """
+def plot_point(ax, pt, color='blue', marker='o', markersize=2):
+    """ Plot a single Point geometry
+
+        Parameters
+        ----------
+
+        ax : matplotlib.pyplot.Artist
+
+        pt : shapely.Point
+
+        color : np.ndarray or str (default 'blue')
+            A maplotlib color, or RGBA channels.
+            Probably comes from gencolor().
+
+        marker: str (default 'o')
+            A matplotlib marker shape.
+
+        markersize: int (default 2)
+            A matplotlib markersize, in points**2.
+    """
     ax.scatter(pt.x, pt.y,
-            color=color,
-            marker=marker,
-            s=markersize,
-            edgecolor='')
+               color=color,
+               marker=marker,
+               s=markersize,
+               edgecolor='')
 
 
 def gencolor(N, colormap='Set1'):
@@ -76,7 +94,8 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **color_kwds):
+def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None,
+                markersize=2, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -98,7 +117,7 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
                 Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
 
         axes : matplotlib.pyplot.Artist (default None)
-            axes on which to draw the plot
+            Axes on which to draw the plot.
 
         linewidth : float (default 1.0)
             Line width for geometries.
@@ -107,8 +126,11 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
             Size of the resulting matplotlib.figure.Figure. If the argument
             axes is given explicitly, figsize is ignored.
 
+        markersize: int (default 2)
+            A matplotlib markersize, in points**2.
+
         **color_kwds : dict
-            Color options to be passed on to plot_polygon
+            Color options to be passed on to plot_polygon.
 
         Returns
         -------
@@ -128,7 +150,7 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
             plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
         elif geom.type == 'Point':
-            plot_point(ax, geom)
+            plot_point(ax, geom, color=next(color))
     plt.draw()
     return ax
 
@@ -136,7 +158,7 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
 def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                    categorical=False, legend=False, axes=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
-                   markersize=None,
+                   markersize=2,
                    **color_kwds
                    ):
     """ Plot a GeoDataFrame
@@ -170,13 +192,13 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
 
         legend : bool (default False)
             Plot a legend (Experimental; currently for categorical
-            plots only)
+            plots only).
 
         axes : matplotlib.pyplot.Artist (default None)
-            axes on which to draw the plot
+            Axes on which to draw the plot.
 
         scheme : pysal.esda.mapclassify.Map_Classifier
-            Choropleth classification schemes
+            Choropleth classification schemes.
 
         vmin : float
             Minimum value for color map.
@@ -185,7 +207,7 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             Maximum value for color map.
 
         k   : int (default 5)
-            Number of classes (ignored if scheme is None)
+            Number of classes (ignored if scheme is None).
 
         vmin : None or float (default None)
 
@@ -201,8 +223,11 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             Size of the resulting matplotlib.figure.Figure. If the argument
             axes is given explicitly, figsize is ignored.
 
+        markersize: int (default 2)
+            A matplotlib markersize, in points**2.
+
         **color_kwds : dict
-            Color options to be passed on to plot_polygon
+            Color options to be passed on to plot_polygon.
 
         Returns
         -------
@@ -241,11 +266,11 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), linewidth=linewidth, **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
                 plot_multilinestring(ax, geom, color=cmap.to_rgba(value), linewidth=linewidth)
-            # TODO: color point geometries
             elif geom.type == 'Point':
                 plot_point(ax,
                            geom,
                            color=cmap.to_rgba(value),
+                           marker='o',
                            markersize=markersize)
         if legend:
             if categorical:
