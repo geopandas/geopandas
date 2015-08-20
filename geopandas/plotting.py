@@ -47,9 +47,13 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, marker='o', markersize=2):
+def plot_point(ax, pt, color='b', marker='o', markersize=2):
     """ Plot a single Point geometry """
-    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
+    ax.scatter(pt.x, pt.y,
+            color=color,
+            marker=marker,
+            s=markersize,
+            edgecolor='')
 
 
 def gencolor(N, colormap='Set1'):
@@ -132,6 +136,7 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
 def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                    categorical=False, legend=False, axes=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
+                   markersize=None,
                    **color_kwds
                    ):
     """ Plot a GeoDataFrame
@@ -238,7 +243,10 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                 plot_multilinestring(ax, geom, color=cmap.to_rgba(value), linewidth=linewidth)
             # TODO: color point geometries
             elif geom.type == 'Point':
-                plot_point(ax, geom)
+                plot_point(ax,
+                           geom,
+                           color=cmap.to_rgba(value),
+                           markersize=markersize)
         if legend:
             if categorical:
                 patches = []
