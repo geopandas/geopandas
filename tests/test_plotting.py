@@ -15,7 +15,7 @@ from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
 from .util import unittest
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoSeries, GeoDataFrame, read_file
 
 
 # If set to True, generate images rather than perform tests (all tests will pass!)
@@ -27,7 +27,7 @@ TRAVIS = bool(os.environ.get('TRAVIS', False))
 
 
 class PlotTests(unittest.TestCase):
-    
+
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
         return
@@ -105,6 +105,28 @@ class PlotTests(unittest.TestCase):
         # Plot the GeoDataFrame using various keyword arguments to see if they are honoured
         ax = df.plot(column='values', colormap=cm.RdBu, vmin=+2, vmax=None, figsize=(8, 4))
         self._compare_images(ax=ax, filename=filename)
+
+
+class TestPySALPlotting(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            import pysal as ps
+        except ImportError:
+            raise unittest.SkipTest("PySAL is not installed")
+
+        pth = ps.examples.get_path("columbus.shp")
+        cls.tracts = read_file(pth)
+
+    def test_legend(self):
+        ax = self.tracts.plot(column='CRIME', scheme='QUANTILES', k=3,
+                         colormap='OrRd', legend=True)
+
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
+        self.assertEqual(labels, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
