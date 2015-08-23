@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import numpy as np
 import os
@@ -7,7 +7,7 @@ import tempfile
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
-from matplotlib.pyplot import Artist, savefig, clf, cm
+from matplotlib.pyplot import Artist, savefig, clf, cm, get_cmap
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from numpy import cos, sin, pi
@@ -107,6 +107,62 @@ class PlotTests(unittest.TestCase):
         self._compare_images(ax=ax, filename=filename)
 
 
+class TestPointPlotting(unittest.TestCase):
+
+    def setUp(self):
+
+        self.N = 10
+        self.points = GeoSeries(Point(i, i) for i in range(self.N))
+        values = np.arange(self.N)
+        self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+    def test_default_colors(self):
+
+        ## without specifying values -> max 9 different colors
+
+        # GeoSeries
+        ax = self.points.plot()
+        cmap = get_cmap('Set1', 9)
+        expected_colors = cmap(list(range(9))*2)
+        _check_colors(ax.get_lines(), expected_colors)
+
+        # GeoDataFrame -> uses 'jet' instead of 'Set1'
+        ax = self.df.plot()
+        cmap = get_cmap('jet', 9)
+        expected_colors = cmap(list(range(9))*2)
+        _check_colors(ax.get_lines(), expected_colors)
+
+        ## with specifying values
+
+        ax = self.df.plot(column='values')
+        cmap = get_cmap('jet')
+        expected_colors = cmap(np.arange(self.N)/(self.N-1))
+
+        _check_colors(ax.get_lines(), expected_colors)
+
+    def test_colormap(self):
+
+        ## without specifying values -> max 9 different colors
+
+        # GeoSeries
+        ax = self.points.plot(colormap='RdYlGn')
+        cmap = get_cmap('RdYlGn', 9)
+        expected_colors = cmap(list(range(9))*2)
+        _check_colors(ax.get_lines(), expected_colors)
+
+        # GeoDataFrame -> same as GeoSeries in this case
+        ax = self.df.plot(colormap='RdYlGn')
+        _check_colors(ax.get_lines(), expected_colors)
+
+        ## with specifying values
+
+        ax = self.df.plot(column='values', colormap='RdYlGn')
+        cmap = get_cmap('RdYlGn')
+        expected_colors = cmap(np.arange(self.N)/(self.N-1))
+
+        _check_colors(ax.get_lines(), expected_colors)
+
+
 class TestPySALPlotting(unittest.TestCase):
 
     @classmethod
@@ -126,6 +182,16 @@ class TestPySALPlotting(unittest.TestCase):
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
         self.assertEqual(labels, expected)
+
+
+def _check_colors(collection, expected_colors):
+
+    import matplotlib.colors as colors
+    conv = colors.colorConverter
+
+    for patch, color in zip(collection, expected_colors):
+        result = patch.get_color()
+        assert conv.to_rgba(result) == conv.to_rgba(color)
 
 
 if __name__ == '__main__':
