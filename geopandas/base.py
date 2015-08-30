@@ -12,7 +12,7 @@ from pandas import Series, DataFrame, MultiIndex
 import geopandas as gpd
 
 try:
-    from geopandas.sindex import RTreeError, SpatialIndex
+    from rtree.core import RTreeError
     HAS_SINDEX = True
 except ImportError:
     class RTreeError(Exception):
@@ -46,7 +46,7 @@ def _series_op(this, other, op, **kwargs):
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs) 
+        return Series([getattr(this_elem, op)(other_elem, **kwargs)
                     if not this_elem.is_empty | other_elem.is_empty else null_val
                     for this_elem, other_elem in zip(this, other)],
                     index=this.index)
@@ -72,8 +72,9 @@ class GeoPandasBase(object):
         if not HAS_SINDEX:
             warn("Cannot generate spatial index: Missing package `rtree`.")
         else:
+            from geopandas.sindex import SpatialIndex
             stream = ((i, item.bounds, idx) for i, (idx, item) in
-                   enumerate(self.geometry.iteritems()) if 
+                   enumerate(self.geometry.iteritems()) if
                    pd.notnull(item) and not item.is_empty)
             try:
                 self._sindex = SpatialIndex(stream)
@@ -271,7 +272,7 @@ class GeoPandasBase(object):
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
-                         
+
     @property
     def total_bounds(self):
         """Return a single bounding box (minx, miny, maxx, maxy) for all geometries
@@ -293,7 +294,7 @@ class GeoPandasBase(object):
         return self._sindex
 
     def buffer(self, distance, resolution=16):
-        return gpd.GeoSeries([geom.buffer(distance, resolution) 
+        return gpd.GeoSeries([geom.buffer(distance, resolution)
                              for geom in self.geometry],
                          index=self.index, crs=self.crs)
 
@@ -308,7 +309,7 @@ class GeoPandasBase(object):
     def project(self, other, normalized=False):
         """
         Return the distance along each geometry nearest to *other*
-        
+
         Parameters
         ----------
         other : BaseGeometry or GeoSeries
@@ -316,29 +317,29 @@ class GeoPandasBase(object):
         normalized : boolean
             If normalized is True, return the distance normalized to
             the length of the object.
-        
+
         The project method is the inverse of interpolate.
         """
-        
+
         return _series_op(self, other, 'project', normalized=normalized)
 
     def interpolate(self, distance, normalized=False):
         """
         Return a point at the specified distance along each geometry
-        
+
         Parameters
         ----------
         distance : float or Series of floats
             Distance(s) along the geometries at which a point should be returned
         normalized : boolean
-            If normalized is True, distance will be interpreted as a fraction 
+            If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
-        
-        return gpd.GeoSeries([s.interpolate(distance, normalized) 
+
+        return gpd.GeoSeries([s.interpolate(distance, normalized)
                              for s in self.geometry],
             index=self.index, crs=self.crs)
-        
+
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """
         Shift the coordinates of the GeoSeries.
@@ -347,39 +348,39 @@ class GeoPandasBase(object):
         ----------
         xoff, yoff, zoff : float, float, float
             Amount of offset along each dimension.
-            xoff, yoff, and zoff for translation along the x, y, and z 
+            xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
 
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
 
-        return gpd.GeoSeries([affinity.translate(s, xoff, yoff, zoff) 
-                             for s in self.geometry], 
+        return gpd.GeoSeries([affinity.translate(s, xoff, yoff, zoff)
+                             for s in self.geometry],
             index=self.index, crs=self.crs)
 
     def rotate(self, angle, origin='center', use_radians=False):
         """
         Rotate the coordinates of the GeoSeries.
-        
+
         Parameters
         ----------
         angle : float
-            The angle of rotation can be specified in either degrees (default) 
-            or radians by setting use_radians=True. Positive angles are 
+            The angle of rotation can be specified in either degrees (default)
+            or radians by setting use_radians=True. Positive angles are
             counter-clockwise and negative are clockwise rotations.
         origin : string, Point, or tuple (x, y)
-            The point of origin can be a keyword 'center' for the bounding box 
-            center (default), 'centroid' for the geometry's centroid, a Point 
+            The point of origin can be a keyword 'center' for the bounding box
+            center (default), 'centroid' for the geometry's centroid, a Point
             object or a coordinate tuple (x, y).
         use_radians : boolean
             Whether to interpret the angle of rotation as degrees or radians
-            
+
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
 
-        return gpd.GeoSeries([affinity.rotate(s, angle, origin=origin, 
+        return gpd.GeoSeries([affinity.rotate(s, angle, origin=origin,
             use_radians=use_radians) for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -392,8 +393,8 @@ class GeoPandasBase(object):
         xfact, yfact, zfact : float, float, float
             Scaling factors for the x, y, and z dimensions respectively.
         origin : string, Point, or tuple
-            The point of origin can be a keyword 'center' for the 2D bounding 
-            box center (default), 'centroid' for the geometry's 2D centroid, a 
+            The point of origin can be a keyword 'center' for the 2D bounding
+            box center (default), 'centroid' for the geometry's 2D centroid, a
             Point object or a coordinate tuple (x, y, z).
 
         Note: Negative scale factors will mirror or reflect coordinates.
@@ -402,32 +403,32 @@ class GeoPandasBase(object):
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
 
-        return gpd.GeoSeries([affinity.scale(s, xfact, yfact, zfact, 
-            origin=origin) for s in self.geometry], index=self.index, 
+        return gpd.GeoSeries([affinity.scale(s, xfact, yfact, zfact,
+            origin=origin) for s in self.geometry], index=self.index,
             crs=self.crs)
-                           
+
     def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
         """
         Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
-        
+
         Parameters
         ----------
         xs, ys : float, float
-            The shear angle(s) for the x and y axes respectively. These can be 
-            specified in either degrees (default) or radians by setting 
+            The shear angle(s) for the x and y axes respectively. These can be
+            specified in either degrees (default) or radians by setting
             use_radians=True.
         origin : string, Point, or tuple (x, y)
-            The point of origin can be a keyword 'center' for the bounding box 
-            center (default), 'centroid' for the geometry's centroid, a Point 
+            The point of origin can be a keyword 'center' for the bounding box
+            center (default), 'centroid' for the geometry's centroid, a Point
             object or a coordinate tuple (x, y).
         use_radians : boolean
             Whether to interpret the shear angle(s) as degrees or radians
-            
+
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
-        
-        return gpd.GeoSeries([affinity.skew(s, xs, ys, origin=origin, 
+
+        return gpd.GeoSeries([affinity.skew(s, xs, ys, origin=origin,
             use_radians=use_radians) for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -482,5 +483,3 @@ def _array_input(arr):
         arr[0] = geom
 
     return arr
-
-

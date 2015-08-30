@@ -25,8 +25,16 @@ Install
 
 **Requirements**
 
+For the installation of GeoPandas, the following packages are required:
 
-You will need to install [``rtree``](https://github.com/Toblerity/rtree), which requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+- ``pandas``
+- ``shapely``
+- ``fiona``
+- ``descartes``
+- ``pyproj``
+
+Further, [``rtree``](https://github.com/Toblerity/rtree) is an optional
+dependency. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
 
 
 **Install**
@@ -85,7 +93,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     3              Brooklyn  1.959432e+09  726568.946340
     4                Queens  3.049947e+09  861038.479299
     5         Staten Island  1.623853e+09  330385.036974
-    
+
                                                        geometry
     BoroCode
     1         (POLYGON ((981219.0557861328125000 188655.3157...
@@ -95,7 +103,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     5         (POLYGON ((970217.0223999023437500 145643.3322...
 
 ![New York City boroughs](examples/nyc.png)
- 
+
     >>> boros['geometry'].convex_hull
     0    POLYGON ((915517.6877458114176989 120121.88125...
     1    POLYGON ((1000721.5317993164062500 136681.7761...

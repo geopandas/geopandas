@@ -4,11 +4,13 @@ import tempfile
 import shutil
 import numpy as np
 from shapely.geometry import Point
-from geopandas import GeoDataFrame, read_file
-from geopandas.tools import sjoin
+
+from geopandas import GeoDataFrame, read_file, base
 from .util import unittest, download_nybb
+from geopandas.tools import sjoin
 
 
+@unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoin(unittest.TestCase):
 
     def setUp(self):
@@ -16,7 +18,7 @@ class TestSpatialJoin(unittest.TestCase):
         self.polydf = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.crs = {'init': 'epsg:4326'}
-        N = 20 
+        N = 20
         b = [int(x) for x in self.polydf.total_bounds]
         self.pointdf = GeoDataFrame([
             {'geometry' : Point(x, y), 'pointattr1': x + y, 'pointattr2': x - y}

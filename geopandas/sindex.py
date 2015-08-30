@@ -1,5 +1,8 @@
-from rtree.core import RTreeError
-from rtree.index import Index as RTreeIndex
+from geopandas import base
+
+if base.HAS_SINDEX:
+    from rtree.core import RTreeError
+    from rtree.index import Index as RTreeIndex
 
 
 class SpatialIndex(RTreeIndex):
@@ -8,6 +11,8 @@ class SpatialIndex(RTreeIndex):
     """
 
     def __init__(self, *args):
+        if not base.HAS_SINDEX:
+            raise ImportError("SpatialIndex needs `rtree`")
         RTreeIndex.__init__(self, *args)
 
     @property
