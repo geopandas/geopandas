@@ -4,10 +4,8 @@ About
 Known issues
 ------------
 
-- The ``geopy`` API has changed significantly over recent versions.
-  ``geopy 0.99`` is currently supported (though it is known to fail
-  with Python 3.2, it should work with other supported python
-  versions).
+- The ``geopy`` API has changed significantly over recent versions,
+  ``geopy 1.10.0`` is currently supported.
 
 .. toctree::
    :maxdepth: 2
