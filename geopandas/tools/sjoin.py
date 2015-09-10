@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import rtree
 from shapely import prepared
 
 
@@ -19,6 +18,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     lsuffix: suffix to apply to overlapping column names (left GeoDataFrame)
     rsuffix: suffix to apply to overlapping column names (right GeoDataFrame)
     """
+
+    import rtree
 
     allowed_hows = ['left', 'right', 'inner']
     if how not in allowed_hows:

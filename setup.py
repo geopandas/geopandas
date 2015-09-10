@@ -86,6 +86,4 @@ setup(name='geopandas',
       url='http://geopandas.org',
       long_description=LONG_DESCRIPTION,
       packages=['geopandas', 'geopandas.io', 'geopandas.tools'],
-      install_requires=[
-        'pandas', 'shapely', 'fiona', 'descartes', 'pyproj', 'rtree'],
-)
+      install_requires=['pandas', 'shapely', 'fiona', 'descartes', 'pyproj'])
