@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 
 import fiona
+import tempfile
+import shutil
+import os.path
 
 from geopandas import GeoDataFrame, read_postgis, read_file
 import tests.util
@@ -15,7 +18,11 @@ class TestIO(unittest.TestCase):
         self.df = read_file(path, vfs=vfs)
         with fiona.open(path, vfs=vfs) as f:
             self.crs = f.crs
+        self.tempdir = tempfile.mkdtemp()
 
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+        
     def test_read_postgis_default(self):
         con = tests.util.connect('test_geopandas')
         if con is None or not tests.util.create_db(self.df):
@@ -55,3 +62,11 @@ class TestIO(unittest.TestCase):
         df = self.df.rename(columns=lambda x: x.lower())
         tests.util.validate_boro_df(self, df)
         self.assert_(df.crs == self.crs)
+
+    def test_to_file(self):
+        path = os.path.join(self.tempdir, 'nybb_test.json')
+        self.df.to_file(path, driver="GeoJSON")
+        # did a file get written?
+        self.assertTrue(os.path.isfile(path))
+        # Is the file empty?
+        self.assertTrue(os.path.getsize(path) > 0)
