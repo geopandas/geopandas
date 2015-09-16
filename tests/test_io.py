@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
-import fiona
-import tempfile
-import shutil
 import os.path
+import shutil
+import tempfile
+
+import fiona
 
 from geopandas import GeoDataFrame, read_postgis, read_file
 import tests.util
