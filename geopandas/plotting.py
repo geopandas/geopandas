@@ -74,7 +74,7 @@ def gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, colormap='Set1', ax=None, linewidth=1.0, figsize=None, **color_kwds):
+def plot_series(s, cmap='Set1', ax=None, linewidth=1.0, figsize=None, **color_kwds):
     """ Plot a GeoSeries
 
         Generate a plot of a GeoSeries geometry with matplotlib.
@@ -87,7 +87,7 @@ def plot_series(s, colormap='Set1', ax=None, linewidth=1.0, figsize=None, **colo
             MultiPolygon, LineString, MultiLineString and Point
             geometries can be plotted.
 
-        colormap : str (default 'Set1')
+        cmap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.  Any
             colormap will work, but categorical colormaps are
             generally recommended.  Examples of useful discrete
@@ -117,7 +117,7 @@ def plot_series(s, colormap='Set1', ax=None, linewidth=1.0, figsize=None, **colo
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
-    color = gencolor(len(s), colormap=colormap)
+    color = gencolor(len(s), colormap=cmap)
     for geom in s:
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
             plot_multipolygon(ax, geom, facecolor=next(color), linewidth=linewidth, **color_kwds)
@@ -129,7 +129,7 @@ def plot_series(s, colormap='Set1', ax=None, linewidth=1.0, figsize=None, **colo
     return ax
 
 
-def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
+def plot_dataframe(s, column=None, cmap=None, linewidth=1.0,
                    categorical=False, legend=False, ax=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
                    **color_kwds
@@ -153,11 +153,11 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             The name of the column to be plotted.
 
         categorical : bool (default False)
-            If False, colormap will reflect numerical values of the
+            If False, cmap will reflect numerical values of the
             column being plotted.  For non-numerical columns (or if
             column=None), this will be set to True.
 
-        colormap : str (default 'Set1')
+        cmap : str (default 'Set1')
             The name of a colormap recognized by matplotlib.
 
         linewidth : float (default 1.0)
@@ -184,12 +184,12 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
 
         vmin : None or float (default None)
 
-            Minimum value of colormap. If None, the minimum data value
+            Minimum value of cmap. If None, the minimum data value
             in the column to be plotted is used.
 
         vmax : None or float (default None)
 
-            Maximum value of colormap. If None, the maximum data value
+            Maximum value of cmap. If None, the maximum data value
             in the column to be plotted is used.
 
         figsize
@@ -210,13 +210,13 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
     from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, colormap=colormap, ax=ax, linewidth=linewidth, figsize=figsize, **color_kwds)
+        return plot_series(s.geometry, cmap=cmap, ax=ax, linewidth=linewidth, figsize=figsize, **color_kwds)
     else:
         if s[column].dtype is np.dtype('O'):
             categorical = True
         if categorical:
-            if colormap is None:
-                colormap = 'Set1'
+            if cmap is None:
+                cmap = 'Set1'
             categories = list(set(s[column].values))
             categories.sort()
             valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
@@ -231,7 +231,7 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
             binedges = [binning.yb.min()] + binning.bins.tolist()
             categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                           for i in range(len(binedges)-1)]
-        cmap = norm_cmap(values, colormap, Normalize, cm, vmin=vmin, vmax=vmax)
+        cmap = norm_cmap(values, cmap, Normalize, cm, vmin=vmin, vmax=vmax)
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
             ax.set_aspect('equal')
