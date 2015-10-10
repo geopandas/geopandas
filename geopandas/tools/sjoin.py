@@ -4,7 +4,7 @@ from shapely import prepared
 
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
-          lsuffix='left', rsuffix='right', **kwargs):
+          lsuffix='left', rsuffix='right', on='geometry', **kwargs):
     """Spatial join of two GeoDataFrames.
 
     left_df, right_df are GeoDataFrames
@@ -43,7 +43,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     for i in right_df_bounds.index:
         tree_idx.insert(i, right_df_bounds[i])
 
-    idxmatch = (left_df['geometry'].apply(lambda x: x.bounds)
+    idxmatch = (left_df[on].apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
@@ -69,7 +69,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       [l_idx,
                        r_idx,
                        check_predicates(
-                           left_df['geometry']
+                           left_df[on]
                            .apply(lambda x: prepared.prep(x))[l_idx],
                            right_df['geometry'][r_idx])
                        ]))
