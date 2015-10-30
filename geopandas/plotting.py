@@ -49,9 +49,10 @@ def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
             plot_linestring(ax, line, color=color, linewidth=linewidth)
 
 
-def plot_point(ax, pt, marker='o', markersize=2):
+def plot_point(ax, pt, marker='o', markersize=2, color="black"):
     """ Plot a single Point geometry """
-    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0)
+    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, linewidth=0,
+            color=color)
 
 
 def gencolor(N, colormap='Set1'):
@@ -126,7 +127,7 @@ def plot_series(s, colormap='Set1', axes=None, linewidth=1.0, figsize=None, **co
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
             plot_multilinestring(ax, geom, color=next(color), linewidth=linewidth)
         elif geom.type == 'Point':
-            plot_point(ax, geom)
+            plot_point(ax, geom, color=next(color))
     plt.draw()
     return ax
 
@@ -244,9 +245,8 @@ def plot_dataframe(s, column=None, colormap=None, linewidth=1.0,
                 plot_multipolygon(ax, geom, facecolor=cmap.to_rgba(value), linewidth=linewidth, **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
                 plot_multilinestring(ax, geom, color=cmap.to_rgba(value), linewidth=linewidth)
-            # TODO: color point geometries
             elif geom.type == 'Point':
-                plot_point(ax, geom)
+                plot_point(ax, geom, color=cmap.to_rgba(value))
         if legend:
             if categorical:
                 patches = []
@@ -337,6 +337,7 @@ def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
         -------
         n_cmap
             mapping of normalized values to colormap (cmap)
+
     """
 
     mn = vmin or min(values)
