@@ -114,6 +114,15 @@ def plot_series(s, cmap='Set1', ax=None, linewidth=1.0, figsize=None, **color_kw
 
         matplotlib axes instance
     """
+    if 'colormap' in color_kwds:
+        warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
+                      "(for consistency with matplotlib)", FutureWarning)
+        cmap = color_kwds.pop('colormap')
+    if 'axes' in color_kwds:
+        warnings.warn("'axes' is deprecated, please use 'ax' instead "
+                      "(for consistency with pandas)", FutureWarning)
+        ax = color_kwds.pop('axes')
+
     import matplotlib.pyplot as plt
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -205,6 +214,15 @@ def plot_dataframe(s, column=None, cmap=None, linewidth=1.0,
 
         matplotlib axes instance
     """
+    if 'colormap' in color_kwds:
+        warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
+                      "(for consistency with matplotlib)", FutureWarning)
+        cmap = color_kwds.pop('colormap')
+    if 'axes' in color_kwds:
+        warnings.warn("'axes' is deprecated, please use 'ax' instead "
+                      "(for consistency with pandas)", FutureWarning)
+        ax = color_kwds.pop('axes')
+
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
     from matplotlib.colors import Normalize
