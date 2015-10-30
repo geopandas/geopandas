@@ -145,18 +145,18 @@ class TestPointPlotting(unittest.TestCase):
         ## without specifying values -> max 9 different colors
 
         # GeoSeries
-        ax = self.points.plot(colormap='RdYlGn')
+        ax = self.points.plot(cmap='RdYlGn')
         cmap = get_cmap('RdYlGn', 9)
         expected_colors = cmap(list(range(9))*2)
         _check_colors(ax.get_lines(), expected_colors)
 
         # GeoDataFrame -> same as GeoSeries in this case
-        ax = self.df.plot(colormap='RdYlGn')
+        ax = self.df.plot(cmap='RdYlGn')
         _check_colors(ax.get_lines(), expected_colors)
 
         ## with specifying values
 
-        ax = self.df.plot(column='values', colormap='RdYlGn')
+        ax = self.df.plot(column='values', cmap='RdYlGn')
         cmap = get_cmap('RdYlGn')
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
 
