@@ -103,7 +103,7 @@ class PlotTests(unittest.TestCase):
         df = GeoDataFrame({'geometry': polys, 'values': values})
 
         # Plot the GeoDataFrame using various keyword arguments to see if they are honoured
-        ax = df.plot(column='values', colormap=cm.RdBu, vmin=+2, vmax=None, figsize=(8, 4))
+        ax = df.plot(column='values', cmap=cm.RdBu, vmin=+2, vmax=None, figsize=(8, 4))
         self._compare_images(ax=ax, filename=filename)
 
 
@@ -177,7 +177,7 @@ class TestPySALPlotting(unittest.TestCase):
 
     def test_legend(self):
         ax = self.tracts.plot(column='CRIME', scheme='QUANTILES', k=3,
-                         colormap='OrRd', legend=True)
+                         cmap='OrRd', legend=True)
 
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
