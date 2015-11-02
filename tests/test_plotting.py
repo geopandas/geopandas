@@ -7,7 +7,7 @@ import tempfile
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
-from matplotlib.pyplot import Artist, savefig, clf, cm, get_cmap
+from matplotlib.pyplot import Artist, savefig, close, cm, get_cmap
 from matplotlib.colorbar import Colorbar
 from matplotlib.backends import backend_agg
 from matplotlib.testing.noseclasses import ImageComparisonFailure
@@ -67,7 +67,7 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_poly_plot(self):
         """ Test plotting a simple series of polygons """
-        clf()
+        close('all')
         filename = 'poly_plot.png'
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
@@ -77,7 +77,7 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_point_plot(self):
         """ Test plotting a simple series of points """
-        clf()
+        close('all')
         filename = 'points_plot.png'
         N = 10
         points = GeoSeries(Point(i, i) for i in xrange(N))
@@ -86,7 +86,7 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_line_plot(self):
         """ Test plotting a simple series of lines """
-        clf()
+        close('all')
         filename = 'lines_plot.png'
         N = 10
         lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(N)])
@@ -99,7 +99,7 @@ class TestImageComparisons(unittest.TestCase):
         Test plotting a simple GeoDataFrame consisting of a series of polygons
         with increasing values using various extra kwargs.
         """
-        clf()
+        close('all')
         filename = 'poly_plot_with_kwargs.png'
         ts = np.linspace(0, 2*pi, 10, endpoint=False)
 
@@ -123,28 +123,28 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_dataframe_plot(self):
         """ Test plotting of a dataframe """
-        clf()
+        close('all')
         filename = 'df_plot.png'
         ax = self.df.plot()
         self._compare_images(ax=ax, filename=filename)
 
     def test_dataframe_categorical_plot(self):
         """ Test plotting of a categorical GeoDataFrame with legend """
-        clf()
+        close('all')
         filename = 'df_cat_leg_plot.png'
         ax = self.df.plot(column='values', categorical=True, legend=True)
         self._compare_images(ax=ax, filename=filename)
 
     def test_dataframe_noncategorical_plot(self):
         """ Test plotting of a noncategorical GeoDataFrame"""
-        clf()
+        close('all')
         filename = 'df_noncat_plot.png'
         ax = self.df.plot(column='values', categorical=False)
         self._compare_images(ax=ax, filename=filename)
 
     def test_dataframe_noncategorical_leg_plot(self):
-        """ Test plotting of a noncategorical GeoDataFrame"""
-        clf()
+        """ Test plotting of a noncategorical GeoDataFrame with legend"""
+        close('all')
         filename = 'df_noncat_leg_plot.png'
         ax, cbar = self.df.plot(column='values', categorical=False, legend=True)
         self._compare_images(ax=ax, filename=filename)
