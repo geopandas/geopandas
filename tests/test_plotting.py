@@ -8,12 +8,14 @@ import tempfile
 import matplotlib
 matplotlib.use('Agg', warn=False)
 from matplotlib.pyplot import Artist, savefig, clf, cm, get_cmap
+from matplotlib.colorbar import Colorbar
+from matplotlib.backends import backend_agg
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from numpy import cos, sin, pi
 from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
-from .util import unittest
+from .util import download_nybb, unittest
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
 
@@ -29,6 +31,19 @@ TRAVIS = bool(os.environ.get('TRAVIS', False))
 class PlotTests(unittest.TestCase):
 
     def setUp(self):
+        # hardcode settings for comparison tests
+        # settings adapted from ggplot test suite
+        matplotlib.rcdefaults() # Start with all defaults
+        matplotlib.rcParams['text.hinting'] = True
+        matplotlib.rcParams['text.antialiased'] = True
+        matplotlib.rcParams['font.sans-serif'] = 'Bitstream Vera Sans'
+        backend_agg.RendererAgg._fontd.clear()
+
+        nybb_filename = download_nybb()
+
+        self.df = read_file('/nybb_14a_av/nybb.shp',
+                            vfs='zip://' + nybb_filename)
+        self.df['values'] = [0.1, 0.2, 0.1, 0.3, 0.4]
         self.tempdir = tempfile.mkdtemp()
         return
 
@@ -105,6 +120,35 @@ class PlotTests(unittest.TestCase):
         # Plot the GeoDataFrame using various keyword arguments to see if they are honoured
         ax = df.plot(column='values', cmap=cm.RdBu, vmin=+2, vmax=None, figsize=(8, 4))
         self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_plot(self):
+        """ Test plotting of a dataframe """
+        clf()
+        filename = 'df_plot.png'
+        ax = self.df.plot()
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_categorical_plot(self):
+        """ Test plotting of a categorical GeoDataFrame with legend """
+        clf()
+        filename = 'df_cat_leg_plot.png'
+        ax = self.df.plot(column='values', categorical=True, legend=True)
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_noncategorical_plot(self):
+        """ Test plotting of a noncategorical GeoDataFrame"""
+        clf()
+        filename = 'df_noncat_plot.png'
+        ax = self.df.plot(column='values', categorical=False)
+        self._compare_images(ax=ax, filename=filename)
+
+    def test_dataframe_noncategorical_leg_plot(self):
+        """ Test plotting of a noncategorical GeoDataFrame"""
+        clf()
+        filename = 'df_noncat_leg_plot.png'
+        ax, cbar = self.df.plot(column='values', categorical=False, legend=True)
+        self._compare_images(ax=ax, filename=filename)
+        self.assertTrue(isinstance(cbar, Colorbar))
 
 
 class TestPointPlotting(unittest.TestCase):
