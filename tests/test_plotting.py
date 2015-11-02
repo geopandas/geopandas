@@ -31,14 +31,6 @@ TRAVIS = bool(os.environ.get('TRAVIS', False))
 class TestImageComparisons(unittest.TestCase):
 
     def setUp(self):
-        # hardcode settings for comparison tests
-        # settings adapted from ggplot test suite
-        matplotlib.rcdefaults() # Start with all defaults
-        matplotlib.rcParams['text.hinting'] = True
-        matplotlib.rcParams['text.antialiased'] = True
-        matplotlib.rcParams['font.sans-serif'] = 'Bitstream Vera Sans'
-        backend_agg.RendererAgg._fontd.clear()
-
         nybb_filename = download_nybb()
 
         self.df = read_file('/nybb_14a_av/nybb.shp',
