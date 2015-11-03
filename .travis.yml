@@ -22,9 +22,9 @@ python:
 
 env:
   matrix:
-    - PANDAS_VERSION=0.15.2
     - PANDAS_VERSION=master
     - PANDAS_VERSION=0.16.2
+    - PANDAS_VERSION=0.17.0
   global:
     - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
     - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
