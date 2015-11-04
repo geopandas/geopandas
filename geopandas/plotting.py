@@ -110,7 +110,8 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
             ax is given explicitly, figsize is ignored.
 
         **color_kwds : dict
-            Color options to be passed on to plot_polygon
+            Color options to be passed on to plot_polygon, plot_linestring, or
+            plot_point
 
         Returns
         -------
@@ -137,11 +138,14 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         else:
             col = color
         if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
+            if 'facecolor' in color_kwds:
+                plot_multipolygon(ax, geom, linewidth=linewidth, **color_kwds)
+            else:
+                plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
         elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
+            plot_multilinestring(ax, geom, color=col, linewidth=linewidth, **color_kwds)
         elif geom.type == 'Point':
-            plot_point(ax, geom, color=col)
+            plot_point(ax, geom, color=col, **color_kwds)
     plt.draw()
     return ax
 
