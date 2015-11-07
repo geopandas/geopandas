@@ -286,7 +286,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
                 cax = make_axes(ax)[0]
-                cbar = ax.get_figure().colorbar(cmap, cax=cax)
+                cbar = ax.get_figure().colorbar(cmap, alpha=0.5, cax=cax)
     plt.draw()
     if cbar:
         return ax, cbar
