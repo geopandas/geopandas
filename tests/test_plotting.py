@@ -252,14 +252,22 @@ class TestPolygonPlotting(unittest.TestCase):
         # polygons match the colorbar itself
         _check_colors(ax.patches, map(cbar.cmap, self.df['values']))
 
-        # With vmin, vmax
-        ax, cbar = self.df.plot(column='values', vmin=0.0, vmax=0.0, legend=True)
-        cmap = get_cmap('jet', 1)
-        expected_colors = [cmap(0)] * 2
-        # polygons match the intended colormap (plus some alpha)
+    def test_vmin_vmax(self):
+
+        # vmin is the max value, so all polygons get plotted the same color.
+        val = 1.0
+        ax, cbar = self.df.plot(column='values', vmin=val, vmax=2.0, legend=True)
+        cmap = get_cmap('jet', 2)
+        expected_colors = [cmap(0)] * 2 # the bottom of the colormap
         _check_colors(ax.patches, expected_colors, alpha=0.5)
         # polygons match the colorbar itself
-        _check_colors(ax.patches, map(cbar.cmap, self.df['values']))
+        _check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
+
+        # vmin==vmax is the only value, so all polygons get plotted the same color.
+        val = 1.0
+        ax, cbar = self.df.plot(column='values', vmin=val, vmax=val, legend=True)
+        # polygons match the colorbar itself
+        _check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
 
 
 class TestPySALPlotting(unittest.TestCase):
