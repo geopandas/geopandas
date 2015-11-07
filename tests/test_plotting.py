@@ -113,39 +113,6 @@ class TestImageComparisons(unittest.TestCase):
         ax = df.plot(column='values', cmap=cm.RdBu, vmin=+2, vmax=None, figsize=(8, 4))
         self._compare_images(ax=ax, filename=filename)
 
-    @unittest.skipIf(TRAVIS, 'Skip on Travis (fails even though it passes locally)')
-    def test_dataframe_plot(self):
-        """ Test plotting of a dataframe """
-        close('all')
-        filename = 'df_plot.png'
-        ax = self.df.plot()
-        self._compare_images(ax=ax, filename=filename)
-
-    @unittest.skipIf(TRAVIS, 'Skip on Travis (fails even though it passes locally)')
-    def test_dataframe_categorical_plot(self):
-        """ Test plotting of a categorical GeoDataFrame with legend """
-        close('all')
-        filename = 'df_cat_leg_plot.png'
-        ax = self.df.plot(column='values', categorical=True, legend=True)
-        self._compare_images(ax=ax, filename=filename)
-
-    @unittest.skipIf(TRAVIS, 'Skip on Travis (fails even though it passes locally)')
-    def test_dataframe_noncategorical_plot(self):
-        """ Test plotting of a noncategorical GeoDataFrame"""
-        close('all')
-        filename = 'df_noncat_plot.png'
-        ax = self.df.plot(column='values', categorical=False)
-        self._compare_images(ax=ax, filename=filename)
-
-    @unittest.skipIf(TRAVIS, 'Skip on Travis (fails even though it passes locally)')
-    def test_dataframe_noncategorical_leg_plot(self):
-        """ Test plotting of a noncategorical GeoDataFrame with legend"""
-        close('all')
-        filename = 'df_noncat_leg_plot.png'
-        ax, cbar = self.df.plot(column='values', categorical=False, legend=True)
-        self._compare_images(ax=ax, filename=filename)
-        self.assertTrue(isinstance(cbar, Colorbar))
-
 
 
 class TestPointPlotting(unittest.TestCase):
@@ -237,21 +204,62 @@ class TestLineStringPlotting(unittest.TestCase):
 
 class TestPolygonPlotting(unittest.TestCase):
 
-    def test_single_color(self):
+    def setUp(self):
 
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
-        polys = GeoSeries([t1, t2])
-        df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+        self.polys = GeoSeries([t1, t2])
+        self.df = GeoDataFrame({'geometry': self.polys, 'values': [0, 1]})
+        return
 
-        ax = polys.plot(color='green')
+    def tearDown(self):
+
+        close('all')
+        return
+
+    def test_single_color(self):
+
+        ax = self.polys.plot(color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
 
-        ax = df.plot(color='green')
+        ax = self.df.plot(color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
 
-        ax = df.plot(column='values', color='green')
+        ax = self.df.plot(column='values', color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
+
+    def test_categorical_colors(self):
+
+        ax = self.df.plot(column='values', categorical=True, legend=True)
+        cmap = get_cmap('Set1', 2)
+        expected_colors = cmap(self.df['values'])
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+
+    def test_noncategorical_colors(self):
+
+        # With custom colormap
+        ax = self.df.plot(column='values', cmap='copper')
+        cmap = get_cmap('copper', 2)
+        expected_colors = cmap(self.df['values'])
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+
+        # With legend
+        ax, cbar = self.df.plot(column='values', legend=True)
+        cmap = get_cmap('jet', 2)
+        expected_colors = cmap(self.df['values'])
+        # polygons match the colormap (plus some alpha)
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+        # polygons match the colorbar itself
+        _check_colors(ax.patches, map(cbar.cmap, self.df['values']))
+
+        # With vmin, vmax
+        ax, cbar = self.df.plot(column='values', vmin=0.0, vmax=0.0, legend=True)
+        cmap = get_cmap('jet', 1)
+        expected_colors = [cmap(0)] * 2
+        # polygons match the intended colormap (plus some alpha)
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+        # polygons match the colorbar itself
+        _check_colors(ax.patches, map(cbar.cmap, self.df['values']))
 
 
 class TestPySALPlotting(unittest.TestCase):
