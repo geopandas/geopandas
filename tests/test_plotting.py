@@ -197,21 +197,31 @@ class TestLineStringPlotting(unittest.TestCase):
 
 class TestPolygonPlotting(unittest.TestCase):
 
-    def test_single_color(self):
+    def setUp(self):
 
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
-        polys = GeoSeries([t1, t2])
-        df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+        self.polys = GeoSeries([t1, t2])
+        self.df = GeoDataFrame({'geometry': self.polys, 'values': [0, 1]})
+        return
 
-        ax = polys.plot(color='green')
+    def test_single_color(self):
+
+        ax = self.polys.plot(color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
 
-        ax = df.plot(color='green')
+        ax = self.df.plot(color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
 
-        ax = df.plot(column='values', color='green')
+        ax = self.df.plot(column='values', color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
+
+    def test_vmin_vmax(self):
+
+        # when vmin == vmax, all polygons should be the same color
+        ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
+        cmap = get_cmap('Set1', 2)
+        self.assertEqual(ax.patches[0].get_facecolor(), ax.patches[1].get_facecolor())
 
 
 class TestPySALPlotting(unittest.TestCase):

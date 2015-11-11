@@ -192,12 +192,6 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         scheme : pysal.esda.mapclassify.Map_Classifier
             Choropleth classification schemes (requires PySAL)
 
-        vmin : float
-            Minimum value for color map.
-
-        vmax : float
-            Maximum value for color map.
-
         k   : int (default 5)
             Number of classes (ignored if scheme is None)
 
@@ -369,8 +363,8 @@ def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
 
     """
 
-    mn = vmin or min(values)
-    mx = vmax or max(values)
+    mn = min(values) if vmin is None else vmin
+    mx = max(values) if vmax is None else vmax
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
     return n_cmap
