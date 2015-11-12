@@ -238,8 +238,8 @@ class TestPolygonPlotting(unittest.TestCase):
         # polygons match the colormap (plus some alpha)
         _check_colors(ax.patches, expected_colors, alpha=0.5)
         # polygons match the colorbar itself
-        cbar.cmap._lut[:,-1] = cbar.alpha # move alpha from the cbar to the cmap for this test
-        _check_colors(ax.patches, map(cbar.cmap, self.df['values']))
+        _check_colors(ax.patches, [cbar.to_rgba(v, alpha=cbar.alpha)
+                                   for v in self.df['values']])
 
     def test_vmin_vmax(self):
 
@@ -255,15 +255,15 @@ class TestPolygonPlotting(unittest.TestCase):
         expected_colors = [cmap(0)] * 2 # the bottom of the colormap
         _check_colors(ax.patches, expected_colors, alpha=0.5)
         # polygons match the colorbar itself
-        cbar.cmap._lut[:,-1] = cbar.alpha # move alpha from the cbar to the cmap for this test
-        _check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
+        _check_colors(ax.patches, [cbar.to_rgba(val, alpha=cbar.alpha)] * 2)
 
         # vmin==vmax is the only value, so all polygons get plotted the same color.
         val = 1.0
         ax, cbar = self.df.plot(column='values', vmin=val, vmax=val, legend=True)
         # polygons match the colorbar itself
-        # FIXME: This is a bug in geopandas.
-        #_check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
+        # FIXME: This fails, as the colorbar re-normalizes itself.
+        # For context see https://github.com/matplotlib/matplotlib/issues/5467
+        # _check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
 
 
 class TestPySALPlotting(unittest.TestCase):
