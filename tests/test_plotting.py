@@ -7,15 +7,13 @@ import tempfile
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
-from matplotlib.pyplot import Artist, savefig, close, cm, get_cmap
-from matplotlib.colorbar import Colorbar
-from matplotlib.backends import backend_agg
+from matplotlib.pyplot import Artist, savefig, clf, cm, get_cmap
 from matplotlib.testing.noseclasses import ImageComparisonFailure
 from matplotlib.testing.compare import compare_images
 from numpy import cos, sin, pi
 from shapely.geometry import Polygon, LineString, Point
 from six.moves import xrange
-from .util import download_nybb, unittest
+from .util import unittest
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
 
@@ -31,11 +29,6 @@ TRAVIS = bool(os.environ.get('TRAVIS', False))
 class TestImageComparisons(unittest.TestCase):
 
     def setUp(self):
-        nybb_filename = download_nybb()
-
-        self.df = read_file('/nybb_14a_av/nybb.shp',
-                            vfs='zip://' + nybb_filename)
-        self.df['values'] = [0.1, 0.2, 0.1, 0.3, 0.4]
         self.tempdir = tempfile.mkdtemp()
         return
 
@@ -59,7 +52,7 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_poly_plot(self):
         """ Test plotting a simple series of polygons """
-        close('all')
+        clf()
         filename = 'poly_plot.png'
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
@@ -69,7 +62,7 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_point_plot(self):
         """ Test plotting a simple series of points """
-        close('all')
+        clf()
         filename = 'points_plot.png'
         N = 10
         points = GeoSeries(Point(i, i) for i in xrange(N))
@@ -78,7 +71,7 @@ class TestImageComparisons(unittest.TestCase):
 
     def test_line_plot(self):
         """ Test plotting a simple series of lines """
-        close('all')
+        clf()
         filename = 'lines_plot.png'
         N = 10
         lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(N)])
@@ -91,7 +84,7 @@ class TestImageComparisons(unittest.TestCase):
         Test plotting a simple GeoDataFrame consisting of a series of polygons
         with increasing values using various extra kwargs.
         """
-        close('all')
+        clf()
         filename = 'poly_plot_with_kwargs.png'
         ts = np.linspace(0, 2*pi, 10, endpoint=False)
 
@@ -210,11 +203,6 @@ class TestPolygonPlotting(unittest.TestCase):
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
         self.polys = GeoSeries([t1, t2])
         self.df = GeoDataFrame({'geometry': self.polys, 'values': [0, 1]})
-        return
-
-    def tearDown(self):
-
-        close('all')
         return
 
     def test_single_color(self):
