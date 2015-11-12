@@ -255,6 +255,11 @@ class TestPolygonPlotting(unittest.TestCase):
 
     def test_vmin_vmax(self):
 
+        # when vmin == vmax, all polygons should be the same color
+        ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
+        cmap = get_cmap('Set1', 2)
+        self.assertEqual(ax.patches[0].get_facecolor(), ax.patches[1].get_facecolor())
+
         # vmin is the max value, so all polygons get plotted the same color.
         val = 1.0
         ax, cbar = self.df.plot(column='values', vmin=val, vmax=2.0, legend=True)
