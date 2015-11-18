@@ -1,7 +1,9 @@
 import io
 import os.path
 import sys
+
 from six.moves.urllib.request import urlopen
+from pandas.util.testing import assert_isinstance
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -151,13 +153,6 @@ def geom_almost_equals(this, that):
     return (this.geom_almost_equals(that) |
             (this.is_empty & that.is_empty)).all()
 
-# TODO: Remove me when standardizing on pandas 0.13, which already includes
-#       this test util.
-def assert_isinstance(obj, klass_or_tuple):
-    assert isinstance(obj, klass_or_tuple), "type: %r != %r" % (
-                                           type(obj).__name__,
-                                           getattr(klass_or_tuple, '__name__',
-                                                   klass_or_tuple))
 
 def assert_geoseries_equal(left, right, check_dtype=False,
                            check_index_type=False,
