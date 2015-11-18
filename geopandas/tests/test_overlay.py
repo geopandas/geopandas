@@ -4,7 +4,7 @@ import shutil
 from shapely.geometry import Point
 from geopandas import GeoDataFrame, read_file
 from geopandas.tools import overlay
-from .util import unittest, download_nybb
+from geopandas.tests.util import unittest, download_nybb
 
 
 class TestDataFrame(unittest.TestCase):

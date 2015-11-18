@@ -7,7 +7,7 @@ from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
-from .util import unittest, geom_equals, geom_almost_equals
+from geopandas.tests.util import unittest
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
