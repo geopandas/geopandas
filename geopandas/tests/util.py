@@ -4,6 +4,9 @@ from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
 
+HERE = os.path.abspath(os.path.dirname(__file__))
+PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
+
 # Compatibility layer for Python 2.6: try loading unittest2
 import sys
 if sys.version_info[:2] == (2, 6):
@@ -40,7 +43,7 @@ def download_nybb():
     # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
     # saved as geopandas/examples/nybb_14aav.zip.
     filename = 'nybb_14aav.zip'
-    full_path_name = os.path.join('examples', filename)
+    full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
     if not os.path.exists(full_path_name):
         with io.open(full_path_name, 'wb') as f:
             response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/{0}'.format(filename))
