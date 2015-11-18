@@ -12,8 +12,8 @@ from shapely.geometry import Point, Polygon
 
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
-from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
-                  create_db, validate_boro_df, PANDAS_NEW_SQL_API
+from geopandas.tests.util import unittest, download_nybb, assert_geoseries_equal, \
+    connect, create_db, validate_boro_df, PANDAS_NEW_SQL_API
 
 
 class TestDataFrame(unittest.TestCase):

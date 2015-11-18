@@ -11,7 +11,7 @@ from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
-from .util import unittest, geom_equals, geom_almost_equals
+from geopandas.tests.util import unittest, geom_equals
 
 
 class TestSeries(unittest.TestCase):

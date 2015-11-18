@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from shapely.geometry import Point, MultiPoint, LineString
 from geopandas import GeoSeries
 from geopandas.tools import collect
-from .util import unittest
+from geopandas.tests.util import unittest
 
 class TestTools(unittest.TestCase):
     def setUp(self):

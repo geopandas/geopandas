@@ -38,7 +38,7 @@ else:
 
 def download_nybb():
     """ Returns the path to the NYC boroughs file. Downloads if necessary.
-    
+
     returns tuple (zip file name, shapefile's name and path within zip file)"""
     # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
     # saved as geopandas/examples/nybb_14aav.zip.
@@ -48,14 +48,14 @@ def download_nybb():
         with io.open(full_path_name, 'wb') as f:
             response = urlopen('http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/{0}'.format(filename))
             f.write(response.read())
-    
+
     shp_zip_path = None
     zf = zipfile.ZipFile(full_path_name, 'r')
     # finds path name in zip file
     for zip_filename_path in zf.namelist():
         if zip_filename_path.endswith('nybb.shp'):
             break
-            
+
     return full_path_name, ('/' + zip_filename_path)
 
 

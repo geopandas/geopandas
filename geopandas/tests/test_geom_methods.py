@@ -14,7 +14,7 @@ from shapely.ops import unary_union
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.base import GeoPandasBase
-from .util import (
+from geopandas.tests.util import (
     unittest, geom_equals, geom_almost_equals, assert_geoseries_equal
 )
 
