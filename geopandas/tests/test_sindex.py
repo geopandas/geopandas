@@ -1,4 +1,5 @@
 from shapely.geometry import Polygon, Point
+
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
 from geopandas.tests.util import unittest, download_nybb
 
