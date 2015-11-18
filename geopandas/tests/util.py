@@ -1,5 +1,6 @@
 import io
 import os.path
+import sys
 from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -8,13 +9,11 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
 
 # Compatibility layer for Python 2.6: try loading unittest2
-import sys
 if sys.version_info[:2] == (2, 6):
     try:
         import unittest2 as unittest
     except ImportError:
         import unittest
-
 else:
     import unittest
 
