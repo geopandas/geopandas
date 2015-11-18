@@ -1,4 +1,5 @@
 from shapely.geometry import Polygon, Point
+
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
 from geopandas.tests.util import unittest
 
@@ -115,4 +116,3 @@ class TestJoinSindex(unittest.TestCase):
         self.assertEqual(
             [merged.ix[hit.object]['BoroName'] for hit in hits],
             ['Bronx', 'Queens'])
-

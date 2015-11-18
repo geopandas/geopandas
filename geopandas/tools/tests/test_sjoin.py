@@ -1,7 +1,8 @@
-
 from __future__ import absolute_import
+
 import tempfile
 import shutil
+
 import numpy as np
 from shapely.geometry import Point
 
