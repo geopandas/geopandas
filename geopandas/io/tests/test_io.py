@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import fiona
 
-from geopandas import GeoDataFrame, read_postgis, read_file
+from geopandas import read_postgis, read_file
 from geopandas.tests.util import download_nybb, connect, create_db, \
      PANDAS_NEW_SQL_API, unittest, validate_boro_df
 

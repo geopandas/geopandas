@@ -1,11 +1,4 @@
-import shutil
-import tempfile
-import numpy as np
-from numpy.testing import assert_array_equal
-from pandas import Series, read_csv
-from shapely.geometry import (Polygon, Point, LineString,
-                              MultiPoint, MultiLineString, MultiPolygon)
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry import Polygon, Point
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
 from geopandas.tests.util import unittest, download_nybb
 
