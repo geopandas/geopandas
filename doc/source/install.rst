@@ -1,15 +1,20 @@
 Installation
 ============
 
-The released version of GeoPandas is 0.1.  To install the released
-version, use ``pip install geopandas``.
+To install the released version, you can use pip::
+
+    pip install geopandas
+
+or you can install the conda package from the IOOS channel::
+
+    conda install -c ioos geopandas
 
 You may install the latest development version by cloning the
 `GitHub`_ repository and using the setup script::
 
     git clone https://github.com/geopandas/geopandas.git
     cd geopandas
-    python setup.py install
+    pip install .
 
 It is also possible to install the latest development version
 available on PyPI with `pip` by adding the ``--pre`` flag for pip 1.4
@@ -22,13 +27,18 @@ repository with::
 Dependencies
 ------------
 
-Supports Python versions 2.6, 2.7, and 3.2+.
+GeoPandas supports Python versions 2.6, 2.7, and 3.3+. The required
+dependencies are:
 
 - `numpy`_
 - `pandas`_ (version 0.13 or later)
 - `shapely`_
 - `fiona`_
 - `six`_
+- `pyproj`_
+
+Further, optional dependencies are:
+
 - `geopy`_ 0.99 (optional; for geocoding)
 - `psycopg2`_ (optional; for PostGIS connection)
 
@@ -37,6 +47,10 @@ For plotting, these additional packages may be used:
 - `matplotlib`_
 - `descartes`_
 - `pysal`_
+
+Further, `rtree`_ is an optional dependency. ``rtree`` requires the C library
+`libspatialindex`_. If using brew, you can install using
+``brew install Spatialindex``.
 
 Testing
 -------
@@ -62,8 +76,11 @@ including pull requests, on `Travis CI`_.
 .. _six: https://pythonhosted.org/six
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 .. _pysal: http://pysal.org
+.. _pyproj: https://github.com/jswhit/pyproj
+.. _rtree: https://github.com/Toblerity/rtree
+.. _libspatialindex: https://github.com/libspatialindex/libspatialindex
 .. _Travis CI: https://travis-ci.org/geopandas/geopandas
+
 
 .. toctree::
    :maxdepth: 2
-
