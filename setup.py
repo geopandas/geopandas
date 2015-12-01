@@ -33,6 +33,10 @@ MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 QUALIFIER = ''
+if os.environ.get('READTHEDOCS', False) == 'True':
+    INSTALL_REQUIRES = []
+else:
+    INSTALL_REQUIRES = ['pandas', 'shapely', 'fiona', 'descartes', 'pyproj']
 
 FULLVERSION = VERSION
 if not ISRELEASED:
@@ -86,4 +90,4 @@ setup(name='geopandas',
       url='http://geopandas.org',
       long_description=LONG_DESCRIPTION,
       packages=['geopandas', 'geopandas.io', 'geopandas.tools'],
-      install_requires=['pandas', 'shapely', 'fiona', 'descartes', 'pyproj'])
+      install_requires=INSTALL_REQUIRES)
