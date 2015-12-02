@@ -8,7 +8,7 @@ from six.moves import xrange
 from shapely.geometry import Polygon
 
 
-def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
+def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0, **kwargs):
     """ Plot a single Polygon geometry """
     from descartes.patch import PolygonPatch
     a = np.asarray(poly.exterior)
@@ -17,41 +17,41 @@ def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewi
 
     # without Descartes, we could make a Patch of exterior
     ax.add_patch(PolygonPatch(poly, facecolor=facecolor, linewidth=0, alpha=alpha))  # linewidth=0 because boundaries are drawn separately
-    ax.plot(a[:, 0], a[:, 1], color=edgecolor, linewidth=linewidth)
+    ax.plot(a[:, 0], a[:, 1], color=edgecolor, linewidth=linewidth, **kwargs)
     for p in poly.interiors:
         x, y = zip(*p.coords)
         ax.plot(x, y, color=edgecolor, linewidth=linewidth)
 
 
-def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0):
+def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0, **kwargs):
     """ Can safely call with either Polygon or Multipolygon geometry
     """
     if geom.type == 'Polygon':
-        plot_polygon(ax, geom, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
+        plot_polygon(ax, geom, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth, **kwargs)
     elif geom.type == 'MultiPolygon':
         for poly in geom.geoms:
-            plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth)
+            plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth, **kwargs)
 
 
-def plot_linestring(ax, geom, color='black', linewidth=1.0):
+def plot_linestring(ax, geom, color='black', linewidth=1.0, **kwargs):
     """ Plot a single LineString geometry """
     a = np.array(geom)
-    ax.plot(a[:, 0], a[:, 1], color=color, linewidth=linewidth)
+    ax.plot(a[:, 0], a[:, 1], color=color, linewidth=linewidth, **kwargs)
 
 
-def plot_multilinestring(ax, geom, color='red', linewidth=1.0):
+def plot_multilinestring(ax, geom, color='red', linewidth=1.0, **kwargs):
     """ Can safely call with either LineString or MultiLineString geometry
     """
     if geom.type == 'LineString':
-        plot_linestring(ax, geom, color=color, linewidth=linewidth)
+        plot_linestring(ax, geom, color=color, linewidth=linewidth, **kwargs)
     elif geom.type == 'MultiLineString':
         for line in geom.geoms:
-            plot_linestring(ax, line, color=color, linewidth=linewidth)
+            plot_linestring(ax, line, color=color, linewidth=linewidth, **kwargs)
 
 
-def plot_point(ax, pt, marker='o', markersize=2, color='black'):
+def plot_point(ax, pt, marker='o', markersize=2, color='black', **kwargs):
     """ Plot a single Point geometry """
-    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, color=color)
+    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, color=color, **kwargs)
 
 
 def gencolor(N, colormap='Set1'):
@@ -110,8 +110,7 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
             ax is given explicitly, figsize is ignored.
 
         **color_kwds : dict
-            Color options to be passed on to plot_polygon, plot_linestring, or
-            plot_point
+            Color options to be passed on to the actual plot function
 
         Returns
         -------
@@ -214,7 +213,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             axes is given explicitly, figsize is ignored.
 
         **color_kwds : dict
-            Color options to be passed on to plot_polygon
+            Color options to be passed on to the actual plot function
 
         Returns
         -------
@@ -271,9 +270,9 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
                 plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
             elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-                plot_multilinestring(ax, geom, color=col, linewidth=linewidth)
+                plot_multilinestring(ax, geom, color=col, linewidth=linewidth, **color_kwds)
             elif geom.type == 'Point':
-                plot_point(ax, geom, color=col)
+                plot_point(ax, geom, color=col, **color_kwds)
         if legend:
             if categorical:
                 patches = []
