@@ -1,17 +1,21 @@
 import io
 import os.path
+import sys
+
 from six.moves.urllib.request import urlopen
+from pandas.util.testing import assert_isinstance
 
 from geopandas import GeoDataFrame, GeoSeries
 
+HERE = os.path.abspath(os.path.dirname(__file__))
+PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
+
 # Compatibility layer for Python 2.6: try loading unittest2
-import sys
 if sys.version_info[:2] == (2, 6):
     try:
         import unittest2 as unittest
     except ImportError:
         import unittest
-
 else:
     import unittest
 
@@ -40,7 +44,7 @@ def download_nybb():
     # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
     # saved as geopandas/examples/nybb_14aav.zip.
     filename = 'nybb_14aav.zip'
-    full_path_name = os.path.join('examples', filename)
+    full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
     if not os.path.exists(full_path_name):
         with io.open(full_path_name, 'wb') as f:
             response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/{0}'.format(filename))
@@ -149,13 +153,6 @@ def geom_almost_equals(this, that):
     return (this.geom_almost_equals(that) |
             (this.is_empty & that.is_empty)).all()
 
-# TODO: Remove me when standardizing on pandas 0.13, which already includes
-#       this test util.
-def assert_isinstance(obj, klass_or_tuple):
-    assert isinstance(obj, klass_or_tuple), "type: %r != %r" % (
-                                           type(obj).__name__,
-                                           getattr(klass_or_tuple, '__name__',
-                                                   klass_or_tuple))
 
 def assert_geoseries_equal(left, right, check_dtype=False,
                            check_index_type=False,

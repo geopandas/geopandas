@@ -12,8 +12,8 @@ from shapely.geometry import Point, Polygon
 
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
-from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
-                  create_db, validate_boro_df, PANDAS_NEW_SQL_API
+from geopandas.tests.util import assert_geoseries_equal, connect, create_db, \
+    download_nybb, PACKAGE_DIR, PANDAS_NEW_SQL_API, unittest, validate_boro_df
 
 
 class TestDataFrame(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry': Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
-        self.df3 = read_file('examples/null_geom.geojson')
+        self.df3 = read_file(os.path.join(PACKAGE_DIR, 'examples', 'null_geom.geojson'))
         self.line_paths = self.df3['Name']
 
     def tearDown(self):
