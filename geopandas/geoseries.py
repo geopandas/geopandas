@@ -6,7 +6,7 @@ from pandas import Series, DataFrame
 from pandas.core.indexing import _NDFrameIndexer
 from pandas.util.decorators import cache_readonly
 import pyproj
-from shapely.geometry import box, shape, Polygon, Point
+from shapely.geometry import box, mapping, shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
@@ -272,6 +272,23 @@ class GeoSeries(GeoPandasBase, Series):
         result.crs = crs
         result._invalidate_sindex()
         return result
+
+    def to_json(self, **kwargs):
+        """
+        """
+        def geometry_handler(x):
+            if isinstance(x, BaseGeometry):
+                return {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': mapping(x)
+                    }
+            else:
+                return x
+        kwargs.setdefault('default_handler',geometry_handler)
+        kwargs.setdefault('orient','records')
+        features = super(GeoSeries,self).to_json(**kwargs)
+        return '{"type":"FeatureCollection","features":%s}' % features
 
     #
     # Implement standard operators for GeoSeries
