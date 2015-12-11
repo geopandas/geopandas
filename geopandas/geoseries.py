@@ -275,6 +275,11 @@ class GeoSeries(GeoPandasBase, Series):
 
     def to_json(self, **kwargs):
         """
+        Returns a GeoJSON string representation of the GeoSeries.
+
+        Parameters
+        ----------
+        See pandas.Series.to_json()
         """
         def geometry_handler(x):
             if isinstance(x, BaseGeometry):
