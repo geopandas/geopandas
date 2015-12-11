@@ -119,6 +119,7 @@ class TestSeries(unittest.TestCase):
 
     def test_to_json(self):
         """Test whether GeoSeries.to_json works and returns an actual json file."""
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
         s = GeoSeries.from_file(tempfilename)
         json_str = s.to_json()
         json_dict = json.loads(json_str)
