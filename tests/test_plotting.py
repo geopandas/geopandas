@@ -223,6 +223,15 @@ class TestPolygonPlotting(unittest.TestCase):
         cmap = get_cmap('Set1', 2)
         self.assertEqual(ax.patches[0].get_facecolor(), ax.patches[1].get_facecolor())
 
+    def test_facecolor(self):
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(1, 0), (2, 0), (2, 1)])
+        polys = GeoSeries([t1, t2])
+        df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+
+        ax = polys.plot(facecolor='k')
+        _check_colors(ax.patches, ['k']*2, alpha=0.5)
+
 
 class TestPySALPlotting(unittest.TestCase):
 
