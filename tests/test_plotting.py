@@ -173,6 +173,21 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(column='values', color='green')
         _check_colors(ax.get_lines(), ['green']*self.N)
 
+    def test_style_kwargs(self):
+
+        # markersize
+        ax = self.points.plot(markersize=10)
+        ms = [l.get_markersize() for l in ax.get_lines()]
+        assert ms == [10] * self.N
+
+        ax = self.df.plot(markersize=10)
+        ms = [l.get_markersize() for l in ax.get_lines()]
+        assert ms == [10] * self.N
+
+        ax = self.df.plot(column='values', markersize=10)
+        ms = [l.get_markersize() for l in ax.get_lines()]
+        assert ms == [10] * self.N
+
 
 class TestLineStringPlotting(unittest.TestCase):
 
@@ -193,6 +208,21 @@ class TestLineStringPlotting(unittest.TestCase):
 
         ax = self.df.plot(column='values', color='green')
         _check_colors(ax.get_lines(), ['green']*self.N)
+
+    def test_style_kwargs(self):
+
+        # linestyle
+        ax = self.lines.plot(linestyle='dashed')
+        ls = [l.get_linestyle() for l in ax.get_lines()]
+        assert ls == ['--'] * self.N
+
+        ax = self.df.plot(linestyle='dashed')
+        ls = [l.get_linestyle() for l in ax.get_lines()]
+        assert ls == ['--'] * self.N
+
+        ax = self.df.plot(column='values', linestyle='dashed')
+        ls = [l.get_linestyle() for l in ax.get_lines()]
+        assert ls == ['--'] * self.N
 
 
 class TestPolygonPlotting(unittest.TestCase):
