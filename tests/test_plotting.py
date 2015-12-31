@@ -173,6 +173,21 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(column='values', color='green')
         _check_colors(ax.get_lines(), ['green']*self.N)
 
+    def test_style_kwargs(self):
+
+        # markersize
+        ax = self.points.plot(markersize=10)
+        ms = [l.get_markersize() for l in ax.get_lines()]
+        assert ms == [10] * self.N
+
+        ax = self.df.plot(markersize=10)
+        ms = [l.get_markersize() for l in ax.get_lines()]
+        assert ms == [10] * self.N
+
+        ax = self.df.plot(column='values', markersize=10)
+        ms = [l.get_markersize() for l in ax.get_lines()]
+        assert ms == [10] * self.N
+
 
 class TestLineStringPlotting(unittest.TestCase):
 
@@ -193,6 +208,21 @@ class TestLineStringPlotting(unittest.TestCase):
 
         ax = self.df.plot(column='values', color='green')
         _check_colors(ax.get_lines(), ['green']*self.N)
+
+    def test_style_kwargs(self):
+
+        # linestyle
+        ax = self.lines.plot(linestyle='dashed')
+        ls = [l.get_linestyle() for l in ax.get_lines()]
+        assert ls == ['--'] * self.N
+
+        ax = self.df.plot(linestyle='dashed')
+        ls = [l.get_linestyle() for l in ax.get_lines()]
+        assert ls == ['--'] * self.N
+
+        ax = self.df.plot(column='values', linestyle='dashed')
+        ls = [l.get_linestyle() for l in ax.get_lines()]
+        assert ls == ['--'] * self.N
 
 
 class TestPolygonPlotting(unittest.TestCase):
@@ -264,6 +294,15 @@ class TestPolygonPlotting(unittest.TestCase):
         # FIXME: This fails, as the colorbar re-normalizes itself.
         # For context see https://github.com/matplotlib/matplotlib/issues/5467
         # _check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
+
+    def test_facecolor(self):
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(1, 0), (2, 0), (2, 1)])
+        polys = GeoSeries([t1, t2])
+        df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+
+        ax = polys.plot(facecolor='k')
+        _check_colors(ax.patches, ['k']*2, alpha=0.5)
 
 
 class TestPySALPlotting(unittest.TestCase):
