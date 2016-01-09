@@ -246,12 +246,54 @@ class TestPolygonPlotting(unittest.TestCase):
         ax = self.df.plot(column='values', color='green')
         _check_colors(ax.patches, ['green']*2, alpha=0.5)
 
+    def test_categorical_colors(self):
+
+        ax = self.df.plot(column='values', categorical=True, legend=True)
+        cmap = get_cmap('Set1', 2)
+        expected_colors = cmap(self.df['values'])
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+
+    def test_noncategorical_colors(self):
+
+        # With custom colormap
+        ax = self.df.plot(column='values', cmap='copper')
+        cmap = get_cmap('copper', 2)
+        expected_colors = cmap(self.df['values'])
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+
+        # With legend
+        ax, cbar = self.df.plot(column='values', legend=True)
+        cmap = get_cmap('jet', 2)
+        expected_colors = cmap(self.df['values'])
+        # polygons match the colormap (plus some alpha)
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+        # polygons match the colorbar itself
+        _check_colors(ax.patches, [cbar.to_rgba(v, alpha=cbar.alpha)
+                                   for v in self.df['values']])
+
     def test_vmin_vmax(self):
 
         # when vmin == vmax, all polygons should be the same color
         ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
         cmap = get_cmap('Set1', 2)
         self.assertEqual(ax.patches[0].get_facecolor(), ax.patches[1].get_facecolor())
+
+        # vmin is the max value, so all polygons get plotted the same color.
+        val = 1.0
+        ax, cbar = self.df.plot(column='values', vmin=val, vmax=2.0, legend=True)
+        cmap = get_cmap('jet', 2)
+        expected_colors = [cmap(0)] * 2 # the bottom of the colormap
+        _check_colors(ax.patches, expected_colors, alpha=0.5)
+        # polygons match the colorbar itself
+        _check_colors(ax.patches, [cbar.to_rgba(val, alpha=cbar.alpha)] * 2)
+
+        # vmin==vmax is the only value, so all polygons get plotted the same color.
+        val = 1.0
+        ax, cbar = self.df.plot(column='values', vmin=val, vmax=val, legend=True)
+        # polygons match the colorbar itself
+        # FIXME: This fails, as the colorbar re-normalizes itself.
+        # For context see https://github.com/matplotlib/matplotlib/issues/5467
+        # _check_colors(ax.patches, [cbar.to_rgba(val)] * 2)
 
     def test_facecolor(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])

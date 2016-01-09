@@ -3,6 +3,8 @@ from __future__ import print_function
 import warnings
 
 import numpy as np
+
+from matplotlib.colorbar import make_axes
 from six import next
 from six.moves import xrange
 from shapely.geometry import Polygon
@@ -186,8 +188,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             Line width for geometries.
 
         legend : bool (default False)
-            Plot a legend (Experimental; currently for categorical
-            plots only)
+            Plot a legend or colorbar (Experimental)
 
         ax : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
@@ -218,7 +219,11 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         Returns
         -------
 
-        matplotlib axes instance
+        ax : matplotlib axes instance
+            Axes on which the dataframe was plotted
+        cbar : matplotlib.colorbar.Colorbar (optional)
+            Colorbar of the noncategorical plot. Returned only if `categorical`
+            is False and `legend` is True.
     """
     if 'colormap' in color_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
@@ -273,6 +278,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                 plot_multilinestring(ax, geom, color=col, linewidth=linewidth, **color_kwds)
             elif geom.type == 'Point':
                 plot_point(ax, geom, color=col, **color_kwds)
+        cbar = None
         if legend:
             if categorical:
                 patches = []
@@ -282,10 +288,13 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                                           markersize=10, markerfacecolor=cmap.to_rgba(value)))
                 ax.legend(patches, categories, numpoints=1, loc='best')
             else:
-                # TODO: show a colorbar
-                raise NotImplementedError
+                cax = make_axes(ax)[0]
+                cbar = ax.get_figure().colorbar(cmap, alpha=0.5, cax=cax)
     plt.draw()
-    return ax
+    if cbar:
+        return ax, cbar
+    else:
+        return ax
 
 
 def __pysal_choro(values, scheme, k=5):
@@ -370,4 +379,5 @@ def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
     mx = max(values) if vmax is None else vmax
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+    n_cmap.set_array(values)
     return n_cmap
