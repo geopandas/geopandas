@@ -143,7 +143,7 @@ class TestLineStringPlotting(unittest.TestCase):
                     { 'dashed',  'dotted', 'dashdot', 'solid' }.
             """
             from matplotlib.backend_bases import GraphicsContextBase
-            reverse_idx = {v:k for k, v in GraphicsContextBase.dashd.iteritems()}
+            reverse_idx = dict((v, k) for k, v in GraphicsContextBase.dashd.items())
             return reverse_idx[tup]
 
         # linestyle

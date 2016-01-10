@@ -324,7 +324,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         values = s[column]
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
-        values = binning.yb  # TODO: what type is values? It needs to be a pd.Series...
+        values = pd.Series(binning.yb)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [binning.yb.min()] + binning.bins.tolist()
