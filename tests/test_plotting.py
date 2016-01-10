@@ -120,7 +120,8 @@ class TestLineStringPlotting(unittest.TestCase):
 
         self.N = 10
         values = np.arange(self.N)
-        self.lines = GeoSeries([LineString([(0, i), (9, i)]) for i in xrange(self.N)])
+        self.lines = GeoSeries([LineString([(0, i), (4, i+0.5), (9, i)])
+                                for i in xrange(self.N)])
         self.df = GeoDataFrame({'geometry': self.lines, 'values': values})
 
     def test_single_color(self):
@@ -211,6 +212,26 @@ class TestPolygonPlotting(unittest.TestCase):
         ax = self.df2.plot('values')
         ## specifying values -> same as without values in this case.
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
+
+
+class TestNonuniformGeometryPlotting(unittest.TestCase):
+
+    def setUp(self):
+
+        poly = Polygon([(1, 0), (2, 0), (2, 1)])
+        line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])
+        point = Point(0.75, 0.25)
+        self.series = GeoSeries([poly, line, point])
+        self.df = GeoDataFrame({'geometry': self.series, 'values': [1, 2, 3]})
+        return
+
+    def test_colormap(self):
+
+        ax = self.series.plot(cmap='RdYlGn')
+        cmap = get_cmap('RdYlGn', 3)
+        _check_colors(1, ax.collections[0], [cmap(0)], alpha=0.5) # polygon gets extra alpha. See #266
+        _check_colors(1, ax.collections[1], [cmap(1)], alpha=1) # line
+        _check_colors(1, ax.collections[2], [cmap(2)], alpha=1) # point
 
 
 class TestPySALPlotting(unittest.TestCase):

@@ -35,9 +35,8 @@ def plot_polygon_collection(ax, geoms, facecolors, edgecolor='black',
     Parameters
     ----------
     geoms : a sequence of shapely Polygons and/or MultiPolygons (can be mixed)
-    facecolors : a single color string or sequence of RGBA tuples.
-        If the sequence, it should have 1:1 correspondence with the geometries
-        (not their components).  If a single string, it is used for all geometries.
+    facecolors : a sequence of RGBA tuples.
+        It should have 1:1 correspondence with the geometries (not their components).
 
     Returns
     -------
@@ -47,12 +46,10 @@ def plot_polygon_collection(ax, geoms, facecolors, edgecolor='black',
     from matplotlib.collections import PatchCollection
     from matplotlib.patches import Polygon
 
-    if isinstance(facecolors, str):
-        facecolors = [facecolors] * len(geoms)
     components, component_colors = _flatten_multi_geoms(geoms, facecolors)
 
     patches = [Polygon(poly.exterior) for poly in components]
-    patches = PatchCollection(patches, facecolor=component_colors,
+    patches = PatchCollection(patches, facecolors=component_colors,
                               linewidth=linewidth, edgecolor=edgecolor,
                               alpha=alpha, **kwargs)
     # TODO: draw polygon interior(s)
@@ -69,9 +66,8 @@ def plot_linestring_collection(ax, geoms, colors, linewidth=1.0, **kwargs):
     Parameters
     ----------
     geoms : a sequence of shapely LineString and/or MultiLineString (can be mixed)
-    colors : a single color string or sequence of RGBA tuples.
-        If the sequence, it should have 1:1 correspondence with the geometries
-        (not their components).  If a single string, it is used for all geometries.
+    colors : a sequence of RGBA tuples.
+        It should have 1:1 correspondence with the geometries (not their components).
 
     Returns
     -------
@@ -80,8 +76,6 @@ def plot_linestring_collection(ax, geoms, colors, linewidth=1.0, **kwargs):
 
     from matplotlib.collections import LineCollection
 
-    if isinstance(colors, str):
-        colors = [colors] * len(geoms)
     components, component_colors = _flatten_multi_geoms(geoms, colors)
 
     segments = [np.array(linestring)[:, :2] for linestring in components]
@@ -193,26 +187,27 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
+    num_geoms = len(s.index)
     if color:
-        colors = color # single color: all geoms will cycle over it
+        colors = pd.Series([color] * num_geoms)
     else:
         color_generator = gencolor(len(s), colormap=cmap)
-        colors = [next(color_generator) for _ in xrange(len(s.index))]
+        colors = pd.Series([next(color_generator) for _ in xrange(num_geoms)])
 
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        plot_polygon_collection(ax, polys, colors, linewidth=linewidth, **color_kwds)
+        plot_polygon_collection(ax, polys, colors[poly_idx], linewidth=linewidth, **color_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, colors, linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, colors[line_idx], linewidth=linewidth, **color_kwds)
 
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points, colors, **color_kwds)
+        plot_point_collection(ax, points, colors[point_idx], **color_kwds)
 
     plt.draw()
     return ax
@@ -319,12 +314,12 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         categories = list(set(s[column].values))
         categories.sort()
         valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-        values = pd.Series([valuemap[k] for k in s[column]])
+        values = [valuemap[k] for k in s[column]]
     else:
         values = s[column]
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
-        values = pd.Series(binning.yb)
+        values = binning.yb
         # set categorical to True for creating the legend
         categorical = True
         binedges = [binning.yb.min()] + binning.bins.tolist()
@@ -335,26 +330,27 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
+    num_geoms = len(s.index)
+    if color:
+        colors = pd.Series([color] * num_geoms)
+    else:
+        colors = pd.Series([cmap.to_rgba(v) for v in values])
+
     # plot all Polygons and all components of MultiPolygon in the same collection
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        colors = color if color else cmap.to_rgba(values[poly_idx])
-        plot_polygon_collection(ax, polys, colors, linewidth=linewidth, **color_kwds)
+        plot_polygon_collection(ax, polys, colors[poly_idx], linewidth=linewidth, **color_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
     if not lines.empty:
-        colors = color if color else cmap.to_rgba(values[line_idx])
-        plot_linestring_collection(ax, lines, colors, linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, colors[line_idx], linewidth=linewidth, **color_kwds)
 
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
-        # In order to keep different collections (different geometry types) in sync
-        # with the same colorbar, we must resolve every geometry's colors globally.
-        colors = color if color else cmap.to_rgba(values[point_idx])
-        plot_point_collection(ax, points, colors, **color_kwds)
+        plot_point_collection(ax, points, colors[point_idx], **color_kwds)
 
     if legend and not color:
         if categorical:
