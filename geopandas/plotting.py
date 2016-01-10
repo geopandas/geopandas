@@ -3,55 +3,113 @@ from __future__ import print_function
 import warnings
 
 import numpy as np
+import pandas as pd
 from six import next
 from six.moves import xrange
-from shapely.geometry import Polygon
 
-
-def plot_polygon(ax, poly, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0, **kwargs):
-    """ Plot a single Polygon geometry """
-    from descartes.patch import PolygonPatch
-    a = np.asarray(poly.exterior)
-    if poly.has_z:
-        poly = Polygon(zip(*poly.exterior.xy))
-
-    # without Descartes, we could make a Patch of exterior
-    ax.add_patch(PolygonPatch(poly, facecolor=facecolor, linewidth=0, alpha=alpha))  # linewidth=0 because boundaries are drawn separately
-    ax.plot(a[:, 0], a[:, 1], color=edgecolor, linewidth=linewidth, **kwargs)
-    for p in poly.interiors:
-        x, y = zip(*p.coords)
-        ax.plot(x, y, color=edgecolor, linewidth=linewidth)
-
-
-def plot_multipolygon(ax, geom, facecolor='red', edgecolor='black', alpha=0.5, linewidth=1.0, **kwargs):
-    """ Can safely call with either Polygon or Multipolygon geometry
+def _flatten_multi_geoms(geoms, colors):
     """
-    if geom.type == 'Polygon':
-        plot_polygon(ax, geom, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth, **kwargs)
-    elif geom.type == 'MultiPolygon':
-        for poly in geom.geoms:
-            plot_polygon(ax, poly, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, linewidth=linewidth, **kwargs)
-
-
-def plot_linestring(ax, geom, color='black', linewidth=1.0, **kwargs):
-    """ Plot a single LineString geometry """
-    a = np.array(geom)
-    ax.plot(a[:, 0], a[:, 1], color=color, linewidth=linewidth, **kwargs)
-
-
-def plot_multilinestring(ax, geom, color='red', linewidth=1.0, **kwargs):
-    """ Can safely call with either LineString or MultiLineString geometry
+    Returns Series like geoms and colors, except that any Multi geometries
+    are split into their components and colors are repeated for all component
+    in the same Multi geometry.  Maintains 1:1 matching of geometry to color.
     """
-    if geom.type == 'LineString':
-        plot_linestring(ax, geom, color=color, linewidth=linewidth, **kwargs)
-    elif geom.type == 'MultiLineString':
-        for line in geom.geoms:
-            plot_linestring(ax, line, color=color, linewidth=linewidth, **kwargs)
+    components, component_colors = [], []
+    assert len(geoms) == len(colors) # precondition, so zip can't short-circuit
+    for geom, color in zip(geoms, colors):
+        if geom.type.startswith('Multi'):
+            for poly in geom:
+                components.append(poly)
+                # repeat same color for all components
+                component_colors.append(color)
+        else:
+            components.append(geom)
+            component_colors.append(color)
+    return components, component_colors
 
 
-def plot_point(ax, pt, marker='o', markersize=2, color='black', **kwargs):
-    """ Plot a single Point geometry """
-    ax.plot(pt.x, pt.y, marker=marker, markersize=markersize, color=color, **kwargs)
+def plot_polygon_collection(ax, geoms, facecolors, edgecolor='black',
+                            alpha=0.5, linewidth=1.0, **kwargs):
+    """
+    Plots a collection of Polygon and MultiPolygon geometries to `ax`
+
+    Parameters
+    ----------
+    geoms : a sequence of shapely Polygons and/or MultiPolygons (can be mixed)
+    facecolors : a single color string or sequence of RGBA tuples.
+        If the sequence, it should have 1:1 correspondence with the geometries
+        (not their components).  If a single string, it is used for all geometries.
+
+    Returns
+    -------
+    patches : matplotlib.collections.Collection
+    """
+
+    from matplotlib.collections import PatchCollection
+    from matplotlib.patches import Polygon
+
+    if isinstance(facecolors, str):
+        facecolors = [facecolors] * len(geoms)
+    components, component_colors = _flatten_multi_geoms(geoms, facecolors)
+
+    patches = [Polygon(poly.exterior) for poly in components]
+    patches = PatchCollection(patches, facecolor=component_colors,
+                              linewidth=linewidth, edgecolor=edgecolor,
+                              alpha=alpha, **kwargs)
+    # TODO: draw polygon interior(s)
+
+    ax.add_collection(patches, autolim=True)
+    ax.autoscale_view()
+    return patches
+
+
+def plot_linestring_collection(ax, geoms, colors, linewidth=1.0, **kwargs):
+    """
+    Plots a collection of LineString and MultiLineString geometries to `ax`
+
+    Parameters
+    ----------
+    geoms : a sequence of shapely LineString and/or MultiLineString (can be mixed)
+    colors : a single color string or sequence of RGBA tuples.
+        If the sequence, it should have 1:1 correspondence with the geometries
+        (not their components).  If a single string, it is used for all geometries.
+
+    Returns
+    -------
+    collection : matplotlib.collections.Collection
+    """
+
+    from matplotlib.collections import LineCollection
+
+    if isinstance(colors, str):
+        colors = [colors] * len(geoms)
+    components, component_colors = _flatten_multi_geoms(geoms, colors)
+
+    segments = [np.array(linestring)[:, :2] for linestring in components]
+    collection = LineCollection(segments, color=component_colors,
+                                linewidth=linewidth, **kwargs)
+
+    ax.add_collection(collection, autolim=True)
+    ax.autoscale_view()
+    return collection
+
+
+def plot_point_collection(ax, geoms, colors, marker='o', markersize=2, **kwargs):
+    """
+    Plots a collection of Point geometries to `ax`
+
+    Parameters
+    ----------
+    geoms : a sequence of Points
+    colors : a single color string or sequence of RGBA tuples.
+
+    Returns
+    -------
+    collection : matplotlib.collections.Collection
+    """
+    x = [p.x for p in geoms]
+    y = [p.y for p in geoms]
+    collection = ax.scatter(x, y, c=colors, marker=marker, s=markersize, **kwargs)
+    return collection
 
 
 def gencolor(N, colormap='Set1'):
@@ -125,26 +183,37 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
         ax = color_kwds.pop('axes')
+    if 'facecolor' in color_kwds:
+        warnings.warn("'facecolor' is deprecated, please use 'color' instead "
+                      "(for consistency across geometry types)", FutureWarning)
+        color = color_kwds.pop('facecolor') if not color else color
 
     import matplotlib.pyplot as plt
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
-    color_generator = gencolor(len(s), colormap=cmap)
-    for geom in s:
-        if color is None:
-            col = next(color_generator)
-        else:
-            col = color
-        if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-            if 'facecolor' in color_kwds:
-                plot_multipolygon(ax, geom, linewidth=linewidth, **color_kwds)
-            else:
-                plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
-        elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-            plot_multilinestring(ax, geom, color=col, linewidth=linewidth, **color_kwds)
-        elif geom.type == 'Point':
-            plot_point(ax, geom, color=col, **color_kwds)
+
+    if color:
+        colors = color # single color: all geoms will cycle over it
+    else:
+        color_generator = gencolor(len(s), colormap=cmap)
+        colors = [next(color_generator) for _ in xrange(len(s.index))]
+
+    poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
+    polys = s.geometry[poly_idx]
+    if not polys.empty:
+        plot_polygon_collection(ax, polys, colors, linewidth=linewidth, **color_kwds)
+
+    line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
+    lines = s.geometry[line_idx]
+    if not lines.empty:
+        plot_linestring_collection(ax, lines, colors, linewidth=linewidth, **color_kwds)
+
+    point_idx = (s.geometry.type == 'Point')
+    points = s.geometry[point_idx]
+    if not points.empty:
+        plot_point_collection(ax, points, colors, **color_kwds)
+
     plt.draw()
     return ax
 
@@ -186,8 +255,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             Line width for geometries.
 
         legend : bool (default False)
-            Plot a legend (Experimental; currently for categorical
-            plots only)
+            Plot a legend. Ignored if no `column` is given, or if `color` is given.
 
         ax : matplotlib.pyplot.Artist (default None)
             axes on which to draw the plot
@@ -228,6 +296,10 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
         ax = color_kwds.pop('axes')
+    if 'facecolor' in color_kwds:
+        warnings.warn("'facecolor' is deprecated, please use 'color' instead "
+                      "(for consistency across geometry types)", FutureWarning)
+        color = color_kwds.pop('facecolor') if not color else color
 
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
@@ -238,52 +310,63 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         return plot_series(s.geometry, cmap=cmap, color=color,
                            ax=ax, linewidth=linewidth, figsize=figsize,
                            **color_kwds)
+
+    if s[column].dtype is np.dtype('O'):
+        categorical = True
+    if categorical:
+        if cmap is None:
+            cmap = 'Set1'
+        categories = list(set(s[column].values))
+        categories.sort()
+        valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
+        values = pd.Series([valuemap[k] for k in s[column]])
     else:
-        if s[column].dtype is np.dtype('O'):
-            categorical = True
+        values = s[column]
+    if scheme is not None:
+        binning = __pysal_choro(values, scheme, k=k)
+        values = binning.yb  # TODO: what type is values? It needs to be a pd.Series...
+        # set categorical to True for creating the legend
+        categorical = True
+        binedges = [binning.yb.min()] + binning.bins.tolist()
+        categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
+                      for i in range(len(binedges)-1)]
+    cmap = norm_cmap(values, cmap, Normalize, cm, vmin=vmin, vmax=vmax)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_aspect('equal')
+
+    # plot all Polygons and all components of MultiPolygon in the same collection
+    poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
+    polys = s.geometry[poly_idx]
+    if not polys.empty:
+        colors = color if color else cmap.to_rgba(values[poly_idx])
+        plot_polygon_collection(ax, polys, colors, linewidth=linewidth, **color_kwds)
+
+    line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
+    lines = s.geometry[line_idx]
+    if not lines.empty:
+        colors = color if color else cmap.to_rgba(values[line_idx])
+        plot_linestring_collection(ax, lines, colors, linewidth=linewidth, **color_kwds)
+
+    point_idx = (s.geometry.type == 'Point')
+    points = s.geometry[point_idx]
+    if not points.empty:
+        # In order to keep different collections (different geometry types) in sync
+        # with the same colorbar, we must resolve every geometry's colors globally.
+        colors = color if color else cmap.to_rgba(values[point_idx])
+        plot_point_collection(ax, points, colors, **color_kwds)
+
+    if legend and not color:
         if categorical:
-            if cmap is None:
-                cmap = 'Set1'
-            categories = list(set(s[column].values))
-            categories.sort()
-            valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-            values = [valuemap[k] for k in s[column]]
+            patches = []
+            for value, cat in enumerate(categories):
+                patches.append(Line2D([0], [0], linestyle="none",
+                                      marker="o", alpha=color_kwds.get('alpha', 0.5),
+                                      markersize=10, markerfacecolor=cmap.to_rgba(value)))
+            ax.legend(patches, categories, numpoints=1, loc='best')
         else:
-            values = s[column]
-        if scheme is not None:
-            binning = __pysal_choro(values, scheme, k=k)
-            values = binning.yb
-            # set categorical to True for creating the legend
-            categorical = True
-            binedges = [binning.yb.min()] + binning.bins.tolist()
-            categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
-                          for i in range(len(binedges)-1)]
-        cmap = norm_cmap(values, cmap, Normalize, cm, vmin=vmin, vmax=vmax)
-        if ax is None:
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_aspect('equal')
-        for geom, value in zip(s.geometry, values):
-            if color is None:
-                col = cmap.to_rgba(value)
-            else:
-                col = color
-            if geom.type == 'Polygon' or geom.type == 'MultiPolygon':
-                plot_multipolygon(ax, geom, facecolor=col, linewidth=linewidth, **color_kwds)
-            elif geom.type == 'LineString' or geom.type == 'MultiLineString':
-                plot_multilinestring(ax, geom, color=col, linewidth=linewidth, **color_kwds)
-            elif geom.type == 'Point':
-                plot_point(ax, geom, color=col, **color_kwds)
-        if legend:
-            if categorical:
-                patches = []
-                for value, cat in enumerate(categories):
-                    patches.append(Line2D([0], [0], linestyle="none",
-                                          marker="o", alpha=color_kwds.get('alpha', 0.5),
-                                          markersize=10, markerfacecolor=cmap.to_rgba(value)))
-                ax.legend(patches, categories, numpoints=1, loc='best')
-            else:
-                # TODO: show a colorbar
-                raise NotImplementedError
+            ax.get_figure().colorbar(cmap)
+
     plt.draw()
     return ax
 
@@ -370,4 +453,5 @@ def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
     mx = max(values) if vmax is None else vmax
     norm = normalize(vmin=mn, vmax=mx)
     n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+    n_cmap.set_array([])
     return n_cmap
