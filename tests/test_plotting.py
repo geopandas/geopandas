@@ -29,6 +29,14 @@ class TestPointPlotting(unittest.TestCase):
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
 
+    def test_figsize(self):
+
+        ax = self.points.plot(figsize=(1, 1))
+        np.testing.assert_array_equal(ax.figure.get_size_inches(), (1, 1))
+
+        ax = self.df.plot(figsize=(1, 1))
+        np.testing.assert_array_equal(ax.figure.get_size_inches(), (1, 1))
+
     def test_default_colors(self):
 
         ## without specifying values -> max 9 different colors
