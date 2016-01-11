@@ -234,6 +234,16 @@ class TestNonuniformGeometryPlotting(unittest.TestCase):
         _check_colors(1, ax.collections[2], [cmap(2)], alpha=1) # point
 
 
+    def test_style_kwargs(self):
+
+        # markersize -> only the Point gets it
+        ax = self.series.plot(markersize=10)
+        assert ax.collections[2].get_sizes() == [10]
+
+        ax = self.df.plot(markersize=10)
+        assert ax.collections[2].get_sizes() == [10]
+
+
 class TestPySALPlotting(unittest.TestCase):
 
     @classmethod

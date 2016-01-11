@@ -48,6 +48,9 @@ def plot_polygon_collection(ax, geoms, facecolors, edgecolor='black',
 
     components, component_colors = _flatten_multi_geoms(geoms, facecolors)
 
+    # PatchCollection does not accept some kwargs.
+    if 'markersize' in kwargs:
+        del kwargs['markersize']
     patches = [Polygon(poly.exterior) for poly in components]
     patches = PatchCollection(patches, facecolors=component_colors,
                               linewidth=linewidth, edgecolor=edgecolor,
@@ -78,6 +81,9 @@ def plot_linestring_collection(ax, geoms, colors, linewidth=1.0, **kwargs):
 
     components, component_colors = _flatten_multi_geoms(geoms, colors)
 
+    # LineCollection does not accept some kwargs.
+    if 'markersize' in kwargs:
+        del kwargs['markersize']
     segments = [np.array(linestring)[:, :2] for linestring in components]
     collection = LineCollection(segments, color=component_colors,
                                 linewidth=linewidth, **kwargs)
