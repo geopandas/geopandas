@@ -28,12 +28,14 @@ TRAVIS = bool(os.environ.get('TRAVIS', False))
 
 class TestImageComparisons(unittest.TestCase):
 
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
+    @classmethod
+    def setUpClass(cls):
+        cls.tempdir = tempfile.mkdtemp()
         return
 
-    def tearDown(self):
-        shutil.rmtree(self.tempdir)
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tempdir)
         return
 
     def _compare_images(self, ax, filename, tol=10):
