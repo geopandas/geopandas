@@ -5,6 +5,7 @@ import numpy as np
 import os
 import shutil
 import tempfile
+import warnings
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
@@ -87,8 +88,10 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(color='green')
         _check_colors(self.N, ax.collections[0], ['green']*self.N)
 
-        ax = self.df.plot(column='values', color='green')
-        _check_colors(self.N, ax.collections[0], ['green']*self.N)
+        with warnings.catch_warnings(record=True) as _: # don't print warning
+            # 'color' overrides 'column'
+            ax = self.df.plot(column='values', color='green')
+            _check_colors(self.N, ax.collections[0], ['green']*self.N)
 
     def test_style_kwargs(self):
 
@@ -103,9 +106,10 @@ class TestPointPlotting(unittest.TestCase):
         assert ax.collections[0].get_sizes() == [10]
 
     def test_legend(self):
-        # legend ignored if color is given.
-        ax = self.df.plot(column='values', color='green', legend=True)
-        assert len(ax.get_figure().axes) == 1 # only the plot, no axis w/ legend
+        with warnings.catch_warnings(record=True) as _: # don't print warning
+            # legend ignored if color is given.
+            ax = self.df.plot(column='values', color='green', legend=True)
+            assert len(ax.get_figure().axes) == 1 # only the plot, no axis w/ legend
 
         # legend ignored if no column is given.
         ax = self.df.plot(legend=True)
@@ -116,6 +120,16 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(column='values', cmap='RdYlGn', legend=True)
         point_colors = ax.collections[0].get_facecolors()
         cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        ### first point == bottom of colorbar
+        np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
+        ### last point == top of colorbar
+        np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
+
+        # Categorical legend
+        ## the colorbar matches the Point colors
+        ax = self.df.plot(column='values', categorical=True, legend=True)
+        point_colors = ax.collections[0].get_facecolors()
+        cbar_colors = ax.get_legend().axes.collections[0].get_facecolors()
         ### first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         ### last point == top of colorbar
@@ -140,8 +154,10 @@ class TestLineStringPlotting(unittest.TestCase):
         ax = self.df.plot(color='green')
         _check_colors(self.N, ax.collections[0], ['green']*self.N)
 
-        ax = self.df.plot(column='values', color='green')
-        _check_colors(self.N, ax.collections[0], ['green']*self.N)
+        with warnings.catch_warnings(record=True) as _: # don't print warning
+            # 'color' overrides 'column'
+            ax = self.df.plot(column='values', color='green')
+            _check_colors(self.N, ax.collections[0], ['green']*self.N)
 
     def test_style_kwargs(self):
 
@@ -192,20 +208,41 @@ class TestPolygonPlotting(unittest.TestCase):
         ax = self.df.plot(color='green')
         _check_colors(2, ax.collections[0], ['green']*2, alpha=0.5)
 
-        ax = self.df.plot(column='values', color='green')
-        _check_colors(2, ax.collections[0], ['green']*2, alpha=0.5)
+        with warnings.catch_warnings(record=True) as _: # don't print warning
+            # 'color' overrides 'values'
+            ax = self.df.plot(column='values', color='green')
+            _check_colors(2, ax.collections[0], ['green']*2, alpha=0.5)
 
     def test_vmin_vmax(self):
 
         # when vmin == vmax, all polygons should be the same color
+
+        # non-categorical
+        ax = self.df.plot(column='values', categorical=False, vmin=0, vmax=0)
+        actual_colors = ax.collections[0].get_facecolors()
+        np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+
+        # categorical
         ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
-        cmap = get_cmap('Set1', 2)
-        _check_colors(2, ax.collections[0], cmap([0, 0]), alpha=0.5)
+        actual_colors = ax.collections[0].get_facecolors()
+        np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
 
     def test_style_kwargs(self):
 
+        # facecolor overrides default cmap when color is not set
         ax = self.polys.plot(facecolor='k')
         _check_colors(2, ax.collections[0], ['k']*2, alpha=0.5)
+
+        # facecolor overrides more general-purpose color when both are set
+        ax = self.polys.plot(color='red', facecolor='k')
+        _check_colors(2, ax.collections[0], ['k']*2, alpha=0.5)
+
+        # edgecolor
+        ax = self.polys.plot(edgecolor='red')
+        np.testing.assert_array_equal([(1, 0, 0, 0.5)], ax.collections[0].get_edgecolors())
+
+        ax = self.df.plot('values', edgecolor='red')
+        np.testing.assert_array_equal([(1, 0, 0, 0.5)], ax.collections[0].get_edgecolors())
 
     def test_multipolygons(self):
 

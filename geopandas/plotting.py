@@ -7,11 +7,21 @@ import pandas as pd
 from six import next
 from six.moves import xrange
 
+
 def _flatten_multi_geoms(geoms, colors):
     """
     Returns Series like geoms and colors, except that any Multi geometries
     are split into their components and colors are repeated for all component
     in the same Multi geometry.  Maintains 1:1 matching of geometry to color.
+
+    "Colors" are treated opaquely and so can actually contain any values.
+
+    Returns
+    -------
+
+    components : list of geometry
+
+    component_colors : list of whatever type `colors` contains
     """
     components, component_colors = [], []
     assert len(geoms) == len(colors) # precondition, so zip can't short-circuit
@@ -27,88 +37,165 @@ def _flatten_multi_geoms(geoms, colors):
     return components, component_colors
 
 
-def plot_polygon_collection(ax, geoms, facecolors, edgecolor='black',
-                            alpha=0.5, linewidth=1.0, **kwargs):
+def plot_polygon_collection(ax, geoms, colors_or_values, plot_values,
+                            vmin=None, vmax=None, cmap=None,
+                            edgecolor='black', alpha=0.5, linewidth=1.0, **kwargs):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
 
     Parameters
     ----------
-    geoms : a sequence of shapely Polygons and/or MultiPolygons (can be mixed)
-    facecolors : a sequence of RGBA tuples.
+
+    ax : matplotlib.axes.Axes
+        where shapes will be plotted
+
+    geoms : a sequence of `N` Polygons and/or MultiPolygons (can be mixed)
+
+    colors_or_values : a sequence of `N` values or RGBA tuples
         It should have 1:1 correspondence with the geometries (not their components).
+
+    plot_values : bool
+        If True, `colors_or_values` is interpreted as a list of values, and will
+        be mapped to colors using vmin/vmax/cmap (which become required).
+        Otherwise `colors_or_values` is interpreted as a list of colors.
 
     Returns
     -------
-    patches : matplotlib.collections.Collection
+
+    collection : matplotlib.collections.Collection that was plotted
     """
 
+    from descartes.patch import PolygonPatch
     from matplotlib.collections import PatchCollection
-    from matplotlib.patches import Polygon
 
-    components, component_colors = _flatten_multi_geoms(geoms, facecolors)
+    components, component_colors_or_values = _flatten_multi_geoms(geoms, colors_or_values)
 
     # PatchCollection does not accept some kwargs.
     if 'markersize' in kwargs:
         del kwargs['markersize']
-    patches = [Polygon(poly.exterior) for poly in components]
-    patches = PatchCollection(patches, facecolors=component_colors,
-                              linewidth=linewidth, edgecolor=edgecolor,
-                              alpha=alpha, **kwargs)
-    # TODO: draw polygon interior(s)
+    collection = PatchCollection([PolygonPatch(poly) for poly in components],
+                                  linewidth=linewidth, edgecolor=edgecolor,
+                                  alpha=alpha, **kwargs)
+    # TODO: draw polygon interior(s) in the right color.
+    # Better question: what is the old code on master trying to do,
+    # adding the Descartes Patch and then separately drawing the boundaries?
+    # Answer: linewidth=0 because boundaries are drawn separately
 
-    ax.add_collection(patches, autolim=True)
-    ax.autoscale_view()
-    return patches
+    if plot_values:
+        collection.set_array(np.array(component_colors_or_values))
+        collection.set_cmap(cmap)
+        collection.set_clim(vmin, vmax)
+    else:
+        # set_color magically sets the correct combination of facecolor and
+        # edgecolor, based on collection type.
+        collection.set_color(component_colors_or_values)
 
-
-def plot_linestring_collection(ax, geoms, colors, linewidth=1.0, **kwargs):
-    """
-    Plots a collection of LineString and MultiLineString geometries to `ax`
-
-    Parameters
-    ----------
-    geoms : a sequence of shapely LineString and/or MultiLineString (can be mixed)
-    colors : a sequence of RGBA tuples.
-        It should have 1:1 correspondence with the geometries (not their components).
-
-    Returns
-    -------
-    collection : matplotlib.collections.Collection
-    """
-
-    from matplotlib.collections import LineCollection
-
-    components, component_colors = _flatten_multi_geoms(geoms, colors)
-
-    # LineCollection does not accept some kwargs.
-    if 'markersize' in kwargs:
-        del kwargs['markersize']
-    segments = [np.array(linestring)[:, :2] for linestring in components]
-    collection = LineCollection(segments, color=component_colors,
-                                linewidth=linewidth, **kwargs)
+        # If the user set facecolor and/or edgecolor explicitly, the previous
+        # call to set_color might have overridden it (remember, the 'color' may
+        # have come from plot_series, not from the user). The user should be
+        # able to override matplotlib's default behavior, by setting them again
+        # after set_color.
+        if 'facecolor' in kwargs:
+            collection.set_facecolor(kwargs['facecolor'])
+        if edgecolor:
+            collection.set_edgecolor(edgecolor)
 
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
     return collection
 
 
-def plot_point_collection(ax, geoms, colors, marker='o', markersize=2, **kwargs):
+def plot_linestring_collection(ax, geoms, colors_or_values, plot_values,
+                               vmin=None, vmax=None, cmap=None,
+                               linewidth=1.0, **kwargs):
+    """
+    Plots a collection of LineString and MultiLineString geometries to `ax`
+
+    Parameters
+    ----------
+
+    ax : matplotlib.axes.Axes
+        where shapes will be plotted
+
+    geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be mixed)
+
+    colors_or_values : a sequence of `N` values or RGBA tuples
+        It should have 1:1 correspondence with the geometries (not their components).
+
+    plot_values : bool
+        If True, `colors_or_values` is interpreted as a list of values, and will
+        be mapped to colors using vmin/vmax/cmap (which become required).
+        Otherwise `colors_or_values` is interpreted as a list of colors.
+
+    Returns
+    -------
+
+    collection : matplotlib.collections.Collection that was plotted
+    """
+
+    from matplotlib.collections import LineCollection
+
+    components, component_colors_or_values = _flatten_multi_geoms(geoms, colors_or_values)
+
+    # LineCollection does not accept some kwargs.
+    if 'markersize' in kwargs:
+        del kwargs['markersize']
+    segments = [np.array(linestring)[:, :2] for linestring in components]
+    collection = LineCollection(segments,
+                                linewidth=linewidth, **kwargs)
+
+    if plot_values:
+        collection.set_array(np.array(component_colors_or_values))
+        collection.set_cmap(cmap)
+        collection.set_clim(vmin, vmax)
+    else:
+        # set_color magically sets the correct combination of facecolor and
+        # edgecolor, based on collection type.
+        collection.set_color(component_colors_or_values)
+
+        # If the user set facecolor and/or edgecolor explicitly, the previous
+        # call to set_color might have overridden it (remember, the 'color' may
+        # have come from plot_series, not from the user). The user should be
+        # able to override matplotlib's default behavior, by setting them again
+        # after set_color.
+        if 'facecolor' in kwargs:
+            collection.set_facecolor(kwargs['facecolor'])
+
+        if 'edgecolor' in kwargs:
+            collection.set_edgecolor(kwargs['edgecolor'])
+
+    ax.add_collection(collection, autolim=True)
+    ax.autoscale_view()
+    return collection
+
+
+def plot_point_collection(ax, geoms, colors_or_values,
+                          vmin=None, vmax=None, cmap=None,
+                          marker='o', markersize=2, **kwargs):
     """
     Plots a collection of Point geometries to `ax`
 
     Parameters
     ----------
-    geoms : a sequence of Points
-    colors : a single color string or sequence of RGBA tuples.
+
+    ax : matplotlib.axes.Axes
+        where shapes will be plotted
+
+    geoms : sequence of `N` Points
+
+    colors_or_values : sequence of color or sequence of numbers
+        can be a sequence of color specifications of length `N` or a sequence
+        of `N` numbers to be mapped to colors using vmin, vmax, and cmap.
 
     Returns
     -------
-    collection : matplotlib.collections.Collection
+    collection : matplotlib.collections.Collection that was plotted
     """
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
-    collection = ax.scatter(x, y, c=colors, marker=marker, s=markersize, **kwargs)
+    collection = ax.scatter(x, y, c=colors_or_values,
+                            vmin=vmin, vmax=vmax, cmap=cmap,
+                            marker=marker, s=markersize, **kwargs)
     return collection
 
 
@@ -183,10 +270,6 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
         ax = color_kwds.pop('axes')
-    if 'facecolor' in color_kwds:
-        warnings.warn("'facecolor' is deprecated, please use 'color' instead "
-                      "(for consistency across geometry types)", FutureWarning)
-        color = color_kwds.pop('facecolor') if not color else color
 
     import matplotlib.pyplot as plt
     if ax is None:
@@ -203,12 +286,12 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        plot_polygon_collection(ax, polys, colors[poly_idx], linewidth=linewidth, **color_kwds)
+        plot_polygon_collection(ax, polys, colors[poly_idx], False, linewidth=linewidth, **color_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, colors[line_idx], linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, colors[line_idx], False, linewidth=linewidth, **color_kwds)
 
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
@@ -239,7 +322,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
             geometries can be plotted.
 
         column : str (default None)
-            The name of the column to be plotted.
+            The name of the column to be plotted. Ignored if `color` is also set.
 
         categorical : bool (default False)
             If False, cmap will reflect numerical values of the
@@ -297,10 +380,10 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
         ax = color_kwds.pop('axes')
-    if 'facecolor' in color_kwds:
-        warnings.warn("'facecolor' is deprecated, please use 'color' instead "
-                      "(for consistency across geometry types)", FutureWarning)
-        color = color_kwds.pop('facecolor') if not color else color
+    if column and color:
+        warnings.warn("Only specify one of 'column' or 'color'. Using 'color'.",
+                      SyntaxWarning)
+        column = None
 
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
@@ -314,13 +397,15 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
 
     if s[column].dtype is np.dtype('O'):
         categorical = True
+
+    # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = 'Set1'
         categories = list(set(s[column].values))
         categories.sort()
         valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-        values = [valuemap[k] for k in s[column]]
+        values = pd.Series([valuemap[k] for k in s[column]])
     else:
         values = s[column]
     if scheme is not None:
@@ -331,43 +416,42 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         binedges = [binning.yb.min()] + binning.bins.tolist()
         categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                       for i in range(len(binedges)-1)]
-    cmap = norm_cmap(values, cmap, Normalize, cm, vmin=vmin, vmax=vmax)
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
-    num_geoms = len(s.index)
-    if color:
-        colors = pd.Series([color] * num_geoms)
-    else:
-        colors = pd.Series([cmap.to_rgba(v) for v in values])
+    mn = values.min() if vmin is None else vmin
+    mx = values.max() if vmax is None else vmax
 
     # plot all Polygons and all components of MultiPolygon in the same collection
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        plot_polygon_collection(ax, polys, colors[poly_idx], linewidth=linewidth, **color_kwds)
+        plot_polygon_collection(ax, polys, values[poly_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=linewidth, **color_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, colors[line_idx], linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, values[line_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=linewidth, **color_kwds)
 
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points, colors[point_idx], **color_kwds)
+        plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx, cmap=cmap,**color_kwds)
 
     if legend and not color:
+        norm = Normalize(vmin=mn, vmax=mx)
+        n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
             patches = []
             for value, cat in enumerate(categories):
                 patches.append(Line2D([0], [0], linestyle="none",
                                       marker="o", alpha=color_kwds.get('alpha', 0.5),
-                                      markersize=10, markerfacecolor=cmap.to_rgba(value)))
+                                      markersize=10, markerfacecolor=n_cmap.to_rgba(value)))
             ax.legend(patches, categories, numpoints=1, loc='best')
         else:
-            ax.get_figure().colorbar(cmap)
+            n_cmap.set_array([])
+            ax.get_figure().colorbar(n_cmap)
 
     plt.draw()
     return ax
@@ -417,43 +501,3 @@ def __pysal_choro(values, scheme, k=5):
         return binning
     except ImportError:
         raise ImportError("PySAL is required to use the 'scheme' keyword")
-
-
-def norm_cmap(values, cmap, normalize, cm, vmin=None, vmax=None):
-
-    """ Normalize and set colormap
-
-        Parameters
-        ----------
-
-        values
-            Series or array to be normalized
-
-        cmap
-            matplotlib Colormap
-
-        normalize
-            matplotlib.colors.Normalize
-
-        cm
-            matplotlib.cm
-
-        vmin
-            Minimum value of colormap. If None, uses min(values).
-
-        vmax
-            Maximum value of colormap. If None, uses max(values).
-
-        Returns
-        -------
-        n_cmap
-            mapping of normalized values to colormap (cmap)
-
-    """
-
-    mn = min(values) if vmin is None else vmin
-    mx = max(values) if vmax is None else vmax
-    norm = normalize(vmin=mn, vmax=mx)
-    n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
-    n_cmap.set_array([])
-    return n_cmap
