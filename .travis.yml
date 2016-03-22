@@ -38,6 +38,8 @@ matrix:
     - python: 2.7
       env: PANDAS_VERSION=0.17.1
     - python: 2.7
+      env: PANDAS_VERSION=0.18.0
+    - python: 2.7
       env: PANDAS_VERSION=master
       
     - python: 3.5
@@ -46,6 +48,8 @@ matrix:
       env: PANDAS_VERSION=0.16.2
     - python: 3.5
       env: PANDAS_VERSION=0.17.1
+    - python: 2.7
+      env: PANDAS_VERSION=0.18.0
     - python: 3.5
       env: PANDAS_VERSION=master
   
