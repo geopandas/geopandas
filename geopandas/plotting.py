@@ -286,7 +286,13 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        plot_polygon_collection(ax, polys, colors[poly_idx], False, linewidth=linewidth, **color_kwds)
+        # Plot the fill with default or user-specified alpha, but do not draw outlines.
+        plot_polygon_collection(ax, polys, colors[poly_idx], False, linewidth=0, **color_kwds)
+        # Draw the edges, fully opaque, but no facecolor.
+        edges_kwds = color_kwds.copy()
+        edges_kwds['alpha'] = 1
+        edges_kwds['facecolor'] = 'none'
+        plot_polygon_collection(ax, polys, colors[poly_idx], False, linewidth=linewidth, **edges_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
@@ -427,7 +433,13 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        plot_polygon_collection(ax, polys, values[poly_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=linewidth, **color_kwds)
+        # Plot the fill with default or user-specified alpha, but do not draw outlines.
+        plot_polygon_collection(ax, polys, values[poly_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=0, **color_kwds)
+        # Draw the edges, fully opaque, but no facecolor.
+        edges_kwds = color_kwds.copy()
+        edges_kwds['alpha'] = 1
+        edges_kwds['facecolor'] = 'none'
+        plot_polygon_collection(ax, polys, values[poly_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=linewidth, **edges_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
@@ -437,7 +449,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx, cmap=cmap,**color_kwds)
+        plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx, cmap=cmap, **color_kwds)
 
     if legend and not color:
         norm = Normalize(vmin=mn, vmax=mx)

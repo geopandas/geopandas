@@ -275,18 +275,19 @@ class TestNonuniformGeometryPlotting(unittest.TestCase):
         ax = self.series.plot(cmap='RdYlGn')
         cmap = get_cmap('RdYlGn', 3)
         _check_colors(1, ax.collections[0], [cmap(0)], alpha=0.5) # polygon gets extra alpha. See #266
-        _check_colors(1, ax.collections[1], [cmap(1)], alpha=1) # line
-        _check_colors(1, ax.collections[2], [cmap(2)], alpha=1) # point
+        # N.B. ax.collections[1] contains the edges of the polygon
+        _check_colors(1, ax.collections[2], [cmap(1)], alpha=1)   # line
+        _check_colors(1, ax.collections[3], [cmap(2)], alpha=1)   # point
 
 
     def test_style_kwargs(self):
 
         # markersize -> only the Point gets it
         ax = self.series.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [10]
+        assert ax.collections[3].get_sizes() == [10]
 
         ax = self.df.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [10]
+        assert ax.collections[3].get_sizes() == [10]
 
 
 class TestPySALPlotting(unittest.TestCase):
