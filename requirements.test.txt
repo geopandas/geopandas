@@ -1,7 +1,7 @@
 psycopg2>=2.5.1
 SQLAlchemy>=0.8.3
 geopy==1.10.0
-matplotlib>=1.5.0
+matplotlib>=1.2.1
 descartes>=1.0
 mock>=1.0.1  # technically not need for python >= 3.3
 pytest-cov
