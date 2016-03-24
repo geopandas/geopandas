@@ -314,18 +314,19 @@ class TestPySALPlotting(unittest.TestCase):
 def _check_colors(N, collection, expected_colors, alpha=None):
     """ Asserts that the members of `collection` match the `expected_colors` (in order)
 
-	Parameters
-	----------
-    N : the number of geometries believed to be in collection.
+    Parameters
+    ----------
+    N : int
+        The number of geometries believed to be in collection.
         matplotlib.collection is implemented such that the number of geoms in
         `collection` doesn't have to match the number of colors assignments in
         the collection: the colors will cycle to meet the needs of the geoms.
         `N` helps us resolve this.
-	collection : matplotlib.collections.Collection
+    collection : matplotlib.collections.Collection
         The colors of this collection's patches are read from `collection.get_facecolors()`
-	expected_colors : sequence of RGBA tuples
-	alpha : float (optional)
-		If set, this alpha transparency will be applied to the `expected_colors`.
+    expected_colors : sequence of RGBA tuples
+    alpha : float (optional)
+        If set, this alpha transparency will be applied to the `expected_colors`.
         (Any transparency on the `collecton` is assumed to be set in its own
         facecolor RGBA tuples.)
     """
