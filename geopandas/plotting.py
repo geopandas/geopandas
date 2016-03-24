@@ -440,7 +440,9 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         edges_kwds = color_kwds.copy()
         edges_kwds['alpha'] = 1
         edges_kwds['facecolor'] = 'none'
-        plot_polygon_collection(ax, polys, values[poly_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=linewidth, **edges_kwds)
+        # Setting plot_values=False would cause the array values' colors to override edgecolor.
+        # By setting color instead, matplotlib will respect edgecolor if set.
+        plot_polygon_collection(ax, polys, ['black']*len(polys), False, linewidth=linewidth, **edges_kwds)
 
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
