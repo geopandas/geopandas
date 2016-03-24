@@ -76,10 +76,6 @@ def plot_polygon_collection(ax, geoms, colors_or_values, plot_values,
     collection = PatchCollection([PolygonPatch(poly) for poly in components],
                                   linewidth=linewidth, edgecolor=edgecolor,
                                   alpha=alpha, **kwargs)
-    # TODO: draw polygon interior(s) in the right color.
-    # Better question: what is the old code on master trying to do,
-    # adding the Descartes Patch and then separately drawing the boundaries?
-    # Answer: linewidth=0 because boundaries are drawn separately
 
     if plot_values:
         collection.set_array(np.array(component_colors_or_values))
@@ -421,7 +417,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         values = s[column]
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
-        values = binning.yb
+        values = pd.Series(binning.yb)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [binning.yb.min()] + binning.bins.tolist()
