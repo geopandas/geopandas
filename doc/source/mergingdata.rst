@@ -1,5 +1,11 @@
 
-Welcome to GIS in Python!
+Merging Data
 =========================================
 
-Hello world!
+
+Attribute Joins
+----------------
+
+
+Spatial Joins
+----------------

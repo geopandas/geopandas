@@ -51,9 +51,26 @@ In particular, when submitting a pull request:
   imports when necessary in tests.
 
 
+Seven Steps for Contributing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Version control, Git, and GitHub
---------------------------------
+There are seven basic steps to contributing to *geopandas*
+
+
+1) For the *geopandas* git repository
+2) Create a development environment
+3) Install *geopandas* dependencies
+4) Make a ``development`` build of *geopandas*
+5) Make changes to code and add tests
+6) Update the documentation
+7) Submit a Pull Request
+
+Each of these 7 steps is detailed below. 
+
+
+
+1) Forking the *geopandas* repository using Git
+------------------------------------------------
 
 To the new user, working with Git is one of the more daunting aspects of contributing to *geopandas**.
 It can very quickly become overwhelming, but sticking to the guidelines below will help keep the process
@@ -131,8 +148,8 @@ after updating.
 
 .. _contributing.dev_env:
 
-Creating a development environment
------------------------------------
+2) Creating a development environment
+---------------------------------------
 A development environment is a virtual space where you can keep an independent installation of *geopandas*.
 This makes it easy to keep both a stable version of python in one place you use for work, and a development
 version (which you may break while playing with code) in another. 
@@ -214,22 +231,10 @@ Here are some references:
 - https://support.enthought.com/hc/en-us/articles/204469260-Building-Python-extensions-with-Canopy
 
 
-Building in-place
-~~~~~~~~~~~~~~~~~
-
-Once you've created a develoment environment, you then need to install *geopandas* dependencies. This can be accomplished as follows:
 
 
-[need list here]
-
-Do not install geopandas using `pip` or `anaconda` -- rather, make sure that you are in your git directory and type:
-
-      python setup.py develop
-
-
-
-Dependencies
-------------
+3) Installing Dependencies
+---------------------------
 
 GeoPandas supports Python versions 2.6, 2.7, and 3.3+. The required
 dependencies are:
@@ -257,8 +262,11 @@ Further, `rtree`_ is an optional dependency. ``rtree`` requires the C library
 ``brew install Spatialindex``.
 
 
+4) Making a development build
+-------------------------------------
 
-Test-driven development/code writing
+
+5) Making changes and writing tests
 -------------------------------------
 
 *geopandas* is serious about testing and strongly encourages contributors to embrace
@@ -316,6 +324,11 @@ install *geopandas*) by typing::
 
     nosetests -v
 
+6) Updating the Documentation
+------------------------------
+
+7) Submitting a Pull Request
+------------------------------
 
 .. toctree::
    :maxdepth: 2

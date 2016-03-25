@@ -24,7 +24,7 @@ operations in python that would otherwise require a spatial database
 such as PostGIS.
 
 .. toctree::
-   :maxdepth: 1
+  :maxdepth: 2
 
   Installation <install>
   Data Structures <dtypes>
