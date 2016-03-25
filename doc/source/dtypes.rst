@@ -20,6 +20,9 @@ by matching indices.  Binary operations can also be applied to a
 single geometry, in which case the operation is carried out for each
 element of the series with that geometry.  In either case, a
 ``Series`` or a ``GeoSeries`` will be returned, as appropriate.
+    
+
+
 
 The following Shapely methods and attributes are available on
 ``GeoSeries`` objects:
@@ -275,17 +278,6 @@ GeoDataFrame
 A ``GeoDataFrame`` is a tablular data structure that contains a column
 called ``geometry`` which contains a `GeoSeries``.
 
-Currently, the following methods are implemented for a ``GeoDataFrame``:
-
-.. classmethod:: GeoDataFrame.from_file(filename, **kwargs)
-
-  Load a ``GeoDataFrame`` from a file from any format recognized by
-  `fiona`_.  See ``read_file()``.
-
-.. classmethod:: GeoDataFrame.from_postgis(sql, con, geom_col='geom', crs=None, index_col=None, coerce_float=True, params=None)
-
-  Load a ``GeoDataFrame`` from a file from a PostGIS database.
-  See ``read_postgis()``.
 
 .. method:: GeoSeries.to_crs(crs=None, epsg=None, inplace=False)
 
