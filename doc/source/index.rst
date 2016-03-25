@@ -24,10 +24,18 @@ operations in python that would otherwise require a spatial database
 such as PostGIS.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
   Installation <install>
-  User Guide <user>
+  Data Structures <dtypes>
+  Reading and Writing Files <io>
+  Making Maps <mapping>
+  Managing Projections <projections>
+  Geometric Manipulations <geometric_manipulations>
+  Merging Data <mergingdata>
+  Geocoding <geocoding>
+  Spatial Analysis <spatialanalysis>
+  Contributing to Geopandas <contributing>
   About <about>
 
 Indices and tables
