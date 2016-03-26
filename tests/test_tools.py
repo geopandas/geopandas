@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from shapely.geometry import Point, MultiPoint, LineString
-from geopandas import GeoSeries
-from geopandas.tools import collect
+from geopandas import GeoSeries, GeoDataFrame
+from geopandas.tools import collect, included_data
 from .util import unittest
 
 class TestTools(unittest.TestCase):
@@ -47,3 +47,11 @@ class TestTools(unittest.TestCase):
     def test_collect_mixed_multi(self):
         with self.assertRaises(ValueError):
             collect([self.mpc, self.mp1])
+
+
+class TestIncludedData(unittest.TestCase):
+
+    def test_countries(self):
+        countries = included_data('countries')
+        self.assert_(len(countries) == 177)
+        self.assert_(isinstance(countries, GeoDataFrame))
