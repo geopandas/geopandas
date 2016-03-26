@@ -2,10 +2,6 @@ GeoPandas User Guide
 ====================
 
 
-
-Examples
---------
-
 .. sourcecode:: python
 
     >>> p1 = Polygon([(0, 0), (1, 0), (1, 1)])
