@@ -161,6 +161,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
+    def get_geometry(self):
+        """
+        Returns name of column currently acting as "geometry column"
+        """
+        
+        return self._geometry_column_name
+
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """

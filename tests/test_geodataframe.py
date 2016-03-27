@@ -66,6 +66,21 @@ class TestDataFrame(unittest.TestCase):
         assert_geoseries_equal(df2['location'], df['location'],
                                   check_series_type=False, check_dtype=False)
 
+    def test_get_geometry(self):
+        #Correct initially
+        data = {"A": range(5), "B": range(-5, 0),
+                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=self.crs, geometry='location')
+        self.assert_(df._geometry_column_name == df.get_geometry())
+        self.assert_(df.get_geometry() == 'location')
+
+        # Correct after set_geometry
+        geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
+        df2 = df.set_geometry(geom2, crs='dummy_crs')
+        self.assert_(df2._geometry_column_name == df2.get_geometry())
+        self.assert_(df2.get_geometry() == 'geometry')
+
+
     def test_geo_getitem(self):
         data = {"A": range(5), "B": range(-5, 0),
                 "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
