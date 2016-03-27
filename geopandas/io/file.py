@@ -13,8 +13,9 @@ def read_file(filename, **kwargs):
     Returns a GeoDataFrame from a file.
 
     *filename* is either the absolute or relative path to the file to be
-    opened and *kwargs* are keyword args to be passed to the method when
-    opening the file.
+    opened and *kwargs* are keyword args to be passed to the `open` method
+    in the fiona library when opening the file. For more information on 
+    possible keywords, type: ``import fiona; help(fiona.open)``
     """
     bbox = kwargs.pop('bbox', None)
     with fiona.open(filename, **kwargs) as f:
