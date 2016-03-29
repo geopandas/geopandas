@@ -254,6 +254,12 @@ class GeoSeries(GeoPandasBase, Series):
         joining points are assumed to be lines in the current
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
+
+        `to_crs` passes the `crs` argument to the `Proj` function from the
+        `pyproj` library (with the option `preserve_units=True`). It can
+        therefore accept proj4 projections in any format
+        supported by `Proj`, including dictionaries, or proj4 strings.
+
         """
         from fiona.crs import from_epsg
         if self.crs is None:
