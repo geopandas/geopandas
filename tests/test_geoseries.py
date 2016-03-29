@@ -152,7 +152,6 @@ class TestSeries(unittest.TestCase):
                          self.g1.shape[0])
 
     def test_proj4strings(self):
-
         # As string
         reprojected = self.g3.to_crs('+proj=utm +zone=30N')
         reprojected_back = reprojected.to_crs(epsg=4326)
@@ -169,6 +168,11 @@ class TestSeries(unittest.TestCase):
         reprojected = copy.to_crs({'proj': 'utm', 'zone': '30N'})
         reprojected_back = reprojected.to_crs(epsg=4326)
         self.assertTrue(np.alltrue(self.g3.geom_almost_equals(reprojected_back)))
+
+        # Conversions by different format
+        reprojected_string = self.g3.to_crs('+proj=utm +zone=30N')
+        reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
+        self.assertTrue(np.alltrue(reprojected_string.geom_almost_equals(reprojected_dict)))
 
 if __name__ == '__main__':
     unittest.main()
