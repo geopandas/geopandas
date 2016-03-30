@@ -23,13 +23,13 @@ of only one shape (like a single polygon) or multiple shapes that are
 meant to be thought of as one observation (like the many polygons that
 make up the State of Hawaii or a country like Indonesia). 
 
-*geopandas* has three classes of geometric objects (which are actually *shapely* objects):
+*geopandas* has three basic classes of geometric objects (which are actually *shapely* objects):
 
-* Points 
-* Lines 
-* Polygons
+* Points / Multi-Points
+* Lines / Multi-Lines
+* Polygons / Multi-Polygons
 
-All entries in  a ``GeoSeries`` must be of the same geometric type. 
+Note that all entries in  a ``GeoSeries`` need not be of the same geometric type, although certain export operations will fail if this is not the case. 
 
 Overview of Attributes and Methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,13 +78,13 @@ Relationship Tests
 GeoDataFrame
 ------------
 
-A ``GeoDataFrame`` is a tablular data structure that contains contains a ``GeoSeries``. 
+A ``GeoDataFrame`` is a tablular data structure that contains a ``GeoSeries``. 
 
-The most important property of a ``GeoDataFrame`` is that it always has one ``GeoSeries`` that holds a special status. This ``GeoSeries`` is referred to as the ``GeoDataFrame``'s "geometry". When a spatial method is applied to a ``GeoDataFrame`` (or a spatial attribute like ``area`` is called), this commands will always act on the "geometry" column. 
+The most important property of a ``GeoDataFrame`` is that it always has one ``GeoSeries`` column that holds a special status. This ``GeoSeries`` is referred to as the ``GeoDataFrame``'s "geometry". When a spatial method is applied to a ``GeoDataFrame`` (or a spatial attribute like ``area`` is called), this commands will always act on the "geometry" column. 
 
-The "geometry" column -- no matter it's name -- can be accessed through the ``geometry`` attribute (``gdf.geometry``), and the name of the ``geometry`` column can be found by typing ``gdf.geometry.name``.  
+The "geometry" column -- no matter its name -- can be accessed through the ``geometry`` attribute (``gdf.geometry``), and the name of the ``geometry`` column can be found by typing ``gdf.geometry.name``.  
 
-A ``GeoDataFrame`` may also contain other ``GeoSeries``, but only one ``GeoSeries`` can be the active geometry at a time. To change which ``GeoSeries`` is the geometry, use the ``set_geometry`` function:
+A ``GeoDataFrame`` may also contain other ``GeoSeries``, but only one ``GeoSeries`` can be the active geometry at a time. To change which ``GeoSeries`` is the geometry, use the ``set_geometry`` method:
 
 .. ipython:: python 
     

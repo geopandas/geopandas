@@ -20,11 +20,11 @@ In particular, when submitting a pull request:
 
 - All existing tests should pass.  Please make sure that the test
   suite passes, both locally and on
-  [Travis CI](https://travis-ci.org/geopandas/geopandas).  Status on
+  `Travis CI <https://travis-ci.org/geopandas/geopandas>`_.  Status on
   Travis will be visible on a pull request.  If you want to enable
   Travis CI on your own fork, please read the pandas guidelines link
   above or the
-  [getting started docs](http://about.travis-ci.org/docs/user/getting-started/).
+  `getting started docs <http://about.travis-ci.org/docs/user/getting-started/>`_.
 
 - New functionality should include tests.  Please write reasonable
   tests for your code and make sure that they pass on your pull request.
@@ -36,7 +36,7 @@ In particular, when submitting a pull request:
 - GeoPandas supports python 2 (2.6+) and python 3 (3.2+) with a single
   code base.  Use modern python idioms when possible that are
   compatibile with both major versions, and use the
-  [six](https://pythonhosted.org/six) library where helpful to smooth
+  `six <https://pythonhosted.org/six>`_ library where helpful to smooth
   over the differences.  Use `from __future__ import` statements where
   appropriate.  Test code locally in both python 2 and python 3 when
   possible (all supported versions will be automatically tested on

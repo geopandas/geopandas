@@ -27,15 +27,15 @@ The same CRS can often be referred to in many ways. For example, one of the most
 For reference, a few very common projections and their proj4 strings:
 
 * WGS84 Latitude/Longitude: ``"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"`` or ``"+init=epsg:4326"``
-* UTM Zones (North): ``"+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-* UTM Zones (South): ``"+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs +south"
+* UTM Zones (North): ``"+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"``
+* UTM Zones (South): ``"+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs +south"``
 
 Setting a Projection
 ----------------------
 
 There are two relevant operations for projections: setting a projection and re-projecting. 
 
-Setting a projection is when for some reason *geopandas* has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells *geopandas* how to interpret coordinates. 
+Setting a projection may be necessary when for some reason *geopandas* has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells *geopandas* how to interpret coordinates. If no CRS is set, *geopandas* geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
 
 Be aware that **most of the time** you don't have to set a projection. Data loaded from a reputable source (using the ``from_file()`` command) *should* always include projection information. You can see an objects current CRS through the ``crs`` attribute: ``my_geoseries.crs``. 
 

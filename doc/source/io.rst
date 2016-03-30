@@ -7,7 +7,7 @@ Reading and Writing Files
 Reading Spatial Data
 ---------------------
 
-*geopandas* can read almost any standard spatial data format including ESRI shapefile, GeoJSON files and more using the command:
+*geopandas* can read almost any vector-based spatial data format including ESRI shapefile, GeoJSON files and more using the command:
 
     gpd.read_file()
 

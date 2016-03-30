@@ -351,7 +351,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
         """
-
         if inplace:
             df = self
         else:
