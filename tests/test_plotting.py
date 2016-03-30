@@ -2,17 +2,11 @@ from __future__ import absolute_import, division
 
 import itertools
 import numpy as np
-import os
-import shutil
-import tempfile
 import warnings
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
-from matplotlib.pyplot import Artist, savefig, clf, cm, get_cmap
-from matplotlib.testing.noseclasses import ImageComparisonFailure
-from matplotlib.testing.compare import compare_images
-from numpy import cos, sin, pi
+from matplotlib.pyplot import get_cmap
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point
 from six.moves import xrange
@@ -330,7 +324,6 @@ def _check_colors(N, collection, expected_colors, alpha=None):
         (Any transparency on the `collecton` is assumed to be set in its own
         facecolor RGBA tuples.)
     """
-    from matplotlib.lines import Line2D
     import matplotlib.colors as colors
     conv = colors.colorConverter
 
