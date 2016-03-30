@@ -1,4 +1,5 @@
 from functools import partial
+import json
 from warnings import warn
 
 import numpy as np
@@ -278,6 +279,16 @@ class GeoSeries(GeoPandasBase, Series):
         result.crs = crs
         result._invalidate_sindex()
         return result
+
+    def to_json(self, **kwargs):
+        """
+        Returns a GeoJSON string representation of the GeoSeries.
+
+        Parameters
+        ----------
+        *kwargs* that will be passed to json.dumps().
+        """
+        return json.dumps(self.__geo_interface__, **kwargs)
 
     #
     # Implement standard operators for GeoSeries

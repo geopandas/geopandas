@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import os
+import json
 import shutil
 import tempfile
 import numpy as np
@@ -115,6 +116,12 @@ class TestSeries(unittest.TestCase):
         s = GeoSeries.from_file(tempfilename)
         self.assertTrue(all(self.g3.geom_equals(s)))
         # TODO: compare crs
+
+    def test_to_json(self):
+        """Test whether GeoSeries.to_json works and returns an actual json file."""
+        json_str = self.g3.to_json()
+        json_dict = json.loads(json_str)
+        # TODO : verify the output is a valid GeoJSON.
 
     def test_representative_point(self):
         self.assertTrue(np.alltrue(self.g1.contains(self.g1.representative_point())))
