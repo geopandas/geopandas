@@ -27,14 +27,14 @@ such as PostGIS.
   :maxdepth: 2
 
   Installation <install>
-  Data Structures <dtypes>
+  Data Structures <data_structures>
   Reading and Writing Files <io>
   Making Maps <mapping>
   Managing Projections <projections>
   Geometric Manipulations <geometric_manipulations>
   Merging Data <mergingdata>
   Geocoding <geocoding>
-  Index of Attributes and Methods <index_page>
+  Reference to All Attributes and Methods <reference>
   Contributing to Geopandas <contributing>
   About <about>
 

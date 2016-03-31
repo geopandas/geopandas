@@ -29,7 +29,7 @@ Chloropleth Maps
     # Plot by GDP per capta
     world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
     @savefig world_gdp_per_cap.png width=5in
-	  world.plot(column='gdp_per_cap');
+    world.plot(column='gdp_per_cap');
 
 
 Adding Basemaps

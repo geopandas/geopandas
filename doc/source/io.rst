@@ -11,7 +11,7 @@ Reading Spatial Data
 
     gpd.read_file()
 
-which returns a GeoDataFrame object. (This is possible because *geopandas* makes use of the great *fiona* library, which in turn makes use of a massive open-source program called `GDAL/OGR <http://www.gdal.org/>`_ designed to facilitate spatial data transformations). 
+which returns a GeoDataFrame object. (This is possible because *geopandas* makes use of the great `fiona <http://toblerity.org/fiona/manual.html>`_ library, which in turn makes use of a massive open-source program called `GDAL/OGR <http://www.gdal.org/>`_ designed to facilitate spatial data transformations). 
 
 Any arguments passed to ``read_file()`` after the file name will be passed directly to ``fiona.open``, which does the actual data importation. In general, ``read_file`` is pretty smart and should do what you want without extra arguments, but for more help, type:
 

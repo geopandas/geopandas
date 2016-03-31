@@ -26,6 +26,72 @@ repository with::
 
     pip install git+git://github.com/geopandas/geopandas.git
 
+Dependencies
+--------------
+
+Installation via `conda` should also install all dependencies, but a complete list is as follows:
+
+- `numpy`_		
+- `pandas`_ (version 0.13 or later)		
+- `shapely`_		
+- `fiona`_		
+- `six`_		
+- `pyproj`_		
+
+Further, optional dependencies are:		
+		
+- `geopy`_ 0.99 (optional; for geocoding)		
+- `psycopg2`_ (optional; for PostGIS connection)		
+- `rtree`_ (optional; spatial index to improve performance)
+
+For plotting, these additional packages may be used:		
+		
+- `matplotlib`_		
+- `descartes`_		
+- `pysal`_		
+  
+These can be installed independently via the following set of commands::
+
+    conda install -c conda-forge fiona shapely pyproj rtree
+    conda install pandas
+
+
+
+
+
+
 
 .. toctree::
    :maxdepth: 2
+
+.. _PyPI: https://pypi.python.org/pypi/geopandas
+
+.. _GitHub: https://github.com/geopandas/geopandas
+
+.. _numpy: http://www.numpy.org
+
+.. _pandas: http://pandas.pydata.org
+
+.. _shapely: http://toblerity.github.io/shapely
+
+.. _fiona: http://toblerity.github.io/fiona
+
+.. _Descartes: https://pypi.python.org/pypi/descartes
+
+.. _matplotlib: http://matplotlib.org
+
+.. _geopy: https://github.com/geopy/geopy
+
+.. _six: https://pythonhosted.org/six
+
+.. _psycopg2: https://pypi.python.org/pypi/psycopg2
+
+.. _pysal: http://pysal.org
+
+.. _pyproj: https://github.com/jswhit/pyproj
+
+.. _rtree: https://github.com/Toblerity/rtree
+
+.. _libspatialindex: https://github.com/libspatialindex/libspatialindex
+
+.. _Travis CI: https://travis-ci.org/geopandas/geopandas

@@ -229,21 +229,18 @@ Here are some references:
 3) Installing Dependencies
 ---------------------------
 
-To run *geopandas* in an development environment, you must first install *geopandas*'s dependencies. We suggest doing so using the following commands (executed after your development environment has been activated):
+To run *geopandas* in an development environment, you must first install *geopandas*'s dependencies. We suggest doing so using the following commands (executed after your development environment has been activated)::
 
-    conda install fiona -c conda-forge
-    conda install shapely -c conda-forge
-    conda install pyproj -c conda-forge
+    conda install -c conda-forge fiona shapely pyproj rtree
     conda install pandas
 
 
-This should install all necessary dependencies. The only exception is `rtree`_, which is an optional dependency. ``rtree`` requires the C library `libspatialindex`_. If using brew, you can install using ``brew install Spatialindex``.
-
+This should install all necessary dependencies.
 
 4) Making a development build
 -------------------------------------
 
-Once dependencies are in place, make an in-place build by navigating to the git clone of the *geopandas* repository and running:
+Once dependencies are in place, make an in-place build by navigating to the git clone of the *geopandas* repository and running::
 
     python setup.py develop
 
@@ -313,7 +310,7 @@ install *geopandas*) by typing::
 
 *geopandas* documentation resides in the `doc` folder. Changes to the docs are make by modifying the appropriate file in the `source` folder within `doc`. *geopandas* docs us reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_.
 
-Once you have made your changes, you can build the docs by navigating to the `doc` folder and typing:
+Once you have made your changes, you can build the docs by navigating to the `doc` folder and typing::
 
     make html
 

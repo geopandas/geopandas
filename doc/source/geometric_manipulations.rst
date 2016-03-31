@@ -1,5 +1,5 @@
-GeoPandas User Guide
-====================
+Geometric Manipulations
+========================
 
 
 
@@ -7,33 +7,33 @@ GeoPandas User Guide
 Set-theoretic Methods
 ~~~~~~~~~~~~~~~~~~~~~
 
-**Attribute:** GeoSeries.boundary
+.. attribute::  GeoSeries.boundary
 
   Returns a ``GeoSeries`` of lower dimensional objects representing
   each geometries's set-theoretic `boundary`.
 
-**Method:** GeoSeries.difference(other)
+.. method::  GeoSeries.difference(other)
 
   Returns a ``GeoSeries`` of the points in each geometry that
   are not in the *other* object.
 
-**Method:** GeoSeries.intersection(other)
+.. method::  GeoSeries.intersection(other)
 
   Returns a ``GeoSeries`` of the intersection of each object with the `other`
   geometric object.
 
-**Method:** GeoSeries.symmetric_difference(other)
+.. method::  GeoSeries.symmetric_difference(other)
 
   Returns a ``GeoSeries`` of the points in each object not in the `other`
   geometric object, and the points in the `other` not in this object.
 
-**Method:** GeoSeries.union(other)
+.. method::  GeoSeries.union(other)
 
   Returns a ``GeoSeries`` of the union of points from each object and the
   `other` geometric object.
 
 
-**Attribute:** GeoSeries.unary_union
+.. attribute::  GeoSeries.unary_union
 
   Return a geometry containing the union of all geometries in the ``GeoSeries``.
 
@@ -41,25 +41,25 @@ Set-theoretic Methods
 Constructive Methods
 ~~~~~~~~~~~~~~~~~~~~~
 
-**Method:** GeoSeries.buffer(distance, resolution=16)
+.. method::  GeoSeries.buffer(distance, resolution=16)
 
   Returns a ``GeoSeries`` of geometries representing all points within a given `distance`
   of each geometric object.
 
-**Attribute:** GeoSeries.convex_hull
+.. attribute::  GeoSeries.convex_hull
 
   Returns a ``GeoSeries`` of geometries representing the smallest
   convex `Polygon` containing all the points in each object unless the
   number of points in the object is less than three. For two points,
   the convex hull collapses to a `LineString`; for 1, a `Point`.
 
-**Attribute:** GeoSeries.envelope
+.. attribute::  GeoSeries.envelope
 
   Returns a ``GeoSeries`` of geometries representing the point or
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
-**Method:** GeoSeries.simplify(tolerance, preserve_topology=True)
+.. method::  GeoSeries.simplify(tolerance, preserve_topology=True)
 
   Returns a ``GeoSeries`` containing a simplified representation of
   each object.
@@ -67,19 +67,19 @@ Constructive Methods
 Affine transformations
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-**Method:** GeoSeries.rotate(self, angle, origin='center', use_radians=False)
+.. method::  GeoSeries.rotate(self, angle, origin='center', use_radians=False)
 
   Rotate the coordinates of the GeoSeries.
 
-**Method:** GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
+.. method::  GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
 
  Scale the geometries of the GeoSeries along each (x, y, z) dimensio.
 
-**Method:** GeoSeries.skew(self, angle, origin='center', use_radians=False)
+.. method::  GeoSeries.skew(self, angle, origin='center', use_radians=False)
 
   Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
 
-**Method:** GeoSeries.translate(self, angle, origin='center', use_radians=False)
+.. method::  GeoSeries.translate(self, angle, origin='center', use_radians=False)
 
   Shift the coordinates of the GeoSeries.
 

@@ -1,6 +1,6 @@
 
 
-All Attributes and Methods
+Reference
 ===========================
 
 The following Shapely methods and attributes are available on
