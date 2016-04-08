@@ -1,5 +1,6 @@
 import io
 import os.path
+import zipfile
 from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -36,16 +37,26 @@ else:
 
 
 def download_nybb():
-    """ Returns the path to the NYC boroughs file. Downloads if necessary. """
+    """ Returns the path to the NYC boroughs file. Downloads if necessary.
+    
+    returns tuple (zip file name, shapefile's name and path within zip file)"""
     # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
     # saved as geopandas/examples/nybb_14aav.zip.
-    filename = 'nybb_14aav.zip'
+    filename = 'nybb_16a.zip'
     full_path_name = os.path.join('examples', filename)
     if not os.path.exists(full_path_name):
         with io.open(full_path_name, 'wb') as f:
-            response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/{0}'.format(filename))
+            response = urlopen('http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/{0}'.format(filename))
             f.write(response.read())
-    return full_path_name
+    
+    shp_zip_path = None
+    zf = zipfile.ZipFile(full_path_name, 'r')
+    # finds path name in zip file
+    for zip_filename_path in zf.namelist():
+        if zip_filename_path.endswith('nybb.shp'):
+            break
+            
+    return full_path_name, ('/' + zip_filename_path)
 
 
 def validate_boro_df(test, df):

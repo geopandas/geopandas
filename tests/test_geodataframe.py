@@ -21,10 +21,10 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename = download_nybb()
+        nybb_filename, nybb_zip_path = download_nybb()
 
-        self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
-        with fiona.open('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename) as f:
+        self.df = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
+        with fiona.open(nybb_zip_path, vfs='zip://' + nybb_filename) as f:
             self.schema = f.schema
         self.tempdir = tempfile.mkdtemp()
         self.boros = self.df['BoroName']
@@ -373,8 +373,8 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
     def test_from_features(self):
-        nybb_filename = download_nybb()
-        with fiona.open('/nybb_14a_av/nybb.shp',
+        nybb_filename, nybb_zip_path = download_nybb()
+        with fiona.open(nybb_zip_path,
                         vfs='zip://' + nybb_filename) as f:
             features = list(f)
             crs = f.crs

@@ -14,7 +14,7 @@ from geopandas import GeoSeries, GeoDataFrame
 np.random.seed(1)
 DPI = 100
 
-# http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
+# http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/nybb_16a.zip
 boros = GeoDataFrame.from_file('nybb.shp')
 boros.set_index('BoroCode', inplace=True)
 boros.sort()

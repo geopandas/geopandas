@@ -80,7 +80,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/nybb_16a.zip):
 
     >>> boros = GeoDataFrame.from_file('nybb.shp')
     >>> boros.set_index('BoroCode', inplace=True)
