@@ -1,9 +1,10 @@
-Contributing
-============
+Contributing to GeoPandas
+=========================
+
 (Contribution guidelines largely copied from `pandas <http://pandas.pydata.org/pandas-docs/stable/contributing.html>`_)
 
 Overview
-----------
+--------
 
 Contributions to GeoPandas are very welcome.  They are likely to
 be accepted more quickly if they follow these guidelines.
@@ -14,7 +15,7 @@ readable code.  Performance matters, but not at the expense of those
 goals.
 
 In general, GeoPandas follows the conventions of the pandas project
-where applicable. 
+where applicable.
 
 In particular, when submitting a pull request:
 
@@ -37,7 +38,7 @@ In particular, when submitting a pull request:
   code base.  Use modern python idioms when possible that are
   compatibile with both major versions, and use the
   `six <https://pythonhosted.org/six>`_ library where helpful to smooth
-  over the differences.  Use `from __future__ import` statements where
+  over the differences.  Use ``from __future__ import`` statements where
   appropriate.  Test code locally in both python 2 and python 3 when
   possible (all supported versions will be automatically tested on
   Travis CI).
@@ -54,8 +55,7 @@ In particular, when submitting a pull request:
 Seven Steps for Contributing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are seven basic steps to contributing to *geopandas*
-
+There are seven basic steps to contributing to *geopandas*:
 
 1) Fork the *geopandas* git repository
 2) Create a development environment
@@ -65,8 +65,7 @@ There are seven basic steps to contributing to *geopandas*
 6) Update the documentation
 7) Submit a Pull Request
 
-Each of these 7 steps is detailed below. 
-
+Each of these 7 steps is detailed below.
 
 
 1) Forking the *geopandas* repository using Git
@@ -153,29 +152,26 @@ after updating.
 ---------------------------------------
 A development environment is a virtual space where you can keep an independent installation of *geopandas*.
 This makes it easy to keep both a stable version of python in one place you use for work, and a development
-version (which you may break while playing with code) in another. 
+version (which you may break while playing with code) in another.
 
-An easy way to create a *geopandas** development environment is as follows.
+An easy way to create a *geopandas* development environment is as follows:
 
-- Install either :ref:`Anaconda <install.anaconda>` or :ref:`miniconda <install.miniconda>`
+- Install either `Anaconda <http://docs.continuum.io/anaconda/>`_ or
+  `miniconda <http://conda.pydata.org/miniconda.html>`_
 - Make sure that you have :ref:`cloned the repository <contributing.forking>`
 - ``cd`` to the *geopandas** source directory
 
 Tell conda to create a new environment, named ``geopandas_dev``, or any other name you would like
 for this environment, by running::
 
-      conda create -n geopandas_dev 
+      conda create -n geopandas_dev
 
 For a python 3 environment::
 
-      conda create -n geopandas_dev python=3 
-
-.. warning::
-
-   If you are on Windows, see :ref:`here for a fully compliant Windows environment <contributing.windows>`.
+      conda create -n geopandas_dev python=3.4
 
 This will create the new environment, and not touch any of your existing environments,
-nor any existing python installation. 
+nor any existing python installation.
 
 To work in this environment, Windows users should ``activate`` it as follows::
 
@@ -197,39 +193,14 @@ To return to you home root environment::
 
 See the full conda docs `here <http://conda.pydata.org/docs>`__.
 
-At this point you can easily do a *development* install, as detailed in the next section.
-
-.. _contributing.windows:
-
-Creating a Windows development environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To build on Windows, you need to have compilers installed to build the extensions. You will need to install the appropriate Visual Studio compilers, VS 2008 for Python 2.7, VS 2010 for 3.4, and VS 2015 for Python 3.5.
-
-For Python 2.7, you can install the ``mingw`` compiler which will work equivalently to VS 2008::
-
-      conda install -n geopandas_dev libpython
-
-or use the `Microsoft Visual Studio VC++ compiler for Python <https://www.microsoft.com/en-us/download/details.aspx?id=44266>`__. Note that you have to check the ``x64`` box to install the ``x64`` extension building capability as this is not installed by default.
-
-For Python 3.4, you can download and install the `Windows 7.1 SDK <https://www.microsoft.com/en-us/download/details.aspx?id=8279>`__. Read the references below as there may be various gotchas during the installation.
-
-For Python 3.5, you can download and install the `Visual Studio 2015 Community Edition <https://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs.aspx>`__.
-
-Here are some references:
-
-- https://github.com/conda/conda-recipes/wiki/Building-from-Source-on-Windows-32-bit-and-64-bit
-- https://cowboyprogrammer.org/building-python-wheels-for-windows/
-- https://blog.ionelmc.ro/2014/12/21/compiling-python-extensions-on-windows/
-- https://support.enthought.com/hc/en-us/articles/204469260-Building-Python-extensions-with-Canopy
-
-
-
+At this point you can easily do a *development* install, as detailed in the next sections.
 
 3) Installing Dependencies
----------------------------
+--------------------------
 
-To run *geopandas* in an development environment, you must first install *geopandas*'s dependencies. We suggest doing so using the following commands (executed after your development environment has been activated)::
+To run *geopandas* in an development environment, you must first install
+*geopandas*'s dependencies. We suggest doing so using the following commands
+(executed after your development environment has been activated)::
 
     conda install -c conda-forge fiona shapely pyproj rtree
     conda install pandas
@@ -238,13 +209,12 @@ To run *geopandas* in an development environment, you must first install *geopan
 This should install all necessary dependencies.
 
 4) Making a development build
--------------------------------------
+-----------------------------
 
-Once dependencies are in place, make an in-place build by navigating to the git clone of the *geopandas* repository and running::
+Once dependencies are in place, make an in-place build by navigating to the git
+clone of the *geopandas* repository and running::
 
     python setup.py develop
-
-
 
 
 5) Making changes and writing tests
@@ -270,32 +240,14 @@ extensions in `numpy.testing
 Writing tests
 ~~~~~~~~~~~~~
 
-All tests should go into the ``tests`` subdirectory of the specific package.
-This folder contains many current examples of tests, and we suggest looking to these for
-inspiration.
+All tests should go into the ``tests`` directory. This folder contains many
+current examples of tests, and we suggest looking to these for inspiration.
 
-The ``.util`` module has many special ``assert`` functions that
-make it easier to make statements about whether Series or DataFrame objects are
-equivalent. The easiest way to verify that your code is correct is to
+The ``.util`` module has some special ``assert`` functions that
+make it easier to make statements about whether GeoSeries or GeoDataFrame
+objects are equivalent. The easiest way to verify that your code is correct is to
 explicitly construct the result you expect, then compare the actual result to
-the expected correct result::
-
-    def test_pivot(self):
-        data = {
-            'index' : ['A', 'B', 'C', 'C', 'B', 'A'],
-            'columns' : ['One', 'One', 'One', 'Two', 'Two', 'Two'],
-            'values' : [1., 2., 3., 3., 2., 1.]
-        }
-
-        frame = DataFrame(data)
-        pivoted = frame.pivot(index='index', columns='columns', values='values')
-
-        expected = DataFrame({
-            'One' : {'A' : 1., 'B' : 2., 'C' : 3.},
-            'Two' : {'A' : 1., 'B' : 2., 'C' : 3.}
-        })
-
-        assert_frame_equal(pivoted, expected)
+the expected correct result, using eg the function ``assert_geoseries_equal``.
 
 Running the test suite
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -306,22 +258,24 @@ install *geopandas*) by typing::
     nosetests -v
 
 6) Updating the Documentation
-------------------------------
+-----------------------------
 
-*geopandas* documentation resides in the `doc` folder. Changes to the docs are make by modifying the appropriate file in the `source` folder within `doc`. *geopandas* docs us reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_.
+*geopandas* documentation resides in the `doc` folder. Changes to the docs are
+make by modifying the appropriate file in the `source` folder within `doc`.
+*geopandas* docs us reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_
+and the docstrings follow the `Numpy Docstring standard <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_.
 
 Once you have made your changes, you can build the docs by navigating to the `doc` folder and typing::
 
     make html
 
-The resulting html pages will be located in `doc/build/html`. 
+The resulting html pages will be located in `doc/build/html`.
 
 
 7) Submitting a Pull Request
 ------------------------------
 
-Once you've made changes and pushed them to your forked repository, you then submit a pull request to have them integrated into the *geopandas* code base. You can find pull request (or PR) tutorials here:
+Once you've made changes and pushed them to your forked repository, you then
+submit a pull request to have them integrated into the *geopandas* code base.
 
-* `GitHub's Help Docs <https://help.github.com/articles/using-pull-requests/>`_
-* `Atlassian <https://www.atlassian.com/git/tutorials/what-is-version-control>`_
-
+You can find a pull request (or PR) tutorial in the `GitHub's Help Docs <https://help.github.com/articles/using-pull-requests/>`_.
