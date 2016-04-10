@@ -9,11 +9,10 @@ from .util import PANDAS_NEW_SQL_API, unittest
 
 class TestIO(unittest.TestCase):
     def setUp(self):
-        nybb_filename = tests.util.download_nybb()
-        path = '/nybb_14a_av/nybb.shp'
+        nybb_filename, nybb_zip_path = tests.util.download_nybb()
         vfs = 'zip://' + nybb_filename
-        self.df = read_file(path, vfs=vfs)
-        with fiona.open(path, vfs=vfs) as f:
+        self.df = read_file(nybb_zip_path, vfs=vfs)
+        with fiona.open(nybb_zip_path, vfs=vfs) as f:
             self.crs = f.crs
 
     def test_read_postgis_default(self):
