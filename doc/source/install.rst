@@ -31,38 +31,30 @@ Dependencies
 
 Installation via `conda` should also install all dependencies, but a complete list is as follows:
 
-- `numpy`_		
-- `pandas`_ (version 0.13 or later)		
-- `shapely`_		
-- `fiona`_		
-- `six`_		
-- `pyproj`_		
+- `numpy`_
+- `pandas`_ (version 0.13 or later)
+- `shapely`_
+- `fiona`_
+- `six`_
+- `pyproj`_
 
-Further, optional dependencies are:		
-		
-- `geopy`_ 0.99 (optional; for geocoding)		
-- `psycopg2`_ (optional; for PostGIS connection)		
+Further, optional dependencies are:
+
+- `geopy`_ 0.99 (optional; for geocoding)
+- `psycopg2`_ (optional; for PostGIS connection)
 - `rtree`_ (optional; spatial index to improve performance)
 
-For plotting, these additional packages may be used:		
-		
-- `matplotlib`_		
-- `descartes`_		
-- `pysal`_		
-  
+For plotting, these additional packages may be used:
+
+- `matplotlib`_
+- `descartes`_
+- `pysal`_
+
 These can be installed independently via the following set of commands::
 
     conda install -c conda-forge fiona shapely pyproj rtree
     conda install pandas
 
-
-
-
-
-
-
-.. toctree::
-   :maxdepth: 2
 
 .. _PyPI: https://pypi.python.org/pypi/geopandas
 

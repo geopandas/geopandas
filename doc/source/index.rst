@@ -35,7 +35,7 @@ such as PostGIS.
   Merging Data <mergingdata>
   Geocoding <geocoding>
   Reference to All Attributes and Methods <reference>
-  Contributing to Geopandas <contributing>
+  Contributing to GeoPandas <contributing>
   About <about>
 
 Indices and tables
@@ -44,4 +44,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
