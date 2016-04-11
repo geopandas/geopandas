@@ -13,4 +13,4 @@ dependencies:
 - descartes
 - sphinx
 - sphinx_rtd_theme
-- ipython
+- ipython=4.0.1
