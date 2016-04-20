@@ -435,6 +435,54 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame(data).__finalize__(self)
 
     def plot(self, *args, **kwargs):
+        """ Plot a GeoDataFrame
+        Generate a plot of a GeoDataFrame with matplotlib.  If a
+        column is specified, the plot coloring will be based on values
+        in that column.  Otherwise, a categorical plot of the
+        geometries in the `geometry` column will be generated.
+        Parameters
+        ----------
+        GeoDataFrame
+            The GeoDataFrame to be plotted.  Currently Polygon,
+            MultiPolygon, LineString, MultiLineString and Point
+            geometries can be plotted.
+        column : str (default None)
+            The name of the column to be plotted.
+        categorical : bool (default False)
+            If False, cmap will reflect numerical values of the
+            column being plotted.  For non-numerical columns (or if
+            column=None), this will be set to True.
+        cmap : str (default 'Set1')
+            The name of a colormap recognized by matplotlib.
+        color : str (default None)
+            If specified, all objects will be colored uniformly.
+        linewidth : float (default 1.0)
+            Line width for geometries.
+        legend : bool (default False)
+            Plot a legend (Experimental; currently for categorical
+            plots only)
+        ax : matplotlib.pyplot.Artist (default None)
+            axes on which to draw the plot
+        scheme : pysal.esda.mapclassify.Map_Classifier
+            Choropleth classification schemes (requires PySAL)
+        k   : int (default 5)
+            Number of classes (ignored if scheme is None)
+        vmin : None or float (default None)
+            Minimum value of cmap. If None, the minimum data value
+            in the column to be plotted is used.
+        vmax : None or float (default None)
+            Maximum value of cmap. If None, the maximum data value
+            in the column to be plotted is used.
+        figsize
+            Size of the resulting matplotlib.figure.Figure. If the argument
+            axes is given explicitly, figsize is ignored.
+        **color_kwds : dict
+            Color options to be passed on to the actual plot function
+        Returns
+        -------
+        matplotlib axes instance
+        """
+
         return plot_dataframe(self, *args, **kwargs)
 
 
