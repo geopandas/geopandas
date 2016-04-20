@@ -52,7 +52,7 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
-The way color maps are scaled can also be manipulated with the ``scheme`` option. By default, ``scheme`` is set to 'equal_intervals', but it can also be adjusted to any other `pysal option <http://pysal.org/1.2/library/esda/mapclassify.html>`_, like 'quantiles', 'percentiles', etc.  
+The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). By default, ``scheme`` is set to 'equal_intervals', but it can also be adjusted to any other `pysal option <http://pysal.org/1.2/library/esda/mapclassify.html>`_, like 'quantiles', 'percentiles', etc.  
 
 .. ipython:: python
 
@@ -63,7 +63,7 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 Maps with Layers
 -----------------
 
-To overlap different layers, first ensure they share a common CRS (so they will align), then plot.
+To overlap different layers, first ensure they share a common CRS (so they will align). Then map them by (a) creating a matplotlib ``axis`` object, and (b) passing that object to the ``plot()`` method for each layer. 
 
 .. ipython:: python
     
@@ -77,7 +77,16 @@ To overlap different layers, first ensure they share a common CRS (so they will 
     cities = cities.to_crs(world.crs)
 
     # Overlay over country outlines
-    #[anyone know how to do this?]
+    # And yes, there are lots of island capitals
+    # apparently in the middle of the ocean!
+    import matplotlib.pyplot as plt
+    fig, overlaid_axis = plt.subplots(1,1)
+    cities = cities.to_crs(world.crs)
+    cities.plot(marker='o', color='red', markersize=5, ax=overlaid_axis)
+    world.plot(color='white', ax=overlaid_axis)
+    @savefig capitals_over_countries.png width=5in
+    plt.show();
+
 
 
 
