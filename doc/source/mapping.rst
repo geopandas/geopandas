@@ -4,7 +4,7 @@
    :suppress:
 
    import geopandas as gpd
-   world = gpd.GeoDataFrame().from_file('source/_example_data/naturalearth_lowres.shp')
+   world = gpd.GeoDataFrame().from_file('_example_data/naturalearth_lowres.shp')
 
 
 
@@ -18,7 +18,7 @@ Chloropleth Maps
 -----------------
 
 .. ipython:: python
-    
+
     # Examine country GeoDataFrame
     world.head()
 
