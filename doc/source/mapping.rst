@@ -69,7 +69,6 @@ To overlap different layers, first ensure they share a common CRS (so they will 
     
     # Look at capitals
     # Note use of standard `pyplot` line style options 
-    # (points are still "lines" to matplotlib). 
     @savefig capitals.png width=5in
     cities.plot(marker='*', color='green', markersize=5);
 
@@ -79,15 +78,19 @@ To overlap different layers, first ensure they share a common CRS (so they will 
     # Overlay over country outlines
     # And yes, there are lots of island capitals
     # apparently in the middle of the ocean!
+
     import matplotlib.pyplot as plt
-    fig, overlaid_axis = plt.subplots(1,1)
-    cities = cities.to_crs(world.crs)
-    cities.plot(marker='o', color='red', markersize=5, ax=overlaid_axis)
-    world.plot(color='white', ax=overlaid_axis)
+    fig, ax = plt.subplots()
+
+    # set aspect to equal. This is done automatically 
+    # when using *geopandas* plot on it's own, but not when 
+    # working with pyplot directly. 
+    ax.set_aspect('equal')  
+
+    world.plot(ax=ax, color='white')
+    cities.plot(ax=ax, marker='o', color='red', markersize=5)
     @savefig capitals_over_countries.png width=5in
     plt.show();
-
-
 
 
 Other Resources
