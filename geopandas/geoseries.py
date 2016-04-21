@@ -239,40 +239,10 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
-
     def plot(self, *args, **kwargs):
-
-        """ Plot a GeoSeries
-        Generate a plot of a GeoSeries geometry with matplotlib.
-        Parameters
-        ----------
-        Series
-            The GeoSeries to be plotted.  Currently Polygon,
-            MultiPolygon, LineString, MultiLineString and Point
-            geometries can be plotted.
-        cmap : str (default 'Set1')
-            The name of a colormap recognized by matplotlib.  Any
-            colormap will work, but categorical colormaps are
-            generally recommended.  Examples of useful discrete
-            colormaps include:
-                Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
-        color : str (default None)
-            If specified, all objects will be colored uniformly.
-        ax : matplotlib.pyplot.Artist (default None)
-            axes on which to draw the plot
-        linewidth : float (default 1.0)
-            Line width for geometries.
-        figsize : pair of floats (default None)
-            Size of the resulting matplotlib.figure.Figure. If the argument
-            ax is given explicitly, figsize is ignored.
-        **color_kwds : dict
-            Color options to be passed on to the actual plot function
-        Returns
-        -------
-        matplotlib axes instance
-        """
-
         return plot_series(self, *args, **kwargs)
+    
+    plot.__doc__ = plot_series.__doc__
 
     #
     # Additional methods
