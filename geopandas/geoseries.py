@@ -239,9 +239,10 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
-
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
+    
+    plot.__doc__ = plot_series.__doc__
 
     #
     # Additional methods

@@ -435,7 +435,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame(data).__finalize__(self)
 
     def plot(self, *args, **kwargs):
+
         return plot_dataframe(self, *args, **kwargs)
+
+    plot.__doc__ = plot_dataframe.__doc__
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
