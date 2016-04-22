@@ -8,6 +8,7 @@ from geopandas.geodataframe import GeoDataFrame
 
 from geopandas.io.file import read_file
 from geopandas.io.sql import read_postgis
+from geopandas.tools import sjoin
 
 # make the interactive namespace easier to use
 # for `from geopandas import *` demos.

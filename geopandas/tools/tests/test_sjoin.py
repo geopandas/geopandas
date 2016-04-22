@@ -8,7 +8,7 @@ from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, read_file, base
 from geopandas.tests.util import unittest, download_nybb
-from geopandas.tools import sjoin
+from geopandas import sjoin
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
