@@ -63,7 +63,9 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 Maps with Layers
 -----------------
 
-To overlap different layers, first ensure they share a common CRS (so they will align). Then map them by (a) creating a matplotlib ``axis`` object, and (b) passing that object to the ``plot()`` method for each layer. 
+There are two strategies for making a map with multiple layers -- one more succinct, and one that is a littel more flexible. 
+
+Before combining maps, however, remember to always ensure they share a common CRS (so they will align). 
 
 .. ipython:: python
     
@@ -75,9 +77,21 @@ To overlap different layers, first ensure they share a common CRS (so they will 
     # Check crs
     cities = cities.to_crs(world.crs)
 
-    # Overlay over country outlines
+    # Now we can overlay over country outlines
     # And yes, there are lots of island capitals
     # apparently in the middle of the ocean!
+
+**Method 1**
+
+.. ipython:: python
+
+    base = world.plot(color='white')
+    @savefig capitals_over_countries_1.png width=5in
+    cities.plot(ax=base, marker='o', color='red', markersize=5);
+
+**Method 2: Using matplotlib objects**
+
+.. ipython:: python
 
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
@@ -89,7 +103,7 @@ To overlap different layers, first ensure they share a common CRS (so they will 
 
     world.plot(ax=ax, color='white')
     cities.plot(ax=ax, marker='o', color='red', markersize=5)
-    @savefig capitals_over_countries.png width=5in
+    @savefig capitals_over_countries_2.png width=5in
     plt.show();
 
 
