@@ -86,6 +86,28 @@ class TestDataFrame(unittest.TestCase):
         df = overlay(self.polydf, polydf2r, how="union")
         self.assertTrue('Shape_Area_2' in df.columns and 'Shape_Area' in df.columns)
 
+    def test_geometry_not_named_geometry(self):
+        # Issue #306
+        # Add points and flip names
+        polydf3 = self.polydf.copy()
+        polydf3 = polydf3.rename(columns={'geometry':'polygons'})
+        polydf3 = polydf3.set_geometry('polygons')
+        polydf3['geometry'] = self.pointdf.geometry.loc[0:4]
+        self.assertTrue(polydf3.geometry.name == 'polygons')
+
+        df = overlay(polydf3, self.polydf2, how="union")
+        self.assertTrue(type(df) is GeoDataFrame)
+        
+        df2 = overlay(self.polydf, self.polydf2, how="union")
+        self.assertTrue(df.geom_almost_equals(df2).all())
+
+    def test_geoseries_warning(self):
+        # Issue #305
+
+        def f():
+            overlay(self.polydf, self.polydf2.geometry, how="union")
+        self.assertRaises(NotImplementedError, f)
+
 
 
 

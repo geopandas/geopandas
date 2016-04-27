@@ -30,8 +30,10 @@ def _extract_rings(df):
     """
     poly_msg = "overlay only takes GeoDataFrames with (multi)polygon geometries"
     rings = []
+    geometry_column = df.geometry.name
+
     for i, feat in df.iterrows():
-        geom = feat.geometry
+        geom = feat[geometry_column]
 
         if geom.type not in ['Polygon', 'MultiPolygon']:
             raise TypeError(poly_msg)
@@ -82,6 +84,9 @@ def overlay(df1, df2, how, use_sindex=True):
         raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
             (how, allowed_hows))
 
+    if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
+        raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
+
     # Collect the interior and exterior rings
     rings1 = _extract_rings(df1)
     rings2 = _extract_rings(df2)
@@ -125,13 +130,13 @@ def overlay(df1, df2, how, use_sindex=True):
         prop2 = None
         for cand_id in candidates1:
             cand = df1.ix[cand_id]
-            if cent.intersects(cand.geometry):
+            if cent.intersects(cand[df1.geometry.name]):
                 df1_hit = True
                 prop1 = cand
                 break  # Take the first hit
         for cand_id in candidates2:
             cand = df2.ix[cand_id]
-            if cent.intersects(cand.geometry):
+            if cent.intersects(cand[df2.geometry.name]):
                 df2_hit = True
                 prop2 = cand
                 break  # Take the first hit
