@@ -11,7 +11,7 @@ from geopandas import GeoSeries
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
-from .util import unittest, mock, assert_geoseries_equal
+from geopandas.tests.util import unittest, mock, assert_geoseries_equal
 
 
 def _skip_if_no_geopy():

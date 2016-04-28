@@ -1,13 +1,7 @@
-import shutil
-import tempfile
-import numpy as np
-from numpy.testing import assert_array_equal
-from pandas import Series, read_csv
-from shapely.geometry import (Polygon, Point, LineString,
-                              MultiPoint, MultiLineString, MultiPolygon)
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry import Polygon, Point
+
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
-from .util import unittest, geom_equals, geom_almost_equals, download_nybb
+from geopandas.tests.util import unittest, download_nybb
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
@@ -121,4 +115,3 @@ class TestJoinSindex(unittest.TestCase):
         self.assertEqual(
             [merged.ix[hit.object]['BoroName'] for hit in hits],
             ['Bronx', 'Queens'])
-
