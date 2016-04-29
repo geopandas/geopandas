@@ -441,7 +441,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     plot.__doc__ = plot_dataframe.__doc__
 
 
-    def dissolve(self, by=None, aggfunc=None):
+    def dissolve(self, by=None, aggfunc='first'):
         """
         Dissolve geometries within `groupby` into single observation. 
 
@@ -458,9 +458,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame
         """
 
-        if aggfunc is None:
-            aggfunc = lambda x: x.iloc[0,:]
-
         # Separate data and geometry
         data = self.drop(labels=self.geometry.name, axis=1).copy()
 
@@ -470,8 +467,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry = self[groupby_plus_geometry].copy()
 
         # Process data
-        aggregated_data = data.groupby(by=by).apply(aggfunc).drop(by, axis=1)
-
+        aggregated_data = data.groupby(by=by).agg(aggfunc)
+        
         # Process geometry
         def merge_geometries(block):
 
