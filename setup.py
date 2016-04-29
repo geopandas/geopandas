@@ -81,6 +81,15 @@ short_version = '%s'
 
 write_version_py()
 
+
+# get all data dirs in the datasets module
+data_files = []
+
+for item in os.listdir("geopandas/datasets"):
+    if os.path.isdir(os.path.join("geopandas/datasets/", item)) \
+            and not item.startswith('__'):
+        data_files.append(os.path.join("datasets", item, '*'))
+
 setup(name='geopandas',
       version=FULLVERSION,
       description='Geographic pandas extensions',
@@ -89,5 +98,7 @@ setup(name='geopandas',
       author_email='kjordahl@enthought.com',
       url='http://geopandas.org',
       long_description=LONG_DESCRIPTION,
-      packages=['geopandas', 'geopandas.io', 'geopandas.tools'],
+      packages=['geopandas', 'geopandas.io', 'geopandas.tools',
+                'geopandas.datasets'],
+      package_data={'geopandas': data_files},
       install_requires=INSTALL_REQUIRES)
