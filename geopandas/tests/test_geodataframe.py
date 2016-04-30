@@ -12,8 +12,8 @@ from shapely.geometry import Point, Polygon
 
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
-from .util import unittest, download_nybb, assert_geoseries_equal, connect, \
-                  create_db, validate_boro_df, PANDAS_NEW_SQL_API
+from geopandas.tests.util import assert_geoseries_equal, connect, create_db, \
+    download_nybb, PACKAGE_DIR, PANDAS_NEW_SQL_API, unittest, validate_boro_df
 
 
 class TestDataFrame(unittest.TestCase):
@@ -21,10 +21,10 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename = download_nybb()
+        nybb_filename, nybb_zip_path = download_nybb()
 
-        self.df = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
-        with fiona.open('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename) as f:
+        self.df = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
+        with fiona.open(nybb_zip_path, vfs='zip://' + nybb_filename) as f:
             self.schema = f.schema
         self.tempdir = tempfile.mkdtemp()
         self.boros = self.df['BoroName']
@@ -32,7 +32,7 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry': Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
-        self.df3 = read_file('examples/null_geom.geojson')
+        self.df3 = read_file(os.path.join(PACKAGE_DIR, 'examples', 'null_geom.geojson'))
         self.line_paths = self.df3['Name']
 
     def tearDown(self):
@@ -373,8 +373,8 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
     def test_from_features(self):
-        nybb_filename = download_nybb()
-        with fiona.open('/nybb_14a_av/nybb.shp',
+        nybb_filename, nybb_zip_path = download_nybb()
+        with fiona.open(nybb_zip_path,
                         vfs='zip://' + nybb_filename) as f:
             features = list(f)
             crs = f.crs

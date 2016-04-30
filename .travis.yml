@@ -78,7 +78,7 @@ install:
   - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip wheel pandas==$PANDAS; pip install pandas==$PANDAS; fi
 
 script:
-  - py.test tests --cov geopandas -v --cov-report term-missing
+  - py.test geopandas --cov geopandas -v --cov-report term-missing
 
 after_success:
   - coveralls

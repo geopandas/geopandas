@@ -1,13 +1,7 @@
-import shutil
-import tempfile
-import numpy as np
-from numpy.testing import assert_array_equal
-from pandas import Series, read_csv
-from shapely.geometry import (Polygon, Point, LineString,
-                              MultiPoint, MultiLineString, MultiPolygon)
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry import Polygon, Point
+
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
-from .util import unittest, geom_equals, geom_almost_equals
+from geopandas.tests.util import unittest, download_nybb
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
@@ -85,9 +79,8 @@ class TestFrameSindex(unittest.TestCase):
 class TestJoinSindex(unittest.TestCase):
 
     def setUp(self):
-        self.boros = read_file(
-                    "/nybb_14a_av/nybb.shp",
-                    vfs="zip://examples/nybb_14aav.zip")
+        nybb_filename, nybb_zip_path = download_nybb()
+        self.boros = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
 
     def test_merge_geo(self):
         # First check that we gets hits from the boros frame.
@@ -122,4 +115,3 @@ class TestJoinSindex(unittest.TestCase):
         self.assertEqual(
             [merged.ix[hit.object]['BoroName'] for hit in hits],
             ['Bronx', 'Queens'])
-

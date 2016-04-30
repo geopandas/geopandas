@@ -1,16 +1,16 @@
 from __future__ import absolute_import
 
 import os
+import json
 import shutil
 import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import Series
 from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
-from .util import unittest, geom_equals, geom_almost_equals
+from geopandas.tests.util import unittest, geom_equals
 
 
 class TestSeries(unittest.TestCase):
@@ -116,6 +116,12 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(all(self.g3.geom_equals(s)))
         # TODO: compare crs
 
+    def test_to_json(self):
+        """Test whether GeoSeries.to_json works and returns an actual json file."""
+        json_str = self.g3.to_json()
+        json_dict = json.loads(json_str)
+        # TODO : verify the output is a valid GeoJSON.
+
     def test_representative_point(self):
         self.assertTrue(np.alltrue(self.g1.contains(self.g1.representative_point())))
         self.assertTrue(np.alltrue(self.g2.contains(self.g2.representative_point())))
@@ -150,6 +156,29 @@ class TestSeries(unittest.TestCase):
         self.assertEqual(self.g1.__geo_interface__['type'], 'FeatureCollection')
         self.assertEqual(len(self.g1.__geo_interface__['features']),
                          self.g1.shape[0])
+
+    def test_proj4strings(self):
+        # As string
+        reprojected = self.g3.to_crs('+proj=utm +zone=30N')
+        reprojected_back = reprojected.to_crs(epsg=4326)
+        self.assertTrue(np.alltrue(self.g3.geom_almost_equals(reprojected_back)))
+
+        # As dict
+        reprojected = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
+        reprojected_back = reprojected.to_crs(epsg=4326)
+        self.assertTrue(np.alltrue(self.g3.geom_almost_equals(reprojected_back)))
+
+        # Set to equivalent string, convert, compare to original
+        copy = self.g3.copy()
+        copy.crs = '+init=epsg:4326'
+        reprojected = copy.to_crs({'proj': 'utm', 'zone': '30N'})
+        reprojected_back = reprojected.to_crs(epsg=4326)
+        self.assertTrue(np.alltrue(self.g3.geom_almost_equals(reprojected_back)))
+
+        # Conversions by different format
+        reprojected_string = self.g3.to_crs('+proj=utm +zone=30N')
+        reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
+        self.assertTrue(np.alltrue(reprojected_string.geom_almost_equals(reprojected_dict)))
 
 if __name__ == '__main__':
     unittest.main()

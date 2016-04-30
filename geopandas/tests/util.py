@@ -1,17 +1,22 @@
 import io
 import os.path
+import sys
+import zipfile
+
 from six.moves.urllib.request import urlopen
+from pandas.util.testing import assert_isinstance
 
 from geopandas import GeoDataFrame, GeoSeries
 
+HERE = os.path.abspath(os.path.dirname(__file__))
+PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
+
 # Compatibility layer for Python 2.6: try loading unittest2
-import sys
 if sys.version_info[:2] == (2, 6):
     try:
         import unittest2 as unittest
     except ImportError:
         import unittest
-
 else:
     import unittest
 
@@ -36,16 +41,26 @@ else:
 
 
 def download_nybb():
-    """ Returns the path to the NYC boroughs file. Downloads if necessary. """
+    """ Returns the path to the NYC boroughs file. Downloads if necessary.
+
+    returns tuple (zip file name, shapefile's name and path within zip file)"""
     # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
     # saved as geopandas/examples/nybb_14aav.zip.
-    filename = 'nybb_14aav.zip'
-    full_path_name = os.path.join('examples', filename)
+    filename = 'nybb_16a.zip'
+    full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
     if not os.path.exists(full_path_name):
         with io.open(full_path_name, 'wb') as f:
-            response = urlopen('http://www.nyc.gov/html/dcp/download/bytes/{0}'.format(filename))
+            response = urlopen('http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/{0}'.format(filename))
             f.write(response.read())
-    return full_path_name
+
+    shp_zip_path = None
+    zf = zipfile.ZipFile(full_path_name, 'r')
+    # finds path name in zip file
+    for zip_filename_path in zf.namelist():
+        if zip_filename_path.endswith('nybb.shp'):
+            break
+
+    return full_path_name, ('/' + zip_filename_path)
 
 
 def validate_boro_df(test, df):
@@ -149,13 +164,6 @@ def geom_almost_equals(this, that):
     return (this.geom_almost_equals(that) |
             (this.is_empty & that.is_empty)).all()
 
-# TODO: Remove me when standardizing on pandas 0.13, which already includes
-#       this test util.
-def assert_isinstance(obj, klass_or_tuple):
-    assert isinstance(obj, klass_or_tuple), "type: %r != %r" % (
-                                           type(obj).__name__,
-                                           getattr(klass_or_tuple, '__name__',
-                                                   klass_or_tuple))
 
 def assert_geoseries_equal(left, right, check_dtype=False,
                            check_index_type=False,

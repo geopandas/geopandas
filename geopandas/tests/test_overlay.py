@@ -1,10 +1,13 @@
 from __future__ import absolute_import
+
 import tempfile
 import shutil
+
 from shapely.geometry import Point
+
 from geopandas import GeoDataFrame, read_file
 from geopandas.tools import overlay
-from .util import unittest, download_nybb
+from geopandas.tests.util import unittest, download_nybb
 
 
 class TestDataFrame(unittest.TestCase):
@@ -12,9 +15,9 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename = download_nybb()
+        nybb_filename, nybb_zip_path = download_nybb()
 
-        self.polydf = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
+        self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.crs = {'init': 'epsg:4326'}
         b = [int(x) for x in self.polydf.total_bounds]

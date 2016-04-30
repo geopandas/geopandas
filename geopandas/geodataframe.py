@@ -350,6 +350,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         joining points are assumed to be lines in the current
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
+
+        `to_crs` passes the `crs` argument to the `Proj` function from the
+        `pyproj` library (with the option `preserve_units=True`). It can
+        therefore accept proj4 projections in any format
+        supported by `Proj`, including dictionaries, or proj4 strings.
+
         """
         if inplace:
             df = self
@@ -429,7 +435,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame(data).__finalize__(self)
 
     def plot(self, *args, **kwargs):
+
         return plot_dataframe(self, *args, **kwargs)
+
+    plot.__doc__ = plot_dataframe.__doc__
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

@@ -1,18 +1,20 @@
 from __future__ import absolute_import
+
 from shapely.geometry import Point, MultiPoint, LineString
 from geopandas import GeoSeries
 from geopandas.tools import collect
-from .util import unittest
+from geopandas.tests.util import unittest
+
 
 class TestTools(unittest.TestCase):
     def setUp(self):
-        self.p1 = Point(0,0)
-        self.p2 = Point(1,1)
-        self.p3 = Point(2,2)
+        self.p1 = Point(0, 0)
+        self.p2 = Point(1, 1)
+        self.p3 = Point(2, 2)
         self.mpc = MultiPoint([self.p1, self.p2, self.p3])
 
         self.mp1 = MultiPoint([self.p1, self.p2])
-        self.line1 = LineString([(3,3), (4,4)])
+        self.line1 = LineString([(3, 3), (4, 4)])
 
     def test_collect_single(self):
         result = collect(self.p1)

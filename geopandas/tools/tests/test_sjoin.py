@@ -1,12 +1,13 @@
-
 from __future__ import absolute_import
+
 import tempfile
 import shutil
+
 import numpy as np
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, read_file, base
-from .util import unittest, download_nybb
+from geopandas.tests.util import unittest, download_nybb
 from geopandas.tools import sjoin
 
 
@@ -14,8 +15,8 @@ from geopandas.tools import sjoin
 class TestSpatialJoin(unittest.TestCase):
 
     def setUp(self):
-        nybb_filename = download_nybb()
-        self.polydf = read_file('/nybb_14a_av/nybb.shp', vfs='zip://' + nybb_filename)
+        nybb_filename, nybb_zip_path = download_nybb()
+        self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.crs = {'init': 'epsg:4326'}
         N = 20
@@ -55,7 +56,7 @@ class TestSpatialJoin(unittest.TestCase):
         # points within polygons
         df = sjoin(self.pointdf, self.polydf, how="left", op="within")
         self.assertEquals(df.shape, (21,8))
-        self.assertAlmostEquals(df.ix[1]['Shape_Leng'], 330454.175933)
+        self.assertEquals(df.ix[1]['BoroName'], 'Staten Island')
 
         # points contain polygons? never happens so we should have nulls
         df = sjoin(self.pointdf, self.polydf, how="left", op="contains")
