@@ -461,10 +461,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # Separate data and geometry
         data = self.drop(labels=self.geometry.name, axis=1).copy()
 
-
-        groupby_plus_geometry = [self.geometry.name]
-        groupby_plus_geometry.append(by)
-        geometry = self[groupby_plus_geometry].copy()
+        groupby_plus_geometry_cols = [self.geometry.name]
+        groupby_plus_geometry_cols.append(by)
+        geometry = self[groupby_plus_geometry_cols].copy()
 
         # Process data
         aggregated_data = data.groupby(by=by).agg(aggfunc)
