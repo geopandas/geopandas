@@ -451,24 +451,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Column whose values define groups to be dissolved
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
-            with each group. Passed to pandas `groupby` method.
+            with each group. Passed to pandas `groupby.agg` method.
 
         Returns
         -------
         GeoDataFrame
         """
 
-        # Separate data and geometry
+        # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1).copy()
+        aggregated_data = data.groupby(by=by).agg(aggfunc)
 
+
+        # Process spatial component
         groupby_plus_geometry_cols = [self.geometry.name]
         groupby_plus_geometry_cols.append(by)
         geometry = self[groupby_plus_geometry_cols].copy()
 
-        # Process data
-        aggregated_data = data.groupby(by=by).agg(aggfunc)
-        
-        # Process geometry
         def merge_geometries(block):
 
             merged_geom = block.unary_union
@@ -479,11 +478,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             return merged_w_index
 
 
-        aggregated_geometry = geometry.groupby(by=by, group_keys=False)
-        aggregated_geometry = aggregated_geometry.apply(merge_geometries)
-        
-        aggregated_geometry = GeoDataFrame(aggregated_geometry, 
-                                           index=aggregated_geometry.index,
+        g = geometry.groupby(by=by, group_keys=False).apply(merge_geometries)
+
+        aggregated_geometry = GeoDataFrame(g, 
+                                           index=g.index,
                                            geometry=self.geometry.name)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import tempfile
 import shutil
+import numpy as np
 from shapely.geometry import Point
 from geopandas import GeoDataFrame, read_file
 from geopandas.tools import overlay
@@ -49,4 +50,15 @@ class TestDataFrame(unittest.TestCase):
         test = test.drop('myshapes', axis=1)
         first = self.first.drop('myshapes', axis=1)
         assert_frame_equal(first, test)
+
+    def test_mean_dissolve(self):
+        test = self.polydf.dissolve('manhattan_bronx', aggfunc='mean')
+        test = test.drop('myshapes', axis=1)
+        mean = self.mean.drop('myshapes', axis=1)
+        assert_frame_equal(mean, test)
+
+        test = self.polydf.dissolve('manhattan_bronx', aggfunc=np.mean)
+        test = test.drop('myshapes', axis=1)
+        assert_frame_equal(mean, test)
+
 
