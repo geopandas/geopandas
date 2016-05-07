@@ -79,6 +79,32 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method('append', *args, **kwargs)
 
     @property
+    def crs(self):
+        return self._crs
+
+    @crs.setter
+    def crs(self, value):
+        # Pass through pyproj.Proj to check for errors.
+        # When pyproj exposes `pj_get_def`, this
+        # can be used to convert a simple CRS
+        # (like "+init=epsg:4328") to an informative
+        # one
+        # (like " +units=m +init=epsg:4328 +proj=geocent
+        # +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+        # (https://github.com/jswhit/pyproj/pull/78)
+        # if value is not None:
+        #     try:
+        #         pyproj.Proj(value, preserve_units=True)
+        #     except:
+        #         try:
+        #             from fiona.crs import from_epsg
+        #             pyproj.Proj(from_epsg(value), preserve_units=True)
+        #         except:
+        #             raise ValueError("Not valid CRS")
+
+        self._crs = value
+
+    @property
     def geometry(self):
         return self
 
@@ -86,20 +112,20 @@ class GeoSeries(GeoPandasBase, Series):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoSeries from a file
-        
+
         Parameters
         ----------
-        
+
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary, see:
             http://toblerity.github.io/fiona/README.html#usage
             for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to 
+            These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
-        
+
         """
         import fiona
         geoms = []
@@ -119,13 +145,14 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoDataFrame({'geometry': self}).__geo_interface__
 
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
+
         from geopandas import GeoDataFrame
         data = GeoDataFrame({"geometry": self,
-                          "id":self.index.values},
-                          index=self.index)
+                             "id":self.index.values},
+                             index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
-        
+
     #
     # Implement pandas methods
     #
@@ -241,7 +268,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
-    
+
     plot.__doc__ = plot_series.__doc__
 
     #
