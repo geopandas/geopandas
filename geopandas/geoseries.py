@@ -92,15 +92,15 @@ class GeoSeries(GeoPandasBase, Series):
         # (like " +units=m +init=epsg:4328 +proj=geocent
         # +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
         # (https://github.com/jswhit/pyproj/pull/78)
-        # if value is not None:
-        #     try:
-        #         pyproj.Proj(value, preserve_units=True)
-        #     except:
-        #         try:
-        #             from fiona.crs import from_epsg
-        #             pyproj.Proj(from_epsg(value), preserve_units=True)
-        #         except:
-        #             raise ValueError("Not valid CRS")
+        if value is not None:
+            try:
+                pyproj.Proj(value, preserve_units=True)
+            except:
+                try:
+                    from fiona.crs import from_epsg
+                    pyproj.Proj(from_epsg(value), preserve_units=True)
+                except:
+                    raise ValueError("Not valid CRS")
 
         self._crs = value
 

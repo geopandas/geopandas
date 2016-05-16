@@ -54,11 +54,11 @@ class TestDataFrame(unittest.TestCase):
         self.assertEqual(df._geometry_column_name, 'location')
 
         geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
-        df2 = df.set_geometry(geom2, crs='dummy_crs')
+        df2 = df.set_geometry(geom2, crs='4326')
         self.assert_('geometry' in df2)
         self.assert_('location' in df2)
-        self.assertEqual(df2.crs, 'dummy_crs')
-        self.assertEqual(df2.geometry.crs, 'dummy_crs')
+        self.assertEqual(df2.crs, '4326')
+        self.assertEqual(df2.geometry.crs, '4326')
         # reset so it outputs okay
         df2.crs = df.crs
         assert_geoseries_equal(df2.geometry, GeoSeries(geom2, crs=df2.crs))
@@ -99,9 +99,9 @@ class TestDataFrame(unittest.TestCase):
         assert_geoseries_equal(df['geometry'], new_geom)
 
         # new crs
-        gs = GeoSeries(new_geom, crs="epsg:26018")
+        gs = GeoSeries(new_geom, crs="3975")
         df.geometry = gs
-        self.assertEqual(df.crs, "epsg:26018")
+        self.assertEqual(df.crs, "3975")
 
     def test_geometry_property_errors(self):
         with self.assertRaises(AttributeError):
@@ -152,14 +152,14 @@ class TestDataFrame(unittest.TestCase):
             self.df.set_geometry(self.df)
 
         # new crs - setting should default to GeoSeries' crs
-        gs = GeoSeries(geom, crs="epsg:26018")
+        gs = GeoSeries(geom, crs="2263")
         new_df = self.df.set_geometry(gs)
-        self.assertEqual(new_df.crs, "epsg:26018")
+        self.assertEqual(new_df.crs, "2263")
 
         # explicit crs overrides self and dataframe
-        new_df = self.df.set_geometry(gs, crs="epsg:27159")
-        self.assertEqual(new_df.crs, "epsg:27159")
-        self.assertEqual(new_df.geometry.crs, "epsg:27159")
+        new_df = self.df.set_geometry(gs, crs="4326")
+        self.assertEqual(new_df.crs, "4326")
+        self.assertEqual(new_df.geometry.crs, "4326")
 
         # Series should use dataframe's
         new_df = self.df.set_geometry(geom.values)
@@ -332,7 +332,7 @@ class TestDataFrame(unittest.TestCase):
         """
         Ensure that the file is written according to the schema
         if it is specified
-        
+
         """
         try:
             from collections import OrderedDict

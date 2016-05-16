@@ -180,12 +180,15 @@ class TestSeries(unittest.TestCase):
         reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
         self.assertTrue(np.alltrue(reprojected_string.geom_almost_equals(reprojected_dict)))
 
-    # def test_proj4errorchecking(self):
-    #     t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-    #     sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-    #     g1 = GeoSeries([t1, sq])
-    #     with self.assertRaises(ValueError):
-    #         g1.crs = 'jibberish'
+    def test_proj4errorchecking(self):
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        g1 = GeoSeries([t1, sq])
+        with self.assertRaises(ValueError):
+            g1.crs = 'jibberish'
+
+        with self.assertRaises(ValueError):
+            g1.crs = '+init=epsg:9999999'
 
 
 if __name__ == '__main__':
