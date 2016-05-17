@@ -8,7 +8,7 @@ import os
 import sys
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types
@@ -440,6 +440,53 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     plot.__doc__ = plot_dataframe.__doc__
 
+
+    def dissolve(self, by=None, aggfunc='first'):
+        """
+        Dissolve geometries within `groupby` into single observation. 
+
+        Parameters
+        ----------
+        by : string, default None
+            Column whose values define groups to be dissolved
+        aggfunc : function or string, default "first"
+            Aggregation function for manipulation of data associated
+            with each group. Passed to pandas `groupby.agg` method.
+
+        Returns
+        -------
+        GeoDataFrame
+        """
+
+        # Process non-spatial component
+        data = self.drop(labels=self.geometry.name, axis=1).copy()
+        aggregated_data = data.groupby(by=by).agg(aggfunc)
+
+
+        # Process spatial component
+        groupby_plus_geometry_cols = [self.geometry.name]
+        groupby_plus_geometry_cols.append(by)
+        geometry = self[groupby_plus_geometry_cols].copy()
+
+        def merge_geometries(block):
+
+            merged_geom = block.unary_union
+
+            new_index = block.drop(self.geometry.name, axis=1).iloc[0][by]
+            merged_w_index = GeoSeries(merged_geom, index=Index(Series(new_index),name=by), 
+                                          name=self.geometry.name)
+            return merged_w_index
+
+
+        g = geometry.groupby(by=by, group_keys=False).apply(merge_geometries)
+
+        aggregated_geometry = GeoDataFrame(g, 
+                                           index=g.index,
+                                           geometry=self.geometry.name)
+        # Recombine
+        aggregated = aggregated_geometry.join(aggregated_data)
+        aggregated = aggregated.set_geometry(self.geometry.name)
+        return aggregated
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
