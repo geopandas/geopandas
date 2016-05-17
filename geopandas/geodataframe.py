@@ -449,9 +449,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     plot.__doc__ = plot_dataframe.__doc__
 
 
-    def dissolve(self, by=None, aggfunc='first'):
+    def dissolve(self, by=None, aggfunc='first', as_index=True):
         """
         Dissolve geometries within `groupby` into single observation.
+        This is accomplished by applying the `unary_union` method
+        to all geometries within a groupself.
+
+        Observations associated with each `groupby` group will be aggregated
+        using the `aggfunc`.
 
         Parameters
         ----------
@@ -460,6 +465,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
+        as_index : boolean, default True
+            If true, groupby columns become index of result.
 
         Returns
         -------
@@ -467,33 +474,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
 
         # Process non-spatial component
-        data = self.drop(labels=self.geometry.name, axis=1).copy()
+        data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(by=by).agg(aggfunc)
 
 
         # Process spatial component
-        groupby_plus_geometry_cols = [self.geometry.name]
-        groupby_plus_geometry_cols.append(by)
-        geometry = self[groupby_plus_geometry_cols].copy()
-
         def merge_geometries(block):
-
             merged_geom = block.unary_union
+            return merged_geom
 
-            new_index = block.drop(self.geometry.name, axis=1).iloc[0][by]
-            merged_w_index = GeoSeries(merged_geom, index=Index(Series(new_index),name=by),
-                                          name=self.geometry.name)
-            return merged_w_index
+        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
 
-
-        g = geometry.groupby(by=by, group_keys=False).apply(merge_geometries)
-
-        aggregated_geometry = GeoDataFrame(g,
-                                           index=g.index,
-                                           geometry=self.geometry.name)
+        # Aggregate
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
-        aggregated = aggregated.set_geometry(self.geometry.name)
+
+        # Reset if requested
+        if not as_index:
+            aggregated = aggregated.reset_index()
+
         return aggregated
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

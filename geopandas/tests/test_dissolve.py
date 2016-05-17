@@ -8,6 +8,11 @@ from geopandas.tools import overlay
 from .util import unittest, download_nybb
 from pandas.util.testing import assert_frame_equal
 from pandas import Index
+from distutils.version import LooseVersion
+import pandas as pd
+
+pandas_0_15_problem = 'fails under pandas < 0.16 due to issue 324,'\
+                      'not problem with dissolve.'
 
 class TestDataFrame(unittest.TestCase):
 
@@ -28,7 +33,7 @@ class TestDataFrame(unittest.TestCase):
         others = self.polydf.loc[0:2,]
 
         collapsed = [others.geometry.unary_union, manhattan_bronx.geometry.unary_union]
-        merged_shapes = GeoDataFrame({'myshapes': collapsed}, geometry='myshapes', 
+        merged_shapes = GeoDataFrame({'myshapes': collapsed}, geometry='myshapes',
                              index=Index([5,6], name='manhattan_bronx'))
 
         # Different expected results
@@ -40,25 +45,39 @@ class TestDataFrame(unittest.TestCase):
         self.mean['BoroCode'] = [4,1.5]
 
 
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_geom_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx')
         self.assertTrue(test.geometry.name == 'myshapes')
         self.assertTrue(test.geom_almost_equals(self.first).all())
 
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_first_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx')
-        test = test.drop('myshapes', axis=1)
-        first = self.first.drop('myshapes', axis=1)
-        assert_frame_equal(first, test)
+        assert_frame_equal(self.first, test, check_column_type=False)
 
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_mean_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx', aggfunc='mean')
-        test = test.drop('myshapes', axis=1)
-        mean = self.mean.drop('myshapes', axis=1)
-        assert_frame_equal(mean, test)
+        assert_frame_equal(self.mean, test, check_column_type=False)
 
         test = self.polydf.dissolve('manhattan_bronx', aggfunc=np.mean)
-        test = test.drop('myshapes', axis=1)
-        assert_frame_equal(mean, test)
+        assert_frame_equal(self.mean, test, check_column_type=False)
 
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
+    def test_multicolumn_dissolve(self):
+        multi = self.polydf.copy()
+        multi['dup_col'] = multi.manhattan_bronx
+        multi_test = multi.dissolve(['manhattan_bronx', 'dup_col'], aggfunc='first')
 
+        first = self.first.copy()
+        first['dup_col'] = first.index
+        first = first.set_index([first.index, 'dup_col'])
+
+        assert_frame_equal(multi_test, first, check_column_type=False)
+
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
+    def test_reset_index(self):
+        test = self.polydf.dissolve('manhattan_bronx', as_index=False)
+        comparison = self.first.reset_index()
+        assert_frame_equal(comparison, test, check_column_type=False)
