@@ -70,7 +70,7 @@ Basic Methods
 Relationship Tests
 ^^^^^^^^^^^^^^^^^^^
 
-* ``almost_equals(other)``: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
+* ``geom_almost_equals(other)``: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
 * ``contains(other)``: is shape contained within ``other``
 * ``intersects(other)``: does shape intersect ``other``
 

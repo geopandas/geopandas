@@ -32,6 +32,7 @@ such as PostGIS.
   Making Maps <mapping>
   Managing Projections <projections>
   Geometric Manipulations <geometric_manipulations>
+  Set Operations with overlay <set_operations>
   Merging Data <mergingdata>
   Geocoding <geocoding>
   Reference to All Attributes and Methods <reference>
