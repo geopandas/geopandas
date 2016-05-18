@@ -11,6 +11,8 @@ from geopandas.io.sql import read_postgis
 from geopandas.tools import sjoin
 from geopandas.tools import overlay
 
+import geopandas.datasets
+
 # make the interactive namespace easier to use
 # for `from geopandas import *` demos.
 import geopandas as gpd
