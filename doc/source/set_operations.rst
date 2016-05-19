@@ -2,15 +2,6 @@
    :suppress:
 
    import geopandas as gpd
-   world = gpd.GeoDataFrame().from_file('_example_data/naturalearth_lowres.shp')
-   capitals = gpd.GeoDataFrame().from_file('_example_data/naturalearth_cities.shp')
-
-   # For spatial join
-   countries = world[['geometry', 'name']]
-
-   # Project
-   countries = countries.to_crs('+init=epsg:3395')[countries.name!="Antarctica"]
-   capitals = capitals.to_crs('+init=epsg:3395')
 
 
 Set-Operations with Overlay
@@ -29,6 +20,20 @@ The basic idea is demonstrated by the graphic below but keep in mind that overla
 
 Overlay Example
 -----------------
+
+First, we load some example data:
+
+.. ipython:: python
+
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    capitals = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+
+    # Select some columns
+    countries = world[['geometry', 'name']]
+
+    # Project to crs that uses meters as distance measure
+    countries = countries.to_crs('+init=epsg:3395')[countries.name!="Antarctica"]
+    capitals = capitals.to_crs('+init=epsg:3395')
 
 To illustrate the ``overlay`` function, consider the following case in which one wishes to identify the "core" portion of each country -- defined as areas within 500km of a capital -- using a ``GeoDataFrame`` of countries and a ``GeoDataFrame`` of capitals.
 

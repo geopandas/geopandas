@@ -4,8 +4,7 @@
    :suppress:
 
    import geopandas as gpd
-   world = gpd.GeoDataFrame().from_file('_example_data/naturalearth_lowres.shp')
-   world = world.rename(columns={'geometry': 'borders'}).set_geometry('borders')
+
 
 Data Structures
 =========================================
@@ -90,16 +89,25 @@ An example using the ``worlds`` GeoDataFrame:
 
 .. ipython:: python
 
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+
     world.head()
     #Plot countries
     @savefig world_borders.png width=3in
     world.plot();
 
-Currently, the column named "borders" with country borders is the active
+Currently, the column named "geometry" with country borders is the active
 geometry column:
 
 .. ipython:: python
 
+    world.geometry.name
+
+We can also rename this column to "borders":
+
+.. ipython:: python
+
+    world = world.rename(columns={'geometry': 'borders'}).set_geometry('borders')
     world.geometry.name
 
 Now, we create centroids and make it the geometry:
