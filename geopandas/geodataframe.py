@@ -409,10 +409,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+        """propagate metadata from other to self """
+        # merge operation: using metadata of the left object
+        if method == 'merge':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.left, name, None))
+        # concat operation: using metadata of the first object
+        elif method == 'concat':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+        else:
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def copy(self, deep=True):
@@ -443,7 +451,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def dissolve(self, by=None, aggfunc='first'):
         """
-        Dissolve geometries within `groupby` into single observation. 
+        Dissolve geometries within `groupby` into single observation.
 
         Parameters
         ----------
@@ -473,14 +481,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             merged_geom = block.unary_union
 
             new_index = block.drop(self.geometry.name, axis=1).iloc[0][by]
-            merged_w_index = GeoSeries(merged_geom, index=Index(Series(new_index),name=by), 
+            merged_w_index = GeoSeries(merged_geom, index=Index(Series(new_index),name=by),
                                           name=self.geometry.name)
             return merged_w_index
 
 
         g = geometry.groupby(by=by, group_keys=False).apply(merge_geometries)
 
-        aggregated_geometry = GeoDataFrame(g, 
+        aggregated_geometry = GeoDataFrame(g,
                                            index=g.index,
                                            geometry=self.geometry.name)
         # Recombine
