@@ -4,6 +4,7 @@ import numpy as np
 import os
 import shutil
 import tempfile
+from distutils.version import LooseVersion
 
 import matplotlib
 matplotlib.use('Agg', warn=False)
@@ -24,7 +25,7 @@ GENERATE_BASELINE = False
 BASELINE_DIR = os.path.join(os.path.dirname(__file__), 'baseline_images', 'test_plotting')
 
 TRAVIS = bool(os.environ.get('TRAVIS', False))
-
+MPL_DEV = matplotlib.__version__ > LooseVersion('1.5.1')
 
 class TestImageComparisons(unittest.TestCase):
 
@@ -52,6 +53,7 @@ class TestImageComparisons(unittest.TestCase):
                                          'vs. %(expected)s '
                                          '(RMS %(rms).3f)' % err)
 
+    @unittest.skipIf(MPL_DEV, 'Skip for development version of matplotlib')
     def test_poly_plot(self):
         """ Test plotting a simple series of polygons """
         clf()
@@ -62,6 +64,7 @@ class TestImageComparisons(unittest.TestCase):
         ax = polys.plot()
         self._compare_images(ax=ax, filename=filename)
 
+    @unittest.skipIf(MPL_DEV, 'Skip for development version of matplotlib')
     def test_point_plot(self):
         """ Test plotting a simple series of points """
         clf()
@@ -71,6 +74,7 @@ class TestImageComparisons(unittest.TestCase):
         ax = points.plot()
         self._compare_images(ax=ax, filename=filename)
 
+    @unittest.skipIf(MPL_DEV, 'Skip for development version of matplotlib')
     def test_line_plot(self):
         """ Test plotting a simple series of lines """
         clf()
@@ -119,6 +123,7 @@ class TestPointPlotting(unittest.TestCase):
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
 
+    @unittest.skipIf(MPL_DEV, 'Skip for development version of matplotlib')
     def test_default_colors(self):
 
         ## without specifying values -> max 9 different colors
