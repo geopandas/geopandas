@@ -33,6 +33,7 @@ such as PostGIS.
   Managing Projections <projections>
   Geometric Manipulations <geometric_manipulations>
   Set Operations with overlay <set_operations>
+  Aggregation with dissolve <aggregation_with_dissolve>
   Merging Data <mergingdata>
   Geocoding <geocoding>
   Reference to All Attributes and Methods <reference>

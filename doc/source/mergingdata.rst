@@ -67,8 +67,8 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
    cities.head()
 
    # Execute spatial join
-   from geopandas.tools import sjoin
-   cities_with_country = sjoin(cities, countries, how="inner", op='intersects')
+
+   cities_with_country = gpd.sjoin(cities, countries, how="inner", op='intersects')
    cities_with_country.head()
 
 

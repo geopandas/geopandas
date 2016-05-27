@@ -57,8 +57,7 @@ To select only the portion of countries within 500km of a capital, we specify th
 
 .. ipython:: python
 
-   from geopandas.tools import overlay
-   country_cores = overlay(countries, capitals, how='intersection')
+   country_cores = gpd.overlay(countries, capitals, how='intersection')
    @savefig country_cores.png width=5in
    country_cores.plot();
 
@@ -66,7 +65,7 @@ Changing the "how" option allows for different types of overlay operations. For 
 
 .. ipython:: python
 
-   country_peripheries = overlay(countries, capitals, how='difference')
+   country_peripheries = gpd.overlay(countries, capitals, how='difference')
    @savefig country_peripheries.png width=5in
    country_peripheries.plot();
 
