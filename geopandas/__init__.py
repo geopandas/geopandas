@@ -1,8 +1,3 @@
-try:
-    from geopandas.version import version as __version__
-except ImportError:
-    __version__ = '0.2.0.dev-unknown'
-
 from geopandas.geoseries import GeoSeries
 from geopandas.geodataframe import GeoDataFrame
 
@@ -18,3 +13,7 @@ import geopandas.datasets
 import geopandas as gpd
 import pandas as pd
 import numpy as np
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
