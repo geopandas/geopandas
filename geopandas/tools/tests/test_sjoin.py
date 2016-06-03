@@ -82,6 +82,23 @@ class TestSpatialJoin(unittest.TestCase):
         df = sjoin(self.polydf, self.pointdf, how='left')
         self.assertEquals(df.shape, (12,8))
 
+def test_no_overlapping_geometry(self):
+    # Note: these tests are for correctly returning GeoDataFrame
+    # when result of the join is empty
+
+    subset_pointdf = self.pointdf.iloc[17:]
+
+    df_inner = sjoin(subset_pointdf, self.polydf, how='inner')
+    self.assertEquals(df_inner.shape, (0,8))
+
+    df_left = sjoin(subset_pointdf, self.polydf, how='left')
+    self.assertEquals(df_left.shape, (4,8))
+    self.assertTrue(df_left.BoroCode.notnull().sum()==0)
+
+    df_right = sjoin(subset_pointdf, self.polydf, how='right')
+    self.assertEquals(df_right.shape, (5,8))
+    self.assertTrue(df_right.pointattr2.notnull().sum()==0)
+
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
         df = sjoin(self.pointdf, self.polydf, how="outer")
