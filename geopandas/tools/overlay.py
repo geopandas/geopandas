@@ -17,7 +17,7 @@ def _uniquify(columns):
 
 
 def _extract_rings(df):
-    """Collects all inner and outer linear rings from a GeoDataFrame 
+    """Collects all inner and outer linear rings from a GeoDataFrame
     with (multi)Polygon geometeries
 
     Parameters
@@ -55,22 +55,28 @@ def _extract_rings(df):
     return rings
 
 def overlay(df1, df2, how, use_sindex=True):
-    """Perform spatial overlay between two polygons
-    Currently only supports data GeoDataFrames with polygons
+    """Perform spatial overlay between two polygons.
 
-    Implements several methods (see `allowed_hows` list) that are
-    all effectively subsets of the union.
+    Currently only supports data GeoDataFrames with polygons.
+    Implements several methods that are all effectively subsets of
+    the union.
 
     Parameters
     ----------
     df1 : GeoDataFrame with MultiPolygon or Polygon geometry column
     df2 : GeoDataFrame with MultiPolygon or Polygon geometry column
-    how : method of spatial overlay
-    use_sindex : Boolean; Use the spatial index to speed up operation. Default is True.
+    how : string
+        Method of spatial overlay: 'intersection', 'union',
+        'identity', 'symmetric_difference' or 'difference'.
+    use_sindex : boolean, default True
+        Use the spatial index to speed up operation if available.
 
     Returns
     -------
-    df : GeoDataFrame with new set of polygons and attributes resulting from the overlay
+    df : GeoDataFrame
+        GeoDataFrame with new set of polygons and attributes
+        resulting from the overlay
+
     """
     allowed_hows = [
         'intersection',
