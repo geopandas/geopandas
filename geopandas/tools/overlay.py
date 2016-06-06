@@ -17,7 +17,7 @@ def _uniquify(columns):
 
 
 def _extract_rings(df):
-    """Collects all inner and outer linear rings from a GeoDataFrame 
+    """Collects all inner and outer linear rings from a GeoDataFrame
     with (multi)Polygon geometeries
 
     Parameters
@@ -105,7 +105,9 @@ def overlay(df1, df2, how, use_sindex=True):
     newpolys = polygonize(mm)
 
     # determine spatial relationship
-    collection = []
+    collect_df1 = []
+    collect_df2 = []
+    collect_geo = []
     for fid, newpoly in enumerate(newpolys):
         cent = newpoly.representative_point()
 
@@ -113,14 +115,12 @@ def overlay(df1, df2, how, use_sindex=True):
         # FIXME there should be a higher-level abstraction to search by bounds
         # and fall back in the case of no index?
         if use_sindex and df1.sindex is not None:
-            candidates1 = [x.object for x in
-                           df1.sindex.intersection(newpoly.bounds, objects=True)]
+            candidates1 = df1.sindex.intersection(newpoly.bounds)
         else:
             candidates1 = [i for i, x in df1.iterrows()]
 
         if use_sindex and df2.sindex is not None:
-            candidates2 = [x.object for x in
-                           df2.sindex.intersection(newpoly.bounds, objects=True)]
+            candidates2 = df2.sindex.intersection(newpoly.bounds)
         else:
             candidates2 = [i for i, x in df2.iterrows()]
 
@@ -128,17 +128,13 @@ def overlay(df1, df2, how, use_sindex=True):
         df2_hit = False
         prop1 = None
         prop2 = None
-        for cand_id in candidates1:
-            cand = df1.ix[cand_id]
-            if cent.intersects(cand[df1.geometry.name]):
+        for cand_id1 in candidates1:
+            if cent.intersects(df1.geometry.iat[cand_id1]):
                 df1_hit = True
-                prop1 = cand
                 break  # Take the first hit
-        for cand_id in candidates2:
-            cand = df2.ix[cand_id]
-            if cent.intersects(cand[df2.geometry.name]):
+        for cand_id2 in candidates2:
+            if cent.intersects(df2.geometry.iat[cand_id2]):
                 df2_hit = True
-                prop2 = cand
                 break  # Take the first hit
 
         # determine spatial relationship based on type of overlay
@@ -157,21 +153,18 @@ def overlay(df1, df2, how, use_sindex=True):
         if not hit:
             continue
 
-        # gather properties
-        if prop1 is None:
-            prop1 = pd.Series(dict.fromkeys(df1.columns, None))
-        if prop2 is None:
-            prop2 = pd.Series(dict.fromkeys(df2.columns, None))
+        # gather row ids and geometry for each new row
+        collect_df1.append(cand_id1)
+        collect_df2.append(cand_id2)
+        collect_geo.append(newpoly)
 
-        # Concat but don't retain the original geometries
-        out_series = pd.concat([prop1.drop(df1._geometry_column_name),
-                                prop2.drop(df2._geometry_column_name)])
+    # take correct rows from df1 and df2 and combine in one dataframe
+    df = pd.concat([df1.iloc[collect_df1].reset_index(drop=True),
+                    df2.iloc[collect_df2].reset_index(drop=True)], axis=1)
+    # remove the original geometries
+    df = df.drop([df1._geometry_column_name, df2._geometry_column_name], axis=1)
 
-        out_series.index = _uniquify(out_series.index)
+    df.columns = _uniquify(df.columns)
 
-        # Create a geoseries and add it to the collection
-        out_series['geometry'] = newpoly
-        collection.append(out_series)
-
-    # Return geodataframe with new indicies
-    return GeoDataFrame(collection, index=range(len(collection)))
+    # Return geodataframe with new geometries
+    return GeoDataFrame(df, geometry=collect_geo)
