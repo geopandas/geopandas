@@ -10,6 +10,11 @@ Improvements:
   to represent the ``GeoSeries`` as a GeoJSON-like ``FeatureCollection`` (#116)
   and ``iterfeatures`` method (#178)
 * Addition of the ``explode`` (#146) and ``dissolve`` (#310, #311) methods.
+* Addition of the ``sindex`` attribute, a Spatial Index using the optional
+  dependency ``rtree`` (``libspatialindex``) that can be used to speed up
+  certain operations such as overlays (#140, #141).
+* Addition of the ``GeoSeries.ix`` coordinate indexer to slice a GeoSeries based
+  on a bounding box of the coordinates (#55).
 * Improvements to plotting: ability to specify edge colors (#173), support for
   the ``vmin``, ``vmax``, ``figsize``, ``linewidth`` keywords (#207), legends
   for chloropleth plots (#210), color points by specifying a colormap (#186) or
