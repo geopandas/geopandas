@@ -372,6 +372,20 @@ class TestDataFrame(unittest.TestCase):
         utm = lonlat.to_crs(epsg=26918)
         self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
+    def test_to_crs_geo_column_name(self):
+        """ Test to_crs() with different geometry column name (GH#339) """
+        df2 = self.df2.copy()
+        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
+        cols = df2.columns.tolist()
+        cols[cols.index('geometry')] = 'geom'
+        df2.columns = cols
+        df2.set_geometry('geom', inplace=True)
+        lonlat = df2.to_crs(epsg=4326)
+        utm = lonlat.to_crs(epsg=26918)
+        self.assertEqual(lonlat.geometry.name, 'geom')
+        self.assertEqual(utm.geometry.name, 'geom')
+        self.assertTrue(all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2)))
+
     def test_from_features(self):
         nybb_filename, nybb_zip_path = download_nybb()
         with fiona.open(nybb_zip_path,
