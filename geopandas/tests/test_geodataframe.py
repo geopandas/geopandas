@@ -55,16 +55,12 @@ class TestDataFrame(unittest.TestCase):
 
         geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
         df2 = df.set_geometry(geom2, crs='dummy_crs')
-        self.assert_('geometry' in df2)
         self.assert_('location' in df2)
         self.assertEqual(df2.crs, 'dummy_crs')
         self.assertEqual(df2.geometry.crs, 'dummy_crs')
         # reset so it outputs okay
         df2.crs = df.crs
         assert_geoseries_equal(df2.geometry, GeoSeries(geom2, crs=df2.crs))
-        # for right now, non-geometry comes back as series
-        assert_geoseries_equal(df2['location'], df['location'],
-                                  check_series_type=False, check_dtype=False)
 
     def test_geo_getitem(self):
         data = {"A": range(5), "B": range(-5, 0),
