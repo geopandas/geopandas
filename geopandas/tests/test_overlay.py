@@ -164,6 +164,13 @@ class TestOverlay(unittest.TestCase):
         exp = self.result.dropna(subset=['col1', 'col2'], how='any')
         exp = exp.reset_index(drop=True)
         exp[['col1', 'col2']] = exp[['col1', 'col2']].astype('int64')
+        print(exp)
+        print(res)
+        print(self.result.geometry[7])
+        print(self.result.geometry[7].representative_point())
+        print(list(self.df1.sindex.intersection(self.result.geometry[7].bounds)))
+        cent = self.result.geometry[7].representative_point()
+        print(cent.intersects(self.df1.geometry[1]))
         assert_frame_equal(res, exp)
         assert_geoseries_equal(res.geometry, exp.geometry)
 
@@ -182,6 +189,8 @@ class TestOverlay(unittest.TestCase):
         exp = exp.reset_index(drop=True)
         exp['col1'] = exp['col1'].astype('int64')
         exp['col2'] = np.array([None, None, None], dtype='O')
+        print(exp)
+        print(res)
         assert_frame_equal(res, exp)
         assert_geoseries_equal(res.geometry, exp.geometry)
 
@@ -191,6 +200,8 @@ class TestOverlay(unittest.TestCase):
         exp = self.result.dropna(subset=['col1'])
         exp = exp.reset_index(drop=True)
         exp['col1'] = exp['col1'].astype('int64')
+        print(exp)
+        print(res)
         assert_frame_equal(res, exp)
         assert_geoseries_equal(res.geometry, exp.geometry)
 
