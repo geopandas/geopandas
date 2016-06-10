@@ -372,9 +372,7 @@ class TestDataFrame(unittest.TestCase):
         """ Test to_crs() with different geometry column name (GH#339) """
         df2 = self.df2.copy()
         df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        cols = df2.columns.tolist()
-        cols[cols.index('geometry')] = 'geom'
-        df2.columns = cols
+        df2 = df2.rename(columns={'geometry': 'geom'})
         df2.set_geometry('geom', inplace=True)
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
