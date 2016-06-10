@@ -369,7 +369,7 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
     def test_to_crs_geo_column_name(self):
-        """ Test to_crs() with different geometry column name (GH#339) """
+        # Test to_crs() with different geometry column name (GH#339)
         df2 = self.df2.copy()
         df2.crs = {'init': 'epsg:26918', 'no_defs': True}
         df2 = df2.rename(columns={'geometry': 'geom'})
