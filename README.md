@@ -113,10 +113,3 @@ GeoPandas also implements alternate constructors that can read any data format r
     dtype: object
 
 ![Convex hulls of New York City boroughs](examples/nyc_hull.png)
-
-TODO
-----
-
-- Finish implementing and testing pandas methods on GeoPandas objects
-- The current GeoDataFrame does not do very much.
-- spatial joins, grouping and more...
