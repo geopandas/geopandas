@@ -3,9 +3,7 @@
 
 """
 
-import sys
 import os
-import warnings
 
 try:
     from setuptools import setup
