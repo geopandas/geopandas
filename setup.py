@@ -1,12 +1,9 @@
 #!/usr/bin/env/python
 """Installation script
 
-Version handling borrowed from pandas project.
 """
 
-import sys
 import os
-import warnings
 
 try:
     from setuptools import setup
@@ -46,8 +43,8 @@ setup(name='geopandas',
       version=versioneer.get_version(),
       description='Geographic pandas extensions',
       license='BSD',
-      author='Kelsey Jordahl',
-      author_email='kjordahl@enthought.com',
+      author='GeoPandas contributors',
+      author_email='kjordahl@alum.mit.edu',
       url='http://geopandas.org',
       long_description=LONG_DESCRIPTION,
       packages=['geopandas', 'geopandas.io', 'geopandas.tools',
