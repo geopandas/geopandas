@@ -1,7 +1,6 @@
 #!/usr/bin/env/python
 """Installation script
 
-Version handling borrowed from pandas project.
 """
 
 import sys
