@@ -20,6 +20,11 @@ transformed to new coordinate systems with the `to_crs()` method.
 There is currently no enforcement of like coordinates for operations,
 but that may change in the future.
 
+Documentation is available at [geopandas.org](http://geopandas.org)
+(current release) and
+[Read the Docs](http://geopandas.readthedocs.io/en/master/)
+(development version).
+
 Install
 --------
 
