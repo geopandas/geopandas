@@ -125,7 +125,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             crs = getattr(col, 'crs', self.crs)
 
         to_remove = None
-        geo_column_name = DEFAULT_GEO_COLUMN_NAME
+        geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
@@ -139,7 +139,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 raise
             if drop:
                 to_remove = col
-                geo_column_name = DEFAULT_GEO_COLUMN_NAME
+                geo_column_name = self._geometry_column_name
             else:
                 geo_column_name = col
 
