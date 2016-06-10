@@ -131,13 +131,15 @@ def overlay(df1, df2, how, use_sindex=True):
         prop2 = None
         for cand_id in candidates1:
             cand = df1.loc[cand_id]
-            if cent.intersects(cand[df1.geometry.name]):
+            #if cent.intersects(cand[df1.geometry.name]):
+            if newpoly.within(cand[df1.geometry.name]):
                 df1_hit = True
                 prop1 = cand
                 break  # Take the first hit
         for cand_id in candidates2:
             cand = df2.loc[cand_id]
-            if cent.intersects(cand[df2.geometry.name]):
+            #if cent.intersects(cand[df2.geometry.name]):
+            if newpoly.within(cand[df2.geometry.name]):
                 df2_hit = True
                 prop2 = cand
                 break  # Take the first hit
