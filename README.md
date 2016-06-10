@@ -23,7 +23,7 @@ but that may change in the future.
 Documentation is available at [geopandas.org](http://geopandas.org)
 (current release) and
 [Read the Docs](http://geopandas.readthedocs.io/en/master/)
-(development version).
+(release and development versions).
 
 Install
 --------
