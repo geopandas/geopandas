@@ -89,15 +89,18 @@ class TestSpatialJoin(unittest.TestCase):
         subset_pointdf = self.pointdf.iloc[17:]
 
         df_inner = sjoin(subset_pointdf, self.polydf, how='inner')
+        self.assertEquals(df_inner.columns.tolist()[:5], ['geometry', 'pointattr1', 'pointattr2','index_right','BoroCode'])
         self.assertEquals(df_inner.shape, (0,8))
 
         df_left = sjoin(subset_pointdf, self.polydf, how='left')
         self.assertEquals(df_left.shape, (4,8))
         self.assertTrue(df_left.BoroCode.notnull().sum()==0)
+        self.assertTrue(df_left.pointattr2.isnull().sum()==0)
 
         df_right = sjoin(subset_pointdf, self.polydf, how='right')
         self.assertEquals(df_right.shape, (5,8))
         self.assertTrue(df_right.pointattr2.notnull().sum()==0)
+        self.assertTrue(df_right.BoroCode.isnull().sum()==0)
 
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
