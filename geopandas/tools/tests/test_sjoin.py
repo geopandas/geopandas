@@ -4,6 +4,7 @@ import tempfile
 import shutil
 
 import numpy as np
+import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, read_file, base
@@ -116,7 +117,7 @@ class TestSpatialJoin(unittest.TestCase):
         self.assertTrue(expected_inner.equals(df_inner))
         self.assertTrue(expected_right.equals(df_right))
         self.assertTrue(expected_left.equals(df_left))
-        
+
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
         df = sjoin(self.pointdf, self.polydf, how="outer")
