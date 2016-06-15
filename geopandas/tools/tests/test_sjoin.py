@@ -86,22 +86,37 @@ class TestSpatialJoin(unittest.TestCase):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty
 
-        subset_pointdf = self.pointdf.iloc[17:]
+        df_inner = sjoin(self.pointdf.iloc[17:], self.polydf, how='inner')
+        df_left = sjoin(self.pointdf.iloc[17:], self.polydf, how='left')
+        df_right = sjoin(self.pointdf.iloc[17:], self.polydf, how='right')
 
-        df_inner = sjoin(subset_pointdf, self.polydf, how='inner')
-        self.assertEquals(df_inner.columns.tolist()[:5], ['geometry', 'pointattr1', 'pointattr2','index_right','BoroCode'])
-        self.assertEquals(df_inner.shape, (0,8))
 
-        df_left = sjoin(subset_pointdf, self.polydf, how='left')
-        self.assertEquals(df_left.shape, (4,8))
-        self.assertTrue(df_left.BoroCode.notnull().sum()==0)
-        self.assertTrue(df_left.pointattr2.isnull().sum()==0)
+        empty_result_df = pd.concat([pd.Series(name='index_left',dtype='int64'),
+                                     pd.Series(name='index_right',dtype='int64')],axis=1)
 
-        df_right = sjoin(subset_pointdf, self.polydf, how='right')
-        self.assertEquals(df_right.shape, (5,8))
-        self.assertTrue(df_right.pointattr2.notnull().sum()==0)
-        self.assertTrue(df_right.BoroCode.isnull().sum()==0)
+        expected_inner_df = pd.concat([self.pointdf.iloc[:0],
+                                       empty_result_df.index_right,
+                                       self.polydf.drop('geometry', axis = 1).iloc[:0]], axis = 1)
 
+        expected_inner = GeoDataFrame(expected_inner_df, crs = {'init': 'epsg:4326', 'no_defs': True})
+
+        expected_right_df = pd.concat([self.pointdf.iloc[17:].drop('geometry', axis = 1).iloc[:0],
+                                       empty_result_df,
+                                       self.polydf], axis = 1)
+
+        expected_right = GeoDataFrame(expected_right_df, crs = {'init': 'epsg:4326', 'no_defs': True})\
+                            .set_index('index_right')
+
+        expected_left_df = pd.concat([self.pointdf.iloc[17:],
+                                      empty_result_df.index_right,
+                                      self.polydf.iloc[:0].drop('geometry', axis=1)], axis = 1)
+
+        expected_left = GeoDataFrame(expected_left_df, crs = {'init': 'epsg:4326', 'no_defs': True})
+
+        self.assertTrue(expected_inner.equals(df_inner))
+        self.assertTrue(expected_right.equals(df_right))
+        self.assertTrue(expected_left.equals(df_left))
+        
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):
         df = sjoin(self.pointdf, self.polydf, how="outer")
