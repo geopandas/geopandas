@@ -7,10 +7,12 @@ dependencies:
 - shapely
 - fiona
 - pyproj
+- rtree
 - six
 - geopy
 - matplotlib
 - descartes
+- pysal
 - sphinx
 - sphinx_rtd_theme
 - ipython=4.0.1

@@ -8,7 +8,7 @@ import os
 import sys
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types
@@ -125,7 +125,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             crs = getattr(col, 'crs', self.crs)
 
         to_remove = None
-        geo_column_name = DEFAULT_GEO_COLUMN_NAME
+        geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
@@ -139,7 +139,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 raise
             if drop:
                 to_remove = col
-                geo_column_name = DEFAULT_GEO_COLUMN_NAME
+                geo_column_name = self._geometry_column_name
             else:
                 geo_column_name = col
 
@@ -409,10 +409,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+        """propagate metadata from other to self """
+        # merge operation: using metadata of the left object
+        if method == 'merge':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.left, name, None))
+        # concat operation: using metadata of the first object
+        elif method == 'concat':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+        else:
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def copy(self, deep=True):
@@ -440,6 +448,53 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     plot.__doc__ = plot_dataframe.__doc__
 
+
+    def dissolve(self, by=None, aggfunc='first', as_index=True):
+        """
+        Dissolve geometries within `groupby` into single observation.
+        This is accomplished by applying the `unary_union` method
+        to all geometries within a groupself.
+
+        Observations associated with each `groupby` group will be aggregated
+        using the `aggfunc`.
+
+        Parameters
+        ----------
+        by : string, default None
+            Column whose values define groups to be dissolved
+        aggfunc : function or string, default "first"
+            Aggregation function for manipulation of data associated
+            with each group. Passed to pandas `groupby.agg` method.
+        as_index : boolean, default True
+            If true, groupby columns become index of result.
+
+        Returns
+        -------
+        GeoDataFrame
+        """
+
+        # Process non-spatial component
+        data = self.drop(labels=self.geometry.name, axis=1)
+        aggregated_data = data.groupby(by=by).agg(aggfunc)
+
+
+        # Process spatial component
+        def merge_geometries(block):
+            merged_geom = block.unary_union
+            return merged_geom
+
+        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
+
+        # Aggregate
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name)
+        # Recombine
+        aggregated = aggregated_geometry.join(aggregated_data)
+
+        # Reset if requested
+        if not as_index:
+            aggregated = aggregated.reset_index()
+
+        return aggregated
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:

@@ -1,92 +1,73 @@
 Geometric Manipulations
 ========================
 
+*geopandas* makes available all the tools for geometric manipulations in the `*shapely* library <http://toblerity.org/shapely/manual.html>`_.
 
-
-
-Set-theoretic Methods
-~~~~~~~~~~~~~~~~~~~~~
-
-.. attribute::  GeoSeries.boundary
-
-  Returns a ``GeoSeries`` of lower dimensional objects representing
-  each geometries's set-theoretic `boundary`.
-
-.. method::  GeoSeries.difference(other)
-
-  Returns a ``GeoSeries`` of the points in each geometry that
-  are not in the *other* object.
-
-.. method::  GeoSeries.intersection(other)
-
-  Returns a ``GeoSeries`` of the intersection of each object with the `other`
-  geometric object.
-
-.. method::  GeoSeries.symmetric_difference(other)
-
-  Returns a ``GeoSeries`` of the points in each object not in the `other`
-  geometric object, and the points in the `other` not in this object.
-
-.. method::  GeoSeries.union(other)
-
-  Returns a ``GeoSeries`` of the union of points from each object and the
-  `other` geometric object.
-
-
-.. attribute::  GeoSeries.unary_union
-
-  Return a geometry containing the union of all geometries in the ``GeoSeries``.
-
+Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
 
 Constructive Methods
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
-.. method::  GeoSeries.buffer(distance, resolution=16)
+.. method:: GeoSeries.buffer(distance, resolution=16)
 
   Returns a ``GeoSeries`` of geometries representing all points within a given `distance`
   of each geometric object.
 
-.. attribute::  GeoSeries.convex_hull
+.. attribute:: GeoSeries.boundary
+
+  Returns a ``GeoSeries`` of lower dimensional objects representing
+  each geometries's set-theoretic `boundary`.
+
+.. attribute:: GeoSeries.centroid
+
+  Returns a ``GeoSeries`` of points for each geometric centroid.
+
+.. attribute:: GeoSeries.convex_hull
 
   Returns a ``GeoSeries`` of geometries representing the smallest
   convex `Polygon` containing all the points in each object unless the
   number of points in the object is less than three. For two points,
   the convex hull collapses to a `LineString`; for 1, a `Point`.
 
-.. attribute::  GeoSeries.envelope
+.. attribute:: GeoSeries.envelope
 
   Returns a ``GeoSeries`` of geometries representing the point or
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
-.. method::  GeoSeries.simplify(tolerance, preserve_topology=True)
+.. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
   Returns a ``GeoSeries`` containing a simplified representation of
   each object.
 
-Affine transformations
-~~~~~~~~~~~~~~~~~~~~~~~
+.. attribute:: GeoSeries.unary_union
 
-.. method::  GeoSeries.rotate(self, angle, origin='center', use_radians=False)
+  Return a geometry containing the union of all geometries in the ``GeoSeries``.
+
+
+Affine transformations
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. method:: GeoSeries.rotate(self, angle, origin='center', use_radians=False)
 
   Rotate the coordinates of the GeoSeries.
 
-.. method::  GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
+.. method:: GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
 
  Scale the geometries of the GeoSeries along each (x, y, z) dimensio.
 
-.. method::  GeoSeries.skew(self, angle, origin='center', use_radians=False)
+.. method:: GeoSeries.skew(self, angle, origin='center', use_radians=False)
 
   Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
 
-.. method::  GeoSeries.translate(self, angle, origin='center', use_radians=False)
+.. method:: GeoSeries.translate(self, angle, origin='center', use_radians=False)
 
   Shift the coordinates of the GeoSeries.
 
-`Aggregating methods`
 
 
-
+Examples of Geometric Manipulations
+------------------------------------
 
 .. sourcecode:: python
 
@@ -146,7 +127,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     3              Brooklyn  1.959432e+09  726568.946340
     4                Queens  3.049947e+09  861038.479299
     5         Staten Island  1.623853e+09  330385.036974
-    
+
                                                        geometry
     BoroCode
     1         (POLYGON ((981219.0557861328125000 188655.3157...
@@ -156,7 +137,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     5         (POLYGON ((970217.0223999023437500 145643.3322...
 
 .. image:: _static/nyc.png
- 
+
 .. sourcecode:: python
 
     >>> boros['geometry'].convex_hull
@@ -201,7 +182,7 @@ just use:
     >>> holes = boros['geometry'].intersection(mp)
 
 .. image:: _static/holes.png
- 
+
 and to get the area outside of the holes:
 
 .. sourcecode:: python
@@ -209,7 +190,7 @@ and to get the area outside of the holes:
     >>> boros_with_holes = boros['geometry'].difference(mp)
 
 .. image:: _static/boros_with_holes.png
- 
+
 Note that this can be simplified a bit, since ``geometry`` is
 available as an attribute on a ``GeoDataFrame``, and the
 ``intersection`` and ``difference`` methods are implemented with the
@@ -239,5 +220,3 @@ borough that are in the holes:
 
 .. toctree::
    :maxdepth: 2
-
-

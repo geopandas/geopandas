@@ -1,3 +1,5 @@
+formats:
+    - none
 conda:
     file: doc/environment.yml
 python:

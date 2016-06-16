@@ -4,21 +4,28 @@ from shapely import prepared
 
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
-          lsuffix='left', rsuffix='right', **kwargs):
+          lsuffix='left', rsuffix='right'):
     """Spatial join of two GeoDataFrames.
 
-    left_df, right_df are GeoDataFrames
-    how: type of join
-        left -> use keys from left_df; retain only left_df geometry column
-        right -> use keys from right_df; retain only right_df geometry column
-        inner -> use intersection of keys from both dfs;
-                 retain only left_df geometry column
-    op: binary predicate {'intersects', 'contains', 'within'}
-        see http://toblerity.org/shapely/manual.html#binary-predicates
-    lsuffix: suffix to apply to overlapping column names (left GeoDataFrame)
-    rsuffix: suffix to apply to overlapping column names (right GeoDataFrame)
-    """
+    Parameters
+    ----------
+    left_df, right_df : GeoDataFrames
+    how : string, default 'inner'
+        The type of join:
 
+        * 'left': use keys from left_df; retain only left_df geometry column
+        * 'right': use keys from right_df; retain only right_df geometry column
+        * 'inner': use intersection of keys from both dfs; retain only
+          left_df geometry column
+    op : string, default 'intersection'
+        Binary predicate, one of {'intersects', 'contains', 'within'}.
+        See http://toblerity.org/shapely/manual.html#binary-predicates.
+    lsuffix : string, default 'left'
+        Suffix to apply to overlapping column names (left GeoDataFrame).
+    rsuffix : string, default 'right'
+        Suffix to apply to overlapping column names (right GeoDataFrame).
+
+    """
     import rtree
 
     allowed_hows = ['left', 'right', 'inner']

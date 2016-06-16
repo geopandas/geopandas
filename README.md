@@ -20,6 +20,11 @@ transformed to new coordinate systems with the `to_crs()` method.
 There is currently no enforcement of like coordinates for operations,
 but that may change in the future.
 
+Documentation is available at [geopandas.org](http://geopandas.org)
+(current release) and
+[Read the Docs](http://geopandas.readthedocs.io/en/latest/)
+(release and development versions).
+
 Install
 --------
 
@@ -113,10 +118,3 @@ GeoPandas also implements alternate constructors that can read any data format r
     dtype: object
 
 ![Convex hulls of New York City boroughs](examples/nyc_hull.png)
-
-TODO
-----
-
-- Finish implementing and testing pandas methods on GeoPandas objects
-- The current GeoDataFrame does not do very much.
-- spatial joins, grouping and more...
