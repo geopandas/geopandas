@@ -55,16 +55,12 @@ class TestDataFrame(unittest.TestCase):
 
         geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
         df2 = df.set_geometry(geom2, crs='dummy_crs')
-        self.assert_('geometry' in df2)
         self.assert_('location' in df2)
         self.assertEqual(df2.crs, 'dummy_crs')
         self.assertEqual(df2.geometry.crs, 'dummy_crs')
         # reset so it outputs okay
         df2.crs = df.crs
         assert_geoseries_equal(df2.geometry, GeoSeries(geom2, crs=df2.crs))
-        # for right now, non-geometry comes back as series
-        assert_geoseries_equal(df2['location'], df['location'],
-                                  check_series_type=False, check_dtype=False)
 
     def test_geo_getitem(self):
         data = {"A": range(5), "B": range(-5, 0),
@@ -371,6 +367,18 @@ class TestDataFrame(unittest.TestCase):
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
         self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
+
+    def test_to_crs_geo_column_name(self):
+        # Test to_crs() with different geometry column name (GH#339)
+        df2 = self.df2.copy()
+        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
+        df2 = df2.rename(columns={'geometry': 'geom'})
+        df2.set_geometry('geom', inplace=True)
+        lonlat = df2.to_crs(epsg=4326)
+        utm = lonlat.to_crs(epsg=26918)
+        self.assertEqual(lonlat.geometry.name, 'geom')
+        self.assertEqual(utm.geometry.name, 'geom')
+        self.assertTrue(all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2)))
 
     def test_from_features(self):
         nybb_filename, nybb_zip_path = download_nybb()

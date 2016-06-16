@@ -124,15 +124,6 @@ The following Shapely methods and attributes are available on
 
 `Set-theoretic Methods`
 
-.. attribute:: GeoSeries.boundary
-
-  Returns a ``GeoSeries`` of lower dimensional objects representing
-  each geometries's set-theoretic `boundary`.
-
-.. attribute:: GeoSeries.centroid
-
-  Returns a ``GeoSeries`` of points for each geometric centroid.
-
 .. method:: GeoSeries.difference(other)
 
   Returns a ``GeoSeries`` of the points in each geometry that
@@ -159,6 +150,15 @@ The following Shapely methods and attributes are available on
 
   Returns a ``GeoSeries`` of geometries representing all points within a given `distance`
   of each geometric object.
+
+.. attribute:: GeoSeries.boundary
+
+  Returns a ``GeoSeries`` of lower dimensional objects representing
+  each geometries's set-theoretic `boundary`.
+
+.. attribute:: GeoSeries.centroid
+
+  Returns a ``GeoSeries`` of points for each geometric centroid.
 
 .. attribute:: GeoSeries.convex_hull
 

@@ -20,9 +20,7 @@ You may install the latest development version by cloning the
     pip install .
 
 It is also possible to install the latest development version
-available on PyPI with `pip` by adding the ``--pre`` flag for pip 1.4
-and later, or to use `pip` to install directly from the GitHub
-repository with::
+directly from the GitHub repository with::
 
     pip install git+git://github.com/geopandas/geopandas.git
 
@@ -32,7 +30,7 @@ Dependencies
 Installation via `conda` should also install all dependencies, but a complete list is as follows:
 
 - `numpy`_
-- `pandas`_ (version 0.13 or later)
+- `pandas`_ (version 0.15.2 or later)
 - `shapely`_
 - `fiona`_
 - `six`_
