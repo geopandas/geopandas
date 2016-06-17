@@ -95,9 +95,14 @@ class TestSpatialJoin(unittest.TestCase):
         df_left = sjoin(self.pointdf.iloc[17:], self.polydf, how='left')
         df_right = sjoin(self.pointdf.iloc[17:], self.polydf, how='right')
 
+        # Recent Pandas development has introduced a new way of handling merges
+        # this change has altered the output when no overlapping geometries
+        if str(pd.__version__) > LooseVersion('0.18.1'):
+            right_idxs = pd.Series(name='index_right',dtype='int64', index=range(0,5))
+        else:
+            right_idxs = pd.Series(name='index_right',dtype='int64')
 
-        empty_result_df = pd.concat([pd.Series(name='index_left',dtype='int64'),
-                                     pd.Series(name='index_right',dtype='int64')],axis=1)
+        empty_result_df = pd.concat([pd.Series(name='index_left',dtype='int64'), right_idxs], axis=1)
 
         expected_inner_df = pd.concat([self.pointdf.iloc[:0],
                                        empty_result_df.index_right,
