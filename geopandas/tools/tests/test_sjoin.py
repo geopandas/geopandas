@@ -98,7 +98,7 @@ class TestSpatialJoin(unittest.TestCase):
         # Recent Pandas development has introduced a new way of handling merges
         # this change has altered the output when no overlapping geometries
         if str(pd.__version__) > LooseVersion('0.18.1'):
-            right_idxs = pd.Series(name='index_right',dtype='int64', index=range(0,5))
+            right_idxs = pd.Series(range(0,5), name='index_right',dtype='int64')
         else:
             right_idxs = pd.Series(name='index_right',dtype='int64')
 
