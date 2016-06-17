@@ -47,8 +47,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
-    if idxmatch.shape[0]>0: # if output from  join has overlapping geometries
-
+    if idxmatch.shape[0] > 0:
+        # if output from  join has overlapping geometries
         r_idx = np.concatenate(idxmatch.values)
         l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
@@ -83,7 +83,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                   .drop('match_bool', axis=1)
                   )
 
-    else: # when output from the join has no overlapping geometries
+    else:
+        # when output from the join has no overlapping geometries
         result = pd.DataFrame(columns=['index_%s' % lsuffix, 'index_%s' % rsuffix])
 
     if op == "within":

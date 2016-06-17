@@ -105,7 +105,7 @@ class TestSpatialJoin(unittest.TestCase):
 
         expected_inner = GeoDataFrame(expected_inner_df, crs = {'init': 'epsg:4326', 'no_defs': True})
 
-        expected_right_df = pd.concat([self.pointdf.iloc[17:].drop('geometry', axis = 1).iloc[:0],
+        expected_right_df = pd.concat([self.pointdf.drop('geometry', axis = 1).iloc[:0],
                                        empty_result_df,
                                        self.polydf], axis = 1)
 
