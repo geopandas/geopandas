@@ -102,23 +102,21 @@ class TestSpatialJoin(unittest.TestCase):
         else:
             right_idxs = pd.Series(name='index_right',dtype='int64')
 
-        empty_result_df = pd.concat([pd.Series(name='index_left',dtype='int64'), right_idxs], axis=1)
-
         expected_inner_df = pd.concat([self.pointdf.iloc[:0],
-                                       empty_result_df.index_right,
+                                       pd.Series(name='index_right', dtype='int64'),
                                        self.polydf.drop('geometry', axis = 1).iloc[:0]], axis = 1)
 
         expected_inner = GeoDataFrame(expected_inner_df, crs = {'init': 'epsg:4326', 'no_defs': True})
 
         expected_right_df = pd.concat([self.pointdf.drop('geometry', axis = 1).iloc[:0],
-                                       empty_result_df,
+                                       pd.concat([pd.Series(name='index_left',dtype='int64'), right_idxs], axis=1),
                                        self.polydf], axis = 1)
 
         expected_right = GeoDataFrame(expected_right_df, crs = {'init': 'epsg:4326', 'no_defs': True})\
                             .set_index('index_right')
 
         expected_left_df = pd.concat([self.pointdf.iloc[17:],
-                                      empty_result_df.index_right,
+                                      pd.Series(name='index_right', dtype='int64'),
                                       self.polydf.iloc[:0].drop('geometry', axis=1)], axis = 1)
 
         expected_left = GeoDataFrame(expected_left_df, crs = {'init': 'epsg:4326', 'no_defs': True})
