@@ -24,7 +24,9 @@ def _flatten_multi_geoms(geoms, colors):
     component_colors : list of whatever type `colors` contains
     """
     components, component_colors = [], []
-    assert len(geoms) == len(colors) # precondition, so zip can't short-circuit
+
+    # precondition, so zip can't short-circuit
+    assert len(geoms) == len(colors)
     for geom, color in zip(geoms, colors):
         if geom.type.startswith('Multi'):
             for poly in geom:
@@ -68,14 +70,15 @@ def plot_polygon_collection(ax, geoms, colors_or_values, plot_values,
     from descartes.patch import PolygonPatch
     from matplotlib.collections import PatchCollection
 
-    components, component_colors_or_values = _flatten_multi_geoms(geoms, colors_or_values)
+    components, component_colors_or_values = _flatten_multi_geoms(
+        geoms, colors_or_values)
 
     # PatchCollection does not accept some kwargs.
     if 'markersize' in kwargs:
         del kwargs['markersize']
     collection = PatchCollection([PolygonPatch(poly) for poly in components],
-                                  linewidth=linewidth, edgecolor=edgecolor,
-                                  alpha=alpha, **kwargs)
+                                 linewidth=linewidth, edgecolor=edgecolor,
+                                 alpha=alpha, **kwargs)
 
     if plot_values:
         collection.set_array(np.array(component_colors_or_values))
@@ -131,7 +134,8 @@ def plot_linestring_collection(ax, geoms, colors_or_values, plot_values,
 
     from matplotlib.collections import LineCollection
 
-    components, component_colors_or_values = _flatten_multi_geoms(geoms, colors_or_values)
+    components, component_colors_or_values = _flatten_multi_geoms(
+        geoms, colors_or_values)
 
     # LineCollection does not accept some kwargs.
     if 'markersize' in kwargs:
@@ -193,7 +197,8 @@ def plot_point_collection(ax, geoms, colors_or_values,
     # matplotlib ax.scatter requires RGBA color specifications to be a single 2D
     # array, NOT merely a list of 1D arrays. This reshapes that if necessary,
     # having no effect on 1D arrays of values.
-    colors_or_values = np.array([element for _, element in enumerate(colors_or_values)])
+    colors_or_values = np.array([element
+                                 for _, element in enumerate(colors_or_values)])
     collection = ax.scatter(x, y, c=colors_or_values,
                             vmin=vmin, vmax=vmax, cmap=cmap,
                             marker=marker, s=markersize, **kwargs)
@@ -284,21 +289,27 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         color_generator = gencolor(len(s), colormap=cmap)
         colors = pd.Series([next(color_generator) for _ in xrange(num_geoms)])
 
+    # plot all Polygons and all MultiPolygon components in the same collection
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        # Plot the fill with default or user-specified alpha, but do not draw outlines.
-        plot_polygon_collection(ax, polys, colors[poly_idx], False, linewidth=0, **color_kwds)
+        # Plot the fill with default or user-specified alpha, but do not draw
+        # outlines.
+        plot_polygon_collection(ax, polys, colors[poly_idx], False,
+                                linewidth=0, **color_kwds)
         # Draw the edges, fully opaque, but no facecolor.
         edges_kwds = color_kwds.copy()
         edges_kwds['alpha'] = 1
         edges_kwds['facecolor'] = 'none'
-        plot_polygon_collection(ax, polys, colors[poly_idx], False, linewidth=linewidth, **edges_kwds)
+        plot_polygon_collection(ax, polys, colors[poly_idx], False,
+                                linewidth=linewidth, **edges_kwds)
 
+    # plot all LineStrings and MultiLineString components in same collection
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, colors[line_idx], False, linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, colors[line_idx], False,
+                                   linewidth=linewidth, **color_kwds)
 
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
@@ -430,29 +441,38 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     mn = values.min() if vmin is None else vmin
     mx = values.max() if vmax is None else vmax
 
-    # plot all Polygons and all components of MultiPolygon in the same collection
+    # plot all Polygons and all MultiPolygon components in the same collection
     poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        # Plot the fill with default or user-specified alpha, but do not draw outlines.
-        plot_polygon_collection(ax, polys, values[poly_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=0, **color_kwds)
+        # Plot the fill with default or user-specified alpha, but do not draw
+        # outlines.
+        plot_polygon_collection(ax, polys, values[poly_idx], True,
+                                vmin=mn, vmax=mx, cmap=cmap,
+                                linewidth=0, **color_kwds)
         # Draw the edges, fully opaque, but no facecolor.
         edges_kwds = color_kwds.copy()
         edges_kwds['alpha'] = 1
         edges_kwds['facecolor'] = 'none'
-        # Setting plot_values=False would cause the array values' colors to override edgecolor.
-        # By setting color instead, matplotlib will respect edgecolor if set.
-        plot_polygon_collection(ax, polys, ['black']*len(polys), False, linewidth=linewidth, **edges_kwds)
+        # Setting plot_values=False would cause the array values' colors to
+        # override edgecolor. By setting color instead, matplotlib will respect
+        # edgecolor if set.
+        plot_polygon_collection(ax, polys, ['black'] * len(polys), False,
+                                linewidth=linewidth, **edges_kwds)
 
+    # plot all LineStrings and MultiLineString components in same collection
     line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, values[line_idx], True, vmin=mn, vmax=mx, cmap=cmap, linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, values[line_idx], True,
+                                   vmin=mn, vmax=mx, cmap=cmap,
+                                   linewidth=linewidth, **color_kwds)
 
     point_idx = (s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx, cmap=cmap, **color_kwds)
+        plot_point_collection(ax, points, values[point_idx],
+                              vmin=mn, vmax=mx, cmap=cmap, **color_kwds)
 
     if legend and not color:
         norm = Normalize(vmin=mn, vmax=mx)

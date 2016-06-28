@@ -82,7 +82,7 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(color='green')
         _check_colors(self.N, ax.collections[0], ['green']*self.N)
 
-        with warnings.catch_warnings(record=True) as _: # don't print warning
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column='values', color='green')
             _check_colors(self.N, ax.collections[0], ['green']*self.N)
@@ -100,14 +100,14 @@ class TestPointPlotting(unittest.TestCase):
         assert ax.collections[0].get_sizes() == [10]
 
     def test_legend(self):
-        with warnings.catch_warnings(record=True) as _: # don't print warning
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
             # legend ignored if color is given.
             ax = self.df.plot(column='values', color='green', legend=True)
-            assert len(ax.get_figure().axes) == 1 # only the plot, no axis w/ legend
+            assert len(ax.get_figure().axes) == 1  # no separate legend axis
 
         # legend ignored if no column is given.
         ax = self.df.plot(legend=True)
-        assert len(ax.get_figure().axes) == 1 # only the plot, no axis w/ legend
+        assert len(ax.get_figure().axes) == 1  # no separate legend axis
 
         # Continuous legend
         ## the colorbar matches the Point colors
@@ -148,7 +148,7 @@ class TestLineStringPlotting(unittest.TestCase):
         ax = self.df.plot(color='green')
         _check_colors(self.N, ax.collections[0], ['green']*self.N)
 
-        with warnings.catch_warnings(record=True) as _: # don't print warning
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column='values', color='green')
             _check_colors(self.N, ax.collections[0], ['green']*self.N)
@@ -162,20 +162,24 @@ class TestLineStringPlotting(unittest.TestCase):
                     { 'dashed',  'dotted', 'dashdot', 'solid' }.
             """
             from matplotlib.backend_bases import GraphicsContextBase
-            reverse_idx = dict((v, k) for k, v in GraphicsContextBase.dashd.items())
+            reverse_idx = dict((v, k)
+                               for k, v in GraphicsContextBase.dashd.items())
             return reverse_idx[tup]
 
         # linestyle
         ax = self.lines.plot(linestyle='dashed')
-        ls = [linestyle_tuple_to_string(l) for l in ax.collections[0].get_linestyles()]
+        ls = [linestyle_tuple_to_string(l)
+              for l in ax.collections[0].get_linestyles()]
         assert ls == ['dashed']
 
         ax = self.df.plot(linestyle='dashed')
-        ls = [linestyle_tuple_to_string(l) for l in ax.collections[0].get_linestyles()]
+        ls = [linestyle_tuple_to_string(l)
+              for l in ax.collections[0].get_linestyles()]
         assert ls == ['dashed']
 
         ax = self.df.plot(column='values', linestyle='dashed')
-        ls = [linestyle_tuple_to_string(l) for l in ax.collections[0].get_linestyles()]
+        ls = [linestyle_tuple_to_string(l)
+              for l in ax.collections[0].get_linestyles()]
         assert ls == ['dashed']
 
 
@@ -202,7 +206,7 @@ class TestPolygonPlotting(unittest.TestCase):
         ax = self.df.plot(color='green')
         _check_colors(2, ax.collections[0], ['green']*2, alpha=0.5)
 
-        with warnings.catch_warnings(record=True) as _: # don't print warning
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'values'
             ax = self.df.plot(column='values', color='green')
             _check_colors(2, ax.collections[0], ['green']*2, alpha=0.5)
@@ -233,10 +237,12 @@ class TestPolygonPlotting(unittest.TestCase):
 
         # edgecolor
         ax = self.polys.plot(edgecolor='red')
-        np.testing.assert_array_equal([(1, 0, 0, 0.5)], ax.collections[0].get_edgecolors())
+        np.testing.assert_array_equal([(1, 0, 0, 0.5)],
+                                      ax.collections[0].get_edgecolors())
 
         ax = self.df.plot('values', edgecolor='red')
-        np.testing.assert_array_equal([(1, 0, 0, 0.5)], ax.collections[0].get_edgecolors())
+        np.testing.assert_array_equal([(1, 0, 0, 0.5)],
+                                      ax.collections[0].get_edgecolors())
 
     def test_multipolygons(self):
 
@@ -268,11 +274,11 @@ class TestNonuniformGeometryPlotting(unittest.TestCase):
 
         ax = self.series.plot(cmap='RdYlGn')
         cmap = get_cmap('RdYlGn', 3)
-        _check_colors(1, ax.collections[0], [cmap(0)], alpha=0.5) # polygon gets extra alpha. See #266
+        # polygon gets extra alpha. See #266
+        _check_colors(1, ax.collections[0], [cmap(0)], alpha=0.5)
         # N.B. ax.collections[1] contains the edges of the polygon
         _check_colors(1, ax.collections[2], [cmap(1)], alpha=1)   # line
         _check_colors(1, ax.collections[3], [cmap(2)], alpha=1)   # point
-
 
     def test_style_kwargs(self):
 
@@ -298,7 +304,7 @@ class TestPySALPlotting(unittest.TestCase):
 
     def test_legend(self):
         ax = self.tracts.plot(column='CRIME', scheme='QUANTILES', k=3,
-                         cmap='OrRd', legend=True)
+                              cmap='OrRd', legend=True)
 
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
@@ -330,7 +336,8 @@ def _check_colors(N, collection, expected_colors, alpha=None):
     # Convert 2D numpy array to a list of RGBA tuples.
     actual_colors = list(collection.get_facecolors())
     actual_colors = map(tuple, actual_colors)
-    all_actual_colors = list(itertools.islice(itertools.cycle(actual_colors), N))
+    all_actual_colors = list(itertools.islice(
+        itertools.cycle(actual_colors), N))
 
     for actual, expected in zip(all_actual_colors, expected_colors):
         assert actual == conv.to_rgba(expected, alpha=alpha), \
