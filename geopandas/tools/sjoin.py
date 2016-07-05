@@ -54,39 +54,45 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
-    r_idx = np.concatenate(idxmatch.values)
-    l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
+    if idxmatch.shape[0] > 0:
+        # if output from  join has overlapping geometries
+        r_idx = np.concatenate(idxmatch.values)
+        l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
-    # Vectorize predicate operations
-    def find_intersects(a1, a2):
-        return a1.intersects(a2)
+        # Vectorize predicate operations
+        def find_intersects(a1, a2):
+            return a1.intersects(a2)
 
-    def find_contains(a1, a2):
-        return a1.contains(a2)
+        def find_contains(a1, a2):
+            return a1.contains(a2)
 
-    predicate_d = {'intersects': find_intersects,
-                   'contains': find_contains,
-                   'within': find_contains}
+        predicate_d = {'intersects': find_intersects,
+                       'contains': find_contains,
+                       'within': find_contains}
 
-    check_predicates = np.vectorize(predicate_d[op])
+        check_predicates = np.vectorize(predicate_d[op])
 
-    result = (
-              pd.DataFrame(
-                  np.column_stack(
-                      [l_idx,
-                       r_idx,
-                       check_predicates(
-                           left_df['geometry']
-                           .apply(lambda x: prepared.prep(x))[l_idx],
-                           right_df['geometry'][r_idx])
-                       ]))
-               )
+        result = (
+                  pd.DataFrame(
+                      np.column_stack(
+                          [l_idx,
+                           r_idx,
+                           check_predicates(
+                               left_df['geometry']
+                               .apply(lambda x: prepared.prep(x))[l_idx],
+                               right_df['geometry'][r_idx])
+                           ]))
+                   )
 
-    result.columns = ['index_%s' % lsuffix, 'index_%s' % rsuffix, 'match_bool']
-    result = (
-              pd.DataFrame(result[result['match_bool']==1])
-              .drop('match_bool', axis=1)
-              )
+        result.columns = ['index_%s' % lsuffix, 'index_%s' % rsuffix, 'match_bool']
+        result = (
+                  pd.DataFrame(result[result['match_bool']==1])
+                  .drop('match_bool', axis=1)
+                  )
+
+    else:
+        # when output from the join has no overlapping geometries
+        result = pd.DataFrame(columns=['index_%s' % lsuffix, 'index_%s' % rsuffix])
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
