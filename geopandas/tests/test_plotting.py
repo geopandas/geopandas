@@ -212,6 +212,22 @@ class TestPolygonPlotting(unittest.TestCase):
             ax = self.df.plot(column='values', color='green')
             _check_colors(2, ax.collections[0], ['green']*2, alpha=0.5)
 
+    def test_optimization(self):
+
+        # when linewidth=0 or no alpha, we don't have to plot polys twice
+
+        ax = self.polys.plot(linewidth=0)
+        assert len(ax.collections) == 1  # only plotted once
+
+        ax = self.polys.plot(alpha=1)
+        assert len(ax.collections) == 1  # only plotted once
+
+        ax = self.df.plot(linewidth=0)
+        assert len(ax.collections) == 1  # only plotted once
+
+        ax = self.df.plot(alpha=1)
+        assert len(ax.collections) == 1  # only plotted once
+
     def test_vmin_vmax(self):
 
         # when vmin == vmax, all polygons should be the same color
