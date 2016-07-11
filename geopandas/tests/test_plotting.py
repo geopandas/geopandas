@@ -137,7 +137,8 @@ class TestLineStringPlotting(unittest.TestCase):
         self.N = 10
         values = np.arange(self.N)
         self.lines = GeoSeries([LineString([(0, i), (4, i+0.5), (9, i)])
-                                for i in xrange(self.N)])
+                                for i in xrange(self.N)],
+                               index=list('ABCDEFGHIJ'))
         self.df = GeoDataFrame({'geometry': self.lines, 'values': values})
 
     def test_single_color(self):
@@ -189,7 +190,7 @@ class TestPolygonPlotting(unittest.TestCase):
 
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
-        self.polys = GeoSeries([t1, t2])
+        self.polys = GeoSeries([t1, t2], index=list('AB'))
         self.df = GeoDataFrame({'geometry': self.polys, 'values': [0, 1]})
 
         multipoly1 = MultiPolygon([t1, t2])

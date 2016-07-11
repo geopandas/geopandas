@@ -284,13 +284,14 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
 
     num_geoms = len(s.index)
     if color:
-        colors = pd.Series([color] * num_geoms)
+        colors = np.array([color] * num_geoms)
     else:
         color_generator = gencolor(len(s), colormap=cmap)
-        colors = pd.Series([next(color_generator) for _ in xrange(num_geoms)])
+        colors = np.array([next(color_generator) for _ in xrange(num_geoms)])
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
+    poly_idx = np.array(
+        (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon'))
     polys = s.geometry[poly_idx]
     if not polys.empty:
         # Plot the fill with default or user-specified alpha, but do not draw
@@ -305,13 +306,15 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
                                 linewidth=linewidth, **edges_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
-    line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
+    line_idx = np.array(
+        (s.geometry.type == 'LineString') |
+        (s.geometry.type == 'MultiLineString'))
     lines = s.geometry[line_idx]
     if not lines.empty:
         plot_linestring_collection(ax, lines, colors[line_idx], False,
                                    linewidth=linewidth, **color_kwds)
 
-    point_idx = (s.geometry.type == 'Point')
+    point_idx = np.array(s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
         plot_point_collection(ax, points, colors[point_idx], **color_kwds)
@@ -423,12 +426,12 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         categories = list(set(s[column].values))
         categories.sort()
         valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-        values = pd.Series([valuemap[k] for k in s[column]])
+        values = np.array([valuemap[k] for k in s[column]])
     else:
         values = s[column]
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
-        values = pd.Series(binning.yb)
+        values = np.array(binning.yb)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [binning.yb.min()] + binning.bins.tolist()
@@ -442,7 +445,8 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     mx = values.max() if vmax is None else vmax
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    poly_idx = (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon')
+    poly_idx = np.array(
+        (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon'))
     polys = s.geometry[poly_idx]
     if not polys.empty:
         # Plot the fill with default or user-specified alpha, but do not draw
@@ -461,14 +465,16 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                                 linewidth=linewidth, **edges_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
-    line_idx = (s.geometry.type == 'LineString') | (s.geometry.type == 'MultiLineString')
+    line_idx = np.array(
+        (s.geometry.type == 'LineString') |
+        (s.geometry.type == 'MultiLineString'))
     lines = s.geometry[line_idx]
     if not lines.empty:
         plot_linestring_collection(ax, lines, values[line_idx], True,
                                    vmin=mn, vmax=mx, cmap=cmap,
                                    linewidth=linewidth, **color_kwds)
 
-    point_idx = (s.geometry.type == 'Point')
+    point_idx = np.array(s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
         plot_point_collection(ax, points, values[point_idx],
