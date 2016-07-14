@@ -324,10 +324,6 @@ def __pysal_choro(values, scheme, k=5):
             scheme = 'quantiles'
             warnings.warn('Unrecognized scheme "{0}". Using "Quantiles" '
                           'instead'.format(s0), UserWarning, stacklevel=3)
-        if k < 2 or k > 9:
-            warnings.warn('Invalid k: {0} (2 <= k <= 9), setting k=5 '
-                          '(default)'.format(k), UserWarning, stacklevel=3)
-            k = 5
         binning = schemes[scheme](values, k)
         return binning
     except ImportError:
