@@ -50,4 +50,5 @@ setup(name='geopandas',
       packages=['geopandas', 'geopandas.io', 'geopandas.tools',
                 'geopandas.datasets'],
       package_data={'geopandas': data_files},
-      install_requires=INSTALL_REQUIRES)
+      install_requires=INSTALL_REQUIRES,
+      cmdclass=versioneer.get_cmdclass())
