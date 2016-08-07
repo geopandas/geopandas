@@ -3,8 +3,29 @@ import pandas as pd
 from shapely import prepared
 
 
+def rtree_index(geom):
+    '''create a spatial index of a geometry
+
+    Parameters
+    ----------
+    geom : pd.Series with shapely geometry objects
+
+    Returns
+    -------
+    rtree.index : spatial index
+    '''
+    import rtree
+
+    tree_idx = rtree.index.Index()
+    geom_bounds = geom.apply(lambda x: x.bounds)
+    for i in geom_bounds.index:
+        tree_idx.insert(i, geom_bounds[i])
+
+    return tree_idx
+
+
 def sjoin(left_df, right_df, how='inner', op='intersects',
-          lsuffix='left', rsuffix='right'):
+          lsuffix='left', rsuffix='right', tree_idx=None):
     """Spatial join of two GeoDataFrames.
 
     Parameters
@@ -24,9 +45,9 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    tree_idx : rtree.index for right GeoDataFrame, if None, will be created.
 
     """
-    import rtree
 
     allowed_hows = ['left', 'right', 'inner']
     if how not in allowed_hows:
@@ -45,10 +66,9 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
-    tree_idx = rtree.index.Index()
-    right_df_bounds = right_df['geometry'].apply(lambda x: x.bounds)
-    for i in right_df_bounds.index:
-        tree_idx.insert(i, right_df_bounds[i])
+    if tree_idx is None:
+        tree_idx = rtree_index(right_df['geometry'])
+
 
     idxmatch = (left_df['geometry'].apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
