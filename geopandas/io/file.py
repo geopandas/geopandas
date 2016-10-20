@@ -25,7 +25,7 @@ def read_file(filename, **kwargs):
             f_filt = f.filter(bbox=bbox)
         else:
             f_filt = f
-        gdf = GeoDataFrame.from_features(f, crs=crs)
+        gdf = GeoDataFrame.from_features(f_filt, crs=crs)
 
     return gdf
 
