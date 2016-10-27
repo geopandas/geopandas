@@ -46,7 +46,7 @@ def download_nybb():
     returns tuple (zip file name, shapefile's name and path within zip file)"""
     # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
     # saved as geopandas/examples/nybb_14aav.zip.
-    filename = 'nybb_16a.zip'
+    filename = 'nybb_16c.zip'
     full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
     if not os.path.exists(full_path_name):
         with io.open(full_path_name, 'wb') as f:
