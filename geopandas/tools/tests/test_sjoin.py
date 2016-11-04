@@ -22,7 +22,6 @@ class TestSpatialJoin(unittest.TestCase):
         nybb_filename, nybb_zip_path = download_nybb()
         self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
-        #self.crs = {'init': 'epsg:4326'}
         self.crs = self.polydf.crs
         N = 20
         b = [int(x) for x in self.polydf.total_bounds]
