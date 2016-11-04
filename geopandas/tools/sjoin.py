@@ -46,11 +46,11 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         print('Warning: CRS does not match!')
 
     tree_idx = rtree.index.Index()
-    right_df_bounds = right_df[right_df.geometry.name].apply(lambda x: x.bounds)
+    right_df_bounds = right_df.geometry.apply(lambda x: x.bounds)
     for i in right_df_bounds.index:
         tree_idx.insert(i, right_df_bounds[i])
 
-    idxmatch = (left_df[left_df.geometry.name].apply(lambda x: x.bounds)
+    idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
@@ -78,7 +78,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                           [l_idx,
                            r_idx,
                            check_predicates(
-                               left_df[left_df.geometry.name]
+                               left_df.geometry
                                .apply(lambda x: prepared.prep(x))[l_idx],
                                right_df[right_df.geometry.name][r_idx])
                            ]))
