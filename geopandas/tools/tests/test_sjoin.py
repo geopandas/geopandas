@@ -4,12 +4,16 @@ import tempfile
 import shutil
 
 import numpy as np
+import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, read_file, base
 from geopandas.tests.util import unittest, download_nybb
 from geopandas import sjoin
+from distutils.version import LooseVersion
 
+pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
+                      'not problem with sjoin.'
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoin(unittest.TestCase):
@@ -81,6 +85,45 @@ class TestSpatialJoin(unittest.TestCase):
         self.assertEquals(df.shape, (21,8))
         df = sjoin(self.polydf, self.pointdf, how='left')
         self.assertEquals(df.shape, (12,8))
+
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.17'), pandas_0_16_problem)
+    def test_no_overlapping_geometry(self):
+        # Note: these tests are for correctly returning GeoDataFrame
+        # when result of the join is empty
+
+        df_inner = sjoin(self.pointdf.iloc[17:], self.polydf, how='inner')
+        df_left = sjoin(self.pointdf.iloc[17:], self.polydf, how='left')
+        df_right = sjoin(self.pointdf.iloc[17:], self.polydf, how='right')
+
+        # Recent Pandas development has introduced a new way of handling merges
+        # this change has altered the output when no overlapping geometries
+        if str(pd.__version__) > LooseVersion('0.18.1'):
+            right_idxs = pd.Series(range(0,5), name='index_right',dtype='int64')
+        else:
+            right_idxs = pd.Series(name='index_right',dtype='int64')
+
+        expected_inner_df = pd.concat([self.pointdf.iloc[:0],
+                                       pd.Series(name='index_right', dtype='int64'),
+                                       self.polydf.drop('geometry', axis = 1).iloc[:0]], axis = 1)
+
+        expected_inner = GeoDataFrame(expected_inner_df, crs = {'init': 'epsg:4326', 'no_defs': True})
+
+        expected_right_df = pd.concat([self.pointdf.drop('geometry', axis = 1).iloc[:0],
+                                       pd.concat([pd.Series(name='index_left',dtype='int64'), right_idxs], axis=1),
+                                       self.polydf], axis = 1)
+
+        expected_right = GeoDataFrame(expected_right_df, crs = {'init': 'epsg:4326', 'no_defs': True})\
+                            .set_index('index_right')
+
+        expected_left_df = pd.concat([self.pointdf.iloc[17:],
+                                      pd.Series(name='index_right', dtype='int64'),
+                                      self.polydf.iloc[:0].drop('geometry', axis=1)], axis = 1)
+
+        expected_left = GeoDataFrame(expected_left_df, crs = {'init': 'epsg:4326', 'no_defs': True})
+
+        self.assertTrue(expected_inner.equals(df_inner))
+        self.assertTrue(expected_right.equals(df_right))
+        self.assertTrue(expected_left.equals(df_left))
 
     @unittest.skip("Not implemented")
     def test_sjoin_outer(self):

@@ -545,16 +545,9 @@ def __pysal_choro(values, scheme, k=5):
         schemes['equal_interval'] = Equal_Interval
         schemes['quantiles'] = Quantiles
         schemes['fisher_jenks'] = Fisher_Jenks
-        s0 = scheme
         scheme = scheme.lower()
         if scheme not in schemes:
-            scheme = 'quantiles'
-            warnings.warn('Unrecognized scheme "{0}". Using "Quantiles" '
-                          'instead'.format(s0), UserWarning, stacklevel=3)
-        if k < 2 or k > 9:
-            warnings.warn('Invalid k: {0} (2 <= k <= 9), setting k=5 '
-                          '(default)'.format(k), UserWarning, stacklevel=3)
-            k = 5
+            raise ValueError("Invalid scheme. Scheme must be in the set: %r" % schemes.keys())
         binning = schemes[scheme](values, k)
         return binning
     except ImportError:

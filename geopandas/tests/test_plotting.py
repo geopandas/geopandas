@@ -327,6 +327,12 @@ class TestPySALPlotting(unittest.TestCase):
         expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
         self.assertEqual(labels, expected)
 
+    def test_invalid_scheme(self):
+        with self.assertRaises(ValueError):
+            scheme = 'invalid_scheme_*#&)(*#'
+            ax = self.tracts.plot(column='CRIME', scheme=scheme, k=3,
+                                  cmap='OrRd', legend=True)
+
 
 def _check_colors(N, collection, expected_colors, alpha=None):
     """ Asserts that the members of `collection` match the `expected_colors` (in order)
