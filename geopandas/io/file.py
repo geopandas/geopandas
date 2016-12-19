@@ -27,6 +27,10 @@ def read_file(filename, **kwargs):
             f_filt = f
         gdf = GeoDataFrame.from_features(f_filt, crs=crs)
 
+        # re-order with column order from metadata, with geometry first
+        columns = ["geometry"] + list(f.meta["schema"]["properties"])
+        gdf = gdf[columns]
+
     return gdf
 
 
