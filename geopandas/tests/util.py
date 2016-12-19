@@ -50,7 +50,7 @@ def download_nybb():
     full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
     if not os.path.exists(full_path_name):
         with io.open(full_path_name, 'wb') as f:
-            response = urlopen('http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/{0}'.format(filename))
+            response = urlopen('https://github.com/geopandas/geopandas/files/555970/{0}'.format(filename))
             f.write(response.read())
 
     shp_zip_path = None
