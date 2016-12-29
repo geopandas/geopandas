@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+                                                                                
+"features": [
+{ "type": "Feature", "properties": { "Name": "Null Geometry" }, "geometry": null },
+{ "type": "Feature", "properties": { "Name": "SF to NY" }, "geometry": { "type": "LineString", "coordinates": [ [ -122.4051293283311, 37.786780113640894 ], [ -73.859832357849271, 40.487594916296196 ] ] } }
+]
+}

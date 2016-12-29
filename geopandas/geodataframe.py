@@ -3,16 +3,15 @@ try:
 except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
-from collections import defaultdict
 import json
 import os
 import sys
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-from six import string_types, iteritems
+from six import string_types
 
 from geopandas import GeoSeries
 from geopandas.base import GeoPandasBase
@@ -38,7 +37,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
     """
+
+    # XXX: This will no longer be necessary in pandas 0.17
+    _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
+                       'is_copy', '_subtyp', '_index',
+                       '_default_kind', '_default_fill_value', '_metadata',
+                       '__array_struct__', '__array_interface__']
+
     _metadata = ['crs', '_geometry_column_name']
+
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, *args, **kwargs):
@@ -49,6 +56,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
+
+    # Serialize metadata (will no longer be necessary in pandas 0.17+)
+    # See https://github.com/pydata/pandas/pull/10557
+    def __getstate__(self):
+        meta = dict((k, getattr(self, k, None)) for k in self._metadata)
+        return dict(_data=self._data, _typ=self._typ,
+                    _metadata=self._metadata, **meta)
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -68,7 +82,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not isinstance(col, (list, np.ndarray, Series)):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
-
         self.set_geometry(col, inplace=True)
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -112,7 +125,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             crs = getattr(col, 'crs', self.crs)
 
         to_remove = None
-        geo_column_name = DEFAULT_GEO_COLUMN_NAME
+        geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
@@ -126,7 +139,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 raise
             if drop:
                 to_remove = col
-                geo_column_name = DEFAULT_GEO_COLUMN_NAME
+                geo_column_name = self._geometry_column_name
             else:
                 geo_column_name = col
 
@@ -139,7 +152,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) for item in level):
+        if not all(isinstance(item, BaseGeometry) or not item for item in level):
             raise TypeError("Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
@@ -152,7 +165,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoDataFrame from a file.
-        
+
         Example:
             df = geopandas.GeoDataFrame.from_file('nybb.shp')
 
@@ -177,7 +190,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 f = f
 
-            d = {'geometry': shape(f['geometry'])}
+            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
             d.update(f['properties'])
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
@@ -198,42 +211,46 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col, 
+        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
-
     def to_json(self, na='null', show_bbox=False, **kwargs):
-        """Returns a GeoJSON string representation of the GeoDataFrame.
+        """
+        Returns a GeoJSON string representation of the GeoDataFrame.
 
         Parameters
         ----------
         na : {'null', 'drop', 'keep'}, default 'null'
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: ouput the missing entries as JSON null
+            * null: output the missing entries as JSON null
             * drop: remove the property from the feature. This applies to
                     each feature individually so that features may have
                     different properties
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson
-        
+
         The remaining *kwargs* are passed to json.dumps().
+
         """
-        return json.dumps(self._to_geo(na, show_bbox), **kwargs)
+        return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
 
     @property
     def __geo_interface__(self):
-        """Returns a python feature collection (i.e. the geointerface)
-           representation of the GeoDataFrame.
+        """
+        Returns a python feature collection (i.e. the geointerface)
+        representation of the GeoDataFrame.
 
-           This differs from `_to_geo()` only in that it is a property
-           with default args instead of a method
+        This differs from `_to_geo()` only in that it is a property with
+        default args instead of a method
+
         """
         return self._to_geo(na='null', show_bbox=True)
 
-    def _to_geo(self, na='null', show_bbox=False):
-        """Returns a python feature collection (i.e. the geointerface)
-           representation of the GeoDataFrame.
+    def iterfeatures(self, na='null', show_bbox=False):
+        """
+        Returns an iterator that yields feature dictionaries that comply with
+        __geo_interface__
 
         Parameters
         ----------
@@ -246,8 +263,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson. default False
-        """
 
+        """
         def fill_none(row):
             """
             Takes in a Series, converts to a dictionary with null values
@@ -260,90 +277,70 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 d[k] = None
             return d
 
-        # na_methods must take in a Series and return dict-like
+        # na_methods must take in a Series and return dict
         na_methods = {'null': fill_none,
-                      'drop': lambda row: row.dropna(),
-                      'keep': lambda row: row}
+                      'drop': lambda row: row.dropna().to_dict(),
+                      'keep': lambda row: row.to_dict()}
 
         if na not in na_methods:
             raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
-        def feature(i, row):
-            bbox = row[self._geometry_column_name].bounds
-            row = f(row)
-            feat = {
+        for i, row in self.iterrows():
+            properties = f(row)
+            del properties[self._geometry_column_name]
+
+            feature = {
                 'id': str(i),
                 'type': 'Feature',
-                'properties':
-                    dict((k, v) for k, v in iteritems(row) if k != self._geometry_column_name),
-                'geometry': mapping(row[self._geometry_column_name]) }
+                'properties': properties,
+                'geometry': mapping(row[self._geometry_column_name])
+                            if row[self._geometry_column_name] else None
+            }
 
             if show_bbox:
-                feat['bbox'] = bbox
+                feature['bbox'] = row.geometry.bounds
 
-            return feat
+            yield feature
 
+    def _to_geo(self, **kwargs):
+        """
+        Returns a python feature collection (i.e. the geointerface)
+        representation of the GeoDataFrame.
+
+        """
         geo = {'type': 'FeatureCollection',
-               'features': [feature(i, row) for i, row in self.iterrows()]}
+               'features': list(self.iterfeatures(**kwargs))}
 
-        if show_bbox:
+        if kwargs.get('show_bbox', False):
             geo['bbox'] = self.total_bounds
 
         return geo
-            
-    def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
+
+    def to_file(self, filename, driver="ESRI Shapefile", schema=None,
+                **kwargs):
         """
         Write this GeoDataFrame to an OGR data source
-        
+
         A dictionary of supported OGR providers is available via:
         >>> import fiona
         >>> fiona.supported_drivers
 
         Parameters
         ----------
-        filename : string 
+        filename : string
             File path or file handle to write to.
         driver : string, default 'ESRI Shapefile'
             The OGR format driver used to write the vector file.
+        schema : dict, default None
+            If specified, the schema dictionary is passed to Fiona to
+            better control how the file is written.
 
-        The *kwargs* are passed to fiona.open and can be used to write 
+        The *kwargs* are passed to fiona.open and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         """
-        import fiona
-        def convert_type(in_type):
-            if in_type == object:
-                return 'str'
-            out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
-            if out_type == 'long':
-                out_type = 'int'
-            return out_type
-            
-        def feature(i, row):
-            return {
-                'id': str(i),
-                'type': 'Feature',
-                'properties':
-                    dict((k, v) for k, v in iteritems(row) if k != 'geometry'),
-                'geometry': mapping(row['geometry']) }
-        
-        properties = OrderedDict([(col, convert_type(_type)) for col, _type 
-            in zip(self.columns, self.dtypes) if col!='geometry'])
-        # Need to check geom_types before we write to file... 
-        # Some (most?) providers expect a single geometry type: 
-        # Point, LineString, or Polygon
-        geom_types = self['geometry'].geom_type.unique()
-        from os.path import commonprefix # To find longest common prefix
-        geom_type = commonprefix([g[::-1] for g in geom_types])[::-1]  # Reverse
-        if geom_type == '': # No common suffix = mixed geometry types
-            raise ValueError("Geometry column cannot contains mutiple "
-                             "geometry types when writing to file.")
-        schema = {'geometry': geom_type, 'properties': properties}
-        filename = os.path.abspath(os.path.expanduser(filename))
-        with fiona.open(filename, 'w', driver=driver, crs=self.crs, 
-                        schema=schema, **kwargs) as c:
-            for i, row in self.iterrows():
-                c.write(feature(i, row))
+        from geopandas.io.file import to_file
+        to_file(self, filename, driver, schema, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system
@@ -353,6 +350,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         joining points are assumed to be lines in the current
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
+
+        `to_crs` passes the `crs` argument to the `Proj` function from the
+        `pyproj` library (with the option `preserve_units=True`). It can
+        therefore accept proj4 projections in any format
+        supported by `Proj`, including dictionaries, or proj4 strings.
+
         """
         if inplace:
             df = self
@@ -406,10 +409,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+        """propagate metadata from other to self """
+        # merge operation: using metadata of the left object
+        if method == 'merge':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.left, name, None))
+        # concat operation: using metadata of the first object
+        elif method == 'concat':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+        else:
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def copy(self, deep=True):
@@ -432,7 +443,58 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame(data).__finalize__(self)
 
     def plot(self, *args, **kwargs):
+
         return plot_dataframe(self, *args, **kwargs)
+
+    plot.__doc__ = plot_dataframe.__doc__
+
+
+    def dissolve(self, by=None, aggfunc='first', as_index=True):
+        """
+        Dissolve geometries within `groupby` into single observation.
+        This is accomplished by applying the `unary_union` method
+        to all geometries within a groupself.
+
+        Observations associated with each `groupby` group will be aggregated
+        using the `aggfunc`.
+
+        Parameters
+        ----------
+        by : string, default None
+            Column whose values define groups to be dissolved
+        aggfunc : function or string, default "first"
+            Aggregation function for manipulation of data associated
+            with each group. Passed to pandas `groupby.agg` method.
+        as_index : boolean, default True
+            If true, groupby columns become index of result.
+
+        Returns
+        -------
+        GeoDataFrame
+        """
+
+        # Process non-spatial component
+        data = self.drop(labels=self.geometry.name, axis=1)
+        aggregated_data = data.groupby(by=by).agg(aggfunc)
+
+
+        # Process spatial component
+        def merge_geometries(block):
+            merged_geom = block.unary_union
+            return merged_geom
+
+        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
+
+        # Aggregate
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name)
+        # Recombine
+        aggregated = aggregated_geometry.join(aggregated_data)
+
+        # Reset if requested
+        if not as_index:
+            aggregated = aggregated.reset_index()
+
+        return aggregated
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:

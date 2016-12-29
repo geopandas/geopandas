@@ -1,4 +1,5 @@
 from functools import partial
+import json
 from warnings import warn
 
 import numpy as np
@@ -238,9 +239,10 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
-
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
+    
+    plot.__doc__ = plot_series.__doc__
 
     #
     # Additional methods
@@ -254,6 +256,12 @@ class GeoSeries(GeoPandasBase, Series):
         joining points are assumed to be lines in the current
         projection, not geodesics.  Objects crossing the dateline (or
         other projection boundary) will have undesirable behavior.
+
+        `to_crs` passes the `crs` argument to the `Proj` function from the
+        `pyproj` library (with the option `preserve_units=True`). It can
+        therefore accept proj4 projections in any format
+        supported by `Proj`, including dictionaries, or proj4 strings.
+
         """
         from fiona.crs import from_epsg
         if self.crs is None:
@@ -264,14 +272,24 @@ class GeoSeries(GeoPandasBase, Series):
                 crs = from_epsg(epsg)
             except TypeError:
                 raise TypeError('Must set either crs or epsg for output.')
-        proj_in = pyproj.Proj(preserve_units=True, **self.crs)
-        proj_out = pyproj.Proj(preserve_units=True, **crs)
+        proj_in = pyproj.Proj(self.crs, preserve_units=True)
+        proj_out = pyproj.Proj(crs, preserve_units=True)
         project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
         result._invalidate_sindex()
         return result
+
+    def to_json(self, **kwargs):
+        """
+        Returns a GeoJSON string representation of the GeoSeries.
+
+        Parameters
+        ----------
+        *kwargs* that will be passed to json.dumps().
+        """
+        return json.dumps(self.__geo_interface__, **kwargs)
 
     #
     # Implement standard operators for GeoSeries

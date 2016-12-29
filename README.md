@@ -20,6 +20,33 @@ transformed to new coordinate systems with the `to_crs()` method.
 There is currently no enforcement of like coordinates for operations,
 but that may change in the future.
 
+Documentation is available at [geopandas.org](http://geopandas.org)
+(current release) and
+[Read the Docs](http://geopandas.readthedocs.io/en/latest/)
+(release and development versions).
+
+Install
+--------
+
+**Requirements**
+
+For the installation of GeoPandas, the following packages are required:
+
+- ``pandas``
+- ``shapely``
+- ``fiona``
+- ``descartes``
+- ``pyproj``
+
+Further, [``rtree``](https://github.com/Toblerity/rtree) is an optional
+dependency. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+
+
+**Install**
+
+Then, installation works as normal: ``pip install geopandas``
+
+
 Examples
 --------
 
@@ -58,7 +85,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/nybb_16a.zip):
 
     >>> boros = GeoDataFrame.from_file('nybb.shp')
     >>> boros.set_index('BoroCode', inplace=True)
@@ -71,7 +98,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     3              Brooklyn  1.959432e+09  726568.946340
     4                Queens  3.049947e+09  861038.479299
     5         Staten Island  1.623853e+09  330385.036974
-    
+
                                                        geometry
     BoroCode
     1         (POLYGON ((981219.0557861328125000 188655.3157...
@@ -81,7 +108,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     5         (POLYGON ((970217.0223999023437500 145643.3322...
 
 ![New York City boroughs](examples/nyc.png)
- 
+
     >>> boros['geometry'].convex_hull
     0    POLYGON ((915517.6877458114176989 120121.88125...
     1    POLYGON ((1000721.5317993164062500 136681.7761...
@@ -91,10 +118,3 @@ GeoPandas also implements alternate constructors that can read any data format r
     dtype: object
 
 ![Convex hulls of New York City boroughs](examples/nyc_hull.png)
-
-TODO
-----
-
-- Finish implementing and testing pandas methods on GeoPandas objects
-- The current GeoDataFrame does not do very much.
-- spatial joins, grouping and more...
