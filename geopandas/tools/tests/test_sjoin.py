@@ -33,16 +33,14 @@ class TestSpatialJoin(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def test_new_geom_column(self):
-        self.setUp()
+    def test_geometry_name(self):
+        # test sjoin is working with other geometry name
         polydf_original_geom_name = self.polydf.geometry.name
-        self.polydf["new_geom"] = self.polydf.geometry
-        self.polydf.set_geometry(col="new_geom", inplace=True)
+        self.polydf = (self.polydf.rename(columns={'geometry': 'new_geom'})
+                                  .set_geometry('new_geom'))
         self.assertNotEqual(polydf_original_geom_name, self.polydf.geometry.name)
-        self.polydf.drop("geometry", axis=1, inplace=True)
-        df = sjoin(self.polydf, self.pointdf, how="left", lsuffix="pointdf", rsuffix="polydf")
-        result_gdf = GeoDataFrame(data=df, geometry="new_geom", crs=self.polydf.crs)
-        self.assertEqual(self.polydf.geometry.name, result_gdf.geometry.name)
+        res = sjoin(self.polydf, self.pointdf, how="left")
+        self.assertEqual(self.polydf.geometry.name, res.geometry.name)
 
     def test_sjoin_left(self):
         df = sjoin(self.pointdf, self.polydf, how='left')
