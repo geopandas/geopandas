@@ -14,7 +14,7 @@ def read_file(filename, **kwargs):
 
     *filename* is either the absolute or relative path to the file to be
     opened and *kwargs* are keyword args to be passed to the `open` method
-    in the fiona library when opening the file. For more information on 
+    in the fiona library when opening the file. For more information on
     possible keywords, type: ``import fiona; help(fiona.open)``
     """
     bbox = kwargs.pop('bbox', None)
@@ -27,8 +27,8 @@ def read_file(filename, **kwargs):
             f_filt = f
         gdf = GeoDataFrame.from_features(f_filt, crs=crs)
 
-        # re-order with column order from metadata, with geometry first
-        columns = ["geometry"] + list(f.meta["schema"]["properties"])
+        # re-order with column order from metadata, with geometry last
+        columns = list(f.meta["schema"]["properties"]) + ["geometry"]
         gdf = gdf[columns]
 
     return gdf
