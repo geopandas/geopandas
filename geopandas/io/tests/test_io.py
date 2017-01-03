@@ -57,7 +57,7 @@ class TestIO(unittest.TestCase):
         self.assert_(df.crs == self.crs)
         # get lower case columns, and exclude geometry column from comparison
         lower_columns = [c.lower() for c in self.columns]
-        self.assert_((df.columns[1:] == lower_columns).all())
+        self.assert_((df.columns[:-1] == lower_columns).all())
 
     def test_filtered_read_file(self):
         full_df_shape = self.df.shape
