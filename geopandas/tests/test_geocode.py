@@ -5,7 +5,7 @@ import pandas as pd
 import pandas.util.testing as tm
 from shapely.geometry import Point
 import geopandas as gpd
-import nose
+import pytest
 
 from geopandas import GeoSeries
 from geopandas.tools import geocode, reverse_geocode
@@ -18,10 +18,10 @@ def _skip_if_no_geopy():
     try:
         import geopy
     except ImportError:
-        raise nose.SkipTest("Geopy not installed. Skipping tests.")
+        raise pytest.skip("Geopy not installed. Skipping tests.")
     except SyntaxError:
-        raise nose.SkipTest("Geopy is known to be broken on Python 3.2. "
-                            "Skipping tests.")
+        raise pytest.skip("Geopy is known to be broken on Python 3.2. "
+                          "Skipping tests.")
 
 
 class ForwardMock(mock.MagicMock):
