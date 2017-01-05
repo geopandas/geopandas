@@ -22,7 +22,7 @@ class TestSpatialJoin(unittest.TestCase):
         nybb_filename, nybb_zip_path = download_nybb()
         self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
         self.tempdir = tempfile.mkdtemp()
-        self.crs = {'init': 'epsg:4326'}
+        self.crs = self.polydf.crs
         N = 20
         b = [int(x) for x in self.polydf.total_bounds]
         self.pointdf = GeoDataFrame([
@@ -32,6 +32,15 @@ class TestSpatialJoin(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
+
+    def test_geometry_name(self):
+        # test sjoin is working with other geometry name
+        polydf_original_geom_name = self.polydf.geometry.name
+        self.polydf = (self.polydf.rename(columns={'geometry': 'new_geom'})
+                                  .set_geometry('new_geom'))
+        self.assertNotEqual(polydf_original_geom_name, self.polydf.geometry.name)
+        res = sjoin(self.polydf, self.pointdf, how="left")
+        self.assertEqual(self.polydf.geometry.name, res.geometry.name)
 
     def test_sjoin_left(self):
         df = sjoin(self.pointdf, self.polydf, how='left')
