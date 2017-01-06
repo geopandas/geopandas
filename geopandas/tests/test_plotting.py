@@ -130,13 +130,18 @@ class TestPointPlotting(unittest.TestCase):
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
 
-class TestPointZPlotting(TestPointPlotting):
+class TestPointZPlotting(unittest.TestCase):
 
     def setUp(self):
         self.N = 10
         self.points = GeoSeries(Point(i, i, i) for i in range(self.N))
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+    # basic test that points with z coords don't break plotting
+    def test_plot(self):
+
+        ax = self.df.plot()
 
 
 class TestLineStringPlotting(unittest.TestCase):
@@ -284,7 +289,7 @@ class TestPolygonPlotting(unittest.TestCase):
         ## specifying values -> same as without values in this case.
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
 
-class TestPolygonZPlotting(TestPolygonPlotting):
+class TestPolygonZPlotting(unittest.TestCase):
 
     def setUp(self):
 
@@ -299,6 +304,10 @@ class TestPolygonZPlotting(TestPolygonPlotting):
                                  'values': [0, 1]})
         return
 
+    # basic test that points with z coords don't break plotting
+    def test_plot(self):
+
+        ax = self.df.plot()
 
 class TestNonuniformGeometryPlotting(unittest.TestCase):
 
