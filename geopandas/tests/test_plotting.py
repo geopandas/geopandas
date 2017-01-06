@@ -130,6 +130,15 @@ class TestPointPlotting(unittest.TestCase):
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
 
+class TestPointZPlotting(TestPointPlotting):
+
+    def setUp(self):
+        self.N = 10
+        self.points = GeoSeries(Point(i, i, i) for i in range(self.N))
+        values = np.arange(self.N)
+        self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+
 class TestLineStringPlotting(unittest.TestCase):
 
     def setUp(self):
@@ -274,6 +283,21 @@ class TestPolygonPlotting(unittest.TestCase):
         ax = self.df2.plot('values')
         ## specifying values -> same as without values in this case.
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
+
+class TestPolygonZPlotting(TestPolygonPlotting):
+
+    def setUp(self):
+
+        t1 = Polygon([(0, 0, 0), (1, 0, 0), (1, 1, 1)])
+        t2 = Polygon([(1, 0, 0), (2, 0, 0), (2, 1, 1)])
+        self.polys = GeoSeries([t1, t2], index=list('AB'))
+        self.df = GeoDataFrame({'geometry': self.polys, 'values': [0, 1]})
+
+        multipoly1 = MultiPolygon([t1, t2])
+        multipoly2 = rotate(multipoly1, 180)
+        self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
+                                 'values': [0, 1]})
+        return
 
 
 class TestNonuniformGeometryPlotting(unittest.TestCase):
