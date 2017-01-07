@@ -138,8 +138,9 @@ class TestPointZPlotting(unittest.TestCase):
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
 
-    # basic test that points with z coords don't break plotting
+
     def test_plot(self):
+        # basic test that points with z coords don't break plotting
 
         ax = self.df.plot()
 
@@ -289,6 +290,7 @@ class TestPolygonPlotting(unittest.TestCase):
         ## specifying values -> same as without values in this case.
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
 
+
 class TestPolygonZPlotting(unittest.TestCase):
 
     def setUp(self):
@@ -302,12 +304,13 @@ class TestPolygonZPlotting(unittest.TestCase):
         multipoly2 = rotate(multipoly1, 180)
         self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
                                  'values': [0, 1]})
-        return
 
-    # basic test that points with z coords don't break plotting
+
     def test_plot(self):
+        # basic test that points with z coords don't break plotting
 
         ax = self.df.plot()
+
 
 class TestNonuniformGeometryPlotting(unittest.TestCase):
 
