@@ -54,10 +54,12 @@ def _series_op(this, other, op, **kwargs):
         return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
 
+
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""
     return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
                      index=this.index, crs=this.crs)
+
 
 def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
@@ -134,6 +136,24 @@ class GeoPandasBase(object):
         # operates on the exterior, so can't use _series_unary_op()
         return Series([geom.exterior.is_ring for geom in self.geometry],
                       index=self.index)
+
+    @property
+    def x(self):
+        """Return the x location of point geometries in a GeoSeries"""
+        xloc = _series_unary_op(self, 'x', null_value=np.nan)
+        if not xloc.isnull().all():
+            return xloc
+        else:
+            raise ValueError("No geom_type with x attribute in GeoSeries")
+
+    @property
+    def y(self):
+        """Return the y location of point geometries in a GeoSeries"""
+        yloc = _series_unary_op(self, 'y', null_value=np.nan)
+        if not yloc.isnull().all():
+            return yloc
+        else:
+            raise ValueError("No geom_type with y attribute in GeoSeries")
 
     #
     # Unary operations that return a GeoSeries
