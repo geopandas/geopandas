@@ -232,8 +232,8 @@ use cases and writing corresponding tests.
 Adding tests is one of the most common requests after code is pushed to *geopandas*.  Therefore,
 it is worth getting in the habit of writing tests ahead of time so this is never an issue.
 
-Like many packages, *geopandas* uses the `Nose testing system
-<http://nose.readthedocs.org/en/latest/index.html>`_ and the convenient
+*geopandas* uses the `pytest testing system
+<http://doc.pytest.org/en/latest/>`_ and the convenient
 extensions in `numpy.testing
 <http://docs.scipy.org/doc/numpy/reference/routines.testing.html>`_.
 
@@ -255,7 +255,7 @@ Running the test suite
 The tests can then be run directly inside your Git clone (without having to
 install *geopandas*) by typing::
 
-    nosetests -v
+    pytest
 
 6) Updating the Documentation
 -----------------------------
