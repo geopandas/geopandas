@@ -140,20 +140,20 @@ class GeoPandasBase(object):
     @property
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
-        xloc = _series_unary_op(self, 'x', null_value=np.nan)
-        if not xloc.isnull().all():
-            return xloc
+        if (self.geom_type == "Point").all():
+            return _series_unary_op(self, 'x', null_value=np.nan)
         else:
-            raise ValueError("No geom_type with x attribute in GeoSeries")
+            message = "x attribute access only provided for Point geometries"
+            raise ValueError(message)
 
     @property
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
-        yloc = _series_unary_op(self, 'y', null_value=np.nan)
-        if not yloc.isnull().all():
-            return yloc
+        if (self.geom_type == "Point").all():
+            return _series_unary_op(self, 'y', null_value=np.nan)
         else:
-            raise ValueError("No geom_type with y attribute in GeoSeries")
+            message = "y attribute access only provided for Point geometries"
+            raise ValueError(message)
 
     #
     # Unary operations that return a GeoSeries

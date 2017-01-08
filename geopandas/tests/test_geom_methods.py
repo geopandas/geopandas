@@ -334,11 +334,11 @@ class TestGeomMethods(unittest.TestCase):
         assert_array_equal(expected_x, self.landmarks.x)
         assert_array_equal(expected_y, self.landmarks.y)
 
-    def test_x_polygons(self):
+    def test_xy_polygons(self):
+        # accessing x attribute in polygon geoseries should raise an error
         with pytest.raises(ValueError):
             x = self.gdf1.x
-
-    def test_y_polygons(self):
+        # and same for accessing y attribute in polygon geoseries
         with pytest.raises(ValueError):
             y = self.gdf1.y
 
