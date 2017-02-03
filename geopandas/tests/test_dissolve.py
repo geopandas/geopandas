@@ -52,6 +52,18 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(test.geom_almost_equals(self.first).all())
 
     @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
+    def test_dissolve_retains_existing_crs(self):
+        assert self.polydf.crs is not None
+        test = self.polydf.dissolve('manhattan_bronx')
+        assert test.crs is not None
+
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
+    def test_dissolve_retains_nonexisting_crs(self):
+        self.polydf.crs = None
+        test = self.polydf.dissolve('manhattan_bronx')
+        assert test.crs is None
+
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_first_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx')
         assert_frame_equal(self.first, test, check_column_type=False)
