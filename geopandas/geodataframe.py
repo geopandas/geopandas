@@ -486,7 +486,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name)
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 

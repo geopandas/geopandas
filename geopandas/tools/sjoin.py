@@ -46,11 +46,11 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         print('Warning: CRS does not match!')
 
     tree_idx = rtree.index.Index()
-    right_df_bounds = right_df['geometry'].apply(lambda x: x.bounds)
+    right_df_bounds = right_df.geometry.apply(lambda x: x.bounds)
     for i in right_df_bounds.index:
         tree_idx.insert(i, right_df_bounds[i])
 
-    idxmatch = (left_df['geometry'].apply(lambda x: x.bounds)
+    idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
@@ -78,9 +78,9 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                           [l_idx,
                            r_idx,
                            check_predicates(
-                               left_df['geometry']
+                               left_df.geometry
                                .apply(lambda x: prepared.prep(x))[l_idx],
-                               right_df['geometry'][r_idx])
+                               right_df[right_df.geometry.name][r_idx])
                            ]))
                    )
 
@@ -106,7 +106,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         return (
                 left_df
                 .merge(result, left_index=True, right_index=True)
-                .merge(right_df.drop('geometry', axis=1),
+                .merge(right_df.drop(right_df.geometry.name, axis=1),
                     left_on='index_%s' % rsuffix, right_index=True,
                     suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                 )
@@ -115,14 +115,14 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         return (
                 left_df
                 .merge(result, left_index=True, right_index=True, how='left')
-                .merge(right_df.drop('geometry', axis=1),
+                .merge(right_df.drop(right_df.geometry.name, axis=1),
                     how='left', left_on='index_%s' % rsuffix, right_index=True,
                     suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                 )
     elif how == 'right':
         return (
                 left_df
-                .drop('geometry', axis=1)
+                .drop(left_df.geometry.name, axis=1)
                 .merge(result.merge(right_df,
                     left_on='index_%s' % rsuffix, right_index=True,
                     how='right'), left_index=True,
