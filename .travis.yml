@@ -2,10 +2,6 @@ language: python
 
 sudo: false
 
-cache:
-  directories:
-    - ~/.cache/pip
-
 addons:
   apt:
     packages:
@@ -13,11 +9,6 @@ addons:
     - gdal-bin
     - libgdal-dev
     - libspatialindex-dev
-
-env:
-  global:
-    - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
-    - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
 
 # matrix creates 3+5x2 = 13 tests
 matrix:
@@ -62,13 +53,8 @@ matrix:
 
 before_install:
   - pip install -U pip
-  - pip install wheel
 
 install:
-  - pip wheel numpy
-  - pip wheel -r requirements.txt
-  - pip wheel -r requirements.test.txt
-
   - pip install numpy
   - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip wheel matplotlib==$MATPLOTLIB; pip install matplotlib==$MATPLOTLIB; fi
 
