@@ -65,7 +65,7 @@ before_install:
   - pip install wheel
 
 install:
-  - pip wheel numpy
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' || $TRAVIS_PYTHON_VERSION == '3.3' ]]; then pip wheel numpy==1.11.3; else pip wheel numpy; fi
   - pip wheel -r requirements.txt
   - pip wheel -r requirements.test.txt
 
