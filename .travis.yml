@@ -2,9 +2,7 @@ language: python
 
 sudo: false
 
-cache:
-  directories:
-    - ~/.cache/pip
+cache: pip
 
 addons:
   apt:
@@ -13,11 +11,6 @@ addons:
     - gdal-bin
     - libgdal-dev
     - libspatialindex-dev
-
-env:
-  global:
-    - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
-    - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
 
 # matrix creates 3+5x2 = 13 tests
 matrix:
@@ -62,20 +55,15 @@ matrix:
 
 before_install:
   - pip install -U pip
-  - pip install wheel
 
 install:
-  - pip wheel numpy
-  - pip wheel -r requirements.txt
-  - pip wheel -r requirements.test.txt
-
   - pip install numpy
-  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip wheel matplotlib==$MATPLOTLIB; pip install matplotlib==$MATPLOTLIB; fi
+  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip install matplotlib==$MATPLOTLIB; fi
 
   - pip install -r requirements.txt
   - pip install -r requirements.test.txt
 
-  - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip wheel pandas==$PANDAS; pip install pandas==$PANDAS; fi
+  - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
