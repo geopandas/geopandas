@@ -3,7 +3,7 @@ try:
 except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
-import json
+from pandas.io import json
 import os
 import sys
 
