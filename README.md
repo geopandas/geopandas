@@ -1,5 +1,4 @@
 GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://codecov.io/gh/geopandas/geopandas/branch/master/graph/badge.svg)](https://codecov.io/gh/geopandas/geopandas)
-
 =========
 
 Python tools for geographic data
