@@ -69,4 +69,4 @@ script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
 
 after_success:
-  - coveralls
+  - codecov
