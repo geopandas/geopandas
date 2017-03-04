@@ -230,7 +230,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         show_bbox : include bbox (bounds) in the geojson
 
-        The remaining *kwargs* are passed to json.dumps().
+        The remaining *kwargs* are passed to pandas.io.json.dumps().
 
         """
         return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
