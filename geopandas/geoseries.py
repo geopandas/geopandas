@@ -1,11 +1,11 @@
 from functools import partial
-import json
 from warnings import warn
 
 import numpy as np
 from pandas import Series, DataFrame
 from pandas.core.indexing import _NDFrameIndexer
 from pandas.util.decorators import cache_readonly
+from pandas.io import json
 import pyproj
 from shapely.geometry import box, shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
@@ -86,20 +86,20 @@ class GeoSeries(GeoPandasBase, Series):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoSeries from a file
-        
+
         Parameters
         ----------
-        
+
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary, see:
             http://toblerity.github.io/fiona/README.html#usage
             for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to 
+            These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
-        
+
         """
         import fiona
         geoms = []
@@ -125,7 +125,7 @@ class GeoSeries(GeoPandasBase, Series):
                           index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
-        
+
     #
     # Implement pandas methods
     #
@@ -241,7 +241,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
-    
+
     plot.__doc__ = plot_series.__doc__
 
     #
@@ -287,7 +287,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        *kwargs* that will be passed to json.dumps().
+        *kwargs* that will be passed to pandas.io.json.dumps().
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 

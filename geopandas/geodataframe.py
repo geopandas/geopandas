@@ -3,12 +3,12 @@ try:
 except ImportError:
     # Python 2.6
     from ordereddict import OrderedDict
-import json
 import os
 import sys
 
 import numpy as np
 from pandas import DataFrame, Series, Index
+from pandas.io import json
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types
@@ -226,11 +226,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * drop: remove the property from the feature. This applies to
                     each feature individually so that features may have
                     different properties
-            * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson
 
-        The remaining *kwargs* are passed to json.dumps().
+        The remaining *kwargs* are passed to pandas.io.json.dumps().
 
         """
         return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
@@ -287,8 +286,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         f = na_methods[na]
 
         for i, row in self.iterrows():
-            properties = f(row)
-            del properties[self._geometry_column_name]
+
+            properties = f(row.drop(self._geometry_column_name))
 
             feature = {
                 'id': str(i),

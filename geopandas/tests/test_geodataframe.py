@@ -211,6 +211,17 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
 
+    def test_to_json_pandas_options(self):
+        self.df['established'] = pd.date_range('20000101', periods=len(self.df))
+        text = self.df.to_json(double_precision=2, ensure_ascii=False, date_unit='s')
+        data = json.loads(text)
+        self.assertTrue(data['type'] == 'FeatureCollection')
+        self.assertTrue(len(data['features']) == 5)
+        props = data['features'][0]['properties']
+        self.assertTrue(type(props['established']) == int)
+        self.assertTrue(props['established'] == 946684800)
+        self.assertTrue(props['Shape_Leng'] == 330470.01)
+
     def test_to_json_geom_col(self):
         df = self.df.copy()
         df['geom'] = df['geometry']
@@ -262,24 +273,21 @@ class TestDataFrame(unittest.TestCase):
             else:
                 self.assertEqual(len(props), 4)
 
-    def test_to_json_keepna(self):
-        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
-        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
-
-        text = self.df.to_json(na='keep')
+    def test_to_json_datetime(self):
+        self.df['established'] = pd.date_range('20000101', periods=len(self.df))
+        text = self.df.to_json()
         data = json.loads(text)
-        self.assertEqual(len(data['features']), 5)
         for f in data['features']:
             props = f['properties']
-            self.assertEqual(len(props), 4)
-            if props['BoroName'] == 'Queens':
-                self.assertTrue(np.isnan(props['Shape_Area']))
-                # Just make sure setting it to nan in a different row
-                # doesn't affect this one
-                self.assertTrue('Shape_Leng' in props)
-            elif props['BoroName'] == 'Bronx':
-                self.assertTrue(np.isnan(props['Shape_Leng']))
-                self.assertTrue('Shape_Area' in props)
+            self.assertTrue(type(props['established']) == int)
+
+    def test_to_json_datetime_iso(self):
+        self.df['established'] = pd.date_range('20000101', periods=len(self.df))
+        text = self.df.to_json(iso_dates=True)
+        data = json.loads(text)
+        for f in data['features']:
+            props = f['properties']
+            self.assertTrue(type(props['established']) == str)
 
     def test_copy(self):
         df2 = self.df.copy()
@@ -328,7 +336,7 @@ class TestDataFrame(unittest.TestCase):
         """
         Ensure that the file is written according to the schema
         if it is specified
-        
+
         """
         try:
             from collections import OrderedDict
