@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from six import string_types
 
 import json
 import os
@@ -287,7 +288,7 @@ class TestDataFrame(unittest.TestCase):
         data = json.loads(text)
         for f in data['features']:
             props = f['properties']
-            self.assertTrue(type(props['established']) == str)
+            self.assertTrue(isinstance(props['established'], string_types))
 
     def test_copy(self):
         df2 = self.df.copy()
