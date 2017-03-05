@@ -232,8 +232,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         The remaining *kwargs* are passed to json.dumps().
 
+        Noite that if the CRS is set on the geometry it's exported as epsg:4326
+        to meet the 2016 geojson specification.
+
         """
-        return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
+        if self.crs:
+            df = self.to_crs(epsg=4326)
+        else:
+            df = self
+        return json.dumps(df._to_geo(na=na, show_bbox=show_bbox), **kwargs)
 
     @property
     def __geo_interface__(self):
