@@ -214,7 +214,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
-    def to_json(self, na='null', show_bbox=False, **kwargs):
+    def to_json(self, na='null', show_bbox=False, to_wgs84=True, **kwargs):
         """
         Returns a GeoJSON string representation of the GeoDataFrame.
 
@@ -230,13 +230,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         show_bbox : include bbox (bounds) in the geojson
 
+        to_wgs84: if the CRS is set on the geometry it's exported as WGS84
+            to meet the `2016 geojson specification
+            <https://tools.ietf.org/html/rfc7946>`_. True by default.
+
         The remaining *kwargs* are passed to json.dumps().
 
-        Noite that if the CRS is set on the geometry it's exported as epsg:4326
-        to meet the 2016 geojson specification.
-
         """
-        if self.crs:
+        if self.crs and to_wgs84:
             df = self.to_crs(epsg=4326)
         else:
             df = self
