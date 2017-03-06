@@ -210,6 +210,24 @@ class TestDataFrame(unittest.TestCase):
         data = json.loads(text)
         self.assertTrue(data['type'] == 'FeatureCollection')
         self.assertTrue(len(data['features']) == 5)
+        # check it converts to WGS84
+        coord = data['features'][0]['geometry']['coordinates'][0][0][0]
+        self.assertTrue(coord == [-74.05050806403248, 40.56642203419415])
+
+    def test_to_json_no_wgs84(self):
+        text = self.df.to_json(to_wgs84=False)
+        data = json.loads(text)
+        # check it doesn't converts to WGS84
+        coord = data['features'][0]['geometry']['coordinates'][0][0][0]
+        self.assertTrue(coord == [970217.0223999023, 145643.33221435547])
+
+    def test_to_json_no_crs(self):
+        self.df.crs = None
+        text = self.df.to_json()
+        data = json.loads(text)
+        # check it doesn't converts to WGS84
+        coord = data['features'][0]['geometry']['coordinates'][0][0][0]
+        self.assertTrue(coord == [970217.0223999023, 145643.33221435547])
 
     def test_to_json_geom_col(self):
         df = self.df.copy()
@@ -328,7 +346,7 @@ class TestDataFrame(unittest.TestCase):
         """
         Ensure that the file is written according to the schema
         if it is specified
-        
+
         """
         try:
             from collections import OrderedDict
