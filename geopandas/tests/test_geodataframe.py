@@ -212,7 +212,7 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(len(data['features']) == 5)
         # check it converts to WGS84
         coord = data['features'][0]['geometry']['coordinates'][0][0][0]
-        self.assertTrue(coord == [-74.05050806403248, 40.56642203419415])
+        np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
 
     def test_to_json_no_wgs84(self):
         text = self.df.to_json(to_wgs84=False)
