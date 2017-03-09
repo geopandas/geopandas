@@ -157,7 +157,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def _can_hold_na(self):
-        return False
+        return True
 
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
