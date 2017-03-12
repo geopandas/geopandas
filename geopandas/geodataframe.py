@@ -286,12 +286,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
-        for i, row in self.iterrows():
+        for _, row in self.iterrows():
             properties = f(row)
             del properties[self._geometry_column_name]
 
             feature = {
-                'id': str(i),
+                'id': str(row.name),
                 'type': 'Feature',
                 'properties': properties,
                 'geometry': mapping(row[self._geometry_column_name])
