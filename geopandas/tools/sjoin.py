@@ -116,7 +116,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                  )
         if len(joined.index) > 0:
             if op == 'within':
-                joined = joined.set_index(index_left[joined.index])
+                joined = joined.set_index(index_right[joined.index])
                 joined.index.name = 'index_%s' % rsuffix
             else:
                 joined = joined.set_index(index_left[joined.index])
