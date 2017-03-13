@@ -50,10 +50,9 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     left_df = left_df.reset_index(drop=True)
     right_df = right_df.reset_index(drop=True)
 
-    tree_idx = rtree.index.Index()
     right_df_bounds = right_df.geometry.apply(lambda x: x.bounds)
-    for i in right_df_bounds.index:
-        tree_idx.insert(i, right_df_bounds[i])
+    stream = ((i, b, None) for i, b in enumerate(right_df_bounds))
+    tree_idx = rtree.index.Index(stream)
 
     idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
@@ -108,22 +107,38 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
     if how == 'inner':
         result = result.set_index('index_%s' % lsuffix)
-        return (
-                left_df
-                .merge(result, left_index=True, right_index=True)
-                .merge(right_df.drop(right_df.geometry.name, axis=1),
-                    left_on='index_%s' % rsuffix, right_index=True,
-                    suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
-                )
+        joined = (
+                  left_df
+                  .merge(result, left_index=True, right_index=True)
+                  .merge(right_df.drop(right_df.geometry.name, axis=1),
+                      left_on='index_%s' % rsuffix, right_index=True,
+                      suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+                 )
+        if len(joined.index) > 0:
+            if op == 'within':
+                joined = joined.set_index(index_left[joined.index])
+                joined.index.name = 'index_%s' % rsuffix
+            else:
+                joined = joined.set_index(index_left[joined.index])
+                joined.index.name = 'index_%s' % rsuffix
+        return joined
     elif how == 'left':
         result = result.set_index('index_%s' % lsuffix)
-        return (
-                left_df
-                .merge(result, left_index=True, right_index=True, how='left')
-                .merge(right_df.drop(right_df.geometry.name, axis=1),
-                    how='left', left_on='index_%s' % rsuffix, right_index=True,
-                    suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
-                )
+        joined = (
+                  left_df
+                  .merge(result, left_index=True, right_index=True, how='left')
+                  .merge(right_df.drop(right_df.geometry.name, axis=1),
+                      how='left', left_on='index_%s' % rsuffix, right_index=True,
+                      suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+                 )
+        if len(joined.index) > 0:
+            if op == 'within':
+                joined = joined.set_index(index_right[joined.index])
+                joined.index.name = 'index_%s' % rsuffix
+            else:
+                joined = joined.set_index(index_left[joined.index])
+                joined.index.name = 'index_%s' % rsuffix
+        return joined
     elif how == 'right':
         joined = (
                   left_df
@@ -132,8 +147,14 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       left_on='index_%s' % rsuffix, right_index=True,
                       how='right'), left_index=True,
                       right_on='index_%s' % lsuffix, how='right')
+                  .set_index('index_%s' % rsuffix)
                  )
-        # reattach the original index
-        joined.set_index(index_right[joined.index])
+        if len(joined.index) > 0:
+            if op == 'within':
+                joined = joined.set_index(index_left[joined.index])
+                joined.index.name = 'index_%s' % rsuffix
+            else:
+                joined = joined.set_index(index_right[joined.index])
+                joined.index.name = 'index_%s' % rsuffix
         joined.index.name = 'index_%s' % rsuffix
         return joined
