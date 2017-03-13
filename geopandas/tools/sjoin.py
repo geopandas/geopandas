@@ -125,7 +125,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                     suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                 )
     elif how == 'right':
-        import pdb; pdb.set_trace()
         joined = (
                   left_df
                   .drop(left_df.geometry.name, axis=1)
