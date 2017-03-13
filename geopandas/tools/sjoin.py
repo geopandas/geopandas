@@ -45,6 +45,11 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
+    # reset the index because rtree allows limited index types, add back later
+    index_left, index_right = left_df.index, right_df.index
+    left_df = left_df.reset_index(drop=True)
+    right_df = right_df.reset_index(drop=True)
+
     tree_idx = rtree.index.Index()
     right_df_bounds = right_df.geometry.apply(lambda x: x.bounds)
     for i in right_df_bounds.index:
@@ -55,7 +60,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
 
     if idxmatch.shape[0] > 0:
-        # if output from  join has overlapping geometries
+        # if output from join has overlapping geometries
         r_idx = np.concatenate(idxmatch.values)
         l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
@@ -120,12 +125,16 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                     suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                 )
     elif how == 'right':
-        return (
-                left_df
-                .drop(left_df.geometry.name, axis=1)
-                .merge(result.merge(right_df,
-                    left_on='index_%s' % rsuffix, right_index=True,
-                    how='right'), left_index=True,
-                    right_on='index_%s' % lsuffix, how='right')
-                .set_index('index_%s' % rsuffix)
-                )
+        import pdb; pdb.set_trace()
+        joined = (
+                  left_df
+                  .drop(left_df.geometry.name, axis=1)
+                  .merge(result.merge(right_df,
+                      left_on='index_%s' % rsuffix, right_index=True,
+                      how='right'), left_index=True,
+                      right_on='index_%s' % lsuffix, how='right')
+                 )
+        # reattach the original index
+        joined.set_index(index_right[joined.index])
+        joined.index.name = 'index_%s' % rsuffix
+        return joined
