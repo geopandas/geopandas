@@ -46,10 +46,12 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         print('Warning: CRS does not match!')
 
     # reset the index because rtree allows limited index types, add back later
+    # GH 352
     index_left, index_right = left_df.index, right_df.index
     left_df = left_df.reset_index(drop=True)
     right_df = right_df.reset_index(drop=True)
 
+    # insert the bounds in the rtree spatial index
     right_df_bounds = right_df.geometry.apply(lambda x: x.bounds)
     stream = ((i, b, None) for i, b in enumerate(right_df_bounds))
     tree_idx = rtree.index.Index(stream)
@@ -105,6 +107,26 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                     'index_%s' % (lsuffix): 'index_%s' % (rsuffix),
                     'index_%s' % (rsuffix): 'index_%s' % (lsuffix)})
 
+    def select_join_index():
+        # do nothing if the joined frame is empty
+        if len(joined.index) == 0:
+            return []
+
+        # we need to reattach the correct index. which one, left or right?
+        # left join needs left index, right needs right, inner needs left.
+        # but if op was within, we swap sides.
+        if how == 'right':
+            orig_index = index_left if op == 'within' else index_right
+        elif how == 'left':
+            orig_index = index_right if op == 'within' else index_left
+        else:  # how == 'inner'
+            orig_index = index_right if op == 'within' else index_left
+
+        # get the and name the subselection
+        joined_index = orig_index[joined.index]
+        joined_index.name = 'index_%s' % rsuffix
+        return joined_index
+
     if how == 'inner':
         result = result.set_index('index_%s' % lsuffix)
         joined = (
@@ -114,13 +136,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       left_on='index_%s' % rsuffix, right_index=True,
                       suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                  )
-        if len(joined.index) > 0:
-            if op == 'within':
-                joined = joined.set_index(index_right[joined.index])
-                joined.index.name = 'index_%s' % rsuffix
-            else:
-                joined = joined.set_index(index_left[joined.index])
-                joined.index.name = 'index_%s' % rsuffix
+        joined.index = select_join_index()
         return joined
     elif how == 'left':
         result = result.set_index('index_%s' % lsuffix)
@@ -131,13 +147,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       how='left', left_on='index_%s' % rsuffix, right_index=True,
                       suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                  )
-        if len(joined.index) > 0:
-            if op == 'within':
-                joined = joined.set_index(index_right[joined.index])
-                joined.index.name = 'index_%s' % rsuffix
-            else:
-                joined = joined.set_index(index_left[joined.index])
-                joined.index.name = 'index_%s' % rsuffix
+        joined.index = select_join_index()
         return joined
     elif how == 'right':
         joined = (
@@ -149,12 +159,5 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       right_on='index_%s' % lsuffix, how='right')
                   .set_index('index_%s' % rsuffix)
                  )
-        if len(joined.index) > 0:
-            if op == 'within':
-                joined = joined.set_index(index_left[joined.index])
-                joined.index.name = 'index_%s' % rsuffix
-            else:
-                joined = joined.set_index(index_right[joined.index])
-                joined.index.name = 'index_%s' % rsuffix
-        joined.index.name = 'index_%s' % rsuffix
+        joined.index = select_join_index()
         return joined
