@@ -12,8 +12,9 @@ from geopandas.tests.util import unittest, download_nybb
 from geopandas import sjoin
 from distutils.version import LooseVersion
 
-pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
+pandas_0_18_problem = 'fails under pandas < 0.19 due to pandas issue 15692,'\
                       'not problem with sjoin.'
+
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoin(unittest.TestCase):
@@ -95,7 +96,7 @@ class TestSpatialJoin(unittest.TestCase):
         df = sjoin(self.polydf, self.pointdf, how='left')
         self.assertEquals(df.shape, (12,8))
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.17'), pandas_0_16_problem)
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.19'), pandas_0_18_problem)
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty

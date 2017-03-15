@@ -113,18 +113,18 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
             return []
 
         # we need to reattach the correct index. which one, left or right?
-        # left join needs left index, right needs right, inner needs left.
+        # right join needs right index, left needs left, inner needs left.
         # but if op was within, we swap sides.
         if how == 'right':
             orig_index = index_left if op == 'within' else index_right
-        elif how == 'left':
+            index_name = 'index_%s' % rsuffix
+        else:  # how == 'left' or how == 'inner'
             orig_index = index_right if op == 'within' else index_left
-        else:  # how == 'inner'
-            orig_index = index_right if op == 'within' else index_left
+            index_name = 'index_%s' % lsuffix
 
-        # get the and name the subselection
+        # get and name the subselection
         joined_index = orig_index[joined.index.values.astype(int)]
-        joined_index.name = 'index_%s' % rsuffix
+        joined_index.name = index_name
         return joined_index
 
     if how == 'inner':
