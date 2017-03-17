@@ -64,7 +64,7 @@ class TestSpatialJoin(unittest.TestCase):
             exp = self.expected[op].dropna().copy()
             exp = exp.drop('geometry_y', axis=1).rename(columns={'geometry_x': 'geometry'})
             exp[['index_left', 'index_right', 'df1', 'df2']] = \
-                exp[['index_left', 'index_right', 'df1', 'df2']].astype(int)
+                exp[['index_left', 'index_right', 'df1', 'df2']].astype('int64')
             exp = exp.set_index('index_left')
             exp.index.name = None
             assert_frame_equal(res, exp)
@@ -76,7 +76,7 @@ class TestSpatialJoin(unittest.TestCase):
             exp = exp.drop('geometry_y', axis=1).rename(
                 columns={'geometry_x': 'geometry'})
             exp[['index_left', 'df1']] = \
-                exp[['index_left', 'df1']].astype(int)
+                exp[['index_left', 'df1']].astype('int64')
             # TODO: in result the dtype is object
             res['index_right'] = res['index_right'].astype(float)
             exp = exp.set_index('index_left')
@@ -89,7 +89,7 @@ class TestSpatialJoin(unittest.TestCase):
             exp = self.expected[op].dropna(subset=['index_right']).copy()
             exp = exp.drop('geometry_x', axis=1).rename(
                 columns={'geometry_y': 'geometry'})
-            exp[['index_right', 'df2']] = exp[['index_right', 'df2']].astype(int)
+            exp[['index_right', 'df2']] = exp[['index_right', 'df2']].astype('int64')
             res['index_left'] = res['index_left'].astype(float)
             exp = exp.set_index('index_right')
             exp = exp.reindex(columns=res.columns)
