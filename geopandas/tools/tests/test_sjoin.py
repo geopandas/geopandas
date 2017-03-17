@@ -5,9 +5,10 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
+from pandas.util.testing import assert_frame_equal
+from shapely.geometry import Point, Polygon
 
-from geopandas import GeoDataFrame, read_file, base
+from geopandas import GeoDataFrame, GeoSeries, read_file, base
 from geopandas.tests.util import unittest, download_nybb
 from geopandas import sjoin
 from distutils.version import LooseVersion
@@ -15,8 +16,87 @@ from distutils.version import LooseVersion
 pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
                       'not problem with sjoin.'
 
+
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoin(unittest.TestCase):
+
+    def setUp(self):
+
+        polys1 = GeoSeries(
+            [Polygon([(0, 0), (5, 0), (5, 5), (0, 5)]),
+             Polygon([(5, 5), (6, 5), (6, 6), (5, 6)]),
+             Polygon([(6, 0), (9, 0), (9, 3), (6, 3)])])
+
+        polys2 = GeoSeries(
+            [Polygon([(1, 1), (4, 1), (4, 4), (1, 4)]),
+             Polygon([(4, 4), (7, 4), (7, 7), (4, 7)]),
+             Polygon([(7, 7), (10, 7), (10, 10), (7, 10)])])
+
+        self.df1 = GeoDataFrame({'geometry': polys1, 'df1': [0, 1, 2]})
+        self.df2 = GeoDataFrame({'geometry': polys2, 'df2': [3, 4, 5]})
+
+        # construction expected frames
+        self.expected = {}
+
+        part1 = self.df1.copy().reset_index().rename(columns={'index': 'index_left'})
+        part2 = self.df2.copy().reindex([0, 1, 1, 2]).reset_index().rename(
+            columns={'index': 'index_right'})
+        part1['_merge'] = [0, 1, 2]
+        part2['_merge'] = [0, 0, 1, 3]
+        expected = pd.merge(part1, part2, on='_merge', how='outer')
+        self.expected['intersects'] = expected.drop('_merge', axis=1).copy()
+
+        part1 = self.df1.copy().reset_index().rename(columns={'index': 'index_left'})
+        part2 = self.df2.copy().reset_index().rename(columns={'index': 'index_right'})
+        part1['_merge'] = [0, 1, 2]
+        part2['_merge'] = [0, 3, 3]
+        expected = pd.merge(part1, part2, on='_merge', how='outer')
+        self.expected['contains'] = expected.drop('_merge', axis=1).copy()
+
+        part1['_merge'] = [0, 1, 2]
+        part2['_merge'] = [3, 1, 3]
+        expected = pd.merge(part1, part2, on='_merge', how='outer')
+        self.expected['within'] = expected.drop('_merge', axis=1).copy()
+
+    def test_inner(self):
+        for op in ['intersects', 'contains', 'within']:
+            res = sjoin(self.df1, self.df2, how='inner', op=op)
+            exp = self.expected[op].dropna().copy()
+            exp = exp.drop('geometry_y', axis=1).rename(columns={'geometry_x': 'geometry'})
+            exp[['index_left', 'index_right', 'df1', 'df2']] = \
+                exp[['index_left', 'index_right', 'df1', 'df2']].astype(int)
+            exp = exp.set_index('index_left')
+            exp.index.name = None
+            assert_frame_equal(res, exp)
+
+    def test_left(self):
+        for op in ['intersects', 'contains', 'within']:
+            res = sjoin(self.df1, self.df2, how='left', op=op)
+            exp = self.expected[op].dropna(subset=['index_left']).copy()
+            exp = exp.drop('geometry_y', axis=1).rename(
+                columns={'geometry_x': 'geometry'})
+            exp[['index_left', 'df1']] = \
+                exp[['index_left', 'df1']].astype(int)
+            # TODO: in result the dtype is object
+            res['index_right'] = res['index_right'].astype(float)
+            exp = exp.set_index('index_left')
+            exp.index.name = None
+            assert_frame_equal(res, exp)
+
+    def test_right(self):
+        for op in ['intersects', 'contains', 'within']:
+            res = sjoin(self.df1, self.df2, how='right', op=op)
+            exp = self.expected[op].dropna(subset=['index_right']).copy()
+            exp = exp.drop('geometry_x', axis=1).rename(
+                columns={'geometry_y': 'geometry'})
+            exp[['index_right', 'df2']] = exp[['index_right', 'df2']].astype(int)
+            res['index_left'] = res['index_left'].astype(float)
+            exp = exp.set_index('index_right')
+            assert_frame_equal(res, exp, check_like=True)
+
+
+@unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
+class TestSpatialJoinNYBB(unittest.TestCase):
 
     def setUp(self):
         nybb_filename, nybb_zip_path = download_nybb()
