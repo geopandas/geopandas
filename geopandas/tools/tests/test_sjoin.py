@@ -5,19 +5,134 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
+from pandas.util.testing import assert_frame_equal
+from shapely.geometry import Point, Polygon
 
-from geopandas import GeoDataFrame, read_file, base
+from geopandas import GeoDataFrame, GeoSeries, read_file, base
 from geopandas.tests.util import unittest, download_nybb
 from geopandas import sjoin
 from distutils.version import LooseVersion
 
-pandas_0_18_problem = 'fails under pandas < 0.19 due to pandas issue 15692,'\
+pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
                       'not problem with sjoin.'
+
+import pytest
+
+
+@pytest.fixture()
+def dfs(request):
+    polys1 = GeoSeries(
+        [Polygon([(0, 0), (5, 0), (5, 5), (0, 5)]),
+         Polygon([(5, 5), (6, 5), (6, 6), (5, 6)]),
+         Polygon([(6, 0), (9, 0), (9, 3), (6, 3)])])
+
+    polys2 = GeoSeries(
+        [Polygon([(1, 1), (4, 1), (4, 4), (1, 4)]),
+         Polygon([(4, 4), (7, 4), (7, 7), (4, 7)]),
+         Polygon([(7, 7), (10, 7), (10, 10), (7, 10)])])
+
+    df1 = GeoDataFrame({'geometry': polys1, 'df1': [0, 1, 2]})
+    df2 = GeoDataFrame({'geometry': polys2, 'df2': [3, 4, 5]})
+    if request.param == 'string-index':
+        df1.index = ['a', 'b', 'c']
+        df2.index = ['d', 'e', 'f']
+
+    # construction expected frames
+    expected = {}
+
+    part1 = df1.copy().reset_index().rename(
+        columns={'index': 'index_left'})
+    part2 = df2.copy().iloc[[0, 1, 1, 2]].reset_index().rename(
+        columns={'index': 'index_right'})
+    part1['_merge'] = [0, 1, 2]
+    part2['_merge'] = [0, 0, 1, 3]
+    exp = pd.merge(part1, part2, on='_merge', how='outer')
+    expected['intersects'] = exp.drop('_merge', axis=1).copy()
+
+    part1 = df1.copy().reset_index().rename(
+        columns={'index': 'index_left'})
+    part2 = df2.copy().reset_index().rename(
+        columns={'index': 'index_right'})
+    part1['_merge'] = [0, 1, 2]
+    part2['_merge'] = [0, 3, 3]
+    exp = pd.merge(part1, part2, on='_merge', how='outer')
+    expected['contains'] = exp.drop('_merge', axis=1).copy()
+
+    part1['_merge'] = [0, 1, 2]
+    part2['_merge'] = [3, 1, 3]
+    exp = pd.merge(part1, part2, on='_merge', how='outer')
+    expected['within'] = exp.drop('_merge', axis=1).copy()
+
+    return [request.param, df1, df2, expected]
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
-class TestSpatialJoin(unittest.TestCase):
+class TestSpatialJoinNew(object):
+
+    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+                             indirect=True)
+    @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
+    def test_inner(self, op, dfs):
+        index, df1, df2, expected = dfs
+
+        res = sjoin(df1, df2, how='inner', op=op)
+
+        exp = expected[op].dropna().copy()
+        exp = exp.drop('geometry_y', axis=1).rename(
+            columns={'geometry_x': 'geometry'})
+        exp[['df1', 'df2']] = exp[['df1', 'df2']].astype('int64')
+        if index == 'default-index':
+            exp[['index_left', 'index_right']] = \
+                exp[['index_left', 'index_right']].astype('int64')
+        exp = exp.set_index('index_left')
+        exp.index.name = None
+
+        assert_frame_equal(res, exp)
+
+    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+                             indirect=True)
+    @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
+    def test_left(self, op, dfs):
+        index, df1, df2, expected = dfs
+
+        res = sjoin(df1, df2, how='left', op=op)
+
+        exp = expected[op].dropna(subset=['index_left']).copy()
+        exp = exp.drop('geometry_y', axis=1).rename(
+            columns={'geometry_x': 'geometry'})
+        exp['df1'] = exp['df1'].astype('int64')
+        if index == 'default-index':
+            exp['index_left'] = exp['index_left'].astype('int64')
+            # TODO: in result the dtype is object
+            res['index_right'] = res['index_right'].astype(float)
+        exp = exp.set_index('index_left')
+        exp.index.name = None
+
+        assert_frame_equal(res, exp)
+
+    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+                             indirect=True)
+    @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
+    def test_right(self, op, dfs):
+        index, df1, df2, expected = dfs
+
+        res = sjoin(df1, df2, how='right', op=op)
+
+        exp = expected[op].dropna(subset=['index_right']).copy()
+        exp = exp.drop('geometry_x', axis=1).rename(
+            columns={'geometry_y': 'geometry'})
+        exp['df2'] = exp['df2'].astype('int64')
+        if index == 'default-index':
+            exp['index_right'] = exp['index_right'].astype('int64')
+            res['index_left'] = res['index_left'].astype(float)
+        exp = exp.set_index('index_right')
+        exp = exp.reindex(columns=res.columns)
+
+        assert_frame_equal(res, exp, check_index_type=False)
+
+
+@unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
+class TestSpatialJoinNYBB(unittest.TestCase):
 
     def setUp(self):
         nybb_filename, nybb_zip_path = download_nybb()
@@ -96,7 +211,7 @@ class TestSpatialJoin(unittest.TestCase):
         df = sjoin(self.polydf, self.pointdf, how='left')
         self.assertEquals(df.shape, (12,8))
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.19'), pandas_0_18_problem)
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.17'), pandas_0_16_problem)
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty
