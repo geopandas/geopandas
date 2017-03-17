@@ -93,7 +93,7 @@ class TestSpatialJoin(unittest.TestCase):
             res['index_left'] = res['index_left'].astype(float)
             exp = exp.set_index('index_right')
             exp = exp.reindex(columns=res.columns)
-            assert_frame_equal(res, exp)
+            assert_frame_equal(res, exp, check_index_type=False)
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
