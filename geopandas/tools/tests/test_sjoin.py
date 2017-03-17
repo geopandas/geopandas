@@ -16,84 +16,119 @@ from distutils.version import LooseVersion
 pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
                       'not problem with sjoin.'
 
+import pytest
+
+
+@pytest.fixture()
+def dfs(request):
+    polys1 = GeoSeries(
+        [Polygon([(0, 0), (5, 0), (5, 5), (0, 5)]),
+         Polygon([(5, 5), (6, 5), (6, 6), (5, 6)]),
+         Polygon([(6, 0), (9, 0), (9, 3), (6, 3)])])
+
+    polys2 = GeoSeries(
+        [Polygon([(1, 1), (4, 1), (4, 4), (1, 4)]),
+         Polygon([(4, 4), (7, 4), (7, 7), (4, 7)]),
+         Polygon([(7, 7), (10, 7), (10, 10), (7, 10)])])
+
+    df1 = GeoDataFrame({'geometry': polys1, 'df1': [0, 1, 2]})
+    df2 = GeoDataFrame({'geometry': polys2, 'df2': [3, 4, 5]})
+    if request.param == 'string-index':
+        df1.index = ['a', 'b', 'c']
+        df2.index = ['d', 'e', 'f']
+
+    # construction expected frames
+    expected = {}
+
+    part1 = df1.copy().reset_index().rename(
+        columns={'index': 'index_left'})
+    part2 = df2.copy().iloc[[0, 1, 1, 2]].reset_index().rename(
+        columns={'index': 'index_right'})
+    part1['_merge'] = [0, 1, 2]
+    part2['_merge'] = [0, 0, 1, 3]
+    exp = pd.merge(part1, part2, on='_merge', how='outer')
+    expected['intersects'] = exp.drop('_merge', axis=1).copy()
+
+    part1 = df1.copy().reset_index().rename(
+        columns={'index': 'index_left'})
+    part2 = df2.copy().reset_index().rename(
+        columns={'index': 'index_right'})
+    part1['_merge'] = [0, 1, 2]
+    part2['_merge'] = [0, 3, 3]
+    exp = pd.merge(part1, part2, on='_merge', how='outer')
+    expected['contains'] = exp.drop('_merge', axis=1).copy()
+
+    part1['_merge'] = [0, 1, 2]
+    part2['_merge'] = [3, 1, 3]
+    exp = pd.merge(part1, part2, on='_merge', how='outer')
+    expected['within'] = exp.drop('_merge', axis=1).copy()
+
+    return [request.param, df1, df2, expected]
+
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
-class TestSpatialJoin(unittest.TestCase):
+class TestSpatialJoinNew(object):
 
-    def setUp(self):
+    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+                             indirect=True)
+    @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
+    def test_inner(self, op, dfs):
+        index, df1, df2, expected = dfs
 
-        polys1 = GeoSeries(
-            [Polygon([(0, 0), (5, 0), (5, 5), (0, 5)]),
-             Polygon([(5, 5), (6, 5), (6, 6), (5, 6)]),
-             Polygon([(6, 0), (9, 0), (9, 3), (6, 3)])])
+        res = sjoin(df1, df2, how='inner', op=op)
 
-        polys2 = GeoSeries(
-            [Polygon([(1, 1), (4, 1), (4, 4), (1, 4)]),
-             Polygon([(4, 4), (7, 4), (7, 7), (4, 7)]),
-             Polygon([(7, 7), (10, 7), (10, 10), (7, 10)])])
+        exp = expected[op].dropna().copy()
+        exp = exp.drop('geometry_y', axis=1).rename(
+            columns={'geometry_x': 'geometry'})
+        exp[['df1', 'df2']] = exp[['df1', 'df2']].astype('int64')
+        if index == 'default-index':
+            exp[['index_left', 'index_right']] = \
+                exp[['index_left', 'index_right']].astype('int64')
+        exp = exp.set_index('index_left')
+        exp.index.name = None
 
-        self.df1 = GeoDataFrame({'geometry': polys1, 'df1': [0, 1, 2]})
-        self.df2 = GeoDataFrame({'geometry': polys2, 'df2': [3, 4, 5]})
+        assert_frame_equal(res, exp)
 
-        # construction expected frames
-        self.expected = {}
+    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+                             indirect=True)
+    @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
+    def test_left(self, op, dfs):
+        index, df1, df2, expected = dfs
 
-        part1 = self.df1.copy().reset_index().rename(columns={'index': 'index_left'})
-        part2 = self.df2.copy().reindex([0, 1, 1, 2]).reset_index().rename(
-            columns={'index': 'index_right'})
-        part1['_merge'] = [0, 1, 2]
-        part2['_merge'] = [0, 0, 1, 3]
-        expected = pd.merge(part1, part2, on='_merge', how='outer')
-        self.expected['intersects'] = expected.drop('_merge', axis=1).copy()
+        res = sjoin(df1, df2, how='left', op=op)
 
-        part1 = self.df1.copy().reset_index().rename(columns={'index': 'index_left'})
-        part2 = self.df2.copy().reset_index().rename(columns={'index': 'index_right'})
-        part1['_merge'] = [0, 1, 2]
-        part2['_merge'] = [0, 3, 3]
-        expected = pd.merge(part1, part2, on='_merge', how='outer')
-        self.expected['contains'] = expected.drop('_merge', axis=1).copy()
-
-        part1['_merge'] = [0, 1, 2]
-        part2['_merge'] = [3, 1, 3]
-        expected = pd.merge(part1, part2, on='_merge', how='outer')
-        self.expected['within'] = expected.drop('_merge', axis=1).copy()
-
-    def test_inner(self):
-        for op in ['intersects', 'contains', 'within']:
-            res = sjoin(self.df1, self.df2, how='inner', op=op)
-            exp = self.expected[op].dropna().copy()
-            exp = exp.drop('geometry_y', axis=1).rename(columns={'geometry_x': 'geometry'})
-            exp[['index_left', 'index_right', 'df1', 'df2']] = \
-                exp[['index_left', 'index_right', 'df1', 'df2']].astype('int64')
-            exp = exp.set_index('index_left')
-            exp.index.name = None
-            assert_frame_equal(res, exp)
-
-    def test_left(self):
-        for op in ['intersects', 'contains', 'within']:
-            res = sjoin(self.df1, self.df2, how='left', op=op)
-            exp = self.expected[op].dropna(subset=['index_left']).copy()
-            exp = exp.drop('geometry_y', axis=1).rename(
-                columns={'geometry_x': 'geometry'})
-            exp[['index_left', 'df1']] = \
-                exp[['index_left', 'df1']].astype('int64')
+        exp = expected[op].dropna(subset=['index_left']).copy()
+        exp = exp.drop('geometry_y', axis=1).rename(
+            columns={'geometry_x': 'geometry'})
+        exp['df1'] = exp['df1'].astype('int64')
+        if index == 'default-index':
+            exp['index_left'] = exp['index_left'].astype('int64')
             # TODO: in result the dtype is object
             res['index_right'] = res['index_right'].astype(float)
-            exp = exp.set_index('index_left')
-            exp.index.name = None
-            assert_frame_equal(res, exp)
+        exp = exp.set_index('index_left')
+        exp.index.name = None
 
-    def test_right(self):
-        for op in ['intersects', 'contains', 'within']:
-            res = sjoin(self.df1, self.df2, how='right', op=op)
-            exp = self.expected[op].dropna(subset=['index_right']).copy()
-            exp = exp.drop('geometry_x', axis=1).rename(
-                columns={'geometry_y': 'geometry'})
-            exp[['index_right', 'df2']] = exp[['index_right', 'df2']].astype('int64')
+        assert_frame_equal(res, exp)
+
+    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+                             indirect=True)
+    @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
+    def test_right(self, op, dfs):
+        index, df1, df2, expected = dfs
+
+        res = sjoin(df1, df2, how='right', op=op)
+
+        exp = expected[op].dropna(subset=['index_right']).copy()
+        exp = exp.drop('geometry_x', axis=1).rename(
+            columns={'geometry_y': 'geometry'})
+        exp['df2'] = exp['df2'].astype('int64')
+        if index == 'default-index':
+            exp['index_right'] = exp['index_right'].astype('int64')
             res['index_left'] = res['index_left'].astype(float)
-            exp = exp.set_index('index_right')
-            exp = exp.reindex(columns=res.columns)
-            assert_frame_equal(res, exp, check_index_type=False)
+        exp = exp.set_index('index_right')
+        exp = exp.reindex(columns=res.columns)
+
+        assert_frame_equal(res, exp, check_index_type=False)
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
