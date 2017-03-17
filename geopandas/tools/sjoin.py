@@ -124,7 +124,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
         # get and name the subselection
         joined_index = orig_index[joined.index.values.astype(int)]
-        joined_index.name = index_name
+        if how == 'right':
+            joined_index.name = index_name
         return joined_index
 
     if how == 'inner':
