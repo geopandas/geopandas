@@ -13,9 +13,8 @@ from geopandas.tests.util import unittest, download_nybb
 from geopandas import sjoin
 from distutils.version import LooseVersion
 
-pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
-                      'not problem with sjoin.'
-
+pandas_0_18_problem = 'fails under pandas < 0.19 due to pandas issue 15692,'\
+                        'not problem with sjoin.'
 import pytest
 
 
@@ -114,8 +113,6 @@ class TestSpatialJoinNew(object):
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_right(self, op, dfs):
-        # import pdb; pdb.set_trace()
-
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='right', op=op)
@@ -130,7 +127,6 @@ class TestSpatialJoinNew(object):
         exp = exp.set_index('index_right')
         exp = exp.reindex(columns=res.columns)
 
-        # import pdb; pdb.set_trace()
         assert_frame_equal(res, exp, check_index_type=False)
 
 
@@ -214,7 +210,7 @@ class TestSpatialJoinNYBB(unittest.TestCase):
         df = sjoin(self.polydf, self.pointdf, how='left')
         self.assertEquals(df.shape, (12,8))
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.17'), pandas_0_16_problem)
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.19'), pandas_0_18_problem)
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty
