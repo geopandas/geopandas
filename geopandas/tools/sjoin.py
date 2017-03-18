@@ -52,11 +52,19 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     index_left, index_right = left_df.index, right_df.index
 
     if how == 'right':
-        other_index = pd.Series(left_df.index)
-        other_index_name = 'index_%s' % lsuffix
+        if op == 'within':
+            other_index = pd.Series(right_df.index)
+            other_index_name = 'index_%s' % lsuffix
+        else:
+            other_index = pd.Series(left_df.index)
+            other_index_name = 'index_%s' % lsuffix
     else:  # how == 'left' or how == 'inner'
-        other_index = pd.Series(right_df.index)
-        other_index_name = 'index_%s' % rsuffix
+        if op == 'within':
+            other_index = pd.Series(left_df.index)
+            other_index_name = 'index_%s' % rsuffix
+        else:
+            other_index = pd.Series(right_df.index)
+            other_index_name = 'index_%s' % rsuffix
 
     left_df = left_df.reset_index(drop=True)
     right_df = right_df.reset_index(drop=True)
