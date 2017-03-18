@@ -184,7 +184,7 @@ class GeoPandasBase(object):
     @property
     def cascaded_union(self):
         """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(self.values)
+        return cascaded_union(self.geometry.values)
 
     @property
     def unary_union(self):
