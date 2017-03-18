@@ -66,9 +66,10 @@ def _series_unary_op(this, op, null_value=False):
 
 
 class GeoPandasBase(object):
+    _sindex = None
+    _sindex_generated = False
 
     def _generate_sindex(self):
-        self._sindex = None
         if not HAS_SINDEX:
             warn("Cannot generate spatial index: Missing package `rtree`.")
         else:
@@ -83,6 +84,7 @@ class GeoPandasBase(object):
             # and move on. See https://github.com/Toblerity/rtree/issues/20.
             except RTreeError:
                 pass
+        self._sindex_generated = True
 
     def _invalidate_sindex(self):
         """
@@ -91,7 +93,7 @@ class GeoPandasBase(object):
 
         """
         self._sindex = None
-        self._sindex_valid = False
+        self._sindex_generated = False
 
     @property
     def area(self):
@@ -268,7 +270,7 @@ class GeoPandasBase(object):
     @property
     def bounds(self):
         """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
-        bounds = np.array([geom.bounds for geom in self.geometry])
+        bounds = [geom.bounds for geom in self.geometry]
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
@@ -288,9 +290,8 @@ class GeoPandasBase(object):
 
     @property
     def sindex(self):
-        if not self._sindex_valid:
+        if not self._sindex_generated:
             self._generate_sindex()
-            self._sindex_valid = True
         return self._sindex
 
     def buffer(self, distance, resolution=16):
