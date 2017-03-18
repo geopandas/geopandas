@@ -38,10 +38,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         raise ValueError("`op` was \"%s\" but is expected to be in %s" % \
             (op, allowed_ops))
 
-    if op == "within":
-        # within implemented as the inverse of contains; swap names
-        left_df, right_df = right_df, left_df
-
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
@@ -49,25 +45,22 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
-    index_left, index_right = left_df.index, right_df.index
-
-    if how == 'right':
-        if op == 'within':
-            other_index = pd.Series(right_df.index)
-            other_index_name = 'index_%s' % lsuffix
-        else:
-            other_index = pd.Series(left_df.index)
-            other_index_name = 'index_%s' % lsuffix
+    if how == "right":
+        other_index = pd.Series(left_df.index)
+        other_index_name = 'index_%s' % lsuffix
+        join_index = right_df.index
+        join_index_name = 'index_%s' % rsuffix
     else:  # how == 'left' or how == 'inner'
-        if op == 'within':
-            other_index = pd.Series(left_df.index)
-            other_index_name = 'index_%s' % rsuffix
-        else:
-            other_index = pd.Series(right_df.index)
-            other_index_name = 'index_%s' % rsuffix
-
+        other_index = pd.Series(right_df.index)
+        other_index_name = 'index_%s' % rsuffix
+        join_index = left_df.index
+        join_index_name = 'index_%s' % lsuffix
     left_df = left_df.reset_index(drop=True)
     right_df = right_df.reset_index(drop=True)
+
+    if op == "within":
+        # within implemented as the inverse of contains; swap names
+        left_df, right_df = right_df, left_df
 
     # insert the bounds in the rtree spatial index
     right_df_bounds = right_df.geometry.apply(lambda x: x.bounds)
@@ -126,25 +119,15 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                     'index_%s' % (rsuffix): 'index_%s' % (lsuffix)})
 
     # helper method that re-affixes the joined-on index after the join
-    def select_join_index(how, op):
+    def select_join_index(join_index, join_index_name, how):
         # do nothing if the joined frame is empty
         if len(joined.index) == 0:
-            return joined
+            return joined.index
 
-        # we need to reattach the correct index. which one, left or right?
-        # right join needs right index, left needs left, inner needs left.
-        # but if op was within, we swap sides.
+        # otherwise fetch and return the indexed sub-selection
+        joined_index = join_index[joined.index.values.astype(int)]
         if how == 'right':
-            orig_index = index_left if op == 'within' else index_right
-            index_name = 'index_%s' % rsuffix
-        else:  # how == 'left' or how == 'inner'
-            orig_index = index_right if op == 'within' else index_left
-            index_name = 'index_%s' % lsuffix
-
-        # get and name the sub-selection
-        joined_index = orig_index[joined.index.values.astype(int)]
-        if how == 'right':
-            joined_index.name = index_name
+            joined_index.name = join_index_name
         return joined_index
 
     # helper method that re-affixes the non joined-on index after the join
@@ -180,6 +163,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                   .set_index('index_%s' % rsuffix)
                  )
 
-    joined.index = select_join_index(how, op)
+    joined.index = select_join_index(join_index, join_index_name, how)
     joined[other_index_name] = select_other_index(other_index, other_index_name)
     return joined
