@@ -45,9 +45,19 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
-    # reset the index because rtree allows limited index types, add back later
+    # the rtree spatial index only allows limited (integer) index types, but an
+    # index in geopandas may be any arbitrary dtype. so reset both indices now
+    # and store references to the original indices, to be reaffixed later.
     # GH 352
     index_left, index_right = left_df.index, right_df.index
+
+    if how == 'right':
+        other_index = pd.Series(left_df.index)
+        other_index_name = 'index_%s' % lsuffix
+    else:  # how == 'left' or how == 'inner'
+        other_index = pd.Series(right_df.index)
+        other_index_name = 'index_%s' % rsuffix
+
     left_df = left_df.reset_index(drop=True)
     right_df = right_df.reset_index(drop=True)
 
@@ -107,10 +117,11 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                     'index_%s' % (lsuffix): 'index_%s' % (rsuffix),
                     'index_%s' % (rsuffix): 'index_%s' % (lsuffix)})
 
-    def select_join_index():
+    # helper method that re-affixes the joined-on index after the join
+    def select_join_index(how, op):
         # do nothing if the joined frame is empty
         if len(joined.index) == 0:
-            return []
+            return joined
 
         # we need to reattach the correct index. which one, left or right?
         # right join needs right index, left needs left, inner needs left.
@@ -122,11 +133,15 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
             orig_index = index_right if op == 'within' else index_left
             index_name = 'index_%s' % lsuffix
 
-        # get and name the subselection
+        # get and name the sub-selection
         joined_index = orig_index[joined.index.values.astype(int)]
         if how == 'right':
             joined_index.name = index_name
         return joined_index
+
+    # helper method that re-affixes the non joined-on index after the join
+    def select_other_index(other_index, other_index_name):
+        return other_index[joined[other_index_name]].values
 
     if how == 'inner':
         result = result.set_index('index_%s' % lsuffix)
@@ -137,8 +152,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       left_on='index_%s' % rsuffix, right_index=True,
                       suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                  )
-        joined.index = select_join_index()
-        return joined
     elif how == 'left':
         result = result.set_index('index_%s' % lsuffix)
         joined = (
@@ -148,9 +161,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       how='left', left_on='index_%s' % rsuffix, right_index=True,
                       suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                  )
-        joined.index = select_join_index()
-        return joined
-    elif how == 'right':
+    else:  # how == 'right':
         joined = (
                   left_df
                   .drop(left_df.geometry.name, axis=1)
@@ -160,5 +171,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                       right_on='index_%s' % lsuffix, how='right')
                   .set_index('index_%s' % rsuffix)
                  )
-        joined.index = select_join_index()
-        return joined
+
+    joined.index = select_join_index(how, op)
+    joined[other_index_name] = select_other_index(other_index, other_index_name)
+    return joined

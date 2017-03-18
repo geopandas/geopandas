@@ -69,7 +69,7 @@ def dfs(request):
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoinNew(object):
 
-    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_inner(self, op, dfs):
@@ -89,7 +89,7 @@ class TestSpatialJoinNew(object):
 
         assert_frame_equal(res, exp)
 
-    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_left(self, op, dfs):
@@ -110,10 +110,12 @@ class TestSpatialJoinNew(object):
 
         assert_frame_equal(res, exp)
 
-    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_right(self, op, dfs):
+        # import pdb; pdb.set_trace()
+
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='right', op=op)
@@ -128,6 +130,7 @@ class TestSpatialJoinNew(object):
         exp = exp.set_index('index_right')
         exp = exp.reindex(columns=res.columns)
 
+        # import pdb; pdb.set_trace()
         assert_frame_equal(res, exp, check_index_type=False)
 
 
