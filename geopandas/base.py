@@ -270,7 +270,7 @@ class GeoPandasBase(object):
     @property
     def bounds(self):
         """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
-        bounds = [geom.bounds for geom in self.geometry]
+        bounds = np.array([geom.bounds for geom in self.geometry])
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
