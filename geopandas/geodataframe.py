@@ -286,12 +286,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
-        for i, row in self.iterrows():
+        for name, row in self.iterrows():
             properties = f(row)
             del properties[self._geometry_column_name]
 
             feature = {
-                'id': str(i),
+                'id': str(name),
                 'type': 'Feature',
                 'properties': properties,
                 'geometry': mapping(row[self._geometry_column_name])
@@ -486,7 +486,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name)
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 

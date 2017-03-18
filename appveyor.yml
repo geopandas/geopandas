@@ -1,0 +1,45 @@
+# With infos from
+# http://tjelvarolsson.com/blog/how-to-continuously-test-your-python-code-on-windows-using-appveyor/
+# https://packaging.python.org/en/latest/appveyor/
+# https://github.com/rmcgibbo/python-appveyor-conda-example
+
+
+matrix:
+  fast_finish: true     # immediately finish build once one of the jobs fails.
+
+environment:
+  matrix:
+    - PYTHON_VERSION: "2.7"
+      MINICONDA: C:\Miniconda-x64
+
+    - PYTHON_VERSION: "3.5"
+      MINICONDA: C:\Miniconda35-x64
+
+# all our python builds have to happen in tests_script...
+build: false
+
+init:
+  - "ECHO %PYTHON_VERSION% %MINICONDA%"
+
+install:
+  # cancel older builds for the same PR
+  - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
+        https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
+        Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
+        throw "There are newer queued builds for this pull request, failing early." }
+
+  # set up environment
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - conda config --set always_yes yes --set show_channel_urls true --set changeps1 no
+  - conda update -q conda
+  - conda config --add channels conda-forge
+  - conda info -a
+  - "conda create -q -n test-environment python=%PYTHON_VERSION%"
+  - activate test-environment
+  - conda install pandas shapely fiona pyproj rtree matplotlib==1.5.3 descartes
+  - conda install pytest mock
+
+test_script:
+  - activate test-environment
+  - conda list
+  - pytest geopandas -v
