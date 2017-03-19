@@ -41,22 +41,25 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
-    # the rtree spatial index only allows limited (integer) index types, but an
+    # the rtree spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
-    if how == "right":
-        other_index = pd.Series(left_df.index)
-        other_index_name = 'index_%s' % lsuffix
-        join_index = right_df.index
-        join_index_name = 'index_%s' % rsuffix
-    else:  # how == 'left' or how == 'inner'
-        other_index = pd.Series(right_df.index)
-        other_index_name = 'index_%s' % rsuffix
-        join_index = left_df.index
-        join_index_name = 'index_%s' % lsuffix
-    left_df = left_df.reset_index(drop=True)
-    right_df = right_df.reset_index(drop=True)
+    non_numeric_index = (left_df.index.dtype == np.dtype('O') or
+                         right_df.index.dtype == np.dtype('O'))
+    if non_numeric_index:
+        if how == "right":
+            other_index = pd.Series(left_df.index)
+            other_index_name = 'index_%s' % lsuffix
+            join_index = right_df.index
+            join_index_name = 'index_%s' % rsuffix
+        else:  # how == 'left' or how == 'inner'
+            other_index = pd.Series(right_df.index)
+            other_index_name = 'index_%s' % rsuffix
+            join_index = left_df.index
+            join_index_name = 'index_%s' % lsuffix
+        left_df = left_df.reset_index(drop=True)
+        right_df = right_df.reset_index(drop=True)
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
@@ -163,6 +166,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                   .set_index('index_%s' % rsuffix)
                  )
 
-    joined.index = select_join_index(join_index, join_index_name, how)
-    joined[other_index_name] = select_other_index(other_index, other_index_name)
+    if non_numeric_index:
+        joined.index = select_join_index(join_index, join_index_name, how)
+        joined[other_index_name] = select_other_index(other_index, other_index_name)
+
     return joined
