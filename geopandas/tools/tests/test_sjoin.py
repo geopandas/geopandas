@@ -204,7 +204,6 @@ class TestSpatialJoinNYBB(unittest.TestCase):
 
     def test_sjoin_values(self):
         # GH190
-        import pdb; pdb.set_trace()
         self.polydf.index = [1, 3, 4, 5, 6]
         df = sjoin(self.pointdf, self.polydf, how='left')
         self.assertEquals(df.shape, (21,8))
@@ -212,6 +211,7 @@ class TestSpatialJoinNYBB(unittest.TestCase):
         self.assertEquals(df.shape, (12,8))
 
     @unittest.skipIf(str(pd.__version__) < LooseVersion('0.19'), pandas_0_18_problem)
+    @pytest.mark.xfail
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty

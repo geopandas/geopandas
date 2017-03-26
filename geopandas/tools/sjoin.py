@@ -45,21 +45,10 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
-    non_numeric_index = (left_df.index.dtype == np.dtype('O') or
-                         right_df.index.dtype == np.dtype('O'))
-    if non_numeric_index:
-        if how == "right":
-            other_index = pd.Series(left_df.index)
-            other_index_name = 'index_%s' % lsuffix
-            join_index = right_df.index
-            join_index_name = 'index_%s' % rsuffix
-        else:  # how == 'left' or how == 'inner'
-            other_index = pd.Series(right_df.index)
-            other_index_name = 'index_%s' % rsuffix
-            join_index = left_df.index
-            join_index_name = 'index_%s' % lsuffix
-        left_df = left_df.reset_index(drop=True)
-        right_df = right_df.reset_index(drop=True)
+    left_df.index.name = 'index_%s' % lsuffix
+    right_df.index.name = 'index_%s' % rsuffix
+    left_df = left_df.reset_index()
+    right_df = right_df.reset_index()
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
@@ -104,7 +93,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                            ]))
                    )
 
-        result.columns = ['index_%s' % lsuffix, 'index_%s' % rsuffix, 'match_bool']
+        result.columns = ['_key_%s' % lsuffix, '_key_%s' % rsuffix, 'match_bool']
         result = (
                   pd.DataFrame(result[result['match_bool']==1])
                   .drop('match_bool', axis=1)
@@ -112,62 +101,48 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
     else:
         # when output from the join has no overlapping geometries
-        result = pd.DataFrame(columns=['index_%s' % lsuffix, 'index_%s' % rsuffix])
+        result = pd.DataFrame(columns=['_key_%s' % lsuffix, '_key_%s' % rsuffix])
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
         left_df, right_df = right_df, left_df
         result = result.rename(columns={
-                    'index_%s' % (lsuffix): 'index_%s' % (rsuffix),
-                    'index_%s' % (rsuffix): 'index_%s' % (lsuffix)})
+                    '_key_%s' % (lsuffix): '_key_%s' % (rsuffix),
+                    '_key_%s' % (rsuffix): '_key_%s' % (lsuffix)})
 
-    # helper method that re-affixes the joined-on index after the join
-    def select_join_index(join_index, join_index_name, how):
-        # do nothing if the joined frame is empty
-        if len(joined.index) == 0:
-            return joined.index
-
-        # otherwise fetch and return the indexed sub-selection
-        joined_index = join_index[joined.index.values.astype(int)]
-        if how == 'right':
-            joined_index.name = join_index_name
-        return joined_index
-
-    # helper method that re-affixes the non joined-on index after the join
-    def select_other_index(other_index, other_index_name):
-        return other_index[joined[other_index_name]].values
 
     if how == 'inner':
-        result = result.set_index('index_%s' % lsuffix)
+        result = result.set_index('_key_%s' % lsuffix)
         joined = (
                   left_df
                   .merge(result, left_index=True, right_index=True)
                   .merge(right_df.drop(right_df.geometry.name, axis=1),
-                      left_on='index_%s' % rsuffix, right_index=True,
+                      left_on='_key_%s' % rsuffix, right_index=True,
                       suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                  )
+        joined = joined.set_index('index_left').drop(['_key_right'], axis=1)
+        joined.index.name = None
     elif how == 'left':
-        result = result.set_index('index_%s' % lsuffix)
+        result = result.set_index('_key_%s' % lsuffix)
         joined = (
                   left_df
                   .merge(result, left_index=True, right_index=True, how='left')
                   .merge(right_df.drop(right_df.geometry.name, axis=1),
-                      how='left', left_on='index_%s' % rsuffix, right_index=True,
+                      how='left', left_on='_key_%s' % rsuffix, right_index=True,
                       suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
                  )
+        joined = joined.set_index('index_left').drop(['_key_right'], axis=1)
+        joined.index.name = None
     else:  # how == 'right':
         joined = (
                   left_df
                   .drop(left_df.geometry.name, axis=1)
                   .merge(result.merge(right_df,
-                      left_on='index_%s' % rsuffix, right_index=True,
+                      left_on='_key_%s' % rsuffix, right_index=True,
                       how='right'), left_index=True,
-                      right_on='index_%s' % lsuffix, how='right')
+                      right_on='_key_%s' % lsuffix, how='right')
                   .set_index('index_%s' % rsuffix)
                  )
-
-    if non_numeric_index:
-        joined.index = select_join_index(join_index, join_index_name, how)
-        joined[other_index_name] = select_other_index(other_index, other_index_name)
+        joined = joined.drop(['_key_%s' % lsuffix, '_key_%s' % rsuffix], axis=1)
 
     return joined
