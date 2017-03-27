@@ -41,6 +41,12 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if left_df.crs != right_df.crs:
         print('Warning: CRS does not match!')
 
+    # due to GH 352
+    if (any(left_df.columns.isin(['left_index', 'right_index'])) or
+        any(right_df.columns.isin(['left_index', 'right_index']))):
+        raise ValueError("'left_index' and 'right_index' cannot be names in "
+                         "the frames being joined")
+
     # the rtree spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
