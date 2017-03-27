@@ -42,8 +42,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         print('Warning: CRS does not match!')
 
     # due to GH 352
-    if (any(left_df.columns.isin(['left_index', 'right_index'])) or
-        any(right_df.columns.isin(['left_index', 'right_index']))):
+    if (any(left_df.columns.isin(['index_left', 'index_right'])) or
+        any(right_df.columns.isin(['index_left', 'index_right']))):
         raise ValueError("'left_index' and 'right_index' cannot be names in "
                          "the frames being joined")
 
