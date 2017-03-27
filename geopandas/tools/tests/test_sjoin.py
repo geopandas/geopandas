@@ -129,20 +129,6 @@ class TestSpatialJoinNew(object):
 
         assert_frame_equal(res, exp, check_index_type=False)
 
-    @unittest.skip("Not implemented")
-    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
-                             indirect=True)
-    def test_index_column_name_collision(self, dfs):
-        # as an implementation detail sjoin stores the index before the join
-        # and then restores it after, so an edge case occurs when index_left
-        # or index_right is already a name in the frame. this tests that case
-        index, df1, df2, expected = dfs
-        df1.columns = ['index_left', 'geometry']
-        df2.columns = ['index_right', 'geometry']
-
-        res = sjoin(df1, df2, how='right')
-        # TODO: test frame equality
-
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoinNYBB(unittest.TestCase):
