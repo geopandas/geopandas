@@ -66,7 +66,7 @@ def dfs(request):
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
-class TestSpatialJoinNew(object):
+class TestSpatialJoin(object):
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
