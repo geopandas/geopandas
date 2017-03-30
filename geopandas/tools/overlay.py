@@ -197,8 +197,9 @@ def overlay(df1, df2, how='intersection', reproject=True):
     how : string
         Method of spatial overlay: 'intersection', 'union',
         'identity', 'symmetric_difference' or 'difference'.
-    use_sindex : boolean, default True
-        Use the spatial index to speed up operation if available.
+    reproject : boolean, default True
+        If GeoDataFrames do not have same projection, reproject
+        df2 to same projection of df1 before performing overlay
 
     Returns
     -------
