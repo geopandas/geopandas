@@ -34,16 +34,16 @@ class TestDataFrame(unittest.TestCase):
         ident_qgis = ident_qgis[ident_qgis.is_valid]
         ident_qgis.reset_index(inplace=True, drop=True)
         # Order GeoDataFrames
-        cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
-        union_qgis.sort_values(cols, inplace=True)
+        self.cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
+        union_qgis.sort_values(self.cols, inplace=True)
         union_qgis.reset_index(inplace=True, drop=True)
-        symdiff_qgis.sort_values(cols, inplace=True)
+        symdiff_qgis.sort_values(self.cols, inplace=True)
         symdiff_qgis.reset_index(inplace=True, drop=True)
-        intersect_qgis.sort_values(cols, inplace=True)
+        intersect_qgis.sort_values(self.cols, inplace=True)
         intersect_qgis.reset_index(inplace=True, drop=True)
-        ident_qgis.sort_values(cols, inplace=True)
+        ident_qgis.sort_values(self.cols, inplace=True)
         ident_qgis.reset_index(inplace=True, drop=True)
-        diff_qgis.sort_values(cols[:-2], inplace=True)
+        diff_qgis.sort_values(self.cols[:-2], inplace=True)
         diff_qgis.reset_index(inplace=True, drop=True)
 
         # Create original data again
@@ -81,7 +81,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_intersection(self):
         df = overlay(self.polydf, self.polydf2, how="intersection")
-        df.sort_values(cols, inplace=True)
+        df.sort_values(self.cols, inplace=True)
         df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, intersect_qgis.shape)
@@ -91,7 +91,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_identity(self):
         df = overlay(self.polydf, self.polydf2, how="identity")
-        df.sort_values(cols, inplace=True)
+        df.sort_values(self.cols, inplace=True)
         df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, identity_qgis.shape)
@@ -101,7 +101,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_symmetric_difference(self):
         df = overlay(self.polydf, self.polydf2, how="symmetric_difference")
-        df.sort_values(cols, inplace=True)
+        df.sort_values(self.cols, inplace=True)
         df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, symdiff_qgis.shape)
@@ -111,7 +111,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_difference(self):
         df = overlay(self.polydf, self.polydf2, how="difference")
-        df.sort_values(cols[:-2], inplace=True)
+        df.sort_values(self.cols[:-2], inplace=True)
         df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, diff_qgis.shape)
