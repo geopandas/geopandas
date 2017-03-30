@@ -24,11 +24,11 @@ class TestDataFrame(unittest.TestCase):
         self.polydf2 = GeoDataFrame([
             {'geometry' : Point(x, y).buffer(10000), 'value1': x + y, 'value2': x - y}
             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                            range(b[1], b[3], int((b[3]-b[1])/N)))], crs=self.crs)
+                            range(b[1], b[3], int((b[3]-b[1])/N)))], crs=self.polydf.crs)
         self.pointdf = GeoDataFrame([
             {'geometry' : Point(x, y), 'value1': x + y, 'value2': x - y}
             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                            range(b[1], b[3], int((b[3]-b[1])/N)))], crs=self.crs)
+                            range(b[1], b[3], int((b[3]-b[1])/N)))], crs=self.polydf.crs)
 
         # TODO this appears to be necessary;
         # why is the sindex not generated automatically?

@@ -225,23 +225,26 @@ def overlay(df1, df2, how='intersection', reproject=True):
         for i,j in pairs.items():
             for k in j:
                 nei.append([i,k])
-        pairs = GeoDataFrame(nei, columns=['idx1','idx2'], crs=df1.crs)
-        pairs = pairs.merge(df1, left_on='idx1', right_index=True)
-        pairs = pairs.merge(df2, left_on='idx2', right_index=True, suffixes=['_1','_2'])
-        pairs['Intersection'] = pairs.apply(lambda x: (x['geometry_1'].intersection(x['geometry_2'])).buffer(0), axis=1)
-        pairs = GeoDataFrame(pairs, columns=pairs.columns, crs=df1.crs)
-        cols = pairs.columns.tolist()
-        cols.remove('geometry_1')
-        cols.remove('geometry_2')
-        cols.remove('sidx')
-        cols.remove('bbox')
-        cols.remove('Intersection')
-        dfinter = pairs[cols+['Intersection']].copy()
-        dfinter.rename(columns={'Intersection':'geometry'}, inplace=True)
-        dfinter = GeoDataFrame(dfinter, columns=dfinter.columns, crs=pairs.crs)
-        dfinter = dfinter.loc[dfinter.geometry.is_empty==False]
-        dfinter.drop(['idx1','idx2'], inplace=True, axis=1)
-        return dfinter
+        if nei!=[]:
+            pairs = GeoDataFrame(nei, columns=['idx1','idx2'], crs=df1.crs)
+            pairs = pairs.merge(df1, left_on='idx1', right_index=True)
+            pairs = pairs.merge(df2, left_on='idx2', right_index=True, suffixes=['_1','_2'])
+            pairs['Intersection'] = pairs.apply(lambda x: (x['geometry_1'].intersection(x['geometry_2'])).buffer(0), axis=1)
+            pairs = GeoDataFrame(pairs, columns=pairs.columns, crs=df1.crs)
+            cols = pairs.columns.tolist()
+            cols.remove('geometry_1')
+            cols.remove('geometry_2')
+            cols.remove('sidx')
+            cols.remove('bbox')
+            cols.remove('Intersection')
+            dfinter = pairs[cols+['Intersection']].copy()
+            dfinter.rename(columns={'Intersection':'geometry'}, inplace=True)
+            dfinter = GeoDataFrame(dfinter, columns=dfinter.columns, crs=pairs.crs)
+            dfinter = dfinter.loc[dfinter.geometry.is_empty==False]
+            dfinter.drop(['idx1','idx2'], inplace=True, axis=1)
+            return dfinter
+        else:
+            return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
     elif how=='difference':
         spatial_index = df2.sindex
         df1['bbox'] = df1.geometry.apply(lambda x: x.bounds)
