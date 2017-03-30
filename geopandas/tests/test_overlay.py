@@ -20,6 +20,32 @@ class TestDataFrame(unittest.TestCase):
         symdiff_qgis = read_file(qgispath+'symdiff_qgis.shp')
         intersect_qgis = read_file(qgispath+'intersect_qgis.shp')
         ident_qgis = union_qgis[union_qgis.BoroCode.isnull()==False].copy()
+        df1 = read_file(qgispath+'polydf.shp')
+        df2 = read_file(qgispath+'polydf2.shp')
+        # Eliminate observations without geometries (issue from QGIS)
+        union_qgis = union_qgis[union_qgis.is_valid]
+        union_qgis.reset_index(inplace=True, drop=True)
+        diff_qgis = diff_qgis[diff_qgis.is_valid]
+        diff_qgis.reset_index(inplace=True, drop=True)
+        symdiff_qgis = symdiff_qgis[symdiff_qgis.is_valid]
+        symdiff_qgis.reset_index(inplace=True, drop=True)
+        intersect_qgis = intersect_qgis[intersect_qgis.is_valid]
+        intersect_qgis.reset_index(inplace=True, drop=True)
+        ident_qgis = ident_qgis[ident_qgis.is_valid]
+        ident_qgis.reset_index(inplace=True, drop=True)
+        # Order GeoDataFrames
+        cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
+        union_qgis.sort_values(cols, inplace=True)
+        union_qgis.reset_index(inplace=True, drop=True)
+        symdiff_qgis.sort_values(cols, inplace=True)
+        symdiff_qgis.reset_index(inplace=True, drop=True)
+        intersect_qgis.sort_values(cols, inplace=True)
+        intersect_qgis.reset_index(inplace=True, drop=True)
+        ident_qgis.sort_values(cols, inplace=True)
+        ident_qgis.reset_index(inplace=True, drop=True)
+        diff_qgis.sort_values(cols[:-2], inplace=True)
+        diff_qgis.reset_index(inplace=True, drop=True)
+
         # Create original data again
         N = 10
         nybb_filename, nybb_zip_path = download_nybb()
@@ -50,40 +76,48 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, union_qgis.shape)
         self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertEquals(df.area, union_qgis.area)
-        self.assertEquals(df.boundary.length, union_qgis.boundary.length)
+        self.assertTrue((df.area/union_qgis.area).mean()==1)
+        self.assertTrue((df.boundary.length/union_qgis.boundary.length).mean()==1)
 
     def test_intersection(self):
         df = overlay(self.polydf, self.polydf2, how="intersection")
+        df.sort_values(cols, inplace=True)
+        df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, intersect_qgis.shape)
         self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertEquals(df.area, intersect_qgis.area)
-        self.assertEquals(df.boundary.length, intersect_qgis.boundary.length)
+        self.assertTrue((df.area/intersect_qgis.area).mean()==1)
+        self.assertTrue((df.boundary.length/intersect_qgis.boundary.length).mean()==1)
 
     def test_identity(self):
         df = overlay(self.polydf, self.polydf2, how="identity")
+        df.sort_values(cols, inplace=True)
+        df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, identity_qgis.shape)
         self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertEquals(df.area, identity_qgis.area)
-        self.assertEquals(df.boundary.length, identity_qgis.boundary.length)
+        self.assertTrue((df.area/identity_qgis.area).mean()==1)
+        self.assertTrue((df.boundary.length/identity_qgis.boundary.length).mean()==1)
 
     def test_symmetric_difference(self):
         df = overlay(self.polydf, self.polydf2, how="symmetric_difference")
+        df.sort_values(cols, inplace=True)
+        df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, symdiff_qgis.shape)
         self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertEquals(df.area, symdiff_qgis.area)
-        self.assertEquals(df.boundary.length, symdiff_qgis.boundary.length)
+        self.assertTrue((df.area/symdiff_qgis.area).mean()==1)
+        self.assertTrue((df.boundary.length/symdiff_qgis.boundary.length).mean()==1)
 
     def test_difference(self):
         df = overlay(self.polydf, self.polydf2, how="difference")
+        df.sort_values(cols[:-2], inplace=True)
+        df.reset_index(inplace=True, drop=True)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEquals(df.shape, diff_qgis.shape)
-        self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertEquals(df.area, diff_qgis.area)
-        self.assertEquals(df.boundary.length, diff_qgis.boundary.length)
+        self.assertTrue('value1' not in df.columns and 'Shape_Area' in df.columns)
+        self.assertTrue((df.area/diff_qgis.area).mean()==1)
+        self.assertTrue((df.boundary.length/diff_qgis.boundary.length).mean()==1)
 
     def test_bad_how(self):
         self.assertRaises(ValueError,

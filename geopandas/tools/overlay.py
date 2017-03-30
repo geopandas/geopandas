@@ -243,6 +243,7 @@ def overlay(df1, df2, how='intersection', reproject=True):
             dfinter = GeoDataFrame(dfinter, columns=dfinter.columns, crs=pairs.crs)
             dfinter = dfinter.loc[dfinter.geometry.is_empty==False]
             dfinter.drop(['idx1','idx2'], inplace=True, axis=1)
+            dfinter.reset_index(inplace=True, drop=True)
             return dfinter
         else:
             return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
@@ -255,6 +256,7 @@ def overlay(df1, df2, how='intersection', reproject=True):
         df1.geometry = df1.new_g
         df1 = df1.loc[df1.geometry.is_empty==False].copy()
         df1.drop(['bbox', 'sidx', 'new_g'], axis=1, inplace=True)
+        df1.reset_index(inplace=True, drop=True)
         return df1
     elif how=='symmetric_difference':
         df1['idx1'] = df1.index.tolist()
@@ -276,6 +278,7 @@ def overlay(df1, df2, how='intersection', reproject=True):
         dfsym.geometry = dfsym.new_g
         dfsym = dfsym.loc[dfsym.geometry.is_empty==False].copy()
         dfsym.drop(['bbox', 'sidx', 'idx', 'idx1','idx2', 'new_g'], axis=1, inplace=True)
+        dfsym.reset_index(inplace=True, drop=True)
         return dfsym
     elif how=='union':
         dfinter = overlay(df1, df2, how='intersection')
@@ -293,4 +296,5 @@ def overlay(df1, df2, how='intersection', reproject=True):
         cols1 = list(set(cols1).difference(set(cols2)))
         cols2 = [col+'_1' for col in cols2]
         dfunion = dfunion[(dfunion[cols1+cols2].isnull()==False).values]
+        dfunion.reset_index(inplace=True, drop=True)
         return dfunion
