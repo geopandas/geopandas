@@ -109,8 +109,10 @@ class TestDataFrame(unittest.TestCase):
                           overlay, self.polydf, self.polydf, how="spandex")
 
     def test_nonpoly(self):
+        df2c = df2.copy()
+        df2c.geometry = df2c.geometry.centroid
         self.assertRaises(TypeError,
-                          overlay, self.polydf.centroid, self.polydf, how="union")
+                          overlay, self.polydf, df2c, how="union")
 
     def test_duplicate_column_name(self):
         polydf2r = self.polydf2.rename(columns={'df2': 'df1'})

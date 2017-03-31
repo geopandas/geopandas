@@ -208,6 +208,7 @@ def overlay(df1, df2, how='intersection', reproject=True):
         resulting from the overlay
 
     """
+    # Allowed operations
     allowed_hows = [
         'intersection',
         'union',
@@ -215,7 +216,7 @@ def overlay(df1, df2, how='intersection', reproject=True):
         'symmetric_difference',
         'difference',  # aka erase
     ]
-
+    # Error Messages
     if how not in allowed_hows:
         raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
             (how, allowed_hows))
@@ -223,6 +224,11 @@ def overlay(df1, df2, how='intersection', reproject=True):
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
 
+    if (df1.geom_type.apply(lambda x: x in ['Polygon', 'MultiPolygon']).sum()!=len(df1.index) or 
+        df2.geom_type.apply(lambda x: x in ['Polygon', 'MultiPolygon']).sum()!=len(df2.index)):
+        raise TypeError("overlay only takes GeoDataFrames with (multi)polygon geometries") 
+
+    # Computations
     df1 = df1.copy()
     df2 = df2.copy()
     df1['geometry'] = df1.geometry.buffer(0)
