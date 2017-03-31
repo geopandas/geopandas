@@ -208,6 +208,21 @@ def overlay(df1, df2, how='intersection', reproject=True):
         resulting from the overlay
 
     """
+    allowed_hows = [
+        'intersection',
+        'union',
+        'identity',
+        'symmetric_difference',
+        'difference',  # aka erase
+    ]
+
+    if how not in allowed_hows:
+        raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
+            (how, allowed_hows))
+
+    if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
+        raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
+
     df1 = df1.copy()
     df2 = df2.copy()
     df1['geometry'] = df1.geometry.buffer(0)
