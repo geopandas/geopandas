@@ -129,6 +129,18 @@ class TestPointPlotting(unittest.TestCase):
         ### last point == top of colorbar
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
+    def test_float_cast_legend(self):
+        values = np.arange(self.N, dtype=np.object)
+        self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+        ax = self.df.plot(column='values', scheme='QUANTILES', k=5, legend=True)
+        assert len(ax.legend_.legendHandles) == 5
+
+    def test_ignore_scheme_categorical_legend(self):
+        values = np.array([chr(i) for i in range(self.N)])
+        self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+        ax = self.df.plot(column='values', scheme='QUANTILES', k=5, legend=True, cmap='RdYlGn')
+        assert len(ax.legend_.legendHandles) == 10
+
 
 class TestPointZPlotting(unittest.TestCase):
 
