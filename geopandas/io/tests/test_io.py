@@ -16,6 +16,16 @@ class TestIO(unittest.TestCase):
             self.crs = f.crs
             self.columns = list(f.meta["schema"]["properties"].keys())
 
+    def test_to_postgis(self):
+        import sqlalchemy
+        engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
+        try:
+            engine.connect()
+        except sqlalchemy.exc.OperationalError:
+            raise unittest.case.SkipTest()
+
+        self.df.to_postgis("nybb_write", engine, if_exists="replace")
+
     def test_read_postgis_default(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):
@@ -25,9 +35,6 @@ class TestIO(unittest.TestCase):
             sql = "SELECT * FROM nybb;"
             df = read_postgis(sql, con)
         finally:
-            if PANDAS_NEW_SQL_API:
-                # It's not really a connection, it's an engine
-                con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
@@ -44,9 +51,6 @@ class TestIO(unittest.TestCase):
                      FROM nybb;"""
             df = read_postgis(sql, con, geom_col='__geometry__')
         finally:
-            if PANDAS_NEW_SQL_API:
-                # It's not really a connection, it's an engine
-                con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
@@ -68,5 +72,3 @@ class TestIO(unittest.TestCase):
         filtered_df_shape = filtered_df.shape
         assert(full_df_shape != filtered_df_shape)
         assert(filtered_df_shape == (2, 5))
-
-

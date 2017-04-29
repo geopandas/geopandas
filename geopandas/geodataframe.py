@@ -214,6 +214,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
+    def to_postgis(self, table_name, con, **kwargs):
+        """
+        Writes the geodataframe to a postgis database
+
+        Wraps geopandas.to_postgis(). For additional help, see to_postgis()
+        """
+
+        return geopandas.io.sql.to_postgis(self, table_name, con, **kwargs)
+
+
     def to_json(self, na='null', show_bbox=False, **kwargs):
         """
         Returns a GeoJSON string representation of the GeoDataFrame.

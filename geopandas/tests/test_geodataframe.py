@@ -328,7 +328,7 @@ class TestDataFrame(unittest.TestCase):
         """
         Ensure that the file is written according to the schema
         if it is specified
-        
+
         """
         try:
             from collections import OrderedDict
@@ -425,9 +425,9 @@ class TestDataFrame(unittest.TestCase):
             sql = "SELECT * FROM nybb;"
             df = GeoDataFrame.from_postgis(sql, con)
         finally:
-            if PANDAS_NEW_SQL_API:
-                # It's not really a connection, it's an engine
-                con = con.connect()
+            #if PANDAS_NEW_SQL_API:
+            #    # It's not really a connection, it's an engine
+            #    con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
@@ -444,9 +444,9 @@ class TestDataFrame(unittest.TestCase):
                      FROM nybb;"""
             df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
         finally:
-            if PANDAS_NEW_SQL_API:
-                # It's not really a connection, it's an engine
-                con = con.connect()
+            #if PANDAS_NEW_SQL_API:
+            #    # It's not really a connection, it's an engine
+            #    con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
