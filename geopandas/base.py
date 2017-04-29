@@ -66,9 +66,10 @@ def _series_unary_op(this, op, null_value=False):
 
 
 class GeoPandasBase(object):
+    _sindex = None
+    _sindex_generated = False
 
     def _generate_sindex(self):
-        self._sindex = None
         if not HAS_SINDEX:
             warn("Cannot generate spatial index: Missing package `rtree`.")
         else:
@@ -83,6 +84,7 @@ class GeoPandasBase(object):
             # and move on. See https://github.com/Toblerity/rtree/issues/20.
             except RTreeError:
                 pass
+        self._sindex_generated = True
 
     def _invalidate_sindex(self):
         """
@@ -91,7 +93,7 @@ class GeoPandasBase(object):
 
         """
         self._sindex = None
-        self._sindex_valid = False
+        self._sindex_generated = False
 
     @property
     def area(self):
@@ -184,7 +186,7 @@ class GeoPandasBase(object):
     @property
     def cascaded_union(self):
         """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(self.values)
+        return cascaded_union(self.geometry.values)
 
     @property
     def unary_union(self):
@@ -288,9 +290,8 @@ class GeoPandasBase(object):
 
     @property
     def sindex(self):
-        if not self._sindex_valid:
+        if not self._sindex_generated:
             self._generate_sindex()
-            self._sindex_valid = True
         return self._sindex
 
     def buffer(self, distance, resolution=16):

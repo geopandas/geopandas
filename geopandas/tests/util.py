@@ -1,24 +1,16 @@
 import io
 import os.path
 import sys
+import unittest
 import zipfile
 
 from six.moves.urllib.request import urlopen
-from pandas.util.testing import assert_isinstance
 
 from geopandas import GeoDataFrame, GeoSeries
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
 
-# Compatibility layer for Python 2.6: try loading unittest2
-if sys.version_info[:2] == (2, 6):
-    try:
-        import unittest2 as unittest
-    except ImportError:
-        import unittest
-else:
-    import unittest
 
 try:
     import psycopg2
@@ -195,7 +187,7 @@ def assert_geoseries_equal(left, right, check_dtype=False,
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
     if check_index_type:
-        assert_isinstance(left.index, type(right.index))
+        assert isinstance(left.index, type(right.index))
 
     if check_dtype:
         assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype,
@@ -203,7 +195,7 @@ def assert_geoseries_equal(left, right, check_dtype=False,
 
     if check_series_type:
         assert isinstance(left, GeoSeries)
-        assert_isinstance(left, type(right))
+        assert isinstance(left, type(right))
 
         if check_crs:
             assert(left.crs == right.crs)

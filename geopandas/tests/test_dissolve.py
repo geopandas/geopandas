@@ -8,11 +8,8 @@ from geopandas.tools import overlay
 from .util import unittest, download_nybb
 from pandas.util.testing import assert_frame_equal
 from pandas import Index
-from distutils.version import LooseVersion
 import pandas as pd
 
-pandas_0_15_problem = 'fails under pandas < 0.16 due to issue 324,'\
-                      'not problem with dissolve.'
 
 class TestDataFrame(unittest.TestCase):
 
@@ -44,31 +41,25 @@ class TestDataFrame(unittest.TestCase):
         self.mean = merged_shapes.copy()
         self.mean['BoroCode'] = [4,1.5]
 
-
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_geom_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx')
         self.assertTrue(test.geometry.name == 'myshapes')
         self.assertTrue(test.geom_almost_equals(self.first).all())
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_dissolve_retains_existing_crs(self):
         assert self.polydf.crs is not None
         test = self.polydf.dissolve('manhattan_bronx')
         assert test.crs is not None
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_dissolve_retains_nonexisting_crs(self):
         self.polydf.crs = None
         test = self.polydf.dissolve('manhattan_bronx')
         assert test.crs is None
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_first_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx')
         assert_frame_equal(self.first, test, check_column_type=False)
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_mean_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx', aggfunc='mean')
         assert_frame_equal(self.mean, test, check_column_type=False)
@@ -76,7 +67,6 @@ class TestDataFrame(unittest.TestCase):
         test = self.polydf.dissolve('manhattan_bronx', aggfunc=np.mean)
         assert_frame_equal(self.mean, test, check_column_type=False)
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_multicolumn_dissolve(self):
         multi = self.polydf.copy()
         multi['dup_col'] = multi.manhattan_bronx
@@ -88,7 +78,6 @@ class TestDataFrame(unittest.TestCase):
 
         assert_frame_equal(multi_test, first, check_column_type=False)
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.16'), pandas_0_15_problem)
     def test_reset_index(self):
         test = self.polydf.dissolve('manhattan_bronx', as_index=False)
         comparison = self.first.reset_index()
