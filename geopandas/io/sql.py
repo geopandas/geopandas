@@ -72,3 +72,6 @@ def to_postgis(df, name, con, **kwargs):
 
     temp_df[temp_df.geometry.name] = geom.apply(convert_geometry)
     temp_df.to_sql(name, con, **kwargs)
+    alter_command = "ALTER TABLE {name} ALTER COLUMN {geom_name} TYPE geometry;"
+    alter_args = {"name": name, "geom_name": temp_df.geometry.name}
+    con.execute(alter_command.format(**alter_args))
