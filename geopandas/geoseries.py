@@ -58,6 +58,10 @@ class GeoSeries(GeoPandasBase, Series):
             return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
+        # fix problem for scalar geometries passed
+        if len(args) == 1 and isinstance(args[0], BaseGeometry):
+            args = ([args[0]],)
+
         crs = kwargs.pop('crs', None)
 
         super(GeoSeries, self).__init__(*args, **kwargs)
