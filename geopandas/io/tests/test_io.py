@@ -4,7 +4,7 @@ import fiona
 
 from geopandas import read_postgis, read_file
 from geopandas.tests.util import download_nybb, connect, create_db, \
-     PANDAS_NEW_SQL_API, unittest, validate_boro_df
+     unittest, validate_boro_df
 
 
 class TestIO(unittest.TestCase):

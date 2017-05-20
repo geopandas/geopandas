@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal, connect, create_db, \
-    download_nybb, PACKAGE_DIR, PANDAS_NEW_SQL_API, unittest, validate_boro_df
+    download_nybb, PACKAGE_DIR, unittest, validate_boro_df
 
 
 class TestDataFrame(unittest.TestCase):
@@ -425,9 +425,6 @@ class TestDataFrame(unittest.TestCase):
             sql = "SELECT * FROM nybb;"
             df = GeoDataFrame.from_postgis(sql, con)
         finally:
-            #if PANDAS_NEW_SQL_API:
-            #    # It's not really a connection, it's an engine
-            #    con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
@@ -444,9 +441,6 @@ class TestDataFrame(unittest.TestCase):
                      FROM nybb;"""
             df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
         finally:
-            #if PANDAS_NEW_SQL_API:
-            #    # It's not really a connection, it's an engine
-            #    con = con.connect()
             con.close()
 
         validate_boro_df(self, df)

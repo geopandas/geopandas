@@ -1,8 +1,3 @@
-try:
-    from collections import OrderedDict
-except ImportError:
-    # Python 2.6
-    from ordereddict import OrderedDict
 import json
 import os
 import sys
@@ -11,7 +6,7 @@ import numpy as np
 from pandas import DataFrame, Series, Index
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-from six import string_types
+from six import string_types, PY3
 
 from geopandas import GeoSeries
 from geopandas.base import GeoPandasBase
@@ -20,7 +15,6 @@ import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
-PY3 = sys.version_info[0] == 3
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):

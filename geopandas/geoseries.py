@@ -5,7 +5,7 @@ from warnings import warn
 import numpy as np
 from pandas import Series, DataFrame
 from pandas.core.indexing import _NDFrameIndexer
-from pandas.util.decorators import cache_readonly
+
 import pyproj
 from shapely.geometry import box, shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
@@ -15,7 +15,6 @@ from shapely.ops import transform
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase
 
-OLD_PANDAS = issubclass(Series, np.ndarray)
 
 def _is_empty(x):
     try:
@@ -23,10 +22,6 @@ def _is_empty(x):
     except:
         return False
 
-def _convert_array_args(args):
-    if len(args) == 1 and isinstance(args[0], BaseGeometry):
-        args = ([args[0]],)
-    return args
 
 class _CoordinateIndexer(_NDFrameIndexer):
     """ Indexing by coordinate slices """
@@ -56,19 +51,17 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
-        if OLD_PANDAS:
-            args = _convert_array_args(args)
-            arr = Series.__new__(cls, *args, **kwargs)
-        else:
-            arr = Series.__new__(cls)
+        arr = Series.__new__(cls)
         if type(arr) is GeoSeries:
             return arr
         else:
             return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
-        if not OLD_PANDAS:
-            args = _convert_array_args(args)
+        # fix problem for scalar geometries passed
+        if len(args) == 1 and isinstance(args[0], BaseGeometry):
+            args = ([args[0]],)
+
         crs = kwargs.pop('crs', None)
 
         super(GeoSeries, self).__init__(*args, **kwargs)
@@ -197,21 +190,8 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = Point()
-        if not OLD_PANDAS:
-            return super(GeoSeries, self).fillna(value=value, method=method,
-                                                 inplace=inplace, **kwargs)
-        else:
-            # FIXME: this is an ugly way to support pandas <= 0.12
-            if method is not None:
-                raise NotImplementedError('Fill method is currently not implemented for GeoSeries')
-            if isinstance(value, BaseGeometry):
-                result = self.copy() if not inplace else self
-                mask = self.isnull()
-                result[mask] = value
-                if not inplace:
-                    return GeoSeries(result)
-            else:
-                raise ValueError('Non-geometric fill values not allowed for GeoSeries')
+        return super(GeoSeries, self).fillna(value=value, method=method,
+                                             inplace=inplace, **kwargs)
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=None, **kwargs):
