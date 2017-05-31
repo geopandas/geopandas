@@ -263,7 +263,7 @@ def overlay(df1, df2, how='intersection', reproject=True):
             dfinter.rename(columns={'Intersection':'geometry'}, inplace=True)
             dfinter = GeoDataFrame(dfinter, columns=dfinter.columns, crs=pairs.crs)
             dfinter = dfinter.loc[dfinter.geometry.is_empty==False]
-            dfinter.drop(['idx1','idx2'], inplace=True, axis=1)
+            #dfinter.drop(['idx1','idx2'], inplace=True, axis=1)
             dfinter.reset_index(inplace=True, drop=True)
             return dfinter
         else:
