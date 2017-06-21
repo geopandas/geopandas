@@ -64,6 +64,9 @@ Affine transformations
 
   Shift the coordinates of the GeoSeries.
 
+.. method:: GeoSeries.affine_transform(self, matrix)
+
+  Transform the coordinates of the GeoSeries using a transformation matrix.
 
 
 Examples of Geometric Manipulations

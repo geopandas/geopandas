@@ -433,6 +433,24 @@ class GeoPandasBase(object):
             use_radians=use_radians) for s in self.geometry],
             index=self.index, crs=self.crs)
 
+    def affine_transform(self, matrix):
+        """
+        Transform the GeoSeries with a transformation matrix.
+
+        Parameters
+        ----------
+        matrix : list of floats
+            A list of the values of a tranformation matrix. The matrix can
+            be 2x3 (6 entries) for 2D transformations or 3x4 (12 entries)
+            for 3D transformations.
+
+        See shapely manual for more information:
+        http://toblerity.org/shapely/manual.html#affine-transformations
+        """
+
+        return gpd.GeoSeries([affinity.affine_transform(s, matrix) for s in self.geometry],
+                             index=self.index, crs=self.crs)
+
     def explode(self):
         """
         Explode multi-part geometries into multiple single geometries.
