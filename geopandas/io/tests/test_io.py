@@ -3,8 +3,9 @@ from __future__ import absolute_import
 import fiona
 
 from geopandas import read_postgis, read_file
+from geopandas.io.sql import write_postgis
 from geopandas.tests.util import download_nybb, connect, create_db, \
-     unittest, validate_boro_df
+     unittest, validate_boro_df, connect_sqlalchemy
 
 
 class TestIO(unittest.TestCase):
@@ -43,6 +44,26 @@ class TestIO(unittest.TestCase):
         finally:
             con.close()
 
+        validate_boro_df(self, df)
+
+    def test_write_postgis(self):
+        con = connect('test_geopandas')
+        if con is None or not create_db(self.df):
+            raise unittest.case.SkipTest()
+        try:
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, con, crs={'init': 'epsg:4326'})
+        finally:
+            con.close()
+        engine = connect_sqlalchemy("test_geopandas")
+        write_postgis(df, 'nybb_copy', engine, if_exists='replace')
+        # Retrieve copied data and test it
+        con = connect('test_geopandas')
+        try:
+            sql = "SELECT * FROM nybb_copy;"
+            df = read_postgis(sql, con, crs={'init': 'epsg:4326'})
+        finally:
+            con.close()
         validate_boro_df(self, df)
 
     def test_read_file(self):

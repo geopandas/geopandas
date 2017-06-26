@@ -229,6 +229,51 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
 
+    def to_postgis(self, name, con, schema=None, if_exists='fail',
+                   index=True, index_label=None, chunksize=None,
+                   dtype=None):
+        """
+        Write a GeoDataFrame to a PostGIS database.
+
+        Examples:
+        df = geopandas.GeoDataFrame.from_file('nybb.shp')
+        engine = sqlalchemy.create_engine('postgresql+psycopg2:///my_db')
+        df.to_postgis(df, 'nybb', engine)
+
+
+        Parameters
+        ----------
+        name : string
+            Name of SQL table
+        con : SQLAlchemy connection object or SQLAlchemy engine.
+        schema : string, default None. If None, use default schema.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            - fail: If table exists, do nothing.
+            - replace: If table exists, drop it, recreate it, and insert data.
+            - append: If table exists, insert data. Create if does not exist.
+        index : boolean, default True
+            Write DataFrame index as a column.
+        index_label : string or sequence, default None
+            Column label for index column(s). If None is given (default) and
+            `index` is True, then the index names are used.
+            A sequence should be given if the GeoDataFrame uses MultiIndex.
+        chunksize : int, default None
+            If not None, then rows will be written in batches of this size at a
+            time.  If None, all rows will be written at once.
+        dtype : dict of column name to SQL type, default None
+            Optional specifying the datatype for columns. The SQL type should
+            be a SQLAlchemy type.
+        """
+        return geopandas.io.sql.write_postgis(
+            self, name, con,
+            schema=schema,
+            if_exists=if_exists,
+            index=index,
+            index_label=index_label,
+            chunksize=chunksize,
+            dtype=dtype
+        )
+
     @property
     def __geo_interface__(self):
         """

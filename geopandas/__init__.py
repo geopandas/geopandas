@@ -17,3 +17,18 @@ import numpy as np
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+# Teach psycopg2 how to handle certain datatypes.
+
+from geoalchemy2.elements import WKBElement
+from geoalchemy2.shape import to_shape
+from psycopg2.extensions import register_adapter, AsIs, adapt
+
+
+def adapt_geoalchemy2_wkbe_element(element):
+    ewkt = "SRID={};{}".format(element.srid, to_shape(element).wkt)
+    return AsIs(adapt(ewkt))
+
+
+register_adapter(WKBElement, adapt_geoalchemy2_wkbe_element)

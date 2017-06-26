@@ -4,6 +4,7 @@ import sys
 import unittest
 import zipfile
 
+from sqlalchemy import create_engine
 from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -67,6 +68,14 @@ def connect(dbname):
         return None
 
     return con
+
+
+def connect_sqlalchemy(dbname):
+    try:
+        engine = create_engine("postgresql+psycopg2:///" + dbname)
+    except (NameError, OperationalError):
+        return None
+    return engine
 
 
 def create_db(df):

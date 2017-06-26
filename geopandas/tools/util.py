@@ -23,7 +23,7 @@ def collect(x, multi=False):
     Parameters
     ----------
     x : an iterable or Series of Shapely geometries, a GeoSeries, or
-        a single Shapely geometry        
+        a single Shapely geometry
     multi : boolean, default False
         if True, force returned geometries to be Multi* even if they
         only have one component.
@@ -50,3 +50,26 @@ def collect(x, multi=False):
         # multi, then just return it
         return x[0]
     return _multi_type_map[t](x)
+
+
+def get_srid(crs):
+    """
+    Extract the srid from a crs dict or proj string. If no srid can be
+    extracted, return -1.
+
+    Parameters
+    ----------
+    crs : A dict or proj string crs. Example: {'init': 'epsg:4326'} or
+          '+init=epsg:4326'.
+    """
+    srid = -1
+    if isinstance(crs, dict):
+        if 'init' in crs:
+            s = crs['init'].split('epsg:')
+            if len(s) > 0:
+                srid = crs['init'].split('epsg:')[1]
+    elif isinstance(crs, str):
+        s = crs.split('epsg:')
+        if len(s) > 0:
+            srid = crs.split('epsg:')[1].split(' ')[0]
+    return srid

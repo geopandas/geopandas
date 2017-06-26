@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 import fiona
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal, connect, create_db, \
-    download_nybb, PACKAGE_DIR, unittest, validate_boro_df
+    download_nybb, PACKAGE_DIR, unittest, validate_boro_df, connect_sqlalchemy
 
 
 class TestDataFrame(unittest.TestCase):
@@ -444,6 +444,28 @@ class TestDataFrame(unittest.TestCase):
             con.close()
 
         validate_boro_df(self, df)
+
+    def test_to_postgis_default(self):
+        con = connect('test_geopandas')
+        if con is None or not create_db(self.df):
+            raise unittest.case.SkipTest()
+        try:
+            sql = "SELECT * FROM nybb;"
+            df = GeoDataFrame.from_postgis(sql, con)
+        finally:
+            con.close()
+        engine = connect_sqlalchemy("test_geopandas")
+        df.to_postgis('nybb_copy', engine, if_exists='replace')
+        # Retrieve copied data and test it
+        con = connect('test_geopandas')
+        if con is None or not create_db(self.df):
+            raise unittest.case.SkipTest()
+        try:
+            sql = "SELECT * FROM nybb_copy;"
+            df_copy = GeoDataFrame.from_postgis(sql, con)
+        finally:
+            con.close()
+        validate_boro_df(self, df_copy)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame({"A": range(len(self.df)), "location":
