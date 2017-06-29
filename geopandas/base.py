@@ -283,10 +283,10 @@ class GeoPandasBase(object):
         """
 
         b = self.bounds
-        return (b['minx'].min(),
-                b['miny'].min(),
-                b['maxx'].max(),
-                b['maxy'].max())
+        return np.array((b['minx'].min(),
+                         b['miny'].min(),
+                         b['maxx'].max(),
+                         b['maxy'].max()))
 
     @property
     def sindex(self):
