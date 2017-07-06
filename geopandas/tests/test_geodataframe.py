@@ -32,7 +32,8 @@ class TestDataFrame(unittest.TestCase):
         self.df2 = GeoDataFrame([
             {'geometry': Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, 'examples', 'null_geom.geojson'))
+        self.df3 = read_file(os.path.join(
+            PACKAGE_DIR, 'examples', 'null_geom.geojson'))
         self.line_paths = self.df3['Name']
 
     def tearDown(self):
@@ -74,7 +75,8 @@ class TestDataFrame(unittest.TestCase):
         self.assert_(not isinstance(df['geometry'], GeoSeries))
         self.assert_(isinstance(df['location'], GeoSeries))
 
-        data["geometry"] = [Point(x + 1, y - 1) for x, y in zip(range(5), range(5))]
+        data["geometry"] = [Point(x + 1, y - 1)
+                            for x, y in zip(range(5), range(5))]
         df = GeoDataFrame(data, crs=self.crs)
         self.assert_(isinstance(df.geometry, GeoSeries))
         self.assert_(isinstance(df['geometry'], GeoSeries))
@@ -83,11 +85,11 @@ class TestDataFrame(unittest.TestCase):
 
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
-                                  check_dtype=True, check_index_type=True)
+                               check_dtype=True, check_index_type=True)
 
         df = self.df.copy()
         new_geom = [Point(x, y) for x, y in zip(range(len(self.df)),
-                                               range(len(self.df)))]
+                                                range(len(self.df)))]
         df.geometry = new_geom
 
         new_geom = GeoSeries(new_geom, index=df.index, crs=df.crs)
@@ -190,7 +192,7 @@ class TestDataFrame(unittest.TestCase):
         #
         # Reverse the index order
         # Set the Series to be Point(i,i) where i is the index
-        self.df.index = range(len(self.df)-1, -1, -1)
+        self.df.index = range(len(self.df) - 1, -1, -1)
 
         d = {}
         for i in range(len(self.df)):
@@ -224,7 +226,7 @@ class TestDataFrame(unittest.TestCase):
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
-        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName'] == 'Queens', 'Shape_Area'] = np.nan
 
         text = self.df.to_json()
         data = json.loads(text)
@@ -241,8 +243,8 @@ class TestDataFrame(unittest.TestCase):
             text = self.df.to_json(na='garbage')
 
     def test_to_json_dropna(self):
-        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
-        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
+        self.df.loc[self.df['BoroName'] == 'Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName'] == 'Bronx', 'Shape_Leng'] = np.nan
 
         text = self.df.to_json(na='drop')
         data = json.loads(text)
@@ -263,8 +265,8 @@ class TestDataFrame(unittest.TestCase):
                 self.assertEqual(len(props), 4)
 
     def test_to_json_keepna(self):
-        self.df.loc[self.df['BoroName']=='Queens', 'Shape_Area'] = np.nan
-        self.df.loc[self.df['BoroName']=='Bronx', 'Shape_Leng'] = np.nan
+        self.df.loc[self.df['BoroName'] == 'Queens', 'Shape_Area'] = np.nan
+        self.df.loc[self.df['BoroName'] == 'Bronx', 'Shape_Leng'] = np.nan
 
         text = self.df.to_json(na='keep')
         data = json.loads(text)
@@ -285,6 +287,15 @@ class TestDataFrame(unittest.TestCase):
         df2 = self.df.copy()
         self.assertTrue(type(df2) is GeoDataFrame)
         self.assertEqual(self.df.crs, df2.crs)
+
+    def test_from_url(self):
+        """ Test from_url """
+        # Write layer with null geometry out to file
+        testurl = 'https://raw.githubusercontent.com/geopandas/geopandas/master/examples/null_geom.geojson'
+        df3 = GeoDataFrame.from_url(testurl)
+        self.assertTrue('geometry' in df3)
+        self.assertTrue(len(df3) == 2)
+        self.assertTrue(np.alltrue(df3['Name'].values == self.line_paths))
 
     def test_to_file(self):
         """ Test to_file and from_file """
@@ -312,7 +323,7 @@ class TestDataFrame(unittest.TestCase):
                      np.uint8, np.uint16, np.uint32, np.uint64, np.long]
         geometry = self.df2.geometry
         data = dict((str(i), np.arange(len(geometry), dtype=dtype))
-                     for i, dtype in enumerate(int_types))
+                    for i, dtype in enumerate(int_types))
         df = GeoDataFrame(data, geometry=geometry)
         df.to_file(tempfilename)
 
@@ -320,7 +331,7 @@ class TestDataFrame(unittest.TestCase):
         """ Test that mixed geometry types raise error when writing to file """
         tempfilename = os.path.join(self.tempdir, 'test.shp')
         s = GeoDataFrame({'geometry': [Point(0, 0),
-                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
+                                       Polygon([(0, 0), (1, 0), (1, 1)])]})
         with self.assertRaises(ValueError):
             s.to_file(tempfilename)
 
@@ -366,7 +377,8 @@ class TestDataFrame(unittest.TestCase):
         df2.crs = {'init': 'epsg:26918', 'no_defs': True}
         lonlat = df2.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
-        self.assertTrue(all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
+        self.assertTrue(
+            all(df2['geometry'].geom_almost_equals(utm['geometry'], decimal=2)))
 
     def test_to_crs_geo_column_name(self):
         # Test to_crs() with different geometry column name (GH#339)
@@ -378,7 +390,8 @@ class TestDataFrame(unittest.TestCase):
         utm = lonlat.to_crs(epsg=26918)
         self.assertEqual(lonlat.geometry.name, 'geom')
         self.assertEqual(utm.geometry.name, 'geom')
-        self.assertTrue(all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2)))
+        self.assertTrue(
+            all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2)))
 
     def test_from_features(self):
         nybb_filename, nybb_zip_path = download_nybb()
@@ -395,18 +408,18 @@ class TestDataFrame(unittest.TestCase):
     def test_from_features_unaligned_properties(self):
         p1 = Point(1, 1)
         f1 = {'type': 'Feature',
-                'properties': {'a': 0},
-                'geometry': p1.__geo_interface__}
+              'properties': {'a': 0},
+              'geometry': p1.__geo_interface__}
 
         p2 = Point(2, 2)
         f2 = {'type': 'Feature',
-                'properties': {'b': 1},
-                'geometry': p2.__geo_interface__}
+              'properties': {'b': 1},
+              'geometry': p2.__geo_interface__}
 
         p3 = Point(3, 3)
         f3 = {'type': 'Feature',
-                'properties': {'a': 2},
-                'geometry': p3.__geo_interface__}
+              'properties': {'a': 2},
+              'geometry': p3.__geo_interface__}
 
         df = GeoDataFrame.from_features([f1, f2, f3])
 
@@ -472,7 +485,8 @@ class TestDataFrame(unittest.TestCase):
             df.set_geometry('location', inplace=True)
 
     def test_geodataframe_geointerface(self):
-        self.assertEqual(self.df.__geo_interface__['type'], 'FeatureCollection')
+        self.assertEqual(self.df.__geo_interface__[
+                         'type'], 'FeatureCollection')
         self.assertEqual(len(self.df.__geo_interface__['features']),
                          self.df.shape[0])
 

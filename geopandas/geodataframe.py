@@ -13,6 +13,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
+from pandas.io.common import get_filepath_or_buffer
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
@@ -147,13 +148,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         if not all(isinstance(item, BaseGeometry) or not item for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
+            raise TypeError(
+                "Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         frame._invalidate_sindex()
         if not inplace:
             return frame
+
+    @classmethod
+    def from_url(cls, url, **kwargs):
+        """
+        Alternate constructor to create a GeoDataFrame from a GeoJSON file online.
+
+        Example:
+            df = geopandas.GeoDataFrame.from_url('https://raw.githubusercontent.com/geopandas/geopandas/master/examples/null_geom.geojson')
+
+        Inspired by pandas.read_json().
+
+        """
+        raw, _, _ = get_filepath_or_buffer(url)
+        geojson = json.loads(raw.read())
+        return GeoDataFrame.from_url(geojson['features'], **kwargs)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -206,7 +223,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
-                     coerce_float, params)
+                                             coerce_float, params)
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
         """
@@ -289,7 +306,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 'type': 'Feature',
                 'properties': properties,
                 'geometry': mapping(row[self._geometry_column_name])
-                            if row[self._geometry_column_name] else None
+                if row[self._geometry_column_name] else None
             }
 
             if show_bbox:
@@ -411,7 +428,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # concat operation: using metadata of the first object
         elif method == 'concat':
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                object.__setattr__(self, name, getattr(
+                    other.objs[0], name, None))
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
@@ -442,7 +460,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     plot.__doc__ = plot_dataframe.__doc__
 
-
     def dissolve(self, by=None, aggfunc='first', as_index=True):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -471,16 +488,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(by=by).agg(aggfunc)
 
-
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
+        g = self.groupby(by=by, group_keys=False)[
+            self.geometry.name].agg(merge_geometries)
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = GeoDataFrame(
+            g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
@@ -490,6 +508,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return aggregated
 
+
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
         raise ValueError("Can't do inplace setting when converting from"
@@ -497,6 +516,7 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     gf = GeoDataFrame(self)
     # this will copy so that BlockManager gets copied
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
+
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry
