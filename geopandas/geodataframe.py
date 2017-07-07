@@ -169,7 +169,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
         raw = get_filepath_or_buffer(url)[0]
-        geojson = json.loads(raw.read())
+        data = raw.read()
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        geojson = json.loads(data)
         return GeoDataFrame.from_features(geojson['features'])
 
     @classmethod
