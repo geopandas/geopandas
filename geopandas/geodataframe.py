@@ -168,7 +168,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Inspired by pandas.read_json().
 
         """
-        raw, _, _ = get_filepath_or_buffer(url)
+        raw = get_filepath_or_buffer(url)[0]
         geojson = json.loads(raw.read())
         return GeoDataFrame.from_features(geojson['features'])
 
