@@ -158,7 +158,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             return frame
 
     @classmethod
-    def from_url(cls, url, **kwargs):
+    def from_url(cls, url):
         """
         Alternate constructor to create a GeoDataFrame from a GeoJSON file online.
 
@@ -170,7 +170,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         raw, _, _ = get_filepath_or_buffer(url)
         geojson = json.loads(raw.read())
-        return GeoDataFrame.from_url(geojson['features'], **kwargs)
+        return GeoDataFrame.from_features(geojson['features'])
 
     @classmethod
     def from_file(cls, filename, **kwargs):
