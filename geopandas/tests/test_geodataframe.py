@@ -290,7 +290,6 @@ class TestDataFrame(unittest.TestCase):
 
     def test_from_url(self):
         """ Test from_url """
-        # Write layer with null geometry out to file
         testurl = 'https://raw.githubusercontent.com/geopandas/geopandas/master/examples/null_geom.geojson'
         df3 = GeoDataFrame.from_url(testurl)
         self.assertTrue('geometry' in df3)
