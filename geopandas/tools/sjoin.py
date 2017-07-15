@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from warnings import warn
 
 import numpy as np
@@ -30,7 +32,6 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
-
     """
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(

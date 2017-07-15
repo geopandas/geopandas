@@ -671,3 +671,12 @@ class TestGeomMethods:
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+
+    def test_geom_type(self):
+        gt = self.a1.geom_type
+        assert list(gt) == ["Polygon", "Polygon"]
+        assert gt.index is self.a1.index
+
+        gt = self.na_none.geom_type
+        assert list(gt) == ["Polygon", np.nan]
+        assert gt.index is self.na_none.index

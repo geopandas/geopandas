@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from warnings import warn
 
 import numpy as np
@@ -8,9 +10,8 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 
-import geopandas as gpd
 
-from .array import GeometryArray, GeometryDtype
+from .array import GeometryArray, GeometryDtype, from_shapely
 
 try:
     from rtree.core import RTreeError
@@ -37,6 +38,13 @@ def is_geometry_type(data):
         return False
 
 
+def _ensure_geometry(values):
+    if isinstance(values, GeometryArray):
+        return values
+    else:
+        return from_shapely(values)
+
+
 def _delegate_binary_method(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
     this = this.geometry
@@ -47,10 +55,10 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
         # if this.crs != other.crs:
         #     warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
         #                                                       other.crs))
-        a_this = GeometryArray(this.values)
-        other = GeometryArray(other.values)
+        a_this = _ensure_geometry(this.values)
+        other = _ensure_geometry(other.values)
     elif isinstance(other, BaseGeometry):
-        a_this = GeometryArray(this.values)
+        a_this = _ensure_geometry(this.values)
     else:
         raise TypeError(type(this), type(other))
 
@@ -64,7 +72,7 @@ def _binary_geo(op, this, other):
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other)
-    return GeoSeries(geoms.data, index=index, crs=this.crs)
+    return GeoSeries(geoms, index=index, crs=this.crs)
 
 
 def _binary_op(op, this, other, *args, **kwargs):
@@ -76,12 +84,12 @@ def _binary_op(op, this, other, *args, **kwargs):
 
 def _delegate_property(op, this):
     # type: (str, GeoSeries) -> GeoSeries/Series
-    a_this = GeometryArray(this.geometry.values)
+    a_this = _ensure_geometry(this.geometry.values)
     data = getattr(a_this, op)
     if isinstance(data, GeometryArray):
         from .geoseries import GeoSeries
 
-        return GeoSeries(data.data, index=this.index, crs=this.crs)
+        return GeoSeries(data, index=this.index, crs=this.crs)
     else:
         return Series(data, index=this.index)
 
@@ -91,8 +99,8 @@ def _delegate_geo_method(op, this, *args, **kwargs):
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
-    a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs).data
+    a_this = _ensure_geometry(this.geometry.values)
+    data = getattr(a_this, op)(*args, **kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -490,7 +498,7 @@ class GeoPandasBase(object):
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
         """
-        bounds = GeometryArray(self.geometry.values).bounds
+        bounds = self.geometry.values.bounds
         return DataFrame(
             bounds, columns=["minx", "miny", "maxx", "maxy"], index=self.index
         )
@@ -503,7 +511,7 @@ class GeoPandasBase(object):
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
         """
-        return GeometryArray(self.geometry.values).total_bounds
+        return self.geometry.values.total_bounds
 
     @property
     def sindex(self):
@@ -742,9 +750,10 @@ class GeoPandasBase(object):
         1  0    POINT (2 2)
            1    POINT (3 3)
            2    POINT (4 4)
-        dtype: geometry
-
+        dtype: object
         """
+        from .geoseries import GeoSeries
+
         index = []
         geometries = []
         for idx, s in self.geometry.iteritems():
@@ -757,7 +766,7 @@ class GeoPandasBase(object):
             index.extend(idxs)
             geometries.extend(geoms)
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-        return gpd.GeoSeries(geometries, index=index).__finalize__(self)
+        return GeoSeries(geometries, index=index).__finalize__(self)
 
     @property
     def cx(self):

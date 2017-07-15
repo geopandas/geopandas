@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import json
 import os
+import random
 import shutil
 import tempfile
 
@@ -9,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 import fiona
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file
@@ -867,3 +868,23 @@ class TestConstructor:
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
+
+
+def test_set_geometry_null():
+    polys = [
+        Polygon([(random.random(), random.random()) for _ in range(3)])
+        for _ in range(2)
+    ]
+    gdf = GeoDataFrame({"geometry": polys, "x": [1, 2]})
+
+    a = GeoSeries([Polygon([(1, 2), (3, 1), (2, 2)]), None])
+
+    assert a._values.data[1] == 0
+
+    gdf2 = gdf.set_geometry(a)
+    assert gdf2.geometry._values.data[1] == 0
+
+
+def test_constructor_without_geometries():
+    gdf = GeoDataFrame({"x": [1]})
+    assert list(gdf.x) == [1]

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from distutils.version import LooseVersion
 from functools import partial
 import json
@@ -245,8 +247,18 @@ class GeoSeries(GeoPandasBase, Series):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+            if not hasattr(self, name):
+                object.__setattr__(self, name, getattr(other, name, None))
         return self
+
+    def apply(self, func, *args, **kwargs):
+        s = Series(self.values, index=self.index, name=self.name)
+        s = s.apply(func, *args, **kwargs)
+        if len(s) and isinstance(s.iloc[0], BaseGeometry):
+            vec = from_shapely(s.values)
+            return GeoSeries(vec, index=self.index)
+        else:
+            return s
 
     def isna(self):
         """
@@ -358,9 +370,11 @@ class GeoSeries(GeoPandasBase, Series):
         Wraps the ``plot_series()`` function, and documentation is copied from
         there.
         """
+        from geopandas.plotting import plot_series
+
         return plot_series(self, *args, **kwargs)
 
-    plot.__doc__ = plot_series.__doc__
+    # plot.__doc__ = plot_series.__doc__
 
     #
     # Additional methods
@@ -459,8 +473,17 @@ class GeoSeries(GeoPandasBase, Series):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
 
+    # # TODO(cython) needed now with EAs?
+    # def _reindex_indexer(self, new_index, indexer, copy):
+    #     """ Overwrites the pd.Series method
 
-try:
-    from ._geoseries import *
-except ImportError:
-    pass
+    #     This allows us to use the GeometryArray.take method.
+    #     Otherwise the data gets turned into a numpy array.
+    #     """
+    #     if indexer is None:
+    #         if copy:
+    #             return self.copy()
+    #         return self
+
+    #     new_values = self.values.take(indexer)
+    #     return self._constructor(new_values, index=new_index)

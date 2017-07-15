@@ -1,11 +1,14 @@
+from __future__ import absolute_import, division, print_function
+
 import json
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+
 from six import PY3, string_types
 
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, shape, Point
 
 from geopandas.array import GeometryArray, from_shapely
 from geopandas.base import GeoPandasBase, is_geometry_type
@@ -166,6 +169,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if to_remove:
             del frame[to_remove]
 
+        if geo_column_name in frame.columns:
+            del frame[geo_column_name]
+
         if isinstance(level, GeoSeries) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
             level = level.copy()
@@ -234,6 +240,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
+        import geopandas.io
+
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
@@ -341,6 +349,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
+        import geopandas.io
 
         df = geopandas.io.sql.read_postgis(
             sql,
@@ -457,6 +466,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     feature["bbox"] = geom.bounds if geom else None
                 yield feature
 
+    def iterrows(self):
+        # TODO(cython) needed?
+        rows = super(GeoDataFrame, self).iterrows()
+        for (index, series), geom in zip(rows, self.geometry.values):
+            series.loc[self._geometry_column_name] = geom
+            yield (index, series)
+
     def _to_geo(self, **kwargs):
         """
         Returns a python feature collection (i.e. the geointerface)
@@ -545,10 +561,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
-            result.__class__ = GeoSeries
-            result.crs = self.crs
-            result._invalidate_sindex()
+        if isinstance(key, string_types) and (
+            (key == geo_col)
+            or (result.ndim == 1 and isinstance(result.values, GeometryArray))
+        ):
+            if not key == geo_col:
+                result = GeoSeries(result, crs=self.crs)
+            else:
+                result.__class__ = GeoSeries
+                result.crs = self.crs
+                result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
@@ -568,6 +590,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
+            values = result[geo_col]._values
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
@@ -644,10 +667,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             merge_geometries
         )
 
-        # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
-        aggregated = aggregated_geometry.join(aggregated_data)
+        aggregated = aggregated_data.set_geometry(g, crs=self.crs)
 
         # Reset if requested
         if not as_index:
@@ -720,9 +741,7 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
         )
-    gf = GeoDataFrame(self)
-    # this will copy so that BlockManager gets copied
-    return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
+    return GeoDataFrame(self, geometry=col, crs=crs)
 
 
 if PY3:

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from geopandas.geoseries import GeoSeries  # noqa
 from geopandas.geodataframe import GeoDataFrame  # noqa
 from geopandas.array import _points_from_xy as points_from_xy  # noqa

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 from .crs import explicit_crs_from_epsg
 from .geocoding import geocode, reverse_geocode
