@@ -2,7 +2,7 @@ SHELL= /bin/bash
 PYTHON ?= python
 
 inplace:
-	$(PYTHON) setup.py build_ext --inplace --with-cython
+	$(PYTHON) setup.py build_ext --inplace --with-cython -l geos_c
 
 test: inplace
 	py.test geopandas
