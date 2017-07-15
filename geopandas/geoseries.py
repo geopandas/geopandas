@@ -292,3 +292,8 @@ class GeoSeries(GeoPandasBase, Series):
         return self.difference(other)
 
 GeoSeries._create_indexer('cx', _CoordinateIndexer)
+
+try:
+    from ._geoseries import *
+except ImportError:
+    pass
