@@ -458,3 +458,9 @@ class GeoSeries(GeoPandasBase, Series):
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
+
+
+try:
+    from ._geoseries import *
+except ImportError:
+    pass
