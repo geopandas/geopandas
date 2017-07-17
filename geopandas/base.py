@@ -29,11 +29,13 @@ def _geo_op(this, other, op):
             warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
                                                               other.crs))
         this, other = this.align(other.geometry)
-        return gpd.GeoSeries([getattr(this_elem, op)(other_elem)
+        func = getattr(type(this.iloc[0]), op)
+        return gpd.GeoSeries([func(this_elem, other_elem)
                              for this_elem, other_elem in zip(this, other)],
                              index=this.index, crs=crs)
     else:
-        return gpd.GeoSeries([getattr(s, op)(other)
+        func = getattr(type(this.geometry.iloc[0]), op)
+        return gpd.GeoSeries([func(s, other)
                              for s in this.geometry],
                              index=this.index, crs=this.crs)
 
@@ -46,10 +48,15 @@ def _series_op(this, other, op, **kwargs):
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs)
-                    if not this_elem.is_empty | other_elem.is_empty else null_val
-                    for this_elem, other_elem in zip(this, other)],
-                    index=this.index)
+        try:
+            func = getattr(type(this.iloc[0]), op)
+        except KeyError:
+            return Series([], index=this.index)
+        else:
+            return Series([func(this_elem, other_elem, **kwargs)
+                        if not this_elem.is_empty | other_elem.is_empty else null_val
+                        for this_elem, other_elem in zip(this, other)],
+                        index=this.index)
     else:
         return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
@@ -484,3 +491,8 @@ def _array_input(arr):
         arr[0] = geom
 
     return arr
+
+try:
+    from ._geoseries import _series_op
+except ImportError as e:
+    print("Failed to import from cython", e)

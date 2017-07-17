@@ -1,26 +1,37 @@
-cpdef fake_func(x, y):
-    return x + y
-
-
 from warnings import warn
 
+import shapely
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
+import cython
+cimport cpython.array
+
+cimport numpy as np
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
+
 from .base import GeoPandasBase
+
+include "_geos.pxi"
 
 
 def _series_op(this, other, op, **kwargs):
-    return _cy_series_op(this, other, op, kwargs)
+    if kwargs:
+        return _cy_series_op_slow(this, other, op, kwargs)
+    try:
+        return Series(_cy_series_op_fast(this.values, other, op),
+                index=this.index)
+    except NotImplementedError:
+        return _cy_series_op_slow(this, other, op, kwargs)
 
-cdef _cy_series_op(this, other, op, kwargs):
+
+cdef _cy_series_op_slow(this, other, op, kwargs):
     """Geometric operation that returns a pandas Series"""
     null_val = False if op != 'distance' else np.nan
 
@@ -43,7 +54,7 @@ cdef _cy_series_op(this, other, op, kwargs):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def contains_cy(array, geometry):
+cdef _cy_series_op_fast(array, geometry, op):
 
     cdef Py_ssize_t idx
     cdef unsigned int n = array.size
@@ -54,8 +65,30 @@ def contains_cy(array, geometry):
     cdef GEOSGeometry *geom2
     cdef uintptr_t geos_geom
 
-    # TODO: take `op` like "contains" and replace `GEOSPreparedContains_r`
-    #       below with a switch statement on op.
+    if op == 'contains':
+        func = GEOSPreparedContains_r
+    elif op == 'intersects':
+        func = GEOSPreparedIntersects_r
+    elif op == 'touches':
+        func = GEOSPreparedTouches_r
+    elif op == 'crosses':
+        func = GEOSPreparedCrosses_r
+    elif op == 'within':
+        func = GEOSPreparedWithin_r
+    elif op == 'contains_properly':
+        func = GEOSPreparedContainsProperly_r
+    elif op == 'overlaps':
+        func = GEOSPreparedOverlaps_r
+    elif op == 'covers':
+        func = GEOSPreparedCovers_r
+    elif op == 'covered_by':
+        func = GEOSPreparedCoveredBy_r
+    # elif op == 'equals':
+    #     func = GEOSEquals_r
+
+    else:
+        raise NotImplementedError("Op %s not known" % op)
+
 
     # Prepare the geometry if it hasn't already been prepared.
     if not isinstance(geometry, shapely.prepared.PreparedGeometry):
@@ -71,7 +104,7 @@ def contains_cy(array, geometry):
 
         # Put the result of whether the point is "contained" by the
         # prepared geometry into the result array.
-        result[idx] = <np.uint8_t> GEOSPreparedContains_r(geos_h, geom1, geom2)
+        result[idx] = <np.uint8_t> func(geos_h, geom1, geom2)
         #GEOSGeom_destroy_r(geos_h, geom2)
 
     return result.view(dtype=np.bool)
