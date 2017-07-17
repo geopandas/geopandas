@@ -29,13 +29,11 @@ def _geo_op(this, other, op):
             warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
                                                               other.crs))
         this, other = this.align(other.geometry)
-        func = getattr(type(this.iloc[0]), op)
-        return gpd.GeoSeries([func(this_elem, other_elem)
+        return gpd.GeoSeries([getattr(this_elem, op)(other_elem)
                              for this_elem, other_elem in zip(this, other)],
                              index=this.index, crs=crs)
     else:
-        func = getattr(type(this.geometry.iloc[0]), op)
-        return gpd.GeoSeries([func(s, other)
+        return gpd.GeoSeries([getattr(s, op)(other)
                              for s in this.geometry],
                              index=this.index, crs=this.crs)
 
@@ -48,18 +46,14 @@ def _series_op(this, other, op, **kwargs):
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        try:
-            func = getattr(type(this.iloc[0]), op)
-        except KeyError:
-            return Series([], index=this.index)
-        else:
-            return Series([func(this_elem, other_elem, **kwargs)
-                        if not this_elem.is_empty | other_elem.is_empty else null_val
-                        for this_elem, other_elem in zip(this, other)],
-                        index=this.index)
+        return Series([getattr(this_elem, op)(other_elem, **kwargs)
+                    if not this_elem.is_empty | other_elem.is_empty else null_val
+                    for this_elem, other_elem in zip(this, other)],
+                    index=this.index)
     else:
         return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
+
 
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""

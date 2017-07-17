@@ -38,15 +38,10 @@ cdef _cy_series_op_slow(this, other, op, kwargs):
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        try:
-            func = getattr(type(this.iloc[0]), op)
-        except KeyError:
-            return Series([], index=this.index)
-        else:
-            return Series([func(this_elem, other_elem, **kwargs)
-                        if not this_elem.is_empty | other_elem.is_empty else null_val
-                        for this_elem, other_elem in zip(this, other)],
-                        index=this.index)
+        return Series([getattr(this_elem, op)(other_elem, **kwargs)
+                    if not this_elem.is_empty | other_elem.is_empty else null_val
+                    for this_elem, other_elem in zip(this, other)],
+                    index=this.index)
     else:
         return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
