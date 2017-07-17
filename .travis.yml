@@ -11,6 +11,7 @@ addons:
     - gdal-bin
     - libgdal-dev
     - libspatialindex-dev
+    - libgeos-dev
 
 matrix:
   include:
@@ -65,6 +66,7 @@ install:
   - pip install -r requirements.test.txt
 
   - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
+  - make inplace
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
