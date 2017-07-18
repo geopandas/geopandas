@@ -94,7 +94,7 @@ cdef _cy_series_op_fast(array, geometry, op):
 
     for idx in xrange(n):
         # Construct a coordinate sequence with our x, y values.
-        geos_geom = array[idx]._geom
+        geos_geom = array[idx].__geom__
         geom2 = <GEOSGeometry *>geos_geom
 
         # Put the result of whether the point is "contained" by the
