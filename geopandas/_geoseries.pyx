@@ -22,7 +22,7 @@ include "_geos.pxi"
 
 
 def _series_op(this, other, op, **kwargs):
-    if kwargs:
+    if kwargs or not isinstance(other, BaseGeometry):
         return _cy_series_op_slow(this, other, op, kwargs)
     try:
         return Series(_cy_series_op_fast(this.values, other, op),
@@ -94,12 +94,16 @@ cdef _cy_series_op_fast(array, geometry, op):
 
     for idx in xrange(n):
         # Construct a coordinate sequence with our x, y values.
-        geos_geom = array[idx].__geom__
-        geom2 = <GEOSGeometry *>geos_geom
+        g = array[idx]
+        if g is None:
+            result[idx] = 0
+        else:
+            geos_geom = g.__geom__
+            geom2 = <GEOSGeometry *>geos_geom
 
-        # Put the result of whether the point is "contained" by the
-        # prepared geometry into the result array.
-        result[idx] = <np.uint8_t> func(geos_h, geom1, geom2)
-        #GEOSGeom_destroy_r(geos_h, geom2)
+            # Put the result of whether the point is "contained" by the
+            # prepared geometry into the result array.
+            result[idx] = <np.uint8_t> func(geos_h, geom1, geom2)
+            #GEOSGeom_destroy_r(geos_h, geom2)
 
     return result.view(dtype=np.bool)
