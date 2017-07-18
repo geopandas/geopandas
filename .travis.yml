@@ -12,6 +12,8 @@ addons:
     - libgdal-dev
     - libspatialindex-dev
     - libgeos-dev
+    - build-essential
+    - python-dev
 
 matrix:
   include:
