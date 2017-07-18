@@ -12,7 +12,6 @@ addons:
     - libgdal-dev
     - libspatialindex-dev
 
-# matrix creates 3+5x2 = 13 tests
 matrix:
   include:
     # Only one test for these Python versions
@@ -20,7 +19,7 @@ matrix:
     - python: 3.4
       env: PANDAS=0.18.1 MATPLOTLIB=1.4.3
     - python: 3.5
-      env: PANDAS=0.19.2 MATPLOTLIB=1.5.1
+      env: PANDAS=0.19.2 MATPLOTLIB=1.5.3
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
@@ -28,9 +27,11 @@ matrix:
     - python: 2.7
       env: PANDAS=0.17.1  MATPLOTLIB=1.4.3
     - python: 2.7
-      env: PANDAS=0.18.1  MATPLOTLIB=1.5.1
+      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
     - python: 2.7
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.1
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
+    - python: 2.7
+      env: PANDAS=0.20.2  MATPLOTLIB=1.5.3   # Make this MATPLOTLIB 2.0.x, when fixed
     - python: 2.7
       env: PANDAS=master  MATPLOTLIB=master
 
@@ -40,9 +41,11 @@ matrix:
     - python: 3.6
       env: PANDAS=0.17.1  MATPLOTLIB=1.4.3
     - python: 3.6
-      env: PANDAS=0.18.1  MATPLOTLIB=1.5.1
+      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.1
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
+    - python: 3.6
+      env: PANDAS=0.20.2  MATPLOTLIB=1.5.3  # Make this MATPLOTLIB 2.0.x, when fixed
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
