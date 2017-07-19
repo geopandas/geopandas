@@ -103,7 +103,9 @@ cdef _cy_series_op_fast(array, geometry, op):
     with nogil:
         for idx in xrange(n):
             geos_geom = geometries[idx]
-            if geos_geom != 0:
+            if geos_geom == 0:
+                result[idx] = <np.uint8_t> 0
+            else:
                 geom2 = <GEOSGeometry *> geos_geom
                 result[idx] = <np.uint8_t> func(geos_handle, geom1, geom2)
 
