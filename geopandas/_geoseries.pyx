@@ -57,6 +57,7 @@ cdef _cy_series_op_fast(array, geometry, op):
     cdef Py_ssize_t idx
     cdef unsigned int n = array.size
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] result = np.empty(n, dtype=np.uint8)
+    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] geometries = np.empty(n, dtype=np.uintp)
 
     cdef GEOSContextHandle_t geos_handle
     cdef GEOSPreparedGeometry *geom1
@@ -95,11 +96,16 @@ cdef _cy_series_op_fast(array, geometry, op):
     for idx in xrange(n):
         g = array[idx]
         if g is None:
-            result[idx] = 0
+            geometries[idx] = 0
         else:
-            geos_geom = g.__geom__
-            geom2 = <GEOSGeometry *>geos_geom
-            result[idx] = <np.uint8_t> func(geos_handle, geom1, geom2)
+            geometries[idx] = g.__geom__
+
+    with nogil:
+        for idx in xrange(n):
+            geos_geom = geometries[idx]
+            if geos_geom != 0:
+                geom2 = <GEOSGeometry *> geos_geom
+                result[idx] = <np.uint8_t> func(geos_handle, geom1, geom2)
 
     return result.view(dtype=np.bool)
 
