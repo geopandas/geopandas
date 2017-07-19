@@ -58,5 +58,5 @@ cdef GEOSContextHandle_t get_geos_context_handle():
 
 cdef GEOSPreparedGeometry *geos_from_prepared(shapely_geom) except *:
     """Get the Prepared GEOS geometry pointer from the given shapely geometry."""
-    cdef uintptr_t geos_geom = shapely_geom._geom
+    cdef uintptr_t geos_geom = shapely_geom.__geom__
     return <GEOSPreparedGeometry *>geos_geom

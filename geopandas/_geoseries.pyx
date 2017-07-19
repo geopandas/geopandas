@@ -25,8 +25,11 @@ def _series_op(this, other, op, **kwargs):
     if kwargs or not isinstance(other, BaseGeometry):
         return _cy_series_op_slow(this, other, op, kwargs)
     try:
-        return Series(_cy_series_op_fast(this.values, other, op),
-                index=this.index)
+        if op == 'equals':
+            func = _cy_series_op_fast_unprepared
+        else:
+            func = _cy_series_op_fast
+        return Series(func(this.values, other, op), index=this.index)
     except NotImplementedError:
         return _cy_series_op_slow(this, other, op, kwargs)
 
@@ -78,32 +81,59 @@ cdef _cy_series_op_fast(array, geometry, op):
         func = GEOSPreparedCovers_r
     elif op == 'covered_by':
         func = GEOSPreparedCoveredBy_r
-    # elif op == 'equals':
-    #     func = GEOSEquals_r
 
     else:
         raise NotImplementedError("Op %s not known" % op)
-
 
     # Prepare the geometry if it hasn't already been prepared.
     if not isinstance(geometry, shapely.prepared.PreparedGeometry):
         geometry = shapely.prepared.prep(geometry)
 
-    geos_h = get_geos_context_handle()
+    geos_handle = get_geos_context_handle()
     geom1 = geos_from_prepared(geometry)
 
     for idx in xrange(n):
-        # Construct a coordinate sequence with our x, y values.
         g = array[idx]
         if g is None:
             result[idx] = 0
         else:
             geos_geom = g.__geom__
             geom2 = <GEOSGeometry *>geos_geom
+            result[idx] = <np.uint8_t> func(geos_handle, geom1, geom2)
 
-            # Put the result of whether the point is "contained" by the
-            # prepared geometry into the result array.
-            result[idx] = <np.uint8_t> func(geos_h, geom1, geom2)
-            #GEOSGeom_destroy_r(geos_h, geom2)
+    return result.view(dtype=np.bool)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _cy_series_op_fast_unprepared(array, geometry, op):
+
+    cdef Py_ssize_t idx
+    cdef unsigned int n = array.size
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] result = np.empty(n, dtype=np.uint8)
+
+    cdef GEOSContextHandle_t geos_handle
+    cdef GEOSGeometry *geom1
+    cdef GEOSGeometry *geom2
+    cdef uintptr_t geos_geom
+    cdef uintptr_t geos_geom_1
+
+    if op == 'equals':
+        func = GEOSEquals_r
+    else:
+        raise NotImplementedError("Op %s not known" % op)
+
+    geos_handle = get_geos_context_handle()
+    geos_geom_1 = geometry.__geom__
+    geom1 = <GEOSGeometry *> geos_geom_1
+
+    for idx in xrange(n):
+        g = array[idx]
+        if g is None:
+            result[idx] = 0
+        else:
+            geos_geom = g.__geom__
+            geom2 = <GEOSGeometry *>geos_geom
+            result[idx] = <np.uint8_t> func(geos_handle, geom1, geom2)
 
     return result.view(dtype=np.bool)
