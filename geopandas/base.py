@@ -487,6 +487,6 @@ def _array_input(arr):
     return arr
 
 try:
-    from ._geoseries import _series_op
+    from ._geoseries import _series_op, _geo_unary_op
 except ImportError as e:
     print("Failed to import from cython", e)

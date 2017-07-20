@@ -40,6 +40,7 @@ cdef extern from "geos_c.h":
     char GEOSPreparedTouches_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
     char GEOSPreparedWithin_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
 
+    char GEOSHasZ(const GEOSGeometry*) nogil
     char GEOSHasZ_r(GEOSContextHandle_t, GEOSGeometry *) nogil
     char GEOSisRing_r(GEOSContextHandle_t, GEOSGeometry *) nogil
     char GEOSisClosed_r(GEOSContextHandle_t, GEOSGeometry *) nogil
@@ -47,6 +48,32 @@ cdef extern from "geos_c.h":
     char GEOSEquals(const GEOSGeometry * , const GEOSGeometry *) nogil
     char GEOSEquals_r(GEOSContextHandle_t , const GEOSGeometry * , const GEOSGeometry *) nogil
     char GEOSEqualsExact(const GEOSGeometry * , const GEOSGeometry * , double) nogil
+
+    GEOSGeometry *GEOSDifference(const GEOSGeometry*, const GEOSGeometry*)
+    GEOSGeometry *GEOSSymDifference(const GEOSGeometry*, const GEOSGeometry*)
+    GEOSGeometry *GEOSBoundary(const GEOSGeometry*)
+    GEOSGeometry *GEOSUnion(const GEOSGeometry*, const GEOSGeometry*)
+    GEOSGeometry *GEOSUnaryUnion(const GEOSGeometry*)
+    GEOSGeometry *GEOSGetCentroid(const GEOSGeometry*)
+
+    GEOSGeometry *GEOSDifference_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSSymDifference_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSBoundary_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSUnion_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSUnaryUnion_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSGetCentroid_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+
+    GEOSGeometry *GEOSConvexHull_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSConvexHull(GEOSContextHandle_t, const GEOSGeometry*)
+    GEOSGeometry *GEOSEnvelope(const GEOSGeometry*)
+    GEOSGeometry *GEOSEnvelope_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSGetExteriorRing(const GEOSGeometry*)
+    GEOSGeometry *GEOSGetExteriorRing_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+
+    int GEOSGeomTypeId(const GEOSGeometry*) nogil
+    int GEOSGeomTypeId_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+
+
 
 
 cdef GEOSContextHandle_t get_geos_context_handle():

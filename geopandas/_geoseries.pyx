@@ -20,21 +20,25 @@ from .base import GeoPandasBase
 
 include "_geos.pxi"
 
+from shapely.geometry.base import GEOMETRY_TYPES as GEOMETRY_NAMES
+
+GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
+
 
 def _series_op(this, other, op, **kwargs):
     if kwargs or not isinstance(other, BaseGeometry):
         return _cy_series_op_slow(this, other, op, kwargs)
     try:
-        if op == 'equals':
-            func = _cy_series_op_fast_unprepared
+        if op in ['equals']:
+            x = _cy_series_op_fast_unprepared(this.values, other, op)
         else:
-            func = _cy_series_op_fast
-        return Series(func(this.values, other, op), index=this.index)
+            x = _cy_series_op_fast(this.values, other, op)
+        return Series(x, index=this.index)
     except NotImplementedError:
         return _cy_series_op_slow(this, other, op, kwargs)
 
 
-cdef _cy_series_op_slow(this, other, op, kwargs):
+cdef _cy_series_op_slow(object this, object other, str op, kwargs):
     """Geometric operation that returns a pandas Series"""
     null_val = False if op != 'distance' else np.nan
 
@@ -52,7 +56,7 @@ cdef _cy_series_op_slow(this, other, op, kwargs):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _cy_series_op_fast(array, geometry, op):
+cdef _cy_series_op_fast(np.ndarray[object, ndim=1] array, object geometry, str op):
 
     cdef Py_ssize_t idx
     cdef unsigned int n = array.size
@@ -114,7 +118,7 @@ cdef _cy_series_op_fast(array, geometry, op):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _cy_series_op_fast_unprepared(array, geometry, op):
+cdef _cy_series_op_fast_unprepared(np.ndarray[object, ndim=1] array, object geometry, str op):
 
     cdef Py_ssize_t idx
     cdef unsigned int n = array.size
@@ -145,3 +149,80 @@ cdef _cy_series_op_fast_unprepared(array, geometry, op):
             result[idx] = <np.uint8_t> func(geos_handle, geom1, geom2)
 
     return result.view(dtype=np.bool)
+
+
+def _geo_unary_op(this, op):
+    try:
+        x = _cy_geo_unary_op(this.geometry.values, op)
+    except NotImplementedError:
+        x = _py_geo_unary_op(this.geometry.values, op)
+    return gpd.GeoSeries(x, index=this.index, crs=this.crs)
+
+
+cdef _py_geo_unary_op(np.ndarray[object, ndim=1] this, str op):
+    """Unary operation that returns a GeoSeries"""
+    return [getattr(geom, op) for geom in this]
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _cy_geo_unary_op(np.ndarray[object, ndim=1] array, str op):
+
+    cdef Py_ssize_t idx
+    cdef unsigned int n = array.size
+    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] geometries = np.empty(n, dtype=np.uintp)
+    cdef np.ndarray[object, ndim=1] out = np.empty(n, dtype=object)
+
+    cdef GEOSContextHandle_t geos_handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+
+    if op == 'boundary':
+        func = GEOSBoundary_r
+    elif op == 'centroid':
+        func = GEOSGetCentroid_r
+    elif op == 'convex_hull':
+        func = GEOSConvexHull_r
+    # elif op == 'exterior':
+    #     func = GEOSGetExteriorRing_r  # segfaults on cleanup?
+    elif op == 'envelope':
+        func = GEOSEnvelope_r
+    else:
+        raise NotImplementedError("Op %s not known" % op)
+
+    geos_handle = get_geos_context_handle()
+
+    for idx in xrange(n):
+        g = array[idx]
+        if g is None:
+            geometries[idx] = 0
+        else:
+            geometries[idx] = <np.uintp_t> g.__geom__
+
+    with nogil:
+        for idx in xrange(n):
+            geos_geom = geometries[idx]
+            if geos_geom == 0:
+                geometries[idx] = <np.uintp_t> 0
+            else:
+                geom = <GEOSGeometry *> geos_geom
+                result = func(geos_handle, geom)
+                geometries[idx] = <np.uintp_t> result
+
+    for idx in xrange(n):
+        geom = <GEOSGeometry *> geometries[idx]
+        if geom == NULL:
+            out[idx] = None
+        else:
+            typ = GEOMETRY_TYPES[GEOSGeomTypeId_r(geos_handle, geom)]
+            obj = BaseGeometry()
+            obj.__class = typ
+            obj.__geom__ = <np.uintp_t> geom
+            obj.__p__ = None
+            if GEOSHasZ_r(geos_handle, geom):
+                obj._ndim = 3
+            else:
+                obj._ndim = 2
+            obj._is_empty = False
+            out[idx] = obj
+    return out
