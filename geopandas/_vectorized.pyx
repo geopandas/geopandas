@@ -1,3 +1,6 @@
+import collections
+import numbers
+
 import shapely
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry, geom_factory
@@ -251,12 +254,37 @@ cpdef from_shapely(object L):
     return VectorizedGeometry(out)
 
 
+cdef free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+
+    handle = get_geos_context_handle()
+
+    for idx in xrange(geoms.size):
+        geos_geom = geoms[idx]
+        geom = <GEOSGeometry *> geos_geom
+        GEOSGeom_destroy_r(handle, geom)
+
+
 class VectorizedGeometry(object):
-    def __init__(self, data):
+    def __init__(self, data, parent=None):
         self.data = data
+        self.parent = parent
 
     def __getitem__(self, idx):
-        return get_element(self.data, idx)
+        if isinstance(idx, numbers.Integral):
+            return get_element(self.data, idx)
+        elif isinstance(idx, collections.Iterable):
+            return VectorizedGeometry(self.data[idx], parent=self)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __del__(self):
+        if self.parent is None:
+            free(self.data)
 
     @property
     def x(self):
