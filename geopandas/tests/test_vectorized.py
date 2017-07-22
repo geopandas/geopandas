@@ -110,3 +110,12 @@ def test_clean_up_on_gc():
     mem_7 = proc.memory_info().rss - mem_1
     assert mem_7 <= mem_5
     assert proc.memory_info().rss - mem_1 < nb
+
+
+def test_dir():
+    points = [shapely.geometry.Point(i, i) for i in range(10)]
+    vec = from_shapely(points)
+
+    assert 'contains' in dir(vec)
+    assert 'data' in dir(vec)
+

@@ -38,6 +38,8 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
     return geom_factory(<np.uintp_t> geom)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
                      np.ndarray[double, ndim=1, cast=True] y):
     cdef Py_ssize_t idx
@@ -51,13 +53,14 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
 
     handle = get_geos_context_handle()
 
-    for idx in xrange(n):
-        sequence = GEOSCoordSeq_create_r(handle, 1, 2)
-        GEOSCoordSeq_setX_r(handle, sequence, 0, x[idx])
-        GEOSCoordSeq_setY_r(handle, sequence, 0, y[idx])
-        geom = GEOSGeom_createPoint_r(handle, sequence)
-        geos_geom = <np.uintp_t> geom
-        out[idx] = <np.uintp_t> geom
+    with nogil:
+        for idx in xrange(n):
+            sequence = GEOSCoordSeq_create_r(handle, 1, 2)
+            GEOSCoordSeq_setX_r(handle, sequence, 0, x[idx])
+            GEOSCoordSeq_setY_r(handle, sequence, 0, y[idx])
+            geom = GEOSGeom_createPoint_r(handle, sequence)
+            geos_geom = <np.uintp_t> geom
+            out[idx] = <np.uintp_t> geom
 
     return VectorizedGeometry(out)
 
@@ -190,10 +193,11 @@ cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     else:
         raise NotImplementedError("Op %s not known" % op)
 
-    for idx in xrange(n):
-        geos_geom = geoms[idx]
-        geom = <GEOSGeometry *> geos_geom
-        out[idx] = <np.uintp_t> func(handle, geom)
+    with nogil:
+        for idx in xrange(n):
+            geos_geom = geoms[idx]
+            geom = <GEOSGeometry *> geos_geom
+            out[idx] = <np.uintp_t> func(handle, geom)
 
     return VectorizedGeometry(out)
 
@@ -254,18 +258,22 @@ cpdef from_shapely(object L):
     return VectorizedGeometry(out)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
+    cdef unsigned int n = geoms.size
 
     handle = get_geos_context_handle()
 
-    for idx in xrange(geoms.size):
-        geos_geom = geoms[idx]
-        geom = <GEOSGeometry *> geos_geom
-        GEOSGeom_destroy_r(handle, geom)
+    with nogil:
+        for idx in xrange(n):
+            geos_geom = geoms[idx]
+            geom = <GEOSGeometry *> geos_geom
+            GEOSGeom_destroy_r(handle, geom)
 
 
 class VectorizedGeometry(object):
