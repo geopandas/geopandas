@@ -29,6 +29,16 @@ cdef extern from "geos_c.h":
 
     void GEOSGeom_destroy_r(GEOSContextHandle_t, GEOSGeometry *) nogil
 
+    char GEOSContains_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSCoveredBy_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSCovers_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSCrosses_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSDisjoint_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSIntersects_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSOverlaps_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSTouches_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    char GEOSWithin_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+
     char GEOSPreparedContains_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
     char GEOSPreparedContainsProperly_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
     char GEOSPreparedCoveredBy_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil

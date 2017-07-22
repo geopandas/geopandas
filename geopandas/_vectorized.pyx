@@ -54,12 +54,13 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
         GEOSCoordSeq_setY_r(handle, sequence, 0, y[idx])
         geom = GEOSGeom_createPoint_r(handle, sequence)
         geos_geom = <np.uintp_t> geom
-        print(idx, x[idx], y[idx], <np.uintp_t> sequence, geos_geom)
         out[idx] = <np.uintp_t> geom
 
     return VectorizedGeometry(out)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef prepared_binary_op(str op,
                         np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                         object other):
@@ -70,11 +71,19 @@ cdef prepared_binary_op(str op,
     cdef GEOSPreparedGeometry *prepared_geom
     cdef unsigned int n = geoms.size
 
-    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
     handle = get_geos_context_handle()
     other_geom = <GEOSGeometry *> other.__geom__
-    prepared_geom = GEOSPrepare_r(handle, other_geom)
+
+    # Prepare the geometry if it hasn't already been prepared.
+    # TODO: why can't we do the following instead?
+    #   prepared_geom = GEOSPrepare_r(handle, other_geom)
+    if not isinstance(other, shapely.prepared.PreparedGeometry):
+        other = shapely.prepared.prep(other)
+
+    geos_handle = get_geos_context_handle()
+    prepared_geom = geos_from_prepared(other)
 
     if op == 'contains':
         func = GEOSPreparedContains_r
@@ -98,11 +107,96 @@ cdef prepared_binary_op(str op,
     with nogil:
         for idx in xrange(n):
             geom = <GEOSGeometry *> geoms[idx]
-            out[idx] = <np.uintp_t> func(handle, prepared_geom, geom)
+            out[idx] = func(handle, prepared_geom, geom)
+
+    return out
+
+
+"""
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef binary_op(str op,
+               np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+               object other):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef GEOSGeometry *other_geom
+    cdef unsigned int n = geoms.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+    other_geom = <GEOSGeometry *> other.__geom__
+
+
+    if op == 'contains':
+        func = GEOSContains_r
+    elif op == 'equals':
+        func = GEOSEquals_r
+    elif op == 'intersects':
+        func = GEOSIntersects_r
+    elif op == 'touches':
+        func = GEOSTouches_r
+    elif op == 'crosses':
+        func = GEOSCrosses_r
+    elif op == 'within':
+        func = GEOSWithin_r
+    elif op == 'contains_properly':
+        func = GEOSContainsProperly_r
+    elif op == 'overlaps':
+        func = GEOSOverlaps_r
+    elif op == 'covers':
+        func = GEOSCovers_r
+    elif op == 'covered_by':
+        func = GEOSCoveredBy_r
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            out[idx] = func(handle, geom, other_geom)
+
+    return out
+"""
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef GEOSGeometry *other_geom
+    cdef unsigned int n = geoms.size
+
+    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
+
+    handle = get_geos_context_handle()
+
+    if op == 'boundary':
+        func = GEOSBoundary_r
+    elif op == 'centroid':
+        func = GEOSGetCentroid_r
+    elif op == 'convex_hull':
+        func = GEOSConvexHull_r
+    # elif op == 'exterior':
+    #     func = GEOSGetExteriorRing_r  # segfaults on cleanup?
+    elif op == 'envelope':
+        func = GEOSEnvelope_r
+    else:
+        raise NotImplementedError("Op %s not known" % op)
+
+    for idx in xrange(n):
+        geos_geom = geoms[idx]
+        geom = <GEOSGeometry *> geos_geom
+        out[idx] = <np.uintp_t> func(handle, geom)
 
     return VectorizedGeometry(out)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                           int coordinate):
     cdef Py_ssize_t idx
@@ -135,6 +229,28 @@ cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
     return out
 
 
+cpdef from_shapely(object L):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n
+
+    n = len(L)
+
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    handle = get_geos_context_handle()
+
+    for idx in xrange(n):
+        g = L[idx]
+        geos_geom = <np.uintp_t> g.__geom__
+        geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
+        out[idx] = <np.uintp_t> geom
+
+    return VectorizedGeometry(out)
+
+
 class VectorizedGeometry(object):
     def __init__(self, data):
         self.data = data
@@ -149,3 +265,24 @@ class VectorizedGeometry(object):
     @property
     def y(self):
         return get_coordinate_point(self.data, 1)
+
+    def contains(self, other):
+        return prepared_binary_op('within', self.data, other)
+
+    def covers(self, other):
+        return prepared_binary_op('covered_by', self.data, other)
+
+    def covered_by(self, other):
+        return prepared_binary_op('covers', self.data, other)
+
+    def rcontains(self, other):
+        return prepared_binary_op('contains', self.data, other)
+
+    def rcovers(self, other):
+        return prepared_binary_op('covers', self.data, other)
+
+    def rcovered_by(self, other):
+        return prepared_binary_op('covered_by', self.data, other)
+
+    def centroid(self):
+        return geo_unary_op('centroid', self.data)
