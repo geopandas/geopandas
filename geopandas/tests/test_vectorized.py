@@ -4,6 +4,7 @@ import random
 import shapely
 from geopandas.vectorized import (VectorizedGeometry, points_from_xy,
         from_shapely)
+from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 
 import pytest
 import numpy as np
@@ -187,3 +188,17 @@ def test_chaining():
     vec = from_shapely(triangles)
 
     assert vec.contains(vec.centroid()).all()
+
+
+@pytest.mark.parametrize('resolution', [16, 25])
+def test_buffer(resolution):
+    points = [shapely.geometry.Point(i, i) for i in range(10)]
+    vec = from_shapely(points)
+
+    expected = [p.buffer(0.1, resolution=resolution, cap_style=CAP_STYLE.round,
+                         join_style=JOIN_STYLE.round)
+                for p in points]
+    result = vec.buffer(0.1, resolution=resolution, cap_style=CAP_STYLE.round,
+                        join_style=JOIN_STYLE.round)
+
+    assert all(a.equals(b) for a, b in zip(expected, result))

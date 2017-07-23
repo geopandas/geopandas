@@ -88,6 +88,10 @@ cdef extern from "geos_c.h":
     int GEOSGeomTypeId(const GEOSGeometry*) nogil
     int GEOSGeomTypeId_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
 
+    GEOSGeometry *GEOSBufferWithStyle_r(GEOSContextHandle_t, const GEOSGeometry*, double, int, int, int, double) nogil
+
+
+
 
 
 

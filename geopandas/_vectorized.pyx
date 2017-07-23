@@ -21,7 +21,8 @@ from .base import GeoPandasBase
 
 include "_geos.pxi"
 
-from shapely.geometry.base import GEOMETRY_TYPES as GEOMETRY_NAMES
+from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
+        JOIN_STYLE)
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
 
@@ -257,6 +258,31 @@ cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
+            int resolution, int cap_style, int join_style, double mitre_limit):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef GEOSGeometry *other_geom
+    cdef unsigned int n = geoms.size
+
+    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
+    handle = get_geos_context_handle()
+
+    with nogil:
+        for idx in xrange(n):
+            geos_geom = geoms[idx]
+            geom = <GEOSGeometry *> geos_geom
+            out[idx] = <np.uintp_t> GEOSBufferWithStyle_r(handle, geom,
+                    distance, resolution, cap_style, join_style, mitre_limit)
+
+    return VectorizedGeometry(out)
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                           int coordinate):
     cdef Py_ssize_t idx
@@ -437,3 +463,8 @@ class VectorizedGeometry(object):
 
     def representative_point(self):
         return geo_unary_op('representative_point', self.data)
+
+    def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
+              join_style=JOIN_STYLE.round, mitre_limit=5.0):
+        return buffer(self.data, distance, resolution, cap_style, join_style,
+                      mitre_limit)
