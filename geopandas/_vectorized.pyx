@@ -118,22 +118,64 @@ cdef prepared_binary_op(str op,
     return out
 
 
-"""
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef binary_op(str op,
-               np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
-               object other):
+cdef vector_binary_predicate(str op,
+                             np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                             np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef unsigned int n = left.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+
+    if op == 'contains':
+        func = GEOSContains_r
+    elif op == 'intersects':
+        func = GEOSIntersects_r
+    elif op == 'touches':
+        func = GEOSTouches_r
+    elif op == 'crosses':
+        func = GEOSCrosses_r
+    elif op == 'within':
+        func = GEOSWithin_r
+    elif op == 'overlaps':
+        func = GEOSOverlaps_r
+    elif op == 'covers':
+        func = GEOSCovers_r
+    elif op == 'covered_by':
+        func = GEOSCoveredBy_r
+
+    with nogil:
+        for idx in xrange(n):
+            left_geom = <GEOSGeometry *> left[idx]
+            right_geom = <GEOSGeometry *> right[idx]
+            out[idx] = func(handle, left_geom, right_geom)
+
+    return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef binary_predicate(str op,
+                      np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                      object other):
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef GEOSGeometry *other_geom
+    cdef uintptr_t other_pointer
     cdef unsigned int n = geoms.size
 
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
     handle = get_geos_context_handle()
-    other_geom = <GEOSGeometry *> other.__geom__
+    other_pointer = <np.uintp_t> other.__geom__
+    other_geom = <GEOSGeometry *> other_pointer
 
 
     if op == 'contains':
@@ -148,8 +190,6 @@ cdef binary_op(str op,
         func = GEOSCrosses_r
     elif op == 'within':
         func = GEOSWithin_r
-    elif op == 'contains_properly':
-        func = GEOSContainsProperly_r
     elif op == 'overlaps':
         func = GEOSOverlaps_r
     elif op == 'covers':
@@ -163,7 +203,6 @@ cdef binary_op(str op,
             out[idx] = func(handle, geom, other_geom)
 
     return out
-"""
 
 
 @cython.boundscheck(False)
@@ -303,7 +342,13 @@ class VectorizedGeometry(object):
         return get_coordinate_point(self.data, 1)
 
     def contains(self, other):
-        return prepared_binary_op('within', self.data, other)
+        if isinstance(other, BaseGeometry):
+            return binary_predicate('contains', self.data, other)
+        elif isinstance(other, VectorizedGeometry):
+            assert len(self) == len(other)
+            return vector_binary_predicate('contains', self.data, other.data)
+        else:
+            raise NotImplementedError("type not known %s" % type(other))
 
     def covers(self, other):
         return prepared_binary_op('covered_by', self.data, other)

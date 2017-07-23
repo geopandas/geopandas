@@ -32,7 +32,8 @@ def test_from_shapely():
     # TODO: handle gc
 
 
-def test_prepared_operations():
+@pytest.mark.parametrize('attr', ['contains', 'covers'])
+def test_prepared_operations(attr):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(100)]
@@ -40,12 +41,11 @@ def test_prepared_operations():
     vec = from_shapely(triangles)
 
     point = shapely.geometry.Point(random.random(), random.random())
-    result = vec.covers(point)
+    result = getattr(vec, attr)(point)
     assert isinstance(result, np.ndarray)
     assert result.dtype == bool
 
-    expected = [tri.covers(point) for tri in triangles]
-    assert any(expected)
+    expected = [getattr(tri, attr)(point) for tri in triangles]
 
     assert result.tolist() == expected
 
@@ -119,3 +119,12 @@ def test_dir():
     assert 'contains' in dir(vec)
     assert 'data' in dir(vec)
 
+
+def test_chaining():
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+
+    vec = from_shapely(triangles)
+
+    assert vec.contains(vec.centroid()).all()
