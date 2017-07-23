@@ -32,8 +32,19 @@ def test_from_shapely():
     # TODO: handle gc
 
 
-@pytest.mark.parametrize('attr', ['contains', 'covers'])
-def test_prepared_operations(attr):
+@pytest.mark.parametrize('attr', [
+    'contains',
+    'covers',
+    'crosses',
+    'disjoint',
+    'equals',
+    'intersects',
+    'overlaps',
+    'touches',
+    'within',
+    # 'equals_exact',
+])
+def test_vector_scalar_predicates(attr):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(100)]
@@ -41,25 +52,69 @@ def test_prepared_operations(attr):
     vec = from_shapely(triangles)
 
     point = shapely.geometry.Point(random.random(), random.random())
-    result = getattr(vec, attr)(point)
+    tri = triangles[0]
+
+    for other in [point, tri]:
+        result = getattr(vec, attr)(other)
+        assert isinstance(result, np.ndarray)
+        assert result.dtype == bool
+
+        expected = [getattr(tri, attr)(other) for tri in triangles]
+
+        assert result.tolist() == expected
+
+
+@pytest.mark.parametrize('attr', [
+    'contains',
+    'covers',
+    'crosses',
+    'disjoint',
+    'equals',
+    'intersects',
+    'overlaps',
+    'touches',
+    'within',
+    # 'equals_exact',
+])
+def test_vector_vector_predicates(attr):
+    A = [shapely.geometry.Polygon([(random.random(), random.random())
+                                   for i in range(3)])
+         for _ in range(100)]
+    B = [shapely.geometry.Polygon([(random.random(), random.random())
+                                   for i in range(3)])
+         for _ in range(100)]
+
+
+    vec_A = from_shapely(A)
+    vec_B = from_shapely(B)
+
+    result = getattr(vec_A, attr)(vec_B)
     assert isinstance(result, np.ndarray)
     assert result.dtype == bool
 
-    expected = [getattr(tri, attr)(point) for tri in triangles]
+    expected = [getattr(a, attr)(b) for a, b in zip(A, B)]
 
     assert result.tolist() == expected
 
 
-def test_unary_geo_operations():
+@pytest.mark.parametrize('attr', [
+    'boundary',
+    'centroid',
+#    'representative_point',
+    'convex_hull',
+    'envelope',
+])
+def test_unary_geo_operations(attr):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(10)]
 
     vec = from_shapely(triangles)
 
-    centroids = vec.centroid()
+    result = getattr(vec, attr)()
+    expected = [getattr(t, attr) for t in triangles]
 
-    assert [c == t.centroid for c, t in zip(vec, triangles)]
+    assert [a.equals(b) for a, b in zip(result, expected)]
 
 
 def test_getitem():

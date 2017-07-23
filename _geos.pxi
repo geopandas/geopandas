@@ -60,6 +60,7 @@ cdef extern from "geos_c.h":
     char GEOSEquals(const GEOSGeometry * , const GEOSGeometry *) nogil
     char GEOSEquals_r(GEOSContextHandle_t , const GEOSGeometry * , const GEOSGeometry *) nogil
     char GEOSEqualsExact(const GEOSGeometry * , const GEOSGeometry * , double) nogil
+    char GEOSEqualsExact_r(GEOSContextHandle_t , const GEOSGeometry * , const GEOSGeometry * , double) nogil
 
     GEOSGeometry *GEOSDifference(const GEOSGeometry*, const GEOSGeometry*)
     GEOSGeometry *GEOSSymDifference(const GEOSGeometry*, const GEOSGeometry*)
@@ -74,6 +75,8 @@ cdef extern from "geos_c.h":
     GEOSGeometry *GEOSUnion_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
     GEOSGeometry *GEOSUnaryUnion_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
     GEOSGeometry *GEOSGetCentroid_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSPointOnSurface_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+
 
     GEOSGeometry *GEOSConvexHull_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
     GEOSGeometry *GEOSConvexHull(GEOSContextHandle_t, const GEOSGeometry*)

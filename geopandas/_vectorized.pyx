@@ -67,9 +67,9 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef prepared_binary_op(str op,
-                        np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
-                        object other):
+cdef prepared_binary_predicate(str op,
+                               np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                               object other):
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -93,6 +93,8 @@ cdef prepared_binary_op(str op,
 
     if op == 'contains':
         func = GEOSPreparedContains_r
+    elif op == 'disjoint':
+        func = GEOSPreparedDisjoint_r
     elif op == 'intersects':
         func = GEOSPreparedIntersects_r
     elif op == 'touches':
@@ -109,6 +111,8 @@ cdef prepared_binary_op(str op,
         func = GEOSPreparedCovers_r
     elif op == 'covered_by':
         func = GEOSPreparedCoveredBy_r
+    else:
+        raise NotImplementedError(op)
 
     with nogil:
         for idx in xrange(n):
@@ -135,6 +139,10 @@ cdef vector_binary_predicate(str op,
 
     if op == 'contains':
         func = GEOSContains_r
+    elif op == 'disjoint':
+        func = GEOSDisjoint_r
+    elif op == 'equals':
+        func = GEOSEquals_r
     elif op == 'intersects':
         func = GEOSIntersects_r
     elif op == 'touches':
@@ -149,6 +157,8 @@ cdef vector_binary_predicate(str op,
         func = GEOSCovers_r
     elif op == 'covered_by':
         func = GEOSCoveredBy_r
+    else:
+        raise NotImplementedError(op)
 
     with nogil:
         for idx in xrange(n):
@@ -180,6 +190,8 @@ cdef binary_predicate(str op,
 
     if op == 'contains':
         func = GEOSContains_r
+    elif op == 'disjoint':
+        func = GEOSDisjoint_r
     elif op == 'equals':
         func = GEOSEquals_r
     elif op == 'intersects':
@@ -229,6 +241,8 @@ cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     #     func = GEOSGetExteriorRing_r  # segfaults on cleanup?
     elif op == 'envelope':
         func = GEOSEnvelope_r
+    elif op == 'representative_point':
+        func = GEOSPointOnSurface_r
     else:
         raise NotImplementedError("Op %s not known" % op)
 
@@ -343,32 +357,83 @@ class VectorizedGeometry(object):
     def y(self):
         return get_coordinate_point(self.data, 1)
 
-    def contains(self, other):
+    def binop_predicate(self, other, op):
         if isinstance(other, BaseGeometry):
-            return binary_predicate('contains', self.data, other)
+            return binary_predicate(op, self.data, other)
         elif isinstance(other, VectorizedGeometry):
             assert len(self) == len(other)
-            return vector_binary_predicate('contains', self.data, other.data)
+            return vector_binary_predicate(op, self.data, other.data)
         else:
             raise NotImplementedError("type not known %s" % type(other))
 
     def covers(self, other):
-        return prepared_binary_op('covered_by', self.data, other)
+        return self.binop_predicate(other, 'covers')
+
+    def contains(self, other):
+        return self.binop_predicate(other, 'contains')
+
+    def crosses(self, other):
+        return self.binop_predicate(other, 'crosses')
+
+    def disjoint(self, other):
+        return self.binop_predicate(other, 'disjoint')
+
+    def equals(self, other):
+        return self.binop_predicate(other, 'equals')
+
+    def intersects(self, other):
+        return self.binop_predicate(other, 'intersects')
+
+    def overlaps(self, other):
+        return self.binop_predicate(other, 'overlaps')
+
+    def touches(self, other):
+        return self.binop_predicate(other, 'touches')
 
     def within(self, other):
-        return prepared_binary_op('within', self.data, other)
+        return self.binop_predicate(other, 'within')
 
-    def covered_by(self, other):
-        return prepared_binary_op('covers', self.data, other)
+    def equals_exact(self, other):
+        return prepared_binary_predicate('', self.data, other)
 
     def rcontains(self, other):
-        return prepared_binary_op('contains', self.data, other)
+        return prepared_binary_predicate('contains', self.data, other)
 
     def rcovers(self, other):
-        return prepared_binary_op('covers', self.data, other)
+        return prepared_binary_predicate('covers', self, other)
 
     def rcovered_by(self, other):
-        return prepared_binary_op('covered_by', self.data, other)
+        return prepared_binary_predicate('covered_by', self, other)
+
+    def rcrosses(self, other):
+        return prepared_binary_predicate('crosses', self.data, other)
+
+    def rdisjoint(self, other):
+        return prepared_binary_predicate('crosses', self.data, other)
+
+    def rintersects(self, other):
+        return prepared_binary_predicate('intersects', self.data, other)
+
+    def roverlaps(self, other):
+        return prepared_binary_predicate('overlaps', self.data, other)
+
+    def rtouches(self, other):
+        return prepared_binary_predicate('touches', self.data, other)
+
+    def rwithin(self, other):
+        return prepared_binary_predicate('within', self.data, other)
+
+    def boundary(self):
+        return geo_unary_op('boundary', self.data)
 
     def centroid(self):
         return geo_unary_op('centroid', self.data)
+
+    def convex_hull(self):
+        return geo_unary_op('convex_hull', self.data)
+
+    def envelope(self):
+        return geo_unary_op('envelope', self.data)
+
+    def representative_point(self):
+        return geo_unary_op('representative_point', self.data)
