@@ -62,17 +62,21 @@ def test_unary_geo_operations():
     assert [c == t.centroid for c, t in zip(vec, triangles)]
 
 
-def test_selection():
+def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
     vec = from_shapely(points)
-    vec2 = vec[vec.x % 2 == 0]
 
+    vec2 = vec[vec.x % 2 == 0]
     assert len(vec2) == 5
     assert all(p.x % 2 == 0 for p in vec2)
 
     vec3 = vec[[1, 3, 5]]
     assert len(vec3) == 3
     assert [p.x for p in vec3] == [1, 3, 5]
+
+    vec4 = vec[1::2]
+    assert len(vec4) == 5
+    assert [p.x for p in vec4] == [1, 3, 5, 7, 9]
 
 
 @pytest.mark.xfail(reason="We don't yet clean up memory well")

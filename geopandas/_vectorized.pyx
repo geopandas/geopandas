@@ -323,8 +323,10 @@ class VectorizedGeometry(object):
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return get_element(self.data, idx)
-        elif isinstance(idx, collections.Iterable):
+        elif isinstance(idx, (collections.Iterable, slice)):
             return VectorizedGeometry(self.data[idx], parent=self)
+        else:
+            raise TypeError("Index type not supported", idx)
 
     def __len__(self):
         return len(self.data)
@@ -352,6 +354,9 @@ class VectorizedGeometry(object):
 
     def covers(self, other):
         return prepared_binary_op('covered_by', self.data, other)
+
+    def within(self, other):
+        return prepared_binary_op('within', self.data, other)
 
     def covered_by(self, other):
         return prepared_binary_op('covers', self.data, other)
