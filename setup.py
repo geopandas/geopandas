@@ -70,7 +70,7 @@ if '--with-cython' in sys.argv:
 
 suffix = '.pyx' if use_cython else '.c'
 ext_modules = []
-for modname in ['_geoseries', '_vectorized']:
+for modname in ['vectorized']:
     ext_modules.append(Extension('geopandas.' + modname,
                                  ['geopandas/' + modname + suffix]))
 if use_cython:

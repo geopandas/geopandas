@@ -11,7 +11,7 @@ from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
 
-from . import _vectorized as vectorized
+from . import vectorized
 
 try:
     from rtree.core import RTreeError
