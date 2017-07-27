@@ -33,19 +33,19 @@ def test_from_shapely():
     # TODO: handle gc
 
 
-@pytest.mark.parametrize('attr', [
-    'contains',
-    'covers',
-    'crosses',
-    'disjoint',
-    'equals',
-    'intersects',
-    'overlaps',
-    'touches',
-    'within',
-    # 'equals_exact',
+@pytest.mark.parametrize('attr,args', [
+    ('contains', ()),
+    ('covers', ()),
+    ('crosses', ()),
+    ('disjoint', ()),
+    ('equals', ()),
+    ('intersects', ()),
+    ('overlaps', ()),
+    ('touches', ()),
+    ('within', ()),
+    ('equals_exact', (0.1,))
 ])
-def test_vector_scalar_predicates(attr):
+def test_vector_scalar_predicates(attr, args):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(100)]
@@ -56,28 +56,28 @@ def test_vector_scalar_predicates(attr):
     tri = triangles[0]
 
     for other in [point, tri]:
-        result = getattr(vec, attr)(other)
+        result = getattr(vec, attr)(other, *args)
         assert isinstance(result, np.ndarray)
         assert result.dtype == bool
 
-        expected = [getattr(tri, attr)(other) for tri in triangles]
+        expected = [getattr(tri, attr)(other, *args) for tri in triangles]
 
         assert result.tolist() == expected
 
 
-@pytest.mark.parametrize('attr', [
-    'contains',
-    'covers',
-    'crosses',
-    'disjoint',
-    'equals',
-    'intersects',
-    'overlaps',
-    'touches',
-    'within',
-    # 'equals_exact',
+@pytest.mark.parametrize('attr,args', [
+    ('contains', ()),
+    ('covers', ()),
+    ('crosses', ()),
+    ('disjoint', ()),
+    ('equals', ()),
+    ('intersects', ()),
+    ('overlaps', ()),
+    ('touches', ()),
+    ('within', ()),
+    ('equals_exact', (0.1,))
 ])
-def test_vector_vector_predicates(attr):
+def test_vector_vector_predicates(attr, args):
     A = [shapely.geometry.Polygon([(random.random(), random.random())
                                    for i in range(3)])
          for _ in range(100)]
@@ -89,11 +89,11 @@ def test_vector_vector_predicates(attr):
     vec_A = from_shapely(A)
     vec_B = from_shapely(B)
 
-    result = getattr(vec_A, attr)(vec_B)
+    result = getattr(vec_A, attr)(vec_B, *args)
     assert isinstance(result, np.ndarray)
     assert result.dtype == bool
 
-    expected = [getattr(a, attr)(b) for a, b in zip(A, B)]
+    expected = [getattr(a, attr)(b, *args) for a, b in zip(A, B)]
 
     assert result.tolist() == expected
 
@@ -105,7 +105,7 @@ def test_vector_vector_predicates(attr):
     'convex_hull',
     'envelope',
 ])
-def test_unary_geo_operations(attr):
+def test_unary_geo(attr):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(10)]
@@ -116,6 +116,80 @@ def test_unary_geo_operations(attr):
     expected = [getattr(t, attr) for t in triangles]
 
     assert [a.equals(b) for a, b in zip(result, expected)]
+
+
+@pytest.mark.parametrize('attr', [
+    'difference',
+    'symmetric_difference',
+    'union',
+    'intersection',
+])
+def test_vector_binary_geo(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+    quads = []
+    while len(quads) < 10:
+        geom = shapely.geometry.Polygon([(random.random(), random.random())
+                                        for i in range(4)])
+        if geom.is_valid:
+            quads.append(geom)
+
+    T = from_shapely(triangles)
+    Q = from_shapely(quads)
+
+    result = getattr(T, attr)(Q)
+    expected = [getattr(t, attr)(q) for t, q in zip(triangles, quads)]
+
+    assert [a.equals(b) for a, b in zip(result, expected)]
+
+
+@pytest.mark.parametrize('attr', [
+    'difference',
+    'symmetric_difference',
+    'union',
+    'intersection',
+])
+def test_binary_geo(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+    quads = []
+    while len(quads) < 1:
+        geom = shapely.geometry.Polygon([(random.random(), random.random())
+                                        for i in range(4)])
+        if geom.is_valid:
+            quads.append(geom)
+
+    q = quads[0]
+
+    T = from_shapely(triangles)
+
+    result = getattr(T, attr)(q)
+    expected = [getattr(t, attr)(q) for t in triangles]
+
+    assert [a.equals(b) for a, b in zip(result, expected)]
+
+
+@pytest.mark.parametrize('attr', [
+    pytest.mark.xfail('is_closed'),
+    'is_valid',
+    'is_empty',
+    'is_simple',
+    'has_z',
+    'is_ring',
+])
+def test_unary_predicates(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+
+    vec = from_shapely(triangles)
+
+    result = getattr(vec, attr)()
+    expected = [getattr(t, attr) for t in triangles]
+
+    assert result.tolist() == expected
 
 
 def test_getitem():
@@ -202,3 +276,20 @@ def test_buffer(resolution):
                         join_style=JOIN_STYLE.round)
 
     assert all(a.equals(b) for a, b in zip(expected, result))
+
+
+@pytest.mark.parametrize('attr', ['area', 'length'])
+def test_vector_float(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(100)]
+
+    vec = from_shapely(triangles)
+
+    result = getattr(vec, attr)()
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == np.float
+
+    expected = [getattr(tri, attr) for tri in triangles]
+
+    assert result.tolist() == expected

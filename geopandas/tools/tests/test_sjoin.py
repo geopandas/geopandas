@@ -85,6 +85,7 @@ class TestSpatialJoin(object):
                 exp[['index_left', 'index_right']].astype('int64')
         exp = exp.set_index('index_left')
         exp.index.name = None
+        exp.geometry = exp.geometry.astype(np.uintp)
 
         assert_frame_equal(res, exp)
 
@@ -106,6 +107,7 @@ class TestSpatialJoin(object):
             res['index_right'] = res['index_right'].astype(float)
         exp = exp.set_index('index_left')
         exp.index.name = None
+        exp.geometry = exp.geometry.astype(np.uintp)
 
         assert_frame_equal(res, exp)
 
@@ -126,6 +128,7 @@ class TestSpatialJoin(object):
             res['index_left'] = res['index_left'].astype(float)
         exp = exp.set_index('index_right')
         exp = exp.reindex(columns=res.columns)
+        exp.geometry = exp.geometry.astype(np.uintp)
 
         assert_frame_equal(res, exp, check_index_type=False)
 
