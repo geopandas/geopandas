@@ -26,6 +26,9 @@ cdef extern from "geos_c.h":
     GEOSGeometry *GEOSGeom_createLinearRing_r(GEOSContextHandle_t, GEOSCoordSequence *) nogil
     GEOSGeometry *GEOSGeom_clone_r(GEOSContextHandle_t, GEOSGeometry *) nogil
     GEOSCoordSequence *GEOSCoordSeq_clone_r(GEOSContextHandle_t, GEOSCoordSequence *) nogil
+    GEOSGeometry *GEOSGeom_createEmptyPolygon() 
+    GEOSGeometry *GEOSGeom_createEmptyPolygon_r(GEOSContextHandle_t handle) nogil
+
 
     void GEOSGeom_destroy_r(GEOSContextHandle_t, GEOSGeometry *) nogil
 
@@ -87,6 +90,28 @@ cdef extern from "geos_c.h":
 
     int GEOSGeomTypeId(const GEOSGeometry*) nogil
     int GEOSGeomTypeId_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+
+    int GEOSArea_r(GEOSContextHandle_t, const GEOSGeometry*, double *) nogil
+    int GEOSLength_r(GEOSContextHandle_t, const GEOSGeometry*, double *) nogil
+    int GEOSDistance_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*, double *) nogil
+    int GEOSDistanceIndexed_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*, double *) nogil
+    int GEOSHausdorffDistance_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *, double *) nogil
+    int GEOSHausdorffDistanceDensify_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *,double, double *) nogil
+    int GEOSFrechetDistance_r(GEOSContextHandle_t, const GEOSGeometry *,const GEOSGeometry *, double *) nogil
+    int GEOSFrechetDistanceDensify_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *, double , double *) nogil
+    int GEOSGeomGetLength_r(GEOSContextHandle_t, const GEOSGeometry *, double *) nogil
+
+    char GEOSisValid_r(GEOSContextHandle_t, const GEOSGeometry* ) nogil
+    char GEOSisEmpty_r(GEOSContextHandle_t, const GEOSGeometry* ) nogil
+    char GEOSisSimple_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    char GEOSisRing_r(GEOSContextHandle_t, const GEOSGeometry* ) nogil
+    char GEOSHasZ_r(GEOSContextHandle_t, const GEOSGeometry* g) nogil
+    char GEOSisClosed_r(GEOSContextHandle_t, const GEOSGeometry *) nogil
+
+    GEOSGeometry *GEOSDifference_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSSymDifference_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSUnion_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSIntersection_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
 
     GEOSGeometry *GEOSBufferWithStyle_r(GEOSContextHandle_t, const GEOSGeometry*, double, int, int, int, double) nogil
 
