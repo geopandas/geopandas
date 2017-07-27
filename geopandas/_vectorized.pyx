@@ -179,7 +179,7 @@ cpdef vector_binary_predicate(str op,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef binary_predicate(str op,
+cpdef binary_predicate(str op,
                       np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                       object other):
     cdef Py_ssize_t idx

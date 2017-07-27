@@ -54,7 +54,7 @@ def binary_predicate(op, this, other, **kwargs):
         x = vectorized.vector_binary_predicate(op, t.data, o.data)
         return Series(x, index=this.index)
     elif isinstance(other, BaseGeometry):
-        x = vectorized.binary_predicate(op, this._geometry_array, other)
+        x = vectorized.binary_predicate(op, this._geometry_array.data, other)
         return Series(x, index=this.index)
     else:
         raise TypeError(type(this), type(other))

@@ -60,12 +60,12 @@ class TestSeries(unittest.TestCase):
         for g in geoms:
             gs = GeoSeries(g)
             self.assert_(len(gs) == 1)
-            self.assert_(gs.iloc[0] is g)
+            self.assert_(gs.iloc[0].equals(g))
 
             gs = GeoSeries(g, index=index)
             self.assert_(len(gs) == len(index))
             for x in gs:
-                self.assert_(x is g)
+                self.assert_(x.equals(g))
 
     def test_copy(self):
         gc = self.g3.copy()
@@ -137,7 +137,7 @@ class TestSeries(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.landmarks.to_crs(crs=None, epsg=None)
 
-    def dont_test_fillna(self):
+    def test_fillna(self):
         na = self.na_none.fillna(Point())
         self.assertTrue(isinstance(na[2], BaseGeometry))
         self.assertTrue(na[2].is_empty)

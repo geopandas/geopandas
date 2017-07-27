@@ -147,6 +147,8 @@ class GeoSeries(GeoPandasBase, Series):
         return val
 
     def __getitem__(self, key):
+        if isinstance(key, (slice, list, Series, np.ndarray)):
+            return super(GeoSeries, self).__getitem__(key)
         try:
             if key in self.index:
                 loc = self.index.get_loc(key)

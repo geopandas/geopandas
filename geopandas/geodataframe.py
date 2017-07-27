@@ -38,7 +38,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                        '_default_kind', '_default_fill_value', '_metadata',
                        '__array_struct__', '__array_interface__']
 
-    _metadata = ['crs', '_geometry_column_name']
+    _metadata = ['crs', '_geometry_column_name', '_original_geometry']
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
@@ -49,6 +49,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
+        elif isinstance(args[0], dict) and 'geometry' in args[0]:
+            g = args[0]['geometry']
+            self._original_geometry = g._original_geometry
+
         self._invalidate_sindex()
 
     # Serialize metadata (will no longer be necessary in pandas 0.17+)
@@ -76,6 +80,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not isinstance(col, (list, np.ndarray, Series)):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
+        self._original_geometry = col._original_geometry
         self.set_geometry(col, inplace=True)
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -297,6 +302,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
             yield feature
 
+    def iterrows(self):
+        rows = super(GeoDataFrame, self).iterrows()
+        for (index, series), geom in zip(rows, self.geometry._geometry_array):
+            series.loc[self._geometry_column_name] = geom
+            yield (index, series)
+
     def _to_geo(self, **kwargs):
         """
         Returns a python feature collection (i.e. the geointerface)
@@ -373,11 +384,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()
+            result._original_geometry = self._original_geometry
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
+            result._original_geometry = self._original_geometry
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
