@@ -11,6 +11,8 @@ from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
 
+from . import _vectorized as vectorized
+
 try:
     from rtree.core import RTreeError
     HAS_SINDEX = True
@@ -39,20 +41,37 @@ def _geo_op(this, other, op):
 
 
 # TODO: think about merging with _geo_op
-def _series_op(this, other, op, **kwargs):
+def binary_predicate(op, this, other, **kwargs):
     """Geometric operation that returns a pandas Series"""
     null_val = False if op != 'distance' else np.nan
+    assert not kwargs
 
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs)
-                    if not this_elem.is_empty | other_elem.is_empty else null_val
-                    for this_elem, other_elem in zip(this, other)],
-                    index=this.index)
+        t = this._geometry_array
+        o = other._geometry_array
+        x = vectorized.vector_binary_predicate(op, t.data, o.data)
+        return Series(x, index=this.index)
+    elif isinstance(other, BaseGeometry):
+        x = vectorized.binary_predicate(op, this._geometry_array, other)
+        return Series(x, index=this.index)
     else:
-        return Series([getattr(s, op)(other, **kwargs) if s else null_val
-                      for s in this.geometry], index=this.index)
+        raise TypeError(type(this), type(other))
+
+
+def prepared_binary_predicate(op, this, other):
+    """Geometric operation that returns a pandas Series"""
+    if isinstance(other, BaseGeometry):
+        x = vectorized.prepared_binary_predicate(this._geometry_array, other)
+        return Series(x, index=this.index)
+    else:
+        raise TypeError(type(this), type(other))
+
+
+def unary_geo(op, this):
+    x = vectorized.geo_unary_op(op, this._geometry_array)
+    return GeoSeries(x, index=this.index)
 
 
 def _geo_unary_op(this, op):
@@ -200,17 +219,16 @@ class GeoPandasBase(object):
 
     @property
     def _geometry_array(self):
-        from geopandas._vectorized import VectorizedGeometry
-        return VectorizedGeometry(data=self.geometry.values,
-                                  parent=self._original_geometry)
+        return vectorized.VectorizedGeometry(data=self.geometry.values,
+                                             parent=self._original_geometry)
 
     def contains(self, other):
         """Return True for all geometries that contain *other*, else False"""
-        return self._geometry_array.contains(other)
+        return binary_predicate('contains', self, other)
 
     def geom_equals(self, other):
         """Return True for all geometries that equal *other*, else False"""
-        return self._geometry_array.equals(other)
+        return binary_predicate('equals', self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Return True for all geometries that is approximately equal to *other*, else False"""
@@ -224,27 +242,27 @@ class GeoPandasBase(object):
 
     def crosses(self, other):
         """Return True for all geometries that cross *other*, else False"""
-        return self._geometry_array.crosses(other)
+        return binary_predicate('crosses', self, other)
 
     def disjoint(self, other):
         """Return True for all geometries that are disjoint with *other*, else False"""
-        return self._geometry_array.disjoint(other)
+        return binary_predicate('disjoint', self, other)
 
     def intersects(self, other):
         """Return True for all geometries that intersect *other*, else False"""
-        return self._geometry_array.intersects(other)
+        return binary_predicate('intersects', self, other)
 
     def overlaps(self, other):
         """Return True for all geometries that overlap *other*, else False"""
-        return self._geometry_array.overlaps(other)
+        return binary_predicate('overlaps', self, other)
 
     def touches(self, other):
         """Return True for all geometries that touch *other*, else False"""
-        return self._geometry_array.touches(other)
+        return binary_predicate('touches', self, other)
 
     def within(self, other):
         """Return True for all geometries that are within *other*, else False"""
-        return self._geometry_array.within(other)
+        return binary_predicate('within', self, other)
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
@@ -490,8 +508,3 @@ def _array_input(arr):
         arr[0] = geom
 
     return arr
-
-try:
-    from ._geoseries import _series_op, _geo_unary_op
-except ImportError as e:
-    print("Failed to import from cython", e)

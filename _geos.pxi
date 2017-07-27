@@ -26,6 +26,9 @@ cdef extern from "geos_c.h":
     GEOSGeometry *GEOSGeom_createLinearRing_r(GEOSContextHandle_t, GEOSCoordSequence *) nogil
     GEOSGeometry *GEOSGeom_clone_r(GEOSContextHandle_t, GEOSGeometry *) nogil
     GEOSCoordSequence *GEOSCoordSeq_clone_r(GEOSContextHandle_t, GEOSCoordSequence *) nogil
+    GEOSGeometry *GEOSGeom_createEmptyPolygon() 
+    GEOSGeometry *GEOSGeom_createEmptyPolygon_r(GEOSContextHandle_t handle) nogil
+
 
     void GEOSGeom_destroy_r(GEOSContextHandle_t, GEOSGeometry *) nogil
 

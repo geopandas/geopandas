@@ -70,10 +70,10 @@ class GeoSeries(GeoPandasBase, Series):
         if isinstance(args[0], (tuple, list)) and isinstance(args[0][0], BaseGeometry):
             args = (from_shapely(args[0]),)
         if isinstance(args[0], VectorizedGeometry):
-            data = args[0].data
             self._original_geometry = args[0]
+            args = (args[0].data,) + args[1:]
 
-        super(GeoSeries, self).__init__(data, **kwargs)
+        super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
         self._invalidate_sindex()
 
@@ -132,9 +132,10 @@ class GeoSeries(GeoPandasBase, Series):
     # Implement pandas methods
     #
 
-    @property
-    def _constructor(self):
-        return GeoSeries
+    def _constructor(self, *args, **kwargs):
+        obj = GeoSeries(*args, **kwargs)
+        obj._original_geometry = self._original_geometry
+        return obj
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -146,10 +147,13 @@ class GeoSeries(GeoPandasBase, Series):
         return val
 
     def __getitem__(self, key):
-        if isinstance(key, int):
-            return self._geometry_array[key]
-        else:
-            return self._wrapped_pandas_method('__getitem__', key)
+        try:
+            if key in self.index:
+                loc = self.index.get_loc(key)
+                return self._geometry_array[loc]
+        except TypeError:
+            pass
+        raise KeyError(key)
 
     def __iter__(self):
         return iter(self._geometry_array)
@@ -188,8 +192,10 @@ class GeoSeries(GeoPandasBase, Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name).__finalize__(self)
+        return self
+        return GeoSeries(self._geometry_array,  # TODO: implement copy
+                         index=self.index,
+                         name=self.name).__finalize__(self)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
@@ -209,17 +215,21 @@ class GeoSeries(GeoPandasBase, Series):
                                              inplace=inplace, **kwargs)
 
     def align(self, other, join='outer', level=None, copy=True,
-              fill_value=None, **kwargs):
-        if fill_value is None:
-            fill_value = Point()
+              fill_value=0, **kwargs):
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
+        left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
+        right = right.astype(np.uintp)
+        left2 = GeoSeries(left)  # TODO: why do we do this?
+        left2._original_geometry = left._original_geometry
         if isinstance(other, GeoSeries):
-            return GeoSeries(left), GeoSeries(right)
+            right2 = GeoSeries(right)
+            right2._original_geometry = right._original_geometry
+            return left2, right2
         else: # It is probably a Series, let's keep it that way
-            return GeoSeries(left), right
+            return left2, right
 
 
     def __contains__(self, other):

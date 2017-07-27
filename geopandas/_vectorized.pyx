@@ -17,8 +17,6 @@ from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
 
-from .base import GeoPandasBase
-
 include "_geos.pxi"
 
 from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
@@ -33,8 +31,11 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
     geom = <GEOSGeometry *> geoms[idx]
 
     handle = get_geos_context_handle()
-    geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
-    typ = GEOMETRY_TYPES[GEOSGeomTypeId_r(handle, geom)]
+
+    if not geom:
+        geom = GEOSGeom_createEmptyPolygon_r(handle)
+    else:
+        geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
 
     return geom_factory(<np.uintp_t> geom)
 
@@ -118,14 +119,17 @@ cdef prepared_binary_predicate(str op,
     with nogil:
         for idx in xrange(n):
             geom = <GEOSGeometry *> geoms[idx]
-            out[idx] = func(handle, prepared_geom, geom)
+            if geom != NULL:
+                out[idx] = func(handle, prepared_geom, geom)
+            else:
+                out[idx] = 0
 
     return out
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef vector_binary_predicate(str op,
+cpdef vector_binary_predicate(str op,
                              np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                              np.ndarray[np.uintp_t, ndim=1, cast=True] right):
     cdef Py_ssize_t idx
@@ -165,7 +169,10 @@ cdef vector_binary_predicate(str op,
         for idx in xrange(n):
             left_geom = <GEOSGeometry *> left[idx]
             right_geom = <GEOSGeometry *> right[idx]
-            out[idx] = func(handle, left_geom, right_geom)
+            if left_geom != NULL and right_geom != NULL:
+                out[idx] = func(handle, left_geom, right_geom)
+            else:
+                out[idx] = False
 
     return out
 
@@ -213,7 +220,10 @@ cdef binary_predicate(str op,
     with nogil:
         for idx in xrange(n):
             geom = <GEOSGeometry *> geoms[idx]
-            out[idx] = func(handle, geom, other_geom)
+            if geom:
+                out[idx] = func(handle, geom, other_geom)
+            else:
+                out[idx] = False
 
     return out
 
@@ -251,7 +261,10 @@ cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         for idx in xrange(n):
             geos_geom = geoms[idx]
             geom = <GEOSGeometry *> geos_geom
-            out[idx] = <np.uintp_t> func(handle, geom)
+            if geom:
+                out[idx] = <np.uintp_t> func(handle, geom)
+            else:
+                out[idx] = 0
 
     return VectorizedGeometry(out)
 
@@ -274,8 +287,11 @@ cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
         for idx in xrange(n):
             geos_geom = geoms[idx]
             geom = <GEOSGeometry *> geos_geom
-            out[idx] = <np.uintp_t> GEOSBufferWithStyle_r(handle, geom,
-                    distance, resolution, cap_style, join_style, mitre_limit)
+            if geom:
+                out[idx] = <np.uintp_t> GEOSBufferWithStyle_r(handle, geom,
+                        distance, resolution, cap_style, join_style, mitre_limit)
+            else:
+                out[idx] = 0
 
     return VectorizedGeometry(out)
 
@@ -308,9 +324,12 @@ cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
     with nogil:
         for idx in xrange(n):
             geom = <GEOSGeometry *> geoms[idx]
-            sequence = GEOSGeom_getCoordSeq_r(handle, geom)
-            func(handle, sequence, 0, &value)
-            out[idx] = value
+            if geom:
+                sequence = GEOSGeom_getCoordSeq_r(handle, geom)
+                func(handle, sequence, 0, &value)
+                out[idx] = value
+            else:
+                out[idx] = 0
 
     return out
 
@@ -330,9 +349,12 @@ cpdef from_shapely(object L):
 
     for idx in xrange(n):
         g = L[idx]
-        geos_geom = <np.uintp_t> g.__geom__
-        geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
-        out[idx] = <np.uintp_t> geom
+        if g is not None:
+            geos_geom = <np.uintp_t> g.__geom__
+            geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
+            out[idx] = <np.uintp_t> geom
+        else:
+            out[idx] = 0
 
     return VectorizedGeometry(out)
 
@@ -352,7 +374,8 @@ cdef free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         for idx in xrange(n):
             geos_geom = geoms[idx]
             geom = <GEOSGeometry *> geos_geom
-            GEOSGeom_destroy_r(handle, geom)
+            if geom:
+                GEOSGeom_destroy_r(handle, geom)
 
 
 class VectorizedGeometry(object):
