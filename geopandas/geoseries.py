@@ -12,6 +12,7 @@ from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
+from .vectorized import from_shapely, VectorizedGeometry
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase
 
@@ -47,7 +48,7 @@ class _CoordinateIndexer(_NDFrameIndexer):
 
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
-    _metadata = ['name', 'crs']
+    _metadata = ['name', 'crs', '_original_geometry']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -64,7 +65,15 @@ class GeoSeries(GeoPandasBase, Series):
 
         crs = kwargs.pop('crs', None)
 
-        super(GeoSeries, self).__init__(*args, **kwargs)
+        assert len(args) > 1  # for now while prototyping
+
+        if isinstance(args[0], (tuple, list)) and isinstance(args[0][0], BaseGeometry):
+            args = (from_shapely(args[0]),)
+        if isinstance(args[0], VectorizedGeometry):
+            data = args[0].data
+            self._original_geometry = args[0]
+
+        super(GeoSeries, self).__init__(data, **kwargs)
         self.crs = crs
         self._invalidate_sindex()
 
@@ -137,7 +146,13 @@ class GeoSeries(GeoPandasBase, Series):
         return val
 
     def __getitem__(self, key):
-        return self._wrapped_pandas_method('__getitem__', key)
+        if isinstance(key, int):
+            return self._geometry_array[key]
+        else:
+            return self._wrapped_pandas_method('__getitem__', key)
+
+    def __iter__(self):
+        return iter(self._geometry_array)
 
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method('sort_index', *args, **kwargs)

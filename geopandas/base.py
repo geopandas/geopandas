@@ -198,13 +198,19 @@ class GeoPandasBase(object):
     # Binary operations that return a pandas Series
     #
 
+    @property
+    def _geometry_array(self):
+        from geopandas._vectorized import VectorizedGeometry
+        return VectorizedGeometry(data=self.geometry.values,
+                                  parent=self._original_geometry)
+
     def contains(self, other):
         """Return True for all geometries that contain *other*, else False"""
-        return _series_op(self, other, 'contains')
+        return self._geometry_array.contains(other)
 
     def geom_equals(self, other):
         """Return True for all geometries that equal *other*, else False"""
-        return _series_op(self, other, 'equals')
+        return self._geometry_array.equals(other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Return True for all geometries that is approximately equal to *other*, else False"""
@@ -218,27 +224,27 @@ class GeoPandasBase(object):
 
     def crosses(self, other):
         """Return True for all geometries that cross *other*, else False"""
-        return _series_op(self, other, 'crosses')
+        return self._geometry_array.crosses(other)
 
     def disjoint(self, other):
         """Return True for all geometries that are disjoint with *other*, else False"""
-        return _series_op(self, other, 'disjoint')
+        return self._geometry_array.disjoint(other)
 
     def intersects(self, other):
         """Return True for all geometries that intersect *other*, else False"""
-        return _series_op(self, other, 'intersects')
+        return self._geometry_array.intersects(other)
 
     def overlaps(self, other):
         """Return True for all geometries that overlap *other*, else False"""
-        return _series_op(self, other, 'overlaps')
+        return self._geometry_array.overlaps(other)
 
     def touches(self, other):
         """Return True for all geometries that touch *other*, else False"""
-        return _series_op(self, other, 'touches')
+        return self._geometry_array.touches(other)
 
     def within(self, other):
         """Return True for all geometries that are within *other*, else False"""
-        return _series_op(self, other, 'within')
+        return self._geometry_array.within(other)
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
@@ -295,10 +301,9 @@ class GeoPandasBase(object):
             self._generate_sindex()
         return self._sindex
 
-    def buffer(self, distance, resolution=16):
-        return gpd.GeoSeries([geom.buffer(distance, resolution)
-                             for geom in self.geometry],
-                         index=self.index, crs=self.crs)
+    def buffer(self, distance, **kwargs):
+        geom_array = self._geometry_array.buffer(distance, **kwargs)
+        return gpd.GeoSeries(geom_array, index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
         return gpd.GeoSeries([geom.simplify(*args, **kwargs)
