@@ -179,6 +179,41 @@ cpdef vector_binary_predicate(str op,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cpdef vector_binary_predicate_with_arg(
+        str op,
+        np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+        np.ndarray[np.uintp_t, ndim=1, cast=True] right,
+        double x):
+    """ This is a copy of vector_binary_predicate but supporting a double arg """
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef unsigned int n = left.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+
+    if op == 'equals_exact':
+        func = GEOSEqualsExact_r
+    else:
+        raise NotImplementedError(op)
+
+    with nogil:
+        for idx in xrange(n):
+            left_geom = <GEOSGeometry *> left[idx]
+            right_geom = <GEOSGeometry *> right[idx]
+            if left_geom != NULL and right_geom != NULL:
+                out[idx] = func(handle, left_geom, right_geom, x)
+            else:
+                out[idx] = False
+
+    return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef binary_predicate(str op,
                       np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                       object other):
@@ -216,6 +251,8 @@ cpdef binary_predicate(str op,
         func = GEOSCovers_r
     elif op == 'covered_by':
         func = GEOSCoveredBy_r
+    else:
+        raise NotImplementedError(op)
 
     with nogil:
         for idx in xrange(n):
@@ -226,6 +263,41 @@ cpdef binary_predicate(str op,
                 out[idx] = False
 
     return out
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef binary_predicate_with_arg(str op,
+                                np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                                object other,
+                                double x):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef GEOSGeometry *other_geom
+    cdef uintptr_t other_pointer
+    cdef unsigned int n = geoms.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+    other_pointer = <np.uintp_t> other.__geom__
+    other_geom = <GEOSGeometry *> other_pointer
+
+    if op == 'equals_exact':
+        func = GEOSEqualsExact_r
+    else:
+        raise NotImplementedError(op)
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            if geom:
+                out[idx] = func(handle, geom, other_geom, x)
+            else:
+                out[idx] = False
+
+    return out
+
 
 
 @cython.boundscheck(False)
@@ -406,12 +478,18 @@ class VectorizedGeometry(object):
     def y(self):
         return get_coordinate_point(self.data, 1)
 
-    def binop_predicate(self, other, op):
+    def binop_predicate(self, other, op, extra=None):
         if isinstance(other, BaseGeometry):
-            return binary_predicate(op, self.data, other)
+            if extra is not None:
+                return binary_predicate_with_arg(op, self.data, other, extra)
+            else:
+                return binary_predicate(op, self.data, other)
         elif isinstance(other, VectorizedGeometry):
             assert len(self) == len(other)
-            return vector_binary_predicate(op, self.data, other.data)
+            if extra is not None:
+                return vector_binary_predicate_with_arg(op, self.data, other.data, extra)
+            else:
+                return vector_binary_predicate(op, self.data, other.data)
         else:
             raise NotImplementedError("type not known %s" % type(other))
 
@@ -442,8 +520,8 @@ class VectorizedGeometry(object):
     def within(self, other):
         return self.binop_predicate(other, 'within')
 
-    def equals_exact(self, other):
-        return prepared_binary_predicate('', self.data, other)
+    def equals_exact(self, other, tolerance):
+        return self.binop_predicate(other, 'equals_exact', tolerance)
 
     def rcontains(self, other):
         return prepared_binary_predicate('contains', self.data, other)

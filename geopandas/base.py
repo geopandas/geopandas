@@ -41,7 +41,7 @@ def _geo_op(this, other, op):
 
 
 # TODO: think about merging with _geo_op
-def binary_predicate(op, this, other, **kwargs):
+def binary_predicate(op, this, other, *args, **kwargs):
     """Geometric operation that returns a pandas Series"""
     null_val = False if op != 'distance' else np.nan
     assert not kwargs
@@ -51,10 +51,16 @@ def binary_predicate(op, this, other, **kwargs):
         this, other = this.align(other.geometry)
         t = this._geometry_array
         o = other._geometry_array
-        x = vectorized.vector_binary_predicate(op, t.data, o.data)
+        if args:
+            x = vectorized.vector_binary_predicate_with_arg(op, t.data, o.data, *args)
+        else:
+            x = vectorized.vector_binary_predicate(op, t.data, o.data)
         return Series(x, index=this.index)
     elif isinstance(other, BaseGeometry):
-        x = vectorized.binary_predicate(op, this._geometry_array.data, other)
+        if args:
+            x = vectorized.binary_predicate_with_arg(op, this._geometry_array.data, other, *args)
+        else:
+            x = vectorized.binary_predicate(op, this._geometry_array.data, other)
         return Series(x, index=this.index)
     else:
         raise TypeError(type(this), type(other))
@@ -233,12 +239,13 @@ class GeoPandasBase(object):
     def geom_almost_equals(self, other, decimal=6):
         """Return True for all geometries that is approximately equal to *other*, else False"""
         # TODO: pass precision argument
-        return _series_op(self, other, 'almost_equals', decimal=decimal)
+        tolerance = 0.5 * 10**(-decimal)
+        return binary_predicate('equals_exact', self, other, tolerance)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given tolerance, else False"""
         # TODO: pass tolerance argument.
-        return _series_op(self, other, 'equals_exact', tolerance=tolerance)
+        return binary_predicate('equals_exact', self, other, tolerance)
 
     def crosses(self, other):
         """Return True for all geometries that cross *other*, else False"""

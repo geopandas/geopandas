@@ -33,19 +33,19 @@ def test_from_shapely():
     # TODO: handle gc
 
 
-@pytest.mark.parametrize('attr', [
-    'contains',
-    'covers',
-    'crosses',
-    'disjoint',
-    'equals',
-    'intersects',
-    'overlaps',
-    'touches',
-    'within',
-    # 'equals_exact',
+@pytest.mark.parametrize('attr,args', [
+    ('contains', ()),
+    ('covers', ()),
+    ('crosses', ()),
+    ('disjoint', ()),
+    ('equals', ()),
+    ('intersects', ()),
+    ('overlaps', ()),
+    ('touches', ()),
+    ('within', ()),
+    ('equals_exact', (0.1,))
 ])
-def test_vector_scalar_predicates(attr):
+def test_vector_scalar_predicates(attr, args):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(100)]
@@ -56,28 +56,28 @@ def test_vector_scalar_predicates(attr):
     tri = triangles[0]
 
     for other in [point, tri]:
-        result = getattr(vec, attr)(other)
+        result = getattr(vec, attr)(other, *args)
         assert isinstance(result, np.ndarray)
         assert result.dtype == bool
 
-        expected = [getattr(tri, attr)(other) for tri in triangles]
+        expected = [getattr(tri, attr)(other, *args) for tri in triangles]
 
         assert result.tolist() == expected
 
 
-@pytest.mark.parametrize('attr', [
-    'contains',
-    'covers',
-    'crosses',
-    'disjoint',
-    'equals',
-    'intersects',
-    'overlaps',
-    'touches',
-    'within',
-    # 'equals_exact',
+@pytest.mark.parametrize('attr,args', [
+    ('contains', ()),
+    ('covers', ()),
+    ('crosses', ()),
+    ('disjoint', ()),
+    ('equals', ()),
+    ('intersects', ()),
+    ('overlaps', ()),
+    ('touches', ()),
+    ('within', ()),
+    ('equals_exact', (0.1,))
 ])
-def test_vector_vector_predicates(attr):
+def test_vector_vector_predicates(attr, args):
     A = [shapely.geometry.Polygon([(random.random(), random.random())
                                    for i in range(3)])
          for _ in range(100)]
@@ -89,11 +89,11 @@ def test_vector_vector_predicates(attr):
     vec_A = from_shapely(A)
     vec_B = from_shapely(B)
 
-    result = getattr(vec_A, attr)(vec_B)
+    result = getattr(vec_A, attr)(vec_B, *args)
     assert isinstance(result, np.ndarray)
     assert result.dtype == bool
 
-    expected = [getattr(a, attr)(b) for a, b in zip(A, B)]
+    expected = [getattr(a, attr)(b, *args) for a, b in zip(A, B)]
 
     assert result.tolist() == expected
 
