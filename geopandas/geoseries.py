@@ -65,7 +65,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         crs = kwargs.pop('crs', None)
 
-        assert len(args) > 1  # for now while prototyping
+        assert len(args) == 1  # for now while prototyping
 
         if isinstance(args[0], (tuple, list)) and isinstance(args[0][0], BaseGeometry):
             args = (from_shapely(args[0]),)
