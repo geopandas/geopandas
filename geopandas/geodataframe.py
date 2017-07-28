@@ -1,3 +1,4 @@
+from collections import Iterable
 import json
 import os
 import sys
@@ -17,6 +18,16 @@ from . import vectorized
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
+
+
+def coerce_to_geoseries(x):
+    if isinstance(x, GeoSeries):
+        return x
+    if isinstance(x, vectorized.VectorizedGeometry):
+        return GeoSeries(x)
+    if isinstance(x, Iterable):
+        return GeoSeries(vectorized.from_shapely(list(x)))
+    raise TypeError(type(x))
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -47,13 +58,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
+        if isinstance(args[0], dict) and self._geometry_column_name in args[0]:
+            g = args[0][self._geometry_column_name]
+            g = coerce_to_geoseries(g)
+            args[0][self._geometry_column_name] = g
+            self._original_geometry = g._original_geometry
         super(GeoDataFrame, self).__init__(*args, **kwargs)
         self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
-        elif isinstance(args[0], dict) and 'geometry' in args[0]:
-            g = args[0]['geometry']
-            self._original_geometry = g._original_geometry
 
         self._invalidate_sindex()
 
