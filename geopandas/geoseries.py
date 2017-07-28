@@ -195,7 +195,6 @@ class GeoSeries(GeoPandasBase, Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return self
         return GeoSeries(self._geometry_array,  # TODO: implement copy
                          index=self.index,
                          name=self.name).__finalize__(self)
