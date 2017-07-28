@@ -91,6 +91,17 @@ cdef extern from "geos_c.h":
     int GEOSGeomTypeId(const GEOSGeometry*) nogil
     int GEOSGeomTypeId_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
 
+    int GEOSArea_r(GEOSContextHandle_t, const GEOSGeometry*, double *) nogil
+    int GEOSLength_r(GEOSContextHandle_t, const GEOSGeometry*, double *) nogil
+    int GEOSDistance_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*, double *) nogil
+    int GEOSDistanceIndexed_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*, double *) nogil
+    int GEOSHausdorffDistance_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *, double *) nogil
+    int GEOSHausdorffDistanceDensify_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *,double, double *) nogil
+    int GEOSFrechetDistance_r(GEOSContextHandle_t, const GEOSGeometry *,const GEOSGeometry *, double *) nogil
+    int GEOSFrechetDistanceDensify_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *, double , double *) nogil
+    int GEOSGeomGetLength_r(GEOSContextHandle_t, const GEOSGeometry *, double *) nogil
+
+
     GEOSGeometry *GEOSBufferWithStyle_r(GEOSContextHandle_t, const GEOSGeometry*, double, int, int, int, double) nogil
 
 

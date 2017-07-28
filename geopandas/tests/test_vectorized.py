@@ -202,3 +202,20 @@ def test_buffer(resolution):
                         join_style=JOIN_STYLE.round)
 
     assert all(a.equals(b) for a, b in zip(expected, result))
+
+
+@pytest.mark.parametrize('attr', ['area', 'length'])
+def test_vector_float(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(100)]
+
+    vec = from_shapely(triangles)
+
+    result = getattr(vec, attr)()
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == np.float
+
+    expected = [getattr(tri, attr) for tri in triangles]
+
+    assert result.tolist() == expected

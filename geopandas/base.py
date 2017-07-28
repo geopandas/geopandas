@@ -124,7 +124,8 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'area', null_value=np.nan)
+        x = vectorized.vector_float('area', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def geom_type(self):
@@ -139,7 +140,8 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Return the length of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'length', null_value=np.nan)
+        x = vectorized.vector_float('length', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_valid(self):

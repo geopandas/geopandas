@@ -299,6 +299,41 @@ cpdef binary_predicate_with_arg(str op,
     return out
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef unsigned int n = geoms.size
+    cdef double nan = np.nan
+    cdef double * location
+
+    cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
+    location = <double *> out.data
+
+    handle = get_geos_context_handle()
+
+    if op == 'area':
+        func = GEOSArea_r
+    elif op == 'length':
+        func = GEOSLength_r
+    else:
+        raise NotImplementedError(op)
+
+    ptr = out.data
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            if geom != NULL:
+                func(handle, geom, <double*> location + idx)
+            else:
+                out[idx] = nan
+
+    return out
+
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -564,6 +599,12 @@ class VectorizedGeometry(object):
 
     def representative_point(self):
         return geo_unary_op('representative_point', self.data)
+
+    def area(self):
+        return vector_float('area', self.data)
+
+    def length(self):
+        return vector_float('length', self.data)
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
               join_style=JOIN_STYLE.round, mitre_limit=5.0):
