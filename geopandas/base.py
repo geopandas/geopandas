@@ -146,24 +146,27 @@ class GeoPandasBase(object):
     @property
     def is_valid(self):
         """Return True for each valid geometry, else False"""
-        return _series_unary_op(self, 'is_valid', null_value=False)
+        x = vectorized.unary_predicate('is_valid', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_empty(self):
         """Return True for each empty geometry, False for non-empty"""
-        return _series_unary_op(self, 'is_empty', null_value=False)
+        x = vectorized.unary_predicate('is_empty', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_simple(self):
         """Return True for each simple geometry, else False"""
-        return _series_unary_op(self, 'is_simple', null_value=False)
+        x = vectorized.unary_predicate('is_simple', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_ring(self):
         """Return True for each geometry that is a closed ring, else False"""
         # operates on the exterior, so can't use _series_unary_op()
-        return Series([geom.exterior.is_ring for geom in self.geometry],
-                      index=self.index)
+        x = vectorized.unary_predicate('is_ring', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     #
     # Unary operations that return a GeoSeries

@@ -214,6 +214,43 @@ cpdef vector_binary_predicate_with_arg(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef unsigned int n = geoms.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+
+    if op == 'is_empty':
+        func = GEOSisEmpty_r
+    elif op == 'is_valid':
+        func = GEOSisValid_r
+    elif op == 'is_simple':
+        func = GEOSisSimple_r
+    elif op == 'is_ring':
+        func = GEOSisRing_r
+    elif op == 'has_z':
+        func = GEOSHasZ_r
+    elif op == 'is_closed':
+        func = GEOSisClosed_r
+    else:
+        raise NotImplementedError(op)
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            if geom:
+                out[idx] = func(handle, geom)
+            else:
+                out[idx] = False
+
+    return out
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef binary_predicate(str op,
                       np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                       object other):
@@ -584,6 +621,24 @@ class VectorizedGeometry(object):
 
     def rwithin(self, other):
         return prepared_binary_predicate('within', self.data, other)
+
+    def is_valid(self):
+        return unary_predicate('is_valid', self.data)
+
+    def is_empty(self):
+        return unary_predicate('is_empty', self.data)
+
+    def is_simple(self):
+        return unary_predicate('is_simple', self.data)
+
+    def is_ring(self):
+        return unary_predicate('is_ring', self.data)
+
+    def has_z(self):
+        return unary_predicate('has_z', self.data)
+
+    def is_closed(self):
+        return unary_predicate('is_closed', self.data)
 
     def boundary(self):
         return geo_unary_op('boundary', self.data)

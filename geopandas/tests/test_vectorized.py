@@ -118,6 +118,27 @@ def test_unary_geo_operations(attr):
     assert [a.equals(b) for a, b in zip(result, expected)]
 
 
+@pytest.mark.parametrize('attr', [
+    pytest.mark.xfail('is_closed'),
+    'is_valid',
+    'is_empty',
+    'is_simple',
+    'has_z',
+    'is_ring',
+])
+def test_unary_geo_operations(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+
+    vec = from_shapely(triangles)
+
+    result = getattr(vec, attr)()
+    expected = [getattr(t, attr) for t in triangles]
+
+    assert result.tolist() == expected
+
+
 def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
     vec = from_shapely(points)
