@@ -82,8 +82,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not isinstance(col, (list, np.ndarray, Series)):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
-        self._original_geometry = col._original_geometry
-        self.set_geometry(col, inplace=True)
+        if isinstance(col, GeoSeries):
+            self._original_geometry = col._original_geometry
+            self.set_geometry(col, inplace=True)
+        elif isinstance(col, (list, np.ndarray, Series)):
+            col = vectorized.from_shapely(col)
+            self._original_geometry = col
+            self.set_geometry(col.data, inplace=True)
+
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
@@ -153,14 +159,21 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) or not item for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
+        assert level.dtype == np.uintp
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         frame._invalidate_sindex()
         if not inplace:
             return frame
+
+    def _ensure_geometry(self):
+        if self.dtypes[self._geometry_column_name] == object:
+            shapes = DataFrame.__getitem__(self, self._geometry_column_name)
+            x = vectorized.from_shapely(shapes.tolist())
+            self._original_geometry = x
+            self[self._geometry_column_name] = x.data
+        return self
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -196,7 +209,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
         df.crs = crs
-        return df
+        return df._ensure_geometry()
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
@@ -451,7 +464,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         data = self._data
         if deep:
             data = data.copy()
-        return GeoDataFrame(data).__finalize__(self)
+        out = GeoDataFrame(data).__finalize__(self)
+        out._original_geometry = self._original_geometry
+        return out
 
     def plot(self, *args, **kwargs):
 
@@ -498,6 +513,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Aggregate
         aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry._original_geometry = self._original_geometry
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
@@ -513,7 +529,12 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
                          " DataFrame to GeoDataFrame")
     gf = GeoDataFrame(self)
     # this will copy so that BlockManager gets copied
-    return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
+    out = gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
+    try:
+        out._original_geometry = col._original_geometry
+    except AttributeError:
+        out._original_geometry = self._original_geometry
+    return out
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry

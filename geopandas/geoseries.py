@@ -72,6 +72,9 @@ class GeoSeries(GeoPandasBase, Series):
         if isinstance(args[0], VectorizedGeometry):
             self._original_geometry = args[0]
             args = (args[0].data,) + args[1:]
+        if isinstance(args[0], GeoSeries):
+            self._original_geometry = args[0]._original_geometry
+
 
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
