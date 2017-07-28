@@ -199,12 +199,14 @@ class GeoSeries(GeoPandasBase, Series):
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
         return GeoSeries(self._geometry_array,  # TODO: implement copy
-                         index=self.index,
+                         index=self.index, crs=self.crs,
                          name=self.name).__finalize__(self)
 
     def apply(self, func, *args, **kwargs):
         s = Series(list(self._geometry_array), index=self.index)
-        return s.apply(func, *args, **kwargs)
+        L = s.apply(func, *args, **kwargs).tolist()
+        vec = from_shapely(L)
+        return GeoSeries(vec, index=self.index)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""

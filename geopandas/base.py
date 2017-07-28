@@ -22,24 +22,6 @@ except ImportError:
     HAS_SINDEX = False
 
 
-def _geo_op(this, other, op):
-    """Operation that returns a GeoSeries"""
-    if isinstance(other, GeoPandasBase):
-        this = this.geometry
-        crs = this.crs
-        if crs != other.crs:
-            warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-                                                              other.crs))
-        this, other = this.align(other.geometry)
-        return gpd.GeoSeries([getattr(this_elem, op)(other_elem)
-                             for this_elem, other_elem in zip(this, other)],
-                             index=this.index, crs=crs)
-    else:
-        return gpd.GeoSeries([getattr(s, op)(other)
-                             for s in this.geometry],
-                             index=this.index, crs=this.crs)
-
-
 def binary_geo(op, left, right):
     """Geometric operation that returns a pandas Series"""
     if isinstance(right, GeoPandasBase):
