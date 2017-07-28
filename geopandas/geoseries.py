@@ -199,6 +199,10 @@ class GeoSeries(GeoPandasBase, Series):
                          index=self.index,
                          name=self.name).__finalize__(self)
 
+    def apply(self, func, *args, **kwargs):
+        s = Series(list(self._geometry_array), index=self.index)
+        return s.apply(func, *args, **kwargs)
+
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
         non_geo_null = super(GeoSeries, self).isnull()

@@ -13,6 +13,8 @@ from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
+from . import vectorized
+
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
@@ -428,6 +430,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
+        if not hasattr(self, '_original_geometry'):
+            self._original_geometry = other._original_geometry
         return self
 
     def copy(self, deep=True):
