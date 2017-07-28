@@ -40,7 +40,22 @@ def _geo_op(this, other, op):
                              index=this.index, crs=this.crs)
 
 
-# TODO: think about merging with _geo_op
+def binary_geo(op, left, right):
+    """Geometric operation that returns a pandas Series"""
+    if isinstance(right, GeoPandasBase):
+        left = left.geometry
+        left, right = left.align(right.geometry)
+        t = left._geometry_array
+        o = right._geometry_array
+        x = vectorized.vector_binary_geo(op, t.data, o.data)
+        return gpd.GeoSeries(x, index=left.index, crs=left.crs)
+    elif isinstance(right, BaseGeometry):
+        x = vectorized.binary_geo(op, left._geometry_array.data, right)
+        return gpd.GeoSeries(x, index=left.index, crs=left.crs)
+    else:
+        raise TypeError(type(left), type(right))
+
+
 def binary_predicate(op, this, other, *args, **kwargs):
     """Geometric operation that returns a pandas Series"""
     null_val = False if op != 'distance' else np.nan
@@ -286,19 +301,19 @@ class GeoPandasBase(object):
 
     def difference(self, other):
         """Return the set-theoretic difference of each geometry with *other*"""
-        return _geo_op(self, other, 'difference')
+        return binary_geo('difference', self, other)
 
     def symmetric_difference(self, other):
         """Return the symmetric difference of each geometry with *other*"""
-        return _geo_op(self, other, 'symmetric_difference')
+        return binary_geo('symmetric_difference', self, other)
 
     def union(self, other):
         """Return the set-theoretic union of each geometry with *other*"""
-        return _geo_op(self, other, 'union')
+        return binary_geo('union', self, other)
 
     def intersection(self, other):
         """Return the set-theoretic intersection of each geometry with *other*"""
-        return _geo_op(self, other, 'intersection')
+        return binary_geo('intersection', self, other)
 
     #
     # Other operations

@@ -415,6 +415,85 @@ cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cpdef vector_binary_geo(str op,
+                       np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                       np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef unsigned int n = left.size
+
+    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
+
+    handle = get_geos_context_handle()
+
+    if op == 'difference':
+        func = GEOSDifference_r
+    elif op == 'symmetric_difference':
+        func = GEOSSymDifference_r
+    elif op == 'union':
+        func = GEOSUnion_r
+    elif op == 'intersection':
+        func = GEOSIntersection_r
+    else:
+        raise NotImplementedError("Op %s not known" % op)
+
+    with nogil:
+        for idx in xrange(n):
+            left_geom = <GEOSGeometry *> left[idx]
+            right_geom = <GEOSGeometry *> right[idx]
+            if left_geom and right_geom:
+                out[idx] = <np.uintp_t> func(handle, left_geom, right_geom)
+            else:
+                out[idx] = 0
+
+    return VectorizedGeometry(out)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef binary_geo(str op,
+                np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                object right):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef uintptr_t right_ptr
+    cdef unsigned int n = left.size
+
+    cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
+
+    right_ptr = <np.uintp_t> right.__geom__
+    right_geom = <GEOSGeometry *> right_ptr
+
+    handle = get_geos_context_handle()
+
+    if op == 'difference':
+        func = GEOSDifference_r
+    elif op == 'symmetric_difference':
+        func = GEOSSymDifference_r
+    elif op == 'union':
+        func = GEOSUnion_r
+    elif op == 'intersection':
+        func = GEOSIntersection_r
+    else:
+        raise NotImplementedError("Op %s not known" % op)
+
+    with nogil:
+        for idx in xrange(n):
+            left_geom = <GEOSGeometry *> left[idx]
+            if left_geom and right_geom:
+                out[idx] = <np.uintp_t> func(handle, left_geom, right_geom)
+            else:
+                out[idx] = 0
+
+    return VectorizedGeometry(out)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
             int resolution, int cap_style, int join_style, double mitre_limit):
     cdef Py_ssize_t idx
@@ -550,6 +629,15 @@ class VectorizedGeometry(object):
     def y(self):
         return get_coordinate_point(self.data, 1)
 
+    def binary_geo(self, other, op):
+        if isinstance(other, BaseGeometry):
+            return binary_geo(op, self.data, other)
+        elif isinstance(other, VectorizedGeometry):
+            assert len(self) == len(other)
+            return vector_binary_geo(op, self.data, other.data)
+        else:
+            raise NotImplementedError("type not known %s" % type(other))
+
     def binop_predicate(self, other, op, extra=None):
         if isinstance(other, BaseGeometry):
             if extra is not None:
@@ -660,6 +748,18 @@ class VectorizedGeometry(object):
 
     def length(self):
         return vector_float('length', self.data)
+
+    def difference(self, other):
+        return self.binary_geo(other, 'difference')
+
+    def symmetric_difference(self, other):
+        return self.binary_geo(other, 'symmetric_difference')
+
+    def union(self, other):
+        return self.binary_geo(other, 'union')
+
+    def intersection(self, other):
+        return self.binary_geo(other, 'intersection')
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
               join_style=JOIN_STYLE.round, mitre_limit=5.0):

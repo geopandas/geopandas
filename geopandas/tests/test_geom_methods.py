@@ -149,7 +149,7 @@ class TestGeomMethods(unittest.TestCase):
             col1 = string.ascii_lowercase[:n]
             col2 = range(n)
 
-            return GeoDataFrame({'geometry': s.values,
+            return GeoDataFrame({'geometry': s,
                                  'col1' : col1,
                                  'col2' : col2},
                                  index=s.index, crs=s.crs)

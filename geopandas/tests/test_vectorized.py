@@ -105,7 +105,7 @@ def test_vector_vector_predicates(attr, args):
     'convex_hull',
     'envelope',
 ])
-def test_unary_geo_operations(attr):
+def test_unary_geo(attr):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(10)]
@@ -119,6 +119,59 @@ def test_unary_geo_operations(attr):
 
 
 @pytest.mark.parametrize('attr', [
+    'difference',
+    'symmetric_difference',
+    'union',
+    'intersection',
+])
+def test_vector_binary_geo(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+    quads = []
+    while len(quads) < 10:
+        geom = shapely.geometry.Polygon([(random.random(), random.random())
+                                        for i in range(4)])
+        if geom.is_valid:
+            quads.append(geom)
+
+    T = from_shapely(triangles)
+    Q = from_shapely(quads)
+
+    result = getattr(T, attr)(Q)
+    expected = [getattr(t, attr)(q) for t, q in zip(triangles, quads)]
+
+    assert [a.equals(b) for a, b in zip(result, expected)]
+
+
+@pytest.mark.parametrize('attr', [
+    'difference',
+    'symmetric_difference',
+    'union',
+    'intersection',
+])
+def test_binary_geo(attr):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+    quads = []
+    while len(quads) < 1:
+        geom = shapely.geometry.Polygon([(random.random(), random.random())
+                                        for i in range(4)])
+        if geom.is_valid:
+            quads.append(geom)
+
+    q = quads[0]
+
+    T = from_shapely(triangles)
+
+    result = getattr(T, attr)(q)
+    expected = [getattr(t, attr)(q) for t in triangles]
+
+    assert [a.equals(b) for a, b in zip(result, expected)]
+
+
+@pytest.mark.parametrize('attr', [
     pytest.mark.xfail('is_closed'),
     'is_valid',
     'is_empty',
@@ -126,7 +179,7 @@ def test_unary_geo_operations(attr):
     'has_z',
     'is_ring',
 ])
-def test_unary_geo_operations(attr):
+def test_unary_predicates(attr):
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                            for i in range(3)])
                  for _ in range(10)]

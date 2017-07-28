@@ -108,6 +108,10 @@ cdef extern from "geos_c.h":
     char GEOSHasZ_r(GEOSContextHandle_t, const GEOSGeometry* g) nogil
     char GEOSisClosed_r(GEOSContextHandle_t, const GEOSGeometry *) nogil
 
+    GEOSGeometry *GEOSDifference_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSSymDifference_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSUnion_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    GEOSGeometry *GEOSIntersection_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
 
     GEOSGeometry *GEOSBufferWithStyle_r(GEOSContextHandle_t, const GEOSGeometry*, double, int, int, int, double) nogil
 
