@@ -104,7 +104,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         elif isinstance(col, (list, np.ndarray, Series)):
             col = vectorized.from_shapely(col)
             self._original_geometry = col
-            self.set_geometry(col.data, inplace=True)
+            self.set_geometry(col.data, inplace=True, original_geometry=col)
 
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -179,12 +179,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level = level.copy()
             level.crs = crs
 
+        if (isinstance(level, np.ndarray) and level.dtype == object or
+            isinstance(level, Iterable) and any(isinstance(x, BaseGeometry) for x in level)):
+            level = vectorized.from_shapely(level)
+            original_geometry = level
+            level = level.data
+
         # Check that we are using a listlike of geometries
         assert level.dtype == np.uintp
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
-        frame._original_geometry = _original_geometry
+        frame._original_geometry = original_geometry
         frame._invalidate_sindex()
         if not inplace:
             return frame
@@ -555,10 +561,11 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None, orig
     # this will copy so that BlockManager gets copied
     out = gf.set_geometry(col, drop=drop, inplace=False, crs=crs,
                           original_geometry=original_geometry)
-    try:
-        out._original_geometry = col._original_geometry
-    except AttributeError:
-        out._original_geometry = self._original_geometry
+    if not getattr(out, '_original_geometry'):
+        try:
+            out._original_geometry = col._original_geometry
+        except AttributeError:
+            out._original_geometry = self._original_geometry
     return out
 
 if PY3:
