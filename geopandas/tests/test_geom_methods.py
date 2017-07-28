@@ -427,12 +427,13 @@ class TestGeomMethods(unittest.TestCase):
 
     def test_explode(self):
         s = GeoSeries([MultiPoint([(0,0), (1,1)]),
-                      MultiPoint([(2,2), (3,3), (4,4)])])
+                       MultiPoint([(2,2), (3,3), (4,4)])])
 
         index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
         expected = GeoSeries([Point(0,0), Point(1,1), Point(2,2), Point(3,3),
                               Point(4,4)], index=MultiIndex.from_tuples(index))
 
+        s.explode().area
         assert_geoseries_equal(expected, s.explode())
 
         df = self.gdf1[:2].set_geometry(s)

@@ -411,10 +411,9 @@ class GeoPandasBase(object):
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
-
-        return gpd.GeoSeries([affinity.rotate(s, angle, origin=origin,
-            use_radians=use_radians) for s in self.geometry],
-            index=self.index, crs=self.crs)
+        L = [affinity.rotate(s, angle, origin=origin,
+             use_radians=use_radians) for s in self.geometry]
+        return gpd.GeoSeries(L, index=self.index, crs=self.crs)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
         """
@@ -490,7 +489,6 @@ class GeoPandasBase(object):
            1    POINT (3 3)
            2    POINT (4 4)
         dtype: object
-
         """
         index = []
         geometries = []
@@ -503,8 +501,9 @@ class GeoPandasBase(object):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        return gpd.GeoSeries(geometries,
-            index=MultiIndex.from_tuples(index)).__finalize__(self)
+        s = gpd.GeoSeries(geometries, index=MultiIndex.from_tuples(index))
+        s = s.__finalize__(self)
+        return s
 
 def _array_input(arr):
     if isinstance(arr, (MultiPoint, MultiLineString, MultiPolygon)):

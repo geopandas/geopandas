@@ -177,7 +177,8 @@ class GeoSeries(GeoPandasBase, Series):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+            if not hasattr(self, name):
+                object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def copy(self, order='C'):
