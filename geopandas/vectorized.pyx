@@ -12,10 +12,6 @@ cimport cpython.array
 
 cimport numpy as np
 import numpy as np
-import pandas as pd
-from pandas import Series, DataFrame, MultiIndex
-
-import geopandas as gpd
 
 include "_geos.pxi"
 
@@ -38,6 +34,27 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
         geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
 
     return geom_factory(<np.uintp_t> geom)
+
+
+cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef GEOSGeometry *geom
+    cdef GEOSContextHandle_t handle
+    cdef unsigned int n = geoms.size
+    cdef np.ndarray[object, ndim=1] out = np.empty(n, dtype=object)
+
+    handle = get_geos_context_handle()
+
+    for i in range(n):
+        geom = <GEOSGeometry *> geoms[i]
+
+        if not geom:
+            geom = GEOSGeom_createEmptyPolygon_r(handle)
+        else:
+            geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
+
+        out[i] = geom_factory(<np.uintp_t> geom)
+
+    return out
 
 
 @cython.boundscheck(False)
@@ -602,6 +619,8 @@ cdef free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 
 class VectorizedGeometry(object):
+    dtype = np.dtype('O')
+
     def __init__(self, data, parent=False):
         self.data = data
         self.parent = parent
@@ -620,6 +639,14 @@ class VectorizedGeometry(object):
     def __del__(self):
         if self.parent is False:
             free(self.data)
+
+    def copy(self):
+        # TODO dummy implementation just to have someting
+        return from_shapely(to_shapely(self.data))
+
+    @property
+    def ndim(self):
+        return 1
 
     @property
     def x(self):
@@ -765,3 +792,84 @@ class VectorizedGeometry(object):
               join_style=JOIN_STYLE.round, mitre_limit=5.0):
         return buffer(self.data, distance, resolution, cap_style, join_style,
                       mitre_limit)
+
+
+    # for Series/ndarray like compat
+
+
+    @property
+    def shape(self):
+        """ Shape of the ...
+
+        For internal compatibility with numpy arrays.
+
+        Returns
+        -------
+        shape : tuple
+        """
+
+        return tuple([len(self)])
+
+    def ravel(self, order='C'):
+        """ Return a flattened (numpy) array.
+
+        For internal compatibility with numpy arrays.
+
+        Returns
+        -------
+        raveled : numpy array
+        """
+        return np.array(self)
+
+    def view(self):
+        """Return a view of myself.
+
+        For internal compatibility with numpy arrays.
+
+        Returns
+        -------
+        view : Categorical
+           Returns `self`!
+        """
+        return self
+
+    def to_dense(self):
+        """Return my 'dense' representation
+
+        For internal compatibility with numpy arrays.
+
+        Returns
+        -------
+        dense : array
+        """
+        return to_shapely(self.data)
+
+    def get_values(self):
+        """ Return the values.
+
+        For internal compatibility with pandas formatting.
+
+        Returns
+        -------
+        values : numpy array
+            A numpy array of the same dtype as categorical.categories.dtype or
+            Index if datetime / periods
+        """
+        # if we are a datetime and period index, return Index to keep metadata
+        return to_shapely(self.data)
+
+    def __array__(self, dtype=None):
+        """
+        The numpy array interface.
+
+        Returns
+        -------
+        values : numpy array
+            A numpy array of either the specified dtype or,
+            if dtype==None (default), the same dtype as
+            categorical.categories.dtype
+        """
+        ret = self.data
+        if dtype:
+            return np.asarray(ret, dtype)
+        return ret
