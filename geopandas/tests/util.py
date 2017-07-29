@@ -5,7 +5,6 @@ import unittest
 import zipfile
 
 from six.moves.urllib.request import urlopen
-from pandas.util.testing import assert_isinstance
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -24,13 +23,6 @@ try:
     import unittest.mock as mock
 except ImportError:
     import mock
-
-try:
-    from pandas import read_sql_table
-except ImportError:
-    PANDAS_NEW_SQL_API = False
-else:
-    PANDAS_NEW_SQL_API = True
 
 
 def download_nybb():
@@ -188,7 +180,7 @@ def assert_geoseries_equal(left, right, check_dtype=False,
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
     if check_index_type:
-        assert_isinstance(left.index, type(right.index))
+        assert isinstance(left.index, type(right.index))
 
     if check_dtype:
         assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype,
@@ -196,7 +188,7 @@ def assert_geoseries_equal(left, right, check_dtype=False,
 
     if check_series_type:
         assert isinstance(left, GeoSeries)
-        assert_isinstance(left, type(right))
+        assert isinstance(left, type(right))
 
         if check_crs:
             assert(left.crs == right.crs)

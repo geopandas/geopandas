@@ -4,7 +4,7 @@ import fiona
 
 from geopandas import read_postgis, read_file
 from geopandas.tests.util import download_nybb, connect, create_db, \
-     PANDAS_NEW_SQL_API, unittest, validate_boro_df
+     unittest, validate_boro_df
 
 
 class TestIO(unittest.TestCase):
@@ -25,9 +25,6 @@ class TestIO(unittest.TestCase):
             sql = "SELECT * FROM nybb;"
             df = read_postgis(sql, con)
         finally:
-            if PANDAS_NEW_SQL_API:
-                # It's not really a connection, it's an engine
-                con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
@@ -44,9 +41,6 @@ class TestIO(unittest.TestCase):
                      FROM nybb;"""
             df = read_postgis(sql, con, geom_col='__geometry__')
         finally:
-            if PANDAS_NEW_SQL_API:
-                # It's not really a connection, it's an engine
-                con = con.connect()
             con.close()
 
         validate_boro_df(self, df)
@@ -68,5 +62,3 @@ class TestIO(unittest.TestCase):
         filtered_df_shape = filtered_df.shape
         assert(full_df_shape != filtered_df_shape)
         assert(filtered_df_shape == (2, 5))
-
-

@@ -13,9 +13,8 @@ from geopandas.tests.util import unittest, download_nybb
 from geopandas import sjoin
 from distutils.version import LooseVersion
 
-pandas_0_16_problem = 'fails under pandas < 0.17 due to issue 251,'\
-                      'not problem with sjoin.'
-
+pandas_0_18_problem = 'fails under pandas < 0.19 due to pandas issue 15692,'\
+                        'not problem with sjoin.'
 import pytest
 
 
@@ -67,9 +66,9 @@ def dfs(request):
 
 
 @unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
-class TestSpatialJoinNew(object):
+class TestSpatialJoin(object):
 
-    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_inner(self, op, dfs):
@@ -89,7 +88,7 @@ class TestSpatialJoinNew(object):
 
         assert_frame_equal(res, exp)
 
-    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_left(self, op, dfs):
@@ -110,7 +109,7 @@ class TestSpatialJoinNew(object):
 
         assert_frame_equal(res, exp)
 
-    @pytest.mark.parametrize('dfs', ['default-index', pytest.mark.xfail('string-index')],
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_right(self, op, dfs):
@@ -211,7 +210,8 @@ class TestSpatialJoinNYBB(unittest.TestCase):
         df = sjoin(self.polydf, self.pointdf, how='left')
         self.assertEquals(df.shape, (12,8))
 
-    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.17'), pandas_0_16_problem)
+    @unittest.skipIf(str(pd.__version__) < LooseVersion('0.19'), pandas_0_18_problem)
+    @pytest.mark.xfail
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty
