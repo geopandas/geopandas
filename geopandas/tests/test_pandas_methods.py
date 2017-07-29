@@ -142,6 +142,12 @@ def test_where(s):
     assert_series_equal(res, exp)
 
 
+def test_select_dtypes(df):
+    res = df.select_dtypes(include=np.number)
+    exp = df[['value1', 'value2']]
+    assert_frame_equal(res, exp)
+
+
 # Missing values
 
 
@@ -212,3 +218,11 @@ def test_groupby(df):
                      Point(1, 1)],
                     index=pd.Index([1, 2], name='value2'), name='geometry')
     assert_series_equal(res, exp)
+
+
+def test_groupby_groups(df):
+    g = df.groupby('value2')
+    res = g.get_group(1)
+    assert isinstance(res, GeoDataFrame)
+    exp = df.loc[[0, 2]]
+    assert_frame_equal(res, exp)
