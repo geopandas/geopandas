@@ -11,6 +11,8 @@ from pandas import Series, DataFrame, MultiIndex
 
 import geopandas as gpd
 
+from . import vectorized
+
 try:
     from rtree.core import RTreeError
     HAS_SINDEX = True
@@ -20,39 +22,60 @@ except ImportError:
     HAS_SINDEX = False
 
 
-def _geo_op(this, other, op):
-    """Operation that returns a GeoSeries"""
-    if isinstance(other, GeoPandasBase):
-        this = this.geometry
-        crs = this.crs
-        if crs != other.crs:
-            warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-                                                              other.crs))
-        this, other = this.align(other.geometry)
-        return gpd.GeoSeries([getattr(this_elem, op)(other_elem)
-                             for this_elem, other_elem in zip(this, other)],
-                             index=this.index, crs=crs)
+def binary_geo(op, left, right):
+    """Geometric operation that returns a pandas Series"""
+    if isinstance(right, GeoPandasBase):
+        left = left.geometry
+        left, right = left.align(right.geometry)
+        t = left._geometry_array
+        o = right._geometry_array
+        x = vectorized.vector_binary_geo(op, t.data, o.data)
+        return gpd.GeoSeries(x, index=left.index, crs=left.crs)
+    elif isinstance(right, BaseGeometry):
+        x = vectorized.binary_geo(op, left._geometry_array.data, right)
+        return gpd.GeoSeries(x, index=left.index, crs=left.crs)
     else:
-        return gpd.GeoSeries([getattr(s, op)(other)
-                             for s in this.geometry],
-                             index=this.index, crs=this.crs)
+        raise TypeError(type(left), type(right))
 
 
-# TODO: think about merging with _geo_op
-def _series_op(this, other, op, **kwargs):
+def binary_predicate(op, this, other, *args, **kwargs):
     """Geometric operation that returns a pandas Series"""
     null_val = False if op != 'distance' else np.nan
+    assert not kwargs
 
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs)
-                    if not this_elem.is_empty | other_elem.is_empty else null_val
-                    for this_elem, other_elem in zip(this, other)],
-                    index=this.index)
+        t = this._geometry_array
+        o = other._geometry_array
+        if args:
+            x = vectorized.vector_binary_predicate_with_arg(op, t.data, o.data, *args)
+        else:
+            x = vectorized.vector_binary_predicate(op, t.data, o.data)
+        return Series(x, index=this.index)
+    elif isinstance(other, BaseGeometry):
+        if args:
+            x = vectorized.binary_predicate_with_arg(op, this._geometry_array.data, other, *args)
+        else:
+            x = vectorized.binary_predicate(op, this._geometry_array.data, other)
+        return Series(x, index=this.index)
     else:
-        return Series([getattr(s, op)(other, **kwargs) if s else null_val
-                      for s in this.geometry], index=this.index)
+        raise TypeError(type(this), type(other))
+
+
+def prepared_binary_predicate(op, this, other):
+    """Geometric operation that returns a pandas Series"""
+    if isinstance(other, BaseGeometry):
+        x = vectorized.prepared_binary_predicate(this._geometry_array, other)
+        return Series(x, index=this.index)
+    else:
+        raise TypeError(type(this), type(other))
+
+
+def unary_geo(op, this):
+    x = vectorized.geo_unary_op(op, this._geometry_array)
+    return GeoSeries(x, index=this.index)
+
 
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""
@@ -98,7 +121,8 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'area', null_value=np.nan)
+        x = vectorized.vector_float('area', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def geom_type(self):
@@ -113,29 +137,33 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Return the length of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'length', null_value=np.nan)
+        x = vectorized.vector_float('length', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_valid(self):
         """Return True for each valid geometry, else False"""
-        return _series_unary_op(self, 'is_valid', null_value=False)
+        x = vectorized.unary_predicate('is_valid', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_empty(self):
         """Return True for each empty geometry, False for non-empty"""
-        return _series_unary_op(self, 'is_empty', null_value=False)
+        x = vectorized.unary_predicate('is_empty', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_simple(self):
         """Return True for each simple geometry, else False"""
-        return _series_unary_op(self, 'is_simple', null_value=False)
+        x = vectorized.unary_predicate('is_simple', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def is_ring(self):
         """Return True for each geometry that is a closed ring, else False"""
         # operates on the exterior, so can't use _series_unary_op()
-        return Series([geom.exterior.is_ring for geom in self.geometry],
-                      index=self.index)
+        x = vectorized.unary_predicate('is_ring', self._geometry_array.data)
+        return Series(x, index=self.index)
 
     #
     # Unary operations that return a GeoSeries
@@ -197,47 +225,53 @@ class GeoPandasBase(object):
     # Binary operations that return a pandas Series
     #
 
+    @property
+    def _geometry_array(self):
+        return vectorized.VectorizedGeometry(data=self.geometry.values,
+                                             parent=self._original_geometry)
+
     def contains(self, other):
         """Return True for all geometries that contain *other*, else False"""
-        return _series_op(self, other, 'contains')
+        return binary_predicate('contains', self, other)
 
     def geom_equals(self, other):
         """Return True for all geometries that equal *other*, else False"""
-        return _series_op(self, other, 'equals')
+        return binary_predicate('equals', self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Return True for all geometries that is approximately equal to *other*, else False"""
         # TODO: pass precision argument
-        return _series_op(self, other, 'almost_equals', decimal=decimal)
+        tolerance = 0.5 * 10**(-decimal)
+        return binary_predicate('equals_exact', self, other, tolerance)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given tolerance, else False"""
         # TODO: pass tolerance argument.
-        return _series_op(self, other, 'equals_exact', tolerance=tolerance)
+        return binary_predicate('equals_exact', self, other, tolerance)
 
     def crosses(self, other):
         """Return True for all geometries that cross *other*, else False"""
-        return _series_op(self, other, 'crosses')
+        return binary_predicate('crosses', self, other)
 
     def disjoint(self, other):
         """Return True for all geometries that are disjoint with *other*, else False"""
-        return _series_op(self, other, 'disjoint')
+        return binary_predicate('disjoint', self, other)
 
     def intersects(self, other):
         """Return True for all geometries that intersect *other*, else False"""
-        return _series_op(self, other, 'intersects')
+        return binary_predicate('intersects', self, other)
 
     def overlaps(self, other):
         """Return True for all geometries that overlap *other*, else False"""
-        return _series_op(self, other, 'overlaps')
+        return binary_predicate('overlaps', self, other)
 
     def touches(self, other):
         """Return True for all geometries that touch *other*, else False"""
-        return _series_op(self, other, 'touches')
+        return binary_predicate('touches', self, other)
 
     def within(self, other):
         """Return True for all geometries that are within *other*, else False"""
-        return _series_op(self, other, 'within')
+        return binary_predicate('within', self, other)
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
@@ -249,19 +283,19 @@ class GeoPandasBase(object):
 
     def difference(self, other):
         """Return the set-theoretic difference of each geometry with *other*"""
-        return _geo_op(self, other, 'difference')
+        return binary_geo('difference', self, other)
 
     def symmetric_difference(self, other):
         """Return the symmetric difference of each geometry with *other*"""
-        return _geo_op(self, other, 'symmetric_difference')
+        return binary_geo('symmetric_difference', self, other)
 
     def union(self, other):
         """Return the set-theoretic union of each geometry with *other*"""
-        return _geo_op(self, other, 'union')
+        return binary_geo('union', self, other)
 
     def intersection(self, other):
         """Return the set-theoretic intersection of each geometry with *other*"""
-        return _geo_op(self, other, 'intersection')
+        return binary_geo('intersection', self, other)
 
     #
     # Other operations
@@ -294,10 +328,9 @@ class GeoPandasBase(object):
             self._generate_sindex()
         return self._sindex
 
-    def buffer(self, distance, resolution=16):
-        return gpd.GeoSeries([geom.buffer(distance, resolution)
-                             for geom in self.geometry],
-                         index=self.index, crs=self.crs)
+    def buffer(self, distance, **kwargs):
+        geom_array = self._geometry_array.buffer(distance, **kwargs)
+        return gpd.GeoSeries(geom_array, index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
         return gpd.GeoSeries([geom.simplify(*args, **kwargs)
@@ -380,10 +413,9 @@ class GeoPandasBase(object):
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
-
-        return gpd.GeoSeries([affinity.rotate(s, angle, origin=origin,
-            use_radians=use_radians) for s in self.geometry],
-            index=self.index, crs=self.crs)
+        L = [affinity.rotate(s, angle, origin=origin,
+             use_radians=use_radians) for s in self.geometry]
+        return gpd.GeoSeries(L, index=self.index, crs=self.crs)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
         """
@@ -459,7 +491,6 @@ class GeoPandasBase(object):
            1    POINT (3 3)
            2    POINT (4 4)
         dtype: object
-
         """
         index = []
         geometries = []
@@ -472,8 +503,9 @@ class GeoPandasBase(object):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        return gpd.GeoSeries(geometries,
-            index=MultiIndex.from_tuples(index)).__finalize__(self)
+        s = gpd.GeoSeries(geometries, index=MultiIndex.from_tuples(index))
+        s = s.__finalize__(self)
+        return s
 
 def _array_input(arr):
     if isinstance(arr, (MultiPoint, MultiLineString, MultiPolygon)):

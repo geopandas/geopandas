@@ -60,12 +60,12 @@ class TestSeries(unittest.TestCase):
         for g in geoms:
             gs = GeoSeries(g)
             self.assert_(len(gs) == 1)
-            self.assert_(gs.iloc[0] is g)
+            self.assert_(gs.iloc[0].equals(g))
 
             gs = GeoSeries(g, index=index)
             self.assert_(len(gs) == len(index))
             for x in gs:
-                self.assert_(x is g)
+                self.assert_(x.equals(g))
 
     def test_copy(self):
         gc = self.g3.copy()

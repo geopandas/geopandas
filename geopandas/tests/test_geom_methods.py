@@ -92,7 +92,7 @@ class TestGeomMethods(unittest.TestCase):
         else:
             right_df = False
 
-        self._binary_op_test(op, expected, a, b, fcmp, True, right_df, 
+        self._binary_op_test(op, expected, a, b, fcmp, True, right_df,
                         *args, **kwargs)
 
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
@@ -118,7 +118,7 @@ class TestGeomMethods(unittest.TestCase):
         self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
 
     def _binary_op_test(self, op, expected, left, right, fcmp, left_df,
-                        right_df, 
+                        right_df,
                         *args, **kwargs):
         """
         This is a helper to call a function on GeoSeries and GeoDataFrame
@@ -129,12 +129,12 @@ class TestGeomMethods(unittest.TestCase):
 
         Parameters
         ----------
-        
+
         expected : str
             The operation to be tested. e.g., 'intersection'
         left: GeoSeries
         right: GeoSeries
-        fcmp: function 
+        fcmp: function
             Called with the result of the operation and expected. It should
             assert if the result is incorrect
         left_df: bool
@@ -148,16 +148,16 @@ class TestGeomMethods(unittest.TestCase):
             n = len(s)
             col1 = string.ascii_lowercase[:n]
             col2 = range(n)
-            
-            return GeoDataFrame({'geometry': s.values, 
-                                 'col1' : col1, 
+
+            return GeoDataFrame({'geometry': s,
+                                 'col1' : col1,
                                  'col2' : col2},
                                  index=s.index, crs=s.crs)
 
         # Test GeoSeries.op(GeoSeries)
         result = getattr(left, op)(right, *args, **kwargs)
         fcmp(result, expected)
-        
+
         if left_df:
             # Test GeoDataFrame.op(GeoSeries)
             gdf_left = _make_gdf(left)
@@ -186,7 +186,7 @@ class TestGeomMethods(unittest.TestCase):
         fcmp(result, expected)
 
     def test_intersection(self):
-        self._test_binary_topological('intersection', self.t1, 
+        self._test_binary_topological('intersection', self.t1,
                                       self.g1, self.g2)
 
     def test_union_series(self):
@@ -427,12 +427,13 @@ class TestGeomMethods(unittest.TestCase):
 
     def test_explode(self):
         s = GeoSeries([MultiPoint([(0,0), (1,1)]),
-                      MultiPoint([(2,2), (3,3), (4,4)])])
+                       MultiPoint([(2,2), (3,3), (4,4)])])
 
         index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
         expected = GeoSeries([Point(0,0), Point(1,1), Point(2,2), Point(3,3),
                               Point(4,4)], index=MultiIndex.from_tuples(index))
 
+        s.explode().area
         assert_geoseries_equal(expected, s.explode())
 
         df = self.gdf1[:2].set_geometry(s)

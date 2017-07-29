@@ -12,6 +12,7 @@ from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
+from .vectorized import from_shapely, VectorizedGeometry
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase
 
@@ -47,7 +48,7 @@ class _CoordinateIndexer(_NDFrameIndexer):
 
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
-    _metadata = ['name', 'crs']
+    _metadata = ['name', 'crs', '_original_geometry']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -64,6 +65,17 @@ class GeoSeries(GeoPandasBase, Series):
 
         crs = kwargs.pop('crs', None)
 
+        assert len(args) == 1  # for now while prototyping
+
+        if isinstance(args[0], (tuple, list)) and isinstance(args[0][0], BaseGeometry):
+            args = (from_shapely(args[0]),)
+        if isinstance(args[0], VectorizedGeometry):
+            self._original_geometry = args[0]
+            args = (args[0].data,) + args[1:]
+        if isinstance(args[0], GeoSeries):
+            self._original_geometry = args[0]._original_geometry
+
+
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.crs = crs
         self._invalidate_sindex()
@@ -79,20 +91,20 @@ class GeoSeries(GeoPandasBase, Series):
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoSeries from a file
-        
+
         Parameters
         ----------
-        
+
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary, see:
             http://toblerity.github.io/fiona/README.html#usage
             for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to 
+            These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
-        
+
         """
         import fiona
         geoms = []
@@ -118,14 +130,15 @@ class GeoSeries(GeoPandasBase, Series):
                           index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
-        
+
     #
     # Implement pandas methods
     #
 
-    @property
-    def _constructor(self):
-        return GeoSeries
+    def _constructor(self, *args, **kwargs):
+        obj = GeoSeries(*args, **kwargs)
+        obj._original_geometry = self._original_geometry
+        return obj
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -137,7 +150,18 @@ class GeoSeries(GeoPandasBase, Series):
         return val
 
     def __getitem__(self, key):
-        return self._wrapped_pandas_method('__getitem__', key)
+        if isinstance(key, (slice, list, Series, np.ndarray)):
+            return super(GeoSeries, self).__getitem__(key)
+        try:
+            if key in self.index:
+                loc = self.index.get_loc(key)
+                return self._geometry_array[loc]
+        except TypeError:
+            pass
+        raise KeyError(key)
+
+    def __iter__(self):
+        return iter(self._geometry_array)
 
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method('sort_index', *args, **kwargs)
@@ -156,7 +180,8 @@ class GeoSeries(GeoPandasBase, Series):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
+            if not hasattr(self, name):
+                object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def copy(self, order='C'):
@@ -173,8 +198,15 @@ class GeoSeries(GeoPandasBase, Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name).__finalize__(self)
+        return GeoSeries(self._geometry_array,  # TODO: implement copy
+                         index=self.index, crs=self.crs,
+                         name=self.name).__finalize__(self)
+
+    def apply(self, func, *args, **kwargs):
+        s = Series(list(self._geometry_array), index=self.index)
+        L = s.apply(func, *args, **kwargs).tolist()
+        vec = from_shapely(L)
+        return GeoSeries(vec, index=self.index)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
@@ -194,17 +226,21 @@ class GeoSeries(GeoPandasBase, Series):
                                              inplace=inplace, **kwargs)
 
     def align(self, other, join='outer', level=None, copy=True,
-              fill_value=None, **kwargs):
-        if fill_value is None:
-            fill_value = Point()
+              fill_value=0, **kwargs):
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
+        left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
+        right = right.astype(np.uintp)
+        left2 = GeoSeries(left)  # TODO: why do we do this?
+        left2._original_geometry = left._original_geometry
         if isinstance(other, GeoSeries):
-            return GeoSeries(left), GeoSeries(right)
+            right2 = GeoSeries(right)
+            right2._original_geometry = right._original_geometry
+            return left2, right2
         else: # It is probably a Series, let's keep it that way
-            return GeoSeries(left), right
+            return left2, right
 
 
     def __contains__(self, other):
@@ -221,7 +257,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
-    
+
     plot.__doc__ = plot_series.__doc__
 
     #
