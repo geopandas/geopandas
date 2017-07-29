@@ -640,6 +640,10 @@ class VectorizedGeometry(object):
         if self.parent is False:
             free(self.data)
 
+    def copy(self):
+        # TODO dummy implementation just to have someting
+        return from_shapely(to_shapely(self.data))
+
     @property
     def ndim(self):
         return 1
