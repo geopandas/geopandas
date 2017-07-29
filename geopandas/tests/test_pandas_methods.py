@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
+
+import shapely
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -81,6 +83,14 @@ def test_assignment(s, df):
     assert_geoseries_equal(df2['geometry'], exp)
 
 
+def test_assign(df):
+    res = df.assign(new=1)
+    exp = df.copy()
+    exp['new'] = 1
+    assert isinstance(res, GeoDataFrame)
+    assert_frame_equal(res, exp, )
+
+
 def test_astype(s):
 
     with pytest.raises(TypeError):
@@ -125,12 +135,11 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
-def test_assign(df):
-    res = df.assign(new=1)
-    exp = df.copy()
-    exp['new'] = 1
-    assert isinstance(res, GeoDataFrame)
-    assert_frame_equal(res, exp, )
+def test_where(s):
+    res = s.where([True, False, True])
+    exp = s.copy()
+    exp[1] = np.nan
+    assert_series_equal(res, exp)
 
 
 # Missing values
@@ -164,7 +173,7 @@ def test_isnull():
         assert_series_equal(res, ~exp)
 
 
-# Groupby
+# Groupby / algos
 
 
 @pytest.mark.xfail
@@ -173,3 +182,33 @@ def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = np.array([Point(0, 0), Point(2, 2)])
     assert_array_equal(s.unique(), exp)
+
+@pytest.mark.xfail
+def test_value_counts():
+    # each object is considered unique
+    s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
+    res = s.value_counts()
+    exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
+    assert_series_equal(res, exp)
+
+
+def test_groupby(df):
+
+    # counts work fine
+    res = df.groupby('value2').count()
+    exp = pd.DataFrame({'geometry': [2, 1], 'value1': [2, 1],
+                        'value2': [1, 2]}).set_index('value2')
+    assert_frame_equal(res, exp)
+
+    # reductions ignore geometry column
+    res = df.groupby('value2').sum()
+    exp = pd.DataFrame({'value1': [2, 1],
+                        'value2': [1, 2]}).set_index('value2')
+    assert_frame_equal(res, exp)
+
+    # applying on the geometry column
+    res = df.groupby('value2')['geometry'].apply(lambda x: x.cascaded_union)
+    exp = pd.Series([shapely.geometry.MultiPoint([(0, 0), (2, 2)]),
+                     Point(1, 1)],
+                    index=pd.Index([1, 2], name='value2'), name='geometry')
+    assert_series_equal(res, exp)
