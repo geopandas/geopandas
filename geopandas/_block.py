@@ -242,7 +242,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
     def __init__(self, values, placement, ndim=2, **kwargs):
 
         if not isinstance(values, self._holder):
-            values = self._holder(values)
+            raise TypeError("values must be a VectorizedGeometry object")
 
         super(GeometryBlock, self).__init__(values, placement=placement,
                                             ndim=ndim, **kwargs)
@@ -302,6 +302,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
 
     def _slice(self, slicer):
         """ return a slice of my values """
+        print("I am sliced")
         if isinstance(slicer, tuple):
             col, loc = slicer
             if not is_null_slice(col) and col != 0:
@@ -313,6 +314,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         """
         Take values according to indexer and return them as a block.bb
         """
+        print("I am in take_nd")
         if fill_tuple is None:
             fill_value = None
         else:
