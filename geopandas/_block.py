@@ -287,6 +287,19 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
     #                              self._box_func).reshape(self.values.shape)
     #     return self.values
 
+    def to_native_types(self, slicer=None, na_rep=None, date_format=None,
+                        quoting=None, **kwargs):
+        """ convert to our native types format, slicing if desired """
+
+        values = self.values
+        if slicer is not None:
+            values = values[slicer]
+
+        from geopandas.vectorized import to_shapely
+        values = to_shapely(values.data)
+
+        return np.atleast_2d(values)
+
     def _slice(self, slicer):
         """ return a slice of my values """
         if isinstance(slicer, tuple):
