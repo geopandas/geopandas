@@ -1,3 +1,5 @@
+# distutils: sources = geopandas/algos.c
+
 import collections
 import numbers
 
@@ -19,6 +21,18 @@ include "_geos.pxi"
 
 from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
         JOIN_STYLE)
+
+cdef extern from "algos.c":
+    ctypedef void (*GEOMPredicate)(GEOSContextHandle_t handler, GEOSGeometry *left, GEOSGeometry *right)
+    ctypedef struct size_vector:
+        size_t n
+        size_t m
+        size_t *a
+    size_vector *sjoin(GEOSContextHandle_t, handle,
+               GEOMPredicate predicate,
+               GEOSGeometry *left, size_t nleft,
+               GEOSGeometry *right, size_t nright)
+
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
 
