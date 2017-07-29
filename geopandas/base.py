@@ -137,24 +137,6 @@ class GeoPandasBase(object):
         return Series([geom.exterior.is_ring for geom in self.geometry],
                       index=self.index)
 
-    @property
-    def x(self):
-        """Return the x location of point geometries in a GeoSeries"""
-        if (self.geom_type == "Point").all():
-            return _series_unary_op(self, 'x', null_value=np.nan)
-        else:
-            message = "x attribute access only provided for Point geometries"
-            raise ValueError(message)
-
-    @property
-    def y(self):
-        """Return the y location of point geometries in a GeoSeries"""
-        if (self.geom_type == "Point").all():
-            return _series_unary_op(self, 'y', null_value=np.nan)
-        else:
-            message = "y attribute access only provided for Point geometries"
-            raise ValueError(message)
-
     #
     # Unary operations that return a GeoSeries
     #

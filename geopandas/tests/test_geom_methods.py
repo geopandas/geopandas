@@ -331,16 +331,16 @@ class TestGeomMethods(unittest.TestCase):
         expected_x = [-73.9847, -74.0446]
         expected_y = [40.7484, 40.6893]
 
-        assert_array_equal(expected_x, self.landmarks.x)
-        assert_array_equal(expected_y, self.landmarks.y)
+        assert_array_equal(expected_x, self.landmarks.geometry.x)
+        assert_array_equal(expected_y, self.landmarks.geometry.y)
 
     def test_xy_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
         with pytest.raises(ValueError):
-            x = self.gdf1.x
+            x = self.gdf1.geometry.x
         # and same for accessing y attribute in polygon geoseries
         with pytest.raises(ValueError):
-            y = self.gdf1.y
+            y = self.gdf1.geometry.y
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
