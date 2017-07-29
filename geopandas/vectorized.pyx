@@ -602,7 +602,7 @@ cdef free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 
 class VectorizedGeometry(object):
-    def __init__(self, data, parent=None):
+    def __init__(self, data, parent=False):
         self.data = data
         self.parent = parent
 
@@ -618,7 +618,7 @@ class VectorizedGeometry(object):
         return len(self.data)
 
     def __del__(self):
-        if self.parent is None:
+        if self.parent is False:
             free(self.data)
 
     @property
