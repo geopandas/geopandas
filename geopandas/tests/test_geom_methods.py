@@ -6,6 +6,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_series_equal, assert_frame_equal
 from pandas import Series, DataFrame, MultiIndex
+import pytest
 from shapely.geometry import (
     Point, LinearRing, LineString, Polygon, MultiPoint
 )
@@ -326,6 +327,21 @@ class TestGeomMethods(unittest.TestCase):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real('is_simple', expected, self.g1)
 
+    def test_xy_points(self):
+        expected_x = [-73.9847, -74.0446]
+        expected_y = [40.7484, 40.6893]
+
+        assert_array_equal(expected_x, self.landmarks.geometry.x)
+        assert_array_equal(expected_y, self.landmarks.geometry.y)
+
+    def test_xy_polygons(self):
+        # accessing x attribute in polygon geoseries should raise an error
+        with pytest.raises(ValueError):
+            x = self.gdf1.geometry.x
+        # and same for accessing y attribute in polygon geoseries
+        with pytest.raises(ValueError):
+            y = self.gdf1.geometry.y
+
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
         for expected, computed in zip(exp_exterior, self.g3.exterior):
@@ -336,7 +352,6 @@ class TestGeomMethods(unittest.TestCase):
         exp_interiors = GeoSeries([LinearRing(self.inner_sq.boundary)])
         for expected, computed in zip(exp_interiors, square_series.interiors):
             assert computed[0].equals(expected)
-
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])

@@ -13,7 +13,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase
+from geopandas.base import GeoPandasBase, _series_unary_op
 
 
 def _is_empty(x):
@@ -75,24 +75,42 @@ class GeoSeries(GeoPandasBase, Series):
     def geometry(self):
         return self
 
+    @property
+    def x(self):
+        """Return the x location of point geometries in a GeoSeries"""
+        if (self.geom_type == "Point").all():
+            return _series_unary_op(self, 'x', null_value=np.nan)
+        else:
+            message = "x attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
+    def y(self):
+        """Return the y location of point geometries in a GeoSeries"""
+        if (self.geom_type == "Point").all():
+            return _series_unary_op(self, 'y', null_value=np.nan)
+        else:
+            message = "y attribute access only provided for Point geometries"
+            raise ValueError(message)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoSeries from a file
-        
+
         Parameters
         ----------
-        
+
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary, see:
             http://toblerity.github.io/fiona/README.html#usage
             for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to 
+            These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
-        
+
         """
         import fiona
         geoms = []
@@ -118,7 +136,7 @@ class GeoSeries(GeoPandasBase, Series):
                           index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
-        
+
     #
     # Implement pandas methods
     #
@@ -221,7 +239,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
-    
+
     plot.__doc__ = plot_series.__doc__
 
     #
