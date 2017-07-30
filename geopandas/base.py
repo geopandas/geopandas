@@ -54,10 +54,12 @@ def _series_op(this, other, op, **kwargs):
         return Series([getattr(s, op)(other, **kwargs) if s else null_val
                       for s in this.geometry], index=this.index)
 
+
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""
     return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
                      index=this.index, crs=this.crs)
+
 
 def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
@@ -283,10 +285,10 @@ class GeoPandasBase(object):
         """
 
         b = self.bounds
-        return (b['minx'].min(),
-                b['miny'].min(),
-                b['maxx'].max(),
-                b['maxy'].max())
+        return np.array((b['minx'].min(),
+                         b['miny'].min(),
+                         b['maxx'].max(),
+                         b['maxy'].max()))
 
     @property
     def sindex(self):

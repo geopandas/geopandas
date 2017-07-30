@@ -6,6 +6,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_series_equal, assert_frame_equal
 from pandas import Series, DataFrame, MultiIndex
+import pytest
 from shapely.geometry import (
     Point, LinearRing, LineString, Polygon, MultiPoint
 )
@@ -92,7 +93,7 @@ class TestGeomMethods(unittest.TestCase):
         else:
             right_df = False
 
-        self._binary_op_test(op, expected, a, b, fcmp, True, right_df, 
+        self._binary_op_test(op, expected, a, b, fcmp, True, right_df,
                         *args, **kwargs)
 
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
@@ -118,7 +119,7 @@ class TestGeomMethods(unittest.TestCase):
         self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
 
     def _binary_op_test(self, op, expected, left, right, fcmp, left_df,
-                        right_df, 
+                        right_df,
                         *args, **kwargs):
         """
         This is a helper to call a function on GeoSeries and GeoDataFrame
@@ -129,12 +130,12 @@ class TestGeomMethods(unittest.TestCase):
 
         Parameters
         ----------
-        
+
         expected : str
             The operation to be tested. e.g., 'intersection'
         left: GeoSeries
         right: GeoSeries
-        fcmp: function 
+        fcmp: function
             Called with the result of the operation and expected. It should
             assert if the result is incorrect
         left_df: bool
@@ -148,16 +149,16 @@ class TestGeomMethods(unittest.TestCase):
             n = len(s)
             col1 = string.ascii_lowercase[:n]
             col2 = range(n)
-            
-            return GeoDataFrame({'geometry': s.values, 
-                                 'col1' : col1, 
+
+            return GeoDataFrame({'geometry': s.values,
+                                 'col1' : col1,
                                  'col2' : col2},
                                  index=s.index, crs=s.crs)
 
         # Test GeoSeries.op(GeoSeries)
         result = getattr(left, op)(right, *args, **kwargs)
         fcmp(result, expected)
-        
+
         if left_df:
             # Test GeoDataFrame.op(GeoSeries)
             gdf_left = _make_gdf(left)
@@ -186,7 +187,7 @@ class TestGeomMethods(unittest.TestCase):
         fcmp(result, expected)
 
     def test_intersection(self):
-        self._test_binary_topological('intersection', self.t1, 
+        self._test_binary_topological('intersection', self.t1,
                                       self.g1, self.g2)
 
     def test_union_series(self):
@@ -326,6 +327,21 @@ class TestGeomMethods(unittest.TestCase):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real('is_simple', expected, self.g1)
 
+    def test_xy_points(self):
+        expected_x = [-73.9847, -74.0446]
+        expected_y = [40.7484, 40.6893]
+
+        assert_array_equal(expected_x, self.landmarks.geometry.x)
+        assert_array_equal(expected_y, self.landmarks.geometry.y)
+
+    def test_xy_polygons(self):
+        # accessing x attribute in polygon geoseries should raise an error
+        with pytest.raises(ValueError):
+            x = self.gdf1.geometry.x
+        # and same for accessing y attribute in polygon geoseries
+        with pytest.raises(ValueError):
+            y = self.gdf1.geometry.y
+
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
         for expected, computed in zip(exp_exterior, self.g3.exterior):
@@ -336,7 +352,6 @@ class TestGeomMethods(unittest.TestCase):
         exp_interiors = GeoSeries([LinearRing(self.inner_sq.boundary)])
         for expected, computed in zip(exp_interiors, square_series.interiors):
             assert computed[0].equals(expected)
-
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
@@ -419,11 +434,12 @@ class TestGeomMethods(unittest.TestCase):
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
-        self.assert_(self.landmarks.total_bounds, bbox)
+        self.assertIsInstance(self.landmarks.total_bounds, np.ndarray)
+        self.assert_(tuple(self.landmarks.total_bounds), bbox)
 
         df = GeoDataFrame({'geometry': self.landmarks,
                            'col1': range(len(self.landmarks))})
-        self.assert_(df.total_bounds, bbox)
+        self.assert_(tuple(df.total_bounds), bbox)
 
     def test_explode(self):
         s = GeoSeries([MultiPoint([(0,0), (1,1)]),

@@ -327,7 +327,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                'features': list(self.iterfeatures(**kwargs))}
 
         if kwargs.get('show_bbox', False):
-            geo['bbox'] = self.total_bounds
+            geo['bbox'] = tuple(self.total_bounds)
 
         return geo
 
