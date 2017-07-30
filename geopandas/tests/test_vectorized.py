@@ -327,7 +327,7 @@ def test_pickle():
     'covers',
     'crosses',
     'disjoint',
-    'equals',
+    # 'equals',
     'intersects',
     'overlaps',
     'touches',
@@ -356,3 +356,24 @@ def test_sjoin(predicate):
         left = triangles[i]
         right = points[j]
         assert getattr(left, predicate)(right)
+
+
+@pytest.mark.skip
+def test_bench_sjoin():
+    last = time.time()
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(1000)]
+
+    points = points_from_xy(np.random.random(10000),
+                            np.random.random(10000))
+    print("creation", time.time() - last); last = time.time()
+
+    T = from_shapely(triangles)
+    P = from_shapely(points)
+
+    print("vectorize", time.time() - last); last = time.time()
+
+    result = cysjoin(T.data, P.data, 'intersects')
+
+    print("join", time.time() - last); last = time.time()

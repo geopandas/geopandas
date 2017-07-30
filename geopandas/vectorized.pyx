@@ -28,12 +28,15 @@ cdef extern from "algos.h":
     ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
                                    const GEOSGeometry *left,
                                    const GEOSGeometry *right) nogil
+    ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
+                                           const GEOSPreparedGeometry *left,
+                                           const GEOSGeometry *right) nogil
     ctypedef struct size_vector:
         size_t n
         size_t m
         size_t *a
     size_vector sjoin(GEOSContextHandle_t handle,
-                      GEOSPredicate predicate,
+                      GEOSPreparedPredicate predicate,
                       GEOSGeometry *left, size_t nleft,
                       GEOSGeometry *right, size_t nright) nogil
 
@@ -114,6 +117,7 @@ cdef prepared_binary_predicate(str op,
     cdef GEOSGeometry *geom
     cdef GEOSGeometry *other_geom
     cdef GEOSPreparedGeometry *prepared_geom
+    cdef GEOSPreparedPredicate predicate
     cdef unsigned int n = geoms.size
 
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
@@ -130,6 +134,19 @@ cdef prepared_binary_predicate(str op,
     geos_handle = get_geos_context_handle()
     prepared_geom = geos_from_prepared(other)
 
+    predicate = get_prepared_predicate(op)
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            if geom != NULL:
+                out[idx] = predicate(handle, prepared_geom, geom)
+            else:
+                out[idx] = 0
+
+    return out
+
+cdef GEOSPreparedPredicate get_prepared_predicate(str op):
     if op == 'contains':
         func = GEOSPreparedContains_r
     elif op == 'disjoint':
@@ -153,15 +170,7 @@ cdef prepared_binary_predicate(str op,
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom != NULL:
-                out[idx] = func(handle, prepared_geom, geom)
-            else:
-                out[idx] = 0
-
-    return out
+    return func
 
 
 cdef GEOSPredicate get_predicate(str op):
@@ -981,7 +990,7 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
               np.ndarray[np.uintp_t, ndim=1, cast=True] right,
               str predicate_name):
     cdef GEOSContextHandle_t handle
-    cdef GEOSPredicate predicate
+    cdef GEOSPreparedPredicate predicate
     cdef size_vector sv
     cdef Py_ssize_t idx
     cdef np.ndarray[np.uintp_t, ndim=2] out
@@ -989,7 +998,7 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
     cdef size_t right_size = right.size
 
     handle = get_geos_context_handle()
-    predicate = get_predicate(predicate_name)
+    predicate = get_prepared_predicate(predicate_name)
 
     with nogil:
         sv = sjoin(handle, predicate,

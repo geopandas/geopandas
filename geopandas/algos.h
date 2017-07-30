@@ -5,6 +5,7 @@
 #define GEOPANDAS_ALGOS_C
 
 typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *left, const GEOSGeometry *right);
+typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, const GEOSPreparedGeometry *left, const GEOSGeometry *right);
 
 typedef struct 
 {
@@ -15,7 +16,7 @@ typedef struct
 void sjoin_callback(void *item, void *vec);
 
 size_vector sjoin(GEOSContextHandle_t handle, 
-                  GEOSPredicate predicate,
+                  GEOSPreparedPredicate predicate,
                   GEOSGeometry **left, size_t nleft, 
                   GEOSGeometry **right, size_t nright);
 
