@@ -35,7 +35,7 @@ cdef extern from "algos.h":
     size_vector sjoin(GEOSContextHandle_t handle,
                       GEOSPredicate predicate,
                       GEOSGeometry *left, size_t nleft,
-                      GEOSGeometry *right, size_t nright)
+                      GEOSGeometry *right, size_t nright) nogil
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -985,19 +985,23 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
     cdef size_vector sv
     cdef Py_ssize_t idx
     cdef np.ndarray[np.uintp_t, ndim=2] out
+    cdef size_t left_size = left.size
+    cdef size_t right_size = right.size
 
     handle = get_geos_context_handle()
     predicate = get_predicate(predicate_name)
 
-    sv = sjoin(handle, predicate,
-               <GEOSGeometry*> left.data, left.size,
-               <GEOSGeometry*> right.data, right.size)
+    with nogil:
+        sv = sjoin(handle, predicate,
+                   <GEOSGeometry*> left.data, left_size,
+                   <GEOSGeometry*> right.data, right_size)
 
     out = np.empty((sv.n // 2, 2), dtype=np.uintp)
 
-    for idx in range(0, sv.n // 2):
-        out[idx, 0] = sv.a[2 * idx]
-        out[idx, 1] = sv.a[2 * idx + 1]
+    with nogil:
+        for idx in range(0, sv.n // 2):
+            out[idx, 0] = sv.a[2 * idx]
+            out[idx, 1] = sv.a[2 * idx + 1]
 
     cfree(sv.a)
     return out
