@@ -2,6 +2,8 @@
 
 import collections
 import numbers
+from libc.stdlib cimport free as cfree
+
 
 import shapely
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
@@ -22,16 +24,18 @@ include "_geos.pxi"
 from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
         JOIN_STYLE)
 
-cdef extern from "algos.c":
-    ctypedef void (*GEOMPredicate)(GEOSContextHandle_t handler, GEOSGeometry *left, GEOSGeometry *right)
+cdef extern from "algos.h":
+    ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
+                                   const GEOSGeometry *left,
+                                   const GEOSGeometry *right) nogil
     ctypedef struct size_vector:
         size_t n
         size_t m
         size_t *a
-    size_vector *sjoin(GEOSContextHandle_t, handle,
-               GEOMPredicate predicate,
-               GEOSGeometry *left, size_t nleft,
-               GEOSGeometry *right, size_t nright)
+    size_vector sjoin(GEOSContextHandle_t handle,
+                      GEOSPredicate predicate,
+                      GEOSGeometry *left, size_t nleft,
+                      GEOSGeometry *right, size_t nright)
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -160,20 +164,8 @@ cdef prepared_binary_predicate(str op,
     return out
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cpdef vector_binary_predicate(str op,
-                             np.ndarray[np.uintp_t, ndim=1, cast=True] left,
-                             np.ndarray[np.uintp_t, ndim=1, cast=True] right):
-    cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
-    cdef GEOSGeometry *left_geom
-    cdef GEOSGeometry *right_geom
-    cdef unsigned int n = left.size
-
-    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
-
-    handle = get_geos_context_handle()
+cdef GEOSPredicate get_predicate(str op):
+    cdef GEOSPredicate func
 
     if op == 'contains':
         func = GEOSContains_r
@@ -197,6 +189,27 @@ cpdef vector_binary_predicate(str op,
         func = GEOSCoveredBy_r
     else:
         raise NotImplementedError(op)
+
+    return func
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef vector_binary_predicate(str op,
+                             np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                             np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef GEOSPredicate func
+    cdef unsigned int n = left.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+
+    func = get_predicate(op)
 
     with nogil:
         for idx in xrange(n):
@@ -884,9 +897,7 @@ class VectorizedGeometry(object):
         return buffer(self.data, distance, resolution, cap_style, join_style,
                       mitre_limit)
 
-
     # for Series/ndarray like compat
-
 
     @property
     def shape(self):
@@ -964,3 +975,29 @@ class VectorizedGeometry(object):
         if dtype:
             return np.asarray(ret, dtype)
         return ret
+
+
+cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+              np.ndarray[np.uintp_t, ndim=1, cast=True] right,
+              str predicate_name):
+    cdef GEOSContextHandle_t handle
+    cdef GEOSPredicate predicate
+    cdef size_vector sv
+    cdef Py_ssize_t idx
+    cdef np.ndarray[np.uintp_t, ndim=2] out
+
+    handle = get_geos_context_handle()
+    predicate = get_predicate(predicate_name)
+
+    sv = sjoin(handle, predicate,
+               <GEOSGeometry*> left.data, left.size,
+               <GEOSGeometry*> right.data, right.size)
+
+    out = np.empty((sv.n // 2, 2), dtype=np.uintp)
+
+    for idx in range(0, sv.n // 2):
+        out[idx, 0] = sv.a[2 * idx]
+        out[idx, 1] = sv.a[2 * idx + 1]
+
+    cfree(sv.a)
+    return out

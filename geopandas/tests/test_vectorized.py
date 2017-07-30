@@ -3,7 +3,7 @@ import time
 import random
 import shapely
 from geopandas.vectorized import (VectorizedGeometry, points_from_xy,
-        from_shapely, serialize, deserialize)
+        from_shapely, serialize, deserialize, cysjoin)
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 
 import pytest
@@ -320,3 +320,39 @@ def test_pickle():
 
     assert (vec.data != vec2.data).all()
     assert vec.equals(vec2).all()
+
+
+@pytest.mark.parametrize('predicate', [
+    'contains',
+    'covers',
+    'crosses',
+    'disjoint',
+    'equals',
+    'intersects',
+    'overlaps',
+    'touches',
+    'within',
+])
+def test_sjoin(predicate):
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+
+    points = [shapely.geometry.Point(random.random(), random.random())
+              for _ in range(20)]
+
+    T = from_shapely(triangles)
+    P = from_shapely(points)
+
+    result = cysjoin(T.data, P.data, predicate)
+
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == T.data.dtype
+    n, m = result.shape
+    assert m == 2
+    assert n < (len(T) * len(P))
+
+    for i, j in result:
+        left = triangles[i]
+        right = points[j]
+        assert getattr(left, predicate)(right)

@@ -2,10 +2,8 @@
 #include <geos_c.h>
 #include "kvec.h"
 
-#ifndef GEOPANDAS_ALGOS_C
-#define GEOPANDAS_ALGOS_C
-
-typedef void (*GEOMPredicate)(GEOSContextHandle_t handle, GEOSGeometry *left, GEOSGeometry *right);
+typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *left, const GEOSGeometry *right);
+typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, GEOSPreparedGeometry *left, GEOSGeometry *right);
 
 typedef struct 
 {
@@ -19,9 +17,9 @@ void sjoin_callback(void *item, void *vec)
 }
 
 size_vector sjoin(GEOSContextHandle_t handle, 
-           GEOMPredicate predicate,
-           GEOSGeometry **left, size_t nleft, 
-           GEOSGeometry **right, size_t nright)
+                  GEOSPredicate predicate,
+                  GEOSGeometry **left, size_t nleft, 
+                  GEOSGeometry **right, size_t nright)
 {
     size_t l, r;
     size_t index;
@@ -43,8 +41,10 @@ size_vector sjoin(GEOSContextHandle_t handle,
         while (vec.n)
         {
             l = kv_pop(vec);
-            kv_push(size_t, out, l);
-            kv_push(size_t, out, r);
+            if (predicate(handle, left[l], right[r])){
+                kv_push(size_t, out, l);
+                kv_push(size_t, out, r);
+            }
         }
     }
 
@@ -52,5 +52,3 @@ size_vector sjoin(GEOSContextHandle_t handle,
     kv_destroy(vec);
     return out;
 }
-
-#endif
