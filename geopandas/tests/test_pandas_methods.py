@@ -136,7 +136,7 @@ def test_numerical_operations(s, df):
 
 
 def test_where(s):
-    res = s.where([True, False, True])
+    res = s.where(np.array([True, False, True]))
     exp = s.copy()
     exp[1] = np.nan
     assert_series_equal(res, exp)
