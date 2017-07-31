@@ -2,74 +2,12 @@
 import numpy as np
 
 from pandas.core.internals import Block, NonConsolidatableMixIn
-
-from pandas.core.base import PandasObject
-
-from pandas.core.dtypes.dtypes import (
-    ExtensionDtype, DatetimeTZDtype,
-    CategoricalDtype)
-from pandas.core.dtypes.common import (
-    _TD_DTYPE, _NS_DTYPE,
-    _ensure_int64, _ensure_platform_int,
-    is_integer,
-    is_dtype_equal,
-    is_timedelta64_dtype,
-    is_datetime64_dtype, is_datetimetz, is_sparse,
-    is_categorical, is_categorical_dtype,
-    is_integer_dtype,
-    is_datetime64tz_dtype,
-    is_bool_dtype,
-    is_object_dtype,
-    is_datetimelike_v_numeric,
-    is_float_dtype, is_numeric_dtype,
-    is_numeric_v_string_like, is_extension_type,
-    is_list_like,
-    is_re,
-    is_re_compilable,
-    is_scalar,
-    _get_dtype)
-from pandas.core.dtypes.cast import (
-    maybe_downcast_to_dtype,
-    maybe_upcast,
-    maybe_promote,
-    infer_dtype_from,
-    infer_dtype_from_scalar,
-    soft_convert_objects,
-    maybe_convert_objects,
-    astype_nansafe,
-    find_common_type)
-from pandas.core.dtypes.missing import (
-    isna, notna, array_equivalent,
-    _isna_compat,
-    is_null_datelike_scalar)
-import pandas.core.dtypes.concat as _concat
-
-from pandas.core.dtypes.generic import ABCSeries, ABCDatetimeIndex
 from pandas.core.common import is_null_slice
-import pandas.core.algorithms as algos
 
-from pandas.core.index import Index, MultiIndex, _ensure_index
-from pandas.core.indexing import maybe_convert_indices, length_of_indexer
-from pandas.core.categorical import Categorical, maybe_to_categorical
-from pandas.core.indexes.datetimes import DatetimeIndex
-from pandas.io.formats.printing import pprint_thing
 
-import pandas.core.missing as missing
-from pandas.core.sparse.array import _maybe_to_sparse, SparseArray
-from pandas._libs import lib, tslib
-from pandas._libs.tslib import Timedelta
-from pandas._libs.lib import BlockPlacement
-
-import pandas.core.computation.expressions as expressions
-from pandas.util._decorators import cache_readonly
-from pandas.util._validators import validate_bool_kwarg
-
-from pandas import compat, _np_version_under1p9
-from pandas.compat import range, map, zip, u
-
-class GeometryBlockOrig(Block):
+class GeometryBlock(NonConsolidatableMixIn, Block):
+    """ implement a datetime64 block with a tz attribute """
     __slots__ = ()
-    _can_hold_na = False
 
     @property
     def _holder(self):
@@ -79,17 +17,17 @@ class GeometryBlockOrig(Block):
     def __init__(self, values, placement, ndim=2, **kwargs):
 
         if not isinstance(values, self._holder):
-            values = self._holder(values)
+            raise TypeError("values must be a VectorizedGeometry object")
 
         super(GeometryBlock, self).__init__(values, placement=placement,
                                             ndim=ndim, **kwargs)
 
-    # def __init__(self, values, placement, fastpath=False, **kwargs):
-    #     if values.dtype != _NS_DTYPE:
-    #         values = tslib.cast_to_nanoseconds(values)
-    #
-    #     super(DatetimeBlock, self).__init__(values, fastpath=True,
-    #                                         placement=placement, **kwargs)
+    @property
+    def _box_func(self):
+        # TODO does not seems to be used at the moment (from the examples) ?
+        print("I am boxed")
+        from shapely.geometry.base import geom_factory
+        return geom_factory
 
     # @property
     # def _na_value(self):
@@ -99,14 +37,128 @@ class GeometryBlockOrig(Block):
     # def fill_value(self):
     #     return tslib.iNaT
 
-    def get_values(self, dtype=None):
+    # TODO
+    # def copy(self, deep=True, mgr=None):
+    #     """ copy constructor """
+    #     values = self.values
+    #     if deep:
+    #         values = values.copy(deep=True)
+    #     return self.make_block_same_class(values)
+
+    def external_values(self):
+        """ we internally represent the data as a DatetimeIndex, but for
+        external compat with ndarray, export as a ndarray of Timestamps
         """
-        return object dtype as boxed values, such as Timestamps/Timedelta
+        return np.asarray(self.values)
+
+    def formatted_values(self, dtype=None):
+        """ return an internal format, currently just the ndarray
+        this should be the pure internal API format
         """
-        if is_object_dtype(dtype):
-            return lib.map_infer(self.values.ravel(),
-                                 self._box_func).reshape(self.values.shape)
-        return self.values
+        return self.to_dense()
+
+    def to_dense(self):
+        print("I am densified ({} elements)".format(len(self)))
+        return self.values.to_dense().view()
+
+    # TODO is this needed?
+    # def get_values(self, dtype=None):
+    #     """
+    #     return object dtype as boxed values, as shapely objects
+    #     """
+    #     if is_object_dtype(dtype):
+    #         return lib.map_infer(self.values.ravel(),
+    #                              self._box_func).reshape(self.values.shape)
+    #     return self.values
+
+    def to_native_types(self, slicer=None, na_rep=None, date_format=None,
+                        quoting=None, **kwargs):
+        """ convert to our native types format, slicing if desired """
+
+        values = self.values
+        if slicer is not None:
+            values = values[slicer]
+
+        from geopandas.vectorized import to_shapely
+        values = to_shapely(values.data)
+
+        return np.atleast_2d(values)
+
+    # TODO needed for what?
+    def _can_hold_element(self, element):
+        # if is_list_like(element):
+        #     element = np.array(element)
+        #     return element.dtype == _NS_DTYPE or element.dtype == np.int64
+        from shapely.geometry.base import BaseGeometry
+        return isinstance(element, BaseGeometry)
+
+    def _slice(self, slicer):
+        """ return a slice of my values """
+        print("I am sliced")
+        if isinstance(slicer, tuple):
+            col, loc = slicer
+            if not is_null_slice(col) and col != 0:
+                raise IndexError("{0} only contains one item".format(self))
+            return self.values[loc]
+        return self.values[slicer]
+
+    def take_nd(self, indexer, axis=0, new_mgr_locs=None, fill_tuple=None):
+        """
+        Take values according to indexer and return them as a block.bb
+        """
+        print("I am in take_nd")
+        if fill_tuple is None:
+            fill_value = None
+        else:
+            fill_value = fill_tuple[0]
+
+        # axis doesn't matter; we are really a single-dim object
+        # but are passed the axis depending on the calling routing
+        # if its REALLY axis 0, then this will be a reindex and not a take
+
+        # TODO implement take_nd on VectorizedGeometry
+        # new_values = self.values.take_nd(indexer, fill_value=fill_value)
+        new_values = self.values[indexer]
+
+        # if we are a 1-dim object, then always place at 0
+        if self.ndim == 1:
+            new_mgr_locs = [0]
+        else:
+            if new_mgr_locs is None:
+                new_mgr_locs = self.mgr_locs
+
+        return self.make_block_same_class(new_values, new_mgr_locs)
+
+    def eval(self, func, other, raise_on_error=True, try_cast=False,
+             mgr=None):
+        if func.__name__ == 'eq':
+            super(GeometryBlock, self).eval(
+                func, other, raise_on_error=raise_on_error, try_cast=try_cast,
+                mgr=mgr)
+        raise TypeError("{} not supported on geometry blocks".format(func.__name__))
+
+
+    # def should_store(self, value):
+    #     return (issubclass(value.dtype.type, np.uint64)
+    #             and value.dtype == self.dtype)
+
+    def set(self, locs, values, check=False):
+        """
+        Modify Block in-place with new item value
+
+        Returns
+        -------
+        None
+        """
+        from shapely.geometry.base import BaseGeometry
+        if values.dtype != self.dtype:
+            # Workaround for numpy 1.6 bug
+            if isinstance(values, BaseGeometry):
+                values = values.__geom__
+            else:
+                raise ValueError()
+
+            self.values[locs] = values
 
     # def _astype(self, dtype, mgr=None, **kwargs):
     #     """
@@ -127,12 +179,6 @@ class GeometryBlockOrig(Block):
     #     # delegate
     #     return super(DatetimeBlock, self)._astype(dtype=dtype, **kwargs)
 
-    def _can_hold_element(self, element):
-        # if is_list_like(element):
-        #     element = np.array(element)
-        #     return element.dtype == _NS_DTYPE or element.dtype == np.int64
-        from shapely.geometry.base import BaseGeometry
-        return isinstance(element, BaseGeometry)
 
     # def _try_coerce_args(self, values, other):
     #     """
@@ -188,155 +234,6 @@ class GeometryBlockOrig(Block):
     #     elif isinstance(result, (np.integer, np.float, np.datetime64)):
     #         result = self._box_func(result)
     #     return result
-
-    @property
-    def _box_func(self):
-        from shapely.geometry.base import geom_factory
-        return geom_factory
-
-    def to_native_types(self, slicer=None, na_rep=None, date_format=None,
-                        quoting=None, **kwargs):
-        """ convert to our native types format, slicing if desired """
-
-        values = self.values
-        if slicer is not None:
-            values = values[..., slicer]
-
-        from geopandas.vectorized import to_shapely
-        values = to_shapely(values)
-
-        return np.atleast_2d(values)
-
-    def should_store(self, value):
-        return (issubclass(value.dtype.type, np.uint64)
-                and value.dtype == self.dtype)
-
-    def set(self, locs, values, check=False):
-        """
-        Modify Block in-place with new item value
-
-        Returns
-        -------
-        None
-        """
-        from shapely.geometry.base import BaseGeometry
-        if values.dtype != self.dtype:
-            # Workaround for numpy 1.6 bug
-            if isinstance(values, BaseGeometry):
-                values = values.__geom__
-            else:
-                raise ValueError()
-
-        self.values[locs] = values
-
-
-class GeometryBlock(NonConsolidatableMixIn, Block):
-    """ implement a datetime64 block with a tz attribute """
-    __slots__ = ()
-
-    @property
-    def _holder(self):
-        from geopandas.vectorized import VectorizedGeometry
-        return VectorizedGeometry
-
-    def __init__(self, values, placement, ndim=2, **kwargs):
-
-        if not isinstance(values, self._holder):
-            raise TypeError("values must be a VectorizedGeometry object")
-
-        super(GeometryBlock, self).__init__(values, placement=placement,
-                                            ndim=ndim, **kwargs)
-
-    @property
-    def _box_func(self):
-        # TODO does not seems to be used at the moment (from the examples) ?
-        print("I am boxed")
-        from shapely.geometry.base import geom_factory
-        return geom_factory
-
-    # TODO
-    # def copy(self, deep=True, mgr=None):
-    #     """ copy constructor """
-    #     values = self.values
-    #     if deep:
-    #         values = values.copy(deep=True)
-    #     return self.make_block_same_class(values)
-
-    def external_values(self):
-        """ we internally represent the data as a DatetimeIndex, but for
-        external compat with ndarray, export as a ndarray of Timestamps
-        """
-        return np.asarray(self.values)
-
-    def formatted_values(self, dtype=None):
-        """ return an internal format, currently just the ndarray
-        this should be the pure internal API format
-        """
-        return self.to_dense()
-
-    def to_dense(self):
-        print("I am densified ({} elements)".format(len(self)))
-        return self.values.to_dense().view()
-
-    # def get_values(self, dtype=None):
-    #     """
-    #     return object dtype as boxed values, as shapely objects
-    #     """
-    #     if is_object_dtype(dtype):
-    #         return lib.map_infer(self.values.ravel(),
-    #                              self._box_func).reshape(self.values.shape)
-    #     return self.values
-
-    def to_native_types(self, slicer=None, na_rep=None, date_format=None,
-                        quoting=None, **kwargs):
-        """ convert to our native types format, slicing if desired """
-
-        values = self.values
-        if slicer is not None:
-            values = values[slicer]
-
-        from geopandas.vectorized import to_shapely
-        values = to_shapely(values.data)
-
-        return np.atleast_2d(values)
-
-    def _slice(self, slicer):
-        """ return a slice of my values """
-        print("I am sliced")
-        if isinstance(slicer, tuple):
-            col, loc = slicer
-            if not is_null_slice(col) and col != 0:
-                raise IndexError("{0} only contains one item".format(self))
-            return self.values[loc]
-        return self.values[slicer]
-
-    def take_nd(self, indexer, axis=0, new_mgr_locs=None, fill_tuple=None):
-        """
-        Take values according to indexer and return them as a block.bb
-        """
-        print("I am in take_nd")
-        if fill_tuple is None:
-            fill_value = None
-        else:
-            fill_value = fill_tuple[0]
-
-        # axis doesn't matter; we are really a single-dim object
-        # but are passed the axis depending on the calling routing
-        # if its REALLY axis 0, then this will be a reindex and not a take
-
-        # TODO implement take_nd on VectorizedGeometry
-        # new_values = self.values.take_nd(indexer, fill_value=fill_value)
-        new_values = self.values[indexer]
-
-        # if we are a 1-dim object, then always place at 0
-        if self.ndim == 1:
-            new_mgr_locs = [0]
-        else:
-            if new_mgr_locs is None:
-                new_mgr_locs = self.mgr_locs
-
-        return self.make_block_same_class(new_values, new_mgr_locs)
-
     #
     # def _try_coerce_args(self, values, other):
     #     """
@@ -400,10 +297,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
     #
     #     return result
     #
-    # @property
-    # def _box_func(self):
-    #     return lambda x: tslib.Timestamp(x, tz=self.dtype.tz)
-    #
+
     # def shift(self, periods, axis=0, mgr=None):
     #     """ shift the block by periods """
     #
