@@ -46,15 +46,15 @@ class TestSeries(unittest.TestCase):
         p = Point(1,2)
         line = LineString([(2, 3), (4, 5), (5, 6)])
         poly = Polygon([(0, 0), (1, 0), (1, 1)],
-                          [[(.1, .1), (.9, .1), (.9, .9)]])
+                       [[(.1, .05), (.95, .05), (.95, .9)]])
         mp = MultiPoint([(1, 2), (3, 4), (5, 6)])
         mline = MultiLineString([[(1, 2), (3, 4), (5, 6)], [(7, 8), (9, 10)]])
 
         poly2 = Polygon([(1, 1), (1, -1), (-1, -1), (-1, 1)],
                         [[(.5, .5), (.5, -.5), (-.5, -.5), (-.5, .5)]])
-        mpoly = MultiPolygon([poly, poly2])
+        #mpoly = MultiPolygon([poly, poly2])
 
-        geoms = [p, line, poly, mp, mline, mpoly]
+        geoms = [p, line, poly, mp, mline]#, mpoly]
         index = ['a', 'b', 'c', 'd']
 
         for g in geoms:

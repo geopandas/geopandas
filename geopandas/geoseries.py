@@ -3,8 +3,9 @@ import json
 from warnings import warn
 
 import numpy as np
-from pandas import Series, DataFrame
+from pandas import Series, DataFrame, Index
 from pandas.core.indexing import _NDFrameIndexer
+from pandas.core.internals import SingleBlockManager
 
 import pyproj
 from shapely.geometry import box, shape, Polygon, Point
@@ -15,6 +16,7 @@ from shapely.ops import transform
 from .vectorized import from_shapely, VectorizedGeometry
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase
+from ._block import GeometryBlock
 
 
 def _is_empty(x):
@@ -67,18 +69,35 @@ class GeoSeries(GeoPandasBase, Series):
 
         assert len(args) == 1  # for now while prototyping
 
-        if isinstance(args[0], (tuple, list)) and isinstance(args[0][0], BaseGeometry):
-            args = (from_shapely(args[0]),)
+        if isinstance(args[0], SingleBlockManager):
+            if isinstance(args[0].blocks[0], GeometryBlock):
+                return super(GeoSeries, self).__init__(args[0], **kwargs)
+            else:
+                values = np.asarray(args[0].blocks[0].external_values())
+        values = args[0]
+        if isinstance(args[0], (tuple, list, np.ndarray)) and np.any(isinstance(a, BaseGeometry) for a in args[0]):
+            values = from_shapely(args[0])
+            self._original_geometry= False
         if isinstance(args[0], VectorizedGeometry):
             self._original_geometry = args[0]
+            values = args[0]
             args = (args[0].data,) + args[1:]
         if isinstance(args[0], GeoSeries):
+            values = args[0]._values
+            kwargs['index'] = args[0].index
             self._original_geometry = args[0]._original_geometry
 
+        index = kwargs.pop('index', range(len(values)))
+        index = Index(index)
 
-        super(GeoSeries, self).__init__(*args, **kwargs)
+        block = GeometryBlock(values, placement=slice(0, len(values), 1),
+                              ndim=1)
+
+        # super(GeoSeries, self).__init__(*args, **kwargs)
+        super(GeoSeries, self).__init__(block, index, **kwargs, fastpath=True)
         self.crs = crs
         self._invalidate_sindex()
+        self._name = None
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)
@@ -231,10 +250,11 @@ class GeoSeries(GeoPandasBase, Series):
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
-        left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
-        right = right.astype(np.uintp)
-        left2 = GeoSeries(left)  # TODO: why do we do this?
-        left2._original_geometry = left._original_geometry
+        #left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
+        #right = right.astype(np.uintp)
+        #left2 = GeoSeries(left)  # TODO: why do we do this?
+        #left2._original_geometry = left._original_geometry
+        left2 = left
         if isinstance(other, GeoSeries):
             right2 = GeoSeries(right)
             right2._original_geometry = right._original_geometry
