@@ -3,6 +3,7 @@ import json
 from warnings import warn
 
 import numpy as np
+import pandas as pd
 from pandas import Series, DataFrame, Index
 from pandas.core.indexing import _NDFrameIndexer
 from pandas.core.internals import SingleBlockManager
@@ -51,7 +52,7 @@ class _CoordinateIndexer(_NDFrameIndexer):
 
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
-    _metadata = ['name', 'crs', '_original_geometry']
+    _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -63,39 +64,42 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __init__(self, *args, **kwargs):
         # fix problem for scalar geometries passed
-        if len(args) == 1 and isinstance(args[0], BaseGeometry):
-            args = ([args[0]],)
-
         crs = kwargs.pop('crs', None)
 
         assert len(args) == 1  # for now while prototyping
 
-        if isinstance(args[0], SingleBlockManager):
-            if isinstance(args[0].blocks[0], GeometryBlock):
-                return super(GeoSeries, self).__init__(args[0], **kwargs)
+        arg = args[0]
+
+        if isinstance(arg, SingleBlockManager):
+            if isinstance(arg.blocks[0], GeometryBlock):
+                super(GeoSeries, self).__init__(args[0], **kwargs)
+                self.crs = crs
+                return
             else:
+                import pdb; pdb.set_trace()
                 values = np.asarray(args[0].blocks[0].external_values())
-        values = args[0]
-        if isinstance(args[0], (tuple, list, np.ndarray)) and np.any(isinstance(a, BaseGeometry) for a in args[0]):
-            values = from_shapely(args[0])
-            self._original_geometry= False
-        if isinstance(args[0], VectorizedGeometry):
-            self._original_geometry = args[0]
-            values = args[0]
-            args = (args[0].data,) + args[1:]
-        if isinstance(args[0], GeoSeries):
-            values = args[0]._values
-            kwargs['index'] = args[0].index
-            self._original_geometry = args[0]._original_geometry
 
-        index = kwargs.pop('index', range(len(values)))
-        index = Index(index)
+        if isinstance(arg, BaseGeometry):
+            arg = [arg]
 
-        block = GeometryBlock(values, placement=slice(0, len(values), 1),
-                              ndim=1)
+        if isinstance(arg, GeoSeries):
+            block = arg._data._block
+            index = arg.index
+            name = arg.name
+        else:
+            if isinstance(arg, VectorizedGeometry):
+                index = kwargs.pop('index', pd.Index(np.arange(len(arg))))
+                name = kwargs.get('name', None)
+            else:
+                s = pd.Series(arg, **kwargs)
+                arg = from_shapely(s.values)
+                index = s.index
+                name = s.name
+            block = GeometryBlock(arg, placement=slice(0, len(arg), 1),
+                                  ndim=1)
 
-        # super(GeoSeries, self).__init__(*args, **kwargs)
-        super(GeoSeries, self).__init__(block, index, **kwargs, fastpath=True)
+        super(GeoSeries, self).__init__(block, index=index, name=name,
+                                        fastpath=True)
         self.crs = crs
         self._invalidate_sindex()
         self._name = None
@@ -175,7 +179,6 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _constructor(self, *args, **kwargs):
         obj = GeoSeries(*args, **kwargs)
-        obj._original_geometry = self._original_geometry
         return obj
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
@@ -189,7 +192,10 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __getitem__(self, key):
         if isinstance(key, (slice, list, Series, np.ndarray)):
-            return super(GeoSeries, self).__getitem__(key)
+            block = self._data._block[key]
+            index = self.index[key]
+            return GeoSeries(SingleBlockManager(block, axis=index),
+                             crs=self.crs, index=index)
         try:
             if key in self.index:
                 loc = self.index.get_loc(key)
@@ -236,9 +242,9 @@ class GeoSeries(GeoPandasBase, Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return GeoSeries(self._geometry_array,  # TODO: implement copy
+        return GeoSeries(self._data,
                          index=self.index, crs=self.crs,
-                         name=self.name).__finalize__(self)
+                         name=self.name)
 
     def apply(self, func, *args, **kwargs):
         s = Series(list(self._geometry_array), index=self.index)
@@ -272,11 +278,9 @@ class GeoSeries(GeoPandasBase, Series):
         #left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
         #right = right.astype(np.uintp)
         #left2 = GeoSeries(left)  # TODO: why do we do this?
-        #left2._original_geometry = left._original_geometry
         left2 = left
         if isinstance(other, GeoSeries):
             right2 = GeoSeries(right)
-            right2._original_geometry = right._original_geometry
             return left2, right2
         else: # It is probably a Series, let's keep it that way
             return left2, right
@@ -365,5 +369,14 @@ class GeoSeries(GeoPandasBase, Series):
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
+
+    def _reindex_indexer(self, new_index, indexer, copy):
+        if indexer is None:
+            if copy:
+                return self.copy()
+            return self
+
+        new_values = self._geometry_array.take(indexer)
+        return self._constructor(new_values, index=new_index)
 
 GeoSeries._create_indexer('cx', _CoordinateIndexer)

@@ -1,5 +1,8 @@
+
 import collections
 import numbers
+from libc.stdlib cimport free as cfree
+
 
 import shapely
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
@@ -17,6 +20,14 @@ include "_geos.pxi"
 
 from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
         JOIN_STYLE)
+
+ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
+                               const GEOSGeometry *left,
+                               const GEOSGeometry *right) nogil
+ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
+                                       const GEOSPreparedGeometry *left,
+                                       const GEOSGeometry *right) nogil
+
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
 
@@ -94,6 +105,7 @@ cdef prepared_binary_predicate(str op,
     cdef GEOSGeometry *geom
     cdef GEOSGeometry *other_geom
     cdef GEOSPreparedGeometry *prepared_geom
+    cdef GEOSPreparedPredicate predicate
     cdef unsigned int n = geoms.size
 
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
@@ -110,6 +122,19 @@ cdef prepared_binary_predicate(str op,
     geos_handle = get_geos_context_handle()
     prepared_geom = geos_from_prepared(other)
 
+    predicate = get_prepared_predicate(op)
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            if geom != NULL:
+                out[idx] = predicate(handle, prepared_geom, geom)
+            else:
+                out[idx] = 0
+
+    return out
+
+cdef GEOSPreparedPredicate get_prepared_predicate(str op) except NULL:
     if op == 'contains':
         func = GEOSPreparedContains_r
     elif op == 'disjoint':
@@ -133,31 +158,11 @@ cdef prepared_binary_predicate(str op,
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom != NULL:
-                out[idx] = func(handle, prepared_geom, geom)
-            else:
-                out[idx] = 0
-
-    return out
+    return func
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cpdef vector_binary_predicate(str op,
-                             np.ndarray[np.uintp_t, ndim=1, cast=True] left,
-                             np.ndarray[np.uintp_t, ndim=1, cast=True] right):
-    cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
-    cdef GEOSGeometry *left_geom
-    cdef GEOSGeometry *right_geom
-    cdef unsigned int n = left.size
-
-    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
-
-    handle = get_geos_context_handle()
+cdef GEOSPredicate get_predicate(str op) except NULL:
+    cdef GEOSPredicate func
 
     if op == 'contains':
         func = GEOSContains_r
@@ -180,6 +185,29 @@ cpdef vector_binary_predicate(str op,
     elif op == 'covered_by':
         func = GEOSCoveredBy_r
     else:
+        raise NotImplementedError(op)
+
+    return func
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef vector_binary_predicate(str op,
+                             np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                             np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef GEOSPredicate func
+    cdef unsigned int n = left.size
+
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
+
+    handle = get_geos_context_handle()
+
+    func = get_predicate(op)
+    if not func:
         raise NotImplementedError(op)
 
     with nogil:
@@ -633,6 +661,11 @@ class VectorizedGeometry(object):
         else:
             raise TypeError("Index type not supported", idx)
 
+    def take(self, idx):
+        result = self[idx]
+        result.data[idx == -1] = 0
+        return result
+
     def __len__(self):
         return len(self.data)
 
@@ -793,9 +826,7 @@ class VectorizedGeometry(object):
         return buffer(self.data, distance, resolution, cap_style, join_style,
                       mitre_limit)
 
-
     # for Series/ndarray like compat
-
 
     @property
     def shape(self):

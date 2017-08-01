@@ -24,7 +24,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
-
     """
     import rtree
 

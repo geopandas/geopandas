@@ -4,30 +4,33 @@ import os
 import sys
 
 import numpy as np
+import pandas as pd
+from pandas.core.internals import BlockManager
 from pandas import DataFrame, Series, Index
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas import GeoSeries
+from .geoseries import GeoSeries
 from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
 from . import vectorized
+from ._block import GeometryBlock
 
 
-DEFAULT_GEO_COLUMN_NAME = 'geometry'
-
-
-def coerce_to_geoseries(x):
+def coerce_to_geoseries(x, **kwargs):
     if isinstance(x, GeoSeries):
         return x
     if isinstance(x, vectorized.VectorizedGeometry):
-        return GeoSeries(x)
+        return GeoSeries(x, **kwargs)
     if isinstance(x, Iterable):
-        return GeoSeries(vectorized.from_shapely(list(x)))
+        return GeoSeries(vectorized.from_shapely(list(x)), **kwargs)
     raise TypeError(type(x))
+
+
+DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -51,25 +54,62 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                        '_default_kind', '_default_fill_value', '_metadata',
                        '__array_struct__', '__array_interface__']
 
-    _metadata = ['crs', '_geometry_column_name', '_original_geometry']
+    _metadata = ['crs', '_geometry_column_name']
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
 
-        geometry = kwargs.pop('geometry', None)
-        self._original_geometry = kwargs.pop('original_geometry', None)
-        if isinstance(args[0], dict) and self._geometry_column_name in args[0]:
-            g = args[0][self._geometry_column_name]
-            g = coerce_to_geoseries(g)
-            args[0][self._geometry_column_name] = g
-            if not self._original_geometry:
-                self._original_geometry = g._original_geometry
-        super(GeoDataFrame, self).__init__(*args, **kwargs)
+        geometry = kwargs.pop('geometry', 'geometry')
+        [arg] = args
+
+        if isinstance(arg, BlockManager):
+            super(GeoDataFrame, self).__init__(arg, **kwargs)
+            self._geometry_column_name = geometry
+            return
+
+        gs = {}
+
+        if isinstance(arg, list) and all(isinstance(a, dict) for a in arg):
+            arg = pd.DataFrame(arg, **kwargs)
+
+        if isinstance(arg, dict):
+            for i, (k, v) in list(enumerate(arg.items())):
+                if isinstance(v, GeoSeries):
+                    if 'columns' in kwargs:
+                        kwargs['columns'].pop(i)
+                    gs[k] = arg.pop(k)
+                    kwargs['index'] = v.index  # TODO: assumes consistent index
+
+            arg = pd.DataFrame(arg, **kwargs)
+
+        assert isinstance(arg, pd.DataFrame)
+
+        if not isinstance(geometry, str):
+            arg['geometry'] = geometry
+            geometry = 'geometry'
+
+        if geometry in arg.columns:
+            arg = arg.copy()
+            geom = arg.pop(geometry)
+            geom = coerce_to_geoseries(geom)
+            gs[geometry] = geom
+
+        columns, index = arg._data.axes
+        blocks = arg._data.blocks
+        for k, geom in gs.items():
+            geom = coerce_to_geoseries(geom)
+            geom_block = geom._data._block
+            geom_block = GeometryBlock(geom._values, slice(len(columns),
+                                       len(columns) + 1))
+            columns = columns.append(pd.Index([k]))
+            blocks = BlockManager(blocks + (geom_block,), [columns, index])
+
+        super(GeoDataFrame, self).__init__(blocks)
+
         self.crs = crs
-        if geometry is not None:
-            self.set_geometry(geometry, inplace=True)
+        self._geometry_column_name = geometry
 
         self._invalidate_sindex()
 
@@ -99,19 +139,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
         if isinstance(col, GeoSeries):
-            self._original_geometry = col._original_geometry
             self.set_geometry(col, inplace=True)
         elif isinstance(col, (list, np.ndarray, Series)):
             col = vectorized.from_shapely(col)
-            self._original_geometry = col
-            self.set_geometry(col.data, inplace=True, original_geometry=col)
+            self.set_geometry(col.data, inplace=True)
 
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None,
-                     original_geometry=None):
+    def set_geometry(self, col, drop=False, inplace=False, crs=None):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -140,6 +177,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geodataframe : GeoDataFrame
         """
         # Most of the code here is taken from DataFrame.set_index()
+        if (self._geometry_column_name not in self.columns
+            and col in self.columns
+            and isinstance(self[col], GeoSeries)):
+            self._geometry_column_name = col
+            return self
+        raise NotImplementedError()
         if inplace:
             frame = self
         else:
@@ -147,10 +190,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if not crs:
             crs = getattr(col, 'crs', self.crs)
-        if not original_geometry:
-            original_geometry = getattr(col, '_original_geometry',
-                                        self._original_geometry)
-
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -182,26 +221,31 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if (isinstance(level, np.ndarray) and level.dtype == object or
             isinstance(level, Iterable) and any(isinstance(x, BaseGeometry) for x in level)):
             level = vectorized.from_shapely(level)
-            original_geometry = level
-            level = level.data
 
-        # Check that we are using a listlike of geometries
-        assert level.dtype == np.uintp
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
-        frame._original_geometry = original_geometry
         frame._invalidate_sindex()
         if not inplace:
             return frame
 
     def _ensure_geometry(self):
-        if self.dtypes[self._geometry_column_name] == object:
-            shapes = DataFrame.__getitem__(self, self._geometry_column_name)
-            x = vectorized.from_shapely(shapes.tolist())
-            self._original_geometry = x
-            self[self._geometry_column_name] = x.data
         return self
+        self = self.copy()
+        if self.dtypes[self._geometry_column_name] == object:
+            geom = self.pop(self._geometry_column_name)
+            vec = vectorized.from_shapely(geom.tolist())
+
+            columns, index = self._data.axes
+            blocks = self._data.blocks
+
+            geom_block = GeometryBlock(vec, slice(len(columns), len(columns) + 1))
+            columns = columns.append(pd.Index([self._geometry_column_name]))
+
+            bm = BlockManager(blocks + (geom_block,), [columns, index])
+            return GeoDataFrame(bm)
+        else:
+            return self
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -423,15 +467,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
+        if isinstance(key, string_types) and isinstance(result._data._block, GeometryBlock):
             result.__class__ = GeoSeries
             result.crs = self.crs
-            result._original_geometry = self._original_geometry
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
-            result._original_geometry = self._original_geometry
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
@@ -473,8 +515,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
-        if not hasattr(self, '_original_geometry'):
-            self._original_geometry = other._original_geometry
         return self
 
     def copy(self, deep=True):
@@ -495,7 +535,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if deep:
             data = data.copy()
         out = GeoDataFrame(data).__finalize__(self)
-        out._original_geometry = self._original_geometry
         return out
 
     def plot(self, *args, **kwargs):
@@ -543,7 +582,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Aggregate
         aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name,
-                                           crs=self.crs, original_geometry=self._original_geometry)
+                                           crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
@@ -553,20 +592,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return aggregated
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None, original_geometry=None):
+def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
         raise ValueError("Can't do inplace setting when converting from"
                          " DataFrame to GeoDataFrame")
-    gf = GeoDataFrame(self)
-    # this will copy so that BlockManager gets copied
-    out = gf.set_geometry(col, drop=drop, inplace=False, crs=crs,
-                          original_geometry=original_geometry)
-    if not getattr(out, '_original_geometry'):
-        try:
-            out._original_geometry = col._original_geometry
-        except AttributeError:
-            out._original_geometry = self._original_geometry
-    return out
+    return GeoDataFrame(self, geometry=col, crs=crs)
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry
