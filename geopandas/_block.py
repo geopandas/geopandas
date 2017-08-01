@@ -49,7 +49,9 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         """ we internally represent the data as a DatetimeIndex, but for
         external compat with ndarray, export as a ndarray of Timestamps
         """
-        return np.asarray(self.values)
+        #return np.asarray(self.values)
+        print("I am densified (external_values, {} elements)".format(len(self)))
+        return self.values.to_dense()
 
     def formatted_values(self, dtype=None):
         """ return an internal format, currently just the ndarray
@@ -137,6 +139,23 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
                 mgr=mgr)
         raise TypeError("{} not supported on geometry blocks".format(func.__name__))
 
+
+    def _astype(self, dtype, copy=False, errors='raise', values=None,
+                klass=None, mgr=None):
+        """
+        Coerce to the new type (if copy=True, return a new copy)
+        raise on an except if raise == True
+        """
+
+        if dtype != np.object_:
+            if errors == 'raise':
+                raise TypeError('cannot astype geometries')
+        values = self.values
+
+        if copy:
+            values = values.copy()
+
+        return self.make_block(values)
 
     # def should_store(self, value):
     #     return (issubclass(value.dtype.type, np.uint64)
