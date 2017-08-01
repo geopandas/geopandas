@@ -50,7 +50,7 @@ class _CoordinateIndexer(_NDFrameIndexer):
 
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
-    _metadata = ['name', 'crs', '_original_geometry']
+    _metadata = ['name', 'crs']
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -71,21 +71,20 @@ class GeoSeries(GeoPandasBase, Series):
 
         if isinstance(args[0], SingleBlockManager):
             if isinstance(args[0].blocks[0], GeometryBlock):
-                return super(GeoSeries, self).__init__(args[0], **kwargs)
+                super(GeoSeries, self).__init__(args[0], **kwargs)
+                self.crs = crs
+                return
             else:
                 values = np.asarray(args[0].blocks[0].external_values())
         values = args[0]
         if isinstance(args[0], (tuple, list, np.ndarray)) and np.any(isinstance(a, BaseGeometry) for a in args[0]):
             values = from_shapely(args[0])
-            self._original_geometry= False
         if isinstance(args[0], VectorizedGeometry):
-            self._original_geometry = args[0]
             values = args[0]
             args = (args[0].data,) + args[1:]
         if isinstance(args[0], GeoSeries):
             values = args[0]._values
             kwargs['index'] = args[0].index
-            self._original_geometry = args[0]._original_geometry
 
         index = kwargs.pop('index', range(len(values)))
         index = Index(index)
@@ -156,7 +155,6 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _constructor(self, *args, **kwargs):
         obj = GeoSeries(*args, **kwargs)
-        obj._original_geometry = self._original_geometry
         return obj
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
@@ -170,7 +168,10 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __getitem__(self, key):
         if isinstance(key, (slice, list, Series, np.ndarray)):
-            return super(GeoSeries, self).__getitem__(key)
+            block = self._data._block[key]
+            index = self.index[key]
+            return GeoSeries(SingleBlockManager(block, axis=index),
+                             crs=self.crs, index=index)
         try:
             if key in self.index:
                 loc = self.index.get_loc(key)
@@ -253,11 +254,9 @@ class GeoSeries(GeoPandasBase, Series):
         #left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
         #right = right.astype(np.uintp)
         #left2 = GeoSeries(left)  # TODO: why do we do this?
-        #left2._original_geometry = left._original_geometry
         left2 = left
         if isinstance(other, GeoSeries):
             right2 = GeoSeries(right)
-            right2._original_geometry = right._original_geometry
             return left2, right2
         else: # It is probably a Series, let's keep it that way
             return left2, right

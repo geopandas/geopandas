@@ -63,6 +63,11 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         print("I am densified ({} elements)".format(len(self)))
         return self.values.to_dense().view()
 
+    def __getitem__(self, key):
+        values = self.values[key]
+        return GeometryBlock(values, placement=slice(0, len(values), 1),
+                             ndim=1)
+
     # TODO is this needed?
     # def get_values(self, dtype=None):
     #     """
