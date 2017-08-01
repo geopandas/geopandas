@@ -228,8 +228,9 @@ class GeoPandasBase(object):
 
     @property
     def _geometry_array(self):
-        return vectorized.VectorizedGeometry(data=self.geometry.values,
-                                             parent=self._original_geometry)
+        #return vectorized.VectorizedGeometry(data=self.geometry.values,
+        #                                     parent=self._original_geometry)
+        return self.geometry._values
 
     def contains(self, other):
         """Return True for all geometries that contain *other*, else False"""
@@ -276,7 +277,7 @@ class GeoPandasBase(object):
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
-        return _series_op(self, other, 'distance')
+        return binary_predicate(self, other, 'distance')
 
     #
     # Binary operations that return a GeoSeries
