@@ -220,7 +220,7 @@ class GeoSeries(GeoPandasBase, Series):
         # FIXME: this will likely be unnecessary in pandas >= 0.13
         return GeoSeries(self._geometry_array,  # TODO: implement copy
                          index=self.index, crs=self.crs,
-                         name=self.name).__finalize__(self)
+                         name=self.name)
 
     def apply(self, func, *args, **kwargs):
         s = Series(list(self._geometry_array), index=self.index)
