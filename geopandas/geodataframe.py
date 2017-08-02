@@ -489,7 +489,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                      or (result.ndim == 1
                          and isinstance(result._data._block, GeometryBlock))):
             if not key == geo_col:
-                result = GeoSeries(result, crs=crs)
+                result = GeoSeries(result, crs=self.crs)
             else:
                 result.__class__ = GeoSeries
                 result.crs = self.crs
