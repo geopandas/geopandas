@@ -66,6 +66,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if isinstance(arg, BlockManager):
             super(GeoDataFrame, self).__init__(arg, **kwargs)
+            self.crs = crs
             self._geometry_column_name = geometry
             return
 
@@ -175,14 +176,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Returns
         -------
         geodataframe : GeoDataFrame
+
         """
-        # Most of the code here is taken from DataFrame.set_index()
-        if (self._geometry_column_name not in self.columns
-            and col in self.columns
-            and isinstance(self[col], GeoSeries)):
-            self._geometry_column_name = col
-            return self
-        raise NotImplementedError()
         if inplace:
             frame = self
         else:
@@ -195,6 +190,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray)):
             level = col
+            to_remove = geo_column_name
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
@@ -213,20 +209,41 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if to_remove:
             del frame[to_remove]
 
+        if geo_column_name in frame.columns:
+            del frame[geo_column_name]
+
         if isinstance(level, GeoSeries) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
             level = level.copy()
             level.crs = crs
 
-        if (isinstance(level, np.ndarray) and level.dtype == object or
-            isinstance(level, Iterable) and any(isinstance(x, BaseGeometry) for x in level)):
-            level = vectorized.from_shapely(level)
+        if isinstance(level, Series):
+            level = GeoSeries(level)
+            level, _ = level.align(frame, join='right')
+        else:
+            level= GeoSeries(level, index=frame.index)
 
-        frame[geo_column_name] = level
-        frame._geometry_column_name = geo_column_name
-        frame.crs = crs
-        frame._invalidate_sindex()
-        if not inplace:
+        columns, index = frame._data.axes
+        blocks = frame._data.blocks
+
+        geom_block = level._data._block
+        geom_block = GeometryBlock(geom_block.values,
+                                   slice(len(columns), len(columns) + 1))
+        columns = columns.append(pd.Index([geo_column_name]))
+        blk_mgr = BlockManager(blocks + (geom_block,), [columns, index])
+
+        # frame[geo_column_name] = level
+        # frame._geometry_column_name = geo_column_name
+        # frame.crs = crs
+        # frame._invalidate_sindex()
+        if inplace:
+            frame._data = blk_mgr
+            frame._geometry_column_name = geo_column_name
+            frame.crs = crs
+            frame._invalidate_sindex()
+        else:
+            frame = self._constructor(blk_mgr, geometry=geo_column_name,
+                                      crs=crs)
             return frame
 
     def _ensure_geometry(self):
@@ -467,10 +484,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and isinstance(result._data._block, GeometryBlock):
-            result.__class__ = GeoSeries
-            result.crs = self.crs
-            result._invalidate_sindex()
+        if isinstance(key, string_types)\
+                and ((key == geo_col)
+                     or (result.ndim == 1
+                         and isinstance(result._data._block, GeometryBlock))):
+            if not key == geo_col:
+                result = GeoSeries(result, crs=crs)
+            else:
+                result.__class__ = GeoSeries
+                result.crs = self.crs
+                result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
@@ -479,6 +502,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
+
+    def __setitem__(self, key, value):
+        """If what is set is a GeoSeries, make sure the GeometryBlock
+        is preserved"""
+        if isinstance(key, string_types) and isinstance(value, GeoSeries):
+            # TODO not densify
+            value = value.values
+        super(GeoDataFrame, self).__setitem__(key, value)
 
     #
     # Implement pandas methods
