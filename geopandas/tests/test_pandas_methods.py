@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from six import PY3
+
 import pytest
 
 import numpy as np
@@ -116,8 +118,10 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         s.sum()
 
-    with pytest.raises(TypeError):
-        s.max()
+    if PY3:
+        # in python 2, objects are still orderable
+        with pytest.raises(TypeError):
+            s.max()
 
     with pytest.raises(TypeError):
         s.idxmax()
