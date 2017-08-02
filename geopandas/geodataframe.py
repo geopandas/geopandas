@@ -69,10 +69,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self._geometry_column_name = geometry
             return
 
+        gs = {}
+
         if isinstance(arg, list) and all(isinstance(a, dict) for a in arg):
             arg = pd.DataFrame(arg, **kwargs)
 
         if isinstance(arg, dict):
+            for k, v in list(arg.items()):
+                if isinstance(v, GeoSeries):
+                    gs[k] = arg.pop(k)
+                    kwargs['index'] = v.index  # TODO: assumes consistent index
+
             arg = pd.DataFrame(arg, **kwargs)
 
         assert isinstance(arg, pd.DataFrame)
@@ -85,17 +92,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             arg = arg.copy()
             geom = arg.pop(geometry)
             geom = coerce_to_geoseries(geom)
-            geom_block = geom._data._block
+            gs[geometry] = geom
 
-            columns, index = arg._data.axes
-            blocks = arg._data.blocks
+        columns, index = arg._data.axes
+        blocks = arg._data.blocks
+        for k, geom in gs.items():
+            geom_block = geom._data._block
             geom_block = GeometryBlock(geom._values, slice(len(columns),
                                        len(columns) + 1))
-            columns = columns.append(pd.Index([geometry]))
-            bm = BlockManager(blocks + (geom_block,), [columns, index])
-        else:
-            bm = arg._data
-        super(GeoDataFrame, self).__init__(bm)
+            columns = columns.append(pd.Index([k]))
+            blocks = BlockManager(blocks + (geom_block,), [columns, index])
+
+        super(GeoDataFrame, self).__init__(blocks)
 
         self.crs = crs
         self._geometry_column_name = geometry
@@ -166,6 +174,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geodataframe : GeoDataFrame
         """
         # Most of the code here is taken from DataFrame.set_index()
+        raise NotImplementedError()
         if inplace:
             frame = self
         else:
