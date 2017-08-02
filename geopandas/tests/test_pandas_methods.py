@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from distutils.version import LooseVersion
+
 from six import PY3
 
 import pytest
@@ -108,6 +110,7 @@ def test_to_csv(df):
     assert df.to_csv(index=False) == exp
 
 
+@pytest.mark.skipif(pd.__version__ < LooseVersion('0.17'))
 def test_numerical_operations(s, df):
 
     # df methods ignore the geometry column
