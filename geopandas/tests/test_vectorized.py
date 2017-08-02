@@ -3,7 +3,7 @@ import time
 import random
 import shapely
 from geopandas.vectorized import (VectorizedGeometry, points_from_xy,
-        from_shapely)
+        from_shapely, serialize, deserialize)
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 
 import pytest
@@ -293,3 +293,30 @@ def test_vector_float(attr):
     expected = [getattr(tri, attr) for tri in triangles]
 
     assert result.tolist() == expected
+
+
+def test_serialize_deserialize():
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+
+    vec = from_shapely(triangles)
+
+    ba, sizes = serialize(vec.data)
+    vec2 = VectorizedGeometry(deserialize(ba, sizes))
+
+    assert (vec.data != vec2.data).all()
+    assert vec.equals(vec2).all()
+
+
+def test_pickle():
+    import pickle
+    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                           for i in range(3)])
+                 for _ in range(10)]
+
+    vec = from_shapely(triangles)
+    vec2 = pickle.loads(pickle.dumps(vec))
+
+    assert (vec.data != vec2.data).all()
+    assert vec.equals(vec2).all()

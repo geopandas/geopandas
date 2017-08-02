@@ -9,6 +9,9 @@ cdef extern from "geos_c.h":
     ctypedef struct GEOSGeometry
     ctypedef struct GEOSCoordSequence
     ctypedef struct GEOSPreparedGeometry
+    ctypedef struct GEOSWKBReader
+    ctypedef struct GEOSWKBWriter
+
 
     GEOSCoordSequence *GEOSCoordSeq_create_r(GEOSContextHandle_t, unsigned int, unsigned int) nogil
     GEOSCoordSequence *GEOSGeom_getCoordSeq_r(GEOSContextHandle_t, GEOSGeometry *) nogil
@@ -114,6 +117,15 @@ cdef extern from "geos_c.h":
     GEOSGeometry *GEOSIntersection_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
 
     GEOSGeometry *GEOSBufferWithStyle_r(GEOSContextHandle_t, const GEOSGeometry*, double, int, int, int, double) nogil
+
+    GEOSWKBReader *GEOSWKBReader_create_r(GEOSContextHandle_t) nogil
+    void GEOSWKBReader_destroy_r(GEOSContextHandle_t, GEOSWKBReader*) nogil
+    GEOSGeometry *GEOSWKBReader_read_r(GEOSContextHandle_t, GEOSWKBReader* , const unsigned char *, size_t) nogil
+
+    GEOSWKBWriter *GEOSWKBWriter_create_r(GEOSContextHandle_t) nogil
+    void GEOSWKBWriter_destroy_r(GEOSContextHandle_t , GEOSWKBWriter* ) nogil
+    unsigned char *GEOSWKBWriter_write_r(GEOSContextHandle_t, GEOSWKBWriter*, const GEOSGeometry*, size_t *) nogil
+
 
 
 
