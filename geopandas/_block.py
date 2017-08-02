@@ -53,7 +53,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         print("I am densified (external_values, {} elements)".format(len(self)))
         return self.values.to_dense()
 
-    def formatted_values(self, dtype=None):
+    def formatting_values(self, dtype=None):
         """ return an internal format, currently just the ndarray
         this should be the pure internal API format
         """
