@@ -11,7 +11,7 @@ from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas import GeoSeries
+from .geoseries import GeoSeries
 from geopandas.base import GeoPandasBase
 from geopandas.plotting import plot_dataframe
 import geopandas.io
@@ -20,17 +20,17 @@ from . import vectorized
 from ._block import GeometryBlock
 
 
-DEFAULT_GEO_COLUMN_NAME = 'geometry'
-
-
-def coerce_to_geoseries(x):
+def coerce_to_geoseries(x, **kwargs):
     if isinstance(x, GeoSeries):
         return x
     if isinstance(x, vectorized.VectorizedGeometry):
-        return GeoSeries(x)
+        return GeoSeries(x, **kwargs)
     if isinstance(x, Iterable):
-        return GeoSeries(vectorized.from_shapely(list(x)))
+        return GeoSeries(vectorized.from_shapely(list(x)), **kwargs)
     raise TypeError(type(x))
+
+
+DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
