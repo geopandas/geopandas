@@ -7,7 +7,7 @@
 typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *left, const GEOSGeometry *right);
 typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, const GEOSPreparedGeometry *left, const GEOSGeometry *right);
 
-typedef struct 
+typedef struct
 {
     size_t n, m;
     size_t *a;
@@ -15,9 +15,9 @@ typedef struct
 
 void sjoin_callback(void *item, void *vec);
 
-size_vector sjoin(GEOSContextHandle_t handle, 
+size_vector sjoin(GEOSContextHandle_t handle,
                   GEOSPreparedPredicate predicate,
-                  GEOSGeometry **left, size_t nleft, 
+                  GEOSGeometry **left, size_t nleft,
                   GEOSGeometry **right, size_t nright);
 
 #endif

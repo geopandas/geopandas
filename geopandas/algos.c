@@ -7,7 +7,7 @@
 typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *left, const GEOSGeometry *right);
 typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, const GEOSPreparedGeometry *left, const GEOSGeometry *right);
 
-typedef struct 
+typedef struct
 {
     size_t n, m;
     size_t *a;
@@ -18,9 +18,9 @@ void sjoin_callback(void *item, void *vec)
     kv_push(size_t, *((size_vector*) vec), (size_t) item);
 }
 
-size_vector sjoin(GEOSContextHandle_t handle, 
+size_vector sjoin(GEOSContextHandle_t handle,
                   GEOSPreparedPredicate predicate,
-                  GEOSGeometry **left, size_t nleft, 
+                  GEOSGeometry **left, size_t nleft,
                   GEOSGeometry **right, size_t nright)
 {
     // clock_t begin, begin_1, begin_2;
@@ -56,7 +56,7 @@ size_vector sjoin(GEOSContextHandle_t handle,
         // time_spent_1 += (double)(end_1 - begin_1) / CLOCKS_PER_SEC;
 
         prepared = GEOSPrepare_r(handle, left[l]);
-            
+
         // begin_2 = clock();
         while (vec.n)
         {
