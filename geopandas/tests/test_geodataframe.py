@@ -491,6 +491,11 @@ class TestDataFrame(unittest.TestCase):
             self.assertTrue('bbox' in feature.keys())
 
     def test_pickle(self):
+        import pickle
+        df2 = pickle.loads(pickle.dumps(self.df))
+        assert str(df) == str(df2)
+
+    def test_pickle_file(self):
         filename = os.path.join(self.tempdir, 'df.pkl')
         self.df.to_pickle(filename)
         unpickled = pd.read_pickle(filename)
