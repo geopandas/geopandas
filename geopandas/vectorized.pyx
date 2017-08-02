@@ -146,7 +146,7 @@ cdef prepared_binary_predicate(str op,
 
     return out
 
-cdef GEOSPreparedPredicate get_prepared_predicate(str op):
+cdef GEOSPreparedPredicate get_prepared_predicate(str op) except NULL:
     if op == 'contains':
         func = GEOSPreparedContains_r
     elif op == 'disjoint':
@@ -173,7 +173,7 @@ cdef GEOSPreparedPredicate get_prepared_predicate(str op):
     return func
 
 
-cdef GEOSPredicate get_predicate(str op):
+cdef GEOSPredicate get_predicate(str op) except NULL:
     cdef GEOSPredicate func
 
     if op == 'contains':
@@ -219,6 +219,8 @@ cpdef vector_binary_predicate(str op,
     handle = get_geos_context_handle()
 
     func = get_predicate(op)
+    if not func:
+        raise NotImplementedError(op)
 
     with nogil:
         for idx in xrange(n):
@@ -1002,6 +1004,8 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
 
     handle = get_geos_context_handle()
     predicate = get_prepared_predicate(predicate_name)
+    if not predicate:
+        raise NotImplementedError(predicate_name)
 
     with nogil:
         sv = sjoin(handle, predicate,
