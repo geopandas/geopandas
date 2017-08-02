@@ -9,6 +9,8 @@ import shapely.affinity as affinity
 
 import cython
 cimport cpython.array
+from libc.stdlib cimport malloc, free
+
 
 cimport numpy as np
 import numpy as np
@@ -601,7 +603,74 @@ cpdef from_shapely(object L):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cpdef serialize(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n = geoms.size
+    cdef size_t size
+    cdef GEOSWKBWriter *writer
+    cdef unsigned char* c_string
+    cdef bytes py_string
+
+    cdef np.ndarray[np.uintp_t, ndim=1] sizes = np.empty(n, dtype=np.uintp)
+    cdef bytearray out = bytearray()
+
+    handle = get_geos_context_handle()
+
+    writer = GEOSWKBWriter_create_r(handle)
+
+    for idx in xrange(n):
+        geos_geom = geoms[idx]
+        geom = <GEOSGeometry *> geos_geom
+        if geom:
+            c_string = GEOSWKBWriter_write_r(handle, writer, geom, &size)
+            py_string = c_string[:size]
+            out.extend(py_string)
+            free(c_string)
+            sizes[idx] = size
+        else:
+            sizes[idx] = 0
+
+    GEOSWKBWriter_destroy_r(handle, writer)
+    return out, sizes
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast=True] sizes):
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n = sizes.size
+    cdef size_t size
+    cdef GEOSWKBReader *reader
+
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    handle = get_geos_context_handle()
+
+    reader = GEOSWKBReader_create_r(handle)
+
+    with nogil:
+        for idx in xrange(n):
+            size = sizes[idx]
+            if size:
+                geom = GEOSWKBReader_read_r(handle, reader, data, size)
+                out[idx] = <np.uintp_t> geom
+            else:
+                out[idx] = 0
+            data += size
+
+    GEOSWKBReader_destroy_r(handle, reader)
+    return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -638,7 +707,7 @@ class VectorizedGeometry(object):
 
     def __del__(self):
         if self.parent is False:
-            free(self.data)
+            vec_free(self.data)
 
     def copy(self):
         # TODO dummy implementation just to have someting
@@ -647,6 +716,14 @@ class VectorizedGeometry(object):
     @property
     def ndim(self):
         return 1
+
+    def __getstate__(self):
+        return serialize(self.data)
+
+    def __setstate__(self, state):
+        geoms = deserialize(*state)
+        self.data = geoms
+        self.parent = None
 
     @property
     def x(self):
