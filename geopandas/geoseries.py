@@ -351,4 +351,13 @@ class GeoSeries(GeoPandasBase, Series):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
 
+    def _reindex_indexer(self, new_index, indexer, copy):
+        if indexer is None:
+            if copy:
+                return self.copy()
+            return self
+
+        new_values = self._geometry_array.take(indexer)
+        return self._constructor(new_values, index=new_index)
+
 GeoSeries._create_indexer('cx', _CoordinateIndexer)
