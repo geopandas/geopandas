@@ -177,6 +177,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geodataframe : GeoDataFrame
         """
         # Most of the code here is taken from DataFrame.set_index()
+        if (self._geometry_column_name not in self.columns
+            and col in self.columns
+            and isinstance(self[col], GeoSeries)):
+            self._geometry_column_name = col
+            return self
         raise NotImplementedError()
         if inplace:
             frame = self
@@ -462,7 +467,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
+        if isinstance(key, string_types) and isinstance(result._data._block, GeometryBlock):
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()

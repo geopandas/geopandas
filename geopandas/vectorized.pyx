@@ -738,6 +738,9 @@ class VectorizedGeometry(object):
         else:
             raise TypeError("Index type not supported", idx)
 
+    def take(self, idx):
+        return self[idx]
+
     def __len__(self):
         return len(self.data)
 

@@ -94,7 +94,8 @@ class GeoSeries(GeoPandasBase, Series):
                               ndim=1)
 
         # super(GeoSeries, self).__init__(*args, **kwargs)
-        super(GeoSeries, self).__init__(block, index, **kwargs, fastpath=True)
+        kwargs['fastpath'] = True
+        super(GeoSeries, self).__init__(block, index, **kwargs)
         self.crs = crs
         self._invalidate_sindex()
         self._name = None
