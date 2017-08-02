@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 from shapely import prepared
 
+from ..geodataframe import GeoDataFrame
+from ..geodataframe import GeoSeries
+
+from ..vectorized import cysjoin
+
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
           lsuffix='left', rsuffix='right'):
@@ -24,8 +29,37 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
-
     """
+    indices = cysjoin(left_df.geometry._geometry_array.data,
+                      right_df.geometry._geometry_array.data,
+                      op)
+    left = left_df.take(indices[:, 0])
+    right = right_df.take(indices[:, 1])
+    del right[right._geometry_column_name]
+
+    columns = {}
+    names = []
+    for name, series in left.iteritems():
+        if name in right.columns:
+            name = lsuffix + '_' + name
+        columns[name] = series
+        names.append(name)
+    for name, series in right.iteritems():
+        if name in left.columns:
+            name = rsuffix + '_' + name
+        series.index = left.index
+        columns[name] = series
+        names.append(name)
+
+    s = pd.Series(right.index.values, index=left.index)
+    columns['right_index'] = s
+    names.append('right_index')
+
+    s = columns[left_df._geometry_column_name]
+    columns[left_df._geometry_column_name] = GeoSeries(s._values, index=s.index, name=s.name)
+
+    return GeoDataFrame(columns, columns=names, index=left.index,
+                        geometry=left_df._geometry_column_name)
     import rtree
 
     allowed_hows = ['left', 'right', 'inner']

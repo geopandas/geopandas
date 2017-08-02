@@ -89,6 +89,7 @@ class GeoSeries(GeoPandasBase, Series):
         index = kwargs.pop('index', range(len(values)))
         index = Index(index)
 
+        assert isinstance(values, VectorizedGeometry)
         block = GeometryBlock(values, placement=slice(0, len(values), 1),
                               ndim=1)
 

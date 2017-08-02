@@ -75,8 +75,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             arg = pd.DataFrame(arg, **kwargs)
 
         if isinstance(arg, dict):
-            for k, v in list(arg.items()):
+            for i, (k, v) in list(enumerate(arg.items())):
                 if isinstance(v, GeoSeries):
+                    if 'columns' in kwargs:
+                        kwargs['columns'].pop(i)
                     gs[k] = arg.pop(k)
                     kwargs['index'] = v.index  # TODO: assumes consistent index
 
@@ -97,6 +99,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         columns, index = arg._data.axes
         blocks = arg._data.blocks
         for k, geom in gs.items():
+            geom = coerce_to_geoseries(geom)
             geom_block = geom._data._block
             geom_block = GeometryBlock(geom._values, slice(len(columns),
                                        len(columns) + 1))
