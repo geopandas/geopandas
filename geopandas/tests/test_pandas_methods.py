@@ -143,7 +143,7 @@ def test_where(s):
 
 
 def test_select_dtypes(df):
-    res = df.select_dtypes(include=np.number)
+    res = df.select_dtypes(include=[np.number])
     exp = df[['value1', 'value2']]
     assert_frame_equal(res, exp)
 
