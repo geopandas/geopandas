@@ -431,7 +431,7 @@ cpdef vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom

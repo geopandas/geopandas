@@ -172,22 +172,26 @@ class GeoPandasBase(object):
     @property
     def boundary(self):
         """Return the bounding geometry for each geometry"""
-        return _geo_unary_op(self, 'boundary')
+        x = vectorized.geo_unary_op('boundary', self._geometry_array.data)
+        return gpd.GeoSeries(x, index=self.index, crs=self.crs)
 
     @property
     def centroid(self):
         """Return the centroid of each geometry in the GeoSeries"""
-        return _geo_unary_op(self, 'centroid')
+        x = vectorized.geo_unary_op('centroid', self._geometry_array.data)
+        return gpd.GeoSeries(x, index=self.index, crs=self.crs)
 
     @property
     def convex_hull(self):
         """Return the convex hull of each geometry"""
-        return _geo_unary_op(self, 'convex_hull')
+        x = vectorized.geo_unary_op('convex_hull', self._geometry_array.data)
+        return gpd.GeoSeries(x, index=self.index, crs=self.crs)
 
     @property
     def envelope(self):
         """Return a bounding rectangle for each geometry"""
-        return _geo_unary_op(self, 'envelope')
+        x = vectorized.geo_unary_op('envelope', self._geometry_array.data)
+        return gpd.GeoSeries(x, index=self.index, crs=self.crs)
 
     @property
     def exterior(self):
@@ -203,9 +207,8 @@ class GeoPandasBase(object):
 
     def representative_point(self):
         """Return a GeoSeries of points guaranteed to be in each geometry"""
-        return gpd.GeoSeries([geom.representative_point()
-                             for geom in self.geometry],
-                         index=self.index)
+        x = vectorized.geo_unary_op('representative_point', self._geometry_array.data)
+        return gpd.GeoSeries(x, index=self.index, crs=self.crs)
 
     #
     # Reduction operations that return a Shapely geometry
