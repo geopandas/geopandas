@@ -118,7 +118,7 @@ def test_unary_geo(attr):
     result = getattr(T, attr)()
     expected = [getattr(t, attr) for t in triangles]
 
-    assert [a.equals(b) for a, b in zip(result, expected)]
+    assert all([a.equals(b) for a, b in zip(result, expected)])
 
 @pytest.mark.parametrize('attr', [
     'representative_point',
@@ -128,7 +128,7 @@ def test_unary_geo_callable(attr):
     result = getattr(T, attr)()
     expected = [getattr(t, attr)() for t in triangles]
 
-    assert [a.equals(b) for a, b in zip(result, expected)]
+    assert all([a.equals(b) for a, b in zip(result, expected)])
 
 @pytest.mark.parametrize('attr', [
     'difference',
@@ -149,7 +149,7 @@ def test_vector_binary_geo(attr):
     result = getattr(T, attr)(Q)
     expected = [getattr(t, attr)(q) for t, q in zip(triangles, quads)]
 
-    assert [a.equals(b) for a, b in zip(result, expected)]
+    assert all([a.equals(b) for a, b in zip(result, expected)])
 
 
 @pytest.mark.parametrize('attr', [
@@ -173,7 +173,7 @@ def test_binary_geo(attr):
     result = getattr(T, attr)(q)
     expected = [getattr(t, attr)(q) for t in triangles]
 
-    assert [a.equals(b) for a, b in zip(result, expected)]
+    assert all([a.equals(b) for a, b in zip(result, expected)])
 
 
 @pytest.mark.parametrize('attr', [
