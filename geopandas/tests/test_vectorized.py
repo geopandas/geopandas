@@ -313,3 +313,20 @@ def test_raise_on_bad_sizes():
     assert "shape" in str(info.value).lower()
     assert '10' in str(info.value)
     assert '20' in str(info.value)
+
+
+def test_types():
+    cat = T.geom_type()
+    assert list(cat) == ['Polygon'] * len(T)
+
+
+def test_null_mixed_types():
+    geoms = [shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+             None,
+             shapely.geometry.Point(0, 1)]
+
+    G = from_shapely(geoms)
+
+    cat = G.geom_type()
+
+    assert list(cat) == ['Polygon', np.nan, 'Point']
