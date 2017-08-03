@@ -1105,8 +1105,8 @@ class GeometryArray(object):
         return self.binary_geo(other, 'intersection')
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
-        """ Buffer operation on array of GEOSGeometry objects """
               join_style=JOIN_STYLE.round, mitre_limit=5.0):
+        """ Buffer operation on array of GEOSGeometry objects """
         return buffer(self.data, distance, resolution, cap_style, join_style,
                       mitre_limit)
 
