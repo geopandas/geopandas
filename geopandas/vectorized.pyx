@@ -757,8 +757,7 @@ class VectorizedGeometry(object):
             vec_free(self.data)
 
     def copy(self):
-        # TODO dummy implementation just to have someting
-        return from_shapely(to_shapely(self.data))
+        return self  # assume immutable for now
 
     @property
     def ndim(self):
