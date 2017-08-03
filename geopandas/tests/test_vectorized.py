@@ -9,6 +9,20 @@ from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 import pytest
 import numpy as np
 
+
+triangles = [shapely.geometry.Polygon([(random.random(), random.random())
+                                       for i in range(3)])
+             for _ in range(10)]
+T = from_shapely(triangles)
+
+points = [shapely.geometry.Point(random.random(), random.random())
+          for _ in range(20)]
+P = from_shapely(points)
+
+
+point = points[0]
+
+
 def test_points():
     x = np.arange(10).astype(np.float)
     y = np.arange(10).astype(np.float) ** 2
@@ -23,13 +37,8 @@ def test_points():
 
 
 def test_from_shapely():
-    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
-                                           for i in range(3)])
-                 for _ in range(10)]
-
-    vec = from_shapely(triangles)
-    assert isinstance(vec, VectorizedGeometry)
-    assert [v.equals(t) for v, t in zip(vec, triangles)]
+    assert isinstance(T, VectorizedGeometry)
+    assert [v.equals(t) for v, t in zip(T, triangles)]
     # TODO: handle gc
 
 
@@ -50,13 +59,13 @@ def test_vector_scalar_predicates(attr, args):
                                            for i in range(3)])
                  for _ in range(100)]
 
-    vec = from_shapely(triangles)
+    T = from_shapely(triangles)
 
     point = shapely.geometry.Point(random.random(), random.random())
     tri = triangles[0]
 
     for other in [point, tri]:
-        result = getattr(vec, attr)(other, *args)
+        result = getattr(T, attr)(other, *args)
         assert isinstance(result, np.ndarray)
         assert result.dtype == bool
 
@@ -106,13 +115,8 @@ def test_vector_vector_predicates(attr, args):
     'envelope',
 ])
 def test_unary_geo(attr):
-    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
-                                           for i in range(3)])
-                 for _ in range(10)]
 
-    vec = from_shapely(triangles)
-
-    result = getattr(vec, attr)()
+    result = getattr(T, attr)()
     expected = [getattr(t, attr) for t in triangles]
 
     assert [a.equals(b) for a, b in zip(result, expected)]
@@ -125,9 +129,6 @@ def test_unary_geo(attr):
     'intersection',
 ])
 def test_vector_binary_geo(attr):
-    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
-                                           for i in range(3)])
-                 for _ in range(10)]
     quads = []
     while len(quads) < 10:
         geom = shapely.geometry.Polygon([(random.random(), random.random())
@@ -135,7 +136,6 @@ def test_vector_binary_geo(attr):
         if geom.is_valid:
             quads.append(geom)
 
-    T = from_shapely(triangles)
     Q = from_shapely(quads)
 
     result = getattr(T, attr)(Q)
@@ -184,9 +184,9 @@ def test_unary_predicates(attr):
                                            for i in range(3)])
                  for _ in range(10)]
 
-    vec = from_shapely(triangles)
+    T = from_shapely(triangles)
 
-    result = getattr(vec, attr)()
+    result = getattr(T, attr)()
     expected = [getattr(t, attr) for t in triangles]
 
     assert result.tolist() == expected
@@ -194,19 +194,19 @@ def test_unary_predicates(attr):
 
 def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
-    vec = from_shapely(points)
+    P = from_shapely(points)
 
-    vec2 = vec[vec.x % 2 == 0]
-    assert len(vec2) == 5
-    assert all(p.x % 2 == 0 for p in vec2)
+    P2 = P[P.x % 2 == 0]
+    assert len(P2) == 5
+    assert all(p.x % 2 == 0 for p in P2)
 
-    vec3 = vec[[1, 3, 5]]
-    assert len(vec3) == 3
-    assert [p.x for p in vec3] == [1, 3, 5]
+    P3 = P[[1, 3, 5]]
+    assert len(P3) == 3
+    assert [p.x for p in P3] == [1, 3, 5]
 
-    vec4 = vec[1::2]
-    assert len(vec4) == 5
-    assert [p.x for p in vec4] == [1, 3, 5, 7, 9]
+    P4 = P[1::2]
+    assert len(P4) == 5
+    assert [p.x for p in P4] == [1, 3, 5, 7, 9]
 
 
 @pytest.mark.xfail(reason="We don't yet clean up memory well")
@@ -247,11 +247,8 @@ def test_clean_up_on_gc():
 
 
 def test_dir():
-    points = [shapely.geometry.Point(i, i) for i in range(10)]
-    vec = from_shapely(points)
-
-    assert 'contains' in dir(vec)
-    assert 'data' in dir(vec)
+    assert 'contains' in dir(P)
+    assert 'data' in dir(P)
 
 
 def test_chaining():
@@ -259,20 +256,17 @@ def test_chaining():
                                            for i in range(3)])
                  for _ in range(10)]
 
-    vec = from_shapely(triangles)
+    T = from_shapely(triangles)
 
-    assert vec.contains(vec.centroid()).all()
+    assert T.contains(T.centroid()).all()
 
 
 @pytest.mark.parametrize('resolution', [16, 25])
 def test_buffer(resolution):
-    points = [shapely.geometry.Point(i, i) for i in range(10)]
-    vec = from_shapely(points)
-
     expected = [p.buffer(0.1, resolution=resolution, cap_style=CAP_STYLE.round,
                          join_style=JOIN_STYLE.round)
                 for p in points]
-    result = vec.buffer(0.1, resolution=resolution, cap_style=CAP_STYLE.round,
+    result = P.buffer(0.1, resolution=resolution, cap_style=CAP_STYLE.round,
                         join_style=JOIN_STYLE.round)
 
     assert all(a.equals(b) for a, b in zip(expected, result))
@@ -284,9 +278,9 @@ def test_vector_float(attr):
                                            for i in range(3)])
                  for _ in range(100)]
 
-    vec = from_shapely(triangles)
+    T = from_shapely(triangles)
 
-    result = getattr(vec, attr)()
+    result = getattr(T, attr)()
     assert isinstance(result, np.ndarray)
     assert result.dtype == np.float
 
@@ -300,26 +294,21 @@ def test_serialize_deserialize():
                                            for i in range(3)])
                  for _ in range(10)]
 
-    vec = from_shapely(triangles)
+    T = from_shapely(triangles)
 
-    ba, sizes = serialize(vec.data)
+    ba, sizes = serialize(T.data)
     vec2 = VectorizedGeometry(deserialize(ba, sizes))
 
-    assert (vec.data != vec2.data).all()
-    assert vec.equals(vec2).all()
+    assert (T.data != vec2.data).all()
+    assert T.equals(vec2).all()
 
 
 def test_pickle():
     import pickle
-    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
-                                           for i in range(3)])
-                 for _ in range(10)]
+    T2 = pickle.loads(pickle.dumps(T))
 
-    vec = from_shapely(triangles)
-    vec2 = pickle.loads(pickle.dumps(vec))
-
-    assert (vec.data != vec2.data).all()
-    assert vec.equals(vec2).all()
+    assert (T.data != T2.data).all()
+    assert T.equals(T2).all()
 
 
 @pytest.mark.parametrize('predicate', [
@@ -334,16 +323,6 @@ def test_pickle():
     'within',
 ])
 def test_sjoin(predicate):
-    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
-                                           for i in range(3)])
-                 for _ in range(10)]
-
-    points = [shapely.geometry.Point(random.random(), random.random())
-              for _ in range(20)]
-
-    T = from_shapely(triangles)
-    P = from_shapely(points)
-
     result = cysjoin(T.data, P.data, predicate)
 
     assert isinstance(result, np.ndarray)
@@ -377,3 +356,12 @@ def test_bench_sjoin():
     result = cysjoin(T.data, P.data, 'intersects')
 
     print("join", time.time() - last); last = time.time()
+
+
+def test_raise_on_bad_sizes():
+    with pytest.raises(ValueError) as info:
+        T.contains(P)
+
+    assert "shape" in str(info.value)
+    assert '10' in str(info.value)
+    assert '20' in str(info.value)
