@@ -56,6 +56,9 @@ def binary_predicate(op, this, other, *args):
     elif isinstance(other, BaseGeometry):
         if args:
             x = vectorized.binary_predicate_with_arg(op, this._geometry_array.data, other, *args)
+        elif op in vectorized.opposite_predicates:
+            op2 = vectorized.opposite_predicates[op]
+            x = vectorized.prepared_binary_predicate(op2, this._geometry_array.data, other)
         else:
             x = vectorized.binary_predicate(op, this._geometry_array.data, other)
         return Series(x, index=this.index)

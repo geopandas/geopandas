@@ -43,8 +43,23 @@ cdef extern from "algos.h":
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
 
+opposite_predicates = {'contains': 'within',
+                       'intersects': 'intersects',
+                       'touches': 'touches',
+                       'covers': 'covered_by',
+                       'crosses': 'crosses',
+                       'overlaps': 'overlaps'}
+
+for k, v in list(opposite_predicates.items()):
+    opposite_predicates[v] = k
+
 
 cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
+    """
+    Get a single shape from a GeometryArray as a Shapely object
+
+    This allocates a new GEOSGeometry object
+    """
     cdef GEOSGeometry *geom
     cdef GEOSContextHandle_t handle
     geom = <GEOSGeometry *> geoms[idx]
@@ -60,6 +75,7 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
 
 
 cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Convert array of pointers to an array of shapely objects """
     cdef GEOSGeometry *geom
     cdef GEOSContextHandle_t handle
     cdef unsigned int n = geoms.size
@@ -81,6 +97,7 @@ cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 
 cpdef from_shapely(object L):
+    """ Convert a list or array of shapely objects to a GeometryArray """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -109,6 +126,7 @@ cpdef from_shapely(object L):
 @cython.wraparound(False)
 cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
                      np.ndarray[double, ndim=1, cast=True] y):
+    """ Convert numpy arrays of x and y values to a GeometryArray of points """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSCoordSequence *sequence
@@ -134,9 +152,26 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef prepared_binary_predicate(str op,
+cpdef prepared_binary_predicate(str op,
                                np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                                object other):
+    """
+    Apply predicate to a GeometryArray and an individual shapely object
+
+    This uses a prepared geometry for other
+
+    Parameters
+    ----------
+    op: str
+        string like 'contains', or 'intersects'
+    geoms: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+    other: shapely BaseGeometry
+
+    Returns
+    -------
+    out: boolean array
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -232,6 +267,22 @@ cdef GEOSPredicate get_predicate(str op) except NULL:
 cpdef vector_binary_predicate(str op,
                              np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                              np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    """
+    Apply predicate to two arrays of GEOSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'contains', or 'intersects'
+    left : numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+    right: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: boolean array
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
@@ -266,7 +317,8 @@ cpdef vector_binary_predicate_with_arg(
         np.ndarray[np.uintp_t, ndim=1, cast=True] left,
         np.ndarray[np.uintp_t, ndim=1, cast=True] right,
         double arg):
-    """ This is a copy of vector_binary_predicate but supporting a double arg
+    """
+    This is a copy of vector_binary_predicate but supporting a double arg
 
     This is currently only used for equals_exact
     """
@@ -300,6 +352,20 @@ cpdef vector_binary_predicate_with_arg(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """
+    Apply predicate to a single array of GEOSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'contains', or 'intersects'
+    goems: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: boolean array
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -339,6 +405,21 @@ cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 cpdef binary_predicate(str op,
                       np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                       object other):
+    """
+    Apply predicate to an array of GEOSGeometry pointers and a shapely object
+
+    Parameters
+    ----------
+    op: str
+        string like 'contains', or 'intersects'
+    goems: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+    other: shapely BaseGeometry
+
+    Returns
+    -------
+    out: boolean array
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -371,6 +452,11 @@ cpdef binary_predicate_with_arg(str op,
                                 np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                                 object other,
                                 double arg):
+    """
+    This is a copy of binary_predicate but supporting a double arg
+
+    This is currently only used for equals_exact
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -403,6 +489,20 @@ cpdef binary_predicate_with_arg(str op,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """
+    Evaluate float-valued function on array of GEoSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'area', or 'length'
+    goems: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: float array
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -437,6 +537,20 @@ cpdef vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """
+    Evaluate Geometry-valued function on array of GEoSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'centroid', or 'convex_hull'
+    goems: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: array of pointers to GEOSGeometry objects
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -480,6 +594,22 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 cpdef vector_binary_geo(str op,
                        np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                        np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    """
+    Evaluate Geometry-valued function on two arrays of GEoSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'intersection', or 'union'
+    left: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+    right: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: array of pointers to GEOSGeometry objects
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
@@ -518,6 +648,22 @@ cpdef vector_binary_geo(str op,
 cpdef binary_geo(str op,
                 np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                 object right):
+    """
+    Evaluate Geometry-valued function on arrays GEoSGeometry pointers and a
+    shapely object
+
+    Parameters
+    ----------
+    op: str
+        string like 'intersection', or 'union'
+    left: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+    right: shapely BaseGeometry
+
+    Returns
+    -------
+    out: array of pointers to GEOSGeometry objects
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
@@ -558,6 +704,7 @@ cpdef binary_geo(str op,
 @cython.wraparound(False)
 cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
             int resolution, int cap_style, int join_style, double mitre_limit):
+    """ Buffer operation on array of GEOSGeometry objects """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -586,6 +733,7 @@ cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
 @cython.wraparound(False)
 cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                           int coordinate):
+    """ Get x, y, or z value for an array of points """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -622,6 +770,17 @@ cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef serialize(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Serialize array of pointers
+
+    Returns
+    -------
+    out: bytearray of data
+    sizes: array of sizes of wkb strings
+
+    See Also
+    --------
+    deserialize
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -658,6 +817,17 @@ cpdef serialize(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast=True] sizes):
+    """ Serialize array of pointers
+
+    Parameters
+    -------
+    out: bytearray of data
+    sizes: array of sizes of wkb strings
+
+    See Also
+    --------
+    serialize
+    """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -688,6 +858,7 @@ cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Free an array of GEOSGeometry pointers """
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
@@ -759,6 +930,20 @@ class GeometryArray(object):
         return get_coordinate_point(self.data, 1)
 
     def binary_geo(self, other, op):
+        """ Apply geometry-valued operation
+
+        Supports:
+
+        -   difference
+        -   symmetric_difference
+        -   intersection
+        -   union
+
+        Parameters
+        ----------
+        other: GeometryArray or single shapely BaseGeoemtry
+        op: string
+        """
         if isinstance(other, BaseGeometry):
             return binary_geo(op, self.data, other)
         elif isinstance(other, GeometryArray):
@@ -771,9 +956,32 @@ class GeometryArray(object):
             raise NotImplementedError("type not known %s" % type(other))
 
     def binop_predicate(self, other, op, extra=None):
+        """ Apply boolean-valued operation
+
+        Supports:
+
+        -  contains
+        -  disjoint
+        -  intersects
+        -  touches
+        -  crosses
+        -  within
+        -  overlaps
+        -  covers
+        -  covered_by
+        -  equals
+
+        Parameters
+        ----------
+        other: GeometryArray or single shapely BaseGeoemtry
+        op: string
+        """
         if isinstance(other, BaseGeometry):
             if extra is not None:
                 return binary_predicate_with_arg(op, self.data, other, extra)
+            elif op in opposite_predicates:
+                op2 = opposite_predicates[op]
+                return prepared_binary_predicate(op2, self.data, other)
             else:
                 return binary_predicate(op, self.data, other)
         elif isinstance(other, GeometryArray):
@@ -897,6 +1105,7 @@ class GeometryArray(object):
         return self.binary_geo(other, 'intersection')
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
+        """ Buffer operation on array of GEOSGeometry objects """
               join_style=JOIN_STYLE.round, mitre_limit=5.0):
         return buffer(self.data, distance, resolution, cap_style, join_style,
                       mitre_limit)
