@@ -5,7 +5,7 @@ import shapely.geometry
 import numpy as np
 
 import geopandas as gpd
-from geopandas.vectorized import VectorizedGeometry, from_shapely
+from geopandas.vectorized import GeometryArray, from_shapely
 
 
 triangles = [shapely.geometry.Polygon([(random.random(), random.random())

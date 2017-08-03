@@ -226,8 +226,6 @@ class GeoPandasBase(object):
 
     @property
     def _geometry_array(self):
-        #return vectorized.VectorizedGeometry(data=self.geometry.values,
-        #                                     parent=self._original_geometry)
         return self.geometry._values
 
     def contains(self, other):

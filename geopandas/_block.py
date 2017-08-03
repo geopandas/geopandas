@@ -6,7 +6,7 @@ from pandas.core.internals import Block, NonConsolidatableMixIn
 from pandas.core.common import is_null_slice
 from shapely.geometry.base import geom_factory, BaseGeometry
 
-from .vectorized import VectorizedGeometry, to_shapely
+from .vectorized import GeometryArray, to_shapely
 
 
 class GeometryBlock(NonConsolidatableMixIn, Block):
@@ -15,12 +15,12 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
 
     @property
     def _holder(self):
-        return VectorizedGeometry
+        return GeometryArray
 
     def __init__(self, values, placement, ndim=2, **kwargs):
 
         if not isinstance(values, self._holder):
-            raise TypeError("values must be a VectorizedGeometry object")
+            raise TypeError("values must be a GeometryArray object")
 
         super(GeometryBlock, self).__init__(values, placement=placement,
                                             ndim=ndim, **kwargs)
@@ -123,7 +123,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         # but are passed the axis depending on the calling routing
         # if its REALLY axis 0, then this will be a reindex and not a take
 
-        # TODO implement take_nd on VectorizedGeometry
+        # TODO implement take_nd on GeometryArray
         # new_values = self.values.take_nd(indexer, fill_value=fill_value)
         new_values = self.values[indexer]
 

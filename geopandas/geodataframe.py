@@ -24,7 +24,7 @@ from ._block import GeometryBlock
 def coerce_to_geoseries(x, **kwargs):
     if isinstance(x, GeoSeries):
         return x
-    if isinstance(x, vectorized.VectorizedGeometry):
+    if isinstance(x, vectorized.GeometryArray):
         return GeoSeries(x, **kwargs)
     if isinstance(x, pd.Series):
         kwargs['name'] = kwargs.get('name', x.name)
@@ -509,7 +509,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
-            g = vectorized.VectorizedGeometry(result[geo_col])
+            g = vectorized.GeometryArray(result[geo_col])
             result[geo_col] = list(g)
             result._geometry_column_name = geo_col
             result._invalidate_sindex()

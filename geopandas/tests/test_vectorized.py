@@ -2,7 +2,7 @@
 import time
 import random
 import shapely
-from geopandas.vectorized import (VectorizedGeometry, points_from_xy,
+from geopandas.vectorized import (GeometryArray, points_from_xy,
         from_shapely, serialize, deserialize, cysjoin)
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 
@@ -37,7 +37,7 @@ def test_points():
 
 
 def test_from_shapely():
-    assert isinstance(T, VectorizedGeometry)
+    assert isinstance(T, GeometryArray)
     assert [v.equals(t) for v, t in zip(T, triangles)]
     # TODO: handle gc
 
@@ -297,7 +297,7 @@ def test_serialize_deserialize():
     T = from_shapely(triangles)
 
     ba, sizes = serialize(T.data)
-    vec2 = VectorizedGeometry(deserialize(ba, sizes))
+    vec2 = GeometryArray(deserialize(ba, sizes))
 
     assert (T.data != vec2.data).all()
     assert T.equals(vec2).all()

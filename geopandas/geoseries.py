@@ -16,7 +16,7 @@ from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
-from .vectorized import from_shapely, VectorizedGeometry
+from .vectorized import from_shapely, GeometryArray
 from .base import GeoPandasBase
 from ._block import GeometryBlock
 
@@ -86,7 +86,7 @@ class GeoSeries(GeoPandasBase, Series):
             index = arg.index
             name = arg.name
         else:
-            if isinstance(arg, VectorizedGeometry):
+            if isinstance(arg, GeometryArray):
                 index = kwargs.pop('index', pd.Index(np.arange(len(arg))))
                 name = kwargs.get('name', None)
             else:
@@ -354,7 +354,7 @@ class GeoSeries(GeoPandasBase, Series):
     def _reindex_indexer(self, new_index, indexer, copy):
         """ Overwrites the pd.Series method
 
-        This allows us to use the VectorizedGeometry.take method.
+        This allows us to use the GeometryArray.take method.
         Otherwise the data gets turned into a numpy array.
         """
         if indexer is None:

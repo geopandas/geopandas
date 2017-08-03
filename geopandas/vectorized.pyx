@@ -102,7 +102,7 @@ cpdef from_shapely(object L):
         else:
             out[idx] = 0
 
-    return VectorizedGeometry(out)
+    return GeometryArray(out)
 
 
 @cython.boundscheck(False)
@@ -129,7 +129,7 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
             geos_geom = <np.uintp_t> geom
             out[idx] = <np.uintp_t> geom
 
-    return VectorizedGeometry(out)
+    return GeometryArray(out)
 
 
 @cython.boundscheck(False)
@@ -472,7 +472,7 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
             else:
                 out[idx] = 0
 
-    return VectorizedGeometry(out)
+    return GeometryArray(out)
 
 
 @cython.boundscheck(False)
@@ -510,7 +510,7 @@ cpdef vector_binary_geo(str op,
             else:
                 out[idx] = 0
 
-    return VectorizedGeometry(out)
+    return GeometryArray(out)
 
 
 @cython.boundscheck(False)
@@ -551,7 +551,7 @@ cpdef binary_geo(str op,
             else:
                 out[idx] = 0
 
-    return VectorizedGeometry(out)
+    return GeometryArray(out)
 
 
 @cython.boundscheck(False)
@@ -578,7 +578,7 @@ cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
             else:
                 out[idx] = 0
 
-    return VectorizedGeometry(out)
+    return GeometryArray(out)
 
 
 
@@ -704,7 +704,7 @@ cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
                 GEOSGeom_destroy_r(handle, geom)
 
 
-class VectorizedGeometry(object):
+class GeometryArray(object):
     dtype = np.dtype('O')
 
     def __init__(self, data, parent=False):
@@ -715,7 +715,7 @@ class VectorizedGeometry(object):
         if isinstance(idx, numbers.Integral):
             return get_element(self.data, idx)
         elif isinstance(idx, (collections.Iterable, slice)):
-            return VectorizedGeometry(self.data[idx], parent=self)
+            return GeometryArray(self.data[idx], parent=self)
         else:
             raise TypeError("Index type not supported", idx)
 
@@ -761,7 +761,7 @@ class VectorizedGeometry(object):
     def binary_geo(self, other, op):
         if isinstance(other, BaseGeometry):
             return binary_geo(op, self.data, other)
-        elif isinstance(other, VectorizedGeometry):
+        elif isinstance(other, GeometryArray):
             if len(self) != len(other):
                 msg = ("Lengths of inputs to not match.  Left: %d, Right: %d" %
                         (len(self), len(other)))
@@ -776,7 +776,7 @@ class VectorizedGeometry(object):
                 return binary_predicate_with_arg(op, self.data, other, extra)
             else:
                 return binary_predicate(op, self.data, other)
-        elif isinstance(other, VectorizedGeometry):
+        elif isinstance(other, GeometryArray):
             if len(self) != len(other):
                 msg = ("Shapes of inputs to not match.  Left: %d, Right: %d" %
                         (len(self), len(other)))

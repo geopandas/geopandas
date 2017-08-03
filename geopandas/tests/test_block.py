@@ -6,7 +6,7 @@ import pandas as pd
 import shapely
 from shapely.geometry.base import BaseGeometry
 
-from geopandas.vectorized import VectorizedGeometry, from_shapely
+from geopandas.vectorized import GeometryArray, from_shapely
 from geopandas._block import GeometryBlock
 
 
@@ -16,7 +16,7 @@ def test_block():
     ga = from_shapely(a)
     geom_block = GeometryBlock(ga, placement=slice(1, 2, 1))
 
-    assert isinstance(geom_block.values, VectorizedGeometry)
+    assert isinstance(geom_block.values, GeometryArray)
 
 
 @pytest.fixture
