@@ -222,7 +222,7 @@ class GeoSeries(GeoPandasBase, Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return GeoSeries(self._data,
+        return GeoSeries(self._data.copy(),
                          index=self.index, crs=self.crs,
                          name=self.name)
 
