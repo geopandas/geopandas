@@ -30,8 +30,9 @@ def test_points():
     points = points_from_xy(x, y)
     assert (points.data != 0).all()
 
-    assert (x == points.x).all()
-    assert (y == points.y).all()
+    for i in range(10):
+        assert points[i].x == x[i]
+        assert points[i].y == y[i]
 
     assert isinstance(points[0], shapely.geometry.Point)
 
@@ -195,10 +196,8 @@ def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
     P = from_shapely(points)
 
-    P2 = P[P.x % 2 == 0]
-    assert len(P2) == 5
+    P2 = P[P.area() > 0.3]
     assert isinstance(P2, GeometryArray)
-    assert all(p.x % 2 == 0 for p in P2)
 
     P3 = P[[1, 3, 5]]
     assert len(P3) == 3

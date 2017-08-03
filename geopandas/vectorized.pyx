@@ -921,14 +921,6 @@ class GeometryArray(object):
         self.data = geoms
         self.parent = None
 
-    @property
-    def x(self):
-        return get_coordinate_point(self.data, 0)
-
-    @property
-    def y(self):
-        return get_coordinate_point(self.data, 1)
-
     def binary_geo(self, other, op):
         """ Apply geometry-valued operation
 
@@ -1025,33 +1017,6 @@ class GeometryArray(object):
 
     def equals_exact(self, other, tolerance):
         return self.binop_predicate(other, 'equals_exact', tolerance)
-
-    def rcontains(self, other):
-        return prepared_binary_predicate('contains', self.data, other)
-
-    def rcovers(self, other):
-        return prepared_binary_predicate('covers', self, other)
-
-    def rcovered_by(self, other):
-        return prepared_binary_predicate('covered_by', self, other)
-
-    def rcrosses(self, other):
-        return prepared_binary_predicate('crosses', self.data, other)
-
-    def rdisjoint(self, other):
-        return prepared_binary_predicate('crosses', self.data, other)
-
-    def rintersects(self, other):
-        return prepared_binary_predicate('intersects', self.data, other)
-
-    def roverlaps(self, other):
-        return prepared_binary_predicate('overlaps', self.data, other)
-
-    def rtouches(self, other):
-        return prepared_binary_predicate('touches', self.data, other)
-
-    def rwithin(self, other):
-        return prepared_binary_predicate('within', self.data, other)
 
     def is_valid(self):
         return unary_predicate('is_valid', self.data)
