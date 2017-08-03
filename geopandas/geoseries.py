@@ -53,7 +53,6 @@ class _CoordinateIndexer(_NDFrameIndexer):
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
     _metadata = ['name', 'crs']
-    _pandas_cls = pd.Series
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -158,9 +157,9 @@ class GeoSeries(GeoPandasBase, Series):
     # Implement pandas methods
     #
 
+    @property
     def _constructor(self, *args, **kwargs):
-        obj = GeoSeries(*args, **kwargs)
-        return obj
+        return GeoSeries
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -228,9 +227,9 @@ class GeoSeries(GeoPandasBase, Series):
                          name=self.name)
 
     def apply(self, func, *args, **kwargs):
-        s = Series(list(self._geometry_array), index=self.index)
-        L = s.apply(func, *args, **kwargs).tolist()
-        vec = from_shapely(L)
+        s = Series(self.values, index=self.index, name=self.name)
+        s = s.apply(func, *args, **kwargs)
+        vec = from_shapely(s.values)
         return GeoSeries(vec, index=self.index)
 
     def isnull(self):
@@ -353,6 +352,11 @@ class GeoSeries(GeoPandasBase, Series):
         return self.difference(other)
 
     def _reindex_indexer(self, new_index, indexer, copy):
+        """ Overwrites the pd.Series method
+
+        This allows us to use the VectorizedGeometry.take method.
+        Otherwise the data gets turned into a numpy array.
+        """
         if indexer is None:
             if copy:
                 return self.copy()

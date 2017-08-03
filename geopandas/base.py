@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from warnings import warn
 
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import BaseGeometry, CAP_STYLE, JOIN_STYLE
 from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
@@ -23,7 +23,7 @@ except ImportError:
 
 
 def binary_geo(op, left, right):
-    """Geometric operation that returns a pandas Series"""
+    """ Binary operation on GeoSeries objects that returns a GeoSeries """
     from .geoseries import GeoSeries
     if isinstance(right, GeoPandasBase):
         left = left.geometry
@@ -39,10 +39,9 @@ def binary_geo(op, left, right):
         raise TypeError(type(left), type(right))
 
 
-def binary_predicate(op, this, other, *args, **kwargs):
-    """Geometric operation that returns a pandas Series"""
+def binary_predicate(op, this, other, *args):
+    """ Binary operation on GeoSeries objects that returns a boolean Series """
     null_val = False if op != 'distance' else np.nan
-    assert not kwargs
 
     if isinstance(other, GeoPandasBase):
         this = this.geometry
@@ -329,9 +328,12 @@ class GeoPandasBase(object):
             self._generate_sindex()
         return self._sindex
 
-    def buffer(self, distance, **kwargs):
+    def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
+            join_style=JOIN_STYLE.round, mitre_limit=5.0):
         from .geoseries import GeoSeries
-        geom_array = self._geometry_array.buffer(distance, **kwargs)
+        geom_array = self._geometry_array.buffer(distance,
+                resolution=resolution, cap_style=cap_style,
+                join_style=join_style, mitre_limit=mitre_limit)
         return GeoSeries(geom_array, index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):

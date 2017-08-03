@@ -27,8 +27,9 @@ def coerce_to_geoseries(x, **kwargs):
     if isinstance(x, vectorized.VectorizedGeometry):
         return GeoSeries(x, **kwargs)
     if isinstance(x, pd.Series):
-        return GeoSeries(vectorized.from_shapely(list(x)),
-                         name=x.name, index=x.index)
+        kwargs['name'] = kwargs.get('name', x.name)
+        kwargs['index'] = kwargs.get('index', x.index)
+        return GeoSeries(vectorized.from_shapely(x.values), **kwargs)
     if isinstance(x, Iterable):
         return GeoSeries(vectorized.from_shapely(list(x)), **kwargs)
     raise TypeError(type(x))
@@ -61,7 +62,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _metadata = ['crs', '_geometry_column_name']
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
-    _pandas_cls = pd.Series
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
@@ -147,7 +147,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(col, inplace=True)
         elif isinstance(col, (list, np.ndarray, Series)):
             col = vectorized.from_shapely(col)
-            self.set_geometry(col.data, inplace=True)
+            self.set_geometry(col, inplace=True)
 
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -250,24 +250,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                                       crs=crs)
             return frame
 
-    def _ensure_geometry(self):
-        return self
-        self = self.copy()
-        if self.dtypes[self._geometry_column_name] == object:
-            geom = self.pop(self._geometry_column_name)
-            vec = vectorized.from_shapely(geom.tolist())
-
-            columns, index = self._data.axes
-            blocks = self._data.blocks
-
-            geom_block = GeometryBlock(vec, slice(len(columns), len(columns) + 1))
-            columns = columns.append(pd.Index([self._geometry_column_name]))
-
-            bm = BlockManager(blocks + (geom_block,), [columns, index])
-            return GeoDataFrame(bm)
-        else:
-            return self
-
     @classmethod
     def from_file(cls, filename, **kwargs):
         """
@@ -303,7 +285,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
         df.crs = crs
-        return df._ensure_geometry()
+        return df
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,

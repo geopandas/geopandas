@@ -748,6 +748,10 @@ class VectorizedGeometry(object):
     def __len__(self):
         return len(self.data)
 
+    @property
+    def size(self):
+        return len(self.data)
+
     def __del__(self):
         if self.parent is False:
             vec_free(self.data)
