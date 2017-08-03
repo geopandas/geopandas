@@ -360,3 +360,8 @@ def test_raise_on_bad_sizes():
     assert "shape" in str(info.value).lower()
     assert '10' in str(info.value)
     assert '20' in str(info.value)
+
+
+def test_types():
+    cat = T.types()
+    assert list(cat) == [shapely.geometry.Polygon] * len(T)

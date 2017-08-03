@@ -875,6 +875,30 @@ cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
                 GEOSGeom_destroy_r(handle, geom)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef vec_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Free an array of GEOSGeometry pointers """
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef unsigned int n = geoms.size
+
+    cdef np.ndarray[np.int8_t, ndim=1] out = np.empty(n, dtype=np.int8)
+
+    handle = get_geos_context_handle()
+
+    with nogil:
+        for idx in xrange(n):
+            geom = <GEOSGeometry *> geoms[idx]
+            if geom is NULL:
+                out[idx] = -1
+            else:
+                out[idx] = GEOSGeomTypeId_r(handle, geom)
+
+    return out
+
+
 class GeometryArray(object):
     dtype = np.dtype('O')
 
@@ -1074,6 +1098,23 @@ class GeometryArray(object):
         """ Buffer operation on array of GEOSGeometry objects """
         return buffer(self.data, distance, resolution, cap_style, join_style,
                       mitre_limit)
+
+    def types(self):
+        """
+        Types of the underlying Geometries
+
+        Returns
+        -------
+        Pandas categorical with types for each geometry
+        """
+        x = vec_type(self.data)
+
+        types = GEOMETRY_TYPES[:]
+        x[x == 255] = len(types)
+        types.append('NA')
+
+        import pandas as pd
+        return pd.Categorical.from_codes(x, types)
 
     # for Series/ndarray like compat
 
