@@ -172,7 +172,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __getitem__(self, key):
         if isinstance(key, (slice, list, Series, np.ndarray)):
-            block = self._data._block[key]
+            block = self._data._block._getitem(key)
             index = self.index[key]
             return GeoSeries(SingleBlockManager(block, axis=index),
                              crs=self.crs, index=index)
