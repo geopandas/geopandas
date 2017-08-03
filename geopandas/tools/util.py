@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import (
@@ -23,7 +25,7 @@ def collect(x, multi=False):
     Parameters
     ----------
     x : an iterable or Series of Shapely geometries, a GeoSeries, or
-        a single Shapely geometry        
+        a single Shapely geometry
     multi : boolean, default False
         if True, force returned geometries to be Multi* even if they
         only have one component.

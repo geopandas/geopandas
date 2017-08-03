@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from collections import Iterable
 import json
 import os
@@ -12,9 +14,8 @@ from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
 from .geoseries import GeoSeries
-from geopandas.base import GeoPandasBase
-from geopandas.plotting import plot_dataframe
-import geopandas.io
+from .base import GeoPandasBase
+from .plotting import plot_dataframe
 
 from . import vectorized
 from ._block import GeometryBlock
@@ -23,8 +24,12 @@ from ._block import GeometryBlock
 def coerce_to_geoseries(x, **kwargs):
     if isinstance(x, GeoSeries):
         return x
-    if isinstance(x, vectorized.VectorizedGeometry):
+    if isinstance(x, vectorized.GeometryArray):
         return GeoSeries(x, **kwargs)
+    if isinstance(x, pd.Series):
+        kwargs['name'] = kwargs.get('name', x.name)
+        kwargs['index'] = kwargs.get('index', x.index)
+        return GeoSeries(vectorized.from_shapely(x.values), **kwargs)
     if isinstance(x, Iterable):
         return GeoSeries(vectorized.from_shapely(list(x)), **kwargs)
     raise TypeError(type(x))
@@ -72,17 +77,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         gs = {}
 
-        if isinstance(arg, list) and all(isinstance(a, dict) for a in arg):
-            arg = pd.DataFrame(arg, **kwargs)
-
         if isinstance(arg, dict):
+            arg = arg.copy()
             for i, (k, v) in list(enumerate(arg.items())):
                 if isinstance(v, GeoSeries):
                     if 'columns' in kwargs:
-                        kwargs['columns'].pop(i)
+                        columns = kwargs['columns'].copy()
+                        columns.pop(i)
+                        kwargs['columns'] = columns
                     gs[k] = arg.pop(k)
                     kwargs['index'] = v.index  # TODO: assumes consistent index
 
+        if isinstance(arg, (dict, list, pd.Series, np.ndarray)):
             arg = pd.DataFrame(arg, **kwargs)
 
         assert isinstance(arg, pd.DataFrame)
@@ -94,20 +100,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if geometry in arg.columns:
             arg = arg.copy()
             geom = arg.pop(geometry)
-            geom = coerce_to_geoseries(geom)
+            geom = coerce_to_geoseries(geom, name=geometry)
             gs[geometry] = geom
 
         columns, index = arg._data.axes
         blocks = arg._data.blocks
         for k, geom in gs.items():
             geom = coerce_to_geoseries(geom)
+            geom.name = geometry
             geom_block = geom._data._block
             geom_block = GeometryBlock(geom._values, slice(len(columns),
                                        len(columns) + 1))
-            columns = columns.append(pd.Index([k]))
-            blocks = BlockManager(blocks + (geom_block,), [columns, index])
+            columns = columns.append(pd.Index([geometry]))
+            blocks = blocks + (geom_block,)
 
-        super(GeoDataFrame, self).__init__(blocks)
+        kwargs['columns'] = columns
+        block_manager = BlockManager(blocks, [columns, index])
+
+        super(GeoDataFrame, self).__init__(block_manager, **kwargs)
 
         self.crs = crs
         self._geometry_column_name = geometry
@@ -143,7 +153,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(col, inplace=True)
         elif isinstance(col, (list, np.ndarray, Series)):
             col = vectorized.from_shapely(col)
-            self.set_geometry(col.data, inplace=True)
+            self.set_geometry(col, inplace=True)
 
 
     geometry = property(fget=_get_geometry, fset=_set_geometry,
@@ -246,24 +256,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                                       crs=crs)
             return frame
 
-    def _ensure_geometry(self):
-        return self
-        self = self.copy()
-        if self.dtypes[self._geometry_column_name] == object:
-            geom = self.pop(self._geometry_column_name)
-            vec = vectorized.from_shapely(geom.tolist())
-
-            columns, index = self._data.axes
-            blocks = self._data.blocks
-
-            geom_block = GeometryBlock(vec, slice(len(columns), len(columns) + 1))
-            columns = columns.append(pd.Index([self._geometry_column_name]))
-
-            bm = BlockManager(blocks + (geom_block,), [columns, index])
-            return GeoDataFrame(bm)
-        else:
-            return self
-
     @classmethod
     def from_file(cls, filename, **kwargs):
         """
@@ -275,6 +267,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_file(). For additional help, see read_file()
 
         """
+        import geopandas.io
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
@@ -298,7 +291,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             rows.append(d)
         df = GeoDataFrame.from_dict(rows)
         df.crs = crs
-        return df._ensure_geometry()
+        return df
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
@@ -314,6 +307,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
+        import geopandas.io
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
@@ -521,7 +515,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
-            g = vectorized.VectorizedGeometry(result[geo_col])
+            values = result[geo_col]._values
+            if isinstance(values, np.ndarray):
+                g = vectorized.from_shapely(values)
+            else:
+                g = values
             result[geo_col] = list(g)
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
@@ -603,7 +601,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(by=by).agg(aggfunc)
 
-
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
@@ -611,11 +608,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
 
-        # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name,
-                                           crs=self.crs)
         # Recombine
-        aggregated = aggregated_geometry.join(aggregated_data)
+        aggregated = aggregated_data.set_geometry(g, crs=self.crs)
 
         # Reset if requested
         if not as_index:

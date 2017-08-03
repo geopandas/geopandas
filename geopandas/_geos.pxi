@@ -128,10 +128,6 @@ cdef extern from "geos_c.h":
 
 
 
-
-
-
-
 cdef GEOSContextHandle_t get_geos_context_handle():
     # Note: This requires that lgeos is defined, so needs to be imported as:
     from shapely.geos import lgeos
