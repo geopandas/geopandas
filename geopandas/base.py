@@ -275,6 +275,7 @@ class GeoPandasBase(object):
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
+        raise NotImplementedError()
         return binary_predicate(self, other, 'distance')
 
     #
@@ -359,7 +360,7 @@ class GeoPandasBase(object):
 
         The project method is the inverse of interpolate.
         """
-
+        raise NotImplementedError()
         return _series_op(self, other, 'project', normalized=normalized)
 
     def interpolate(self, distance, normalized=False):
