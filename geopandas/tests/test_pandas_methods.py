@@ -111,7 +111,8 @@ def test_to_csv(df):
     assert df.to_csv(index=False) == exp
 
 
-@pytest.mark.skipif(pd.__version__ < LooseVersion('0.17'))
+@pytest.mark.skipif(str(pd.__version__) < LooseVersion('0.17'),
+                    reason="s.max() does not raise on 0.16")
 def test_numerical_operations(s, df):
 
     # df methods ignore the geometry column
