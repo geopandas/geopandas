@@ -2,9 +2,11 @@ from __future__ import absolute_import
 
 import os
 import json
+import random
 import shutil
 import tempfile
 import numpy as np
+import pandas as pd
 from numpy.testing import assert_array_equal
 from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
@@ -179,6 +181,18 @@ class TestSeries(unittest.TestCase):
         reprojected_string = self.g3.to_crs('+proj=utm +zone=30N')
         reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
         self.assertTrue(np.alltrue(reprojected_string.geom_almost_equals(reprojected_dict)))
+
+
+def test_construct_from_series():
+    shapes = [Polygon([(random.random(), random.random()) for _ in range(3)])
+              for _ in range(10)]
+    s = pd.Series(shapes, index=list('abcdefghij'), name='foo')
+    g = GeoSeries(s)
+
+    assert [a.equals(b) for a, b in zip(s, g)]
+    assert s.name == g.name
+    assert s.index is g.index
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -52,6 +52,7 @@ class _CoordinateIndexer(_NDFrameIndexer):
 class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
     _metadata = ['name', 'crs']
+    _pandas_cls = pd.Series
 
     def __new__(cls, *args, **kwargs):
         kwargs.pop('crs', None)
@@ -75,7 +76,6 @@ class GeoSeries(GeoPandasBase, Series):
                 self.crs = crs
                 return
             else:
-                import pdb; pdb.set_trace()
                 values = np.asarray(args[0].blocks[0].external_values())
 
         if isinstance(arg, BaseGeometry):
@@ -101,7 +101,6 @@ class GeoSeries(GeoPandasBase, Series):
                                         fastpath=True)
         self.crs = crs
         self._invalidate_sindex()
-        self._name = None
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)

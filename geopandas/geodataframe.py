@@ -25,6 +25,9 @@ def coerce_to_geoseries(x, **kwargs):
         return x
     if isinstance(x, vectorized.VectorizedGeometry):
         return GeoSeries(x, **kwargs)
+    if isinstance(x, pd.Series):
+        return GeoSeries(vectorized.from_shapely(list(x)),
+                         name=x.name, index=x.index)
     if isinstance(x, Iterable):
         return GeoSeries(vectorized.from_shapely(list(x)), **kwargs)
     raise TypeError(type(x))
@@ -57,6 +60,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _metadata = ['crs', '_geometry_column_name']
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
+    _pandas_cls = pd.Series
 
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
@@ -72,9 +76,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         gs = {}
 
-        if isinstance(arg, list) and all(isinstance(a, dict) for a in arg):
-            arg = pd.DataFrame(arg, **kwargs)
-
         if isinstance(arg, dict):
             for i, (k, v) in list(enumerate(arg.items())):
                 if isinstance(v, GeoSeries):
@@ -83,6 +84,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     gs[k] = arg.pop(k)
                     kwargs['index'] = v.index  # TODO: assumes consistent index
 
+        if isinstance(arg, (dict, list, pd.Series, np.ndarray)):
             arg = pd.DataFrame(arg, **kwargs)
 
         assert isinstance(arg, pd.DataFrame)
@@ -94,20 +96,21 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if geometry in arg.columns:
             arg = arg.copy()
             geom = arg.pop(geometry)
-            geom = coerce_to_geoseries(geom)
+            geom = coerce_to_geoseries(geom, name=geometry)
             gs[geometry] = geom
 
         columns, index = arg._data.axes
         blocks = arg._data.blocks
         for k, geom in gs.items():
             geom = coerce_to_geoseries(geom)
+            geom.name = geometry
             geom_block = geom._data._block
             geom_block = GeometryBlock(geom._values, slice(len(columns),
                                        len(columns) + 1))
-            columns = columns.append(pd.Index([k]))
+            columns = columns.append(pd.Index([geometry]))
             blocks = BlockManager(blocks + (geom_block,), [columns, index])
 
-        super(GeoDataFrame, self).__init__(blocks)
+        super(GeoDataFrame, self).__init__(blocks, **kwargs)
 
         self.crs = crs
         self._geometry_column_name = geometry
