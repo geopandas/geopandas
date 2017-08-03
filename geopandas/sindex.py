@@ -1,4 +1,6 @@
-from geopandas import base
+from __future__ import absolute_import, division, print_function
+
+from . import base
 
 if base.HAS_SINDEX:
     from rtree.core import RTreeError

@@ -37,7 +37,6 @@ def test_repr(df):
     assert 'POINT' in repr(df['geometry'])
 
 
-@pytest.mark.xfail
 def test_repr_truncated(df):
     with pd.option_context('display.max_rows', 4):
         repr(df)

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from functools import partial
 import json
 from warnings import warn
@@ -15,8 +17,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from .vectorized import from_shapely, VectorizedGeometry
-from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase
+from .base import GeoPandasBase
 from ._block import GeometryBlock
 
 
@@ -279,9 +280,10 @@ class GeoSeries(GeoPandasBase, Series):
             return False
 
     def plot(self, *args, **kwargs):
+        from geopandas.plotting import plot_series
         return plot_series(self, *args, **kwargs)
 
-    plot.__doc__ = plot_series.__doc__
+    # plot.__doc__ = plot_series.__doc__
 
     #
     # Additional methods

@@ -1,8 +1,12 @@
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
 from pandas.core.internals import Block, NonConsolidatableMixIn
 from pandas.core.common import is_null_slice
+from shapely.geometry.base import geom_factory, BaseGeometry
+
+from .vectorized import VectorizedGeometry, to_shapely
 
 
 class GeometryBlock(NonConsolidatableMixIn, Block):
@@ -11,7 +15,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
 
     @property
     def _holder(self):
-        from geopandas.vectorized import VectorizedGeometry
         return VectorizedGeometry
 
     def __init__(self, values, placement, ndim=2, **kwargs):
@@ -26,7 +29,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
     def _box_func(self):
         # TODO does not seems to be used at the moment (from the examples) ?
         print("I am boxed")
-        from shapely.geometry.base import geom_factory
         return geom_factory
 
     # @property
@@ -86,7 +88,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         if slicer is not None:
             values = values[slicer]
 
-        from geopandas.vectorized import to_shapely
         values = to_shapely(values.data)
 
         return np.atleast_2d(values)
@@ -96,7 +97,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         # if is_list_like(element):
         #     element = np.array(element)
         #     return element.dtype == _NS_DTYPE or element.dtype == np.int64
-        from shapely.geometry.base import BaseGeometry
         return isinstance(element, BaseGeometry)
 
     def _slice(self, slicer):
@@ -174,7 +174,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         -------
         None
         """
-        from shapely.geometry.base import BaseGeometry
         if values.dtype != self.dtype:
             # Workaround for numpy 1.6 bug
             if isinstance(values, BaseGeometry):

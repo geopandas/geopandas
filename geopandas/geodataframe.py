@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from collections import Iterable
 import json
 import os
@@ -12,9 +14,8 @@ from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
 from .geoseries import GeoSeries
-from geopandas.base import GeoPandasBase
-from geopandas.plotting import plot_dataframe
-import geopandas.io
+from .base import GeoPandasBase
+from .plotting import plot_dataframe
 
 from . import vectorized
 from ._block import GeometryBlock
@@ -278,6 +279,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_file(). For additional help, see read_file()
 
         """
+        import geopandas.io
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
@@ -317,6 +319,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Wraps geopandas.read_postgis(). For additional help, see read_postgis()
 
         """
+        import geopandas.io
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
