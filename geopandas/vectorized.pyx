@@ -19,7 +19,7 @@ from libc.stdlib cimport malloc, free
 cimport numpy as np
 import numpy as np
 
-include "_geos.pxi"
+include "geopandas/_geos.pxi"
 
 from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
         JOIN_STYLE)
