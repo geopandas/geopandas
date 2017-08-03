@@ -229,8 +229,11 @@ class GeoSeries(GeoPandasBase, Series):
     def apply(self, func, *args, **kwargs):
         s = Series(self.values, index=self.index, name=self.name)
         s = s.apply(func, *args, **kwargs)
-        vec = from_shapely(s.values)
-        return GeoSeries(vec, index=self.index)
+        if len(s) and isinstance(s.iloc[0], BaseGeometry):
+            vec = from_shapely(s.values)
+            return GeoSeries(vec, index=self.index)
+        else:
+            return s
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""

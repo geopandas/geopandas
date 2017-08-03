@@ -509,7 +509,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result.crs = self.crs
-            g = vectorized.GeometryArray(result[geo_col])
+            values = result[geo_col]._values
+            if isinstance(values, np.ndarray):
+                g = vectorized.from_shapely(values)
+            else:
+                g = values
             result[geo_col] = list(g)
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
@@ -591,7 +595,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(by=by).agg(aggfunc)
 
-
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
@@ -599,11 +602,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
 
-        # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name,
-                                           crs=self.crs)
         # Recombine
-        aggregated = aggregated_geometry.join(aggregated_data)
+        aggregated = aggregated_data.set_geometry(g, crs=self.crs)
 
         # Reset if requested
         if not as_index:
