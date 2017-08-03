@@ -26,7 +26,8 @@ def s():
 @pytest.fixture
 def df():
     return GeoDataFrame({'geometry': [Point(x, x) for x in range(3)],
-                         'value1': range(3), 'value2': [1, 2, 1]})
+                         'value1': np.arange(3, dtype='int64'),
+                         'value2': np.array([1, 2, 1], dtype='int64')})
 
 
 def test_repr(s, df):
@@ -216,7 +217,7 @@ def test_groupby(df):
     # reductions ignore geometry column
     res = df.groupby('value2').sum()
     exp = pd.DataFrame({'value1': [2, 1],
-                        'value2': [1, 2]}).set_index('value2')
+                        'value2': [1, 2]}, dtype='int64').set_index('value2')
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
