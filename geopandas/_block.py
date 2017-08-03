@@ -1,8 +1,12 @@
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
 from pandas.core.internals import Block, NonConsolidatableMixIn
 from pandas.core.common import is_null_slice
+from shapely.geometry.base import geom_factory, BaseGeometry
+
+from .vectorized import GeometryArray, to_shapely
 
 
 class GeometryBlock(NonConsolidatableMixIn, Block):
@@ -12,13 +16,12 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
 
     @property
     def _holder(self):
-        from geopandas.vectorized import VectorizedGeometry
-        return VectorizedGeometry
+        return GeometryArray
 
     def __init__(self, values, placement, ndim=2, **kwargs):
 
         if not isinstance(values, self._holder):
-            raise TypeError("values must be a VectorizedGeometry object")
+            raise TypeError("values must be a GeometryArray object")
 
         super(GeometryBlock, self).__init__(values, placement=placement,
                                             ndim=ndim, **kwargs)
@@ -27,7 +30,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
     def _box_func(self):
         # TODO does not seems to be used at the moment (from the examples) ?
         print("I am boxed")
-        from shapely.geometry.base import geom_factory
         return geom_factory
 
     # @property
@@ -64,7 +66,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         print("I am densified ({} elements)".format(len(self)))
         return self.values.to_dense().view()
 
-    def __getitem__(self, key):
+    def _getitem(self, key):
         values = self.values[key]
         return GeometryBlock(values, placement=slice(0, len(values), 1),
                              ndim=1)
@@ -87,7 +89,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         if slicer is not None:
             values = values[slicer]
 
-        from geopandas.vectorized import to_shapely
         values = to_shapely(values.data)
 
         return np.atleast_2d(values)
@@ -97,12 +98,10 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         # if is_list_like(element):
         #     element = np.array(element)
         #     return element.dtype == _NS_DTYPE or element.dtype == np.int64
-        from shapely.geometry.base import BaseGeometry
         return isinstance(element, BaseGeometry)
 
     def _slice(self, slicer):
         """ return a slice of my values """
-        print("I am sliced")
         if isinstance(slicer, tuple):
             col, loc = slicer
             if not is_null_slice(col) and col != 0:
@@ -114,7 +113,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         """
         Take values according to indexer and return them as a block.bb
         """
-        print("I am in take_nd")
         if fill_tuple is None:
             fill_value = None
         else:
@@ -124,7 +122,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         # but are passed the axis depending on the calling routing
         # if its REALLY axis 0, then this will be a reindex and not a take
 
-        # TODO implement take_nd on VectorizedGeometry
+        # TODO implement take_nd on GeometryArray
         # new_values = self.values.take_nd(indexer, fill_value=fill_value)
         new_values = self.values[indexer]
 
@@ -175,7 +173,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         -------
         None
         """
-        from shapely.geometry.base import BaseGeometry
         if values.dtype != self.dtype:
             # Workaround for numpy 1.6 bug
             if isinstance(values, BaseGeometry):

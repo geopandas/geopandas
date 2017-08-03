@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from functools import partial
 import json
 from warnings import warn
@@ -14,10 +16,9 @@ from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
-from .vectorized import from_shapely, VectorizedGeometry
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _series_unary_op
-from geopandas.base import GeoPandasBase, _series_unary_op
+from .vectorized import from_shapely, GeometryArray
+from .base import GeoPandasBase, _series_unary_op
 from ._block import GeometryBlock
 
 
@@ -76,7 +77,6 @@ class GeoSeries(GeoPandasBase, Series):
                 self.crs = crs
                 return
             else:
-                import pdb; pdb.set_trace()
                 values = np.asarray(args[0].blocks[0].external_values())
 
         if isinstance(arg, BaseGeometry):
@@ -87,7 +87,7 @@ class GeoSeries(GeoPandasBase, Series):
             index = arg.index
             name = arg.name
         else:
-            if isinstance(arg, VectorizedGeometry):
+            if isinstance(arg, GeometryArray):
                 index = kwargs.pop('index', pd.Index(np.arange(len(arg))))
                 name = kwargs.get('name', None)
             else:
@@ -102,7 +102,6 @@ class GeoSeries(GeoPandasBase, Series):
                                         fastpath=True)
         self.crs = crs
         self._invalidate_sindex()
-        self._name = None
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)
@@ -177,9 +176,9 @@ class GeoSeries(GeoPandasBase, Series):
     # Implement pandas methods
     #
 
+    @property
     def _constructor(self, *args, **kwargs):
-        obj = GeoSeries(*args, **kwargs)
-        return obj
+        return GeoSeries
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -192,7 +191,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __getitem__(self, key):
         if isinstance(key, (slice, list, Series, np.ndarray)):
-            block = self._data._block[key]
+            block = self._data._block._getitem(key)
             index = self.index[key]
             return GeoSeries(SingleBlockManager(block, axis=index),
                              crs=self.crs, index=index)
@@ -242,15 +241,18 @@ class GeoSeries(GeoPandasBase, Series):
         copy : GeoSeries
         """
         # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return GeoSeries(self._data,
+        return GeoSeries(self._data.copy(),
                          index=self.index, crs=self.crs,
                          name=self.name)
 
     def apply(self, func, *args, **kwargs):
-        s = Series(list(self._geometry_array), index=self.index)
-        L = s.apply(func, *args, **kwargs).tolist()
-        vec = from_shapely(L)
-        return GeoSeries(vec, index=self.index)
+        s = Series(self.values, index=self.index, name=self.name)
+        s = s.apply(func, *args, **kwargs)
+        if len(s) and isinstance(s.iloc[0], BaseGeometry):
+            vec = from_shapely(s.values)
+            return GeoSeries(vec, index=self.index)
+        else:
+            return s
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
@@ -299,9 +301,10 @@ class GeoSeries(GeoPandasBase, Series):
             return False
 
     def plot(self, *args, **kwargs):
+        from geopandas.plotting import plot_series
         return plot_series(self, *args, **kwargs)
 
-    plot.__doc__ = plot_series.__doc__
+    # plot.__doc__ = plot_series.__doc__
 
     #
     # Additional methods
@@ -371,6 +374,11 @@ class GeoSeries(GeoPandasBase, Series):
         return self.difference(other)
 
     def _reindex_indexer(self, new_index, indexer, copy):
+        """ Overwrites the pd.Series method
+
+        This allows us to use the GeometryArray.take method.
+        Otherwise the data gets turned into a numpy array.
+        """
         if indexer is None:
             if copy:
                 return self.copy()

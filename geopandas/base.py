@@ -1,15 +1,15 @@
+from __future__ import absolute_import, division, print_function
+
 from warnings import warn
 
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import BaseGeometry, CAP_STYLE, JOIN_STYLE
 from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
-
-import geopandas as gpd
 
 from . import vectorized
 
@@ -23,25 +23,25 @@ except ImportError:
 
 
 def binary_geo(op, left, right):
-    """Geometric operation that returns a pandas Series"""
+    """ Binary operation on GeoSeries objects that returns a GeoSeries """
+    from .geoseries import GeoSeries
     if isinstance(right, GeoPandasBase):
         left = left.geometry
         left, right = left.align(right.geometry)
         t = left._geometry_array
         o = right._geometry_array
         x = vectorized.vector_binary_geo(op, t.data, o.data)
-        return gpd.GeoSeries(x, index=left.index, crs=left.crs)
+        return GeoSeries(x, index=left.index, crs=left.crs)
     elif isinstance(right, BaseGeometry):
         x = vectorized.binary_geo(op, left._geometry_array.data, right)
-        return gpd.GeoSeries(x, index=left.index, crs=left.crs)
+        return GeoSeries(x, index=left.index, crs=left.crs)
     else:
         raise TypeError(type(left), type(right))
 
 
-def binary_predicate(op, this, other, *args, **kwargs):
-    """Geometric operation that returns a pandas Series"""
+def binary_predicate(op, this, other, *args):
+    """ Binary operation on GeoSeries objects that returns a boolean Series """
     null_val = False if op != 'distance' else np.nan
-    assert not kwargs
 
     if isinstance(other, GeoPandasBase):
         this = this.geometry
@@ -56,6 +56,9 @@ def binary_predicate(op, this, other, *args, **kwargs):
     elif isinstance(other, BaseGeometry):
         if args:
             x = vectorized.binary_predicate_with_arg(op, this._geometry_array.data, other, *args)
+        elif op in vectorized.opposite_predicates:
+            op2 = vectorized.opposite_predicates[op]
+            x = vectorized.prepared_binary_predicate(op2, this._geometry_array.data, other)
         else:
             x = vectorized.binary_predicate(op, this._geometry_array.data, other)
         return Series(x, index=this.index)
@@ -72,14 +75,10 @@ def prepared_binary_predicate(op, this, other):
         raise TypeError(type(this), type(other))
 
 
-def unary_geo(op, this):
-    x = vectorized.geo_unary_op(op, this._geometry_array)
-    return GeoSeries(x, index=this.index)
-
-
 def _geo_unary_op(this, op):
     """Unary operation that returns a GeoSeries"""
-    return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
+    from .geoseries import GeoSeries
+    return GeoSeries([getattr(geom, op) for geom in this.geometry],
                      index=this.index, crs=this.crs)
 
 
@@ -170,25 +169,30 @@ class GeoPandasBase(object):
     # Unary operations that return a GeoSeries
     #
 
+    def unary_geo(self, op):
+        from .geoseries import GeoSeries
+        x = vectorized.geo_unary_op(op, self._geometry_array.data)
+        return GeoSeries(x, index=self.index, crs=self.crs)
+
     @property
     def boundary(self):
         """Return the bounding geometry for each geometry"""
-        return _geo_unary_op(self, 'boundary')
+        return self.unary_geo('boundary')
 
     @property
     def centroid(self):
         """Return the centroid of each geometry in the GeoSeries"""
-        return _geo_unary_op(self, 'centroid')
+        return self.unary_geo('centroid')
 
     @property
     def convex_hull(self):
         """Return the convex hull of each geometry"""
-        return _geo_unary_op(self, 'convex_hull')
+        return self.unary_geo('convex_hull')
 
     @property
     def envelope(self):
         """Return a bounding rectangle for each geometry"""
-        return _geo_unary_op(self, 'envelope')
+        return self.unary_geo('envelope')
 
     @property
     def exterior(self):
@@ -204,9 +208,7 @@ class GeoPandasBase(object):
 
     def representative_point(self):
         """Return a GeoSeries of points guaranteed to be in each geometry"""
-        return gpd.GeoSeries([geom.representative_point()
-                             for geom in self.geometry],
-                         index=self.index)
+        return self.unary_geo('representative_point')
 
     #
     # Reduction operations that return a Shapely geometry
@@ -228,8 +230,6 @@ class GeoPandasBase(object):
 
     @property
     def _geometry_array(self):
-        #return vectorized.VectorizedGeometry(data=self.geometry.values,
-        #                                     parent=self._original_geometry)
         return self.geometry._values
 
     def contains(self, other):
@@ -277,6 +277,7 @@ class GeoPandasBase(object):
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
+        raise NotImplementedError()
         return binary_predicate(self, other, 'distance')
 
     #
@@ -330,12 +331,17 @@ class GeoPandasBase(object):
             self._generate_sindex()
         return self._sindex
 
-    def buffer(self, distance, **kwargs):
-        geom_array = self._geometry_array.buffer(distance, **kwargs)
-        return gpd.GeoSeries(geom_array, index=self.index, crs=self.crs)
+    def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
+            join_style=JOIN_STYLE.round, mitre_limit=5.0):
+        from .geoseries import GeoSeries
+        geom_array = self._geometry_array.buffer(distance,
+                resolution=resolution, cap_style=cap_style,
+                join_style=join_style, mitre_limit=mitre_limit)
+        return GeoSeries(geom_array, index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
-        return gpd.GeoSeries([geom.simplify(*args, **kwargs)
+        from .geoseries import GeoSeries
+        return GeoSeries([geom.simplify(*args, **kwargs)
                              for geom in self.geometry],
                       index=self.index, crs=self.crs)
 
@@ -356,7 +362,7 @@ class GeoPandasBase(object):
 
         The project method is the inverse of interpolate.
         """
-
+        raise NotImplementedError()
         return _series_op(self, other, 'project', normalized=normalized)
 
     def interpolate(self, distance, normalized=False):
@@ -371,8 +377,8 @@ class GeoPandasBase(object):
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
-
-        return gpd.GeoSeries([s.interpolate(distance, normalized)
+        from .geoseries import GeoSeries
+        return GeoSeries([s.interpolate(distance, normalized)
                              for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -390,8 +396,8 @@ class GeoPandasBase(object):
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
-
-        return gpd.GeoSeries([affinity.translate(s, xoff, yoff, zoff)
+        from .geoseries import GeoSeries
+        return GeoSeries([affinity.translate(s, xoff, yoff, zoff)
                              for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -415,9 +421,10 @@ class GeoPandasBase(object):
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
+        from .geoseries import GeoSeries
         L = [affinity.rotate(s, angle, origin=origin,
              use_radians=use_radians) for s in self.geometry]
-        return gpd.GeoSeries(L, index=self.index, crs=self.crs)
+        return GeoSeries(L, index=self.index, crs=self.crs)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
         """
@@ -437,8 +444,8 @@ class GeoPandasBase(object):
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
-
-        return gpd.GeoSeries([affinity.scale(s, xfact, yfact, zfact,
+        from .geoseries import GeoSeries
+        return GeoSeries([affinity.scale(s, xfact, yfact, zfact,
             origin=origin) for s in self.geometry], index=self.index,
             crs=self.crs)
 
@@ -462,8 +469,8 @@ class GeoPandasBase(object):
         See shapely manual for more information:
         http://toblerity.org/shapely/manual.html#affine-transformations
         """
-
-        return gpd.GeoSeries([affinity.skew(s, xs, ys, origin=origin,
+        from .geoseries import GeoSeries
+        return GeoSeries([affinity.skew(s, xs, ys, origin=origin,
             use_radians=use_radians) for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -494,6 +501,7 @@ class GeoPandasBase(object):
            2    POINT (4 4)
         dtype: object
         """
+        from .geoseries import GeoSeries
         index = []
         geometries = []
         for idx, s in self.geometry.iteritems():
@@ -505,7 +513,7 @@ class GeoPandasBase(object):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        s = gpd.GeoSeries(geometries, index=MultiIndex.from_tuples(index))
+        s = GeoSeries(geometries, index=MultiIndex.from_tuples(index))
         s = s.__finalize__(self)
         return s
 
