@@ -126,7 +126,8 @@ class GeoPandasBase(object):
     @property
     def geom_type(self):
         """Return the geometry type of each geometry in the GeoSeries"""
-        return _series_unary_op(self, 'geom_type', null_value=None)
+        cat = self._geometry_array.geom_type()
+        return Series(cat, index=self.index)
 
     @property
     def type(self):
