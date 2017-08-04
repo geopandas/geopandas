@@ -364,7 +364,7 @@ def test_raise_on_bad_sizes():
 
 def test_types():
     cat = T.geom_type()
-    assert list(cat) == [shapely.geometry.Polygon] * len(T)
+    assert list(cat) == ['Polygon'] * len(T)
 
 
 def test_null_mixed_types():
@@ -376,4 +376,4 @@ def test_null_mixed_types():
 
     cat = G.geom_type()
 
-    assert list(cat) == [shapely.geometry.Polygon, np.nan, shapely.geometry.Point]
+    assert list(cat) == ['Polygon', np.nan, 'Point']

@@ -466,9 +466,9 @@ class TestGeomMethods(unittest.TestCase):
 
     def test_geom_type(self):
         gt = self.a1.geom_type
-        assert list(gt) == [Polygon, Polygon]
+        assert list(gt) == ['Polygon', 'Polygon']
         assert gt.index is self.a1.index
 
         gt = self.na_none.geom_type
-        assert list(gt) == [Polygon, np.nan]
+        assert list(gt) == ['Polygon', np.nan]
         assert gt.index is self.na_none.index

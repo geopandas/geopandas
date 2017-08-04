@@ -1110,7 +1110,7 @@ class GeometryArray(object):
         x = geom_type(self.data)
 
         import pandas as pd
-        return pd.Categorical.from_codes(x, GEOMETRY_TYPES)
+        return pd.Categorical.from_codes(x, GEOMETRY_NAMES)
 
     # for Series/ndarray like compat
 
