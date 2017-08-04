@@ -78,10 +78,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         gs = {}
 
         if isinstance(arg, dict):
+            arg = arg.copy()
             for i, (k, v) in list(enumerate(arg.items())):
                 if isinstance(v, GeoSeries):
                     if 'columns' in kwargs:
-                        kwargs['columns'].pop(i)
+                        columns = kwargs['columns'].copy()
+                        columns.pop(i)
+                        kwargs['columns'] = columns
                     gs[k] = arg.pop(k)
                     kwargs['index'] = v.index  # TODO: assumes consistent index
 
@@ -111,6 +114,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             columns = columns.append(pd.Index([geometry]))
             blocks = blocks + (geom_block,)
 
+        kwargs['columns'] = columns
         block_manager = BlockManager(blocks, [columns, index])
 
         super(GeoDataFrame, self).__init__(block_manager, **kwargs)

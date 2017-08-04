@@ -40,7 +40,10 @@ size_vector sjoin(GEOSContextHandle_t handle,
 
     for (r = 0; r < nright; r++)
     {
-        GEOSSTRtree_insert_r(handle, tree, right[r], (void*) r);
+        if (right[r] != NULL)
+        {
+            GEOSSTRtree_insert_r(handle, tree, right[r], (void*) r);
+        }
     }
 
     // end = clock();
@@ -50,25 +53,28 @@ size_vector sjoin(GEOSContextHandle_t handle,
 
     for (l = 0; l < nleft; l++)
     {
-        // begin_1 = clock();
-        GEOSSTRtree_query_r(handle, tree, left[l], sjoin_callback, &vec);
-        // end_1 = clock();
-        // time_spent_1 += (double)(end_1 - begin_1) / CLOCKS_PER_SEC;
-
-        prepared = GEOSPrepare_r(handle, left[l]);
-
-        // begin_2 = clock();
-        while (vec.n)
+        if (left[l] != NULL)
         {
-            r = kv_pop(vec);
-            if (predicate(handle, prepared, right[r])){
-                kv_push(size_t, out, l);
-                kv_push(size_t, out, r);
+            // begin_1 = clock();
+            GEOSSTRtree_query_r(handle, tree, left[l], sjoin_callback, &vec);
+            // end_1 = clock();
+            // time_spent_1 += (double)(end_1 - begin_1) / CLOCKS_PER_SEC;
+
+            prepared = GEOSPrepare_r(handle, left[l]);
+
+            // begin_2 = clock();
+            while (vec.n)
+            {
+                r = kv_pop(vec);
+                if (predicate(handle, prepared, right[r])){
+                    kv_push(size_t, out, l);
+                    kv_push(size_t, out, r);
+                }
             }
+            GEOSPreparedGeom_destroy_r(handle, prepared);
+            // end_2 = clock();
+            // time_spent_2 += (double)(end_2 - begin_2) / CLOCKS_PER_SEC;
         }
-        GEOSPreparedGeom_destroy_r(handle, prepared);
-        // end_2 = clock();
-        // time_spent_2 += (double)(end_2 - begin_2) / CLOCKS_PER_SEC;
     }
     // end = clock();
     // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;

@@ -162,35 +162,78 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     return joined
 
 
-def new_sjoin(left_df, right_df, op='intersects',
+def new_sjoin(left_df, right_df, op='intersects', how='inner',
               lsuffix='left', rsuffix='right'):
     indices = cysjoin(left_df.geometry._geometry_array.data,
                       right_df.geometry._geometry_array.data,
                       op)
-    left = left_df.take(indices[:, 0])
-    right = right_df.take(indices[:, 1])
-    del right[right._geometry_column_name]
+    n = len(indices)
+    left_indices = indices[:, 0]
+    right_indices = indices[:, 1]
+
+    if how == 'left':
+        missing = pd.Index(np.arange(len(left_df))).difference(pd.Index(left_indices))
+        if len(missing):
+            left_indices = np.concatenate([left_indices, missing])
+
+    if how == 'right':
+        missing = pd.Index(np.arange(len(right_df))).difference(pd.Index(right_indices))
+        if len(missing):
+            right_indices = np.concatenate([right_indices, missing])
+
+    n_left = len(left_indices)
+    n_right = len(right_indices)
+
+    left = left_df.take(left_indices)
+    right = right_df.take(right_indices)
+
+    if how in ('inner', 'left'):
+        del right[right._geometry_column_name]
+        index = left.index
+    else:
+        del left[left._geometry_column_name]
+        index = right.index
 
     columns = {}
     names = []
     for name, series in left.iteritems():
         if name in right.columns:
             name = lsuffix + '_' + name
+        series.index = index[:n_left]
+        if how == 'right':
+            new = series.iloc[:0].reindex(index[n:])
+            series = pd.concat([series, new], axis=0)
         columns[name] = series
         names.append(name)
     for name, series in right.iteritems():
         if name in left.columns:
             name = rsuffix + '_' + name
-        series.index = left.index
+        series.index = index[:n_right]
+        if how == 'left':
+            new = series.iloc[:0].reindex(index[n:])
+            series = pd.concat([series, new], axis=0)
         columns[name] = series
         names.append(name)
 
-    s = pd.Series(right.index.values, index=left.index)
-    columns['right_index'] = s
-    names.append('right_index')
+    if how in ('inner', 'left'):
+        series = pd.Series(right.index.values, index=index[:n_right])
+        new = series.iloc[:0].reindex(index[n:])
+        series = pd.concat([series, new], axis=0)
+        series.index = index
+        columns['right_index'] = series
+        names.append('right_index')
+        geo_name = left_df._geometry_column_name
+    else:
+        series = pd.Series(left.index.values, index=index[:n_left])
+        new = series.iloc[:0].reindex(index[n:])
+        series = pd.concat([series, new], axis=0)
+        series.index = index
+        columns['left_index'] = series
+        names.append('left_index')
+        geo_name = right_df._geometry_column_name
 
-    s = columns[left_df._geometry_column_name]
-    columns[left_df._geometry_column_name] = GeoSeries(s._values, index=s.index, name=s.name)
+    geometry = columns[geo_name]
+    geometry = GeoSeries(geometry._values, index=index, name=geometry.name)
+    columns[geo_name] = geometry
 
-    return GeoDataFrame(columns, columns=names, index=left.index,
-                        geometry=left_df._geometry_column_name)
+    return GeoDataFrame(columns, columns=names, index=index, geometry=geo_name)
