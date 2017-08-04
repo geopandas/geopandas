@@ -515,3 +515,8 @@ def test_set_geometry_null():
 
     gdf2 = gdf.set_geometry(a)
     assert gdf2.geometry._values.data[1] == 0
+
+
+def test_constructor_without_geometries():
+    gdf = GeoDataFrame({'x': [1]})
+    assert list(gdf.x) == [1]

@@ -109,9 +109,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             geom_block = GeometryBlock(geom._values, slice(len(columns),
                                        len(columns) + 1))
             columns = columns.append(pd.Index([geometry]))
-            blocks = BlockManager(blocks + (geom_block,), [columns, index])
+            blocks = blocks + (geom_block,)
 
-        super(GeoDataFrame, self).__init__(blocks, **kwargs)
+        block_manager = BlockManager(blocks, [columns, index])
+
+        super(GeoDataFrame, self).__init__(block_manager, **kwargs)
 
         self.crs = crs
         self._geometry_column_name = geometry
