@@ -4,8 +4,12 @@ import os
 import json
 import shutil
 import tempfile
+
 import numpy as np
+import pandas as pd
 from numpy.testing import assert_array_equal
+from pandas.util.testing import assert_series_equal
+
 from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
@@ -106,6 +110,12 @@ class TestSeries(unittest.TestCase):
         # TODO: test tolerance parameter
         self.assertTrue(np.alltrue(self.g1.geom_equals_exact(self.g1, 0.001)))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
+
+    def test_equal_comp_op(self):
+        s = GeoSeries([Point(x, x) for x in range(3)])
+        res = s == Point(1, 1)
+        exp = pd.Series([False, True, False])
+        assert_series_equal(res, exp)
 
     def test_to_file(self):
         """ Test to_file and from_file """
