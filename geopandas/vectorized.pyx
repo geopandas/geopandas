@@ -1,3 +1,4 @@
+# distutils: sources = geopandas/algos.c
 
 import collections
 import numbers
@@ -24,12 +25,21 @@ include "geopandas/_geos.pxi"
 from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
         JOIN_STYLE)
 
-ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
-                               const GEOSGeometry *left,
-                               const GEOSGeometry *right) nogil
-ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
-                                       const GEOSPreparedGeometry *left,
-                                       const GEOSGeometry *right) nogil
+cdef extern from "algos.h":
+    ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
+                                   const GEOSGeometry *left,
+                                   const GEOSGeometry *right) nogil
+    ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
+                                           const GEOSPreparedGeometry *left,
+                                           const GEOSGeometry *right) nogil
+    ctypedef struct size_vector:
+        size_t n
+        size_t m
+        size_t *a
+    size_vector sjoin(GEOSContextHandle_t handle,
+                      GEOSPreparedPredicate predicate,
+                      GEOSGeometry *left, size_t nleft,
+                      GEOSGeometry *right, size_t nright) nogil
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -1178,3 +1188,35 @@ class GeometryArray(object):
             categorical.categories.dtype
         """
         return to_shapely(self.data)
+
+
+cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+              np.ndarray[np.uintp_t, ndim=1, cast=True] right,
+              str predicate_name):
+    cdef GEOSContextHandle_t handle
+    cdef GEOSPreparedPredicate predicate
+    cdef size_vector sv
+    cdef Py_ssize_t idx
+    cdef np.ndarray[np.uintp_t, ndim=2] out
+    cdef size_t left_size = left.size
+    cdef size_t right_size = right.size
+
+    handle = get_geos_context_handle()
+    predicate = get_prepared_predicate(predicate_name)
+    if not predicate:
+        raise NotImplementedError(predicate_name)
+
+    with nogil:
+        sv = sjoin(handle, predicate,
+                   <GEOSGeometry*> left.data, left_size,
+                   <GEOSGeometry*> right.data, right_size)
+
+    out = np.empty((sv.n // 2, 2), dtype=np.uintp)
+
+    with nogil:
+        for idx in range(0, sv.n // 2):
+            out[idx, 0] = sv.a[2 * idx]
+            out[idx, 1] = sv.a[2 * idx + 1]
+
+    cfree(sv.a)
+    return out
