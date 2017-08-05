@@ -1,3 +1,22 @@
+Changes
+=======
+
+Next
+----
+
+Improvements:
+
+* improved plotting performance using ``matplotlib.collections`` (#267)
+* return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
+* enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
+* provide access to x/y coordinates as attributes for Point GeoSeries (#383)
+
+Bug fixes:
+
+* fixed ``fiona.filter`` results when bbox is not None (#372)
+* fixed ``dissolve`` to retain CRS (#389)
+
+
 Version 0.2.0
 -------------
 
