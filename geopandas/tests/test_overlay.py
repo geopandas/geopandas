@@ -97,7 +97,7 @@ class TestDataFrame(unittest.TestCase):
 
         df = overlay(polydf3, self.polydf2, how="union")
         self.assertTrue(type(df) is GeoDataFrame)
-        
+
         df2 = overlay(self.polydf, self.polydf2, how="union")
         self.assertTrue(df.geom_almost_equals(df2).all())
 
@@ -107,8 +107,3 @@ class TestDataFrame(unittest.TestCase):
         def f():
             overlay(self.polydf, self.polydf2.geometry, how="union")
         self.assertRaises(NotImplementedError, f)
-
-
-
-
-
