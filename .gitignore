@@ -9,7 +9,6 @@ geopandas/version.py
 doc/_static/world_*
 examples/nybb_*.zip
 .cache/
-*.c
 *.so
 *.pyd
 *.swp

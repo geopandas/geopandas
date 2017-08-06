@@ -1,17 +1,13 @@
 
 #include <geos_c.h>
 #include "kvec.h"
+#include "algos.h"
 #include <stdio.h>
 #include <time.h>
+#include <stdbool.h>
 
 typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *left, const GEOSGeometry *right);
 typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, const GEOSPreparedGeometry *left, const GEOSGeometry *right);
-
-typedef struct
-{
-    size_t n, m;
-    size_t *a;
-} size_vector;
 
 typedef struct
 {
@@ -102,7 +98,7 @@ size_vector sjoin(GEOSContextHandle_t handle,
 }
 
 
-void process_polygon_rings(GEOSContextHandle_t handle, GEOSGeometry *geom, geom_vector rings)
+void process_polygon_rings(GEOSContextHandle_t handle, GEOSGeometry *geom, geom_vector *rings)
 {
     int n_interior;
     GEOSGeometry *ring;
@@ -112,24 +108,24 @@ void process_polygon_rings(GEOSContextHandle_t handle, GEOSGeometry *geom, geom_
 
     // Exterior Ring
     ring = GEOSGetExteriorRing_r(handle, geom);
-    kv_push(GEOSGeometry*, rings, ring);
+    kv_push(GEOSGeometry*, *rings, ring);
 
     // Interior Rings
     n_interior = GEOSGetNumInteriorRings_r(handle, geom);
     for (int i = 0; i < n_interior; i++)
     {
         ring = GEOSGetInteriorRingN_r(handle, geom, i);
-        kv_push(GEOSGeometry*, rings, ring);
+        kv_push(GEOSGeometry*, *rings, ring);
     }
 }
 
 
-GEOSGeometry *extract_rings(GEOSContextHandle_t handle, GEOSGeometry **geoms, size_t n)
+geom_vector extract_rings(GEOSContextHandle_t handle, GEOSGeometry **geoms, size_t n)
 {
     GEOSGeometry *geom, *sub, *out;
     geom_vector rings;
     kv_init(rings);
-    int n_geoms, i, j, n_interior;
+    int n_geoms, i, j;
     enum GEOSGeomTypes type;
 
     for(i = 0; i < n; i++)
@@ -138,7 +134,7 @@ GEOSGeometry *extract_rings(GEOSContextHandle_t handle, GEOSGeometry **geoms, si
         type = GEOSGeomTypeId_r(handle, geom);
         if (type == 3)  // Polygon
         {
-            process_polygon_rings(handle, geom, rings);
+            process_polygon_rings(handle, geom, &rings);
         }
         else if (type == 6) // MultiPolygon
         {
@@ -146,34 +142,29 @@ GEOSGeometry *extract_rings(GEOSContextHandle_t handle, GEOSGeometry **geoms, si
             for (j = 0; j < n_geoms; j++)
             {
                 sub = GEOSGetGeometryN_r(handle, geom, j);
-                process_polygon_rings(handle, sub, rings);
+                process_polygon_rings(handle, sub, &rings);
             }
         }
         else
         {
             kv_destroy(rings);
-            return NULL;
+            return rings;
         }
     }
 
-    out = GEOSGeom_createCollection_r(handle, 5, rings.a, rings.n);
-    kv_destroy(rings);
-    return out;
+    return rings;
 }
 
 
 
-/*
-size_vector overlay(GEOSContextHandle_t handle,
-                       GEOSPreparedPredicate predicate,
-                       GEOSGeometry **left, size_t n_left,
-                       GEOSGeometry **right, size_t n_right,
-                       enum overlay_strategy strategy)
+size_vector overlay(GEOSContextHandle_t handle, int how,
+                    GEOSGeometry **left_geoms, size_t n_left,
+                    GEOSGeometry **right_geoms, size_t n_right)
 {
-    GEOSGeometry *left_multi_ring, *right_multi_ring, *all_rings, *polygons, *poly, *point, *left_geom, *right_geom;
-    GEOSGeometry *L[2];
-    GEOSSTRTree *left_tree, *right_tree;
-    int n_polys, ind;
+    GEOSGeometry **all_rings, *polygons, *poly, *point, *left_geom, *right_geom, *collection, *uunion;
+    geom_vector left_rings, right_rings;
+    GEOSSTRtree *left_tree, *right_tree;
+    int n_polys, left_ind = 0, right_ind = 0, i;
     bool hit_left, hit_right, hit;
     size_vector vec;
     kv_init(vec);
@@ -181,17 +172,28 @@ size_vector overlay(GEOSContextHandle_t handle,
     size_vector out;
     kv_init(out);
 
-    left_multi_ring = extract_rings(handle, left, n_left);
-    right_multi_ring = extract_rings(handle, right, n_right);
-    L[0] = left_multi_ring;
-    L[1] = right_multi_ring;
-    // all_rings = GEOSGeom_createCollection_r(handle, 6, L, 2);
-    // all_rings = GEOSUnaryUnion_r(handle, all_rings);
-    polygons = GEOSPolygonize_r(handle, L, 2);
+    left_rings = extract_rings(handle, left_geoms, n_left);
+    right_rings = extract_rings(handle, right_geoms, n_right);
+    all_rings = malloc(sizeof(GEOSGeometry *) * (left_rings.n + right_rings.n));
+
+    for (i = 0; i < left_rings.n; i++)
+        all_rings[i] = left_rings.a[i];
+    for (i = 0; i < right_rings.n; i++)
+        all_rings[i + left_rings.n] = right_rings.a[i];
+
+    collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON, all_rings, left_rings.n + right_rings.n);
+    uunion = GEOSUnaryUnion_r(handle, collection);
+    free(all_rings);
+    n_polys = GEOSGetNumGeometries_r(handle, uunion);
+    all_rings = malloc(sizeof(GEOSGeometry *) * n_polys);
+    for (i = 0; i < n_polys; i++)
+        all_rings[i] = GEOSGetGeometryN_r(handle, uunion, i);
+
+    polygons = GEOSPolygonize_r(handle, all_rings, n_polys);
     n_polys = GEOSGetNumGeometries_r(handle, polygons);
 
-    left_tree = create_index(handle, left, n_left);
-    right_tree = create_index(handle, right, n_right);
+    left_tree = create_index(handle, left_geoms, n_left);
+    right_tree = create_index(handle, right_geoms, n_right);
 
     for (int i; i < n_polys; i++)
     {
@@ -229,29 +231,30 @@ size_vector overlay(GEOSContextHandle_t handle,
             }
         }
 
-        hit = false
+        hit = false;
         if (how == INTERSECTION && (hit_left && hit_right))
             hit = true;
         else if (how == UNION && (hit_left || hit_right))
             hit = true;
         else if (how == IDENTITY && hit_left)
             hit = true;
-        else if (how == SYMMETRIC_DIFFERENCE && !(left_hit && right_hit))
+        else if (how == SYMMETRIC_DIFFERENCE && !(hit_left && hit_right))
             hit = true;
-        else if (how == DIFFERENCE && (left_hit && !right_hit))
+        else if (how == DIFFERENCE && (hit_left && !hit_right))
             hit = true;
 
-        if (!hit)
-            continue;
-
-        kv_push(size_t, out, left_ind);
-        kv_push(size_t, out, right_ind);
-        kv_push(size_t, out, poly);
-        GEOSGeom_destroy_r(handle, point);
+        if (hit)
+        {
+            kv_push(size_t, out, poly);
+            kv_push(size_t, out, left_ind);
+            kv_push(size_t, out, right_ind);
+            GEOSGeom_destroy_r(handle, point);
+        }
     }
-    GEOSGeom_destroy_r(handle, left_rings);
-    GEOSGeom_destroy_r(handle, right_rings);
-    GEOSGeom_destroy_r(handle, polygons);
+    // GEOSGeom_destroy_r(handle, polygons);  // destroys used data
+    free(all_rings);
     kv_destroy(vec);
+    kv_destroy(left_rings);
+    kv_destroy(right_rings);
     return out;
-*/
+}

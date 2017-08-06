@@ -3,6 +3,7 @@
 import collections
 import numbers
 from libc.stdlib cimport free as cfree
+from time import time
 
 
 import shapely
@@ -26,6 +27,13 @@ from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
         JOIN_STYLE)
 
 cdef extern from "algos.h":
+    cdef enum overlay_strategy:
+        INTERSECTION = 0
+        UNION = 1
+        DIFFERENCE = 2
+        SYMMETRIC_DIFFERENCE = 3
+        IDENTITY = 4
+
     ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
                                    const GEOSGeometry *left,
                                    const GEOSGeometry *right) nogil
@@ -38,8 +46,13 @@ cdef extern from "algos.h":
         size_t *a
     size_vector sjoin(GEOSContextHandle_t handle,
                       GEOSPreparedPredicate predicate,
-                      GEOSGeometry *left, size_t nleft,
-                      GEOSGeometry *right, size_t nright) nogil
+                      GEOSGeometry **left, size_t nleft,
+                      GEOSGeometry **right, size_t nright) nogil
+
+    size_vector overlay(GEOSContextHandle_t handle, int how,
+                        GEOSGeometry **left, size_t n_left,
+                        GEOSGeometry **right,size_t n_right) nogil
+
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -1208,8 +1221,8 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
 
     with nogil:
         sv = sjoin(handle, predicate,
-                   <GEOSGeometry*> left.data, left_size,
-                   <GEOSGeometry*> right.data, right_size)
+                   <GEOSGeometry**> left.data, left_size,
+                   <GEOSGeometry**> right.data, right_size)
 
     out = np.empty((sv.n // 2, 2), dtype=np.uintp)
 
@@ -1220,3 +1233,45 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
 
     cfree(sv.a)
     return out
+
+OVERLAY_STRATEGIES = ['intersection', 'union', 'difference',
+                      'symmetric_difference', 'identity']
+
+cpdef cyoverlay(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                np.ndarray[np.uintp_t, ndim=1, cast=True] right,
+                str how):
+    cdef Py_ssize_t idx
+    cdef size_vector sv
+    cdef size_t left_size = left.size
+    cdef size_t right_size = right.size
+    cdef np.ndarray[np.uintp_t, ndim=1] geoms, out_left, out_right
+    cdef int how2
+
+    how2 = OVERLAY_STRATEGIES.index(how)
+
+    handle = get_geos_context_handle()
+    start = time()
+    with nogil:
+        sv = overlay(handle, how2,
+                     <GEOSGeometry**> left.data, left_size,
+                     <GEOSGeometry**> right.data, right_size)
+    end = time()
+    print('overlay', end - start)
+
+    geoms = np.empty((sv.n // 3,), dtype=np.uintp)
+    out_left = np.empty((sv.n // 3,), dtype=np.uintp)
+    out_right = np.empty((sv.n // 3,), dtype=np.uintp)
+
+    with nogil:
+        for idx in range(0, sv.n // 3):
+            geoms[idx] = sv.a[3 * idx]
+            out_left[idx] = sv.a[3 * idx + 1]
+            out_right[idx] = sv.a[3 * idx + 2]
+
+    return geoms, out_left, out_right
+
+
+def vec_overlay(left, right, how):
+    geoms, out_left, out_right = cyoverlay(left.data, right.data, how)
+    geoms = GeometryArray(geoms, parent=[left, right])
+    return geoms, out_left, out_right

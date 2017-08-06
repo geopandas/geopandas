@@ -4,6 +4,7 @@ from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
 import pandas as pd
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.vectorized import vec_overlay
 
 
 def _uniquify(columns):
@@ -94,6 +95,18 @@ def overlay(df1, df2, how, use_sindex=True):
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
+
+    geoms, left_indices, right_indices = vec_overlay(df1.geometry._geometry_array,
+                                                     df2.geometry._geometry_array,
+                                                     how)
+
+    left_values = pd.DataFrame(df1.drop(df1._geometry_column_name, axis=1)).take(left_indices)
+    right_values = pd.DataFrame(df2.drop(df2._geometry_column_name, axis=1)).take(right_indices)
+    # right_values['right_index'] = right_values.index
+    right_values.index = left_values.index
+    df = pd.concat([left_values, right_values], axis=1)
+    df = df.set_geometry(GeoSeries(geoms, index=df.index, name='geometry'))
+    return df
 
     # Collect the interior and exterior rings
     rings1 = _extract_rings(df1)

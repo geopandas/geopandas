@@ -3,7 +3,7 @@ import time
 import random
 import shapely
 from geopandas.vectorized import (GeometryArray, points_from_xy,
-        from_shapely, serialize, deserialize, cysjoin)
+        from_shapely, serialize, deserialize, cysjoin, cyoverlay)
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 
 import pytest
@@ -377,3 +377,22 @@ def test_null_mixed_types():
     cat = G.geom_type()
 
     assert list(cat) == ['Polygon', np.nan, 'Point']
+
+
+def test_overlay():
+    polys1 = [shapely.geometry.Polygon([(0,0), (2,0), (2,2), (0,2)]),
+              shapely.geometry.Polygon([(2,2), (4,2), (4,4), (2,4)])]
+
+    polys2 = [shapely.geometry.Polygon([(1,1), (3,1), (3,3), (1,3)]),
+              shapely.geometry.Polygon([(3,3), (5,3), (5,5), (3,5)])]
+
+    P1 = from_shapely(polys1)
+    P2 = from_shapely(polys2)
+
+    geoms, left, right = cyoverlay(P1.data, P2.data, 'union')
+    assert len(geoms) == len(left) == len(right) == 4
+
+    out = GeometryArray(geoms, parent=[polys1, polys2])
+
+    for shape, l, r in zip(geoms, left, right):
+        intersection = polys1[l].intersection(polys2[r])
