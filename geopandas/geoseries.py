@@ -37,10 +37,10 @@ class _CoordinateIndexer(_NDFrameIndexer):
         if xs.step is not None or ys.step is not None:
             warn("Ignoring step - full interval is used.")
         xmin, ymin, xmax, ymax = obj.total_bounds
-        bbox = box(xs.start or xmin,
-                   ys.start or ymin,
-                   xs.stop or xmax,
-                   ys.stop or ymax)
+        bbox = box(xmin if xs.start is None else xs.start,
+                   ymin if ys.start is None else ys.start,
+                   xmax if xs.stop is None else xs.stop,
+                   ymax if ys.stop is None else ys.stop)
         idx = obj.intersects(bbox)
         return obj[idx]
 
