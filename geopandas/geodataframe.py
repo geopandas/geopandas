@@ -8,8 +8,8 @@ from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas import GeoSeries
 from geopandas.base import GeoPandasBase
+from geopandas.geoseries import GeoSeries, _CoordinateIndexer
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
@@ -504,3 +504,6 @@ else:
     import types
     DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
                                               DataFrame)
+
+
+GeoDataFrame._create_indexer('cx', _CoordinateIndexer)
