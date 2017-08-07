@@ -161,9 +161,9 @@ size_vector overlay(GEOSContextHandle_t handle, int how,
                     GEOSGeometry **left_geoms, size_t n_left,
                     GEOSGeometry **right_geoms, size_t n_right)
 {
-    clock_t begin, begin_1, begin_2;
-    clock_t end, end_1, end_2;
-    double time_spent = 0, time_spent_1 = 0, time_spent_2 = 0;
+    // clock_t begin, begin_1, begin_2;
+    // clock_t end, end_1, end_2;
+    // double time_spent = 0, time_spent_1 = 0, time_spent_2 = 0;
 
     GEOSGeometry **all_rings, *polygons, *poly, *point, *left_geom, *right_geom, *collection, *uunion;
     geom_vector left_rings, right_rings;
@@ -176,66 +176,61 @@ size_vector overlay(GEOSContextHandle_t handle, int how,
     size_vector out;
     kv_init(out);
 
-    begin = clock();
+    // begin = clock();
+
     left_rings = extract_rings(handle, left_geoms, n_left);
     right_rings = extract_rings(handle, right_geoms, n_right);
     all_rings = malloc(sizeof(GEOSGeometry *) * (left_rings.n + right_rings.n));
 
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("extract rings, %f\n", time_spent);
-    begin = end;
+    // end = clock();
+    // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("extract rings, %f\n", time_spent);
 
+    // begin = end;
 
     for (i = 0; i < left_rings.n; i++)
         all_rings[i] = left_rings.a[i];
     for (i = 0; i < right_rings.n; i++)
         all_rings[i + left_rings.n] = right_rings.a[i];
 
-    begin = clock();
-
     collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON, all_rings, left_rings.n + right_rings.n);
     uunion = GEOSUnaryUnion_r(handle, collection);
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("unary union, %f\n", time_spent);
-    begin = end;
+    // end = clock();
+    // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("unary union, %f\n", time_spent);
+
+    // begin = end;
 
     free(all_rings);
     n_polys = GEOSGetNumGeometries_r(handle, uunion);
     all_rings = malloc(sizeof(GEOSGeometry *) * n_polys);
     for (i = 0; i < n_polys; i++)
         all_rings[i] = GEOSGetGeometryN_r(handle, uunion, i);
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("copy geometries, %f\n", time_spent);
-    begin = end;
+
+    // end = clock();
+    // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("copy geometries, %f\n", time_spent);
+    // begin = end;
 
     polygons = GEOSPolygonize_r(handle, all_rings, n_polys);
     n_polys = GEOSGetNumGeometries_r(handle, polygons);
 
-    end = clock();
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("copy geometries, %f\n", time_spent);
-    begin = end;
 
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("polygonize, %f\n", time_spent);
-    begin = end;
+    // end = clock();
+    // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("polygonize, %f\n", time_spent);
 
-    begin = clock();
+    // begin = end;
 
     left_tree = create_index(handle, left_geoms, n_left);
     right_tree = create_index(handle, right_geoms, n_right);
 
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("create index, %f\n", time_spent);
-    begin = end;
-
-
-    begin = clock();
+    // end = clock();
+    // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("create index, %f\n", time_spent);
+    // begin = end;
 
     for (int i; i < n_polys; i++)
     {
@@ -294,10 +289,10 @@ size_vector overlay(GEOSContextHandle_t handle, int how,
         }
     }
 
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("query, %f\n", time_spent);
-    begin = end;
+    // end = clock();
+    // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("query, %f\n", time_spent);
+    // begin = end;
 
     // GEOSGeom_destroy_r(handle, polygons);  // destroys used data
     free(all_rings);
