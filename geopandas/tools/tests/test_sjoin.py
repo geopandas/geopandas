@@ -9,7 +9,7 @@ from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries, read_file, base
-from geopandas.tests.util import unittest, download_nybb
+from geopandas.tests.util import unittest
 from geopandas import sjoin
 from distutils.version import LooseVersion
 
@@ -134,8 +134,8 @@ class TestSpatialJoin(object):
 class TestSpatialJoinNYBB(unittest.TestCase):
 
     def setUp(self):
-        nybb_filename, nybb_zip_path = download_nybb()
-        self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
+        nybb_filename = geopandas.datasets.get_path('nybb')
+        self.polydf = read_file(nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.crs = self.polydf.crs
         N = 20

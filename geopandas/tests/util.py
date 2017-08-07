@@ -25,29 +25,6 @@ except ImportError:
     import mock
 
 
-def download_nybb():
-    """ Returns the path to the NYC boroughs file. Downloads if necessary.
-
-    returns tuple (zip file name, shapefile's name and path within zip file)"""
-    # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
-    # saved as geopandas/examples/nybb_14aav.zip.
-    filename = 'nybb_16a.zip'
-    full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
-    if not os.path.exists(full_path_name):
-        with io.open(full_path_name, 'wb') as f:
-            response = urlopen('https://github.com/geopandas/geopandas/files/555970/{0}'.format(filename))
-            f.write(response.read())
-
-    shp_zip_path = None
-    zf = zipfile.ZipFile(full_path_name, 'r')
-    # finds path name in zip file
-    for zip_filename_path in zf.namelist():
-        if zip_filename_path.endswith('nybb.shp'):
-            break
-
-    return full_path_name, ('/' + zip_filename_path)
-
-
 def validate_boro_df(test, df):
     """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
     test.assertTrue(isinstance(df, GeoDataFrame))
