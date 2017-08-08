@@ -4,6 +4,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.vectorized import GeometryArray
 from geopandas.tests.util import unittest
 
 
@@ -27,6 +28,7 @@ class TestMerging(unittest.TestCase):
 
         # check result is a GeoDataFrame
         self.assert_(isinstance(res, GeoDataFrame))
+        self.assert_(isinstance(res._geometry_array, GeometryArray))
 
         # check geometry property gives GeoSeries
         self.assert_(isinstance(res.geometry, GeoSeries))

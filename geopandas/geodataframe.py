@@ -198,7 +198,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray)):
+        if isinstance(col, (Series, list, np.ndarray,
+                            vectorized.GeometryArray)):
             level = col
             to_remove = geo_column_name
         elif hasattr(col, 'ndim') and col.ndim != 1:
@@ -520,7 +521,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 g = vectorized.from_shapely(values)
             else:
                 g = values
-            result[geo_col] = list(g)
+            # TODO setting the geometry with __setitem__ does not yet preserve
+            # geometry block
+            result.set_geometry(g, inplace=True)
+            # result[geo_col] = list(g)
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
