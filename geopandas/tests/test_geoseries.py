@@ -153,15 +153,15 @@ class TestSeries(unittest.TestCase):
         self.assertTrue(geom_equals(self.g3[[False, True]], self.g3.cx[0:0.1, 0.9:1.0]))
 
     def test_coord_slice_with_zero(self):
-        """Test that CoordinateSlice correctly handles zero slice (#GH477)."""
+        # Test that CoordinateSlice correctly handles zero slice (#GH477).
 
         gs = GeoSeries([Point(x, x) for x in range(-3, 4)])
-        assert(geom_equals(gs.cx[:0, :0], gs.loc[:3]))
-        assert(geom_equals(gs.cx[:, :0], gs.loc[:3]))
-        assert(geom_equals(gs.cx[:0, :], gs.loc[:3]))
-        assert(geom_equals(gs.cx[0:, 0:], gs.loc[3:]))
-        assert(geom_equals(gs.cx[0:, :], gs.loc[3:]))
-        assert(geom_equals(gs.cx[:, 0:], gs.loc[3:]))
+        self.assertTrue(geom_equals(gs.cx[:0, :0], gs.loc[:3]))
+        self.assertTrue(geom_equals(gs.cx[:, :0], gs.loc[:3]))
+        self.assertTrue(geom_equals(gs.cx[:0, :], gs.loc[:3]))
+        self.assertTrue(geom_equals(gs.cx[0:, 0:], gs.loc[3:]))
+        self.assertTrue(geom_equals(gs.cx[0:, :], gs.loc[3:]))
+        self.assertTrue(geom_equals(gs.cx[:, 0:], gs.loc[3:]))
 
     def test_geoseries_geointerface(self):
         self.assertEqual(self.g1.__geo_interface__['type'], 'FeatureCollection')
