@@ -541,6 +541,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if method == 'merge':
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.left, name, None))
+            self._ensure_geometry_array()
         # concat operation: using metadata of the first object
         elif method == 'concat':
             for name in self._metadata:
@@ -549,6 +550,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
         return self
+
+    def _ensure_geometry_array(self):
+        """"
+        Ensure the underlying geometry values are a GeometryArray
+        object and not an numpy array of geometries.
+
+        This should in principle only be used if a pandas method is not
+        preserving the GeometryBlock (until that is fixed in pandas).
+        """
+        if not isinstance(self._geometry_array, vectorized.GeometryArray):
+            self.set_geometry(self._geometry_array, inplace=True)
 
     def copy(self, deep=True):
         """

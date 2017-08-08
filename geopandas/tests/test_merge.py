@@ -24,26 +24,34 @@ class TestMerging(unittest.TestCase):
 
     def test_merge(self):
 
-        res = self.gdf.merge(self.df, left_on='values', right_on='col1')
+        gdf, df = self.gdf, self.df
 
-        # check result is a GeoDataFrame
-        self.assert_(isinstance(res, GeoDataFrame))
-        self.assert_(isinstance(res._geometry_array, GeometryArray))
+        for res in [gdf.merge(df, left_on='values', right_on='col1'),
+                    pd.merge(gdf, df, left_on='values', right_on='col1')]:
 
-        # check geometry property gives GeoSeries
-        self.assert_(isinstance(res.geometry, GeoSeries))
+            # check result is a GeoDataFrame
+            self.assert_(isinstance(res, GeoDataFrame))
+            self.assert_(isinstance(res._geometry_array, GeometryArray))
 
-        # check metadata
-        self._check_metadata(res)
+            # check geometry property gives GeoSeries
+            self.assert_(isinstance(res.geometry, GeoSeries))
+
+            # check metadata
+            self._check_metadata(res)
 
         ## test that crs and other geometry name are preserved
-        self.gdf.crs = {'init' :'epsg:4326'}
-        self.gdf = (self.gdf.rename(columns={'geometry': 'points'})
-                            .set_geometry('points'))
-        res = self.gdf.merge(self.df, left_on='values', right_on='col1')
-        self.assert_(isinstance(res, GeoDataFrame))
-        self.assert_(isinstance(res.geometry, GeoSeries))
-        self._check_metadata(res, 'points', self.gdf.crs)
+        gdf.crs = {'init' :'epsg:4326'}
+        gdf = (gdf.rename(columns={'geometry': 'points'})
+                  .set_geometry('points'))
+
+        for res in [gdf.merge(df, left_on='values', right_on='col1'),
+                    pd.merge(gdf, df, left_on='values', right_on='col1')]:
+            self.assert_(isinstance(res, GeoDataFrame))
+            self.assert_(isinstance(res.geometry, GeoSeries))
+            self._check_metadata(res, 'points', gdf.crs)
+
+    def test_pd_merge(self):
+        res = pd.merge(self.gdf, self.df, left_on='values', right_on='col1')
 
     def test_concat_axis0(self):
 
