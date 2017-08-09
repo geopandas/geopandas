@@ -10,7 +10,6 @@ from shapely.geometry import Point, Polygon
 
 from geopandas.tools.sjoin import sjoin
 
-
 import pytest
 
 

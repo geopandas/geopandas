@@ -5,8 +5,9 @@ import shutil
 
 from shapely.geometry import Point
 
+import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.tests.util import unittest, download_nybb
+from geopandas.tests.util import unittest
 from geopandas import overlay
 
 
@@ -15,9 +16,9 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename, nybb_zip_path = download_nybb()
+        nybb_filename = geopandas.datasets.get_path('nybb')
 
-        self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
+        self.polydf = read_file(nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.crs = {'init': 'epsg:4326'}
         b = [int(x) for x in self.polydf.total_bounds]

@@ -3,9 +3,10 @@ import tempfile
 import shutil
 import numpy as np
 from shapely.geometry import Point
+import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas.tools import overlay
-from .util import unittest, download_nybb
+from .util import unittest
 from pandas.util.testing import assert_frame_equal
 from pandas import Index
 import pandas as pd
@@ -15,8 +16,8 @@ class TestDataFrame(unittest.TestCase):
 
     def setUp(self):
 
-        nybb_filename, nybb_zip_path = download_nybb()
-        self.polydf = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
+        nybb_filename = geopandas.datasets.get_path('nybb')
+        self.polydf = read_file(nybb_filename)
         self.polydf = self.polydf[['geometry', 'BoroName', 'BoroCode']]
 
         self.polydf = self.polydf.rename(columns={'geometry':'myshapes'})
