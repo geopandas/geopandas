@@ -362,7 +362,7 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(type(df) is GeoDataFrame)
 
     def test_coord_slice_points(self):
-        assert(self.df2.cx[-2:-1, -2:-1].empty)
+        self.assertTrue(self.df2.cx[-2:-1, -2:-1].empty)
         assert_frame_equal(self.df2, self.df2.cx[:, :])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, :])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
