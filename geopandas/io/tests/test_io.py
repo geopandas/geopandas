@@ -2,17 +2,16 @@ from __future__ import absolute_import
 
 import fiona
 
+import geopandas
 from geopandas import read_postgis, read_file
-from geopandas.tests.util import download_nybb, connect, create_db, \
-     unittest, validate_boro_df
+from geopandas.tests.util import connect, create_db, unittest, validate_boro_df
 
 
 class TestIO(unittest.TestCase):
     def setUp(self):
-        nybb_filename, nybb_zip_path = download_nybb()
-        vfs = 'zip://' + nybb_filename
-        self.df = read_file(nybb_zip_path, vfs=vfs)
-        with fiona.open(nybb_zip_path, vfs=vfs) as f:
+        nybb_zip_path = geopandas.datasets.get_path('nybb')
+        self.df = read_file(nybb_zip_path)
+        with fiona.open(nybb_zip_path) as f:
             self.crs = f.crs
             self.columns = list(f.meta["schema"]["properties"].keys())
 
@@ -55,10 +54,9 @@ class TestIO(unittest.TestCase):
 
     def test_filtered_read_file(self):
         full_df_shape = self.df.shape
-        nybb_filename, nybb_zip_path = download_nybb()
-        vfs = 'zip://' + nybb_filename
+        nybb_filename = geopandas.datasets.get_path('nybb')
         bbox = (1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244)
-        filtered_df = read_file(nybb_zip_path, vfs=vfs, bbox=bbox)
+        filtered_df = read_file(nybb_filename, bbox=bbox)
         filtered_df_shape = filtered_df.shape
         assert(full_df_shape != filtered_df_shape)
         assert(filtered_df_shape == (2, 5))

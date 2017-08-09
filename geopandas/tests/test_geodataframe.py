@@ -15,9 +15,10 @@ from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 import fiona
+import geopandas
 from geopandas import GeoDataFrame, read_file, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal, connect, create_db, \
-    download_nybb, PACKAGE_DIR, unittest, validate_boro_df
+    PACKAGE_DIR, unittest, validate_boro_df
 
 
 class TestDataFrame(unittest.TestCase):
@@ -25,11 +26,9 @@ class TestDataFrame(unittest.TestCase):
     def setUp(self):
         N = 10
 
-        nybb_filename, nybb_zip_path = download_nybb()
+        nybb_filename = geopandas.datasets.get_path('nybb')
 
-        self.df = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
-        with fiona.open(nybb_zip_path, vfs='zip://' + nybb_filename) as f:
-            self.schema = f.schema
+        self.df = read_file(nybb_filename)
         self.tempdir = tempfile.mkdtemp()
         self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
@@ -400,9 +399,8 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue(all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2)))
 
     def test_from_features(self):
-        nybb_filename, nybb_zip_path = download_nybb()
-        with fiona.open(nybb_zip_path,
-                        vfs='zip://' + nybb_filename) as f:
+        nybb_filename = geopandas.datasets.get_path('nybb')
+        with fiona.open(nybb_filename) as f:
             features = list(f)
             crs = f.crs
 

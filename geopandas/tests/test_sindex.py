@@ -3,7 +3,7 @@ import sys
 from shapely.geometry import Polygon, Point
 
 from geopandas import GeoSeries, GeoDataFrame, base, read_file
-from geopandas.tests.util import unittest, download_nybb
+from geopandas.tests.util import unittest
 
 
 @unittest.skipIf(sys.platform.startswith("win"), "fails on AppVeyor")
@@ -87,8 +87,8 @@ class TestFrameSindex(unittest.TestCase):
 class TestJoinSindex(unittest.TestCase):
 
     def setUp(self):
-        nybb_filename, nybb_zip_path = download_nybb()
-        self.boros = read_file(nybb_zip_path, vfs='zip://' + nybb_filename)
+        nybb_filename = geopandas.datasets.get_path('nybb')
+        self.boros = read_file(nybb_filename)
 
     def test_merge_geo(self):
         # First check that we gets hits from the boros frame.
