@@ -6,16 +6,19 @@ Next
 
 Improvements:
 
-* improved plotting performance using ``matplotlib.collections`` (#267)
-* return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
-* enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
-* provide access to x/y coordinates as attributes for Point GeoSeries (#383)
+* Improve plotting performance using ``matplotlib.collections`` (#267)
+* Return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
+* Enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
+* Provide access to x/y coordinates as attributes for Point GeoSeries (#383)
+* Make the NYBB dataset available through ``geopandas.datasets`` (#384)
+* Use index label instead of integer id in output of ``iterfeatures`` and
+  ``to_json`` (#421)
 
 Bug fixes:
 
-* fixed ``fiona.filter`` results when bbox is not None (#372)
-* fixed ``dissolve`` to retain CRS (#389)
-
+* Fix ``fiona.filter`` results when bbox is not None (#372)
+* Fix ``dissolve`` to retain CRS (#389)
+* Fix ``cx`` behavior when using index of 0 (#478)
 
 Version 0.2.0
 -------------
