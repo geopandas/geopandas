@@ -373,6 +373,13 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue('Bronx' in boros)
         self.assertTrue(type(df) is GeoDataFrame)
 
+    def test_coord_slice_points(self):
+        self.assertTrue(self.df2.cx[-2:-1, -2:-1].empty)
+        assert_frame_equal(self.df2, self.df2.cx[:, :])
+        assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, :])
+        assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
+        assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
+
     def test_transform(self):
         df2 = self.df2.copy()
         df2.crs = {'init': 'epsg:26918', 'no_defs': True}
