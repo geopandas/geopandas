@@ -4,16 +4,15 @@ from warnings import warn
 
 import numpy as np
 from pandas import Series, DataFrame
-from pandas.core.indexing import _NDFrameIndexer
 
 import pyproj
-from shapely.geometry import box, shape, Polygon, Point
+from shapely.geometry import shape, Polygon, Point
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _series_unary_op
+from geopandas.base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
 
 
 def _is_empty(x):
@@ -21,28 +20,6 @@ def _is_empty(x):
         return x.is_empty
     except:
         return False
-
-
-class _CoordinateIndexer(_NDFrameIndexer):
-    """ Indexing by coordinate slices """
-    def _getitem_tuple(self, tup):
-        obj = self.obj
-        xs, ys = tup
-        # handle numeric values as x and/or y coordinate index
-        if type(xs) is not slice:
-            xs = slice(xs, xs)
-        if type(ys) is not slice:
-            ys = slice(ys, ys)
-        # don't know how to handle step; should this raise?
-        if xs.step is not None or ys.step is not None:
-            warn("Ignoring step - full interval is used.")
-        xmin, ymin, xmax, ymax = obj.total_bounds
-        bbox = box(xs.start if xs.start is not None else xmin,
-                   ys.start if ys.start is not None else ymin,
-                   xs.stop if xs.stop is not None else xmax,
-                   ys.stop if ys.stop is not None else ymax)
-        idx = obj.intersects(bbox)
-        return obj[idx]
 
 
 class GeoSeries(GeoPandasBase, Series):

@@ -1,6 +1,6 @@
 from warnings import warn
 
-from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
+from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
@@ -8,6 +8,7 @@ import shapely.affinity as affinity
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
+from pandas.core.indexing import _NDFrameIndexer
 
 import geopandas as gpd
 
@@ -476,6 +477,37 @@ class GeoPandasBase(object):
             geometries.extend(geoms)
         return gpd.GeoSeries(geometries,
             index=MultiIndex.from_tuples(index)).__finalize__(self)
+
+
+class _CoordinateIndexer(_NDFrameIndexer):
+    """
+    Coordinate based indexer to select by intersection with bounding box.
+
+    Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of ``xmin``,
+    ``xmax``, ``ymin``, and ``ymax`` can be provided, but input must
+    include a comma separating x and y slices. That is, ``.cx[:, :]`` will
+    return the full series/frame, but ``.cx[:]`` is not implemented.
+    """
+
+    def _getitem_tuple(self, tup):
+        obj = self.obj
+        xs, ys = tup
+        # handle numeric values as x and/or y coordinate index
+        if type(xs) is not slice:
+            xs = slice(xs, xs)
+        if type(ys) is not slice:
+            ys = slice(ys, ys)
+        # don't know how to handle step; should this raise?
+        if xs.step is not None or ys.step is not None:
+            warn("Ignoring step - full interval is used.")
+        xmin, ymin, xmax, ymax = obj.total_bounds
+        bbox = box(xs.start if xs.start is not None else xmin,
+                   ys.start if ys.start is not None else ymin,
+                   xs.stop if xs.stop is not None else xmax,
+                   ys.stop if ys.stop is not None else ymax)
+        idx = obj.intersects(bbox)
+        return obj[idx]
+
 
 def _array_input(arr):
     if isinstance(arr, (MultiPoint, MultiLineString, MultiPolygon)):
