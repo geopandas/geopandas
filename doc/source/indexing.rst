@@ -7,7 +7,7 @@
 
 
 Indexing and Selecting Data
-=========================================
+===========================
 
 GeoPandas inherits the standard ``pandas`` methods for indexing/selecting data. This includes label based indexing with ``.loc`` and integer position based indexing with ``.iloc``, which apply to both ``GeoSeries`` and ``GeoDataFrame`` objects. For more information on indexing/selecting, see the pandas_ documentation.
 

@@ -8,8 +8,8 @@ from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas.base import GeoPandasBase
-from geopandas.geoseries import GeoSeries, _CoordinateIndexer
+from geopandas.base import GeoPandasBase, _CoordinateIndexer
+from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
