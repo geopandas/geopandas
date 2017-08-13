@@ -8,11 +8,12 @@ Improvements:
 
 * Improve plotting performance using ``matplotlib.collections`` (#267)
 * Return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
-* Enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
 * Provide access to x/y coordinates as attributes for Point GeoSeries (#383)
 * Make the NYBB dataset available through ``geopandas.datasets`` (#384)
 * Use index label instead of integer id in output of ``iterfeatures`` and
   ``to_json`` (#421)
+* Enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
+* Add ``cx`` indexer to GeoDataFrame (#482)
 
 Bug fixes:
 
