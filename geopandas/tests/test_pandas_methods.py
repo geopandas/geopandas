@@ -157,6 +157,27 @@ def test_select_dtypes(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.xfail
+def test_drop_duplicates_series():
+    # currently, geoseries with identical values are not recognized as
+    # duplicates
+    dups = GeoSeries([Point(0, 0), Point(0, 0)])
+    dropped = dups.drop_duplicates()
+    assert len(dropped) == 1
+
+
+@pytest.mark.xfail
+def test_drop_duplicates_frame():
+    # currently, dropping duplicates in a geodataframe produces a TypeError
+    # better behavior would be dropping the duplicated points
+    gdf_len = 3
+    dup_gdf = GeoDataFrame({'geometry': [Point(0, 0) for x in range(gdf_len)],
+                            'value1': [x for x in range(gdf_len)]})
+    dropped_geometry = dup_gdf.drop_duplicates(subset="geometry")
+    assert len(dropped_geometry) == 1
+    dropped_all = dup_gdf.drop_duplicates()
+    assert len(dropped_all) == gdf_len
+
 # Missing values
 
 
