@@ -15,7 +15,6 @@ compilation.  Use of C extensions significantly improves the performance of
 extension modules are unavailable.
 
 """
-
 import os
 import sys
 import warnings
@@ -31,6 +30,8 @@ from distutils.errors import (CCompilerError, DistutilsExecError,
                               DistutilsPlatformError)
 
 import versioneer
+import numpy
+from shapely._buildcfg import get_geos_config
 
 LONG_DESCRIPTION = """GeoPandas is a project to add support for geographic data to
 `pandas`_ objects.
@@ -71,8 +72,15 @@ if '--with-cython' in sys.argv:
 suffix = '.pyx' if use_cython else '.c'
 ext_modules = []
 for modname in ['vectorized']:
-    ext_modules.append(Extension('geopandas.' + modname,
-                                 ['geopandas/' + modname + suffix]))
+    ext_modules.append(
+        Extension(
+            'geopandas.' + modname,
+            ['geopandas/' + modname + suffix],
+            include_dirs=[numpy.get_include(), get_geos_config('--includes')],
+            libraries=['geos_c'],
+            library_dirs=[get_geos_config('--ldflags')[len('-L'):]],
+        )
+    )
 if use_cython:
     # Set global Cython options
     # http://docs.cython.org/en/latest/src/reference/compilation.html#compiler-directives
