@@ -290,6 +290,23 @@ def test_vector_float(attr):
     assert result.tolist() == expected
 
 
+@pytest.mark.parametrize('attr', ['distance'])
+def test_binary_vector_float(attr):
+    result = T.distance(P[:len(T)])
+    expected = [t.distance(p) for t, p in zip(triangles, points)]
+
+    assert list(result) == expected
+
+
+@pytest.mark.parametrize('attr', ['distance'])
+def test_binary_float(attr):
+    p = points[0]
+    result = T.distance(p)
+    expected = [t.distance(p) for t in triangles]
+
+    assert list(result) == expected
+
+
 def test_serialize_deserialize():
     ba, sizes = serialize(T.data)
     vec2 = GeometryArray(deserialize(ba, sizes))

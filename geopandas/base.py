@@ -41,8 +41,6 @@ def binary_geo(op, left, right):
 
 def binary_predicate(op, this, other, *args):
     """ Binary operation on GeoSeries objects that returns a boolean Series """
-    null_val = False if op != 'distance' else np.nan
-
     if isinstance(other, GeoPandasBase):
         this = this.geometry
         this, other = this.align(other.geometry)
@@ -61,6 +59,22 @@ def binary_predicate(op, this, other, *args):
             x = vectorized.prepared_binary_predicate(op2, this._geometry_array.data, other)
         else:
             x = vectorized.binary_predicate(op, this._geometry_array.data, other)
+        return Series(x, index=this.index)
+    else:
+        raise TypeError(type(this), type(other))
+
+
+def binary_float(op, this, other, *args):
+    """ Binary operation on GeoSeries objects that returns a boolean Series """
+    if isinstance(other, GeoPandasBase):
+        this = this.geometry
+        this, other = this.align(other.geometry)
+        t = this._geometry_array
+        o = other._geometry_array
+        x = vectorized.binary_vector_float(op, t.data, o.data)
+        return Series(x, index=this.index)
+    elif isinstance(other, BaseGeometry):
+        x = vectorized.binary_float(op, this._geometry_array.data, other)
         return Series(x, index=this.index)
     else:
         raise TypeError(type(this), type(other))
@@ -121,7 +135,7 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Return the area of each geometry in the GeoSeries"""
-        x = vectorized.vector_float('area', self._geometry_array.data)
+        x = vectorized.unary_vector_float('area', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
@@ -138,7 +152,7 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Return the length of each geometry in the GeoSeries"""
-        x = vectorized.vector_float('length', self._geometry_array.data)
+        x = vectorized.unary_vector_float('length', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
@@ -278,8 +292,7 @@ class GeoPandasBase(object):
 
     def distance(self, other):
         """Return distance of each geometry to *other*"""
-        raise NotImplementedError()
-        return binary_predicate(self, other, 'distance')
+        return binary_float('distance', self, other)
 
     #
     # Binary operations that return a GeoSeries
