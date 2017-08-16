@@ -292,8 +292,8 @@ def test_vector_float(attr):
 
 @pytest.mark.parametrize('attr', ['distance'])
 def test_binary_vector_float(attr):
-    result = T.distance(P[:len(T)])
-    expected = [t.distance(p) for t, p in zip(triangles, points)]
+    result = getattr(P[:len(T)], attr)(T)
+    expected = [getattr(t, attr)(p) for t, p in zip(triangles, points)]
 
     assert list(result) == expected
 
@@ -301,10 +301,20 @@ def test_binary_vector_float(attr):
 @pytest.mark.parametrize('attr', ['distance'])
 def test_binary_float(attr):
     p = points[0]
-    result = T.distance(p)
-    expected = [t.distance(p) for t in triangles]
+    result = getattr(T, attr)(p)
+    expected = [getattr(t, attr)(p) for t in triangles]
 
     assert list(result) == expected
+
+
+def test_project():
+    lines = [shapely.geometry.LineString([(random.random(), random.random())
+                                          for _ in range(2)])
+              for _ in range(20)]
+    L = from_shapely(lines)
+
+    result = L.project(P)
+    expected = [l.project(p) for p, l in zip(points, lines)]
 
 
 def test_serialize_deserialize():

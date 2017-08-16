@@ -104,6 +104,11 @@ cdef extern from "geos_c.h":
     int GEOSFrechetDistanceDensify_r(GEOSContextHandle_t, const GEOSGeometry *, const GEOSGeometry *, double , double *) nogil
     int GEOSGeomGetLength_r(GEOSContextHandle_t, const GEOSGeometry *, double *) nogil
 
+
+    double GEOSProject_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+    double GEOSProjectNormalized_r(GEOSContextHandle_t, const GEOSGeometry*, const GEOSGeometry*) nogil
+
+
     char GEOSisValid_r(GEOSContextHandle_t, const GEOSGeometry* ) nogil
     char GEOSisEmpty_r(GEOSContextHandle_t, const GEOSGeometry* ) nogil
     char GEOSisSimple_r(GEOSContextHandle_t, const GEOSGeometry*) nogil

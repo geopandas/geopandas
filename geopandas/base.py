@@ -376,8 +376,17 @@ class GeoPandasBase(object):
 
         The project method is the inverse of interpolate.
         """
-        raise NotImplementedError()
-        return _series_op(self, other, 'project', normalized=normalized)
+        op = 'project' if not normalized else 'project-normalized'
+        if isinstance(other, GeoPandasBase):
+            self = self.geometry
+            self, other = self.align(other.geometry)
+            t = self._geometry_array
+            o = other._geometry_array
+            x = vectorized.binary_vector_float_return(op, t.data, o.data)
+            return Series(x, index=self.index)
+        else:
+            x = vectorized.binary_float_return(op, self._geometry_array.data, other)
+            return Series(x, index=self.index)
 
     def interpolate(self, distance, normalized=False):
         """

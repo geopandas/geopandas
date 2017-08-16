@@ -481,7 +481,7 @@ cpdef binary_predicate_with_arg(str op,
 @cython.wraparound(False)
 cpdef unary_vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """
-    Evaluate float-valued function on array of GEoSGeometry pointers
+    Evaluate float-valued function on array of GEOSGeometry pointers
 
     Parameters
     ----------
@@ -530,12 +530,12 @@ cpdef binary_vector_float(str op,
                           np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                           np.ndarray[np.uintp_t, ndim=1, cast=True] right):
     """
-    Evaluate float-valued function on array of GEoSGeometry pointers
+    Evaluate float-valued function on array of GEOSGeometry pointers
 
     Parameters
     ----------
     op: str
-        string like 'area', or 'length'
+        string like 'distance'
     goems: numpy.ndarray
         Array of pointers to GEOSGeometry objects
 
@@ -575,11 +575,60 @@ cpdef binary_vector_float(str op,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cpdef binary_vector_float_return(str op,
+                          np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                          np.ndarray[np.uintp_t, ndim=1, cast=True] right):
+    """
+    Evaluate float-valued function on array of GEOSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'project'
+    goems: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: float array
+    """
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef unsigned int n = left.size
+    cdef double nan = np.nan
+
+    cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
+
+    handle = get_geos_context_handle()
+
+    if op == 'project':
+        func = GEOSProject_r
+    elif op == 'project-normalized':
+        func = GEOSProjectNormalized_r
+    else:
+        raise NotImplementedError(op)
+
+    with nogil:
+        for idx in xrange(n):
+            left_geom = <GEOSGeometry *> left[idx]
+            right_geom = <GEOSGeometry *> right[idx]
+            if left_geom != NULL and right_geom != NULL:
+                out[idx] = <double>func(handle, left_geom, right_geom)
+            else:
+                out[idx] = nan
+
+    return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef binary_float(str op,
                    np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                    object right):
     """
-    Evaluate float-valued function on array of GEoSGeometry pointers
+    Evaluate float-valued function on array of GEOSGeometry pointers
 
     Parameters
     ----------
@@ -625,13 +674,65 @@ cpdef binary_float(str op,
     return out
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef binary_float_return(str op,
+                   np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+                   object right):
+    """
+    Evaluate float-valued function on array of GEOSGeometry pointers
+
+    Parameters
+    ----------
+    op: str
+        string like 'project'
+    goems: numpy.ndarray
+        Array of pointers to GEOSGeometry objects
+
+    Returns
+    -------
+    out: float array
+    """
+    cdef Py_ssize_t idx
+    cdef GEOSContextHandle_t handle
+    cdef uintptr_t right_ptr
+    cdef GEOSGeometry *left_geom
+    cdef GEOSGeometry *right_geom
+    cdef unsigned int n = left.size
+    cdef double nan = np.nan
+
+    cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
+
+    right_ptr = <np.uintp_t> right.__geom__
+    right_geom = <GEOSGeometry *> right_ptr
+
+    handle = get_geos_context_handle()
+
+    if op == 'project':
+        func = GEOSProject_r
+    elif op == 'project-normalized':
+        func = GEOSProjectNormalized_r
+    else:
+        raise NotImplementedError(op)
+
+    with nogil:
+        for idx in xrange(n):
+            left_geom = <GEOSGeometry *> left[idx]
+            if left_geom != NULL and right_geom != NULL:
+                out[idx] = <double>func(handle, left_geom, right_geom)
+            else:
+                out[idx] = nan
+
+    return out
+
+
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """
-    Evaluate Geometry-valued function on array of GEoSGeometry pointers
+    Evaluate Geometry-valued function on array of GEOSGeometry pointers
 
     Parameters
     ----------
@@ -688,7 +789,7 @@ cpdef vector_binary_geo(str op,
                        np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                        np.ndarray[np.uintp_t, ndim=1, cast=True] right):
     """
-    Evaluate Geometry-valued function on two arrays of GEoSGeometry pointers
+    Evaluate Geometry-valued function on two arrays of GEOSGeometry pointers
 
     Parameters
     ----------
@@ -742,7 +843,7 @@ cpdef binary_geo(str op,
                 np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                 object right):
     """
-    Evaluate Geometry-valued function on arrays GEoSGeometry pointers and a
+    Evaluate Geometry-valued function on arrays GEOSGeometry pointers and a
     shapely object
 
     Parameters
@@ -1173,6 +1274,13 @@ class GeometryArray(object):
             return binary_vector_float('distance', self.data, other.data)
         else:
             return binary_float('distance', self.data, other)
+
+    def project(self, other, normalized=False):
+        op = 'project' if not normalized else 'project-normalized'
+        if isinstance(other, GeometryArray):
+            return binary_vector_float_return(op, self.data, other.data)
+        else:
+            return binary_float_return(op, self.data, other)
 
     def area(self):
         return unary_vector_float('area', self.data)
