@@ -44,13 +44,13 @@ class TestPointPlotting(unittest.TestCase):
 
         # GeoDataFrame -> uses 'jet' instead of 'Set1'
         ax = self.df.plot()
-        cmap = get_cmap('jet', 9)
+        cmap = get_cmap(lut=9)
         expected_colors = cmap(list(range(9))*2)
         _check_colors(self.N, ax.collections[0], expected_colors)
 
         ## with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values')
-        cmap = get_cmap('jet')
+        cmap = get_cmap()
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
         _check_colors(self.N, ax.collections[0], expected_colors)
 
@@ -281,7 +281,7 @@ class TestPolygonPlotting(unittest.TestCase):
         # MultiPolygons
         ax = self.df2.plot()
         assert len(ax.collections[0].get_paths()) == 4
-        cmap = get_cmap('jet', 2)
+        cmap = get_cmap(lut=2)
         ## colors are repeated for all components within a MultiPolygon
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
