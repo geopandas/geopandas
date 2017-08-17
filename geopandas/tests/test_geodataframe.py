@@ -397,7 +397,7 @@ class TestDataFrame:
 
         df = GeoDataFrame.from_features(features, crs=crs)
         df.rename(columns=lambda x: x.lower(), inplace=True)
-        validate_boro_df(self, df)
+        validate_boro_df(df)
         assert df.crs == crs
 
     def test_from_features_unaligned_properties(self):
@@ -435,7 +435,7 @@ class TestDataFrame:
         finally:
             con.close()
 
-        validate_boro_df(self, df)
+        validate_boro_df(df)
 
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
@@ -451,7 +451,7 @@ class TestDataFrame:
         finally:
             con.close()
 
-        validate_boro_df(self, df)
+        validate_boro_df(df)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame({"A": range(len(self.df)), "location":

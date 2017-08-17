@@ -1,11 +1,7 @@
-import io
 import os.path
-import sys
-import zipfile
-
-from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
+
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
@@ -24,7 +20,7 @@ except ImportError:
     import mock
 
 
-def validate_boro_df(test, df):
+def validate_boro_df(df):
     """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
     assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
@@ -93,9 +89,12 @@ def create_db(df):
 
 
 def assert_seq_equal(left, right):
-    """Poor man's version of assert_almost_equal which isn't working with Shapely
-    objects right now"""
-    assert len(left) == len(right), "Mismatched lengths: %d != %d" % (len(left), len(right))
+    """
+    Poor man's version of assert_almost_equal which isn't working with Shapely
+    objects right now
+    """
+    assert (len(left) == len(right),
+            "Mismatched lengths: %d != %d" % (len(left), len(right)))
 
     for elem_left, elem_right in zip(left, right):
         assert elem_left == elem_right, "%r != %r" % (left, right)

@@ -28,7 +28,7 @@ class TestIO:
         finally:
             con.close()
 
-        validate_boro_df(self, df)
+        validate_boro_df(df)
 
     def test_read_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
@@ -44,11 +44,11 @@ class TestIO:
         finally:
             con.close()
 
-        validate_boro_df(self, df)
+        validate_boro_df(df)
 
     def test_read_file(self):
         df = self.df.rename(columns=lambda x: x.lower())
-        validate_boro_df(self, df)
+        validate_boro_df(df)
         assert df.crs == self.crs
         # get lower case columns, and exclude geometry column from comparison
         lower_columns = [c.lower() for c in self.columns]
