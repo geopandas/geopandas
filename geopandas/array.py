@@ -287,30 +287,15 @@ def _binary_op_float(op, left, right, *args, **kwargs):
     # type: (str, GeometryArray, GeometryArray/BaseGeometry, args/kwargs)
     #        -> array
     """Binary operation on GeometryArray that returns a ndarray"""
-    # used for distance -> check for empty as we want to return np.nan instead 0.0
-    # as shapely does currently (https://github.com/Toblerity/Shapely/issues/498)
     if isinstance(right, BaseGeometry):
-        data = [
-            getattr(s, op)(right, *args, **kwargs)
-            if not (s is None or s.is_empty or right.is_empty)
-            else np.nan
-            for s in left.data
-        ]
-        return np.array(data, dtype=float)
+        return vectorized.binary_float(op, left.data, right)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
             msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
                 len(left), len(right)
             )
             raise ValueError(msg)
-        data = [
-            getattr(this_elem, op)(other_elem, *args, **kwargs)
-            if not (this_elem is None or this_elem.is_empty)
-            | (other_elem is None or other_elem.is_empty)
-            else np.nan
-            for this_elem, other_elem in zip(left.data, right.data)
-        ]
-        return np.array(data, dtype=float)
+        return vectorized.binary_vector_float(op, left.data, right.data)
     else:
         raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
 
@@ -372,7 +357,7 @@ def _unary_op(op, left, null_value=False):
 def _unary_op_float(op, left):
     # type: (str, GeometryArray, Any) -> array
     """Unary operation that returns a Series"""
-    return vectorized.vector_float(op, left.data)
+    return vectorized.unary_vector_float(op, left.data)
 
 
 def _unary_predicate(op, left):
@@ -708,7 +693,11 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(vectorized.from_shapely(data))
 
     def project(self, other, normalized=False):
-        return _binary_op("project", self, other, normalized=normalized)
+        op = "project" if not normalized else "project-normalized"
+        if isinstance(other, GeometryArray):
+            return vectorized.binary_vector_float_return(op, self.data, other.data)
+        else:
+            return vectorized.binary_float_return(op, self.data, other)
 
     def relate(self, other):
         return _binary_op("relate", self, other)
