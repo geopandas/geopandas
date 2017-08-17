@@ -7,13 +7,20 @@ import warnings
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib.pyplot import get_cmap
+import matplotlib.pyplot as plt
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def close_figures(request):
+    yield
+    print('closing')
+    plt.close('all')
 
 
 class TestPointPlotting:
@@ -39,19 +46,19 @@ class TestPointPlotting:
 
         # GeoSeries
         ax = self.points.plot()
-        cmap = get_cmap('Set1', 9)
+        cmap = plt.get_cmap('Set1', 9)
         expected_colors = cmap(list(range(9))*2)
         _check_colors(self.N, ax.collections[0], expected_colors)
 
         # GeoDataFrame -> uses 'jet' instead of 'Set1'
         ax = self.df.plot()
-        cmap = get_cmap(lut=9)
+        cmap = plt.get_cmap(lut=9)
         expected_colors = cmap(list(range(9))*2)
         _check_colors(self.N, ax.collections[0], expected_colors)
 
         # # with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values')
-        cmap = get_cmap()
+        cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
         _check_colors(self.N, ax.collections[0], expected_colors)
 
@@ -61,7 +68,7 @@ class TestPointPlotting:
 
         # GeoSeries
         ax = self.points.plot(cmap='RdYlGn')
-        cmap = get_cmap('RdYlGn', 9)
+        cmap = plt.get_cmap('RdYlGn', 9)
         expected_colors = cmap(list(range(9))*2)
         _check_colors(self.N, ax.collections[0], expected_colors)
 
@@ -71,7 +78,7 @@ class TestPointPlotting:
 
         # # with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values', cmap='RdYlGn')
-        cmap = get_cmap('RdYlGn')
+        cmap = plt.get_cmap('RdYlGn')
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
         _check_colors(self.N, ax.collections[0], expected_colors)
 
@@ -281,7 +288,7 @@ class TestPolygonPlotting:
         # MultiPolygons
         ax = self.df2.plot()
         assert len(ax.collections[0].get_paths()) == 4
-        cmap = get_cmap(lut=2)
+        cmap = plt.get_cmap(lut=2)
         # colors are repeated for all components within a MultiPolygon
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
@@ -322,7 +329,7 @@ class TestNonuniformGeometryPlotting:
     def test_colormap(self):
 
         ax = self.series.plot(cmap='RdYlGn')
-        cmap = get_cmap('RdYlGn', 3)
+        cmap = plt.get_cmap('RdYlGn', 3)
         # polygon gets extra alpha. See #266
         _check_colors(1, ax.collections[0], [cmap(0)], alpha=0.5)
         # N.B. ax.collections[1] contains the edges of the polygon
@@ -362,8 +369,8 @@ class TestPySALPlotting:
     def test_invalid_scheme(self):
         with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
-            ax = self.tracts.plot(column='CRIME', scheme=scheme, k=3,
-                                  cmap='OrRd', legend=True)
+            self.tracts.plot(column='CRIME', scheme=scheme, k=3,
+                             cmap='OrRd', legend=True)
 
 
 def _check_colors(N, collection, expected_colors, alpha=None):
