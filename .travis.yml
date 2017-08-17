@@ -52,11 +52,6 @@ matrix:
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
-  # matplotlib 2.x (development version) causes a few tests to fail
-  allow_failures:
-    - env: PANDAS=master  MATPLOTLIB=master
-
-
 before_install:
   - pip install -U pip
 
