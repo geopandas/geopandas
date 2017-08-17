@@ -550,7 +550,7 @@ class TestConstructor:
 
         df = GeoDataFrame(data, index=[1, 2])
         check_geodataframe(df)
-        assert_index_equal(df.index, pd.RangeIndex(1, 3))
+        assert_index_equal(df.index, pd.Index([1, 2]))
         assert_series_equal(df['A'], pd.Series([1, 2], index=[1, 2], name='A'),
                             check_index_type=False)
 
