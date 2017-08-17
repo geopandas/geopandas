@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division
 
+from distutils.version import LooseVersion
 import itertools
 import numpy as np
 import warnings
@@ -171,32 +172,35 @@ class TestLineStringPlotting(unittest.TestCase):
 
     def test_style_kwargs(self):
 
-        def linestyle_tuple_to_string(tup):
-            """ Converts a linestyle of the form `(offset, onoffseq)`, as
-                documented in `Collections.set_linestyle`, to a string
-                representation, namely one of:
-                    { 'dashed',  'dotted', 'dashdot', 'solid' }.
+        def style_to_linestring_onoffseq(linestyle):
+            """ Converts a linestyle string representation, namely one of:
+                    ['dashed',  'dotted', 'dashdot', 'solid'],
+                documented in `Collections.set_linestyle`,
+                to the form `onoffseq`.
             """
-            from matplotlib.backend_bases import GraphicsContextBase
-            reverse_idx = dict((v, k)
-                               for k, v in GraphicsContextBase.dashd.items())
-            return reverse_idx[tup]
+            if LooseVersion(matplotlib.__version__) >= '2.0':
+                return matplotlib.lines._get_dash_pattern(linestyle)
+            else:
+                from matplotlib.backend_bases import GraphicsContextBase
+                return GraphicsContextBase.dashd[linestyle]
 
         # linestyle
-        ax = self.lines.plot(linestyle='dashed')
-        ls = [linestyle_tuple_to_string(l)
-              for l in ax.collections[0].get_linestyles()]
-        assert ls == ['dashed']
+        linestyle = 'dashed'
+        ax = self.lines.plot(linestyle=linestyle)
+        exp_ls = style_to_linestring_onoffseq(linestyle)
+        for ls in ax.collections[0].get_linestyles():
+            assert ls[0] == exp_ls[0]
+            assert tuple(ls[1]) == exp_ls[1]
 
-        ax = self.df.plot(linestyle='dashed')
-        ls = [linestyle_tuple_to_string(l)
-              for l in ax.collections[0].get_linestyles()]
-        assert ls == ['dashed']
+        ax = self.df.plot(linestyle=linestyle)
+        for ls in ax.collections[0].get_linestyles():
+            assert ls[0] == exp_ls[0]
+            assert tuple(ls[1]) == exp_ls[1]
 
-        ax = self.df.plot(column='values', linestyle='dashed')
-        ls = [linestyle_tuple_to_string(l)
-              for l in ax.collections[0].get_linestyles()]
-        assert ls == ['dashed']
+        ax = self.df.plot(column='values', linestyle=linestyle)
+        for ls in ax.collections[0].get_linestyles():
+            assert ls[0] == exp_ls[0]
+            assert tuple(ls[1]) == exp_ls[1]
 
 
 class TestPolygonPlotting(unittest.TestCase):
