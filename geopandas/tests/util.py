@@ -27,14 +27,14 @@ except ImportError:
 
 def validate_boro_df(test, df):
     """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
-    test.assertTrue(isinstance(df, GeoDataFrame))
+    assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
     # were properly loaded as MultiPolygons
-    test.assertEqual(len(df), 5)
+    assert len(df) == 5
     columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
     for col in columns:
-        test.assertTrue(col in df.columns, 'Column {0} missing'.format(col))
-    test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
+        assert col in df.columns
+    assert all(df.geometry.type == 'MultiPolygon')
 
 
 def connect(dbname):
