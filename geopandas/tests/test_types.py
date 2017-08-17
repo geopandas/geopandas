@@ -1,14 +1,9 @@
 from __future__ import absolute_import
 
-import numpy as np
 from pandas import Series, DataFrame
 from shapely.geometry import Point
 
 from geopandas import GeoSeries, GeoDataFrame
-
-import pytest
-
-OLD_PANDAS = issubclass(Series, np.ndarray)
 
 
 class TestSeries:
@@ -49,8 +44,6 @@ class TestSeries:
     def test_select(self):
         assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
-    @pytest.mark.skipif(OLD_PANDAS,
-                        reason='Groupby not supported on pandas <= 0.12')
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
