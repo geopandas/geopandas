@@ -2,23 +2,23 @@ from __future__ import absolute_import, division
 
 from distutils.version import LooseVersion
 import itertools
-import numpy as np
 import warnings
 
+import numpy as np
 import matplotlib
-matplotlib.use('Agg', warn=False)
+matplotlib.use('Agg')
 from matplotlib.pyplot import get_cmap
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point
-from six.moves import xrange
-from .util import unittest
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
 
+import pytest
 
-class TestPointPlotting(unittest.TestCase):
 
-    def setUp(self):
+class TestPointPlotting:
+
+    def setup_method(self):
 
         self.N = 10
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
@@ -35,7 +35,7 @@ class TestPointPlotting(unittest.TestCase):
 
     def test_default_colors(self):
 
-        ## without specifying values -> max 9 different colors
+        # # without specifying values -> max 9 different colors
 
         # GeoSeries
         ax = self.points.plot()
@@ -49,7 +49,7 @@ class TestPointPlotting(unittest.TestCase):
         expected_colors = cmap(list(range(9))*2)
         _check_colors(self.N, ax.collections[0], expected_colors)
 
-        ## with specifying values -> different colors for all 10 values
+        # # with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values')
         cmap = get_cmap()
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
@@ -57,7 +57,7 @@ class TestPointPlotting(unittest.TestCase):
 
     def test_colormap(self):
 
-        ## without specifying values -> max 9 different colors
+        # # without specifying values -> max 9 different colors
 
         # GeoSeries
         ax = self.points.plot(cmap='RdYlGn')
@@ -69,7 +69,7 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(cmap='RdYlGn')
         _check_colors(self.N, ax.collections[0], expected_colors)
 
-        ## with specifying values -> different colors for all 10 values
+        # # with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values', cmap='RdYlGn')
         cmap = get_cmap('RdYlGn')
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
@@ -110,50 +110,47 @@ class TestPointPlotting(unittest.TestCase):
         ax = self.df.plot(legend=True)
         assert len(ax.get_figure().axes) == 1  # no separate legend axis
 
-        # Continuous legend
-        ## the colorbar matches the Point colors
+        # # Continuous legend
+        # the colorbar matches the Point colors
         ax = self.df.plot(column='values', cmap='RdYlGn', legend=True)
         point_colors = ax.collections[0].get_facecolors()
         cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
-        ### first point == bottom of colorbar
+        # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
-        ### last point == top of colorbar
+        # last point == top of colorbar
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
-        # Categorical legend
-        ## the colorbar matches the Point colors
+        # # Categorical legend
+        # the colorbar matches the Point colors
         ax = self.df.plot(column='values', categorical=True, legend=True)
         point_colors = ax.collections[0].get_facecolors()
         cbar_colors = ax.get_legend().axes.collections[0].get_facecolors()
-        ### first point == bottom of colorbar
+        # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
-        ### last point == top of colorbar
+        # last point == top of colorbar
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
 
-class TestPointZPlotting(unittest.TestCase):
+class TestPointZPlotting:
 
-    def setUp(self):
+    def setup_method(self):
         self.N = 10
         self.points = GeoSeries(Point(i, i, i) for i in range(self.N))
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
 
-
     def test_plot(self):
         # basic test that points with z coords don't break plotting
+        self.df.plot()
 
-        ax = self.df.plot()
 
+class TestLineStringPlotting:
 
-class TestLineStringPlotting(unittest.TestCase):
-
-    def setUp(self):
-
+    def setup_method(self):
         self.N = 10
         values = np.arange(self.N)
         self.lines = GeoSeries([LineString([(0, i), (4, i+0.5), (9, i)])
-                                for i in xrange(self.N)],
+                                for i in range(self.N)],
                                index=list('ABCDEFGHIJ'))
         self.df = GeoDataFrame({'geometry': self.lines, 'values': values})
 
@@ -203,9 +200,9 @@ class TestLineStringPlotting(unittest.TestCase):
             assert tuple(ls[1]) == exp_ls[1]
 
 
-class TestPolygonPlotting(unittest.TestCase):
+class TestPolygonPlotting:
 
-    def setUp(self):
+    def setup_method(self):
 
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(1, 0), (2, 0), (2, 1)])
@@ -216,7 +213,6 @@ class TestPolygonPlotting(unittest.TestCase):
         multipoly2 = rotate(multipoly1, 180)
         self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
                                  'values': [0, 1]})
-        return
 
     def test_single_color(self):
 
@@ -286,18 +282,18 @@ class TestPolygonPlotting(unittest.TestCase):
         ax = self.df2.plot()
         assert len(ax.collections[0].get_paths()) == 4
         cmap = get_cmap(lut=2)
-        ## colors are repeated for all components within a MultiPolygon
+        # colors are repeated for all components within a MultiPolygon
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
 
         ax = self.df2.plot('values')
-        ## specifying values -> same as without values in this case.
+        # specifying values -> same as without values in this case.
         _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
 
 
-class TestPolygonZPlotting(unittest.TestCase):
+class TestPolygonZPlotting:
 
-    def setUp(self):
+    def setup_method(self):
 
         t1 = Polygon([(0, 0, 0), (1, 0, 0), (1, 1, 1)])
         t2 = Polygon([(1, 0, 0), (2, 0, 0), (2, 1, 1)])
@@ -309,23 +305,19 @@ class TestPolygonZPlotting(unittest.TestCase):
         self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
                                  'values': [0, 1]})
 
-
     def test_plot(self):
         # basic test that points with z coords don't break plotting
+        self.df.plot()
 
-        ax = self.df.plot()
 
+class TestNonuniformGeometryPlotting:
 
-class TestNonuniformGeometryPlotting(unittest.TestCase):
-
-    def setUp(self):
-
+    def setup_method(self):
         poly = Polygon([(1, 0), (2, 0), (2, 1)])
         line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])
         point = Point(0.75, 0.25)
         self.series = GeoSeries([poly, line, point])
         self.df = GeoDataFrame({'geometry': self.series, 'values': [1, 2, 3]})
-        return
 
     def test_colormap(self):
 
@@ -347,14 +339,14 @@ class TestNonuniformGeometryPlotting(unittest.TestCase):
         assert ax.collections[3].get_sizes() == [10]
 
 
-class TestPySALPlotting(unittest.TestCase):
+class TestPySALPlotting:
 
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         try:
             import pysal as ps
         except ImportError:
-            raise unittest.SkipTest("PySAL is not installed")
+            raise pytest.skip("PySAL is not installed")
 
         pth = ps.examples.get_path("columbus.shp")
         cls.tracts = read_file(pth)
@@ -365,17 +357,19 @@ class TestPySALPlotting(unittest.TestCase):
 
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
-        self.assertEqual(labels, expected)
+        assert labels == expected
 
     def test_invalid_scheme(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
             ax = self.tracts.plot(column='CRIME', scheme=scheme, k=3,
                                   cmap='OrRd', legend=True)
 
 
 def _check_colors(N, collection, expected_colors, alpha=None):
-    """ Asserts that the members of `collection` match the `expected_colors` (in order)
+    """
+    Asserts that the members of `collection` match the `expected_colors`
+    (in order)
 
     Parameters
     ----------
@@ -386,12 +380,13 @@ def _check_colors(N, collection, expected_colors, alpha=None):
         the collection: the colors will cycle to meet the needs of the geoms.
         `N` helps us resolve this.
     collection : matplotlib.collections.Collection
-        The colors of this collection's patches are read from `collection.get_facecolors()`
+        The colors of this collection's patches are read from
+        `collection.get_facecolors()`
     expected_colors : sequence of RGBA tuples
     alpha : float (optional)
-        If set, this alpha transparency will be applied to the `expected_colors`.
-        (Any transparency on the `collecton` is assumed to be set in its own
-        facecolor RGBA tuples.)
+        If set, this alpha transparency will be applied to the
+        `expected_colors`. (Any transparency on the `collecton` is assumed
+        to be set in its own facecolor RGBA tuples.)
     """
     import matplotlib.colors as colors
     conv = colors.colorConverter
@@ -405,7 +400,3 @@ def _check_colors(N, collection, expected_colors, alpha=None):
     for actual, expected in zip(all_actual_colors, expected_colors):
         assert actual == conv.to_rgba(expected, alpha=alpha), \
             '{} != {}'.format(actual, conv.to_rgba(expected, alpha=alpha))
-
-
-if __name__ == '__main__':
-    unittest.main()

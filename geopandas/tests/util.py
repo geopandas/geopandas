@@ -1,7 +1,6 @@
 import io
 import os.path
 import sys
-import unittest
 import zipfile
 
 from six.moves.urllib.request import urlopen
