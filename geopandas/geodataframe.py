@@ -83,7 +83,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 if isinstance(v, GeoSeries):
                     if 'columns' in kwargs:
                         columns = kwargs['columns'].copy()
-                        columns.pop(i)
+                        columns.remove(k)
                         kwargs['columns'] = columns
                     gs[k] = arg.pop(k)
                     kwargs['index'] = v.index  # TODO: assumes consistent index
