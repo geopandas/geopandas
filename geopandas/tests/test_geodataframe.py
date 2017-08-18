@@ -546,9 +546,7 @@ class TestConstructor:
         df = GeoDataFrame(data, index=pd.Index([1, 2]))
         check_geodataframe(df)
         assert_index_equal(df.index, pd.Index([1, 2]))
-        assert_series_equal(
-            df['A'], pd.Series([1, 2], index=pd.Index([1, 2]), name='A'),
-            check_index_type=False)
+        assert df['A'].tolist() == [1, 2]
 
         # one non-series -> lenght is not correct
         data = {"A": pd.Series(range(3)), "B": np.arange(3.0),
@@ -618,8 +616,7 @@ class TestConstructor:
             res = GeoDataFrame(df, index=pd.Index([0, 2]))
             check_geodataframe(res)
             assert_index_equal(res.index, pd.Index([0, 2]))
-            assert_series_equal(
-                res['A'], pd.Series([0, 2], index=pd.Index([0, 2]), name='A'))
+            assert res['A'].tolist() == [0, 2]
 
             res = GeoDataFrame(df, columns=['geometry', 'B'])
             check_geodataframe(res)
