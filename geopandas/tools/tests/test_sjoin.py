@@ -3,11 +3,11 @@ from __future__ import absolute_import
 import random
 import string
 
-import geopandas as gpd
 import numpy as np
-import pandas as pd
+
 from shapely.geometry import Point, Polygon
 
+import geopandas as gpd
 from geopandas.tools.sjoin import sjoin
 
 import pytest
@@ -90,7 +90,7 @@ def test_errors():
     left = gpd.GeoDataFrame({'geometry': triangles,
                              'x': np.random.random(len(triangles)),
                              'y': np.random.random(len(triangles))},
-                             index=np.arange(len(triangles)) * 2)
+                            index=np.arange(len(triangles)) * 2)
 
     right = gpd.GeoDataFrame({'geometry': points,
                               'x': np.random.random(len(points)),
@@ -110,11 +110,11 @@ def test_small(l, r):
     left = gpd.GeoDataFrame({'geometry': triangles,
                              'x': np.random.random(len(triangles)),
                              'y': np.random.random(len(triangles))},
-                             index=np.arange(len(triangles)) * 2).iloc[:l]
+                            index=np.arange(len(triangles)) * 2).iloc[:l]
 
     right = gpd.GeoDataFrame({'geometry': points,
                               'x': np.random.random(len(points)),
                               'z': np.random.random(len(points))},
-                              index=list(string.ascii_lowercase[:len(points)])).iloc[:r]
+                             index=list(string.ascii_lowercase[:len(points)])).iloc[:r]
 
     result = sjoin(left, right)
