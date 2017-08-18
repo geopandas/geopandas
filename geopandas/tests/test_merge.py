@@ -4,12 +4,11 @@ import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas.tests.util import unittest
 
 
-class TestMerging(unittest.TestCase):
+class TestMerging:
 
-    def setUp(self):
+    def setup_method(self):
 
         self.gseries = GeoSeries([Point(i, i) for i in range(3)])
         self.series = pd.Series([1, 2, 3])
@@ -18,18 +17,18 @@ class TestMerging(unittest.TestCase):
 
     def _check_metadata(self, gdf, geometry_column_name='geometry', crs=None):
 
-        self.assertEqual(gdf._geometry_column_name, geometry_column_name)
-        self.assertEqual(gdf.crs, crs)
+        assert gdf._geometry_column_name == geometry_column_name
+        assert gdf.crs == crs
 
     def test_merge(self):
 
         res = self.gdf.merge(self.df, left_on='values', right_on='col1')
 
         # check result is a GeoDataFrame
-        self.assert_(isinstance(res, GeoDataFrame))
+        assert isinstance(res, GeoDataFrame)
 
         # check geometry property gives GeoSeries
-        self.assert_(isinstance(res.geometry, GeoSeries))
+        assert isinstance(res.geometry, GeoSeries)
 
         # check metadata
         self._check_metadata(res)
@@ -39,24 +38,24 @@ class TestMerging(unittest.TestCase):
         self.gdf = (self.gdf.rename(columns={'geometry': 'points'})
                             .set_geometry('points'))
         res = self.gdf.merge(self.df, left_on='values', right_on='col1')
-        self.assert_(isinstance(res, GeoDataFrame))
-        self.assert_(isinstance(res.geometry, GeoSeries))
+        assert isinstance(res, GeoDataFrame)
+        assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res, 'points', self.gdf.crs)
 
     def test_concat_axis0(self):
 
         res = pd.concat([self.gdf, self.gdf])
 
-        self.assertEqual(res.shape, (6, 2))
-        self.assert_(isinstance(res, GeoDataFrame))
-        self.assert_(isinstance(res.geometry, GeoSeries))
+        assert res.shape == (6, 2)
+        assert isinstance(res, GeoDataFrame)
+        assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
 
     def test_concat_axis1(self):
 
         res = pd.concat([self.gdf, self.df], axis=1)
 
-        self.assertEqual(res.shape, (3, 4))
-        self.assert_(isinstance(res, GeoDataFrame))
-        self.assert_(isinstance(res.geometry, GeoSeries))
+        assert res.shape == (3, 4)
+        assert isinstance(res, GeoDataFrame)
+        assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)

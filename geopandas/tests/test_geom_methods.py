@@ -3,32 +3,32 @@ from __future__ import absolute_import
 import string
 
 import numpy as np
-from numpy.testing import assert_array_equal
-from pandas.util.testing import assert_series_equal, assert_frame_equal
 from pandas import Series, DataFrame, MultiIndex
-import pytest
 from shapely.geometry import (
-    Point, LinearRing, LineString, Polygon, MultiPoint
-)
+    Point, LinearRing, LineString, Polygon, MultiPoint)
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.base import GeoPandasBase
+
 from geopandas.tests.util import (
-    unittest, geom_equals, geom_almost_equals, assert_geoseries_equal
-)
+    geom_equals, geom_almost_equals, assert_geoseries_equal)
+
+import pytest
+from numpy.testing import assert_array_equal
+from pandas.util.testing import assert_series_equal, assert_frame_equal
 
 
-class TestGeomMethods(unittest.TestCase):
+class TestGeomMethods:
 
-    def setUp(self):
+    def setup_method(self):
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.inner_sq = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75),
-                            (0.25, 0.75)])
+                                 (0.25, 0.75)])
         self.nested_squares = Polygon(self.sq.boundary,
                                       [self.inner_sq.boundary])
         self.p0 = Point(5, 5)
@@ -61,13 +61,12 @@ class TestGeomMethods(unittest.TestCase):
 
         # Placeholder for testing, will just drop in different geometries
         # when needed
-        self.gdf1 = GeoDataFrame({'geometry' : self.g1,
-                                  'col0' : [1.0, 2.0],
-                                  'col1' : ['geo', 'pandas']})
-        self.gdf2 = GeoDataFrame({'geometry' : self.g1,
-                                  'col3' : [4, 5],
-                                  'col4' : ['rand', 'string']})
-
+        self.gdf1 = GeoDataFrame({'geometry': self.g1,
+                                  'col0': [1.0, 2.0],
+                                  'col1': ['geo', 'pandas']})
+        self.gdf2 = GeoDataFrame({'geometry': self.g1,
+                                  'col3': [4, 5],
+                                  'col4': ['rand', 'string']})
 
     def _test_unary_real(self, op, expected, a):
         """ Tests for 'area', 'length', 'is_valid', etc. """
@@ -78,7 +77,7 @@ class TestGeomMethods(unittest.TestCase):
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            fcmp = lambda a, b: self.assert_(a.equals(b))
+            def fcmp(a, b): assert a.equals(b)
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
@@ -86,7 +85,7 @@ class TestGeomMethods(unittest.TestCase):
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            fcmp = lambda a, b: self.assert_(geom_equals(a, b))
+            def fcmp(a, b): assert geom_equals(a, b)
 
         if isinstance(b, GeoPandasBase):
             right_df = True
@@ -94,11 +93,12 @@ class TestGeomMethods(unittest.TestCase):
             right_df = False
 
         self._binary_op_test(op, expected, a, b, fcmp, True, right_df,
-                        *args, **kwargs)
+                             *args, **kwargs)
 
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
         fcmp = assert_series_equal
-        self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
+        self._binary_op_test(op, expected, a, b, fcmp, True, False,
+                             *args, **kwargs)
 
     def _test_binary_operator(self, op, expected, a, b):
         """
@@ -109,7 +109,7 @@ class TestGeomMethods(unittest.TestCase):
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            fcmp = lambda a, b: self.assert_(geom_equals(a, b))
+            def fcmp(a, b): assert geom_equals(a, b)
 
         if isinstance(b, GeoPandasBase):
             right_df = True
@@ -151,9 +151,9 @@ class TestGeomMethods(unittest.TestCase):
             col2 = range(n)
 
             return GeoDataFrame({'geometry': s.values,
-                                 'col1' : col1,
-                                 'col2' : col2},
-                                 index=s.index, crs=s.crs)
+                                 'col1': col1,
+                                 'col2': col2},
+                                index=s.index, crs=s.crs)
 
         # Test GeoSeries.op(GeoSeries)
         result = getattr(left, op)(right, *args, **kwargs)
@@ -233,8 +233,8 @@ class TestGeomMethods(unittest.TestCase):
         # Set columns to get the order right
         expected = DataFrame({'minx': [0.0, 0.0], 'miny': [0.0, 0.0],
                               'maxx': [1.0, 1.0], 'maxy': [1.0, 1.0]},
-                              index=self.g1.index,
-                              columns=['minx', 'miny', 'maxx', 'maxy'])
+                             index=self.g1.index,
+                             columns=['minx', 'miny', 'maxx', 'maxy'])
 
         result = self.g1.bounds
         assert_frame_equal(expected, result)
@@ -276,10 +276,8 @@ class TestGeomMethods(unittest.TestCase):
         assert_array_equal(expected, self.g0.disjoint(self.t1))
 
     def test_distance(self):
-        expected = Series(np.array([
-                          np.sqrt((5 - 1)**2 + (5 - 1)**2),
-                          np.nan]),
-                    self.na_none.index)
+        expected = Series(np.array([np.sqrt((5 - 1)**2 + (5 - 1)**2), np.nan]),
+                          self.na_none.index)
         assert_array_equal(expected, self.na_none.distance(self.p0))
 
         expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]),
@@ -337,10 +335,10 @@ class TestGeomMethods(unittest.TestCase):
     def test_xy_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
         with pytest.raises(ValueError):
-            x = self.gdf1.geometry.x
+            _ = self.gdf1.geometry.x
         # and same for accessing y attribute in polygon geoseries
         with pytest.raises(ValueError):
-            y = self.gdf1.geometry.y
+            _ = self.gdf1.geometry.y
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -373,22 +371,21 @@ class TestGeomMethods(unittest.TestCase):
 
     def test_translate_tuple(self):
         trans = self.sol.x - self.esb.x, self.sol.y - self.esb.y
-        self.assert_(self.landmarks.translate(*trans)[0].equals(self.sol))
+        assert self.landmarks.translate(*trans)[0].equals(self.sol)
 
         res = self.gdf1.set_geometry(self.landmarks).translate(*trans)[0]
-        self.assert_(res.equals(self.sol))
+        assert res.equals(self.sol)
 
     def test_rotate(self):
         angle = 98
         expected = self.g4
 
-        o = Point(0,0)
+        o = Point(0, 0)
         res = self.g4.rotate(angle, origin=o).rotate(-angle, origin=o)
-        self.assert_(geom_almost_equals(self.g4, res))
+        assert geom_almost_equals(self.g4, res)
 
-        res = self.gdf1.set_geometry(self.g4).rotate(angle, origin=Point(0,0))
-        self.assert_(geom_almost_equals(expected,
-                                        res.rotate(-angle, origin=o)))
+        res = self.gdf1.set_geometry(self.g4).rotate(angle, origin=Point(0, 0))
+        assert geom_almost_equals(expected, res.rotate(-angle, origin=o))
 
     def test_scale(self):
         expected = self.g4
@@ -396,58 +393,59 @@ class TestGeomMethods(unittest.TestCase):
         scale = 2., 1.
         inv = tuple(1./i for i in scale)
 
-        o = Point(0,0)
+        o = Point(0, 0)
         res = self.g4.scale(*scale, origin=o).scale(*inv, origin=o)
-        self.assertTrue(geom_almost_equals(expected, res))
+        assert geom_almost_equals(expected, res)
 
         res = self.gdf1.set_geometry(self.g4).scale(*scale, origin=o)
         res = res.scale(*inv, origin=o)
-        self.assert_(geom_almost_equals(expected, res))
+        assert geom_almost_equals(expected, res)
 
     def test_skew(self):
         expected = self.g4
 
         skew = 45.
-        o = Point(0,0)
+        o = Point(0, 0)
 
         # Test xs
         res = self.g4.skew(xs=skew, origin=o).skew(xs=-skew, origin=o)
-        self.assert_(geom_almost_equals(expected, res))
+        assert geom_almost_equals(expected, res)
 
         res = self.gdf1.set_geometry(self.g4).skew(xs=skew, origin=o)
         res = res.skew(xs=-skew, origin=o)
-        self.assert_(geom_almost_equals(expected, res))
+        assert geom_almost_equals(expected, res)
 
         # Test ys
         res = self.g4.skew(ys=skew, origin=o).skew(ys=-skew, origin=o)
-        self.assert_(geom_almost_equals(expected, res))
+        assert geom_almost_equals(expected, res)
 
         res = self.gdf1.set_geometry(self.g4).skew(ys=skew, origin=o)
         res = res.skew(ys=-skew, origin=o)
-        self.assert_(geom_almost_equals(expected, res))
+        assert geom_almost_equals(expected, res)
 
     def test_envelope(self):
         e = self.g3.envelope
-        self.assertTrue(np.alltrue(e.geom_equals(self.sq)))
-        self.assertIsInstance(e, GeoSeries)
-        self.assertEqual(self.g3.crs, e.crs)
+        assert np.all(e.geom_equals(self.sq))
+        assert isinstance(e, GeoSeries)
+        assert self.g3.crs == e.crs
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
-        self.assertIsInstance(self.landmarks.total_bounds, np.ndarray)
-        self.assert_(tuple(self.landmarks.total_bounds), bbox)
+        assert isinstance(self.landmarks.total_bounds, np.ndarray)
+        assert tuple(self.landmarks.total_bounds) == bbox
 
         df = GeoDataFrame({'geometry': self.landmarks,
                            'col1': range(len(self.landmarks))})
-        self.assert_(tuple(df.total_bounds), bbox)
+        assert tuple(df.total_bounds) == bbox
 
     def test_explode(self):
-        s = GeoSeries([MultiPoint([(0,0), (1,1)]),
-                      MultiPoint([(2,2), (3,3), (4,4)])])
+        s = GeoSeries([MultiPoint([(0, 0), (1, 1)]),
+                       MultiPoint([(2, 2), (3, 3), (4, 4)])])
 
         index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
-        expected = GeoSeries([Point(0,0), Point(1,1), Point(2,2), Point(3,3),
-                              Point(4,4)], index=MultiIndex.from_tuples(index))
+        expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2),
+                              Point(3, 3), Point(4, 4)],
+                             index=MultiIndex.from_tuples(index))
 
         assert_geoseries_equal(expected, s.explode())
 
@@ -471,10 +469,10 @@ class TestGeomMethods(unittest.TestCase):
     def test_symmetric_difference_operator(self):
         self._test_binary_operator('__xor__', self.sq, self.g3, self.g4)
 
-    def test_difference_series(self):
+    def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_operator('__sub__', expected, self.g1, self.g2)
 
-    def test_difference_poly(self):
+    def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_operator('__sub__', expected, self.g1, self.t2)
