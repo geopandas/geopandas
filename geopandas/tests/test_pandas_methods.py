@@ -4,18 +4,17 @@ from distutils.version import LooseVersion
 
 from six import PY3
 
-import pytest
-
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_array_equal
-from pandas.util.testing import assert_frame_equal, assert_series_equal
-
 import shapely
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal
+
+import pytest
+from numpy.testing import assert_array_equal
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 
 @pytest.fixture
@@ -221,7 +220,7 @@ def test_drop_duplicates_frame():
     # currently, dropping duplicates in a geodataframe produces a TypeError
     # better behavior would be dropping the duplicated points
     gdf_len = 3
-    dup_gdf = GeoDataFrame({'geometry': [Point(0, 0) for x in range(gdf_len)],
+    dup_gdf = GeoDataFrame({'geometry': [Point(0, 0) for _ in range(gdf_len)],
                             'value1': range(gdf_len)})
     dropped_geometry = dup_gdf.drop_duplicates(subset="geometry")
     assert len(dropped_geometry) == 1

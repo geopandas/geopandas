@@ -2,10 +2,9 @@ from __future__ import absolute_import
 
 from geopandas import read_file, GeoDataFrame
 from geopandas.datasets import get_path
-from geopandas.tests.util import unittest
 
 
-class TestDatasets(unittest.TestCase):
+class TestDatasets:
 
     def test_read_paths(self):
 
