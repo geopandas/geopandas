@@ -1409,11 +1409,30 @@ class GeometryArray(object):
 cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
               np.ndarray[np.uintp_t, ndim=1, cast=True] right,
               str predicate_name):
+    """ Spatial join
+
+    Parameters
+    ----------
+    left: np.ndarray
+        array of pointers to GEOSGeometry objects
+    right : np.ndarray
+        array of pointers to GEOSGeometry objects
+    predicate_name: string
+        contains, intersects, within, etc..
+
+    Returns
+    -------
+    left_out: np.ndarray
+        Array of indices to pass to take for the left side to match with right
+    right_out: np.ndarray
+        Array of indices to pass to take for the right side to match with left
+    """
     cdef GEOSContextHandle_t handle
     cdef GEOSPreparedPredicate predicate
     cdef size_vector sv
     cdef Py_ssize_t idx
-    cdef np.ndarray[np.uintp_t, ndim=2] out
+    cdef np.ndarray[np.uintp_t, ndim=1] left_out
+    cdef np.ndarray[np.uintp_t, ndim=1] right_out
     cdef size_t left_size = left.size
     cdef size_t right_size = right.size
 
@@ -1427,12 +1446,13 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
                    <GEOSGeometry*> left.data, left_size,
                    <GEOSGeometry*> right.data, right_size)
 
-    out = np.empty((sv.n // 2, 2), dtype=np.uintp)
+    left_out = np.empty(sv.n // 2, dtype=np.uintp)
+    right_out = np.empty(sv.n // 2, dtype=np.uintp)
 
     with nogil:
         for idx in range(0, sv.n // 2):
-            out[idx, 0] = sv.a[2 * idx]
-            out[idx, 1] = sv.a[2 * idx + 1]
+            left_out[idx] = sv.a[2 * idx]
+            right_out[idx] = sv.a[2 * idx + 1]
 
     cfree(sv.a)
-    return out
+    return left_out, right_out

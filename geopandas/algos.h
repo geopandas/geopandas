@@ -7,6 +7,9 @@
 typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *left, const GEOSGeometry *right);
 typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, const GEOSPreparedGeometry *left, const GEOSGeometry *right);
 
+/* A resizable vector
+ * This is the same as kvec_t(size_t)
+ */
 typedef struct
 {
     size_t n, m;

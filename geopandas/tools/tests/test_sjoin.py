@@ -66,7 +66,7 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
                 left_out.append(left_index)
                 right_out.append(right_index)
 
-    columns = ['y', 'z', lsuffix + '_x', rsuffix + '_x', 'geometry']
+    columns = ['y', 'z', 'x_' + lsuffix, 'x_' + rsuffix, 'geometry']
 
     if how == 'inner':
         assert len(left_out) == len(result)
@@ -87,3 +87,21 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
         for p in points2:
             if p:
                 assert any(p.equals(p2) for p2 in L)
+
+
+def test_errors():
+    left = gpd.GeoDataFrame({'geometry': triangles,
+                             'x': np.random.random(len(triangles)),
+                             'y': np.random.random(len(triangles))},
+                             index=np.arange(len(triangles)) * 2)
+
+    right = gpd.GeoDataFrame({'geometry': points,
+                              'x': np.random.random(len(points)),
+                              'z': np.random.random(len(points))},
+                             index=list(string.ascii_lowercase[:len(points)]))
+
+    with pytest.raises(ValueError) as info:
+        result = sjoin(left, right, how="both")
+
+    assert "both" in str(info.value)
+    assert "inner" in str(info.value)

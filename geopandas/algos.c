@@ -17,12 +17,16 @@ typedef struct
 } geom_vector;
 
 
+/* Callback to give to strtree_query
+ * Given the value returned from each intersecting geometry it inserts that
+ * value (typically an index) into the given size_vector */
 void strtree_query_callback(void *item, void *vec)
 {
     kv_push(size_t, *((size_vector*) vec), (size_t) item);
 }
 
 
+/* Create STRTree spatial index from an array of Geometries */
 GEOSSTRtree *create_index(GEOSContextHandle_t handle, GEOSGeometry **geoms, size_t n)
 {
     GEOSSTRtree* tree = GEOSSTRtree_create_r(handle, n);
@@ -38,6 +42,13 @@ GEOSSTRtree *create_index(GEOSContextHandle_t handle, GEOSGeometry **geoms, size
 }
 
 
+/* Spatial join of two arrays of geometries over the predicate
+ * This creates an index for the right side
+ * Finds all polygons in both sides that intersect with each other
+ * Then filters by the spatial predicate like intersects, contains, etc.
+ * This returns an array of indices in each side that match
+ * Organized in a [left_0, right_0, left_1, right_1, ... ] order
+ */
 size_vector sjoin(GEOSContextHandle_t handle,
                   GEOSPreparedPredicate predicate,
                   GEOSGeometry **left, size_t nleft,
@@ -47,12 +58,12 @@ size_vector sjoin(GEOSContextHandle_t handle,
     // clock_t end, end_1, end_2;
     // double time_spent = 0, time_spent_1 = 0, time_spent_2 = 0;
 
-    size_t l, r;
-    size_vector out;
+    size_t l, r;                    // indices for left and right sides
+    GEOSPreparedGeometry* prepared; // Temporary prepared geometry for right side
+    size_vector out;                // output array of matching indices
+    size_vector vec;                // Temporary array for matches for each geometry
     kv_init(out);
-    size_vector vec;
     kv_init(vec);
-    GEOSPreparedGeometry* prepared;
 
     // begin = clock();
 

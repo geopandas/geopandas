@@ -10,7 +10,7 @@ from ..vectorized import cysjoin
 
 
 def sjoin(left_df, right_df, op='intersects', how='inner',
-              lsuffix='left', rsuffix='right'):
+          lsuffix='left', rsuffix='right'):
     """Spatial join of two GeoDataFrames.
 
     Parameters
@@ -31,12 +31,18 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
     """
-    indices = cysjoin(left_df.geometry._geometry_array.data,
-                      right_df.geometry._geometry_array.data,
-                      op)
-    n = len(indices)
-    left_indices = indices[:, 0]
-    right_indices = indices[:, 1]
+    allowed_hows = ('left', 'right', 'inner')
+    if how not in allowed_hows:
+        raise ValueError("How keyword should be one of %s, got %s"
+                         % (allowed_hows, how))
+
+    if left_df.crs != right_df.crs:
+        print("Warning: CRS does not match")
+
+    left_indices, right_indices = cysjoin(left_df.geometry._geometry_array.data,
+                                          right_df.geometry._geometry_array.data,
+                                          op)
+    n = len(left_indices)
 
     if how == 'left':
         missing = pd.Index(np.arange(len(left_df))).difference(pd.Index(left_indices))
@@ -65,7 +71,7 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
     names = []
     for name, series in left.iteritems():
         if name in right.columns:
-            name = lsuffix + '_' + name
+            name = name + '_' + lsuffix
         series.index = index[:n_left]
         if how == 'right':
             new = series.iloc[:0].reindex(index[n:])
@@ -74,7 +80,7 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
         names.append(name)
     for name, series in right.iteritems():
         if name in left.columns:
-            name = rsuffix + '_' + name
+            name = name + '_' + rsuffix
         series.index = index[:n_right]
         if how == 'left':
             new = series.iloc[:0].reindex(index[n:])
