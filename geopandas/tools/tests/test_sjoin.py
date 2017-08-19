@@ -70,11 +70,11 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
 
     if how == 'inner':
         assert len(left_out) == len(result)
-        assert set(result.columns) == set(columns + ['right_index'])
+        assert set(result.columns) == set(columns + ['index_right'])
 
     if how == 'left':
         assert len(result) >= len(left_out)
-        assert set(result.columns) == set(columns + ['right_index'])
+        assert set(result.columns) == set(columns + ['index_right'])
         L = list(result.geometry)
         for t in triangles2:
             if t:
@@ -82,7 +82,7 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
 
     if how == 'right':
         assert len(result) >= len(right_out)
-        assert set(result.columns) == set(columns + ['left_index'])
+        assert set(result.columns) == set(columns + ['index_left'])
         L = list(result.geometry)
         for p in points2:
             if p:
