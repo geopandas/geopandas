@@ -55,6 +55,7 @@
     "matrix": {
         "pandas": [],
         "shapely": [],
+        "cython": [],
         "fiona": [],
         "pyproj": [],
         "six": [],
