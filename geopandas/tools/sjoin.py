@@ -39,8 +39,8 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
     if left_df.crs != right_df.crs:
         print("Warning: CRS does not match")
 
-    left_indices, right_indices = cysjoin(left_df.geometry._geometry_array.data,
-                                          right_df.geometry._geometry_array.data,
+    left_indices, right_indices = cysjoin(left_df._geometry_array.data,
+                                          right_df._geometry_array.data,
                                           op)
     n = len(left_indices)
 

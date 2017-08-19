@@ -10,13 +10,6 @@ typedef char (*GEOSPredicate)(GEOSContextHandle_t handle, const GEOSGeometry *le
 typedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handle, const GEOSPreparedGeometry *left, const GEOSGeometry *right);
 
 
-typedef struct
-{
-    size_t n, m;
-    GEOSGeometry **a;
-} geom_vector;
-
-
 /* Callback to give to strtree_query
  * Given the value returned from each intersecting geometry it inserts that
  * value (typically an index) into the given size_vector */
@@ -43,9 +36,12 @@ GEOSSTRtree *create_index(GEOSContextHandle_t handle, GEOSGeometry **geoms, size
 
 
 /* Spatial join of two arrays of geometries over the predicate
- * This creates an index for the right side
- * Finds all polygons in both sides that intersect with each other
- * Then filters by the spatial predicate like intersects, contains, etc.
+ *
+ * This creates places all right-side geometries into an STRTree spatial index
+ * And then iterates through the left side and compares them against the index
+ * This produces a rough intersection of all geometry pairs that might interact
+ * Then we filter those pairs by the more precise spatial predicate
+ *   like intersects, contains, covers, etc..
  * This returns an array of indices in each side that match
  * Organized in a [left_0, right_0, left_1, right_1, ... ] order
  */
@@ -60,7 +56,7 @@ size_vector sjoin(GEOSContextHandle_t handle,
 
     size_t l, r;                    // indices for left and right sides
     GEOSPreparedGeometry* prepared; // Temporary prepared geometry for right side
-    size_vector out;                // output array of matching indices
+    size_vector out;                // Resizable output array of matching indices
     size_vector vec;                // Temporary array for matches for each geometry
     kv_init(out);
     kv_init(vec);
@@ -79,13 +75,16 @@ size_vector sjoin(GEOSContextHandle_t handle,
         if (left[l] != NULL)
         {
             // begin_1 = clock();
+            // Find all geometries of the right side that are close.  Store in vec
             GEOSSTRtree_query_r(handle, tree, left[l], strtree_query_callback, &vec);
             // end_1 = clock();
             // time_spent_1 += (double)(end_1 - begin_1) / CLOCKS_PER_SEC;
 
+            // Prepare left side for fine-grained predicate
             prepared = GEOSPrepare_r(handle, left[l]);
 
             // begin_2 = clock();
+            // Iterate over vec and compare with predicate
             while (vec.n)
             {
                 r = kv_pop(vec);

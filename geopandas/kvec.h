@@ -1,3 +1,5 @@
+/* This contains a standalone resizable array implementation in C */
+
 /* The MIT License
 
    Copyright (c) 2008, by Attractive Chaos <attractor@live.co.uk>
