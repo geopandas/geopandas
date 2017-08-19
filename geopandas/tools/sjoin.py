@@ -93,16 +93,16 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
         new = series.iloc[:0].reindex(index[n:])
         series = pd.concat([series, new], axis=0)
         series.index = index
-        columns['right_index'] = series
-        names.append('right_index')
+        columns['index_right'] = series
+        names.append('index_right')
         geo_name = left_df._geometry_column_name
     else:
         series = pd.Series(left.index.values, index=index[:n_left])
         new = series.iloc[:0].reindex(index[n:])
         series = pd.concat([series, new], axis=0)
         series.index = index
-        columns['left_index'] = series
-        names.append('left_index')
+        columns['index_left'] = series
+        names.append('index_left')
         geo_name = right_df._geometry_column_name
 
     geometry = columns[geo_name]
