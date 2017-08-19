@@ -62,9 +62,10 @@ def dfs(request):
     exp = pd.merge(part1, part2, on='_merge', how='outer')
     expected['within'] = exp.drop('_merge', axis=1).copy()
 
+    # TODO temporary hack (changed column order in new implementation)
     expected = {k: exp[['df1', 'df2', 'index_left', 'index_right',
-                        'geometry_x', 'geometry_y']].sort_values(['index_left',
-                            'index_right'])
+                        'geometry_x', 'geometry_y']].sort_values(
+                    ['index_left', 'index_right'])
                 for k, exp in expected.items()}
 
     return [request.param, df1, df2, expected]
@@ -91,6 +92,9 @@ class TestSpatialJoin(object):
         exp = exp.set_index('index_left')
         exp.index.name = None
 
+        # TODO temporary hack (changed row order in new implementation)
+        res = res.sort_values(['df1', 'df2'])
+        #
         assert_frame_equal(res, exp)
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
@@ -112,6 +116,9 @@ class TestSpatialJoin(object):
         exp = exp.set_index('index_left')
         exp.index.name = None
 
+        # TODO temporary hack (changed row order in new implementation)
+        res = res.sort_values(['df1', 'df2'])
+        #
         assert_frame_equal(res, exp)
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
@@ -132,6 +139,10 @@ class TestSpatialJoin(object):
         exp = exp.set_index('index_right')
         exp = exp.reindex(columns=res.columns)
 
+        # TODO temporary hack (changed row order in new implementation)
+        res = res.sort_values(['df1', 'df2'])
+        exp.index.name = None
+        #
         assert_frame_equal(res, exp, check_index_type=False)
 
 
@@ -198,7 +209,7 @@ class TestSpatialJoinNYBB(unittest.TestCase):
 
     def test_sjoin_bad_op(self):
         # AttributeError: 'Point' object has no attribute 'spandex'
-        self.assertRaises(ValueError, sjoin,
+        self.assertRaises(NotImplementedError, sjoin,
             self.pointdf, self.polydf, how="left", op="spandex")
 
     def test_sjoin_duplicate_column_name(self):

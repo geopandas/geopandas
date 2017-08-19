@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 
 import random
-import shutil
 import string
-import tempfile
 
 import geopandas as gpd
 import numpy as np
@@ -46,7 +44,7 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
     left = gpd.GeoDataFrame({'geometry': triangles2,
                              'x': np.random.random(len(triangles)),
                              'y': np.random.random(len(triangles))},
-                             index=np.arange(len(triangles)) * 2)
+                            index=np.arange(len(triangles)) * 2)
 
     right = gpd.GeoDataFrame({'geometry': points2,
                               'x': np.random.random(len(points)),
