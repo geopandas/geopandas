@@ -22,9 +22,10 @@ void strtree_query_callback(void *item, void *vec)
 /* Create STRTree spatial index from an array of Geometries */
 GEOSSTRtree *create_index(GEOSContextHandle_t handle, GEOSGeometry **geoms, size_t n)
 {
+    int i;
     GEOSSTRtree* tree = GEOSSTRtree_create_r(handle, n);
 
-    for (int i = 0; i < n ; i++)
+    for (i = 0; i < n ; i++)
     {
         if (geoms[i] != NULL)
         {
