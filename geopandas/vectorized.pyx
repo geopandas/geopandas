@@ -32,6 +32,16 @@ ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
                                        const GEOSGeometry *right) nogil
 
 
+GEOS_POINT = 0
+GEOS_LINESTRING = 1
+GEOS_LINEARRING = 2
+GEOS_POLYGON = 3
+GEOS_MULTIPOINT = 4
+GEOS_MULTILINESTRING = 5
+GEOS_MULTIPOLYGON = 6
+GEOS_GEOMETRYCOLLECTIO = 7
+
+
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
 
 opposite_predicates = {'contains': 'within',
@@ -1093,6 +1103,22 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
+cdef unary_union2(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *collection
+    cdef GEOSGeometry *out
+    cdef size_t n = geoms.size
+
+    handle = get_geos_context_handle()
+
+    with nogil:
+        collection = GEOSGeom_createCollection_r(handle, 6,
+                <GEOSGeometry **> geoms.data, n)
+        out = GEOSUnaryUnion_r(handle, collection)
+
+    return geom_factory(<np.uintp_t> out)
+
+
 class GeometryArray(object):
     dtype = np.dtype('O')
 
@@ -1394,3 +1420,6 @@ class GeometryArray(object):
             categorical.categories.dtype
         """
         return to_shapely(self.data)
+
+    def unary_union(self):
+        return unary_union2(self.data)
