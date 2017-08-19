@@ -762,8 +762,8 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         func = GEOSGetCentroid_r
     elif op == 'convex_hull':
         func = GEOSConvexHull_r
-    # elif op == 'exterior':
-    #     func = GEOSGetExteriorRing_r  # segfaults on cleanup?
+    elif op == 'exterior':
+        func = GEOSGetExteriorRing_r  # segfaults on cleanup?
     elif op == 'envelope':
         func = GEOSEnvelope_r
     elif op == 'representative_point':
@@ -1265,6 +1265,11 @@ class GeometryArray(object):
 
     def envelope(self):
         return geo_unary_op('envelope', self.data)
+
+    def exterior(self):
+        out = geo_unary_op('exterior', self.data)
+        out.parent = self
+        return out
 
     def representative_point(self):
         return geo_unary_op('representative_point', self.data)
