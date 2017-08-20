@@ -345,15 +345,17 @@ def test_pickle():
     'within',
 ])
 def test_sjoin(predicate):
-    result = cysjoin(T.data, P.data, predicate)
+    left, right = cysjoin(T.data, P.data, predicate)
 
-    assert isinstance(result, np.ndarray)
-    assert result.dtype == T.data.dtype
-    n, m = result.shape
-    assert m == 2
+    assert isinstance(left, np.ndarray)
+    assert isinstance(right, np.ndarray)
+    assert left.dtype == T.data.dtype
+    assert right.dtype == T.data.dtype
+    assert left.shape == right.shape
+    (n,) = left.shape
     assert n < (len(T) * len(P))
 
-    for i, j in result:
+    for i, j in zip(left, right):
         left = triangles[i]
         right = points[j]
         assert getattr(left, predicate)(right)
