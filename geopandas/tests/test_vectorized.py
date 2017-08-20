@@ -338,7 +338,6 @@ def test_pickle():
     'covers',
     'crosses',
     'disjoint',
-    # 'equals',
     'intersects',
     'overlaps',
     'touches',
