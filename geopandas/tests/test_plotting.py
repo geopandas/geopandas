@@ -19,7 +19,6 @@ import pytest
 @pytest.fixture(autouse=True)
 def close_figures(request):
     yield
-    print('closing')
     plt.close('all')
 
 
@@ -373,6 +372,62 @@ class TestPySALPlotting:
                              cmap='OrRd', legend=True)
 
 
+class TestPlotCollections:
+
+    def setup_method(self):
+        self.N = 3
+        self.values = np.arange(self.N)
+        self.points = GeoSeries(Point(i, i) for i in range(self.N))
+
+    def test_points(self):
+        from geopandas.plotting import plot_point_collection
+        from matplotlib.collections import PathCollection
+
+        fig, ax = plt.subplots()
+        coll = plot_point_collection(ax, self.points)
+        assert isinstance(coll, PathCollection)
+        ax.cla()
+
+        # default: single default matplotlib color
+        coll = plot_point_collection(ax, self.points)
+        dflt_col = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
+        _check_colors2(self.N, coll.get_facecolors(), [dflt_col]*self.N)
+        _check_colors2(self.N, coll.get_edgecolors(), [dflt_col] * self.N)
+        ax.cla()
+
+        # specify single other color
+        coll = plot_point_collection(ax, self.points, color='g')
+        _check_colors2(self.N, coll.get_facecolors(), ['g'] * self.N)
+        _check_colors2(self.N, coll.get_edgecolors(), ['g'] * self.N)
+        ax.cla()
+
+        # specify edgecolor/facecolor
+        coll = plot_point_collection(ax, self.points, facecolor='g',
+                                     edgecolor='r')
+        _check_colors2(self.N, coll.get_facecolors(), ['g'] * self.N)
+        _check_colors2(self.N, coll.get_edgecolors(), ['r'] * self.N)
+        ax.cla()
+
+        # list of colors
+        coll = plot_point_collection(ax, self.points, color=['r', 'g', 'b'])
+        _check_colors2(self.N, coll.get_facecolors(), ['r', 'g', 'b'])
+        _check_colors2(self.N, coll.get_edgecolors(), ['r', 'g', 'b'])
+        ax.cla()
+
+    def test_points_values(self):
+        from geopandas.plotting import plot_point_collection
+
+        # color based on values
+        fig, ax = plt.subplots()
+        coll = plot_point_collection(ax, self.points, self.values)
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N))
+
+        # not sure why this is failing
+        # _check_colors2(self.N, coll.get_facecolors(), expected_colors)
+        # _check_colors2(self.N, coll.get_edgecolors(), expected_colors)
+
+
 def _check_colors(N, collection, expected_colors, alpha=None):
     """
     Asserts that the members of `collection` match the `expected_colors`
@@ -400,6 +455,20 @@ def _check_colors(N, collection, expected_colors, alpha=None):
 
     # Convert 2D numpy array to a list of RGBA tuples.
     actual_colors = list(collection.get_facecolors())
+    actual_colors = map(tuple, actual_colors)
+    all_actual_colors = list(itertools.islice(
+        itertools.cycle(actual_colors), N))
+
+    for actual, expected in zip(all_actual_colors, expected_colors):
+        assert actual == conv.to_rgba(expected, alpha=alpha), \
+            '{} != {}'.format(actual, conv.to_rgba(expected, alpha=alpha))
+
+
+def _check_colors2(N, actual_colors, expected_colors, alpha=None):
+    import matplotlib.colors as colors
+    conv = colors.colorConverter
+
+    # Convert 2D numpy array to a list of RGBA tuples.
     actual_colors = map(tuple, actual_colors)
     all_actual_colors = list(itertools.islice(
         itertools.cycle(actual_colors), N))

@@ -169,7 +169,7 @@ def plot_linestring_collection(ax, geoms, colors_or_values, plot_values,
     return collection
 
 
-def plot_point_collection(ax, geoms, colors_or_values,
+def plot_point_collection(ax, geoms, values=None, color=None,
                           vmin=None, vmax=None, cmap=None,
                           marker='o', markersize=2, **kwargs):
     """
@@ -183,25 +183,23 @@ def plot_point_collection(ax, geoms, colors_or_values,
 
     geoms : sequence of `N` Points
 
-    colors_or_values : sequence of color or sequence of numbers
-        can be a sequence of color specifications of length `N` or a sequence
-        of `N` numbers to be mapped to colors using vmin, vmax, and cmap.
+    values : sequence of color or sequence of numbers
+        A sequence of `N` numbers to be mapped to colors using vmin, vmax,
+        and cmap. Cannot be specified together with `color`.
 
     Returns
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    x = [p.x for p in geoms]
-    y = [p.y for p in geoms]
+    if values is not None and color is not None:
+        raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    # matplotlib ax.scatter requires RGBA color specifications to be a single 2D
-    # array, NOT merely a list of 1D arrays. This reshapes that if necessary,
-    # having no effect on 1D arrays of values.
-    colors_or_values = np.array([element
-                                 for _, element in enumerate(colors_or_values)])
-    collection = ax.scatter(x, y, c=colors_or_values,
+    x = geoms.x.values
+    y = geoms.y.values
+
+    collection = ax.scatter(x, y, s=markersize, c=values, color=color,
                             vmin=vmin, vmax=vmax, cmap=cmap,
-                            marker=marker, s=markersize, **kwargs)
+                            marker=marker, **kwargs)
     return collection
 
 
