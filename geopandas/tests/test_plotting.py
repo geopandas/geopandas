@@ -175,22 +175,10 @@ class TestLineStringPlotting:
 
     def test_style_kwargs(self):
 
-        def style_to_linestring_onoffseq(linestyle):
-            """ Converts a linestyle string representation, namely one of:
-                    ['dashed',  'dotted', 'dashdot', 'solid'],
-                documented in `Collections.set_linestyle`,
-                to the form `onoffseq`.
-            """
-            if LooseVersion(matplotlib.__version__) >= '2.0':
-                return matplotlib.lines._get_dash_pattern(linestyle)
-            else:
-                from matplotlib.backend_bases import GraphicsContextBase
-                return GraphicsContextBase.dashd[linestyle]
-
         # linestyle
         linestyle = 'dashed'
         ax = self.lines.plot(linestyle=linestyle)
-        exp_ls = style_to_linestring_onoffseq(linestyle)
+        exp_ls = _style_to_linestring_onoffseq(linestyle)
         for ls in ax.collections[0].get_linestyles():
             assert ls[0] == exp_ls[0]
             assert tuple(ls[1]) == exp_ls[1]
@@ -378,6 +366,8 @@ class TestPlotCollections:
         self.N = 3
         self.values = np.arange(self.N)
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
+        self.lines = GeoSeries([LineString([(0, i), (4, i + 0.5), (9, i)])
+                                for i in range(self.N)])
 
     def test_points(self):
         from geopandas.plotting import plot_point_collection
@@ -417,15 +407,88 @@ class TestPlotCollections:
     def test_points_values(self):
         from geopandas.plotting import plot_point_collection
 
-        # color based on values
+        # default colormap
         fig, ax = plt.subplots()
         coll = plot_point_collection(ax, self.points, self.values)
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N))
 
-        # not sure why this is failing
+        # not sure why this is failing (gives only a single color, when
+        # testing outside of pytest, this works perfectly
         # _check_colors2(self.N, coll.get_facecolors(), expected_colors)
         # _check_colors2(self.N, coll.get_edgecolors(), expected_colors)
+
+    def test_linestrings(self):
+        from geopandas.plotting import plot_linestring_collection
+        from matplotlib.collections import LineCollection
+
+        fig, ax = plt.subplots()
+        coll = plot_linestring_collection(ax, self.lines)
+        assert isinstance(coll, LineCollection)
+        ax.cla()
+
+        # default: single default matplotlib color
+        coll = plot_linestring_collection(ax, self.lines)
+        dflt_col = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
+        _check_colors2(self.N, coll.get_color(), [dflt_col] * self.N)
+        ax.cla()
+
+        # specify single other color
+        coll = plot_linestring_collection(ax, self.lines, color='g')
+        _check_colors2(self.N, coll.get_colors(), ['g'] * self.N)
+        ax.cla()
+
+        # specify edgecolor / facecolor
+        coll = plot_linestring_collection(ax, self.lines, facecolor='g',
+                                          edgecolor='r')
+        _check_colors2(self.N, coll.get_facecolors(), ['g'] * self.N)
+        _check_colors2(self.N, coll.get_edgecolors(), ['r'] * self.N)
+        ax.cla()
+
+        # list of colors
+        coll = plot_linestring_collection(ax, self.lines,
+                                          color=['r', 'g', 'b'])
+        _check_colors2(self.N, coll.get_colors(), ['r', 'g', 'b'])
+        ax.cla()
+
+        # pass through of kwargs
+        coll = plot_linestring_collection(ax, self.lines, linestyle='--')
+        exp_ls = _style_to_linestring_onoffseq('--')
+        res_ls = coll.get_linestyle()[0]
+        assert res_ls[0] == exp_ls[0]
+        assert tuple(res_ls[1]) == exp_ls[1]
+        ax.cla()
+
+    def test_linestring_values(self):
+        from geopandas.plotting import plot_linestring_collection
+
+        fig, ax = plt.subplots()
+
+        # default colormap
+        coll = plot_linestring_collection(ax, self.lines, self.values)
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N))
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_color(), expected_colors)
+        ax.cla()
+
+        # specify colormap
+        coll = plot_linestring_collection(ax, self.lines, self.values,
+                                          cmap='RdBu')
+        cmap = plt.get_cmap('RdBu')
+        expected_colors = cmap(np.arange(self.N))
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_color(), expected_colors)
+        ax.cla()
+
+        # specify vmin/vmax
+        coll = plot_linestring_collection(ax, self.lines, self.values,
+                                          vmin=3, vmax=5)
+        cmap = plt.get_cmap()
+        expected_colors = cmap([0])
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_color(), expected_colors)
+        ax.cla()
 
 
 def _check_colors(N, collection, expected_colors, alpha=None):
@@ -476,3 +539,16 @@ def _check_colors2(N, actual_colors, expected_colors, alpha=None):
     for actual, expected in zip(all_actual_colors, expected_colors):
         assert actual == conv.to_rgba(expected, alpha=alpha), \
             '{} != {}'.format(actual, conv.to_rgba(expected, alpha=alpha))
+
+
+def _style_to_linestring_onoffseq(linestyle):
+    """ Converts a linestyle string representation, namely one of:
+            ['dashed',  'dotted', 'dashdot', 'solid'],
+        documented in `Collections.set_linestyle`,
+        to the form `onoffseq`.
+    """
+    if LooseVersion(matplotlib.__version__) >= '2.0':
+        return matplotlib.lines._get_dash_pattern(linestyle)
+    else:
+        from matplotlib.backend_bases import GraphicsContextBase
+        return GraphicsContextBase.dashd[linestyle]

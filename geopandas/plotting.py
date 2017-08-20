@@ -23,6 +23,11 @@ def _flatten_multi_geoms(geoms, colors):
 
     component_colors : list of whatever type `colors` contains
     """
+    was_none = False
+    if colors is None:
+        was_none = True
+        colors = [None] * len(geoms)
+
     components, component_colors = [], []
 
     # precondition, so zip can't short-circuit
@@ -36,6 +41,9 @@ def _flatten_multi_geoms(geoms, colors):
         else:
             components.append(geom)
             component_colors.append(color)
+
+    if was_none:
+        component_colors = None
     return components, component_colors
 
 
@@ -104,7 +112,7 @@ def plot_polygon_collection(ax, geoms, colors_or_values, plot_values,
     return collection
 
 
-def plot_linestring_collection(ax, geoms, colors_or_values, plot_values,
+def plot_linestring_collection(ax, geoms, values=None, color=None,
                                vmin=None, vmax=None, cmap=None,
                                linewidth=1.0, **kwargs):
     """
@@ -118,51 +126,39 @@ def plot_linestring_collection(ax, geoms, colors_or_values, plot_values,
 
     geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be mixed)
 
-    colors_or_values : a sequence of `N` values or RGBA tuples
-        It should have 1:1 correspondence with the geometries (not their components).
+    values : a sequence of `N` values
+        Values will be mapped to colors using vmin/vmax/cmap. They should
+        have 1:1 correspondence with the geometries (not their components).
 
-    plot_values : bool
-        If True, `colors_or_values` is interpreted as a list of values, and will
-        be mapped to colors using vmin/vmax/cmap (which become required).
-        Otherwise `colors_or_values` is interpreted as a list of colors.
+    color : single color or sequence of `N` colors
+        Cannot be used together with `values`.
 
     Returns
     -------
 
     collection : matplotlib.collections.Collection that was plotted
-    """
 
+    """
     from matplotlib.collections import LineCollection
 
-    components, component_colors_or_values = _flatten_multi_geoms(
-        geoms, colors_or_values)
+    geoms, values = _flatten_multi_geoms(
+        geoms, values)
 
     # LineCollection does not accept some kwargs.
     if 'markersize' in kwargs:
         del kwargs['markersize']
-    segments = [np.array(linestring)[:, :2] for linestring in components]
-    collection = LineCollection(segments,
-                                linewidth=linewidth, **kwargs)
 
-    if plot_values:
-        collection.set_array(np.array(component_colors_or_values))
+    # color=None gives black instead of default color cycle
+    if color is not None:
+        kwargs['color'] = color
+
+    segments = [np.array(linestring)[:, :2] for linestring in geoms]
+    collection = LineCollection(segments, linewidth=linewidth, **kwargs)
+
+    if values is not None:
+        collection.set_array(np.asarray(values))
         collection.set_cmap(cmap)
         collection.set_clim(vmin, vmax)
-    else:
-        # set_color magically sets the correct combination of facecolor and
-        # edgecolor, based on collection type.
-        collection.set_color(component_colors_or_values)
-
-        # If the user set facecolor and/or edgecolor explicitly, the previous
-        # call to set_color might have overridden it (remember, the 'color' may
-        # have come from plot_series, not from the user). The user should be
-        # able to override matplotlib's default behavior, by setting them again
-        # after set_color.
-        if 'facecolor' in kwargs:
-            collection.set_facecolor(kwargs['facecolor'])
-
-        if 'edgecolor' in kwargs:
-            collection.set_edgecolor(kwargs['edgecolor'])
 
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
