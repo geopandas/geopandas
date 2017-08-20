@@ -269,36 +269,31 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
+    # if no color specified, create range of colors based on cmap
     num_geoms = len(s.index)
-    if color:
-        colors = np.array([color] * num_geoms)
-    else:
+    col_seq = False
+    if color is None:
         color_generator = gencolor(len(s), colormap=cmap)
-        colors = np.array([next(color_generator) for _ in xrange(num_geoms)])
+        color = np.array([next(color_generator) for _ in xrange(num_geoms)])
+        col_seq = True
 
     # plot all Polygons and all MultiPolygon components in the same collection
     poly_idx = np.array(
         (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon'))
     polys = s.geometry[poly_idx]
+
     if not polys.empty:
-        # Legacy behavior applies alpha to fill but not to edges. This requires
-        # plotting them separately (at big performance expense).
-        if linewidth > 0 and color_kwds.get('alpha', 0.5) < 1.0:
-            # Plot the fill with default or user-specified alpha, but do not
-            # draw outlines.
-            plot_polygon_collection(ax, polys, colors[poly_idx], False,
-                                    linewidth=0, **color_kwds)
-            # Draw the edges, fully opaque, but no facecolor.
-            edges_kwds = color_kwds.copy()
-            edges_kwds['alpha'] = 1
-            edges_kwds['facecolor'] = 'none'
-            plot_polygon_collection(ax, polys, colors[poly_idx], False,
-                                    linewidth=linewidth, **edges_kwds)
+        # color overrides both face and edgecolor. As we want people to be
+        # able to use edgecolor as well, pass color to facecolor
+        facecolor = color_kwds.pop('facecolor', None)
+        if col_seq:
+            if not facecolor:
+                facecolor = color[poly_idx] if col_seq else color
         else:
-            # Optimization: if no alpha on fill, or if no edges, we can plot
-            # everything in one go.
-            plot_polygon_collection(ax, polys, colors[poly_idx], False,
-                                    linewidth=linewidth, **color_kwds)
+            facecolor = color
+        plot_polygon_collection(ax, polys,
+                                facecolor=facecolor,
+                                linewidth=linewidth, **color_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
     line_idx = np.array(
@@ -306,13 +301,16 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         (s.geometry.type == 'MultiLineString'))
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, colors[line_idx], False,
+        plot_linestring_collection(ax, lines,
+                                   color=color[line_idx] if col_seq else color,
                                    linewidth=linewidth, **color_kwds)
 
     point_idx = np.array(s.geometry.type == 'Point')
     points = s.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points, colors[point_idx], **color_kwds)
+        plot_point_collection(ax, points,
+                              color=color[point_idx] if col_seq else color,
+                              **color_kwds)
 
     plt.draw()
     return ax
@@ -444,27 +442,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon'))
     polys = s.geometry[poly_idx]
     if not polys.empty:
-        # Legacy behavior applies alpha to fill but not to edges. This requires
-        # plotting them separately (at big performance expense).
-        if linewidth > 0 and color_kwds.get('alpha', 0.5) < 1.0:
-            # Plot the fill with default or user-specified alpha, but do not
-            # draw outlines.
-            plot_polygon_collection(ax, polys, values[poly_idx], True,
-                                    vmin=mn, vmax=mx, cmap=cmap,
-                                    linewidth=0, **color_kwds)
-            # Draw the edges, fully opaque, but no facecolor.
-            edges_kwds = color_kwds.copy()
-            edges_kwds['alpha'] = 1
-            edges_kwds['facecolor'] = 'none'
-            # Setting plot_values=False would cause the array values' colors to
-            # override edgecolor. By setting color instead, matplotlib will
-            # respect edgecolor if set.
-            plot_polygon_collection(ax, polys, ['black'] * len(polys), False,
-                                    linewidth=linewidth, **edges_kwds)
-        else:
-            # Optimization: if no alpha on fill, or if no edges, we can plot
-            # everything in one go.
-            plot_polygon_collection(ax, polys, values[poly_idx], True,
+        plot_polygon_collection(ax, polys, values[poly_idx],
                                     vmin=mn, vmax=mx, cmap=cmap,
                                     linewidth=linewidth, **color_kwds)
 
@@ -474,7 +452,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         (s.geometry.type == 'MultiLineString'))
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, values[line_idx], True,
+        plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap,
                                    linewidth=linewidth, **color_kwds)
 
