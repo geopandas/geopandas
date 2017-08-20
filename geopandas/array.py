@@ -704,9 +704,9 @@ class GeometryArray(ExtensionArray):
     # Reduction operations that return a Shapely geometry
     #
 
+    @property
     def unary_union(self):
-        geoms = vectorized.to_shapely(self.data)
-        return shapely.ops.unary_union(geoms)
+        return vectorized.unary_union(self.data)
 
     #
     # Affinity operations

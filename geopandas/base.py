@@ -8,7 +8,7 @@ from pandas import DataFrame, MultiIndex, Series
 
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union
 
 
 from .array import GeometryArray, GeometryDtype, from_shapely
@@ -272,7 +272,7 @@ class GeoPandasBase(object):
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``."""
-        return unary_union(self.geometry.values)
+        return self.geometry.array.unary_union
 
     #
     # Binary operations that return a pandas Series

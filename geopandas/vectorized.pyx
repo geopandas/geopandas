@@ -27,6 +27,16 @@ ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
                                        const GEOSGeometry *right) nogil
 
 
+cdef int GEOS_POINT = 0
+cdef int GEOS_LINESTRING = 1
+cdef int GEOS_LINEARRING = 2
+cdef int GEOS_POLYGON = 3
+cdef int GEOS_MULTIPOINT = 4
+cdef int GEOS_MULTILINESTRING = 5
+cdef int GEOS_MULTIPOLYGON = 6
+cdef int GEOS_GEOMETRYCOLLECTION = 7
+
+
 cpdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
     """
     Get a single shape from a GeometryArray as a Shapely object
@@ -1085,3 +1095,22 @@ cpdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
                 out[idx] = GEOSGeomTypeId_r(handle, geom)
 
     return out
+
+
+cpdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *collection
+    cdef GEOSGeometry *out
+    cdef size_t n
+
+    handle = get_geos_context_handle()
+    geoms = geoms[geoms != 0]
+    n = geoms.size
+
+    with nogil:
+        collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON,
+                                                 <GEOSGeometry **> geoms.data,
+                                                 n)
+        out = GEOSUnaryUnion_r(handle, collection)
+
+    return geom_factory(<np.uintp_t> out)
