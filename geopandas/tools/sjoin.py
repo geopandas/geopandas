@@ -24,7 +24,7 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
     op : string, default 'intersection'
-        Binary predicate, one of {'intersects', 'contains', 'within'}.
+        Binary predicate, such as 'intersects', 'contains', 'within'.
         See http://toblerity.org/shapely/manual.html#binary-predicates.
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
@@ -45,12 +45,14 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
     n = len(left_indices)
 
     if how == 'left':
-        missing = pd.Index(np.arange(len(left_df))).difference(pd.Index(left_indices))
+        missing = pd.Index(np.arange(len(left_df))).difference(
+            pd.Index(left_indices))
         if len(missing):
             left_indices = np.concatenate([left_indices, missing])
 
     if how == 'right':
-        missing = pd.Index(np.arange(len(right_df))).difference(pd.Index(right_indices))
+        missing = pd.Index(np.arange(len(right_df))).difference(
+            pd.Index(right_indices))
         if len(missing):
             right_indices = np.concatenate([right_indices, missing])
 

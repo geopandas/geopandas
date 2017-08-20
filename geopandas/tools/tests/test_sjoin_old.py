@@ -71,7 +71,6 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
-@unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoin(object):
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
@@ -146,7 +145,6 @@ class TestSpatialJoin(object):
         assert_frame_equal(res, exp, check_index_type=False)
 
 
-@unittest.skipIf(not base.HAS_SINDEX, 'Rtree absent, skipping')
 class TestSpatialJoinNYBB(unittest.TestCase):
 
     def setUp(self):
@@ -227,7 +225,6 @@ class TestSpatialJoinNYBB(unittest.TestCase):
         self.assertEquals(df.shape, (12,8))
 
     @unittest.skipIf(str(pd.__version__) < LooseVersion('0.19'), pandas_0_18_problem)
-    @pytest.mark.xfail
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
         # when result of the join is empty

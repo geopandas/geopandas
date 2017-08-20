@@ -37,11 +37,11 @@ GEOSSTRtree *create_index(GEOSContextHandle_t handle, GEOSGeometry **geoms, size
 
 /* Spatial join of two arrays of geometries over the predicate
  *
- * This creates places all right-side geometries into an STRTree spatial index
+ * This places all right-side geometries into an STRTree spatial index
  * And then iterates through the left side and compares them against the index
  * This produces a rough intersection of all geometry pairs that might interact
  * Then we filter those pairs by the more precise spatial predicate
- *   like intersects, contains, covers, etc..
+ * like intersects, contains, covers, etc..
  * This returns an array of indices in each side that match
  * Organized in a [left_0, right_0, left_1, right_1, ... ] order
  */
