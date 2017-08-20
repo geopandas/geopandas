@@ -9,7 +9,7 @@ import shapely
 import shapely.prepared
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry, geom_factory
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union
 import shapely.affinity as affinity
 
 import cython
@@ -40,6 +40,16 @@ cdef extern from "algos.h":
                       GEOSPreparedPredicate predicate,
                       GEOSGeometry *left, size_t nleft,
                       GEOSGeometry *right, size_t nright) nogil
+
+
+cdef int GEOS_POINT = 0
+cdef int GEOS_LINESTRING = 1
+cdef int GEOS_LINEARRING = 2
+cdef int GEOS_POLYGON = 3
+cdef int GEOS_MULTIPOINT = 4
+cdef int GEOS_MULTILINESTRING = 5
+cdef int GEOS_MULTIPOLYGON = 6
+cdef int GEOS_GEOMETRYCOLLECTION = 7
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -772,8 +782,8 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         func = GEOSGetCentroid_r
     elif op == 'convex_hull':
         func = GEOSConvexHull_r
-    # elif op == 'exterior':
-    #     func = GEOSGetExteriorRing_r  # segfaults on cleanup?
+    elif op == 'exterior':
+        func = GEOSGetExteriorRing_r  # segfaults on cleanup?
     elif op == 'envelope':
         func = GEOSEnvelope_r
     elif op == 'representative_point':
@@ -1103,6 +1113,25 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
+cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *collection
+    cdef GEOSGeometry *out
+    cdef size_t n
+
+    handle = get_geos_context_handle()
+    geoms = geoms[geoms != 0]
+    n = geoms.size
+
+    with nogil:
+        collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON,
+                                                 <GEOSGeometry **> geoms.data,
+                                                 n)
+        out = GEOSUnaryUnion_r(handle, collection)
+
+    return geom_factory(<np.uintp_t> out)
+
+
 class GeometryArray(object):
     dtype = np.dtype('O')
 
@@ -1276,6 +1305,11 @@ class GeometryArray(object):
     def envelope(self):
         return geo_unary_op('envelope', self.data)
 
+    def exterior(self):
+        out = geo_unary_op('exterior', self.data)
+        out.parent = self  # exterior shares data with self
+        return out
+
     def representative_point(self):
         return geo_unary_op('representative_point', self.data)
 
@@ -1404,6 +1438,13 @@ class GeometryArray(object):
             categorical.categories.dtype
         """
         return to_shapely(self.data)
+
+    def unary_union(self):
+        """ Unary union.
+
+        Returns a single shapely geometry
+        """
+        return unary_union(self.data)
 
 
 cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,

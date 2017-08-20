@@ -113,6 +113,7 @@ def test_vector_vector_predicates(attr, args):
     'centroid',
     'convex_hull',
     'envelope',
+    'exterior',
 ])
 def test_unary_geo(attr):
 
@@ -384,3 +385,14 @@ def test_null_mixed_types():
     cat = G.geom_type()
 
     assert list(cat) == ['Polygon', np.nan, 'Point']
+
+
+def test_unary_union():
+    geoms = [shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+             shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)])]
+    G = from_shapely(geoms)
+    u = G.unary_union()
+
+    expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    assert u.equals(expected)
+
