@@ -368,6 +368,8 @@ class TestPlotCollections:
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
         self.lines = GeoSeries([LineString([(0, i), (4, i + 0.5), (9, i)])
                                 for i in range(self.N)])
+        self.polygons = GeoSeries([Polygon([(0, i), (4, i + 0.5), (9, i)])
+                                   for i in range(self.N)])
 
     def test_points(self):
         from geopandas.plotting import plot_point_collection
@@ -459,7 +461,7 @@ class TestPlotCollections:
         assert tuple(res_ls[1]) == exp_ls[1]
         ax.cla()
 
-    def test_linestring_values(self):
+    def test_linestrings_values(self):
         from geopandas.plotting import plot_linestring_collection
 
         fig, ax = plt.subplots()
@@ -488,6 +490,86 @@ class TestPlotCollections:
         expected_colors = cmap([0])
         # failing, see above with points
         # _check_colors2(self.N, coll.get_color(), expected_colors)
+        ax.cla()
+
+    def test_polygons(self):
+        from geopandas.plotting import plot_polygon_collection
+        from matplotlib.collections import PatchCollection
+
+        fig, ax = plt.subplots()
+        coll = plot_polygon_collection(ax, self.polygons)
+        assert isinstance(coll, PatchCollection)
+        ax.cla()
+
+        # default: single default matplotlib color
+        # but with default alpha of 0.5 and black edgecolor
+        coll = plot_polygon_collection(ax, self.polygons)
+        dflt_col = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
+        _check_colors2(self.N, coll.get_facecolor(), [dflt_col] * self.N,
+                       alpha=0.5)
+        _check_colors2(self.N, coll.get_edgecolor(), ['k'] * self.N, alpha=0.5)
+        ax.cla()
+
+        # default: color sets both facecolor and edgecolor
+        # TODO but test fails for edge (still black)
+        coll = plot_polygon_collection(ax, self.polygons, color='g')
+        _check_colors2(self.N, coll.get_facecolor(), ['g'] * self.N, alpha=0.5)
+        # _check_colors2(self.N, coll.get_edgecolor(), ['g'] * self.N, alpha=0.5)
+        ax.cla()
+
+        # only setting facecolor keeps default for edgecolor
+        coll = plot_polygon_collection(ax, self.polygons, facecolor='g')
+        _check_colors2(self.N, coll.get_facecolor(), ['g'] * self.N, alpha=0.5)
+        _check_colors2(self.N, coll.get_edgecolor(), ['k'] * self.N, alpha=0.5)
+        ax.cla()
+
+        # custom facecolor and edgecolor
+        coll = plot_polygon_collection(ax, self.polygons, facecolor='g',
+                                       edgecolor='r')
+        _check_colors2(self.N, coll.get_facecolor(), ['g'] * self.N, alpha=0.5)
+        _check_colors2(self.N, coll.get_edgecolor(), ['r'] * self.N, alpha=0.5)
+        ax.cla()
+
+    def test_polygons_values(self):
+        from geopandas.plotting import plot_polygon_collection
+
+        fig, ax = plt.subplots()
+
+        # default colormap, edge is still black by default
+        coll = plot_polygon_collection(ax, self.polygons, self.values)
+        cmap = plt.get_cmap()
+        exp_colors = cmap(np.arange(self.N))
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        _check_colors2(self.N, coll.get_edgecolor(), ['k'] * self.N, alpha=0.5)
+        ax.cla()
+
+        # specify colormap
+        coll = plot_polygon_collection(ax, self.polygons, self.values,
+                                       cmap='RdBu')
+        cmap = plt.get_cmap('RdBu')
+        exp_colors = cmap(np.arange(self.N))
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        ax.cla()
+
+        # specify vmin/vmax
+        coll = plot_polygon_collection(ax, self.polygons, self.values,
+                                          vmin=3, vmax=5)
+        cmap = plt.get_cmap()
+        exp_colors = cmap([0])
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        ax.cla()
+
+        # override edgecolor
+        coll = plot_polygon_collection(ax, self.polygons, self.values,
+                                       edgecolor='g')
+        cmap = plt.get_cmap()
+        exp_colors = cmap(np.arange(self.N))
+        # failing, see above with points
+        # _check_colors2(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        _check_colors2(self.N, coll.get_edgecolor(), ['g'] * self.N, alpha=0.5)
         ax.cla()
 
 
