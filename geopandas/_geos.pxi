@@ -131,6 +131,7 @@ cdef extern from "geos_c.h":
     void GEOSWKBWriter_destroy_r(GEOSContextHandle_t , GEOSWKBWriter* ) nogil
     unsigned char *GEOSWKBWriter_write_r(GEOSContextHandle_t, GEOSWKBWriter*, const GEOSGeometry*, size_t *) nogil
 
+    GEOSGeometry *GEOSGeom_createCollection_r(GEOSContextHandle_t, int, GEOSGeometry**, unsigned int) nogil
 
 
 cdef GEOSContextHandle_t get_geos_context_handle():

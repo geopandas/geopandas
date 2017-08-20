@@ -246,10 +246,13 @@ class TestGeomMethods(unittest.TestCase):
     def test_unary_union(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
-        expected = unary_union([p1, p2])
-        g = GeoSeries([p1, p2])
+        point = Point(5, 5)
 
-        self._test_unary_topological('unary_union', expected, g)
+        for L in [[p1, p2], [point, p2], [p1, p2], [point, None],
+                  [None, p2], [None, None]]:
+            expected = unary_union([x for x in L if x is not None])
+            g = GeoSeries(L)
+            assert g.unary_union.equals(expected)
 
     def test_contains(self):
         expected = [True, False, True, False, False, False]

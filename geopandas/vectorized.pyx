@@ -8,7 +8,7 @@ import shapely
 import shapely.prepared
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry, geom_factory
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union
 import shapely.affinity as affinity
 
 import cython
@@ -30,6 +30,16 @@ ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
 ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
                                        const GEOSPreparedGeometry *left,
                                        const GEOSGeometry *right) nogil
+
+
+cdef int GEOS_POINT = 0
+cdef int GEOS_LINESTRING = 1
+cdef int GEOS_LINEARRING = 2
+cdef int GEOS_POLYGON = 3
+cdef int GEOS_MULTIPOINT = 4
+cdef int GEOS_MULTILINESTRING = 5
+cdef int GEOS_MULTIPOLYGON = 6
+cdef int GEOS_GEOMETRYCOLLECTION = 7
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -1093,6 +1103,25 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
+cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *collection
+    cdef GEOSGeometry *out
+    cdef size_t n
+
+    handle = get_geos_context_handle()
+    geoms = geoms[geoms != 0]
+    n = geoms.size
+
+    with nogil:
+        collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON,
+                                                 <GEOSGeometry **> geoms.data,
+                                                 n)
+        out = GEOSUnaryUnion_r(handle, collection)
+
+    return geom_factory(<np.uintp_t> out)
+
+
 class GeometryArray(object):
     dtype = np.dtype('O')
 
@@ -1399,3 +1428,10 @@ class GeometryArray(object):
             categorical.categories.dtype
         """
         return to_shapely(self.data)
+
+    def unary_union(self):
+        """ Unary union.
+
+        Returns a single shapely geometry
+        """
+        return unary_union(self.data)
