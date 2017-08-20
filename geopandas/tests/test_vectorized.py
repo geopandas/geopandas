@@ -115,7 +115,9 @@ def test_vector_vector_predicates(attr, args):
     assert result.tolist() == expected
 
 
-@pytest.mark.parametrize("attr", ["boundary", "centroid", "convex_hull", "envelope"])
+@pytest.mark.parametrize(
+    "attr", ["boundary", "centroid", "convex_hull", "envelope", "exterior"]
+)
 def test_unary_geo(attr):
 
     result = getattr(T, attr)

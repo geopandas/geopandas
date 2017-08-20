@@ -543,11 +543,9 @@ class GeometryArray(ExtensionArray):
 
     @property
     def exterior(self):
-        # TODO(cython)
-        return _unary_geo("exterior", self)
-        data = np.empty(len(self), dtype=object)
-        data[:] = [geom.exterior for geom in self]
-        return from_shapely(data)
+        out = vectorized.geo_unary_op("exterior", self.data)
+        # exterior shares data with self
+        return GeometryArray(out, parent=self)
 
     @property
     def interiors(self):
