@@ -277,9 +277,14 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
         color = np.array([next(color_generator) for _ in xrange(num_geoms)])
         col_seq = True
 
+    geom_types = s.geometry.type
+    poly_idx = np.asarray((geom_types == 'Polygon')
+                          | (geom_types == 'MultiPolygon'))
+    line_idx = np.asarray((geom_types == 'LineString')
+                          | (geom_types == 'MultiLineString'))
+    point_idx = np.asarray(geom_types == 'Point')
+
     # plot all Polygons and all MultiPolygon components in the same collection
-    poly_idx = np.array(
-        (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon'))
     polys = s.geometry[poly_idx]
 
     if not polys.empty:
@@ -291,26 +296,21 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
                 facecolor = color[poly_idx] if col_seq else color
         else:
             facecolor = color
-        plot_polygon_collection(ax, polys,
-                                facecolor=facecolor,
+        plot_polygon_collection(ax, polys, facecolor=facecolor,
                                 linewidth=linewidth, **color_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
-    line_idx = np.array(
-        (s.geometry.type == 'LineString') |
-        (s.geometry.type == 'MultiLineString'))
     lines = s.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines,
-                                   color=color[line_idx] if col_seq else color,
+        color_ = color[line_idx] if col_seq else color
+        plot_linestring_collection(ax, lines, color=color_,
                                    linewidth=linewidth, **color_kwds)
 
-    point_idx = np.array(s.geometry.type == 'Point')
+    # plot all Points in the same collection
     points = s.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points,
-                              color=color[point_idx] if col_seq else color,
-                              **color_kwds)
+        color_ = color[point_idx] if col_seq else color
+        plot_point_collection(ax, points, color=color_, **color_kwds)
 
     plt.draw()
     return ax
@@ -437,9 +437,14 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     mn = values.min() if vmin is None else vmin
     mx = values.max() if vmax is None else vmax
 
+    geom_types = s.geometry.type
+    poly_idx = np.asarray((geom_types == 'Polygon')
+                          | (geom_types == 'MultiPolygon'))
+    line_idx = np.asarray((geom_types == 'LineString')
+                          | (geom_types == 'MultiLineString'))
+    point_idx = np.asarray(geom_types == 'Point')
+
     # plot all Polygons and all MultiPolygon components in the same collection
-    poly_idx = np.array(
-        (s.geometry.type == 'Polygon') | (s.geometry.type == 'MultiPolygon'))
     polys = s.geometry[poly_idx]
     if not polys.empty:
         plot_polygon_collection(ax, polys, values[poly_idx],
@@ -447,16 +452,13 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                                     linewidth=linewidth, **color_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
-    line_idx = np.array(
-        (s.geometry.type == 'LineString') |
-        (s.geometry.type == 'MultiLineString'))
     lines = s.geometry[line_idx]
     if not lines.empty:
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap,
                                    linewidth=linewidth, **color_kwds)
 
-    point_idx = np.array(s.geometry.type == 'Point')
+    # plot all Points in the same collection
     points = s.geometry[point_idx]
     if not points.empty:
         plot_point_collection(ax, points, values[point_idx],
