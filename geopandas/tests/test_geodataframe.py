@@ -520,3 +520,15 @@ def test_set_geometry_null():
 def test_constructor_without_geometries():
     gdf = GeoDataFrame({'x': [1]})
     assert list(gdf.x) == [1]
+
+
+def test_constructor_column_ordering():
+    geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    gs = GeoSeries(geoms)
+    gdf = GeoDataFrame({'a': [1, 2, 3], 'geometry': gs},
+                       columns=['geometry', 'a'],
+                       index=pd.Index([0, 0, 1]),
+                       geometry='geometry')
+
+    assert gdf.geometry._geometry_array is gs._geometry_array
+    assert gdf.geometry._geometry_array.data.all()
