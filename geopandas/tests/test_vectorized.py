@@ -1,12 +1,15 @@
-import time
 import random
+import time
+
+import numpy as np
+
 import shapely
-from geopandas.array import GeometryArray, points_from_xy, from_shapely
-from geopandas.vectorized import serialize, deserialize
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
+from geopandas.array import GeometryArray, points_from_xy, from_shapely
+from geopandas.vectorized import serialize, deserialize, cysjoin
+
 import pytest
-import numpy as np
 
 
 triangles = [
@@ -347,6 +350,36 @@ def test_pickle():
 
     assert (T.data != T2.data).all()
     assert T.equals(T2).all()
+
+
+@pytest.mark.parametrize(
+    "predicate",
+    [
+        "contains",
+        "covers",
+        "crosses",
+        "disjoint",
+        "intersects",
+        "overlaps",
+        "touches",
+        "within",
+    ],
+)
+def test_sjoin(predicate):
+    left, right = cysjoin(T.data, P.data, predicate)
+
+    assert isinstance(left, np.ndarray)
+    assert isinstance(right, np.ndarray)
+    assert left.dtype == T.data.dtype
+    assert right.dtype == T.data.dtype
+    assert left.shape == right.shape
+    (n,) = left.shape
+    assert n < (len(T) * len(P))
+
+    for i, j in zip(left, right):
+        left = triangles[i]
+        right = points[j]
+        assert getattr(left, predicate)(right)
 
 
 def test_raise_on_bad_sizes():

@@ -7,11 +7,13 @@ import pandas as pd
 
 from shapely import prepared
 
-from geopandas import GeoDataFrame
+from ..geodataframe import GeoDataFrame
+from ..geodataframe import GeoSeries
+from ..vectorized import cysjoin
 
 
-def sjoin(
-    left_df, right_df, how="inner", op="intersects", lsuffix="left", rsuffix="right"
+def sjoin_old(
+    left_df, right_df, op="intersects", how="inner", lsuffix="left", rsuffix="right"
 ):
     """Spatial join of two GeoDataFrames.
 
@@ -26,7 +28,7 @@ def sjoin(
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
     op : string, default 'intersection'
-        Binary predicate, one of {'intersects', 'contains', 'within'}.
+        Binary predicate, such as 'intersects', 'contains', 'within'.
         See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
@@ -209,3 +211,123 @@ def sjoin(
         joined = joined.drop(["_key_left", "_key_right"], axis=1)
 
     return joined
+
+
+def sjoin(
+    left_df, right_df, op="intersects", how="inner", lsuffix="left", rsuffix="right"
+):
+    """Spatial join of two GeoDataFrames.
+
+    Parameters
+    ----------
+    left_df, right_df : GeoDataFrames
+    how : string, default 'inner'
+        The type of join:
+
+        * 'left': use keys from left_df; retain only left_df geometry column
+        * 'right': use keys from right_df; retain only right_df geometry column
+        * 'inner': use intersection of keys from both dfs; retain only
+          left_df geometry column
+    op : string, default 'intersection'
+        Binary predicate, such as 'intersects', 'contains', 'within'.
+        See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
+    lsuffix : string, default 'left'
+        Suffix to apply to overlapping column names (left GeoDataFrame).
+    rsuffix : string, default 'right'
+        Suffix to apply to overlapping column names (right GeoDataFrame).
+    """
+    if not isinstance(left_df, GeoDataFrame):
+        raise ValueError(
+            "'left_df' should be GeoDataFrame, got {}".format(type(left_df))
+        )
+
+    if not isinstance(right_df, GeoDataFrame):
+        raise ValueError(
+            "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
+        )
+
+    allowed_hows = ["left", "right", "inner"]
+    if how not in allowed_hows:
+        raise ValueError(
+            '`how` was "%s" but is expected to be in %s' % (how, allowed_hows)
+        )
+
+    if left_df.crs != right_df.crs:
+        warn(
+            (
+                "CRS of frames being joined does not match!"
+                "(%s != %s)" % (left_df.crs, right_df.crs)
+            )
+        )
+
+    left_indices, right_indices = cysjoin(
+        left_df.geometry.array.data, right_df.geometry.array.data, op
+    )
+    n = len(left_indices)
+
+    if how == "left":
+        missing = pd.Index(np.arange(len(left_df))).difference(pd.Index(left_indices))
+        if len(missing):
+            left_indices = np.concatenate([left_indices, missing])
+
+    if how == "right":
+        missing = pd.Index(np.arange(len(right_df))).difference(pd.Index(right_indices))
+        if len(missing):
+            right_indices = np.concatenate([right_indices, missing])
+
+    n_left = len(left_indices)
+    n_right = len(right_indices)
+
+    left = left_df.take(left_indices)
+    right = right_df.take(right_indices)
+
+    if how in ("inner", "left"):
+        del right[right._geometry_column_name]
+        index = left.index
+    else:
+        del left[left._geometry_column_name]
+        index = right.index
+
+    columns = {}
+    names = []
+    for name, series in left.iteritems():
+        if name in right.columns:
+            name = name + "_" + lsuffix
+        series.index = index[:n_left]
+        if how == "right":
+            new = series.iloc[:0].reindex(index[n:])
+            series = pd.concat([series, new], axis=0)
+        columns[name] = series
+        names.append(name)
+    for name, series in right.iteritems():
+        if name in left.columns:
+            name = name + "_" + rsuffix
+        series.index = index[:n_right]
+        if how == "left":
+            new = series.iloc[:0].reindex(index[n:])
+            series = pd.concat([series, new], axis=0)
+        columns[name] = series
+        names.append(name)
+
+    if how in ("inner", "left"):
+        series = pd.Series(right.index.values, index=index[:n_right])
+        new = series.iloc[:0].reindex(index[n:])
+        series = pd.concat([series, new], axis=0)
+        series.index = index
+        columns["index_right"] = series
+        names.append("index_right")
+        geo_name = left_df._geometry_column_name
+    else:
+        series = pd.Series(left.index.values, index=index[:n_left])
+        new = series.iloc[:0].reindex(index[n:])
+        series = pd.concat([series, new], axis=0)
+        series.index = index
+        columns["index_left"] = series
+        names.append("index_left")
+        geo_name = right_df._geometry_column_name
+
+    geometry = columns[geo_name]
+    geometry = GeoSeries(geometry._values, index=index, name=geometry.name)
+    columns[geo_name] = geometry
+
+    return GeoDataFrame(columns, columns=names, index=index, geometry=geo_name)

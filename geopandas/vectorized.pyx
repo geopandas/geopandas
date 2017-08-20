@@ -1,3 +1,4 @@
+# distutils: sources = geopandas/algos.c
 
 import collections
 import numbers
@@ -19,12 +20,21 @@ import numpy as np
 include "geopandas/_geos.pxi"
 
 
-ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
-                               const GEOSGeometry *left,
-                               const GEOSGeometry *right) nogil
-ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
-                                       const GEOSPreparedGeometry *left,
-                                       const GEOSGeometry *right) nogil
+cdef extern from "algos.h":
+    ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
+                                   const GEOSGeometry *left,
+                                   const GEOSGeometry *right) nogil
+    ctypedef char (*GEOSPreparedPredicate)(GEOSContextHandle_t handler,
+                                           const GEOSPreparedGeometry *left,
+                                           const GEOSGeometry *right) nogil
+    ctypedef struct size_vector:
+        size_t n
+        size_t m
+        size_t *a
+    size_vector sjoin(GEOSContextHandle_t handle,
+                      GEOSPreparedPredicate predicate,
+                      GEOSGeometry *left, size_t nleft,
+                      GEOSGeometry *right, size_t nright) nogil
 
 
 cdef int GEOS_POINT = 0
@@ -1114,3 +1124,55 @@ cpdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         out = GEOSUnaryUnion_r(handle, collection)
 
     return geom_factory(<np.uintp_t> out)
+
+
+cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
+              np.ndarray[np.uintp_t, ndim=1, cast=True] right,
+              str predicate_name):
+    """ Spatial join
+
+    Parameters
+    ----------
+    left: np.ndarray
+        array of pointers to GEOSGeometry objects
+    right : np.ndarray
+        array of pointers to GEOSGeometry objects
+    predicate_name: string
+        contains, intersects, within, etc..
+
+    Returns
+    -------
+    left_out: np.ndarray
+        Array of indices to pass to take for the left side to match with right
+    right_out: np.ndarray
+        Array of indices to pass to take for the right side to match with left
+    """
+    cdef GEOSContextHandle_t handle
+    cdef GEOSPreparedPredicate predicate
+    cdef size_vector sv
+    cdef Py_ssize_t idx
+    cdef np.ndarray[np.uintp_t, ndim=1] left_out
+    cdef np.ndarray[np.uintp_t, ndim=1] right_out
+    cdef size_t left_size = left.size
+    cdef size_t right_size = right.size
+
+    handle = get_geos_context_handle()
+    predicate = get_prepared_predicate(predicate_name)
+    if not predicate:
+        raise NotImplementedError(predicate_name)
+
+    with nogil:
+        sv = sjoin(handle, predicate,
+                   <GEOSGeometry*> left.data, left_size,
+                   <GEOSGeometry*> right.data, right_size)
+
+    left_out = np.empty(sv.n // 2, dtype=np.uintp)
+    right_out = np.empty(sv.n // 2, dtype=np.uintp)
+
+    with nogil:
+        for idx in range(0, sv.n // 2):
+            left_out[idx] = sv.a[2 * idx]
+            right_out[idx] = sv.a[2 * idx + 1]
+
+    cfree(sv.a)
+    return left_out, right_out
