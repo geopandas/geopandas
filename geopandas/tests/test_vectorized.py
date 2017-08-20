@@ -113,6 +113,7 @@ def test_vector_vector_predicates(attr, args):
     'centroid',
     'convex_hull',
     'envelope',
+    'exterior',
 ])
 def test_unary_geo(attr):
 
