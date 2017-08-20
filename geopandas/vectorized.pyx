@@ -1268,7 +1268,7 @@ class GeometryArray(object):
 
     def exterior(self):
         out = geo_unary_op('exterior', self.data)
-        out.parent = self
+        out.parent = self  # exterior shares data with self
         return out
 
     def representative_point(self):

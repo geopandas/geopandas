@@ -215,7 +215,7 @@ class GeoPandasBase(object):
         # TODO: return empty geometry for non-polygons
         out = self.unary_geo('exterior')
         out._geometry_array.parent = self._geometry_array
-        return out
+        return out  # exterior shares data with self
 
     @property
     def interiors(self):
