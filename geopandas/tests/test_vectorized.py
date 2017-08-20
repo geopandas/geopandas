@@ -396,3 +396,7 @@ def test_unary_union():
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)
 
+
+def test_get_coordinates():
+    L = T.exterior().get_coordinates()
+    assert L == [tuple(t.exterior.coords) for t in triangles]

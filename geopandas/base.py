@@ -189,6 +189,9 @@ class GeoPandasBase(object):
         x = vectorized.geo_unary_op(op, self._geometry_array.data)
         return GeoSeries(x, index=self.index, crs=self.crs)
 
+    def coords(self):
+        return vectorized.get_coordinates(self._geometry_array.data)
+
     @property
     def boundary(self):
         """Return the bounding geometry for each geometry"""

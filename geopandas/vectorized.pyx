@@ -1113,6 +1113,8 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *collection
@@ -1130,6 +1132,60 @@ cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         out = GEOSUnaryUnion_r(handle, collection)
 
     return geom_factory(<np.uintp_t> out)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef get_coordinates(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Get coordinates of LineStrings or Points
+
+    Parameters
+    ----------
+    geoms: np.ndarray
+        Array of pointers to GEOSGeometry objects
+        These must be either LineString objects, Point objects, or NULL
+
+    Returns
+    -------
+    out: list
+        List of tuples of coordinate points
+    """
+    cdef Py_ssize_t i, j
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef GEOSCoordSequence *sequence
+    cdef unsigned int n = geoms.size
+    cdef double x, y, z
+    cdef char has_z
+
+    handle = get_geos_context_handle()
+    out = []
+
+    for i in xrange(n):
+        geom = <GEOSGeometry *> geoms[i]
+        if geom is NULL:
+            out.append(())
+            continue
+
+        sequence = GEOSGeom_getCoordSeq_r(handle, geom)
+        if sequence is NULL:
+            raise TypeError("Geometry must be LineString or Point")
+
+        L = []
+
+        has_z = GEOSHasZ_r(handle, geom)
+
+        for j in xrange(GEOSGetNumCoordinates_r(handle, geom)):
+            GEOSCoordSeq_getX_r(handle, sequence, j, &x)
+            GEOSCoordSeq_getY_r(handle, sequence, j, &y)
+            if has_z:
+                GEOSCoordSeq_getZ_r(handle, sequence, j, &z)
+                L.append(tuple((float(x), float(y), float(z))))
+            else:
+                L.append(tuple((float(x), float(y))))
+        out.append(tuple(L))
+
+    return out
 
 
 class GeometryArray(object):
@@ -1445,6 +1501,9 @@ class GeometryArray(object):
         Returns a single shapely geometry
         """
         return unary_union(self.data)
+
+    def get_coordinates(self):
+        return get_coordinates(self.data)
 
 
 cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,

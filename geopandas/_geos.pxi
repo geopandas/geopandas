@@ -133,6 +133,8 @@ cdef extern from "geos_c.h":
 
     GEOSGeometry *GEOSGeom_createCollection_r(GEOSContextHandle_t, int, GEOSGeometry**, unsigned int) nogil
 
+    int GEOSGetNumCoordinates_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+
 
 cdef GEOSContextHandle_t get_geos_context_handle():
     # Note: This requires that lgeos is defined, so needs to be imported as:
