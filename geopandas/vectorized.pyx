@@ -39,7 +39,7 @@ cdef int GEOS_POLYGON = 3
 cdef int GEOS_MULTIPOINT = 4
 cdef int GEOS_MULTILINESTRING = 5
 cdef int GEOS_MULTIPOLYGON = 6
-cdef int GEOS_GEOMETRYCOLLECTIO = 7
+cdef int GEOS_GEOMETRYCOLLECTION = 7
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
