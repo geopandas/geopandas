@@ -8,7 +8,7 @@ import shapely
 import shapely.prepared
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry, geom_factory
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union
 import shapely.affinity as affinity
 
 import cython
@@ -1103,13 +1103,15 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
-cdef cy_unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *collection
     cdef GEOSGeometry *out
-    cdef size_t n = geoms.size
+    cdef size_t n
 
     handle = get_geos_context_handle()
+    geoms = geoms[geoms != 0]
+    n = geoms.size
 
     with nogil:
         collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON,
@@ -1427,4 +1429,4 @@ class GeometryArray(object):
 
         Returns a single shapely geometry
         """
-        return cy_unary_union(self.data)
+        return unary_union(self.data)

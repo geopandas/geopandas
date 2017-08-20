@@ -248,8 +248,9 @@ class TestGeomMethods(unittest.TestCase):
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         point = Point(5, 5)
 
-        for L in [[p1, p2], [point, p2]]:
-            expected = unary_union(L)
+        for L in [[p1, p2], [point, p2], [p1, p2], [point, None],
+                  [None, p2], [None, None]]:
+            expected = unary_union([x for x in L if x is not None])
             g = GeoSeries(L)
             assert g.unary_union.equals(expected)
 
