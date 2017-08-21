@@ -1,4 +1,4 @@
-
+.. _reference:
 
 Reference
 ===========================
@@ -136,3 +136,20 @@ All pandas ``DataFrame`` methods are also available, although they may
 not operate in a meaningful way on the ``geometry`` column and may not
 return a ``GeoDataFrame`` result even when it would be appropriate to
 do so.
+
+API Pages
+---------
+
+.. currentmodule:: geopandas
+.. autosummary::
+  :template: autosummary.rst
+  :toctree: api/_as_gen
+
+  GeoDataFrame
+  GeoDataFrame.from_file
+  GeoSeries
+  overlay
+  read_file
+  sjoin
+  tools.geocode
+  datasets.get_path
