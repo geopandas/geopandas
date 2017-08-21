@@ -509,3 +509,11 @@ def test_coords():
     with pytest.raises(TypeError):
         s = GeoSeries(polys)
         result = s.coords()
+
+
+def test_coords_points():
+    points = [Point(0, 0), Point(1, 1)]
+    s = GeoSeries(points)
+
+    result = s.coords()
+    assert result == [((0, 0),), ((1, 1),)]
