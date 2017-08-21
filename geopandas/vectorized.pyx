@@ -1136,7 +1136,7 @@ cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef get_coordinates(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cpdef coords(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """ Get coordinates of LineStrings or Points
 
     Parameters
@@ -1502,8 +1502,8 @@ class GeometryArray(object):
         """
         return unary_union(self.data)
 
-    def get_coordinates(self):
-        return get_coordinates(self.data)
+    def coords(self):
+        return coords(self.data)
 
 
 cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,

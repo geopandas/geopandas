@@ -191,7 +191,7 @@ class GeoPandasBase(object):
 
     def coords(self):
         from .geoseries import GeoSeries
-        x = vectorized.get_coordinates(self._geometry_array.data)
+        x = vectorized.coords(self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property

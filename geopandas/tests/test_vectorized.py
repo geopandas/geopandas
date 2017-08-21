@@ -397,6 +397,6 @@ def test_unary_union():
     assert u.equals(expected)
 
 
-def test_get_coordinates():
-    L = T.exterior().get_coordinates()
+def test_coords():
+    L = T.exterior().coords()
     assert L == [tuple(t.exterior.coords) for t in triangles]
