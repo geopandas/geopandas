@@ -190,7 +190,9 @@ class GeoPandasBase(object):
         return GeoSeries(x, index=self.index, crs=self.crs)
 
     def coords(self):
-        return vectorized.get_coordinates(self._geometry_array.data)
+        from .geoseries import GeoSeries
+        x = vectorized.get_coordinates(self._geometry_array.data)
+        return Series(x, index=self.index)
 
     @property
     def boundary(self):

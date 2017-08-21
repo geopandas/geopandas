@@ -498,9 +498,10 @@ def test_coords():
               ((0, 0), (0, 10), (10, 10), (10, 0), (0, 0))]
     polys = [Polygon(c) for c in coords]
 
-    s = GeoSeries(polys)
+    s = GeoSeries(polys, index=['a', 'b'])
     result = s.exterior.coords()
-    assert coords == result
+    assert list(result) == coords
+    assert list(result.index) == ['a', 'b']
 
     s = GeoSeries([None] + polys)
     result = s.exterior.coords()
@@ -516,4 +517,4 @@ def test_coords_points():
     s = GeoSeries(points)
 
     result = s.coords()
-    assert result == [((0, 0),), ((1, 1),)]
+    assert list(result) == [((0, 0),), ((1, 1),)]
