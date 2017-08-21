@@ -513,8 +513,9 @@ def test_coords():
 
 
 def test_coords_points():
-    points = [Point(0, 0), Point(1, 1)]
-    s = GeoSeries(points)
-
-    result = s.coords()
-    assert list(result) == [((0, 0),), ((1, 1),)]
+    for coords in [((0., 0.), (1., 1.)),
+                   ((0., 0., 1.), (1., 2., 3.))]:  # test z coordinate
+        points = list(map(Point, coords))
+        s = GeoSeries(points)
+        result = s.coords()
+        assert list(result) == [(c,) for c in coords]
