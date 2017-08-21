@@ -1,3 +1,5 @@
+.. _geometric_manipulations:
+
 Geometric Manipulations
 ========================
 

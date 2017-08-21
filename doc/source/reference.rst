@@ -146,7 +146,6 @@ API Pages
   :toctree: api/_as_gen
 
   GeoDataFrame
-  GeoDataFrame.from_file
   GeoSeries
   overlay
   read_file

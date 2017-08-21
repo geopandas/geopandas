@@ -48,7 +48,7 @@ autosummary_generate = True
 
 # Sphinx gallery configuration
 sphinx_gallery_conf = {
-    'examples_dirs': ['../../gallery'],
+    'examples_dirs': ['../../examples'],
     'filename_pattern': '^((?!sgskip).)*$',
     'gallery_dirs': ['gallery'],
     'doc_module': ('geopandas',),
@@ -56,7 +56,7 @@ sphinx_gallery_conf = {
                       'numpy': 'http://docs.scipy.org/doc/numpy/reference',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
-    'backreferences_dir': 'api/_as_gen',  # Not currently used but kept for future
+    'backreferences_dir': 'api/_as_gen'
 }
 
 # The suffix of source filenames.

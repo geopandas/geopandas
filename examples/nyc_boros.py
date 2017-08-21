@@ -1,36 +1,57 @@
 """
-Generate example images for GeoPandas documentation.
+Visualizing NYC Boroughs
+------------------------
 
-TODO: autogenerate these from docs themselves
+Visualize the Boroughs of New York City with Geopandas.
 
-Kelsey Jordahl
-Time-stamp: <Tue May  6 12:17:29 EDT 2014>
+This example generates many images that are used in the documentation. See
+the `Geometric Manipulations <geometric_manipulations>` example for more
+details.
+
+First we'll import a dataset containing each borough in New York City. We'll
+use the ``datasets`` module to handle this quickly.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from geopandas import GeoSeries, GeoDataFrame
+import geopandas as gpd
 
 np.random.seed(1)
 DPI = 100
 
-# http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/nybb_16a.zip
-boros = GeoDataFrame.from_file('nybb.shp')
+path_nybb = gpd.datasets.get_path('nybb')
+boros = GeoDataFrame.from_file(path_nybb)
 boros.set_index('BoroCode', inplace=True)
-boros.sort()
-boros.plot()
+boros.sort_index()
+boros
+
+##############################################################################
+# Next, we'll plot the raw data
+ax = boros.plot()
 plt.xticks(rotation=90)
 plt.savefig('nyc.png', dpi=DPI, bbox_inches='tight')
-#plt.show()
+
+##############################################################################
+# We can easily retrieve the convex hull of each shape. This corresponds to
+# the outer edge of the shapes.
 boros.geometry.convex_hull.plot()
 plt.xticks(rotation=90)
+
+# Grab the limits which we'll use later
+xmin, xmax = plt.gca().get_xlim()
+ymin, ymax = plt.gca().get_ylim()
+
 plt.savefig('nyc_hull.png', dpi=DPI, bbox_inches='tight')
-#plt.show()
+
+##############################################################################
+# We'll generate some random dots scattered throughout our data, and will
+# use them to perform some set geometry with our boroughs. We can use
+# GeoPandas to perform unions, intersections, etc.
 
 N = 2000  # number of random points
 R = 2000  # radius of buffer in feet
-xmin, xmax = plt.gca().get_xlim()
-ymin, ymax = plt.gca().get_ylim()
+
 #xmin, xmax, ymin, ymax = 900000, 1080000, 120000, 280000
 xc = (xmax - xmin) * np.random.random(N) + xmin
 yc = (ymax - ymin) * np.random.random(N) + ymin
@@ -40,7 +61,10 @@ boros_with_holes = boros.geometry - mp
 boros_with_holes.plot()
 plt.xticks(rotation=90)
 plt.savefig('boros_with_holes.png', dpi=DPI, bbox_inches='tight')
-plt.show()
+
+##############################################################################
+# Finally, we'll show the holes that were taken out of our boroughs.
+
 holes = boros.geometry & mp
 holes.plot()
 plt.xticks(rotation=90)
