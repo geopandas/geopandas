@@ -22,9 +22,19 @@ def close_figures(request):
     plt.close('all')
 
 
+try:
+    cycle = matplotlib.rcParams['axes.prop_cycle'].by_key()
+    MPL_DFT_COLOR = cycle['color'][0]
+except KeyError:
+    MPL_DFT_COLOR = matplotlib.rcParams['axes.color_cycle'][0]
+
+
 class TestPointPlotting:
 
     def setup_method(self):
+        # scatterplot does not yet accept list of colors in matplotlib 1.4.3
+        # if we change the default to uniform, this might work again
+        pytest.importorskip('matplotlib', '1.5.0')
 
         self.N = 10
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
@@ -283,7 +293,7 @@ class TestPolygonPlotting:
         # values are flattended, but color not yet (can fix, but we are
         # thinking to use uniform coloring by default, which would also fix
         # this)
-        #_check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
+        # _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
 
         ax = self.df2.plot('values')
         # specifying values -> same as without values in this case.
@@ -375,6 +385,10 @@ class TestPlotCollections:
                                    for i in range(self.N)])
 
     def test_points(self):
+        # scatterplot does not yet accept list of colors in matplotlib 1.4.3
+        # if we change the default to uniform, this might work again
+        pytest.importorskip('matplotlib', '1.5.0')
+
         from geopandas.plotting import plot_point_collection
         from matplotlib.collections import PathCollection
 
@@ -385,9 +399,9 @@ class TestPlotCollections:
 
         # default: single default matplotlib color
         coll = plot_point_collection(ax, self.points)
-        dflt_col = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
-        _check_colors2(self.N, coll.get_facecolors(), [dflt_col]*self.N)
-        _check_colors2(self.N, coll.get_edgecolors(), [dflt_col] * self.N)
+        _check_colors2(self.N, coll.get_facecolors(), [MPL_DFT_COLOR] * self.N)
+        # edgecolor depends on matplotlib version
+        # _check_colors2(self.N, coll.get_edgecolors(), [MPL_DFT_COLOR]*self.N)
         ax.cla()
 
         # specify single other color
@@ -434,8 +448,7 @@ class TestPlotCollections:
 
         # default: single default matplotlib color
         coll = plot_linestring_collection(ax, self.lines)
-        dflt_col = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
-        _check_colors2(self.N, coll.get_color(), [dflt_col] * self.N)
+        _check_colors2(self.N, coll.get_color(), [MPL_DFT_COLOR] * self.N)
         ax.cla()
 
         # specify single other color
@@ -458,7 +471,7 @@ class TestPlotCollections:
 
         # pass through of kwargs
         coll = plot_linestring_collection(ax, self.lines, linestyle='--')
-        exp_ls = _style_to_linestring_onoffseq('--')
+        exp_ls = _style_to_linestring_onoffseq('dashed')
         res_ls = coll.get_linestyle()[0]
         assert res_ls[0] == exp_ls[0]
         assert tuple(res_ls[1]) == exp_ls[1]
@@ -507,8 +520,7 @@ class TestPlotCollections:
         # default: single default matplotlib color
         # but with default alpha of 0.5 and black edgecolor
         coll = plot_polygon_collection(ax, self.polygons)
-        dflt_col = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
-        _check_colors2(self.N, coll.get_facecolor(), [dflt_col] * self.N,
+        _check_colors2(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N,
                        alpha=0.5)
         _check_colors2(self.N, coll.get_edgecolor(), ['k'] * self.N, alpha=0.5)
         ax.cla()
@@ -558,7 +570,7 @@ class TestPlotCollections:
 
         # specify vmin/vmax
         coll = plot_polygon_collection(ax, self.polygons, self.values,
-                                          vmin=3, vmax=5)
+                                       vmin=3, vmax=5)
         cmap = plt.get_cmap()
         exp_colors = cmap([0])
         # failing, see above with points
