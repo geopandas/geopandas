@@ -22,8 +22,7 @@ DPI = 100
 
 path_nybb = gpd.datasets.get_path('nybb')
 boros = GeoDataFrame.from_file(path_nybb)
-boros.set_index('BoroCode', inplace=True)
-boros.sort_index()
+boros = boros.set_index('BoroCode')
 boros
 
 ##############################################################################
@@ -46,7 +45,7 @@ plt.savefig('nyc_hull.png', dpi=DPI, bbox_inches='tight')
 
 ##############################################################################
 # We'll generate some random dots scattered throughout our data, and will
-# use them to perform some set geometry with our boroughs. We can use
+# use them to perform some set operations with our boroughs. We can use
 # GeoPandas to perform unions, intersections, etc.
 
 N = 2000  # number of random points

@@ -29,7 +29,7 @@ df.plot()
 
 ###############################################################################
 # Plotting with CartoPy
-# ---------------------
+# =====================
 #
 # Cartopy also handles Shapely objects well, but it uses a different system for
 # CRS. To plot this data with CartoPy, we'll first need to project it into a
@@ -69,7 +69,7 @@ df_epsg.plot(ax=axs[1], color='white')
 
 ###############################################################################
 # CartoPy to GeoPandas
-# --------------------
+# ====================
 #
 # Next we'll perform a CRS projection in CartoPy, and then convert it
 # back into a GeoPandas object.
@@ -90,16 +90,15 @@ df_aea = gpd.GeoDataFrame(df['gdp_pp'], geometry=new_geometries,
 df_aea.plot()
 
 ###############################################################################
-# We can even combine these into the same figure. Here we'll plot half
-# of the countries with CartoPy, and the other half with GeoPandas. For
-# the GeoPandas countries, we'll color each based based on a feature
-# we've calculated above.
+# We can even combine these into the same figure. Here we'll plot the
+# shapes of the countries with CartoPy. We'll then calculate the centroid
+# of each with GeoPandas and plot it on top.
 
-# Generate a CartoPy figure and add half the countries to it
+# Generate a CartoPy figure and add the countries to it
 fig, ax = plt.subplots(subplot_kw={'projection': crs_new})
-ax.add_geometries(new_geometries[:len(new_geometries) // 2], crs=crs_new)
-# Make the GeoPandas plot
-df_aea.iloc[len(new_geometries) // 2:].plot(column='gdp_pp', ax=ax,
-                                            vmin=0, vmax=.02)
+ax.add_geometries(new_geometries, crs=crs_new)
+# Calculate centroids and plot
+df_aea_centroids = df_aea.geometry.centroid
+df_aea_centroids.plot(ax=ax, markersize=5)
 
 plt.show()
