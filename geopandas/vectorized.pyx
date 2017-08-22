@@ -124,7 +124,12 @@ cpdef from_shapely(object L):
     for idx in xrange(n):
         g = L[idx]
         if g is not None and not (isinstance(g, float) and np.isnan(g)):
-            geos_geom = <np.uintp_t> g.__geom__
+            try:
+                geos_geom = <np.uintp_t> g.__geom__
+            except AttributeError:
+                msg = ("Inputs to from_shapely must be shapely eometries. "
+                       "Got %s" % str(g))
+                raise TypeError(msg)
             geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
             out[idx] = <np.uintp_t> geom
         else:
