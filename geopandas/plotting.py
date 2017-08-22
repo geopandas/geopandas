@@ -8,11 +8,13 @@ from six import next
 from six.moves import xrange
 
 
-def _flatten_multi_geoms(geoms, colors):
+def _flatten_multi_geoms(geoms, colors=None):
     """
     Returns Series like geoms and colors, except that any Multi geometries
     are split into their components and colors are repeated for all component
     in the same Multi geometry.  Maintains 1:1 matching of geometry to color.
+    Passing `color` is optional, and when no `color` is passed a list of None
+    values is returned as `component_colors`.
 
     "Colors" are treated opaquely and so can actually contain any values.
 
@@ -23,9 +25,7 @@ def _flatten_multi_geoms(geoms, colors):
 
     component_colors : list of whatever type `colors` contains
     """
-    was_none = False
     if colors is None:
-        was_none = True
         colors = [None] * len(geoms)
 
     components, component_colors = [], []
@@ -42,8 +42,6 @@ def _flatten_multi_geoms(geoms, colors):
             components.append(geom)
             component_colors.append(color)
 
-    if was_none:
-        component_colors = None
     return components, component_colors
 
 
@@ -61,7 +59,7 @@ def plot_polygon_collection(ax, geoms, values=None, linewidth=1.0,
 
     geoms : a sequence of `N` Polygons and/or MultiPolygons (can be mixed)
 
-    values : a sequence of `N` values
+    values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
         Otherwise follows `color` / `facecolor` kwargs.
@@ -87,6 +85,8 @@ def plot_polygon_collection(ax, geoms, values=None, linewidth=1.0,
     from matplotlib.collections import PatchCollection
 
     geoms, values = _flatten_multi_geoms(geoms, values)
+    if None in values:
+        values = None
 
     # PatchCollection does not accept some kwargs.
     if 'markersize' in kwargs:
@@ -120,7 +120,7 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
 
     geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be mixed)
 
-    values : a sequence of `N` values
+    values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
 
@@ -136,6 +136,8 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
     from matplotlib.collections import LineCollection
 
     geoms, values = _flatten_multi_geoms(geoms, values)
+    if None in values:
+        values = None
 
     # LineCollection does not accept some kwargs.
     if 'markersize' in kwargs:
@@ -172,9 +174,9 @@ def plot_point_collection(ax, geoms, values=None, color=None,
 
     geoms : sequence of `N` Points
 
-    values : sequence of color or sequence of numbers
-        A sequence of `N` numbers to be mapped to colors using vmin, vmax,
-        and cmap. Cannot be specified together with `color`.
+    values : a sequence of `N` values, optional
+        Values mapped to colors using vmin, vmax, and cmap.
+        Cannot be specified together with `color`.
 
     Returns
     -------
