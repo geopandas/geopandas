@@ -206,6 +206,14 @@ class TestDataFrame(unittest.TestCase):
             self.assertAlmostEqual(i, r['geometry'].x)
             self.assertAlmostEqual(i, r['geometry'].y)
 
+    def test_set_geometry_series_name(self):
+        geom = [Point(x, y) for x, y in zip(range(5), range(5))]
+        g = GeoSeries(geom, name='my_geom')
+        df = self.df.set_geometry(g)
+        assert df._geometry_column_name == 'my_geom'
+        assert df.geometry.name == 'my_geom'
+        assert 'geometry' not in df.columns
+
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
@@ -532,3 +540,19 @@ def test_constructor_column_ordering():
 
     assert gdf.geometry._geometry_array is gs._geometry_array
     assert gdf.geometry._geometry_array.data.all()
+
+
+def test_constructor_preserve_series_name():
+    geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    gs = GeoSeries(geoms)
+    gdf = GeoDataFrame({'a': [1, 2, 3]}, geometry=gs)
+
+    assert gdf._geometry_column_name == 'geometry'
+    assert gdf.geometry.name == 'geometry'
+
+    geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    gs = GeoSeries(geoms, name='my_geom')
+    gdf = GeoDataFrame({'a': [1, 2, 3]}, geometry=gs)
+
+    assert gdf._geometry_column_name == 'my_geom'
+    assert gdf.geometry.name == 'my_geom'
