@@ -94,8 +94,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         assert isinstance(arg, pd.DataFrame)
 
         if not isinstance(geometry, str):
-            arg['geometry'] = geometry
-            geometry = 'geometry'
+            if isinstance(geometry, Series) and geometry.name:
+                arg[geometry.name] = geometry
+                geometry = geometry.name
+            else:
+                arg['geometry'] = geometry
+                geometry = 'geometry'
 
         if geometry in arg.columns:
             arg = arg.copy()
@@ -201,6 +205,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(col, (Series, list, np.ndarray)):
             level = col
             to_remove = geo_column_name
+            if isinstance(col, Series):
+                if col.name:
+                    geo_column_name = col.name
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:

@@ -37,9 +37,11 @@ class TestDataFrame(unittest.TestCase):
         self.first = merged_shapes.copy()
         self.first['BoroName'] = ['Staten Island', 'Manhattan']
         self.first['BoroCode'] = [5, 1]
+        self.first = self.first[['BoroName', 'BoroCode', 'myshapes']]
 
         self.mean = merged_shapes.copy()
         self.mean['BoroCode'] = [4,1.5]
+        self.mean = self.mean[['BoroCode', 'myshapes']]
 
     def test_geom_dissolve(self):
         test = self.polydf.dissolve('manhattan_bronx')
