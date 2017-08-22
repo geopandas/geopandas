@@ -3,9 +3,8 @@ from __future__ import print_function
 import warnings
 
 import numpy as np
-import pandas as pd
+
 from six import next
-from six.moves import xrange
 
 
 def _flatten_multi_geoms(geoms, colors=None):
@@ -118,7 +117,8 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
     ax : matplotlib.axes.Axes
         where shapes will be plotted
 
-    geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be mixed)
+    geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be
+            mixed)
 
     values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
@@ -194,7 +194,7 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     return collection
 
 
-def gencolor(N, colormap='Set1'):
+def _gencolor(N, colormap='Set1'):
     """
     Color generator intended to work with one of the ColorBrewer
     qualitative color scales.
@@ -210,52 +210,53 @@ def gencolor(N, colormap='Set1'):
     n_colors = min(N, 9)
     cmap = cm.get_cmap(colormap, n_colors)
     colors = cmap(range(n_colors))
-    for i in xrange(N):
+    for i in range(N):
         yield colors[i % n_colors]
 
 
 def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
                 figsize=None, **color_kwds):
-    """ Plot a GeoSeries
+    """
+    Plot a GeoSeries.
 
-        Generate a plot of a GeoSeries geometry with matplotlib.
+    Generate a plot of a GeoSeries geometry with matplotlib.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
 
-        Series
-            The GeoSeries to be plotted.  Currently Polygon,
-            MultiPolygon, LineString, MultiLineString and Point
-            geometries can be plotted.
+    s : Series
+        The GeoSeries to be plotted.  Currently Polygon,
+        MultiPolygon, LineString, MultiLineString and Point
+        geometries can be plotted.
 
-        cmap : str (default 'Set1')
-            The name of a colormap recognized by matplotlib.  Any
-            colormap will work, but categorical colormaps are
-            generally recommended.  Examples of useful discrete
-            colormaps include:
+    cmap : str (default 'Set1')
+        The name of a colormap recognized by matplotlib.  Any
+        colormap will work, but categorical colormaps are
+        generally recommended.  Examples of useful discrete
+        colormaps include:
 
-                Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
+            Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
 
-        color : str (default None)
-            If specified, all objects will be colored uniformly.
+    color : str (default None)
+        If specified, all objects will be colored uniformly.
 
-        ax : matplotlib.pyplot.Artist (default None)
-            axes on which to draw the plot
+    ax : matplotlib.pyplot.Artist (default None)
+        axes on which to draw the plot
 
-        linewidth : float (default 1.0)
-            Line width for geometries.
+    linewidth : float (default 1.0)
+        Line width for geometries.
 
-        figsize : pair of floats (default None)
-            Size of the resulting matplotlib.figure.Figure. If the argument
-            ax is given explicitly, figsize is ignored.
+    figsize : pair of floats (default None)
+        Size of the resulting matplotlib.figure.Figure. If the argument
+        ax is given explicitly, figsize is ignored.
 
-        **color_kwds : dict
-            Color options to be passed on to the actual plot function
+    **color_kwds : dict
+        Color options to be passed on to the actual plot function
 
-        Returns
-        -------
+    Returns
+    -------
 
-        matplotlib axes instance
+    matplotlib axes instance
     """
     if 'colormap' in color_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
@@ -275,8 +276,8 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
     num_geoms = len(s.index)
     col_seq = False
     if color is None:
-        color_generator = gencolor(len(s), colormap=cmap)
-        color = np.array([next(color_generator) for _ in xrange(num_geoms)])
+        color_generator = _gencolor(len(s), colormap=cmap)
+        color = np.array([next(color_generator) for _ in range(num_geoms)])
         col_seq = True
 
     geom_types = s.geometry.type
@@ -318,75 +319,76 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
     return ax
 
 
-def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
+def plot_dataframe(df, column=None, cmap=None, color=None, linewidth=1.0,
                    categorical=False, legend=False, ax=None,
                    scheme=None, k=5, vmin=None, vmax=None, figsize=None,
                    **color_kwds):
-    """ Plot a GeoDataFrame
+    """
+    Plot a GeoDataFrame.
 
-        Generate a plot of a GeoDataFrame with matplotlib.  If a
-        column is specified, the plot coloring will be based on values
-        in that column.  Otherwise, a categorical plot of the
-        geometries in the `geometry` column will be generated.
+    Generate a plot of a GeoDataFrame with matplotlib.  If a
+    column is specified, the plot coloring will be based on values
+    in that column.  Otherwise, a categorical plot of the
+    geometries in the `geometry` column will be generated.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
 
-        GeoDataFrame
-            The GeoDataFrame to be plotted.  Currently Polygon,
-            MultiPolygon, LineString, MultiLineString and Point
-            geometries can be plotted.
+    df : GeoDataFrame
+        The GeoDataFrame to be plotted.  Currently Polygon,
+        MultiPolygon, LineString, MultiLineString and Point
+        geometries can be plotted.
 
-        column : str (default None)
-            The name of the column to be plotted. Ignored if `color` is also set.
+    column : str (default None)
+        The name of the column to be plotted. Ignored if `color` is also set.
 
-        categorical : bool (default False)
-            If False, cmap will reflect numerical values of the
-            column being plotted.  For non-numerical columns (or if
-            column=None), this will be set to True.
+    categorical : bool (default False)
+        If False, cmap will reflect numerical values of the
+        column being plotted.  For non-numerical columns (or if
+        column=None), this will be set to True.
 
-        cmap : str (default 'Set1')
-            The name of a colormap recognized by matplotlib.
+    cmap : str (default 'Set1')
+        The name of a colormap recognized by matplotlib.
 
-        color : str (default None)
-            If specified, all objects will be colored uniformly.
+    color : str (default None)
+        If specified, all objects will be colored uniformly.
 
-        linewidth : float (default 1.0)
-            Line width for geometries.
+    linewidth : float (default 1.0)
+        Line width for geometries.
 
-        legend : bool (default False)
-            Plot a legend. Ignored if no `column` is given, or if `color` is given.
+    legend : bool (default False)
+        Plot a legend. Ignored if no `column` is given, or if `color` is given.
 
-        ax : matplotlib.pyplot.Artist (default None)
-            axes on which to draw the plot
+    ax : matplotlib.pyplot.Artist (default None)
+        axes on which to draw the plot
 
-        scheme : pysal.esda.mapclassify.Map_Classifier
-            Choropleth classification schemes (requires PySAL)
+    scheme : pysal.esda.mapclassify.Map_Classifier
+        Choropleth classification schemes (requires PySAL)
 
-        k   : int (default 5)
-            Number of classes (ignored if scheme is None)
+    k   : int (default 5)
+        Number of classes (ignored if scheme is None)
 
-        vmin : None or float (default None)
+    vmin : None or float (default None)
 
-            Minimum value of cmap. If None, the minimum data value
-            in the column to be plotted is used.
+        Minimum value of cmap. If None, the minimum data value
+        in the column to be plotted is used.
 
-        vmax : None or float (default None)
+    vmax : None or float (default None)
 
-            Maximum value of cmap. If None, the maximum data value
-            in the column to be plotted is used.
+        Maximum value of cmap. If None, the maximum data value
+        in the column to be plotted is used.
 
-        figsize
-            Size of the resulting matplotlib.figure.Figure. If the argument
-            axes is given explicitly, figsize is ignored.
+    figsize
+        Size of the resulting matplotlib.figure.Figure. If the argument
+        axes is given explicitly, figsize is ignored.
 
-        **color_kwds : dict
-            Color options to be passed on to the actual plot function
+    **color_kwds : dict
+        Color options to be passed on to the actual plot function
 
-        Returns
-        -------
+    Returns
+    -------
 
-        matplotlib axes instance
+    matplotlib axes instance
     """
     if 'colormap' in color_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
@@ -397,33 +399,30 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
                       "(for consistency with pandas)", FutureWarning)
         ax = color_kwds.pop('axes')
     if column and color:
-        warnings.warn("Only specify one of 'column' or 'color'. Using 'color'.",
-                      SyntaxWarning)
+        warnings.warn("Only specify one of 'column' or 'color'. Using "
+                      "'color'.", UserWarning)
         column = None
 
     import matplotlib.pyplot as plt
-    from matplotlib.lines import Line2D
-    from matplotlib.colors import Normalize
-    from matplotlib import cm
 
     if column is None:
-        return plot_series(s.geometry, cmap=cmap, color=color,
+        return plot_series(df.geometry, cmap=cmap, color=color,
                            ax=ax, linewidth=linewidth, figsize=figsize,
                            **color_kwds)
 
-    if s[column].dtype is np.dtype('O'):
+    if df[column].dtype is np.dtype('O'):
         categorical = True
 
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = 'Set1'
-        categories = list(set(s[column].values))
+        categories = list(set(df[column].values))
         categories.sort()
         valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-        values = np.array([valuemap[k] for k in s[column]])
+        values = np.array([valuemap[k] for k in df[column]])
     else:
-        values = s[column]
+        values = df[column]
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
         values = np.array(binning.yb)
@@ -432,6 +431,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
         binedges = [binning.yb.min()] + binning.bins.tolist()
         categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                       for i in range(len(binedges)-1)]
+
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
@@ -439,7 +439,7 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     mn = values.min() if vmin is None else vmin
     mx = values.max() if vmax is None else vmax
 
-    geom_types = s.geometry.type
+    geom_types = df.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
                           | (geom_types == 'MultiPolygon'))
     line_idx = np.asarray((geom_types == 'LineString')
@@ -447,34 +447,39 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
     point_idx = np.asarray(geom_types == 'Point')
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = s.geometry[poly_idx]
+    polys = df.geometry[poly_idx]
     if not polys.empty:
         plot_polygon_collection(ax, polys, values[poly_idx],
-                                    vmin=mn, vmax=mx, cmap=cmap,
-                                    linewidth=linewidth, **color_kwds)
+                                vmin=mn, vmax=mx, cmap=cmap,
+                                linewidth=linewidth, **color_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = s.geometry[line_idx]
+    lines = df.geometry[line_idx]
     if not lines.empty:
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap,
                                    linewidth=linewidth, **color_kwds)
 
     # plot all Points in the same collection
-    points = s.geometry[point_idx]
+    points = df.geometry[point_idx]
     if not points.empty:
         plot_point_collection(ax, points, values[point_idx],
                               vmin=mn, vmax=mx, cmap=cmap, **color_kwds)
 
     if legend and not color:
+        from matplotlib.lines import Line2D
+        from matplotlib.colors import Normalize
+        from matplotlib import cm
+
         norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
             patches = []
             for value, cat in enumerate(categories):
-                patches.append(Line2D([0], [0], linestyle="none",
-                                      marker="o", alpha=color_kwds.get('alpha', 0.5),
-                                      markersize=10, markerfacecolor=n_cmap.to_rgba(value)))
+                patches.append(
+                    Line2D([0], [0], linestyle="none", marker="o",
+                           alpha=color_kwds.get('alpha', 0.5), markersize=10,
+                           markerfacecolor=n_cmap.to_rgba(value)))
             ax.legend(patches, categories, numpoints=1, loc='best')
         else:
             n_cmap.set_array([])
@@ -485,38 +490,41 @@ def plot_dataframe(s, column=None, cmap=None, color=None, linewidth=1.0,
 
 
 def __pysal_choro(values, scheme, k=5):
-    """ Wrapper for choropleth schemes from PySAL for use with plot_dataframe
-
-        Parameters
-        ----------
-
-        values
-            Series to be plotted
-
-        scheme
-            pysal.esda.mapclassify classificatin scheme
-            ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
-
-        k
-            number of classes (2 <= k <=9)
-
-        Returns
-        -------
-
-        binning
-            Binning objects that holds the Series with values replaced with
-            class identifier and the bins.
     """
+    Wrapper for choropleth schemes from PySAL for use with plot_dataframe
 
+    Parameters
+    ----------
+
+    values
+        Series to be plotted
+
+    scheme
+        pysal.esda.mapclassify classificatin scheme
+        ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
+
+    k
+        number of classes (2 <= k <=9)
+
+    Returns
+    -------
+
+    binning
+        Binning objects that holds the Series with values replaced with
+        class identifier and the bins.
+
+    """
     try:
-        from pysal.esda.mapclassify import Quantiles, Equal_Interval, Fisher_Jenks
+        from pysal.esda.mapclassify import (
+            Quantiles, Equal_Interval, Fisher_Jenks)
         schemes = {}
         schemes['equal_interval'] = Equal_Interval
         schemes['quantiles'] = Quantiles
         schemes['fisher_jenks'] = Fisher_Jenks
         scheme = scheme.lower()
         if scheme not in schemes:
-            raise ValueError("Invalid scheme. Scheme must be in the set: %r" % schemes.keys())
+            raise ValueError("Invalid scheme. Scheme must be in the"
+                             " set: %r" % schemes.keys())
         binning = schemes[scheme](values, k)
         return binning
     except ImportError:
