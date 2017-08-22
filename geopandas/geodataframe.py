@@ -202,7 +202,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray)):
+        if isinstance(col, (Series, list, np.ndarray,
+                            vectorized.GeometryArray)):
             level = col
             to_remove = geo_column_name
             if isinstance(col, Series):
