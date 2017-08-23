@@ -150,6 +150,10 @@ class TestPointPlotting:
 class TestPointZPlotting:
 
     def setup_method(self):
+        # scatterplot does not yet accept list of colors in matplotlib 1.4.3
+        # if we change the default to uniform, this might work again
+        pytest.importorskip('matplotlib', '1.5.0')
+
         self.N = 10
         self.points = GeoSeries(Point(i, i, i) for i in range(self.N))
         values = np.arange(self.N)
@@ -322,6 +326,8 @@ class TestPolygonZPlotting:
 class TestNonuniformGeometryPlotting:
 
     def setup_method(self):
+        pytest.importorskip('matplotlib', '1.5.0')
+
         poly = Polygon([(1, 0), (2, 0), (2, 1)])
         line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])
         point = Point(0.75, 0.25)
