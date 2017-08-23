@@ -163,7 +163,7 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
 
 def plot_point_collection(ax, geoms, values=None, color=None,
                           cmap=None, vmin=None, vmax=None,
-                          marker='o', markersize=2, **kwargs):
+                          marker='o', markersize=None, **kwargs):
     """
     Plots a collection of Point geometries to `ax`
 
@@ -188,6 +188,10 @@ def plot_point_collection(ax, geoms, values=None, color=None,
 
     x = geoms.x.values
     y = geoms.y.values
+
+    # scatterplot uses different way to specify size as default plot markersize
+    if markersize:
+        markersize = markersize ** 2
 
     collection = ax.scatter(x, y, s=markersize, c=values, color=color,
                             vmin=vmin, vmax=vmax, cmap=cmap,

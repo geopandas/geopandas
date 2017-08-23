@@ -114,13 +114,13 @@ class TestPointPlotting:
 
         # markersize
         ax = self.points.plot(markersize=10)
-        assert ax.collections[0].get_sizes() == [10]
+        assert ax.collections[0].get_sizes() == [100]
 
         ax = self.df.plot(markersize=10)
-        assert ax.collections[0].get_sizes() == [10]
+        assert ax.collections[0].get_sizes() == [100]
 
         ax = self.df.plot(column='values', markersize=10)
-        assert ax.collections[0].get_sizes() == [10]
+        assert ax.collections[0].get_sizes() == [100]
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
