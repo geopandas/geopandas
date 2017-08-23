@@ -288,17 +288,12 @@ class TestPolygonPlotting:
         # MultiPolygons
         ax = self.df2.plot()
         assert len(ax.collections[0].get_paths()) == 4
+        _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR]*4)
+
+        ax = self.df2.plot('values')
         cmap = plt.get_cmap(lut=2)
         # colors are repeated for all components within a MultiPolygon
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
-        # TODO multipolygons don't work yet when values are not specified
-        # values are flattended, but color not yet (can fix, but we are
-        # thinking to use uniform coloring by default, which would also fix
-        # this)
-        # _check_colors(4, ax.collections[0], expected_colors, alpha=0.5)
-
-        ax = self.df2.plot('values')
-        # specifying values -> same as without values in this case.
         _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
 
 
