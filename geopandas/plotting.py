@@ -229,7 +229,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
 
-    cmap : str (default 'Set1')
+    cmap : str (default None)
         The name of a colormap recognized by matplotlib.  Any
         colormap will work, but categorical colormaps are
         generally recommended.  Examples of useful discrete
@@ -247,7 +247,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
 
-    **color_kwds : dict
+    **style_kwds : dict
         Color options to be passed on to the actual plot function
 
     Returns
@@ -322,8 +322,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
 
     Generate a plot of a GeoDataFrame with matplotlib.  If a
     column is specified, the plot coloring will be based on values
-    in that column.  Otherwise, a categorical plot of the
-    geometries in the `geometry` column will be generated.
+    in that column.
 
     Parameters
     ----------
@@ -341,7 +340,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         column being plotted.  For non-numerical columns (or if
         column=None), this will be set to True.
 
-    cmap : str (default 'Set1')
+    cmap : str (default None)
         The name of a colormap recognized by matplotlib.
 
     color : str (default None)
@@ -376,13 +375,13 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
 
-    **color_kwds : dict
+    **style_kwds : dict
         Color options to be passed on to the actual plot function
 
     Returns
     -------
-
     matplotlib axes instance
+
     """
     if 'colormap' in style_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
@@ -409,7 +408,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     # Define `values` as a Series
     if categorical:
         if cmap is None:
-            cmap = 'Set1'
+            cmap = 'tab10'
         categories = list(set(df[column].values))
         categories.sort()
         valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
@@ -469,7 +468,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             for value, cat in enumerate(categories):
                 patches.append(
                     Line2D([0], [0], linestyle="none", marker="o",
-                           alpha=style_kwds.get('alpha', 0.5), markersize=10,
+                           alpha=style_kwds.get('alpha', 1), markersize=10,
                            markerfacecolor=n_cmap.to_rgba(value)))
             ax.legend(patches, categories, numpoints=1, loc='best')
         else:
