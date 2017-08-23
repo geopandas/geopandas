@@ -15,7 +15,6 @@ addons:
 matrix:
   include:
     # Only one test for these Python versions
-    # Pandas >= 0.18.0, is not Python 2.6 compatible
     - python: 3.4
       env: PANDAS=0.18.1 MATPLOTLIB=1.4.3
     - python: 3.5
@@ -49,6 +48,9 @@ matrix:
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
+allow_failures:
+    - env: PANDAS=master  MATPLOTLIB=master
+
 before_install:
   - pip install -U pip
 
@@ -60,6 +62,7 @@ install:
   - pip install -r requirements.test.txt
 
   - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
+  - if [[ $PANDAS == 'master' ]]; then pip install -U shapely; fi
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
