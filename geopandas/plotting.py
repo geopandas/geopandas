@@ -199,26 +199,6 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     return collection
 
 
-def _gencolor(N, colormap='Set1'):
-    """
-    Color generator intended to work with one of the ColorBrewer
-    qualitative color scales.
-
-    Suggested values of colormap are the following:
-
-        Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
-
-    (although any matplotlib colormap will work).
-    """
-    from matplotlib import cm
-    # don't use more than 9 discrete colors
-    n_colors = min(N, 9)
-    cmap = cm.get_cmap(colormap, n_colors)
-    colors = cmap(range(n_colors))
-    for i in range(N):
-        yield colors[i % n_colors]
-
-
 def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     """
     Plot a GeoSeries.
