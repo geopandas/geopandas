@@ -48,7 +48,7 @@ matrix:
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
-allow_failures:
+  allow_failures:
     - env: PANDAS=master  MATPLOTLIB=master
 
 before_install:
