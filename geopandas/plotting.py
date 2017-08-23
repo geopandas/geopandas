@@ -44,9 +44,8 @@ def _flatten_multi_geoms(geoms, colors=None):
     return components, component_colors
 
 
-def plot_polygon_collection(ax, geoms, values=None, linewidth=1.0,
-                            edgecolor='black', alpha=0.5,
-                            vmin=None, vmax=None, cmap=None, **kwargs):
+def plot_polygon_collection(ax, geoms, values=None, color=None,
+                            cmap=None, vmin=None, vmax=None, **kwargs):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
 
@@ -91,9 +90,12 @@ def plot_polygon_collection(ax, geoms, values=None, linewidth=1.0,
     if 'markersize' in kwargs:
         del kwargs['markersize']
 
+    # color=None overwrites specified facecolor/edgecolor with default color
+    if color is not None:
+        kwargs['color'] = color
+
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms],
-                                 linewidth=linewidth, edgecolor=edgecolor,
-                                 alpha=alpha, **kwargs)
+                                 **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -106,8 +108,7 @@ def plot_polygon_collection(ax, geoms, values=None, linewidth=1.0,
 
 
 def plot_linestring_collection(ax, geoms, values=None, color=None,
-                               vmin=None, vmax=None, cmap=None,
-                               linewidth=1.0, **kwargs):
+                               cmap=None, vmin=None, vmax=None, **kwargs):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
 
@@ -148,7 +149,7 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
         kwargs['color'] = color
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
-    collection = LineCollection(segments, linewidth=linewidth, **kwargs)
+    collection = LineCollection(segments, **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -161,7 +162,7 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
 
 
 def plot_point_collection(ax, geoms, values=None, color=None,
-                          vmin=None, vmax=None, cmap=None,
+                          cmap=None, vmin=None, vmax=None,
                           marker='o', markersize=2, **kwargs):
     """
     Plots a collection of Point geometries to `ax`
@@ -214,8 +215,7 @@ def _gencolor(N, colormap='Set1'):
         yield colors[i % n_colors]
 
 
-def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
-                figsize=None, **color_kwds):
+def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     """
     Plot a GeoSeries.
 
@@ -243,9 +243,6 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
 
-    linewidth : float (default 1.0)
-        Line width for geometries.
-
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
@@ -258,14 +255,14 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
 
     matplotlib axes instance
     """
-    if 'colormap' in color_kwds:
+    if 'colormap' in style_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
                       "(for consistency with matplotlib)", FutureWarning)
-        cmap = color_kwds.pop('colormap')
-    if 'axes' in color_kwds:
+        cmap = style_kwds.pop('colormap')
+    if 'axes' in style_kwds:
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
-        ax = color_kwds.pop('axes')
+        ax = style_kwds.pop('axes')
 
     import matplotlib.pyplot as plt
     if ax is None:
@@ -293,36 +290,33 @@ def plot_series(s, cmap='Set1', color=None, ax=None, linewidth=1.0,
     if not polys.empty:
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
-        facecolor = color_kwds.pop('facecolor', None)
+        facecolor = style_kwds.pop('facecolor', None)
         if col_seq:
             if not facecolor:
                 facecolor = color[poly_idx] if col_seq else color
         else:
             facecolor = color
-        plot_polygon_collection(ax, polys, facecolor=facecolor,
-                                linewidth=linewidth, **color_kwds)
+        plot_polygon_collection(ax, polys, facecolor=facecolor, **style_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
     lines = s.geometry[line_idx]
     if not lines.empty:
         color_ = color[line_idx] if col_seq else color
-        plot_linestring_collection(ax, lines, color=color_,
-                                   linewidth=linewidth, **color_kwds)
+        plot_linestring_collection(ax, lines, color=color_, **style_kwds)
 
     # plot all Points in the same collection
     points = s.geometry[point_idx]
     if not points.empty:
         color_ = color[point_idx] if col_seq else color
-        plot_point_collection(ax, points, color=color_, **color_kwds)
+        plot_point_collection(ax, points, color=color_, **style_kwds)
 
     plt.draw()
     return ax
 
 
-def plot_dataframe(df, column=None, cmap=None, color=None, linewidth=1.0,
-                   categorical=False, legend=False, ax=None,
-                   scheme=None, k=5, vmin=None, vmax=None, figsize=None,
-                   **color_kwds):
+def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
+                   categorical=False, legend=False, scheme=None, k=5,
+                   vmin=None, vmax=None, figsize=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -390,14 +384,14 @@ def plot_dataframe(df, column=None, cmap=None, color=None, linewidth=1.0,
 
     matplotlib axes instance
     """
-    if 'colormap' in color_kwds:
+    if 'colormap' in style_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
                       "(for consistency with matplotlib)", FutureWarning)
-        cmap = color_kwds.pop('colormap')
-    if 'axes' in color_kwds:
+        cmap = style_kwds.pop('colormap')
+    if 'axes' in style_kwds:
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
-        ax = color_kwds.pop('axes')
+        ax = style_kwds.pop('axes')
     if column and color:
         warnings.warn("Only specify one of 'column' or 'color'. Using "
                       "'color'.", UserWarning)
@@ -406,9 +400,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, linewidth=1.0,
     import matplotlib.pyplot as plt
 
     if column is None:
-        return plot_series(df.geometry, cmap=cmap, color=color,
-                           ax=ax, linewidth=linewidth, figsize=figsize,
-                           **color_kwds)
+        return plot_series(df.geometry, cmap=cmap, color=color, ax=ax,
+                           figsize=figsize, **style_kwds)
 
     if df[column].dtype is np.dtype('O'):
         categorical = True
@@ -450,21 +443,19 @@ def plot_dataframe(df, column=None, cmap=None, color=None, linewidth=1.0,
     polys = df.geometry[poly_idx]
     if not polys.empty:
         plot_polygon_collection(ax, polys, values[poly_idx],
-                                vmin=mn, vmax=mx, cmap=cmap,
-                                linewidth=linewidth, **color_kwds)
+                                vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
     lines = df.geometry[line_idx]
     if not lines.empty:
         plot_linestring_collection(ax, lines, values[line_idx],
-                                   vmin=mn, vmax=mx, cmap=cmap,
-                                   linewidth=linewidth, **color_kwds)
+                                   vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
     # plot all Points in the same collection
     points = df.geometry[point_idx]
     if not points.empty:
         plot_point_collection(ax, points, values[point_idx],
-                              vmin=mn, vmax=mx, cmap=cmap, **color_kwds)
+                              vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
     if legend and not color:
         from matplotlib.lines import Line2D
@@ -478,7 +469,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, linewidth=1.0,
             for value, cat in enumerate(categories):
                 patches.append(
                     Line2D([0], [0], linestyle="none", marker="o",
-                           alpha=color_kwds.get('alpha', 0.5), markersize=10,
+                           alpha=style_kwds.get('alpha', 0.5), markersize=10,
                            markerfacecolor=n_cmap.to_rgba(value)))
             ax.legend(patches, categories, numpoints=1, loc='best')
         else:
