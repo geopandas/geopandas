@@ -51,45 +51,51 @@ class TestPointPlotting:
 
     def test_default_colors(self):
 
-        # # without specifying values -> max 9 different colors
+        # # without specifying values -> uniform color
 
         # GeoSeries
         ax = self.points.plot()
-        cmap = plt.get_cmap(lut=9)
-        expected_colors = cmap(list(range(9))*2)
-        _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(self.N, ax.collections[0].get_facecolors(),
+                      [MPL_DFT_COLOR] * self.N)
 
-        # GeoDataFrame -> uses 'jet' instead of 'Set1'
+        # GeoDataFrame
         ax = self.df.plot()
-        cmap = plt.get_cmap(lut=9)
-        expected_colors = cmap(list(range(9))*2)
-        _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(self.N, ax.collections[0].get_facecolors(),
+                      [MPL_DFT_COLOR] * self.N)
 
         # # with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values')
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N)/(self.N-1))
-        _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(self.N, ax.collections[0].get_facecolors(),
+                      expected_colors)
 
     def test_colormap(self):
 
-        # # without specifying values -> max 9 different colors
+        # without specifying values but cmap specified -> no uniform color
+        # but different colors for all points
 
         # GeoSeries
         ax = self.points.plot(cmap='RdYlGn')
-        cmap = plt.get_cmap('RdYlGn', 9)
-        expected_colors = cmap(list(range(9))*2)
-        _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+        cmap = plt.get_cmap('RdYlGn')
+        exp_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
         # GeoDataFrame -> same as GeoSeries in this case
         ax = self.df.plot(cmap='RdYlGn')
-        _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
         # # with specifying values -> different colors for all 10 values
         ax = self.df.plot(column='values', cmap='RdYlGn')
         cmap = plt.get_cmap('RdYlGn')
-        expected_colors = cmap(np.arange(self.N)/(self.N-1))
-        _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
+
+        # when using a cmap with specified lut -> limited number of different
+        # colors
+        ax = self.points.plot(cmap=plt.get_cmap('Set1', lut=5))
+        cmap = plt.get_cmap('Set1', lut=5)
+        exp_colors = cmap(list(range(5))*3)
+        _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
     def test_single_color(self):
 
@@ -326,14 +332,14 @@ class TestNonuniformGeometryPlotting:
         self.series = GeoSeries([poly, line, point])
         self.df = GeoDataFrame({'geometry': self.series, 'values': [1, 2, 3]})
 
+    @pytest.mark.xfail
     def test_colormap(self):
 
-        ax = self.series.plot(cmap='RdYlGn')
+        ax = self.series.plot(cmap=plt.get_cmap('RdYlGn', 3))
         cmap = plt.get_cmap('RdYlGn', 3)
-        # polygon gets extra alpha. See #266
         _check_colors(1, ax.collections[0].get_facecolors(), [cmap(0)])
-        _check_colors(1, ax.collections[1].get_facecolors(), [cmap(1)])   # line
-        _check_colors(1, ax.collections[2].get_facecolors(), [cmap(2)])   # point
+        _check_colors(1, ax.collections[1].get_facecolors(), [cmap(1)])  # line
+        _check_colors(1, ax.collections[2].get_facecolors(), [cmap(2)])  # point
 
     def test_style_kwargs(self):
 

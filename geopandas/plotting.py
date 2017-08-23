@@ -269,13 +269,12 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
-    # if no color specified, create range of colors based on cmap
-    num_geoms = len(s.index)
-    col_seq = False
-    if color is None:
-        color_generator = _gencolor(len(s), colormap=cmap)
-        color = np.array([next(color_generator) for _ in range(num_geoms)])
-        col_seq = True
+    # if cmap is specified, create range of colors based on cmap
+    values = None
+    if cmap is not None:
+        values = np.arange(len(s))
+        if hasattr(cmap, 'N'):
+            values = values % cmap.N
 
     geom_types = s.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
@@ -291,24 +290,25 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
         facecolor = style_kwds.pop('facecolor', None)
-        if col_seq:
-            if not facecolor:
-                facecolor = color[poly_idx] if col_seq else color
-        else:
+        if color is not None:
             facecolor = color
-        plot_polygon_collection(ax, polys, facecolor=facecolor, **style_kwds)
+        values_ = values[poly_idx] if cmap else None
+        plot_polygon_collection(ax, polys, values_, facecolor=facecolor,
+                                cmap=cmap, **style_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
     lines = s.geometry[line_idx]
     if not lines.empty:
-        color_ = color[line_idx] if col_seq else color
-        plot_linestring_collection(ax, lines, color=color_, **style_kwds)
+        values_ = values[line_idx] if cmap else None
+        plot_linestring_collection(ax, lines, values_, color=color, cmap=cmap,
+                                   **style_kwds)
 
     # plot all Points in the same collection
     points = s.geometry[point_idx]
     if not points.empty:
-        color_ = color[point_idx] if col_seq else color
-        plot_point_collection(ax, points, color=color_, **style_kwds)
+        values_ = values[point_idx] if cmap else None
+        plot_point_collection(ax, points, values_, color=color, cmap=cmap,
+                              **style_kwds)
 
     plt.draw()
     return ax
