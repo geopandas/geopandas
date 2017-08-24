@@ -32,10 +32,6 @@ except KeyError:
 class TestPointPlotting:
 
     def setup_method(self):
-        # scatterplot does not yet accept list of colors in matplotlib 1.4.3
-        # if we change the default to uniform, this might work again
-        pytest.importorskip('matplotlib', '1.5.0')
-
         self.N = 10
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
         values = np.arange(self.N)
@@ -155,10 +151,6 @@ class TestPointPlotting:
 class TestPointZPlotting:
 
     def setup_method(self):
-        # scatterplot does not yet accept list of colors in matplotlib 1.4.3
-        # if we change the default to uniform, this might work again
-        pytest.importorskip('matplotlib', '1.5.0')
-
         self.N = 10
         self.points = GeoSeries(Point(i, i, i) for i in range(self.N))
         values = np.arange(self.N)
@@ -244,7 +236,6 @@ class TestPolygonPlotting:
             _check_colors(2, ax.collections[0].get_facecolors(), ['green']*2)
 
     def test_vmin_vmax(self):
-
         # when vmin == vmax, all polygons should be the same color
 
         # non-categorical
@@ -326,9 +317,7 @@ class TestNonuniformGeometryPlotting:
         self.series = GeoSeries([poly, line, point])
         self.df = GeoDataFrame({'geometry': self.series, 'values': [1, 2, 3]})
 
-    #@pytest.mark.xfail
     def test_colors(self):
-
         # default uniform color
         ax = self.series.plot()
         _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])
@@ -391,10 +380,6 @@ class TestPlotCollections:
                                    for i in range(self.N)])
 
     def test_points(self):
-        # scatterplot does not yet accept list of colors in matplotlib 1.4.3
-        # if we change the default to uniform, this might work again
-        pytest.importorskip('matplotlib', '1.5.0')
-
         from geopandas.plotting import plot_point_collection
         from matplotlib.collections import PathCollection
 
@@ -525,17 +510,15 @@ class TestPlotCollections:
         ax.cla()
 
         # default: single default matplotlib color
-        # but with default alpha of 0.5 and black edgecolor
         coll = plot_polygon_collection(ax, self.polygons)
         _check_colors(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ['k'] * self.N)
         ax.cla()
 
         # default: color sets both facecolor and edgecolor
-        # TODO but test fails for edge (still black)
         coll = plot_polygon_collection(ax, self.polygons, color='g')
         _check_colors(self.N, coll.get_facecolor(), ['g'] * self.N)
-        # _check_colors(self.N, coll.get_edgecolor(), ['g'] * self.N, alpha=0.5)
+        _check_colors(self.N, coll.get_edgecolor(), ['g'] * self.N)
         ax.cla()
 
         # only setting facecolor keeps default for edgecolor
