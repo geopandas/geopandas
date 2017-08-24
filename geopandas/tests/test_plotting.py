@@ -380,6 +380,9 @@ class TestPlotCollections:
                                    for i in range(self.N)])
 
     def test_points(self):
+        # failing with matplotlib 1.4.3 (edge stays black even when specified)
+        pytest.importorskip('matplotlib', '1.5.0')
+
         from geopandas.plotting import plot_point_collection
         from matplotlib.collections import PathCollection
 
