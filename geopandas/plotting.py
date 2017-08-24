@@ -1,10 +1,9 @@
 from __future__ import print_function
 
+from distutils.version import LooseVersion
 import warnings
 
 import numpy as np
-
-from six import next
 
 
 def _flatten_multi_geoms(geoms, colors=None):
@@ -192,8 +191,10 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     # scatterplot uses different way to specify size as default plot markersize
     if markersize:
         markersize = markersize ** 2
+        # matplotlib < 2.0 does not support s=None
+        kwargs['s'] = markersize
 
-    collection = ax.scatter(x, y, s=markersize, c=values, color=color,
+    collection = ax.scatter(x, y, c=values, color=color,
                             vmin=vmin, vmax=vmax, cmap=cmap,
                             marker=marker, **kwargs)
     return collection
@@ -259,6 +260,8 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         values = np.arange(len(s))
         if hasattr(cmap, 'N'):
             values = values % cmap.N
+        style_kwds['vmin'] = style_kwds.get('vmin', values.min())
+        style_kwds['vmax'] = style_kwds.get('vmax', values.max())
 
     geom_types = s.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
@@ -380,6 +383,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                       "'color'.", UserWarning)
         column = None
 
+    import matplotlib
     import matplotlib.pyplot as plt
 
     if column is None:
@@ -392,7 +396,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     # Define `values` as a Series
     if categorical:
         if cmap is None:
-            cmap = 'tab10'
+            if LooseVersion(matplotlib.__version__) >= '2.0':
+                cmap = 'tab10'
+            else:
+                cmap = 'Set1'
         categories = list(set(df[column].values))
         categories.sort()
         valuemap = dict([(k, v) for (v, k) in enumerate(categories)])

@@ -81,7 +81,6 @@ class TestPointPlotting:
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
         _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
-        # GeoDataFrame -> same as GeoSeries in this case
         ax = self.df.plot(cmap='RdYlGn')
         _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
@@ -327,22 +326,30 @@ class TestNonuniformGeometryPlotting:
         self.series = GeoSeries([poly, line, point])
         self.df = GeoDataFrame({'geometry': self.series, 'values': [1, 2, 3]})
 
-    @pytest.mark.xfail
-    def test_colormap(self):
+    #@pytest.mark.xfail
+    def test_colors(self):
 
-        ax = self.series.plot(cmap=plt.get_cmap('RdYlGn', 3))
-        cmap = plt.get_cmap('RdYlGn', 3)
-        _check_colors(1, ax.collections[0].get_facecolors(), [cmap(0)])
-        _check_colors(1, ax.collections[1].get_facecolors(), [cmap(1)])  # line
-        _check_colors(1, ax.collections[2].get_facecolors(), [cmap(2)])  # point
+        # default uniform color
+        ax = self.series.plot()
+        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])
+        _check_colors(1, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])
+        _check_colors(1, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])
+
+        # colormap: different colors
+        ax = self.series.plot(cmap='RdYlGn')
+        cmap = plt.get_cmap('RdYlGn')
+        exp_colors = cmap(np.arange(3) / (3 - 1))
+        _check_colors(1, ax.collections[0].get_facecolors(), [exp_colors[0]])
+        _check_colors(1, ax.collections[1].get_edgecolors(), [exp_colors[1]])
+        _check_colors(1, ax.collections[2].get_facecolors(), [exp_colors[2]])
 
     def test_style_kwargs(self):
 
         # markersize -> only the Point gets it
         ax = self.series.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [10]
+        assert ax.collections[2].get_sizes() == [100]
         ax = self.df.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [10]
+        assert ax.collections[2].get_sizes() == [100]
 
 
 class TestPySALPlotting:
