@@ -194,8 +194,11 @@ def plot_point_collection(ax, geoms, values=None, color=None,
         # matplotlib < 2.0 does not support s=None
         kwargs['s'] = markersize
 
-    collection = ax.scatter(x, y, c=values, color=color,
-                            vmin=vmin, vmax=vmax, cmap=cmap,
+    # matplotlib 1.4 does not support c=None
+    if values is not None:
+        kwargs['c'] = values
+
+    collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
                             marker=marker, **kwargs)
     return collection
 
