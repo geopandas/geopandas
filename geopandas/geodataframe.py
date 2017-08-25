@@ -290,13 +290,43 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_features(cls, features, crs=None):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
-        features. Each element must be a feature dictionary or implement
-        the __geo_interface__.
-        See: https://gist.github.com/sgillies/2217756
+        features or a feature collection.
+
+        Parameters
+        ----------
+        features
+            - Iterable of features, where each element must be a feature
+              dictionary or implement the __geo_interface__.
+            - Feature collection, where the 'features' key contains an
+              iterable of features.
+            - Object holding a feature collection that implements the
+              ``__geo_interface__``.
+        crs : str or dict (optional)
+            Coordinate reference system to set on the resulting frame.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        Notes
+        -----
+        For more information about the ``__geo_interface__``, see
+        https://gist.github.com/sgillies/2217756
 
         """
+        # Handle feature collections
+        if hasattr(features, "__geo_interface__"):
+            fs = features.__geo_interface__
+        else:
+            fs = features
+
+        if isinstance(fs, dict) and fs.get('type') == 'FeatureCollection':
+            features_lst = fs['features']
+        else:
+            features_lst = features
+
         rows = []
-        for f in features:
+        for f in features_lst:
             if hasattr(f, "__geo_interface__"):
                 f = f.__geo_interface__
             else:
