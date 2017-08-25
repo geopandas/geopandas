@@ -223,7 +223,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         generally recommended.  Examples of useful discrete
         colormaps include:
 
-            Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
+            tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
 
     color : str (default None)
         If specified, all objects will be colored uniformly.
@@ -236,7 +236,9 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         ax is given explicitly, figsize is ignored.
 
     **style_kwds : dict
-        Color options to be passed on to the actual plot function
+        Color options to be passed on to the actual plot function, such
+        as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
+        ``alpha``.
 
     Returns
     -------
@@ -325,19 +327,16 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     column : str (default None)
         The name of the column to be plotted. Ignored if `color` is also set.
 
-    categorical : bool (default False)
-        If False, cmap will reflect numerical values of the
-        column being plotted.  For non-numerical columns (or if
-        column=None), this will be set to True.
-
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
 
+    categorical : bool (default False)
+        If False, cmap will reflect numerical values of the
+        column being plotted.  For non-numerical columns, this
+        will be set to True.
+
     color : str (default None)
         If specified, all objects will be colored uniformly.
-
-    linewidth : float (default 1.0)
-        Line width for geometries.
 
     legend : bool (default False)
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
@@ -345,19 +344,20 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
 
-    scheme : pysal.esda.mapclassify.Map_Classifier
-        Choropleth classification schemes (requires PySAL)
+    scheme : str (default None)
+        Name of a choropleth classification scheme (requires PySAL).
+        A pysal.esda.mapclassify.Map_Classifier object will be used
+        under the hood. Supported schemes: 'Equal_interval', 'Quantiles',
+        'Fisher_Jenks'
 
     k   : int (default 5)
         Number of classes (ignored if scheme is None)
 
     vmin : None or float (default None)
-
         Minimum value of cmap. If None, the minimum data value
         in the column to be plotted is used.
 
     vmax : None or float (default None)
-
         Maximum value of cmap. If None, the maximum data value
         in the column to be plotted is used.
 
@@ -366,7 +366,9 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         axes is given explicitly, figsize is ignored.
 
     **style_kwds : dict
-        Color options to be passed on to the actual plot function
+        Color options to be passed on to the actual plot function, such
+        as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
+        ``alpha``.
 
     Returns
     -------
