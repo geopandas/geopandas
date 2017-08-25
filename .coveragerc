@@ -9,3 +9,4 @@ omit =
     geopandas/tests/*
     geopandas/io/tests/*
     geopandas/tools/tests/*
+    geopandas/_version.py
