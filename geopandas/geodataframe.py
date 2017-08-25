@@ -192,7 +192,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Notes
         -----
-        For more information about the ``__geo_interaface__``, see
+        For more information about the ``__geo_interface__``, see
         https://gist.github.com/sgillies/2217756
 
         """
