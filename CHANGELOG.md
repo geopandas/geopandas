@@ -14,6 +14,7 @@ Improvements:
   ``to_json`` (#421)
 * Enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
 * Add ``cx`` indexer to GeoDataFrame (#482)
+* ``GeoDataFrame.from_features`` now also accepts a Feature Collection (#225)
 
 Bug fixes:
 
