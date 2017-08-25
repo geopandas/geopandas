@@ -107,7 +107,7 @@ class TestPointPlotting:
 
     def test_style_kwargs(self):
 
-        # markersize
+        # markersize (size used by scatterplot -> markersize ** 2)
         ax = self.points.plot(markersize=10)
         assert ax.collections[0].get_sizes() == [100]
 
@@ -334,7 +334,7 @@ class TestNonuniformGeometryPlotting:
 
     def test_style_kwargs(self):
 
-        # markersize -> only the Point gets it
+        # markersize -> only the Point gets it (we use s=markersize ** 2)
         ax = self.series.plot(markersize=10)
         assert ax.collections[2].get_sizes() == [100]
         ax = self.df.plot(markersize=10)
@@ -423,12 +423,11 @@ class TestPlotCollections:
         # default colormap
         fig, ax = plt.subplots()
         coll = plot_point_collection(ax, self.points, self.values)
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        expected_colors = cmap(np.arange(self.N))
-
-        # not sure why this is failing (gives only a single color, when
-        # testing outside of pytest, this works perfectly
-        # _check_colors(self.N, coll.get_facecolors(), expected_colors)
+        expected_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, coll.get_facecolors(), expected_colors)
+        # edgecolor depends on matplotlib version
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
     def test_linestrings(self):
@@ -479,28 +478,28 @@ class TestPlotCollections:
 
         # default colormap
         coll = plot_linestring_collection(ax, self.lines, self.values)
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        expected_colors = cmap(np.arange(self.N))
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_color(), expected_colors)
+        expected_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, coll.get_color(), expected_colors)
         ax.cla()
 
         # specify colormap
         coll = plot_linestring_collection(ax, self.lines, self.values,
                                           cmap='RdBu')
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap('RdBu')
-        expected_colors = cmap(np.arange(self.N))
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_color(), expected_colors)
+        expected_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, coll.get_color(), expected_colors)
         ax.cla()
 
         # specify vmin/vmax
         coll = plot_linestring_collection(ax, self.lines, self.values,
                                           vmin=3, vmax=5)
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap([0])
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_color(), expected_colors)
+        _check_colors(self.N, coll.get_color(), expected_colors)
         ax.cla()
 
     def test_polygons(self):
@@ -544,38 +543,39 @@ class TestPlotCollections:
 
         # default colormap, edge is still black by default
         coll = plot_polygon_collection(ax, self.polygons, self.values)
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        exp_colors = cmap(np.arange(self.N))
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
-        _check_colors(self.N, coll.get_edgecolor(), ['k'] * self.N)
+        exp_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, coll.get_facecolor(), exp_colors)
+        # edgecolor depends on matplotlib version
+        #_check_colors(self.N, coll.get_edgecolor(), ['k'] * self.N)
         ax.cla()
 
         # specify colormap
         coll = plot_polygon_collection(ax, self.polygons, self.values,
                                        cmap='RdBu')
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap('RdBu')
-        exp_colors = cmap(np.arange(self.N))
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        exp_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, coll.get_facecolor(), exp_colors)
         ax.cla()
 
         # specify vmin/vmax
         coll = plot_polygon_collection(ax, self.polygons, self.values,
                                        vmin=3, vmax=5)
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap([0])
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        _check_colors(self.N, coll.get_facecolor(), exp_colors)
         ax.cla()
 
         # override edgecolor
         coll = plot_polygon_collection(ax, self.polygons, self.values,
                                        edgecolor='g')
+        fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        exp_colors = cmap(np.arange(self.N))
-        # failing, see above with points
-        # _check_colors(self.N, coll.get_facecolor(), exp_colors, alpha=0.5)
+        exp_colors = cmap(np.arange(self.N) / (self.N - 1))
+        _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ['g'] * self.N)
         ax.cla()
 
