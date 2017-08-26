@@ -184,14 +184,14 @@ class GeoSeries(GeoPandasBase, Series):
         "method" is currently not implemented for pandas <= 0.12.
         """
         if value is None:
-            value = Point()
+            value = Polygon()
         return super(GeoSeries, self).fillna(value=value, method=method,
                                              inplace=inplace, **kwargs)
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=None, **kwargs):
         if fill_value is None:
-            fill_value = Point()
+            fill_value = Polygon()
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
