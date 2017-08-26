@@ -152,7 +152,8 @@ class TestSeries:
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
-        na = self.na_none.fillna(Point())
+        # default is to fill with empty geometry
+        na = self.na_none.fillna()
         assert isinstance(na[2], BaseGeometry)
         assert na[2].is_empty
         assert geom_equals(self.na_none[:2], na[:2])
