@@ -1,9 +1,7 @@
 import json
-import os
-import sys
 
 import numpy as np
-from pandas import DataFrame, Series, Index
+from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
