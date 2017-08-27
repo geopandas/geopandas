@@ -502,7 +502,9 @@ class TestDataFrame(unittest.TestCase):
     def test_pickle(self):
         import pickle
         df2 = pickle.loads(pickle.dumps(self.df))
-        assert str(df) == str(df2)
+        assert self.df._geometry_array.equals(df2._geometry_array).all()
+        assert list(self.df.columns) == list(df2.columns)
+        assert self.df.crs == df2.crs
 
     def test_pickle_file(self):
         filename = os.path.join(self.tempdir, 'df.pkl')

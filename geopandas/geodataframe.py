@@ -131,9 +131,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     # Serialize metadata (will no longer be necessary in pandas 0.17+)
     # See https://github.com/pydata/pandas/pull/10557
     def __getstate__(self):
-        meta = dict((k, getattr(self, k, None)) for k in self._metadata)
-        return dict(_data=self._data, _typ=self._typ,
-                    _metadata=self._metadata, **meta)
+        geometry = self._geometry_array
+        geometry_name = self._geometry_column_name
+        data = pd.DataFrame(self.drop([self._geometry_column_name], axis=1))
+
+        return dict(geometry=geometry, geometry_name=geometry_name, data=data,
+                    crs=self.crs)
+
+    def __setstate__(self, state):
+        self.__init__(state['data'], geometry=state['geometry'], crs=state['crs'])
+        self.rename(columns={'geometry': state['geometry_name']}).set_geometry(state['geometry_name'])
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -213,7 +220,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
-                level = frame[col].values
+                level = frame[col]._values
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
             except:
