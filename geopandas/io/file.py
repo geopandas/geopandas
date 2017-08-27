@@ -2,9 +2,7 @@ import os
 
 import fiona
 import numpy as np
-from shapely.geometry import mapping
 
-from six import iteritems
 from geopandas import GeoDataFrame
 
 
