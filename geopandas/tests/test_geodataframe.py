@@ -424,6 +424,29 @@ class TestDataFrame:
                                            {'a': 2, 'b': np.nan}])
         assert_frame_equal(expected, result)
 
+    def test_from_feature_collection(self):
+        data = {'name': ['a', 'b', 'c'],
+                'lat': [45, 46, 47.5],
+                'lon': [-120, -121.2, -122.9]}
+
+        df = pd.DataFrame(data)
+        geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])]
+        gdf = GeoDataFrame(df, geometry=geometry)
+        # from_features returns sorted columns
+        expected = gdf[['geometry', 'lat', 'lon', 'name']]
+
+        # test FeatureCollection
+        res = GeoDataFrame.from_features(gdf.__geo_interface__)
+        assert_frame_equal(res, expected)
+
+        # test list of Features
+        res = GeoDataFrame.from_features(gdf.__geo_interface__['features'])
+        assert_frame_equal(res, expected)
+
+        # test __geo_interface__ attribute (a GeoDataFrame has one)
+        res = GeoDataFrame.from_features(gdf)
+        assert_frame_equal(res, expected)
+
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):

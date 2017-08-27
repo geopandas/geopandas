@@ -2,9 +2,7 @@ import os
 
 import fiona
 import numpy as np
-from shapely.geometry import mapping
 
-from six import iteritems
 from geopandas import GeoDataFrame
 
 
@@ -61,10 +59,11 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
-    with fiona.open(filename, 'w', driver=driver, crs=df.crs,
-                    schema=schema, **kwargs) as c:
-        for feature in df.iterfeatures():
-            c.write(feature)
+    with fiona.drivers():
+        with fiona.open(filename, 'w', driver=driver, crs=df.crs,
+                        schema=schema, **kwargs) as colxn:
+            for feature in df.iterfeatures():
+                colxn.write(feature)
 
 
 def infer_schema(df):

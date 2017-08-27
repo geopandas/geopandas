@@ -1,13 +1,5 @@
 import pandas as pd
-import geopandas as gpd
-from shapely.geometry import (
-    Point,
-    LineString,
-    Polygon,
-    MultiPoint,
-    MultiLineString,
-    MultiPolygon
-)
+from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 
 _multi_type_map = {
@@ -23,7 +15,7 @@ def collect(x, multi=False):
     Parameters
     ----------
     x : an iterable or Series of Shapely geometries, a GeoSeries, or
-        a single Shapely geometry        
+        a single Shapely geometry
     multi : boolean, default False
         if True, force returned geometries to be Multi* even if they
         only have one component.

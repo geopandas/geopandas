@@ -1,14 +1,12 @@
 from warnings import warn
 
-from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
-from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union
-import shapely.affinity as affinity
-
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 from pandas.core.indexing import _NDFrameIndexer
+from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
+from shapely.ops import cascaded_union, unary_union
+import shapely.affinity as affinity
 
 import geopandas as gpd
 

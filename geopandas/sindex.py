@@ -1,7 +1,6 @@
 from geopandas import base
 
 if base.HAS_SINDEX:
-    from rtree.core import RTreeError
     from rtree.index import Index as RTreeIndex
 
 

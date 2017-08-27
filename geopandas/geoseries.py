@@ -1,13 +1,10 @@
 from functools import partial
 import json
-from warnings import warn
 
 import numpy as np
-from pandas import Series, DataFrame
-
+from pandas import Series
 import pyproj
-from shapely.geometry import shape, Polygon, Point
-from shapely.geometry.collection import GeometryCollection
+from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
