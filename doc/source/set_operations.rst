@@ -52,7 +52,7 @@ These two GeoDataFrames have some overlapping areas:
 
     ax = df1.plot(color='red');
     @savefig overlay_example.png width=5in
-    df2.plot(ax=ax, color='green');
+    df2.plot(ax=ax, color='green', alpha=0.5);
 
 We illustrate the different overlay modes with the above example.
 The ``overlay`` function will determine the set of all individual geometries
@@ -67,10 +67,10 @@ When using ``how='union'``, all those possible geometries are returned:
     res_union = gpd.overlay(df1, df2, how='union')
     res_union
 
-    ax = res_union.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_union.plot(alpha=0.5, cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_union.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 The other ``how`` operations will return different subsets of those geometries.
 With ``how='intersection'``, it returns only those geometries that are contained
@@ -81,10 +81,10 @@ by both GeoDataFrames:
     res_intersection = gpd.overlay(df1, df2, how='intersection')
     res_intersection
 
-    ax = res_intersection.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_intersection.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_intersection.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 ``how='symmetric_difference'`` is the opposite of ``'intersection'`` and returns
 the geometries that are only part of one of the GeoDataFrames but not of both:
@@ -94,10 +94,10 @@ the geometries that are only part of one of the GeoDataFrames but not of both:
     res_symdiff = gpd.overlay(df1, df2, how='symmetric_difference')
     res_symdiff
 
-    ax = res_symdiff.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_symdiff.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_symdiff.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 To obtain the geometries that are part of ``df1`` but are not contained in
 ``df2``, you can use ``how='difference'``:
@@ -107,10 +107,10 @@ To obtain the geometries that are part of ``df1`` but are not contained in
     res_difference = gpd.overlay(df1, df2, how='difference')
     res_difference
 
-    ax = res_difference.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_difference.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_difference.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 Finally, with ``how='identity'``, the result consists of the surface of ``df1``,
 but with the geometries obtained from overlaying ``df1`` with ``df2``:
@@ -120,10 +120,10 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
     res_identity = gpd.overlay(df1, df2, how='identity')
     res_identity
 
-    ax = res_identity.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_identity.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_identity.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 
 Overlay Countries Example
@@ -171,7 +171,7 @@ To select only the portion of countries within 500km of a capital, we specify th
 
    country_cores = gpd.overlay(countries, capitals, how='intersection')
    @savefig country_cores.png width=5in
-   country_cores.plot();
+   country_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 Changing the "how" option allows for different types of overlay operations. For example, if we were interested in the portions of countries *far* from capitals (the peripheries), we would compute the difference of the two.
 
@@ -179,7 +179,7 @@ Changing the "how" option allows for different types of overlay operations. For 
 
    country_peripheries = gpd.overlay(countries, capitals, how='difference')
    @savefig country_peripheries.png width=5in
-   country_peripheries.plot();
+   country_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 
 

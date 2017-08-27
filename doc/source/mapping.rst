@@ -95,7 +95,7 @@ Before combining maps, however, remember to always ensure they share a common CR
 
 .. ipython:: python
 
-    base = world.plot(color='white')
+    base = world.plot(color='white', edgecolor='black')
     @savefig capitals_over_countries_1.png
     cities.plot(ax=base, marker='o', color='red', markersize=5);
 
@@ -111,7 +111,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     # working with pyplot directly.
     ax.set_aspect('equal')
 
-    world.plot(ax=ax, color='white')
+    world.plot(ax=ax, color='white', edgecolor='black')
     cities.plot(ax=ax, marker='o', color='red', markersize=5)
     @savefig capitals_over_countries_2.png
     plt.show();
