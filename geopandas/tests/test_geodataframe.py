@@ -8,6 +8,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+import pytest
 import geopandas as gpd
 from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
@@ -577,3 +578,22 @@ def test_concat():
 
     assert all(map(lambda x, y: x.equals(y), c, a_geoms + b_geoms))
     assert c.name == 'geo'
+
+
+def test_concat_errors():
+    a_geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    a_gdf = GeoDataFrame({'x': [1, 2, 3], 'geo': a_geoms}, geometry='geo')
+
+    b_geoms = [Point(4, 4), Point(5, 5)]
+    b_gdf = GeoDataFrame({'x': [4, 5], 'geo': b_geoms}, geometry='geo')
+
+    with pytest.raises(TypeError):
+        gpd.concat([a_gdf.geo, b_gdf])
+
+    c_geoms = [Point(4, 4), Point(5, 5)]
+    c_gdf = GeoDataFrame({'x': [4, 5], 'geometry': b_geoms}, geometry='geometry')
+
+    with pytest.raises(ValueError):
+        gpd.concat([a_gdf, c_gdf])
+    with pytest.raises(ValueError):
+        gpd.concat([a_gdf.geo, c_gdf.geometry])
