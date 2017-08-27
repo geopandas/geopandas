@@ -16,3 +16,4 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - ipython
+- pillow
