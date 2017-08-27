@@ -9,7 +9,7 @@ from geopandas import GeoSeries, GeoDataFrame
 def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
                  coerce_float=True, params=None):
     """
-    Returns a GeoDataFrame corresponding to the result of the query 
+    Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column.
 
     Examples:
@@ -25,7 +25,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     crs: optional
         CRS to use for the returned GeoDataFrame
 
-    See the documentation for pandas.read_sql for further explanation 
+    See the documentation for pandas.read_sql for further explanation
     of the following parameters:
     index_col, coerce_float, params
 

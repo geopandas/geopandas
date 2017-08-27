@@ -2,15 +2,15 @@ from __future__ import absolute_import, division, print_function
 
 from warnings import warn
 
-from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
-from shapely.geometry.base import BaseGeometry, CAP_STYLE, JOIN_STYLE
-from shapely.ops import cascaded_union, unary_union
-import shapely.affinity as affinity
-
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 from pandas.core.indexing import _NDFrameIndexer
+
+from shapely.geometry.base import BaseGeometry, CAP_STYLE, JOIN_STYLE
+from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
+from shapely.ops import cascaded_union
+import shapely.affinity as affinity
 
 from . import vectorized
 
