@@ -562,22 +562,32 @@ def test_constructor_preserve_series_name():
 
 def test_concat():
     a_geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
-    a_gdf = GeoDataFrame({'x': [1, 2, 3], 'geo': a_geoms}, geometry='geo')
+    a_gdf = GeoDataFrame({'x': [1, 2, 3], 'geo': a_geoms}, geometry='geo',
+                         index=['a', 'b', 'c'])
 
     b_geoms = [Point(4, 4), Point(5, 5)]
-    b_gdf = GeoDataFrame({'x': [4, 5], 'geo': b_geoms}, geometry='geo')
+    b_gdf = GeoDataFrame({'x': [4, 5], 'geo': b_geoms}, geometry='geo',
+                         index=['d', 'e'])
 
     c = gpd.concat([a_gdf, b_gdf])
 
     assert list(c.x) == [1, 2, 3, 4, 5]
+    assert list(c.index) == ['a', 'b', 'c', 'd' ,'e']
     assert all(map(lambda x, y: x.equals(y), c.geometry, a_geoms + b_geoms))
+
+    c = gpd.concat([a_gdf, b_gdf], ignore_index=True)
+    assert list(c.index) == [0, 1, 2, 3, 4]
 
     a_gs = a_gdf['geo']
     b_gs = b_gdf['geo']
     c = gpd.concat([a_gs, b_gs])
 
+    assert list(c.index) == ['a', 'b', 'c', 'd' ,'e']
     assert all(map(lambda x, y: x.equals(y), c, a_geoms + b_geoms))
     assert c.name == 'geo'
+
+    c = gpd.concat([a_gs, b_gs], ignore_index=True)
+    assert list(c.index) == [0, 1, 2, 3, 4]
 
 
 def test_concat_errors():
