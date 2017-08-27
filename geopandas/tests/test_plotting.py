@@ -107,15 +107,14 @@ class TestPointPlotting:
 
     def test_style_kwargs(self):
 
-        # markersize (size used by scatterplot -> markersize ** 2)
         ax = self.points.plot(markersize=10)
-        assert ax.collections[0].get_sizes() == [100]
+        assert ax.collections[0].get_sizes() == [10]
 
         ax = self.df.plot(markersize=10)
-        assert ax.collections[0].get_sizes() == [100]
+        assert ax.collections[0].get_sizes() == [10]
 
         ax = self.df.plot(column='values', markersize=10)
-        assert ax.collections[0].get_sizes() == [100]
+        assert ax.collections[0].get_sizes() == [10]
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -333,12 +332,10 @@ class TestNonuniformGeometryPlotting:
         _check_colors(1, ax.collections[2].get_facecolors(), [exp_colors[2]])
 
     def test_style_kwargs(self):
-
-        # markersize -> only the Point gets it (we use s=markersize ** 2)
         ax = self.series.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [100]
+        assert ax.collections[2].get_sizes() == [10]
         ax = self.df.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [100]
+        assert ax.collections[2].get_sizes() == [10]
 
 
 class TestPySALPlotting:

@@ -178,6 +178,11 @@ def plot_point_collection(ax, geoms, values=None, color=None,
         Values mapped to colors using vmin, vmax, and cmap.
         Cannot be specified together with `color`.
 
+    markersize : scalar or array-like, optional
+        Size of the markers. Note that under the hood ``scatter`` is
+        used, so the specified value will be proportional to the
+        area of the marker (size in points^2).
+
     Returns
     -------
     collection : matplotlib.collections.Collection that was plotted
@@ -188,15 +193,11 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     x = geoms.x.values
     y = geoms.y.values
 
-    # scatterplot uses different way to specify size as default plot markersize
-    if markersize:
-        markersize = markersize ** 2
-        # matplotlib < 2.0 does not support s=None
-        kwargs['s'] = markersize
-
-    # matplotlib 1.4 does not support c=None
+    # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:
         kwargs['c'] = values
+    if markersize is not None:
+        kwargs['s'] = markersize
 
     collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
                             marker=marker, **kwargs)
