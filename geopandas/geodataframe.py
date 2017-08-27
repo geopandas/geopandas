@@ -2,22 +2,19 @@ from __future__ import absolute_import, division, print_function
 
 from collections import Iterable
 import json
-import os
-import sys
 
 import numpy as np
 import pandas as pd
 from pandas.core.internals import BlockManager
 from pandas import DataFrame, Series, Index
-from shapely.geometry import mapping, shape
-from shapely.geometry.base import BaseGeometry
+
 from six import string_types, PY3
+
+from shapely.geometry import mapping, shape
 
 from .geoseries import GeoSeries
 from .base import GeoPandasBase, _CoordinateIndexer
 from .plotting import plot_dataframe
-import geopandas.io
-
 from . import vectorized
 from ._block import GeometryBlock
 
@@ -354,8 +351,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
         import geopandas.io
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
-                     coerce_float, params)
+        return geopandas.io.sql.read_postgis(
+            sql, con, geom_col, crs, index_col, coerce_float, params)
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
         """
@@ -662,6 +659,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             aggregated = aggregated.reset_index()
 
         return aggregated
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:

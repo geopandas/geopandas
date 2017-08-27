@@ -1,15 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import pandas as pd
-import geopandas as gpd
-from shapely.geometry import (
-    Point,
-    LineString,
-    Polygon,
-    MultiPoint,
-    MultiLineString,
-    MultiPolygon
-)
+from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 
 _multi_type_map = {

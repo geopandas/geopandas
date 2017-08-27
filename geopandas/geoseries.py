@@ -2,23 +2,20 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 import json
-from warnings import warn
 
 import numpy as np
+
 import pandas as pd
-from pandas import Series, DataFrame, Index
-from pandas.core.indexing import _NDFrameIndexer
+from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
 import pyproj
-from shapely.geometry import shape, Polygon, Point
-from shapely.geometry.collection import GeometryCollection
+from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
-from geopandas.plotting import plot_series
-from .vectorized import from_shapely, GeometryArray
 from .base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
+from .vectorized import from_shapely, GeometryArray
 from ._block import GeometryBlock
 
 
@@ -139,8 +136,8 @@ class GeoSeries(GeoPandasBase, Series):
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         from geopandas import GeoDataFrame
         data = GeoDataFrame({"geometry": self,
-                          "id":self.index.values},
-                          index=self.index)
+                             "id": self.index.values},
+                            index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
 
@@ -232,7 +229,9 @@ class GeoSeries(GeoPandasBase, Series):
             return s
 
     def isnull(self):
-        """Null values in a GeoSeries are represented by empty geometric objects"""
+        """
+        Null values in a GeoSeries are represented by empty geometric objects
+        """
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
@@ -254,16 +253,15 @@ class GeoSeries(GeoPandasBase, Series):
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
-        #left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
-        #right = right.astype(np.uintp)
-        #left2 = GeoSeries(left)  # TODO: why do we do this?
+        # left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
+        # right = right.astype(np.uintp)
+        # left2 = GeoSeries(left)  # TODO: why do we do this?
         left2 = left
         if isinstance(other, GeoSeries):
             right2 = GeoSeries(right)
             return left2, right2
-        else: # It is probably a Series, let's keep it that way
+        else:  # It is probably a Series, let's keep it that way
             return left2, right
-
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -363,5 +361,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         new_values = self._geometry_array.take(indexer)
         return self._constructor(new_values, index=new_index)
+
 
 GeoSeries._create_indexer('cx', _CoordinateIndexer)
