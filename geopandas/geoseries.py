@@ -182,16 +182,20 @@ class GeoSeries(GeoPandasBase, Series):
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
-    isnull = isna
-    isnull.__doc__ = "Alias for `isna` method. See `isna` for more detail."
+    def isnull(self):
+        """Alias for `isna` method. See `isna` for more detail."""
+        return self.isna()
 
     def notna(self):
         """Inverse of `isna`. See `isna` for more detail."""
         return ~self.isna()
 
-    notnull = notna
-    notnull.__doc__ = ("Alias for `notna` method, inverse of `isna`. " +
-                       "See `isna` for more details.")
+    def notnull(self):
+        """
+        Alias for `notna` method, inverse of `isna`.
+        See `isna` for more details.
+        """
+        return self.notna()
 
     def fillna(self, value=None, method=None, inplace=False,
                **kwargs):
