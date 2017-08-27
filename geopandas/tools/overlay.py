@@ -1,6 +1,7 @@
+import pandas as pd
 from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
-import pandas as pd
+
 from geopandas import GeoDataFrame, GeoSeries
 
 
