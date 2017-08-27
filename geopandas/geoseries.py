@@ -168,11 +168,49 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoSeries(self.values.copy(order), index=self.index,
                       name=self.name).__finalize__(self)
 
-    def isnull(self):
-        """Null values in a GeoSeries are represented by empty geometric objects"""
+    def isna(self):
+        """
+        N/A values in a GeoSeries can be represented by empty geometric
+        objects, in addition to standard representations such as None and
+        np.nan.
+
+        Returns
+        -------
+        A boolean pandas Series of the same size as the GeoSeries,
+        True where a value is N/A.
+
+        See Also
+        --------
+        GeoSereies.notna : inverse of isna
+        """
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
+
+    def isnull(self):
+        """Alias for `isna` method. See `isna` for more detail."""
+        return self.isna()
+
+    def notna(self):
+        """
+        N/A values in a GeoSeries can be represented by empty geometric
+        objects, in addition to standard representations such as None and
+        np.nan.
+
+        Returns
+        -------
+        A boolean pandas Series of the same size as the GeoSeries,
+        False where a value is N/A.
+
+        See Also
+        --------
+        GeoSeries.isna : inverse of notna
+        """
+        return ~self.isna()
+
+    def notnull(self):
+        """Alias for `notna` method. See `notna` for more detail."""
+        return self.notna()
 
     def fillna(self, value=None, method=None, inplace=False,
                **kwargs):

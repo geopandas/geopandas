@@ -7,7 +7,7 @@ from six import PY3
 import numpy as np
 import pandas as pd
 import shapely
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal
@@ -176,14 +176,18 @@ def test_dropna():
     assert_geoseries_equal(res, exp)
 
 
-def test_isnull():
-    for NA in [None, np.nan]:
-        s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)])
-        res = s2.isnull()
-        exp = pd.Series([False, True, False])
-        assert_series_equal(res, exp)
-        res = s2.notnull()
-        assert_series_equal(res, ~exp)
+@pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
+def test_isna(NA):
+    s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)])
+    exp = pd.Series([False, True, False])
+    res = s2.isnull()
+    assert_series_equal(res, exp)
+    res = s2.isna()
+    assert_series_equal(res, exp)
+    res = s2.notnull()
+    assert_series_equal(res, ~exp)
+    res = s2.notna()
+    assert_series_equal(res, ~exp)
 
 
 # Groupby / algos
