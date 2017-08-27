@@ -167,6 +167,10 @@ class GeoSeries(GeoPandasBase, Series):
         """Return the y location of point geometries in a GeoSeries"""
         return _delegate_property("y", self)
 
+    @property
+    def coords(self):
+        return _delegate_property("coords", self)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoSeries`` from a file.

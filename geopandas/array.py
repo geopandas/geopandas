@@ -754,6 +754,10 @@ class GeometryArray(ExtensionArray):
             raise ValueError(message)
 
     @property
+    def coords(self):
+        return vectorized.coords(self.data)
+
+    @property
     def bounds(self):
         # need to explicitly check for empty (in addition to missing) geometries,
         # as those return an empty tuple, not resulting in a 2D array
