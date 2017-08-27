@@ -150,11 +150,15 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         Coerce to the new type (if copy=True, return a new copy)
         raise on an except if raise == True
         """
-
-        if dtype != np.object_:
+        if dtype == np.object_:
+            values = self.values
+        elif dtype == str:
+            values = np.array(self.values).astype(str)
+        else:
             if errors == 'raise':
                 raise TypeError('cannot astype geometries')
-        values = self.values
+            else:
+                values = self.values
 
         if copy:
             values = values.copy()
