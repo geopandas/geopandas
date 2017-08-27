@@ -224,7 +224,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 geo_column_name = col
 
-        if to_remove:
+        if to_remove and to_remove in self.columns:
             del frame[to_remove]
 
         if geo_column_name in frame.columns:
@@ -630,6 +630,31 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
         raise ValueError("Can't do inplace setting when converting from"
                          " DataFrame to GeoDataFrame")
     return GeoDataFrame(self, geometry=col, crs=crs)
+
+
+def concat(L, axis=0):
+    """ Concatenate multiple GeoDataFrames or GeoSeries together
+
+    Currently only works for axis=0
+    """
+    if axis != 0:
+        raise NotImplementedError("Only axis=0 supported")
+
+    if isinstance(L[0], GeoDataFrame):
+        name = L[0]._geometry_column_name
+    else:
+        name = L[0].name
+
+    geometry = vectorized.concat(df._geometry_array for df in L)
+    if isinstance(L[0], GeoDataFrame):
+        L = [df.drop(name, axis=1) for df in L]
+        new = pd.concat(L)
+        new = new.set_geometry(GeoSeries(geometry, name=name, index=new.index))
+    else:
+        index = pd.concat([df.to_frame().drop(name, axis=1) for df in L]).index
+        new = GeoSeries(geometry, index=index, name=name, crs=L[0].crs)
+    return new
+
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry

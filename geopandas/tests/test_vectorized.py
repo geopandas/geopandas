@@ -1,10 +1,10 @@
-
 import time
 import random
 import shapely
 from geopandas.vectorized import (GeometryArray, points_from_xy,
-        from_shapely, serialize, deserialize, cysjoin)
+        from_shapely, serialize, deserialize, cysjoin, concat)
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
+from shapely.geometry import Point
 
 import pytest
 import numpy as np
@@ -400,3 +400,15 @@ def test_unary_union():
 def test_coords():
     L = T.exterior().coords()
     assert L == [tuple(t.exterior.coords) for t in triangles]
+
+
+def test_concat():
+    a_geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    a = from_shapely(a_geoms)
+    b_geoms = [Point(4, 4), Point(5, 5)]
+    b = from_shapely(b_geoms)
+
+    c = concat([a, b])
+
+    assert c.parent == {a, b}
+    assert len(c) == 5

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from geopandas.geoseries import GeoSeries
-from geopandas.geodataframe import GeoDataFrame
+from geopandas.geodataframe import GeoDataFrame, concat
 
 from geopandas.io.file import read_file
 from geopandas.io.sql import read_postgis

@@ -1561,3 +1561,8 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
 
     cfree(sv.a)
     return left_out, right_out
+
+
+def concat(L):
+    x = np.concatenate([ga.data for ga in L])
+    return GeometryArray(x, parent=set(L))
