@@ -176,12 +176,12 @@ class GeoSeries(GeoPandasBase, Series):
 
         Returns
         -------
-        A boolean array of the same size as the series,
+        A boolean pandas Series of the same size as the GeoSeries,
         True where a value is N/A.
 
         See Also
         --------
-        notna : inverse of isna
+        GeoSereies.notna : inverse of isna
         """
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
@@ -199,12 +199,12 @@ class GeoSeries(GeoPandasBase, Series):
 
         Returns
         -------
-        A boolean array of the same size as the series,
+        A boolean pandas Series of the same size as the GeoSeries,
         False where a value is N/A.
 
         See Also
         --------
-        isna : inverse of notna
+        GeoSeries.isna : inverse of notna
         """
         return ~self.isna()
 
