@@ -19,15 +19,15 @@ matrix:
   include:
     # Only one test for these Python versions
     - python: 3.4
-      env: PANDAS=0.18.1 MATPLOTLIB=1.4.3
+      env: PANDAS=0.18.1 MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 3.5
       env: PANDAS=0.19.2 MATPLOTLIB=1.5.3
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
-      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3
+      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 2.7
-      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3
+      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 2.7
       env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
     - python: 2.7
@@ -38,9 +38,9 @@ matrix:
       env: PANDAS=master  MATPLOTLIB=master
 
     - python: 3.6
-      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3
+      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 3.6
-      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3
+      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 3.6
       env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
     - python: 3.6
@@ -49,9 +49,6 @@ matrix:
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
-
-  allow_failures:
-    - env: PANDAS=master  MATPLOTLIB=master
 
 before_install:
   - pip install -U pip
@@ -59,12 +56,13 @@ before_install:
 install:
   - pip install numpy
   - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip install matplotlib==$MATPLOTLIB; fi
+  - if [ -n "$SHAPELY" ]; then pip install shapely==$SHAPELY; fi
 
   - pip install -r requirements.txt
   - pip install -r requirements.test.txt
 
   - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
-  - if [[ $PANDAS == 'master' ]]; then pip install -U shapely; fi
+
   - make inplace
 
 script:
