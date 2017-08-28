@@ -1,19 +1,15 @@
 from functools import partial
 import json
-from warnings import warn
 
 import numpy as np
-from pandas import Series, DataFrame
-from pandas.core.indexing import _NDFrameIndexer
-
+from pandas import Series
 import pyproj
-from shapely.geometry import box, shape, Polygon, Point
-from shapely.geometry.collection import GeometryCollection
+from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase
+from geopandas.base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
 
 
 def _is_empty(x):
@@ -21,28 +17,6 @@ def _is_empty(x):
         return x.is_empty
     except:
         return False
-
-
-class _CoordinateIndexer(_NDFrameIndexer):
-    """ Indexing by coordinate slices """
-    def _getitem_tuple(self, tup):
-        obj = self.obj
-        xs, ys = tup
-        # handle numeric values as x and/or y coordinate index
-        if type(xs) is not slice:
-            xs = slice(xs, xs)
-        if type(ys) is not slice:
-            ys = slice(ys, ys)
-        # don't know how to handle step; should this raise?
-        if xs.step is not None or ys.step is not None:
-            warn("Ignoring step - full interval is used.")
-        xmin, ymin, xmax, ymax = obj.total_bounds
-        bbox = box(xs.start or xmin,
-                   ys.start or ymin,
-                   xs.stop or xmax,
-                   ys.stop or ymax)
-        idx = obj.intersects(bbox)
-        return obj[idx]
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -75,24 +49,42 @@ class GeoSeries(GeoPandasBase, Series):
     def geometry(self):
         return self
 
+    @property
+    def x(self):
+        """Return the x location of point geometries in a GeoSeries"""
+        if (self.geom_type == "Point").all():
+            return _series_unary_op(self, 'x', null_value=np.nan)
+        else:
+            message = "x attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
+    def y(self):
+        """Return the y location of point geometries in a GeoSeries"""
+        if (self.geom_type == "Point").all():
+            return _series_unary_op(self, 'y', null_value=np.nan)
+        else:
+            message = "y attribute access only provided for Point geometries"
+            raise ValueError(message)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """
         Alternate constructor to create a GeoSeries from a file
-        
+
         Parameters
         ----------
-        
+
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary, see:
             http://toblerity.github.io/fiona/README.html#usage
             for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to 
+            These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
-        
+
         """
         import fiona
         geoms = []
@@ -118,7 +110,7 @@ class GeoSeries(GeoPandasBase, Series):
                           index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
-        
+
     #
     # Implement pandas methods
     #
@@ -176,11 +168,49 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoSeries(self.values.copy(order), index=self.index,
                       name=self.name).__finalize__(self)
 
-    def isnull(self):
-        """Null values in a GeoSeries are represented by empty geometric objects"""
+    def isna(self):
+        """
+        N/A values in a GeoSeries can be represented by empty geometric
+        objects, in addition to standard representations such as None and
+        np.nan.
+
+        Returns
+        -------
+        A boolean pandas Series of the same size as the GeoSeries,
+        True where a value is N/A.
+
+        See Also
+        --------
+        GeoSereies.notna : inverse of isna
+        """
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
+
+    def isnull(self):
+        """Alias for `isna` method. See `isna` for more detail."""
+        return self.isna()
+
+    def notna(self):
+        """
+        N/A values in a GeoSeries can be represented by empty geometric
+        objects, in addition to standard representations such as None and
+        np.nan.
+
+        Returns
+        -------
+        A boolean pandas Series of the same size as the GeoSeries,
+        False where a value is N/A.
+
+        See Also
+        --------
+        GeoSeries.isna : inverse of notna
+        """
+        return ~self.isna()
+
+    def notnull(self):
+        """Alias for `notna` method. See `notna` for more detail."""
+        return self.notna()
 
     def fillna(self, value=None, method=None, inplace=False,
                **kwargs):
@@ -221,7 +251,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
-    
+
     plot.__doc__ = plot_series.__doc__
 
     #

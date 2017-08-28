@@ -1,12 +1,7 @@
-import io
 import os.path
-import sys
-import unittest
-import zipfile
-
-from six.moves.urllib.request import urlopen
 
 from geopandas import GeoDataFrame, GeoSeries
+
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
@@ -25,39 +20,16 @@ except ImportError:
     import mock
 
 
-def download_nybb():
-    """ Returns the path to the NYC boroughs file. Downloads if necessary.
-
-    returns tuple (zip file name, shapefile's name and path within zip file)"""
-    # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
-    # saved as geopandas/examples/nybb_14aav.zip.
-    filename = 'nybb_16a.zip'
-    full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
-    if not os.path.exists(full_path_name):
-        with io.open(full_path_name, 'wb') as f:
-            response = urlopen('https://github.com/geopandas/geopandas/files/555970/{0}'.format(filename))
-            f.write(response.read())
-
-    shp_zip_path = None
-    zf = zipfile.ZipFile(full_path_name, 'r')
-    # finds path name in zip file
-    for zip_filename_path in zf.namelist():
-        if zip_filename_path.endswith('nybb.shp'):
-            break
-
-    return full_path_name, ('/' + zip_filename_path)
-
-
-def validate_boro_df(test, df):
+def validate_boro_df(df):
     """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
-    test.assertTrue(isinstance(df, GeoDataFrame))
+    assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
     # were properly loaded as MultiPolygons
-    test.assertEqual(len(df), 5)
+    assert len(df) == 5
     columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
     for col in columns:
-        test.assertTrue(col in df.columns, 'Column {0} missing'.format(col))
-    test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
+        assert col in df.columns
+    assert all(df.geometry.type == 'MultiPolygon')
 
 
 def connect(dbname):
@@ -117,9 +89,12 @@ def create_db(df):
 
 
 def assert_seq_equal(left, right):
-    """Poor man's version of assert_almost_equal which isn't working with Shapely
-    objects right now"""
-    assert len(left) == len(right), "Mismatched lengths: %d != %d" % (len(left), len(right))
+    """
+    Poor man's version of assert_almost_equal which isn't working with Shapely
+    objects right now
+    """
+    assert (len(left) == len(right),
+            "Mismatched lengths: %d != %d" % (len(left), len(right)))
 
     for elem_left, elem_right in zip(left, right):
         assert elem_left == elem_right, "%r != %r" % (left, right)

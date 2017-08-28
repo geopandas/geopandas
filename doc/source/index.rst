@@ -29,6 +29,7 @@ such as PostGIS.
   Installation <install>
   Data Structures <data_structures>
   Reading and Writing Files <io>
+  Indexing and Selecting Data <indexing>
   Making Maps <mapping>
   Managing Projections <projections>
   Geometric Manipulations <geometric_manipulations>
