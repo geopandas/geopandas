@@ -667,7 +667,7 @@ def concat(L, axis=0, ignore_index=False):
         new = new.set_geometry(GeoSeries(geometry, name=name, index=new.index),
                                crs=L[0].crs)
     else:
-        index = pd.concat([df.to_frame().drop(name, axis=1) for df in L],
+        index = pd.concat([pd.Series(index=s.index) for s in L],
                           ignore_index=ignore_index).index
         new = GeoSeries(geometry, index=index, name=name, crs=L[0].crs)
     return new
