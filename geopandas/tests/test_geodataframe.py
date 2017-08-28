@@ -563,16 +563,17 @@ def test_constructor_preserve_series_name():
 def test_concat():
     a_geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
     a_gdf = GeoDataFrame({'x': [1, 2, 3], 'geo': a_geoms}, geometry='geo',
-                         index=['a', 'b', 'c'])
+                         index=['a', 'b', 'c'], crs='my-crs')
 
     b_geoms = [Point(4, 4), Point(5, 5)]
     b_gdf = GeoDataFrame({'x': [4, 5], 'geo': b_geoms}, geometry='geo',
-                         index=['d', 'e'])
+                         index=['d', 'e'], crs='my-crs')
 
     c = gpd.concat([a_gdf, b_gdf])
 
     assert list(c.x) == [1, 2, 3, 4, 5]
     assert list(c.index) == ['a', 'b', 'c', 'd' ,'e']
+    assert c.crs == 'my-crs'
     assert all(map(lambda x, y: x.equals(y), c.geometry, a_geoms + b_geoms))
 
     c = gpd.concat([a_gdf, b_gdf], ignore_index=True)
