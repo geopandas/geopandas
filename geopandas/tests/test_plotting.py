@@ -348,21 +348,28 @@ class TestPySALPlotting:
             raise pytest.skip("PySAL is not installed")
 
         pth = ps.examples.get_path("columbus.shp")
-        cls.tracts = read_file(pth)
+        cls.df = read_file(pth)
+        cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
 
     def test_legend(self):
-        ax = self.tracts.plot(column='CRIME', scheme='QUANTILES', k=3,
-                              cmap='OrRd', legend=True)
-
+        ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
+                          cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'0.00 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
+        expected = [u'0.18 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
+        assert labels == expected
+
+    def test_negative_legend(self):
+        ax = self.df.plot(column='NEGATIVES', scheme='FISHER_JENKS', k=3,
+                          cmap='OrRd', legend=True)
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u'-10.00 - -3.33', u'-3.33 - 3.33', u'3.33 - 10.00']
         assert labels == expected
 
     def test_invalid_scheme(self):
         with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
-            self.tracts.plot(column='CRIME', scheme=scheme, k=3,
-                             cmap='OrRd', legend=True)
+            self.df.plot(column='CRIME', scheme=scheme, k=3,
+                         cmap='OrRd', legend=True)
 
 
 class TestPlotCollections:
