@@ -414,12 +414,12 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         values = df[column]
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
-        values = np.array(binning.yb)
         # set categorical to True for creating the legend
         categorical = True
-        binedges = [binning.yb.min()] + binning.bins.tolist()
+        binedges = [values.min()] + binning.bins.tolist()
         categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                       for i in range(len(binedges)-1)]
+        values = np.array(binning.yb)
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
