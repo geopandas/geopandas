@@ -1,27 +1,30 @@
 Changes
 =======
 
-Next
-----
+Version 0.3.0 (August 29, 2017)
+-------------------------------
 
 Improvements:
 
 * Improve plotting performance using ``matplotlib.collections`` (#267)
-* Improve default plotting appearance (#502, #510)
-* Return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
+* Improve default plotting appearance. The defaults now follow the new matplotlib defaults (#318, #502, #510)
 * Provide access to x/y coordinates as attributes for Point GeoSeries (#383)
 * Make the NYBB dataset available through ``geopandas.datasets`` (#384)
-* Use index label instead of integer id in output of ``iterfeatures`` and
-  ``to_json`` (#421)
 * Enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
 * Add ``cx`` indexer to GeoDataFrame (#482)
-* ``GeoDataFrame.from_features`` now also accepts a Feature Collection (#507)
+* ``GeoDataFrame.from_features`` now also accepts a Feature Collection (#225, #507)
+* Use index label instead of integer id in output of ``iterfeatures`` and
+  ``to_json`` (#421)
+* Return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
 
 Bug fixes:
 
+* Compatibility with shapely 1.6.0 (#512)
 * Fix ``fiona.filter`` results when bbox is not None (#372)
 * Fix ``dissolve`` to retain CRS (#389)
 * Fix ``cx`` behavior when using index of 0 (#478)
+* Fix display of lower bin in legend label of choropleth plots using a PySAL scheme (#450)
+
 
 Version 0.2.0
 -------------
