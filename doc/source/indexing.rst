@@ -25,6 +25,6 @@ countries whose boundaries extend into the southern hemisphere.
 
    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
    southern_world = world.cx[:, :0]
-   @savefig world_southern.png width=5in
-   southern_world.plot();
+   @savefig world_southern.png
+   southern_world.plot(figsize=(10, 3));
 

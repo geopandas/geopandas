@@ -61,11 +61,13 @@ Re-projecting is the process of changing the representation of locations from on
     world.crs
 
     # Visualize
-    @savefig world_starting.png width=3in
-    world.plot();
+    ax = world.plot()
+    @savefig world_starting.png
+    ax.set_title("WGS84 (lat/lon)");
 
     # Reproject to Mercator (after dropping Antartica)
     world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
     world = world.to_crs({'init': 'epsg:3395'}) # world.to_crs(epsg=3395) would also work
-    @savefig world_reproj.png width=3in
-    world.plot();
+    ax = world.plot()
+    @savefig world_reproj.png
+    ax.set_title("Mercator");

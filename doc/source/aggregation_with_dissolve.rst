@@ -2,6 +2,9 @@
    :suppress:
 
    import geopandas as gpd
+   import matplotlib
+   orig = matplotlib.rcParams['figure.figsize']
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
 
 
 Aggregation with dissolve
@@ -27,7 +30,7 @@ First, let's look at the most simple case where we just want continent shapes an
     world = world[['continent', 'geometry']]
     continents = world.dissolve(by='continent')
 
-    @savefig continents.png width=5in
+    @savefig continents1.png
     continents.plot();
 
     continents.head()
@@ -40,11 +43,16 @@ If we are interested in aggregate populations, however, we can pass different fu
    world = world[['continent', 'geometry', 'pop_est']]
    continents = world.dissolve(by='continent', aggfunc='sum')
 
-   @savefig continents.png width=5in
+   @savefig continents2.png
    continents.plot(column = 'pop_est', scheme='quantiles', cmap='YlOrRd');
 
    continents.head()
 
+
+.. ipython:: python
+    :suppress:
+
+    matplotlib.rcParams['figure.figsize'] = orig
 
 
 .. toctree::
