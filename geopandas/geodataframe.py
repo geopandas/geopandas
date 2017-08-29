@@ -231,7 +231,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 geo_column_name = col
 
-        if to_remove:
+        if to_remove and to_remove in self.columns:
             del frame[to_remove]
 
         if geo_column_name in frame.columns:
@@ -637,6 +637,48 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
         raise ValueError("Can't do inplace setting when converting from"
                          " DataFrame to GeoDataFrame")
     return GeoDataFrame(self, geometry=col, crs=crs)
+
+
+def concat(L, axis=0, ignore_index=False):
+    """ Concatenate multiple GeoDataFrames or GeoSeries together
+
+    **Expectations**
+    -  Currently only works for axis=0
+    -  Expects all input types to be either GeoDataFrame or GeoSeries
+    -  CRS values should be the same
+    -  Geometry names should be the same
+    """
+    if axis != 0:
+        raise NotImplementedError("Only axis=0 supported")
+
+    types = set(map(type, L))
+    if types != {GeoDataFrame} and types != {GeoSeries}:
+        raise TypeError("Expected consistent types, got %s" % str(types))
+
+    if not len(set(df.crs for df in L)) == 1:
+        raise ValueError("Expected all crs values to be the same")
+
+    if isinstance(L[0], GeoDataFrame):
+        if not len(set(df._geometry_column_name for df in L)) == 1:
+            raise ValueError("Expected all geometry names to be the same")
+        name = L[0]._geometry_column_name
+    else:
+        if not len(set(s.name for s in L)) == 1:
+            raise ValueError("Expected all geometry names to be the same")
+        name = L[0].name
+
+    geometry = vectorized.concat(df._geometry_array for df in L)
+    if isinstance(L[0], GeoDataFrame):
+        L = [df.drop(name, axis=1) for df in L]
+        new = pd.concat(L, ignore_index=ignore_index)
+        new = new.set_geometry(GeoSeries(geometry, name=name, index=new.index),
+                               crs=L[0].crs)
+    else:
+        index = pd.concat([pd.Series(index=s.index) for s in L],
+                          ignore_index=ignore_index).index
+        new = GeoSeries(geometry, index=index, name=name, crs=L[0].crs)
+    return new
+
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry
