@@ -20,5 +20,8 @@ dependencies:
 - pillow
 - mock
 - cartopy
+- sphinx-gallery
+- jinja2
 pip:
   - sphinx_gallery
+
