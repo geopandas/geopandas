@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mapping Tools &mdash; GeoPandas 0.2.1 documentation</title>
+  <title>Mapping Tools &mdash; GeoPandas 0.3.0 documentation</title>
   
 
   
@@ -37,9 +37,9 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.2.1 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
         <link rel="next" title="Managing Projections" href="projections.html"/>
-        <link rel="prev" title="Reading and Writing Files" href="io.html"/> 
+        <link rel="prev" title="Indexing and Selecting Data" href="indexing.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.3.0
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Making Maps</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#chloropleth-maps">Chloropleth Maps</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#choosing-colors">Choosing colors</a></li>
@@ -190,32 +191,25 @@
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># Examine country GeoDataFrame</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[3]: </span><span class="go"></span>
-<span class="go">       continent  gdp_md_est  \</span>
-<span class="go">0           Asia     22270.0   </span>
-<span class="go">1         Africa    110300.0   </span>
-<span class="go">2         Europe     21810.0   </span>
-<span class="go">3           Asia    184300.0   </span>
-<span class="go">4  South America    573900.0   </span>
+<span class="go">      pop_est      continent                  name iso_a3  gdp_md_est  \</span>
+<span class="go">0  28400000.0           Asia           Afghanistan    AFG     22270.0   </span>
+<span class="go">1  12799293.0         Africa                Angola    AGO    110300.0   </span>
+<span class="go">2   3639453.0         Europe               Albania    ALB     21810.0   </span>
+<span class="go">3   4798491.0           Asia  United Arab Emirates    ARE    184300.0   </span>
+<span class="go">4  40913584.0  South America             Argentina    ARG    573900.0   </span>
 
-<span class="go">                                            geometry iso_a3  \</span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...    AFG   </span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...    AGO   </span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...    ALB   </span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...    ARE   </span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...    ARG   </span>
-
-<span class="go">                   name     pop_est  </span>
-<span class="go">0           Afghanistan  28400000.0  </span>
-<span class="go">1                Angola  12799293.0  </span>
-<span class="go">2               Albania   3639453.0  </span>
-<span class="go">3  United Arab Emirates   4798491.0  </span>
-<span class="go">4             Argentina  40913584.0  </span>
+<span class="go">                                            geometry  </span>
+<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...  </span>
+<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...  </span>
+<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...  </span>
+<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...  </span>
+<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...  </span>
 
 <span class="go"># Basic plot, random colors</span>
 <span class="gp">In [4]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/world_randomcolors.png"><img alt="_images/world_randomcolors.png" src="_images/world_randomcolors.png" style="width: 5in;" /></a>
+<img alt="_images/world_randomcolors.png" src="_images/world_randomcolors.png" />
 <p>Note that in general, any options one can pass to <a class="reference external" href="http://matplotlib.org/api/pyplot_api.html">pyplot</a> in <code class="docutils literal"><span class="pre">matplotlib</span></code> (or <a class="reference external" href="http://matplotlib.org/api/lines_api.html">style options that work for lines</a>) can be passed to the <code class="docutils literal"><span class="pre">plot()</span></code> method.</p>
 <div class="section" id="chloropleth-maps">
 <h2>Chloropleth Maps<a class="headerlink" href="#chloropleth-maps" title="Permalink to this headline">¶</a></h2>
@@ -228,19 +222,19 @@
 <span class="gp">In [7]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/world_gdp_per_cap.png"><img alt="_images/world_gdp_per_cap.png" src="_images/world_gdp_per_cap.png" style="width: 5in;" /></a>
+<img alt="_images/world_gdp_per_cap.png" src="_images/world_gdp_per_cap.png" />
 <div class="section" id="choosing-colors">
 <h3>Choosing colors<a class="headerlink" href="#choosing-colors" title="Permalink to this headline">¶</a></h3>
 <p>One can also modify the colors used by <code class="docutils literal"><span class="pre">plot</span></code> with the <code class="docutils literal"><span class="pre">cmap</span></code> option (for a full list of colormaps, see the <a class="reference external" href="http://matplotlib.org/users/colormaps.html">matplotlib website</a>):</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [8]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;OrRd&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/world_gdp_per_cap_red.png"><img alt="_images/world_gdp_per_cap_red.png" src="_images/world_gdp_per_cap_red.png" style="width: 5in;" /></a>
+<img alt="_images/world_gdp_per_cap_red.png" src="_images/world_gdp_per_cap_red.png" />
 <p>The way color maps are scaled can also be manipulated with the <code class="docutils literal"><span class="pre">scheme</span></code> option (if you have <code class="docutils literal"><span class="pre">pysal</span></code> installed, which can be accomplished via <code class="docutils literal"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">pysal</span></code>). By default, <code class="docutils literal"><span class="pre">scheme</span></code> is set to ‘equal_intervals’, but it can also be adjusted to any other <a class="reference external" href="http://pysal.org/1.2/library/esda/mapclassify.html">pysal option</a>, like ‘quantiles’, ‘percentiles’, etc.</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [9]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;OrRd&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;quantiles&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/world_gdp_per_cap_quantiles.png"><img alt="_images/world_gdp_per_cap_quantiles.png" src="_images/world_gdp_per_cap_quantiles.png" style="width: 5in;" /></a>
+<img alt="_images/world_gdp_per_cap_quantiles.png" src="_images/world_gdp_per_cap_quantiles.png" />
 </div>
 </div>
 <div class="section" id="maps-with-layers">
@@ -259,14 +253,14 @@
 <span class="go"># apparently in the middle of the ocean!</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/capitals.png"><img alt="_images/capitals.png" src="_images/capitals.png" style="width: 5in;" /></a>
+<img alt="_images/capitals.png" src="_images/capitals.png" />
 <p><strong>Method 1</strong></p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [12]: </span><span class="n">base</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [12]: </span><span class="n">base</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
 
 <span class="gp">In [13]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">);</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/capitals_over_countries_1.png"><img alt="_images/capitals_over_countries_1.png" src="_images/capitals_over_countries_1.png" style="width: 5in;" /></a>
+<img alt="_images/capitals_over_countries_1.png" src="_images/capitals_over_countries_1.png" />
 <p><strong>Method 2: Using matplotlib objects</strong></p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [14]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
@@ -277,16 +271,16 @@
 <span class="go"># working with pyplot directly.</span>
 <span class="gp">In [16]: </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
 
-<span class="gp">In [17]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
-<span class="gh">Out[17]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x7f79010a1160&gt;</span>
+<span class="gp">In [17]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="gh">Out[17]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fa74f7edcc0&gt;</span>
 
 <span class="gp">In [18]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">                                                                   Out[18]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x7f79010a1160&gt;</span>
+<span class="go">                                                                   Out[18]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x7fa74f7edcc0&gt;</span>
 
 <span class="gp">In [19]: </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">();</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/capitals_over_countries_2.png"><img alt="_images/capitals_over_countries_2.png" src="_images/capitals_over_countries_2.png" style="width: 5in;" /></a>
+<img alt="_images/capitals_over_countries_2.png" src="_images/capitals_over_countries_2.png" />
 </div>
 <div class="section" id="other-resources">
 <h2>Other Resources<a class="headerlink" href="#other-resources" title="Permalink to this headline">¶</a></h2>
@@ -308,7 +302,7 @@
         <a href="projections.html" class="btn btn-neutral float-right" title="Managing Projections" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="io.html" class="btn btn-neutral" title="Reading and Writing Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="indexing.html" class="btn btn-neutral" title="Indexing and Selecting Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -317,7 +311,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013-2016, GeoPandas developers.
+        &copy; Copyright 2013–2017, GeoPandas developers.
 
     </p>
   </div>
@@ -339,7 +333,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.1',
+            VERSION:'0.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

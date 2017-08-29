@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Aggregation with dissolve &mdash; GeoPandas 0.2.1 documentation</title>
+  <title>Aggregation with dissolve &mdash; GeoPandas 0.3.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.2.1 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
         <link rel="next" title="Merging Data" href="mergingdata.html"/>
         <link rel="prev" title="Set-Operations with Overlay" href="set_operations.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.3.0
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
@@ -202,7 +203,7 @@
 <span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/continents.png"><img alt="_images/continents.png" src="_images/continents.png" style="width: 5in;" /></a>
+<img alt="_images/continents1.png" src="_images/continents1.png" />
 <p>If we are interested in aggregate populations, however, we can pass different functions to the <code class="docutils literal"><span class="pre">dissolve</span></code> method to aggregate populations:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
@@ -223,7 +224,7 @@
 <span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...  5.393510e+08</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/continents.png"><img alt="_images/continents.png" src="_images/continents.png" style="width: 5in;" /></a>
+<img alt="_images/continents2.png" src="_images/continents2.png" />
 <div class="toctree-wrapper compound">
 </div>
 </div>
@@ -251,7 +252,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013-2016, GeoPandas developers.
+        &copy; Copyright 2013–2017, GeoPandas developers.
 
     </p>
   </div>
@@ -273,7 +274,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.1',
+            VERSION:'0.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

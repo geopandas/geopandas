@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Merging Data &mdash; GeoPandas 0.2.1 documentation</title>
+  <title>Merging Data &mdash; GeoPandas 0.3.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.2.1 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
         <link rel="next" title="Geocoding" href="geocoding.html"/>
         <link rel="prev" title="Aggregation with dissolve" href="aggregation_with_dissolve.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.3.0
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
@@ -255,24 +256,24 @@
 
 <span class="gp">In [12]: </span><span class="n">cities</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="go">                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Out[12]: </span>
-<span class="go">                                      geometry          name</span>
-<span class="go">0  POINT (12.45338654497177 41.90328217996012)  Vatican City</span>
-<span class="go">1    POINT (12.44177015780014 43.936095834768)    San Marino</span>
-<span class="go">2  POINT (9.516669472907267 47.13372377429357)         Vaduz</span>
-<span class="go">3  POINT (6.130002806227083 49.61166037912108)    Luxembourg</span>
-<span class="go">4  POINT (158.1499743237623 6.916643696007725)       Palikir</span>
+<span class="go">           name                                     geometry</span>
+<span class="go">0  Vatican City  POINT (12.45338654497177 41.90328217996012)</span>
+<span class="go">1    San Marino    POINT (12.44177015780014 43.936095834768)</span>
+<span class="go">2         Vaduz  POINT (9.516669472907267 47.13372377429357)</span>
+<span class="go">3    Luxembourg  POINT (6.130002806227083 49.61166037912108)</span>
+<span class="go">4       Palikir  POINT (158.1499743237623 6.916643696007725)</span>
 
 <span class="go"># Execute spatial join</span>
 <span class="gp">In [13]: </span><span class="n">cities_with_country</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cities</span><span class="p">,</span> <span class="n">countries</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
 
 <span class="gp">In [14]: </span><span class="n">cities_with_country</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[14]: </span><span class="go"></span>
-<span class="go">                                        geometry          name  index_right  \</span>
-<span class="go">0    POINT (12.45338654497177 41.90328217996012)  Vatican City           79   </span>
-<span class="go">1      POINT (12.44177015780014 43.936095834768)    San Marino           79   </span>
-<span class="go">192    POINT (12.481312562874 41.89790148509894)          Rome           79   </span>
-<span class="go">2    POINT (9.516669472907267 47.13372377429357)         Vaduz            9   </span>
-<span class="go">184  POINT (16.36469309674374 48.20196113681686)        Vienna            9   </span>
+<span class="go">             name                                     geometry  index_right  \</span>
+<span class="go">0    Vatican City  POINT (12.45338654497177 41.90328217996012)           79   </span>
+<span class="go">1      San Marino    POINT (12.44177015780014 43.936095834768)           79   </span>
+<span class="go">192          Rome    POINT (12.481312562874 41.89790148509894)           79   </span>
+<span class="go">2           Vaduz  POINT (9.516669472907267 47.13372377429357)            9   </span>
+<span class="go">184        Vienna  POINT (16.36469309674374 48.20196113681686)            9   </span>
 
 <span class="go">     country  </span>
 <span class="go">0      Italy  </span>
@@ -309,7 +310,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013-2016, GeoPandas developers.
+        &copy; Copyright 2013–2017, GeoPandas developers.
 
     </p>
   </div>
@@ -331,7 +332,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.1',
+            VERSION:'0.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

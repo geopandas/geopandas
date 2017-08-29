@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Data Structures &mdash; GeoPandas 0.2.1 documentation</title>
+  <title>Data Structures &mdash; GeoPandas 0.3.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.2.1 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
         <link rel="next" title="Reading and Writing Files" href="io.html"/>
         <link rel="prev" title="Installation" href="install.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.3.0
               </div>
             
           
@@ -111,6 +111,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
@@ -260,32 +261,25 @@ in <a class="reference internal" href="geometric_manipulations.html"><span class
 
 <span class="gp">In [2]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[2]: </span><span class="go"></span>
-<span class="go">       continent  gdp_md_est  \</span>
-<span class="go">0           Asia     22270.0   </span>
-<span class="go">1         Africa    110300.0   </span>
-<span class="go">2         Europe     21810.0   </span>
-<span class="go">3           Asia    184300.0   </span>
-<span class="go">4  South America    573900.0   </span>
+<span class="go">      pop_est      continent                  name iso_a3  gdp_md_est  \</span>
+<span class="go">0  28400000.0           Asia           Afghanistan    AFG     22270.0   </span>
+<span class="go">1  12799293.0         Africa                Angola    AGO    110300.0   </span>
+<span class="go">2   3639453.0         Europe               Albania    ALB     21810.0   </span>
+<span class="go">3   4798491.0           Asia  United Arab Emirates    ARE    184300.0   </span>
+<span class="go">4  40913584.0  South America             Argentina    ARG    573900.0   </span>
 
-<span class="go">                                            geometry iso_a3  \</span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...    AFG   </span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...    AGO   </span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...    ALB   </span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...    ARE   </span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...    ARG   </span>
-
-<span class="go">                   name     pop_est  </span>
-<span class="go">0           Afghanistan  28400000.0  </span>
-<span class="go">1                Angola  12799293.0  </span>
-<span class="go">2               Albania   3639453.0  </span>
-<span class="go">3  United Arab Emirates   4798491.0  </span>
-<span class="go">4             Argentina  40913584.0  </span>
+<span class="go">                                            geometry  </span>
+<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...  </span>
+<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...  </span>
+<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...  </span>
+<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...  </span>
+<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...  </span>
 
 <span class="go">#Plot countries</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/world_borders.png"><img alt="_images/world_borders.png" src="_images/world_borders.png" style="width: 3in;" /></a>
+<img alt="_images/world_borders.png" src="_images/world_borders.png" />
 <p>Currently, the column named “geometry” with country borders is the active
 geometry column:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [4]: </span><span class="n">world</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">name</span>
@@ -307,7 +301,7 @@ geometry column:</p>
 <span class="gp">In [9]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/world_centroids.png"><img alt="_images/world_centroids.png" src="_images/world_centroids.png" style="width: 3in;" /></a>
+<img alt="_images/world_centroids.png" src="_images/world_centroids.png" />
 <p><strong>Note:</strong> A <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> keeps track of the active column by name, so if you rename the active geometry column, you must also reset the geometry:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;old_name&#39;</span><span class="p">:</span> <span class="s1">&#39;new_name&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;new_name&#39;</span><span class="p">)</span>
 </pre></div>
@@ -343,7 +337,7 @@ geometry column:</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013-2016, GeoPandas developers.
+        &copy; Copyright 2013–2017, GeoPandas developers.
 
     </p>
   </div>
@@ -365,7 +359,7 @@ geometry column:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.1',
+            VERSION:'0.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Set-Operations with Overlay &mdash; GeoPandas 0.2.1 documentation</title>
+  <title>Set-Operations with Overlay &mdash; GeoPandas 0.3.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.2.1 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
         <link rel="next" title="Aggregation with dissolve" href="aggregation_with_dissolve.html"/>
         <link rel="prev" title="Geometric Manipulations" href="geometric_manipulations.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.3.0
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
@@ -216,7 +217,7 @@ the complexities of applying set operations to two <em>GeoSeries</em>. The stand
 <p>These two GeoDataFrames have some overlapping areas:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">);</span>
 
-<span class="gp">In [7]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">);</span>
+<span class="gp">In [7]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/overlay_example.png"><img alt="_images/overlay_example.png" src="_images/overlay_example.png" style="width: 5in;" /></a>
@@ -241,11 +242,11 @@ the combined boundaries of the two GeoDataFrames.</p>
 <span class="go">7  NaN  2.0  POLYGON ((4 3, 4 4, 3 4, 3 5, 5 5, 5 3, 4 3))</span>
 <span class="go">8  2.0  2.0            POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
 
-<span class="gp">In [10]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_union</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="gp">In [10]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_union</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
-<span class="gp">In [11]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [11]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 
-<span class="gp">In [12]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [12]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/overlay_example_union.png"><img alt="_images/overlay_example_union.png" src="_images/overlay_example_union.png" style="width: 5in;" /></a>
@@ -261,11 +262,11 @@ by both GeoDataFrames:</p>
 <span class="go">1    2    1  POLYGON ((3 3, 3 2, 2 2, 2 3, 3 3))</span>
 <span class="go">2    2    2  POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
 
-<span class="gp">In [15]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_intersection</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="gp">In [15]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_intersection</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
-<span class="gp">In [16]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [16]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 
-<span class="gp">In [17]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [17]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/overlay_example_intersection.png"><img alt="_images/overlay_example_intersection.png" src="_images/overlay_example_intersection.png" style="width: 5in;" /></a>
@@ -283,11 +284,11 @@ the geometries that are only part of one of the GeoDataFrames but not of both:</
 <span class="go">4  2.0  NaN            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
 <span class="go">5  NaN  2.0  POLYGON ((4 3, 4 4, 3 4, 3 5, 5 5, 5 3, 4 3))</span>
 
-<span class="gp">In [20]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_symdiff</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="gp">In [20]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_symdiff</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
-<span class="gp">In [21]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [21]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 
-<span class="gp">In [22]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [22]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/overlay_example_symdiff.png"><img alt="_images/overlay_example_symdiff.png" src="_images/overlay_example_symdiff.png" style="width: 5in;" /></a>
@@ -302,11 +303,11 @@ the geometries that are only part of one of the GeoDataFrames but not of both:</
 <span class="go">1    2  None            POLYGON ((3 2, 3 3, 4 3, 4 2, 3 2))</span>
 <span class="go">2    2  None            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
 
-<span class="gp">In [25]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_difference</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="gp">In [25]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_difference</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
-<span class="gp">In [26]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [26]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 
-<span class="gp">In [27]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [27]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/overlay_example_difference.png"><img alt="_images/overlay_example_difference.png" src="_images/overlay_example_difference.png" style="width: 5in;" /></a>
@@ -324,11 +325,11 @@ but with the geometries obtained from overlaying <code class="docutils literal">
 <span class="go">4    2  NaN            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
 <span class="go">5    2  2.0            POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
 
-<span class="gp">In [30]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_identity</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="gp">In [30]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_identity</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
-<span class="gp">In [31]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [31]: </span><span class="n">df1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 
-<span class="gp">In [32]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">);</span>
+<span class="gp">In [32]: </span><span class="n">df2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/overlay_example_identity.png"><img alt="_images/overlay_example_identity.png" src="_images/overlay_example_identity.png" style="width: 5in;" /></a>
@@ -374,14 +375,14 @@ wishes to identify the “core” portion of each country – defined as areas w
 <p>To select only the portion of countries within 500km of a capital, we specify the <code class="docutils literal"><span class="pre">how</span></code> option to be “intersect”, which creates a new set of polygons where these two layers overlap:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [43]: </span><span class="n">country_cores</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">capitals</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
 
-<span class="gp">In [44]: </span><span class="n">country_cores</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+<span class="gp">In [44]: </span><span class="n">country_cores</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/country_cores.png"><img alt="_images/country_cores.png" src="_images/country_cores.png" style="width: 5in;" /></a>
 <p>Changing the “how” option allows for different types of overlay operations. For example, if we were interested in the portions of countries <em>far</em> from capitals (the peripheries), we would compute the difference of the two.</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [45]: </span><span class="n">country_peripheries</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">capitals</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;difference&#39;</span><span class="p">)</span>
 
-<span class="gp">In [46]: </span><span class="n">country_peripheries</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+<span class="gp">In [46]: </span><span class="n">country_peripheries</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/country_peripheries.png"><img alt="_images/country_peripheries.png" src="_images/country_peripheries.png" style="width: 5in;" /></a>
@@ -416,7 +417,7 @@ wishes to identify the “core” portion of each country – defined as areas w
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013-2016, GeoPandas developers.
+        &copy; Copyright 2013–2017, GeoPandas developers.
 
     </p>
   </div>
@@ -438,7 +439,7 @@ wishes to identify the “core” portion of each country – defined as areas w
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.1',
+            VERSION:'0.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
