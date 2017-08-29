@@ -470,7 +470,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             ax.legend(patches, categories, numpoints=1, loc='best')
         else:
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap)
+            ax.get_figure().colorbar(n_cmap, ax=ax)
 
     plt.draw()
     return ax
