@@ -54,6 +54,13 @@ class TestIO:
         lower_columns = [c.lower() for c in self.columns]
         assert (df.columns[:-1] == lower_columns).all()
 
+    @pytest.mark.webtest
+    def test_remote_geojson_url(self):
+        url = ("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/"
+               "ne_50m_wgs84_bounding_box.geojson")
+        gdf = read_file(url)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
     def test_filtered_read_file(self):
         full_df_shape = self.df.shape
         nybb_filename = geopandas.datasets.get_path('nybb')
