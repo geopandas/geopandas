@@ -155,14 +155,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_file(cls, filename, **kwargs):
-        """
-        Alternate constructor to create a GeoDataFrame from a file.
+        """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
-        Example:
-            df = geopandas.GeoDataFrame.from_file('nybb.shp')
+        Can load a ``GeoDataFrame`` from a file in any format recognized by
+        `fiona`. See http://toblerity.org/fiona/manual.html for details.
 
-        Wraps geopandas.read_file(). For additional help, see read_file()
+        Parameters
+        ----------
 
+        filename : str
+            File path or file handle to read from. Depending on which kwargs
+            are included, the content of filename may vary. See
+            http://toblerity.org/fiona/README.html#usage for usage details.
+        kwargs : key-word arguments
+            These arguments are passed to fiona.open, and can be used to
+            access multi-layer data, data stored within archives (zip files),
+            etc.
+
+        Examples
+        --------
+
+        >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
         return geopandas.io.file.read_file(filename, **kwargs)
 
@@ -222,50 +235,68 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
                      coerce_float=True, params=None):
-        """
-        Alternate constructor to create a GeoDataFrame from a sql query
+        """Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column.
 
-        Example:
-            df = geopandas.GeoDataFrame.from_postgis(con,
-                "SELECT geom, highway FROM roads;")
+        Parameters
+        ----------
+        sql : string
+        con : DB connection object or SQLAlchemy engine
+        geom_col : string, default 'geom'
+            column name to convert to shapely geometries
+        crs : optional
+            Coordinate reference system to use for the returned GeoDataFrame
+        index_col : string or list of strings, optional, default: None
+            Column(s) to set as index(MultiIndex)
+        coerce_float : boolean, default True
+            Attempt to convert values of non-string, non-numeric objects (like
+            decimal.Decimal) to floating point, useful for SQL result sets
+        params : list, tuple or dict, optional, default: None
+            List of parameters to pass to execute method.
 
-        Wraps geopandas.read_postgis(). For additional help, see read_postgis()
+        Examples
+        --------
 
+        >>> sql = "SELECT geom, highway FROM roads;"
+        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
                      coerce_float, params)
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
-        """
-        Returns a GeoJSON string representation of the GeoDataFrame.
+        """Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
         Parameters
         ----------
         na : {'null', 'drop', 'keep'}, default 'null'
-            Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: output the missing entries as JSON null
-            * drop: remove the property from the feature. This applies to
-                    each feature individually so that features may have
-                    different properties
-            * keep: output the missing entries as NaN
+            Indicates how to output missing (NaN) values in the GeoDataFrame.
+            See below.
+        show_bbox : bool, optional, default: False
+            Include bbox (bounds) in the geojson
 
-        show_bbox : include bbox (bounds) in the geojson
-
+        Notes
+        -----
         The remaining *kwargs* are passed to json.dumps().
 
+        Missing (NaN) values in the GeoDataFrame can be represented as follows:
+
+        - ``null``: output the missing entries as JSON null.
+        - ``drop``: remove the property from the feature. This applies to each
+          feature individually so that features may have different properties.
+        - ``keep``: output the missing entries as NaN.
         """
         return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
 
     @property
     def __geo_interface__(self):
-        """
-        Returns a python feature collection (i.e. the geointerface)
-        representation of the GeoDataFrame.
+        """Returns a ``GeoDataFrame`` as a python feature collection.
+
+        Implements the `geo_interface`. The returned python data structure
+        represents the ``GeoDataFrame`` as a GeoJSON-like
+        ``FeatureCollection``.
 
         This differs from `_to_geo()` only in that it is a property with
         default args instead of a method
-
         """
         return self._to_geo(na='null', show_bbox=True)
 
@@ -341,10 +372,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def to_file(self, filename, driver="ESRI Shapefile", schema=None,
                 **kwargs):
-        """
-        Write this GeoDataFrame to an OGR data source
+        """Write the ``GeoDataFrame`` to a file.
 
-        A dictionary of supported OGR providers is available via:
+        By default, an ESRI shapefile is written, but any OGR data source
+        supported by Fiona can be written. A dictionary of supported OGR
+        providers is available via:
+
         >>> import fiona
         >>> fiona.supported_drivers
 
@@ -352,32 +385,44 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default 'ESRI Shapefile'
+        driver : string, default: 'ESRI Shapefile'
             The OGR format driver used to write the vector file.
-        schema : dict, default None
+        schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
 
-        The *kwargs* are passed to fiona.open and can be used to write
-        to multi-layer data, store data within archives (zip files), etc.
+        Notes
+        -----
+        The extra keyword arguments ``**kwargs`` are passed to fiona.open and
+        can be used to write to multi-layer data, store data within archives
+        (zip files), etc.
         """
         from geopandas.io.file import to_file
         to_file(self, filename, driver, schema, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
-        """Transform geometries to a new coordinate reference system
+        """Transform geometries to a new coordinate reference system.
 
-        This method will transform all points in all objects.  It has
-        no notion or projecting entire geometries.  All segments
-        joining points are assumed to be lines in the current
-        projection, not geodesics.  Objects crossing the dateline (or
-        other projection boundary) will have undesirable behavior.
+        Transform all geometries in a GeoSeries to a different coordinate
+        reference system.  The ``crs`` attribute on the current GeoSeries must
+        be set.  Either ``crs`` in string or dictionary form or an EPSG code
+        may be specified for output.
 
-        `to_crs` passes the `crs` argument to the `Proj` function from the
-        `pyproj` library (with the option `preserve_units=True`). It can
-        therefore accept proj4 projections in any format
-        supported by `Proj`, including dictionaries, or proj4 strings.
+        This method will transform all points in all objects.  It has no notion
+        or projecting entire geometries.  All segments joining points are
+        assumed to be lines in the current projection, not geodesics.  Objects
+        crossing the dateline (or other projection boundary) will have
+        undesirable behavior.
 
+        Parameters
+        ----------
+        crs : dict or str
+            Output projection parameters as string or in dictionary form.
+        epsg : int
+            EPSG code specifying output projection.
+        inplace : bool, optional, default: False
+            Whether to return a new GeoDataFrame or do the transformation in
+            place.
         """
         if inplace:
             df = self
@@ -465,7 +510,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return GeoDataFrame(data).__finalize__(self)
 
     def plot(self, *args, **kwargs):
+        """Generate a plot of the geometries in the ``GeoDataFrame``.
 
+        If the ``column`` parameter is given, colors plot according to values
+        in that column, otherwise calls ``GeoSeries.plot()`` on the
+        ``geometry`` column.
+
+        Wraps the ``plot_dataframe()`` function, and documentation is copied
+        from there.
+        """
         return plot_dataframe(self, *args, **kwargs)
 
     plot.__doc__ = plot_dataframe.__doc__
