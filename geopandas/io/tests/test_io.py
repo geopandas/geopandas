@@ -56,8 +56,8 @@ class TestIO:
 
     @pytest.mark.webtest
     def test_remote_geojson_url(self):
-        url = ("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/"
-               "ne_50m_wgs84_bounding_box.geojson")
+        url = ("https://raw.githubusercontent.com/geopandas/geopandas/"
+               "master/examples/null_geom.geojson")
         gdf = read_file(url)
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
