@@ -353,7 +353,7 @@ class GeoPandasBase(object):
         return self._sindex
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
-            join_style=JOIN_STYLE.round, mitre_limit=5.0):
+               join_style=JOIN_STYLE.round, mitre_limit=5.0):
         from .geoseries import GeoSeries
         geom_array = self._geometry_array.buffer(distance,
                 resolution=resolution, cap_style=cap_style,
