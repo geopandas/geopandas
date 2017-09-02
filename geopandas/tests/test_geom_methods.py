@@ -423,6 +423,20 @@ class TestGeomMethods:
         res = res.skew(ys=-skew, origin=o)
         assert geom_almost_equals(expected, res)
 
+    def test_buffer(self):
+        original = GeoSeries([Point(0, 0)])
+        expected = GeoSeries([Polygon(((5, 0), (0, -5), (-5, 0), (0, 5),
+                                       (5, 0)))])
+        calculated = original.buffer(5, resolution=1)
+        assert geom_almost_equals(expected, calculated)
+
+    def test_buffer_args(self):
+        args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
+        calculated_series = self.g0.buffer(10, **args)
+        for original, calculated in zip(self.g0, calculated_series):
+            expected = original.buffer(10, **args)
+            assert calculated.equals(expected)
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))
