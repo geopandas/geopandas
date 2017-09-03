@@ -235,3 +235,8 @@ def test_groupby_groups(df):
     assert isinstance(res, GeoDataFrame)
     exp = df.loc[[0, 2]]
     assert_frame_equal(res, exp)
+
+
+def test_reset_index(df):
+    assert isinstance(df.reset_index(), GeoDataFrame)
+    assert isinstance(df.geometry.reset_index(), GeoDataFrame)
