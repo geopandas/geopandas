@@ -4,6 +4,7 @@ import json
 import os
 import random
 import shutil
+import sys
 import tempfile
 
 import numpy as np
@@ -572,6 +573,8 @@ def test_concat():
                          index=['d', 'e'], crs='my-crs')
 
     c = gpd.concat([a_gdf, b_gdf])
+    assert c._geometry_array.parent == {a_gdf._geometry_array,
+                                        b_gdf._geometry_array}
 
     assert list(c.x) == [1, 2, 3, 4, 5]
     assert list(c.index) == ['a', 'b', 'c', 'd' ,'e']
