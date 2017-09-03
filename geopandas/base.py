@@ -295,8 +295,8 @@ class GeoPandasBase(object):
             self._generate_sindex()
         return self._sindex
 
-    def buffer(self, distance, resolution=16):
-        return gpd.GeoSeries([geom.buffer(distance, resolution)
+    def buffer(self, distance, resolution=16, **kwargs):
+        return gpd.GeoSeries([geom.buffer(distance, resolution, **kwargs)
                              for geom in self.geometry],
                          index=self.index, crs=self.crs)
 
