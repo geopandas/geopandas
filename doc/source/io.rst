@@ -20,9 +20,10 @@ Any arguments passed to ``read_file()`` after the file name will be passed direc
 Among other things, one can explicitly set the driver (shapefile, GeoJSON) with the ``driver`` keyword, or pick a single layer from a multi-layered file with the ``layer`` keyword.
 
 Where supported in ``fiona`` *geopandas* can also load resources directly from
-a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`.
+a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
-    gpd.read_file("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson")
+    url = "http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson"
+    df = gpd.read_file(url)
 
 *geopandas* can also get data from a PostGIS database using the ``read_postgis()`` command.
 
