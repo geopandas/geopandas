@@ -32,11 +32,24 @@ def read_file(filename, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
-    *filename* is either the absolute or relative path to the file or URL to
-    be opened and *kwargs* are keyword args to be passed to the `open`
-    or (`BytesCollection`) method in the fiona library when opening the file.
-    For more information on possible keywords, type:
-    ``import fiona; help(fiona.open)``
+    Parameters
+    ----------
+    filename: str
+        Either the absolute or relative path to the file or URL to
+        be opened.
+    **kwargs:
+        Keyword args to be passed to the `open` or `BytesCollection` method
+        in the fiona library when opening the file. For more information on
+        possible keywords, type:
+        ``import fiona; help(fiona.open)``
+
+    Examples
+    --------
+        >>> df = geopandas.read_file("nybb.shp")
+
+    Returns
+    -------
+    geodataframe : GeoDataFrame
     """
     bbox = kwargs.pop('bbox', None)
     if _is_url(filename):
