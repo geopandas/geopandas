@@ -56,7 +56,10 @@ cdef extern from "geos_c.h":
     char GEOSPreparedTouches_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
     char GEOSPreparedWithin_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
 
-    GEOSPreparedGeometry *GEOSPrepare_r(GEOSContextHandle_t handle, const GEOSGeometry* g) nogil
+    GEOSPreparedGeometry *GEOSPrepare_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSPreparedGeometry *GEOSPrepare(const GEOSGeometry*) 
+    void GEOSPreparedGeom_destroy_r(GEOSContextHandle_t, const GEOSPreparedGeometry* ) nogil
+    void GEOSPreparedGeom_destroy(const GEOSPreparedGeometry* )
 
     char GEOSHasZ(const GEOSGeometry*) nogil
     char GEOSHasZ_r(GEOSContextHandle_t, GEOSGeometry *) nogil
