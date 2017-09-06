@@ -169,8 +169,8 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef prepared_binary_predicate(str op,
-                               np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
-                               object other):
+                                np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                                object other):
     """
     Apply predicate to a GeometryArray and an individual shapely object
 
@@ -191,6 +191,7 @@ cpdef prepared_binary_predicate(str op,
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
+    cdef uintptr_t other_pointer
     cdef GEOSGeometry *other_geom
     cdef GEOSPreparedGeometry *prepared_geom
     cdef GEOSPreparedPredicate predicate
@@ -199,16 +200,10 @@ cpdef prepared_binary_predicate(str op,
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
     handle = get_geos_context_handle()
-    other_geom = <GEOSGeometry *> other.__geom__
+    other_pointer = <np.uintp_t> other.__geom__
+    other_geom = <GEOSGeometry *> other_pointer
 
-    # Prepare the geometry if it hasn't already been prepared.
-    # TODO: why can't we do the following instead?
-    #   prepared_geom = GEOSPrepare_r(handle, other_geom)
-    if not isinstance(other, shapely.prepared.PreparedGeometry):
-        other = shapely.prepared.prep(other)
-
-    geos_handle = get_geos_context_handle()
-    prepared_geom = geos_from_prepared(other)
+    prepared_geom = GEOSPrepare_r(handle, other_geom)
 
     predicate = get_prepared_predicate(op)
 
@@ -220,7 +215,9 @@ cpdef prepared_binary_predicate(str op,
             else:
                 out[idx] = 0
 
+    GEOSPreparedGeom_destroy_r(handle, prepared_geom)
     return out
+
 
 cdef GEOSPreparedPredicate get_prepared_predicate(str op) except NULL:
     if op == 'contains':
@@ -419,8 +416,8 @@ cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef binary_predicate(str op,
-                      np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
-                      object other):
+                       np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                       object other):
     """
     Apply predicate to an array of GEOSGeometry pointers and a shapely object
 
