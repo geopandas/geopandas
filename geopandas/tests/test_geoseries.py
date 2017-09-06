@@ -8,6 +8,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_series_equal
 
@@ -190,6 +191,11 @@ class TestSeries(unittest.TestCase):
         reprojected_string = self.g3.to_crs('+proj=utm +zone=30N')
         reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
         self.assertTrue(np.alltrue(reprojected_string.geom_almost_equals(reprojected_dict)))
+
+    def test_to_frame(self):
+        self.g1.crs = 'foo'
+        assert isinstance(self.g1.to_frame(), gpd.GeoDataFrame)
+        assert self.g1.to_frame().crs == 'foo'
 
 
 def test_construct_from_series():
