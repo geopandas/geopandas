@@ -117,3 +117,27 @@ def test_errors():
 
     assert "both" in str(info.value)
     assert "inner" in str(info.value)
+
+
+@pytest.mark.parametrize("l", [0, 1, 5])
+@pytest.mark.parametrize("r", [0, 1, 5])
+def test_small(l, r):
+    left = gpd.GeoDataFrame(
+        {
+            "geometry": triangles,
+            "x": np.random.random(len(triangles)),
+            "y": np.random.random(len(triangles)),
+        },
+        index=np.arange(len(triangles)) * 2,
+    ).iloc[:l]
+
+    right = gpd.GeoDataFrame(
+        {
+            "geometry": points,
+            "x": np.random.random(len(points)),
+            "z": np.random.random(len(points)),
+        },
+        index=list(string.ascii_lowercase[: len(points)]),
+    ).iloc[:r]
+
+    result = sjoin(left, right)
