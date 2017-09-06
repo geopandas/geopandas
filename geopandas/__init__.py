@@ -8,6 +8,8 @@ from geopandas.io.sql import read_postgis
 from geopandas.tools import sjoin
 from geopandas.tools import overlay
 
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
+
 import geopandas.datasets
 
 # make the interactive namespace easier to use

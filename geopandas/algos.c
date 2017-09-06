@@ -22,7 +22,7 @@ void strtree_query_callback(void *item, void *vec)
 GEOSSTRtree *create_index(GEOSContextHandle_t handle, GEOSGeometry **geoms, size_t n)
 {
     int i;
-    GEOSSTRtree* tree = GEOSSTRtree_create_r(handle, n);
+    GEOSSTRtree* tree = GEOSSTRtree_create_r(handle, n > 1 ? n : 2);
 
     for (i = 0; i < n ; i++)
     {
@@ -62,6 +62,8 @@ size_vector sjoin(GEOSContextHandle_t handle,
     kv_init(vec);
 
     // begin = clock();
+    if (nright == 0)
+        return out;
 
     GEOSSTRtree* tree = create_index(handle, right, nright);
 
