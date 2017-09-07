@@ -75,7 +75,9 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='inner', op=op)
-
+        assert df1.index.name == None
+        assert df2.index.name == None
+        
         exp = expected[op].dropna().copy()
         exp = exp.drop('geometry_y', axis=1).rename(
             columns={'geometry_x': 'geometry'})
@@ -95,6 +97,8 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='left', op=op)
+        assert df1.index.name == None
+        assert df2.index.name == None
 
         exp = expected[op].dropna(subset=['index_left']).copy()
         exp = exp.drop('geometry_y', axis=1).rename(
@@ -116,6 +120,8 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='right', op=op)
+        assert df1.index.name == None
+        assert df2.index.name == None
 
         exp = expected[op].dropna(subset=['index_right']).copy()
         exp = exp.drop('geometry_x', axis=1).rename(
@@ -157,6 +163,8 @@ class TestSpatialJoinNYBB:
 
     def test_sjoin_left(self):
         df = sjoin(self.pointdf, self.polydf, how='left')
+        assert self.polydf.index.name is None
+        assert self.pointdf.index.name is None
         assert df.shape == (21, 8)
         for i, row in df.iterrows():
             assert row.geometry.type == 'Point'
@@ -167,6 +175,8 @@ class TestSpatialJoinNYBB:
         # the inverse of left
         df = sjoin(self.pointdf, self.polydf, how="right")
         df2 = sjoin(self.polydf, self.pointdf, how="left")
+        assert self.polydf.index.name is None
+        assert self.pointdf.index.name is None
         assert df.shape == (12, 8)
         assert df.shape == df2.shape
         for i, row in df.iterrows():
@@ -176,6 +186,8 @@ class TestSpatialJoinNYBB:
 
     def test_sjoin_inner(self):
         df = sjoin(self.pointdf, self.polydf, how="inner")
+        assert self.polydf.index.name is None
+        assert self.pointdf.index.name is None
         assert df.shape == (11, 8)
 
     def test_sjoin_op(self):
@@ -199,6 +211,17 @@ class TestSpatialJoinNYBB:
         df = sjoin(pointdf2, self.polydf, how="left")
         assert 'Shape_Area_left' in df.columns
         assert 'Shape_Area_right' in df.columns
+
+    @pytest.mark.parametrize('how', ['left','right','inner'])
+    def test_sjoin_named_index(self,how):
+        #original index names should be unchanged
+        pointdf2 = self.pointdf.copy()
+        pointdf2.index.name = 'pointid'
+        df = sjoin(pointdf2, self.polydf, how=how)
+        assert pointdf2.index.name == 'pointid'
+        assert self.polydf.index.name == None
+        #output index should be unamed since it is a new index?
+        #assert that extra index is called index_lhs or index_rhs?
 
     def test_sjoin_values(self):
         # GH190

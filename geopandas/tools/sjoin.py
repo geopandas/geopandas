@@ -54,10 +54,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
-    left_df.index.name = index_left
-    right_df.index.name = index_right
-    left_df = left_df.reset_index()
-    right_df = right_df.reset_index()
+    left_df = left_df.rename_axis(index_left,copy=False).reset_index()
+    right_df = right_df.rename_axis(index_right,copy=False).reset_index()
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
