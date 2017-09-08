@@ -655,7 +655,7 @@ def concat(L, axis=0, ignore_index=False):
     if types != {GeoDataFrame} and types != {GeoSeries}:
         raise TypeError("Expected consistent types, got %s" % str(types))
 
-    if not len(set(df.crs for df in L)) == 1:
+    if not len(set(str(df.crs) for df in L)) == 1:
         raise ValueError("Expected all crs values to be the same")
 
     if isinstance(L[0], GeoDataFrame):
