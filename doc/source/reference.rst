@@ -41,13 +41,13 @@ The following Shapely methods and attributes are available on
 
 .. automethod:: geopandas.GeoSeries.contains
 
-.. automethod:: geopandas.GeoSeries.crosses(other)
+.. automethod:: geopandas.GeoSeries.crosses
 
-.. automethod:: geopandas.GeoSeries.disjoint(other)
+.. automethod:: geopandas.GeoSeries.disjoint
 
-.. automethod:: geopandas.GeoSeries.geom_equals(other)
+.. automethod:: geopandas.GeoSeries.geom_equals
 
-.. automethod:: geopandas.GeoSeries.intersects(other)
+.. automethod:: geopandas.GeoSeries.intersects
 
 .. automethod:: geopandas.GeoSeries.touches
 
@@ -97,7 +97,7 @@ Additionally, the following methods are implemented:
 
 .. automethod:: geopandas.GeoSeries.to_crs
 
-.. automethod:: geopandas.GeoSeries.plot
+.. automethod:: geopandas.GeoSeries.plot(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds)
 
 .. autoattribute:: geopandas.GeoSeries.total_bounds
 
