@@ -54,7 +54,7 @@ class TestIO:
         lower_columns = [c.lower() for c in self.columns]
         assert (df.columns[:-1] == lower_columns).all()
 
-    @pytest.mark.webtest
+    @pytest.mark.web
     def test_remote_geojson_url(self):
         url = ("https://raw.githubusercontent.com/geopandas/geopandas/"
                "master/examples/null_geom.geojson")

@@ -45,7 +45,7 @@ def read_file(filename, **kwargs):
 
     Examples
     --------
-        >>> df = geopandas.read_file("nybb.shp")
+    >>> df = geopandas.read_file("nybb.shp")
 
     Returns
     -------
