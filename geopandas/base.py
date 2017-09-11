@@ -126,9 +126,8 @@ class GeoPandasBase(object):
 
     @property
     def is_empty(self):
-
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for empty
-        geometries."""
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        empty geometries."""
         return _series_unary_op(self, 'is_empty', null_value=False)
 
     @property
@@ -187,8 +186,8 @@ class GeoPandasBase(object):
 
     @property
     def exterior(self):
-        """Returns a ``GeoSeries`` of LinearRings representing the outer boundary of
-        each polygon in the GeoSeries.
+        """Returns a ``GeoSeries`` of LinearRings representing the outer
+        boundary of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
         """
@@ -197,8 +196,8 @@ class GeoPandasBase(object):
 
     @property
     def interiors(self):
-        """Returns a ``GeoSeries`` of InteriorRingSequences representing the inner
-        rings of each polygon in the GeoSeries.
+        """Returns a ``GeoSeries`` of InteriorRingSequences representing the
+        inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
         """
@@ -240,7 +239,8 @@ class GeoPandasBase(object):
         `boundary` and `interior` of the other object and their boundaries do
         not touch at all.
 
-        This is the inverse of :meth:`within`.
+        This is the inverse of :meth:`within` in the sense that the expression
+        ``a.contains(b) == b.within(a)`` always evaluates to ``True``.
 
         Parameters
         ----------
@@ -284,7 +284,8 @@ class GeoPandasBase(object):
         return _series_op(self, other, 'almost_equals', decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
-        """Return True for all geometries that equal *other* to a given tolerance, else False"""
+        """Return True for all geometries that equal *other* to a given
+        tolerance, else False"""
         # TODO: pass tolerance argument.
         return _series_op(self, other, 'equals_exact', tolerance=tolerance)
 
@@ -362,13 +363,16 @@ class GeoPandasBase(object):
         intersects only with the `interior` of the other (not its `boundary` or
         `exterior`).
 
-        This is the inverse of :meth:`contains`.
+        This is the inverse of :meth:`contains` in the sense that the
+        expression ``a.within(b) == b.contains(a)`` always evaluates to
+        ``True``.
 
         Parameters
         ----------
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if each
             geometry is within.
+
         """
         return _series_op(self, other, 'within')
 
@@ -400,8 +404,8 @@ class GeoPandasBase(object):
         return _geo_op(self, other, 'difference')
 
     def symmetric_difference(self, other):
-        """Returns a ``GeoSeries`` of the symmetric difference of points in each
-        geometry with `other`.
+        """Returns a ``GeoSeries`` of the symmetric difference of points in
+        each geometry with `other`.
 
         For each geometry, the symmetric difference consists of points in the
         geometry not in `other`, and points in `other` not in the geometry.
