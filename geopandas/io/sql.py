@@ -2,6 +2,7 @@ import binascii
 
 from pandas import read_sql
 import shapely.wkb
+from geoalchemy2.elements import WKBElement
 
 from geopandas import GeoSeries, GeoDataFrame
 
@@ -39,7 +40,13 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
 
     wkb_geoms = df[geom_col]
 
-    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x.encode())))
+    if wkb_geoms.apply(lambda x: isinstance(x, WKBElement)).all():
+        get_wkb_str = lambda x: str(x)
+    else:
+        get_wkb_str = lambda x: x.encode()
+
+    s = wkb_geoms.apply(
+        lambda x: shapely.wkb.loads(binascii.unhexlify(get_wkb_str(x))))
 
     df[geom_col] = GeoSeries(s)
 
