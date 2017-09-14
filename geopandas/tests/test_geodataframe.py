@@ -290,6 +290,14 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
+    def test_from_url(self):
+        """ Test from_url """
+        testurl = 'https://raw.githubusercontent.com/geopandas/geopandas/master/examples/null_geom.geojson'
+        df3 = GeoDataFrame.from_url(testurl)
+        self.assertTrue('geometry' in df3)
+        self.assertTrue(len(df3) == 2)
+        self.assertTrue(np.alltrue(df3['Name'].values == self.line_paths))
+        
     def test_to_file(self):
         """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'boros.shp')

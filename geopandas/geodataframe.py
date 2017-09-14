@@ -11,6 +11,7 @@ from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
+from pandas.io.common import get_filepath_or_buffer
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
@@ -153,6 +154,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
+    @classmethod
+    def from_url(cls, url):
+        """
+        Alternate constructor to create a GeoDataFrame from a GeoJSON file online.
+
+        Example:
+            df = geopandas.GeoDataFrame.from_url('https://raw.githubusercontent.com/geopandas/geopandas/master/examples/null_geom.geojson')
+
+        Inspired by pandas.read_json().
+
+        """
+        raw = get_filepath_or_buffer(url)[0]
+        data = raw.read()
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        geojson = json.loads(data)
+        return GeoDataFrame.from_features(geojson['features'])
+        
     @classmethod
     def from_file(cls, filename, **kwargs):
         """

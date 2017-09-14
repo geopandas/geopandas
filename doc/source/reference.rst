@@ -264,6 +264,11 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
   Load a ``GeoDataFrame`` from a file from any format recognized by
   `fiona`_.  See ``read_file()``.
 
+.. classmethod:: GeoDataFrame.from_file(url)
+
+  Load a ``GeoDataFrame`` from a GeoJSON file hosted online. Inspired
+  by ``pandas.read_json()``.
+
 .. classmethod:: GeoDataFrame.from_postgis(sql, con, geom_col='geom', crs=None, index_col=None, coerce_float=True, params=None)
 
   Load a ``GeoDataFrame`` from a file from a PostGIS database.
