@@ -95,10 +95,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if not isinstance(geometry, str):
             if isinstance(geometry, Series) and geometry.name:
-                arg[geometry.name] = geometry
+                gs[geometry.name] = geometry
                 geometry = geometry.name
             else:
-                arg['geometry'] = geometry
+                gs['geometry'] = geometry
                 geometry = 'geometry'
 
         if geometry in arg.columns:
