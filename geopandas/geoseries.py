@@ -99,22 +99,22 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_file(cls, filename, **kwargs):
-        """
-        Alternate constructor to create a GeoSeries from a file
+        """Alternate constructor to create a ``GeoSeries`` from a file.
+
+        Can load a ``GeoSeries`` from a file from any format recognized by
+        `fiona`. See http://toblerity.org/fiona/manual.html for details.
 
         Parameters
         ----------
 
         filename : str
             File path or file handle to read from. Depending on which kwargs
-            are included, the content of filename may vary, see:
-            http://toblerity.github.io/fiona/README.html#usage
-            for usage details.
+            are included, the content of filename may vary. See
+            http://toblerity.org/fiona/README.html#usage for usage details.
         kwargs : key-word arguments
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
-
         """
         import fiona
         geoms = []
@@ -128,7 +128,12 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def __geo_interface__(self):
-        """Returns a GeoSeries as a python feature collection
+        """Returns a ``GeoSeries`` as a python feature collection.
+
+        Implements the `geo_interface`. The returned python data structure
+        represents the ``GeoSeries`` as a GeoJSON-like ``FeatureCollection``.
+        Note that the features will have an empty ``properties`` dict as they
+        don't have associated attributes (geometry only).
         """
         from geopandas import GeoDataFrame
         return GeoDataFrame({'geometry': self}).__geo_interface__
@@ -315,6 +320,11 @@ class GeoSeries(GeoPandasBase, Series):
             return False
 
     def plot(self, *args, **kwargs):
+        """Generate a plot of the geometries in the ``GeoSeries``.
+
+        Wraps the ``plot_series()`` function, and documentation is copied from
+        there.
+        """
         from geopandas.plotting import plot_series
         return plot_series(self, *args, **kwargs)
 
@@ -325,19 +335,26 @@ class GeoSeries(GeoPandasBase, Series):
     #
 
     def to_crs(self, crs=None, epsg=None):
-        """Transform geometries to a new coordinate reference system
+        """Returns a ``GeoSeries`` with all geometries transformed to a new
+        coordinate reference system.
 
-        This method will transform all points in all objects.  It has
-        no notion or projecting entire geometries.  All segments
-        joining points are assumed to be lines in the current
-        projection, not geodesics.  Objects crossing the dateline (or
-        other projection boundary) will have undesirable behavior.
+        Transform all geometries in a GeoSeries to a different coordinate
+        reference system.  The ``crs`` attribute on the current GeoSeries must
+        be set.  Either ``crs`` in string or dictionary form or an EPSG code
+        may be specified for output.
 
-        `to_crs` passes the `crs` argument to the `Proj` function from the
-        `pyproj` library (with the option `preserve_units=True`). It can
-        therefore accept proj4 projections in any format
-        supported by `Proj`, including dictionaries, or proj4 strings.
+        This method will transform all points in all objects.  It has no notion
+        or projecting entire geometries.  All segments joining points are
+        assumed to be lines in the current projection, not geodesics.  Objects
+        crossing the dateline (or other projection boundary) will have
+        undesirable behavior.
 
+        Parameters
+        ----------
+        crs : dict or str
+            Output projection parameters as string or in dictionary form.
+        epsg : int
+            EPSG code specifying output projection.
         """
         from fiona.crs import from_epsg
         if self.crs is None:
