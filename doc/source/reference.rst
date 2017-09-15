@@ -75,7 +75,7 @@ The following Shapely methods and attributes are available on
 
 .. autoattribute:: geopandas.GeoSeries.envelope
 
-.. automethod:: geopandas.GeoSeries.simplify(tolerance, preserve_topology=True)
+.. automethod:: geopandas.GeoSeries.simplify
 
 `Affine transformations`
 
@@ -97,7 +97,7 @@ Additionally, the following methods are implemented:
 
 .. automethod:: geopandas.GeoSeries.to_crs
 
-.. automethod:: geopandas.GeoSeries.plot(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds)
+.. automethod:: geopandas.GeoSeries.plot
 
 .. autoattribute:: geopandas.GeoSeries.total_bounds
 
@@ -128,7 +128,7 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 
 .. automethod:: geopandas.GeoDataFrame.to_json
 
-.. automethod:: geopandas.GeoDataFrame.plot(column=None, colormap=None, alpha=0.5, categorical=False, legend=False, axes=None)
+.. automethod:: geopandas.GeoDataFrame.plot
 
 .. autoattribute:: geopandas.GeoDataFrame.__geo_interface__
 
