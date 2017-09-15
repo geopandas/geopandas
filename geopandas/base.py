@@ -135,13 +135,15 @@ class GeoPandasBase(object):
 
     @property
     def area(self):
-        """Return the area of each geometry in the GeoSeries"""
+        """Returns a ``Series`` containing the area of each geometry in the
+        ``GeoSeries``."""
         x = vectorized.unary_vector_float('area', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
     def geom_type(self):
-        """Return the geometry type of each geometry in the GeoSeries"""
+        """Returns a ``Series`` of strings specifying the `Geometry Type` of each
+        object."""
         cat = self._geometry_array.geom_type()
         return Series(cat, index=self.index)
 
@@ -152,31 +154,38 @@ class GeoPandasBase(object):
 
     @property
     def length(self):
-        """Return the length of each geometry in the GeoSeries"""
+        """Returns a ``Series`` containing the length of each geometry."""
         x = vectorized.unary_vector_float('length', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
     def is_valid(self):
-        """Return True for each valid geometry, else False"""
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        geometries that are valid."""
         x = vectorized.unary_predicate('is_valid', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
     def is_empty(self):
-        """Return True for each empty geometry, False for non-empty"""
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        empty geometries."""
         x = vectorized.unary_predicate('is_empty', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
     def is_simple(self):
-        """Return True for each simple geometry, else False"""
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        geometries that do not cross themselves.
+
+        This is meaningful only for `LineStrings` and `LinearRings`.
+        """
         x = vectorized.unary_predicate('is_simple', self._geometry_array.data)
         return Series(x, index=self.index)
 
     @property
     def is_ring(self):
-        """Return True for each geometry that is a closed ring, else False"""
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        features that are closed."""
         # operates on the exterior, so can't use _series_unary_op()
         x = vectorized.unary_predicate('is_ring', self._geometry_array.data)
         return Series(x, index=self.index)
@@ -196,27 +205,48 @@ class GeoPandasBase(object):
 
     @property
     def boundary(self):
-        """Return the bounding geometry for each geometry"""
+        """Returns a ``GeoSeries`` of lower dimensional objects representing
+        each geometries's set-theoretic `boundary`."""
         return self.unary_geo('boundary')
 
     @property
     def centroid(self):
-        """Return the centroid of each geometry in the GeoSeries"""
+        """Returns a ``GeoSeries`` of points representing the centroid of each
+        geometry."""
         return self.unary_geo('centroid')
 
     @property
     def convex_hull(self):
-        """Return the convex hull of each geometry"""
+        """
+        Returns a ``GeoSeries`` of geometries representing the convex hull
+        of each geometry.
+
+        The convex hull of a geometry is the smallest convex `Polygon`
+        containing all the points in each geometry, unless the number of points
+        in the geometric object is less than three. For two points, the convex
+        hull collapses to a `LineString`; for 1, a `Point`.
+        """
         return self.unary_geo('convex_hull')
 
     @property
     def envelope(self):
-        """Return a bounding rectangle for each geometry"""
+        """
+        Returns a ``GeoSeries`` of geometries representing the envelope of
+        each geometry.
+
+        The envelope of a geometry is the bounding rectangle. That is, the
+        point or smallest rectangular polygon (with sides parallel to the
+        coordinate axes) that contains the geometry.
+        """
         return self.unary_geo('envelope')
 
     @property
     def exterior(self):
-        """Return the outer boundary of each polygon"""
+        """Returns a ``GeoSeries`` of LinearRings representing the outer
+        boundary of each polygon in the GeoSeries.
+
+        Applies to GeoSeries containing only Polygons.
+        """
         # TODO: return empty geometry for non-polygons
         out = self.unary_geo('exterior')
         out._geometry_array.base = self._geometry_array
@@ -224,12 +254,18 @@ class GeoPandasBase(object):
 
     @property
     def interiors(self):
-        """Return the interior rings of each polygon"""
+        """Returns a ``GeoSeries`` of InteriorRingSequences representing the
+        inner rings of each polygon in the GeoSeries.
+
+        Applies to GeoSeries containing only Polygons.
+        """
         # TODO: return empty list or None for non-polygons
         return _series_unary_op(self, 'interiors', null_value=False)
 
     def representative_point(self):
-        """Return a GeoSeries of points guaranteed to be in each geometry"""
+        """Returns a ``GeoSeries`` of (cheaply computed) points that are
+        guaranteed to be within each geometry.
+        """
         return self.unary_geo('representative_point')
 
     #
@@ -243,7 +279,8 @@ class GeoPandasBase(object):
 
     @property
     def unary_union(self):
-        """Return the union of all geometries"""
+        """Returns a geometry containing the union of all geometries in the
+        ``GeoSeries``."""
         return self._geometry_array.unary_union()
 
     #
@@ -255,34 +292,114 @@ class GeoPandasBase(object):
         return self.geometry._values
 
     def contains(self, other):
-        """Return True for all geometries that contain *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that contains `other`.
+
+        An object is said to contain `other` if its `interior` contains the
+        `boundary` and `interior` of the other object and their boundaries do
+        not touch at all.
+
+        This is the inverse of :meth:`within` in the sense that the expression
+        ``a.contains(b) == b.within(a)`` always evaluates to ``True``.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if is
+            contained.
+        """
         return binary_predicate('contains', self, other)
 
     def geom_equals(self, other):
-        """Return True for all geometries that equal *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry equal to `other`.
+
+        An object is said to be equal to `other` if its set-theoretic
+        `boundary`, `interior`, and `exterior` coincides with those of the
+        other.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test for
+            equality.
+        """
         return binary_predicate('equals', self, other)
 
     def geom_almost_equals(self, other, decimal=6):
-        """Return True for all geometries that is approximately equal to *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
+        each geometry is approximately equal to `other`.
+
+        Approximate equality is tested at all points to the specified `decimal`
+        place precision.  See also :meth:`equals`.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to compare to.
+        decimal : int
+            Decimal place presion used when testing for approximate equality.
+        """
         # TODO: pass precision argument
         tolerance = 0.5 * 10**(-decimal)
         return binary_predicate('equals_exact', self, other, tolerance)
 
     def geom_equals_exact(self, other, tolerance):
-        """Return True for all geometries that equal *other* to a given tolerance, else False"""
+        """Return True for all geometries that equal *other* to a given
+        tolerance, else False"""
         # TODO: pass tolerance argument.
         return binary_predicate('equals_exact', self, other, tolerance)
 
     def crosses(self, other):
-        """Return True for all geometries that cross *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that cross `other`.
+
+        An object is said to cross `other` if its `interior` intersects the
+        `interior` of the other but does not contain it, and the dimension of
+        the intersection is less than the dimension of the one or the other.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if is
+            crossed.
+        """
         return binary_predicate('crosses', self, other)
 
     def disjoint(self, other):
-        """Return True for all geometries that are disjoint with *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry disjoint to `other`.
+
+        An object is said to be disjoint to `other` if its `boundary` and
+        `interior` does not intersect at all with those of the other.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if is
+            disjoint.
+        """
         return binary_predicate('disjoint', self, other)
 
     def intersects(self, other):
-        """Return True for all geometries that intersect *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that intersects `other`.
+
+        An object is said to intersect `other` if its `boundary` and `interior`
+        intersects in any way with those of the other.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if is
+            intersected.
+        """
         return binary_predicate('intersects', self, other)
 
     def overlaps(self, other):
@@ -290,15 +407,54 @@ class GeoPandasBase(object):
         return binary_predicate('overlaps', self, other)
 
     def touches(self, other):
-        """Return True for all geometries that touch *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that touches `other`.
+
+        An object is said to touch `other` if it has at least one point in
+        common with `other` and its interior does not intersect with any part
+        of the other.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if is
+            touched.
+        """
         return binary_predicate('touches', self, other)
 
     def within(self, other):
-        """Return True for all geometries that are within *other*, else False"""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that is within `other`.
+
+        An object is said to be within `other` if its `boundary` and `interior`
+        intersects only with the `interior` of the other (not its `boundary` or
+        `exterior`).
+
+        This is the inverse of :meth:`contains` in the sense that the
+        expression ``a.within(b) == b.contains(a)`` always evaluates to
+        ``True``.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if each
+            geometry is within.
+
+        """
         return binary_predicate('within', self, other)
 
     def distance(self, other):
-        """Return distance of each geometry to *other*"""
+        """
+        Returns a ``Series`` containing the minimum distance to `other`.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the minimum
+            distance to.
+        """
         return binary_float('distance', self, other)
 
     #
@@ -306,19 +462,58 @@ class GeoPandasBase(object):
     #
 
     def difference(self, other):
-        """Return the set-theoretic difference of each geometry with *other*"""
+        """
+        Returns a ``GeoSeries`` of the points in each geometry that
+        are not in `other` (set-theoretic difference).
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the
+            difference to.
+        """
         return binary_geo('difference', self, other)
 
     def symmetric_difference(self, other):
-        """Return the symmetric difference of each geometry with *other*"""
+        """
+        Returns a ``GeoSeries`` of the symmetric difference of points in
+        each geometry with `other`.
+
+        For each geometry, the symmetric difference consists of points in the
+        geometry not in `other`, and points in `other` not in the geometry.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the
+            symmetric difference to.
+        """
         return binary_geo('symmetric_difference', self, other)
 
     def union(self, other):
-        """Return the set-theoretic union of each geometry with *other*"""
+        """
+        Returns a ``GeoSeries`` of the union of points in each geometry with
+        `other`.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the union
+            with.
+        """
         return binary_geo('union', self, other)
 
     def intersection(self, other):
-        """Return the set-theoretic intersection of each geometry with *other*"""
+        """
+        Returns a ``GeoSeries`` of the intersection of points in each
+        geometry with `other`.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the
+            intersection with.
+        """
         return binary_geo('intersection', self, other)
 
     #
@@ -327,7 +522,11 @@ class GeoPandasBase(object):
 
     @property
     def bounds(self):
-        """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
+        """Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
+        ``maxy`` values containing the bounds for each geometry.
+
+        See ``GeoSeries.total_bounds`` for the limits of the entire series.
+        """
         bounds = np.array([geom.bounds for geom in self.geometry])
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
@@ -335,11 +534,12 @@ class GeoPandasBase(object):
 
     @property
     def total_bounds(self):
-        """Return a single bounding box (minx, miny, maxx, maxy) for all geometries
+        """Returns a tuple containing ``minx``, ``miny``, ``maxx``, ``maxy``
+        values for the bounds of the series as a whole.
 
-        This is a shortcut for calculating the min/max x and y bounds individually.
+        See ``GeoSeries.bounds`` for the bounds of the geometries contained in
+        the series.
         """
-
         b = self.bounds
         return np.array((b['minx'].min(),
                          b['miny'].min(),
@@ -354,17 +554,47 @@ class GeoPandasBase(object):
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
                join_style=JOIN_STYLE.round, mitre_limit=5.0):
+        """
+        Returns a ``GeoSeries`` of geometries representing all points within
+        a given `distance` of each geometric object.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#object.buffer
+        for details.
+
+        Parameters
+        ----------
+        distance : float
+            The radius of the buffer.
+        resolution: float
+            Optional, the resolution of the buffer around each vertex.
+        """
         from .geoseries import GeoSeries
-        geom_array = self._geometry_array.buffer(distance,
-                resolution=resolution, cap_style=cap_style,
-                join_style=join_style, mitre_limit=mitre_limit)
+        geom_array = self._geometry_array.buffer(
+            distance, resolution=resolution, cap_style=cap_style,
+            join_style=join_style, mitre_limit=mitre_limit)
         return GeoSeries(geom_array, index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
+        """
+        Returns a ``GeoSeries`` containing a simplified representation of
+        each geometry.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#object.simplify
+        for details.
+
+        Parameters
+        ----------
+        tolerance : float
+            All points in a simplified geometry will be no more than
+            `tolerance` distance from the original.
+        preserve_topology: bool
+            False uses a quicker algorithm, but may produce self-intersecting
+            or otherwise invalid geometries.
+        """
         from .geoseries import GeoSeries
         return GeoSeries([geom.simplify(*args, **kwargs)
-                             for geom in self.geometry],
-                      index=self.index, crs=self.crs)
+                          for geom in self.geometry],
+                         index=self.index, crs=self.crs)
 
     def relate(self, other):
         raise NotImplementedError
@@ -402,19 +632,22 @@ class GeoPandasBase(object):
         Parameters
         ----------
         distance : float or Series of floats
-            Distance(s) along the geometries at which a point should be returned
+            Distance(s) along the geometries at which a point should be
+             returned
         normalized : boolean
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
         from .geoseries import GeoSeries
         return GeoSeries([s.interpolate(distance, normalized)
-                             for s in self.geometry],
-            index=self.index, crs=self.crs)
+                          for s in self.geometry],
+                         index=self.index, crs=self.crs)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
-        """
-        Shift the coordinates of the GeoSeries.
+        """Returns a ``GeoSeries`` with translated geometries.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate
+        for details.
 
         Parameters
         ----------
@@ -422,18 +655,17 @@ class GeoPandasBase(object):
             Amount of offset along each dimension.
             xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
-
-        See shapely manual for more information:
-        http://toblerity.org/shapely/manual.html#affine-transformations
         """
         from .geoseries import GeoSeries
         return GeoSeries([affinity.translate(s, xoff, yoff, zoff)
-                             for s in self.geometry],
-            index=self.index, crs=self.crs)
+                          for s in self.geometry],
+                         index=self.index, crs=self.crs)
 
     def rotate(self, angle, origin='center', use_radians=False):
-        """
-        Rotate the coordinates of the GeoSeries.
+        """Returns a ``GeoSeries`` with rotated geometries.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate
+        for details.
 
         Parameters
         ----------
@@ -447,9 +679,6 @@ class GeoPandasBase(object):
             object or a coordinate tuple (x, y).
         use_radians : boolean
             Whether to interpret the angle of rotation as degrees or radians
-
-        See shapely manual for more information:
-        http://toblerity.org/shapely/manual.html#affine-transformations
         """
         from .geoseries import GeoSeries
         L = [affinity.rotate(s, angle, origin=origin,
@@ -457,8 +686,13 @@ class GeoPandasBase(object):
         return GeoSeries(L, index=self.index, crs=self.crs)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
-        """
-        Scale the geometries of the GeoSeries along each (x, y, z) dimension.
+        """Returns a ``GeoSeries`` with scaled geometries.
+
+        The geometries can be scaled by different factors along each
+        dimension. Negative scale factors will mirror or reflect coordinates.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.scale
+        for details.
 
         Parameters
         ----------
@@ -468,20 +702,20 @@ class GeoPandasBase(object):
             The point of origin can be a keyword 'center' for the 2D bounding
             box center (default), 'centroid' for the geometry's 2D centroid, a
             Point object or a coordinate tuple (x, y, z).
-
-        Note: Negative scale factors will mirror or reflect coordinates.
-
-        See shapely manual for more information:
-        http://toblerity.org/shapely/manual.html#affine-transformations
         """
         from .geoseries import GeoSeries
         return GeoSeries([affinity.scale(s, xfact, yfact, zfact,
-            origin=origin) for s in self.geometry], index=self.index,
-            crs=self.crs)
+                                         origin=origin)
+                          for s in self.geometry],
+                         index=self.index, crs=self.crs)
 
     def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
-        """
-        Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
+        """Returns a ``GeoSeries`` with skewed geometries.
+
+        The geometries are sheared by angles along the x and y dimensions.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.skew
+        for details.
 
         Parameters
         ----------
@@ -495,14 +729,12 @@ class GeoPandasBase(object):
             object or a coordinate tuple (x, y).
         use_radians : boolean
             Whether to interpret the shear angle(s) as degrees or radians
-
-        See shapely manual for more information:
-        http://toblerity.org/shapely/manual.html#affine-transformations
         """
         from .geoseries import GeoSeries
         return GeoSeries([affinity.skew(s, xs, ys, origin=origin,
-            use_radians=use_radians) for s in self.geometry],
-            index=self.index, crs=self.crs)
+                                        use_radians=use_radians)
+                          for s in self.geometry],
+                         index=self.index, crs=self.crs)
 
     def explode(self):
         """
