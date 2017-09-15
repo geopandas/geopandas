@@ -1484,6 +1484,12 @@ class GeometryArray(object):
         # if we are a datetime and period index, return Index to keep metadata
         return to_shapely(self.data)
 
+    def tolist(self):
+        """
+        Return the array as a list of geometries
+        """
+        return self.to_dense().tolist()
+
     def __array__(self, dtype=None):
         """
         The numpy array interface.
