@@ -14,8 +14,8 @@ between GeoPandas and CartoPy.
 First we'll load in the data using GeoPandas.
 """
 # sphinx_gallery_thumbnail_number = 7
-import geopandas as gpd
 import matplotlib.pyplot as plt
+import geopandas as gpd
 from cartopy import crs as ccrs
 
 path = gpd.datasets.get_path('naturalearth_lowres')
@@ -65,7 +65,7 @@ fig, axs = plt.subplots(1, 2, subplot_kw={'projection': crs_epsg},
 axs[0].add_geometries(df_epsg['geometry'], crs=crs_epsg,
                       facecolor='white', edgecolor='black')
 # Make the GeoPandas plot
-df_epsg.plot(ax=axs[1], color='white')
+df_epsg.plot(ax=axs[1], color='white', edgecolor='black')
 
 ###############################################################################
 # CartoPy to GeoPandas
@@ -97,8 +97,9 @@ df_aea.plot()
 # Generate a CartoPy figure and add the countries to it
 fig, ax = plt.subplots(subplot_kw={'projection': crs_new})
 ax.add_geometries(new_geometries, crs=crs_new)
+
 # Calculate centroids and plot
 df_aea_centroids = df_aea.geometry.centroid
-df_aea_centroids.plot(ax=ax, markersize=5)
+df_aea_centroids.plot(ax=ax, markersize=5, color='r')
 
 plt.show()
