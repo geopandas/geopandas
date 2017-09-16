@@ -169,8 +169,8 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef prepared_binary_predicate(str op,
-                               np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
-                               object other):
+                                np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                                object other):
     """
     Apply predicate to a GeometryArray and an individual shapely object
 
@@ -191,6 +191,7 @@ cpdef prepared_binary_predicate(str op,
     cdef Py_ssize_t idx
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
+    cdef uintptr_t other_pointer
     cdef GEOSGeometry *other_geom
     cdef GEOSPreparedGeometry *prepared_geom
     cdef GEOSPreparedPredicate predicate
@@ -199,16 +200,10 @@ cpdef prepared_binary_predicate(str op,
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
     handle = get_geos_context_handle()
-    other_geom = <GEOSGeometry *> other.__geom__
+    other_pointer = <np.uintp_t> other.__geom__
+    other_geom = <GEOSGeometry *> other_pointer
 
-    # Prepare the geometry if it hasn't already been prepared.
-    # TODO: why can't we do the following instead?
-    #   prepared_geom = GEOSPrepare_r(handle, other_geom)
-    if not isinstance(other, shapely.prepared.PreparedGeometry):
-        other = shapely.prepared.prep(other)
-
-    geos_handle = get_geos_context_handle()
-    prepared_geom = geos_from_prepared(other)
+    prepared_geom = GEOSPrepare_r(handle, other_geom)
 
     predicate = get_prepared_predicate(op)
 
@@ -220,7 +215,9 @@ cpdef prepared_binary_predicate(str op,
             else:
                 out[idx] = 0
 
+    GEOSPreparedGeom_destroy_r(handle, prepared_geom)
     return out
+
 
 cdef GEOSPreparedPredicate get_prepared_predicate(str op) except NULL:
     if op == 'contains':
@@ -419,8 +416,8 @@ cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef binary_predicate(str op,
-                      np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
-                      object other):
+                       np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
+                       object other):
     """
     Apply predicate to an array of GEOSGeometry pointers and a shapely object
 
@@ -1118,6 +1115,8 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *collection
@@ -1135,6 +1134,60 @@ cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         out = GEOSUnaryUnion_r(handle, collection)
 
     return geom_factory(<np.uintp_t> out)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef coords(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Get coordinates of LineStrings or Points
+
+    Parameters
+    ----------
+    geoms: np.ndarray
+        Array of pointers to GEOSGeometry objects
+        These must be either LineString objects, Point objects, or NULL
+
+    Returns
+    -------
+    out: list
+        List of tuples of coordinate points
+    """
+    cdef Py_ssize_t i, j
+    cdef GEOSContextHandle_t handle
+    cdef GEOSGeometry *geom
+    cdef GEOSCoordSequence *sequence
+    cdef unsigned int n = geoms.size
+    cdef double x, y, z
+    cdef char has_z
+
+    handle = get_geos_context_handle()
+    out = []
+
+    for i in xrange(n):
+        geom = <GEOSGeometry *> geoms[i]
+        if geom is NULL:
+            out.append(())
+            continue
+
+        sequence = GEOSGeom_getCoordSeq_r(handle, geom)
+        if sequence is NULL:
+            raise TypeError("Geometry must be LineString or Point")
+
+        L = []
+
+        has_z = GEOSHasZ_r(handle, geom)
+
+        for j in xrange(GEOSGetNumCoordinates_r(handle, geom)):
+            GEOSCoordSeq_getX_r(handle, sequence, j, &x)
+            GEOSCoordSeq_getY_r(handle, sequence, j, &y)
+            if has_z:
+                GEOSCoordSeq_getZ_r(handle, sequence, j, &z)
+                L.append(tuple((float(x), float(y), float(z))))
+            else:
+                L.append(tuple((float(x), float(y))))
+        out.append(tuple(L))
+
+    return out
 
 
 class GeometryArray(object):
@@ -1368,6 +1421,9 @@ class GeometryArray(object):
         import pandas as pd
         return pd.Categorical.from_codes(x, GEOMETRY_NAMES)
 
+    def coords(self):
+        return coords(self.data)
+
     # for Series/ndarray like compat
 
     @property
@@ -1430,6 +1486,12 @@ class GeometryArray(object):
         """
         # if we are a datetime and period index, return Index to keep metadata
         return to_shapely(self.data)
+
+    def tolist(self):
+        """
+        Return the array as a list of geometries
+        """
+        return self.to_dense().tolist()
 
     def __array__(self, dtype=None):
         """
@@ -1505,3 +1567,9 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
 
     cfree(sv.a)
     return left_out, right_out
+
+
+def concat(L):
+    L = list(L)
+    x = np.concatenate([ga.data for ga in L])
+    return GeometryArray(x, parent=set(L))

@@ -95,10 +95,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if not isinstance(geometry, str):
             if isinstance(geometry, Series) and geometry.name:
-                arg[geometry.name] = geometry
+                gs[geometry.name] = geometry
                 geometry = geometry.name
             else:
-                arg['geometry'] = geometry
+                gs['geometry'] = geometry
                 geometry = 'geometry'
 
         if geometry in arg.columns:
@@ -131,9 +131,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     # Serialize metadata (will no longer be necessary in pandas 0.17+)
     # See https://github.com/pydata/pandas/pull/10557
     def __getstate__(self):
-        meta = dict((k, getattr(self, k, None)) for k in self._metadata)
-        return dict(_data=self._data, _typ=self._typ,
-                    _metadata=self._metadata, **meta)
+        geometry = self._geometry_array
+        geometry_name = self._geometry_column_name
+        data = pd.DataFrame(self.drop([self._geometry_column_name], axis=1))
+
+        return dict(geometry=geometry, geometry_name=geometry_name, data=data,
+                    crs=self.crs)
+
+    def __setstate__(self, state):
+        self.__init__(state['data'], geometry=state['geometry'], crs=state['crs'])
+        self.rename(columns={'geometry': state['geometry_name']}).set_geometry(state['geometry_name'])
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -213,7 +220,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
-                level = frame[col].values
+                level = frame[col]._values
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
             except:
@@ -224,7 +231,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 geo_column_name = col
 
-        if to_remove:
+        if to_remove and to_remove in self.columns:
             del frame[to_remove]
 
         if geo_column_name in frame.columns:
@@ -630,6 +637,48 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
         raise ValueError("Can't do inplace setting when converting from"
                          " DataFrame to GeoDataFrame")
     return GeoDataFrame(self, geometry=col, crs=crs)
+
+
+def concat(L, axis=0, ignore_index=False):
+    """ Concatenate multiple GeoDataFrames or GeoSeries together
+
+    **Expectations**
+    -  Currently only works for axis=0
+    -  Expects all input types to be either GeoDataFrame or GeoSeries
+    -  CRS values should be the same
+    -  Geometry names should be the same
+    """
+    if axis != 0:
+        raise NotImplementedError("Only axis=0 supported")
+
+    types = set(map(type, L))
+    if types != {GeoDataFrame} and types != {GeoSeries}:
+        raise TypeError("Expected consistent types, got %s" % str(types))
+
+    if not len(set(str(df.crs) for df in L)) == 1:
+        raise ValueError("Expected all crs values to be the same")
+
+    if isinstance(L[0], GeoDataFrame):
+        if not len(set(df._geometry_column_name for df in L)) == 1:
+            raise ValueError("Expected all geometry names to be the same")
+        name = L[0]._geometry_column_name
+    else:
+        if not len(set(s.name for s in L)) == 1:
+            raise ValueError("Expected all geometry names to be the same")
+        name = L[0].name
+
+    geometry = vectorized.concat(df._geometry_array for df in L)
+    if isinstance(L[0], GeoDataFrame):
+        L = [df.drop(name, axis=1) for df in L]
+        new = pd.concat(L, ignore_index=ignore_index)
+        new = new.set_geometry(GeoSeries(geometry, name=name, index=new.index),
+                               crs=L[0].crs)
+    else:
+        index = pd.concat([pd.Series(index=s.index) for s in L],
+                          ignore_index=ignore_index).index
+        new = GeoSeries(geometry, index=index, name=name, crs=L[0].crs)
+    return new
+
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry

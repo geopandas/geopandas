@@ -43,6 +43,7 @@ def test_indexing(s, df):
     assert s.loc[1] == exp
     assert s.iloc[1] == exp
     assert df.loc[1, 'geometry'] == exp
+    # geometry is last column by default
     assert df.iloc[1, 2] == exp
 
     # multiple values
@@ -50,9 +51,9 @@ def test_indexing(s, df):
     assert_geoseries_equal(s.loc[[2, 0]], exp)
     assert_geoseries_equal(s.iloc[[2, 0]], exp)
     assert_geoseries_equal(s.reindex([2, 0]), exp)
-    assert_geoseries_equal(df.loc[[2, 2], 'geometry'], exp)
+    assert_geoseries_equal(df.loc[[2, 0], 'geometry'], exp)
     # TODO here iloc does not return a GeoSeries
-    assert_series_equal(df.iloc[[2, 2], 0], exp, check_series_type=False,
+    assert_series_equal(df.iloc[[2, 0], 2], exp, check_series_type=False,
                         check_names=False)
 
     # boolean indexing
@@ -106,7 +107,6 @@ def test_astype(s):
 
 
 def test_to_csv(df):
-
     exp = ('value1,value2,geometry\n0,1,POINT (0 0)\n1,2,POINT (1 1)\n'
            '2,1,POINT (2 2)\n')
     assert df.to_csv(index=False) == exp

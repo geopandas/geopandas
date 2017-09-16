@@ -56,7 +56,10 @@ cdef extern from "geos_c.h":
     char GEOSPreparedTouches_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
     char GEOSPreparedWithin_r(GEOSContextHandle_t, const GEOSPreparedGeometry*, const GEOSGeometry*) nogil
 
-    GEOSPreparedGeometry *GEOSPrepare_r(GEOSContextHandle_t handle, const GEOSGeometry* g) nogil
+    GEOSPreparedGeometry *GEOSPrepare_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
+    GEOSPreparedGeometry *GEOSPrepare(const GEOSGeometry*) 
+    void GEOSPreparedGeom_destroy_r(GEOSContextHandle_t, const GEOSPreparedGeometry* ) nogil
+    void GEOSPreparedGeom_destroy(const GEOSPreparedGeometry* )
 
     char GEOSHasZ(const GEOSGeometry*) nogil
     char GEOSHasZ_r(GEOSContextHandle_t, GEOSGeometry *) nogil
@@ -132,6 +135,8 @@ cdef extern from "geos_c.h":
     unsigned char *GEOSWKBWriter_write_r(GEOSContextHandle_t, GEOSWKBWriter*, const GEOSGeometry*, size_t *) nogil
 
     GEOSGeometry *GEOSGeom_createCollection_r(GEOSContextHandle_t, int, GEOSGeometry**, unsigned int) nogil
+
+    int GEOSGetNumCoordinates_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
 
 
 cdef GEOSContextHandle_t get_geos_context_handle():

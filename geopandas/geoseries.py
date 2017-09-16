@@ -206,6 +206,11 @@ class GeoSeries(GeoPandasBase, Series):
     def __iter__(self):
         return iter(self._geometry_array)
 
+    def to_frame(self):
+        from .geodataframe import GeoDataFrame
+        name = self.name or 'geometry'
+        return GeoDataFrame({name: self}, geometry=name, crs=self.crs)
+
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method('sort_index', *args, **kwargs)
 

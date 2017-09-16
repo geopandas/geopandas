@@ -491,3 +491,31 @@ class TestGeomMethods(unittest.TestCase):
         gt = self.na_none.geom_type
         assert list(gt) == ['Polygon', np.nan]
         assert gt.index is self.na_none.index
+
+
+def test_coords():
+    coords = [((0, 0), (1, 1), (1, 0), (0, 0)),
+              ((0, 0), (0, 10), (10, 10), (10, 0), (0, 0))]
+    polys = [Polygon(c) for c in coords]
+
+    s = GeoSeries(polys, index=['a', 'b'])
+    result = s.exterior.coords()
+    assert list(result) == coords
+    assert list(result.index) == ['a', 'b']
+
+    s = GeoSeries([None] + polys)
+    result = s.exterior.coords()
+    assert not result[0]
+
+    with pytest.raises(TypeError):
+        s = GeoSeries(polys)
+        result = s.coords()
+
+
+def test_coords_points():
+    for coords in [((0., 0.), (1., 1.)),
+                   ((0., 0., 1.), (1., 2., 3.))]:  # test z coordinate
+        points = list(map(Point, coords))
+        s = GeoSeries(points)
+        result = s.coords()
+        assert list(result) == [(c,) for c in coords]
