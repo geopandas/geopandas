@@ -41,21 +41,15 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return arr.view(GeoSeries)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, arg=None, index=None, crs=None, *args, **kwargs):
         # fix problem for scalar geometries passed
-        crs = kwargs.pop('crs', None)
-
-        assert len(args) == 1  # for now while prototyping
-
-        arg = args[0]
-
         if isinstance(arg, SingleBlockManager):
             if isinstance(arg.blocks[0], GeometryBlock):
-                super(GeoSeries, self).__init__(args[0], **kwargs)
+                super(GeoSeries, self).__init__(arg, index=index, **kwargs)
                 self.crs = crs
                 return
             else:
-                values = np.asarray(args[0].blocks[0].external_values())
+                values = np.asarray(arg.blocks[0].external_values())
 
         if isinstance(arg, BaseGeometry):
             arg = [arg]
@@ -66,10 +60,10 @@ class GeoSeries(GeoPandasBase, Series):
             name = arg.name
         else:
             if isinstance(arg, GeometryArray):
-                index = kwargs.pop('index', pd.Index(np.arange(len(arg))))
+                index = index if index is not None else pd.Index(np.arange(len(arg)))
                 name = kwargs.get('name', None)
             else:
-                s = pd.Series(arg, **kwargs)
+                s = pd.Series(arg, index=index, **kwargs)
                 arg = from_shapely(s.values)
                 index = s.index
                 name = s.name
