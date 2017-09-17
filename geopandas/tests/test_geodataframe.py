@@ -581,8 +581,8 @@ def test_concat(crs):
                          index=['d', 'e'], crs=crs)
 
     c = gpd.concat([a_gdf, b_gdf])
-    assert c._geometry_array.parent == {a_gdf._geometry_array,
-                                        b_gdf._geometry_array}
+    assert c._geometry_array.base == {a_gdf._geometry_array,
+                                      b_gdf._geometry_array}
 
     assert list(c.x) == [1, 2, 3, 4, 5]
     assert list(c.index) == ['a', 'b', 'c', 'd' ,'e']
