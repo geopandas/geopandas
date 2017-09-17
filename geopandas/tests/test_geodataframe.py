@@ -14,6 +14,7 @@ from shapely.geometry import Point, Polygon
 import fiona
 
 import geopandas
+import geopandas as gpd
 from geopandas import GeoDataFrame, read_file, GeoSeries
 
 from geopandas.tests.util import (
