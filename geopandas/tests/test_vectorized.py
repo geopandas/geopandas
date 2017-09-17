@@ -410,5 +410,5 @@ def test_concat():
 
     c = concat([a, b])
 
-    assert c.parent == {a, b}
+    assert c.base == {a, b}
     assert len(c) == 5

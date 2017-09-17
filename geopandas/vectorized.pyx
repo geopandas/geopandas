@@ -1193,15 +1193,15 @@ cpdef coords(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 class GeometryArray(object):
     dtype = np.dtype('O')
 
-    def __init__(self, data, parent=False):
+    def __init__(self, data, base=False):
         self.data = data
-        self.parent = parent
+        self.base = base
 
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return get_element(self.data, idx)
         elif isinstance(idx, (collections.Iterable, slice)):
-            return GeometryArray(self.data[idx], parent=self)
+            return GeometryArray(self.data[idx], base=self)
         else:
             raise TypeError("Index type not supported", idx)
 
@@ -1218,7 +1218,7 @@ class GeometryArray(object):
         return len(self.data)
 
     def __del__(self):
-        if self.parent is False:
+        if self.base is False:
             vec_free(self.data)
 
     def copy(self):
@@ -1234,7 +1234,7 @@ class GeometryArray(object):
     def __setstate__(self, state):
         geoms = deserialize(*state)
         self.data = geoms
-        self.parent = None
+        self.base = None
 
     def binary_geo(self, other, op):
         """ Apply geometry-valued operation
@@ -1365,7 +1365,7 @@ class GeometryArray(object):
 
     def exterior(self):
         out = geo_unary_op('exterior', self.data)
-        out.parent = self  # exterior shares data with self
+        out.base = self  # exterior shares data with self
         return out
 
     def representative_point(self):
@@ -1569,4 +1569,4 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
 def concat(L):
     L = list(L)
     x = np.concatenate([ga.data for ga in L])
-    return GeometryArray(x, parent=set(L))
+    return GeometryArray(x, base=set(L))

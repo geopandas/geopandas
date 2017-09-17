@@ -219,7 +219,7 @@ class GeoPandasBase(object):
         """Return the outer boundary of each polygon"""
         # TODO: return empty geometry for non-polygons
         out = self.unary_geo('exterior')
-        out._geometry_array.parent = self._geometry_array
+        out._geometry_array.base = self._geometry_array
         return out  # exterior shares data with self
 
     @property
