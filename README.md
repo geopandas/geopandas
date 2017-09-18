@@ -47,6 +47,8 @@ dependency. ``rtree`` requires the C library [``libspatialindex``](https://githu
 GeoPandas depends on several low-level libraries for geospatial analysis. Depending on the system and package
 manager that you use, this may cause dependency conflicts if you are not careful.
 
+*Using `conda`*
+
 We suggest that you use the [anaconda distribution](https://conda.io/docs/user-guide/install/download.html)
 to install GeoPandas (``miniconda`` is fine as well).
 
@@ -62,6 +64,15 @@ conda install -c conda-forge geopandas
 from a *different* channel than ``conda-forge`` may cause dependency conflicts, so we recommend starting
 fresh if possible. See the [conda-forge gotcha page](https://conda-forge.org/docs/conda-forge_gotchas.html)
 for more information.
+
+*Using `pip`*
+
+GeoPandas is also pip-installable. If you choose to use `pip`, make sure that you have the proper non-python
+libraries installed and linked properly.
+
+```bash
+pip install geopandas
+```
 
 Examples
 --------
