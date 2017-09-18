@@ -445,7 +445,7 @@ class TestDataFrame:
         geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])]
         gdf = GeoDataFrame(df, geometry=geometry)
         # from_features returns sorted columns
-        expected = gdf[['geometry', 'lat', 'lon', 'name']]
+        expected = gdf[['lat', 'lon', 'name', 'geometry']]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)

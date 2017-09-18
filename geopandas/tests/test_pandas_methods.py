@@ -237,7 +237,7 @@ def test_groupby(df):
     # counts work fine
     res = df.groupby('value2').count()
     exp = pd.DataFrame({'geometry': [2, 1], 'value1': [2, 1],
-                        'value2': [1, 2]}).set_index('value2')
+                        'value2': [1, 2]}).set_index('value2')[['value1', 'geometry']]
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
