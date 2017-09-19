@@ -184,24 +184,26 @@ class TestLineStringPlotting:
             _check_colors(self.N, ax.collections[0].get_colors(), ['green']*self.N)
 
     def test_style_kwargs(self):
-
         # linestyle (style patterns depend on linewidth, therefore pin to 1)
         linestyle = 'dashed'
-        ax = self.lines.plot(linestyle=linestyle, linewidth=1)
-        exp_ls = _style_to_linestring_onoffseq(linestyle)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert tuple(ls[1]) == exp_ls[1]
+        linewidth = 1
 
-        ax = self.df.plot(linestyle=linestyle, linewidth=1)
+        ax = self.lines.plot(linestyle=linestyle, linewidth=linewidth)
+        exp_ls = _style_to_linestring_onoffseq(linestyle, linewidth)
         for ls in ax.collections[0].get_linestyles():
             assert ls[0] == exp_ls[0]
-            assert tuple(ls[1]) == exp_ls[1]
+            assert ls[1] == exp_ls[1]
 
-        ax = self.df.plot(column='values', linestyle=linestyle, linewidth=1)
+        ax = self.df.plot(linestyle=linestyle, linewidth=linewidth)
         for ls in ax.collections[0].get_linestyles():
             assert ls[0] == exp_ls[0]
-            assert tuple(ls[1]) == exp_ls[1]
+            assert ls[1] == exp_ls[1]
+
+        ax = self.df.plot(column='values', linestyle=linestyle,
+                          linewidth=linewidth)
+        for ls in ax.collections[0].get_linestyles():
+            assert ls[0] == exp_ls[0]
+            assert ls[1] == exp_ls[1]
 
 
 class TestPolygonPlotting:
@@ -469,10 +471,10 @@ class TestPlotCollections:
         # pass through of kwargs
         coll = plot_linestring_collection(ax, self.lines, linestyle='--',
                                           linewidth=1)
-        exp_ls = _style_to_linestring_onoffseq('dashed')
+        exp_ls = _style_to_linestring_onoffseq('dashed', 1)
         res_ls = coll.get_linestyle()[0]
         assert res_ls[0] == exp_ls[0]
-        assert tuple(res_ls[1]) == exp_ls[1]
+        assert res_ls[1] == exp_ls[1]
         ax.cla()
 
     def test_linestrings_values(self):
@@ -619,14 +621,15 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
             '{} != {}'.format(actual, conv.to_rgba(expected, alpha=alpha))
 
 
-def _style_to_linestring_onoffseq(linestyle):
+def _style_to_linestring_onoffseq(linestyle, linewidth):
     """ Converts a linestyle string representation, namely one of:
             ['dashed',  'dotted', 'dashdot', 'solid'],
         documented in `Collections.set_linestyle`,
         to the form `onoffseq`.
     """
     if LooseVersion(matplotlib.__version__) >= '2.0':
-        return matplotlib.lines._get_dash_pattern(linestyle)
+        offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
+        return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
     else:
         from matplotlib.backend_bases import GraphicsContextBase
         return GraphicsContextBase.dashd[linestyle]
