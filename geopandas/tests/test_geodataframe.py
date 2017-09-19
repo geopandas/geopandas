@@ -880,3 +880,15 @@ def test_geodataframe_crs():
     gdf = GeoDataFrame()
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+def test_drop():
+    geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    gdf = GeoDataFrame({"a": [1, 2, 3], "geometry": geoms})
+
+    assert type(gdf[["a"]]) == pd.DataFrame
+    assert type(gdf[["geometry"]]) == GeoDataFrame
+    assert isinstance(gdf.drop("a", axis=1), GeoDataFrame)
+    assert gdf.drop("a", axis=1).columns.tolist() == ["geometry"]
+    assert type(gdf.drop("geometry", axis=1)) == pd.DataFrame
+    assert gdf.drop("geometry", axis=1).columns.tolist() == ["a"]

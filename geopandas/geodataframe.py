@@ -698,6 +698,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     # Implement pandas methods
     #
 
+    def drop(self, labels, axis=0, level=None, inplace=False, errors='raise'):
+        result = super(GeoDataFrame, self).drop(labels, axis=axis, level=level,
+                                                inplace=inplace, errors=errors)
+        if self._geometry_column_name not in result.columns:
+            return pd.DataFrame(result)
+        else:
+            return result
+
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
 
