@@ -5,7 +5,7 @@ from fiona.crs import from_epsg
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
-from six import iteritems
+from six import iteritems, string_types
 
 import geopandas as gpd
 
@@ -34,9 +34,8 @@ def geocode(strings, provider='googlev3', **kwargs):
     provider : str or geopy.geocoder
         Specifies geocoding service to use, default is 'googlev3'.
         Either the string name used by geopy (as specified in
-        geopy.geocoders.SERVICE_TO_GEOCODER) or an instance of a
-        geopy Geocoder instance (e.g., geopy.geocoders.GoogleV3) may
-        be used.
+        geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
+        (e.g., geopy.geocoders.GoogleV3) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -78,9 +77,8 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
     provider : str or geopy.geocoder (opt)
         Specifies geocoding service to use, default is 'googlev3'.
         Either the string name used by geopy (as specified in
-        geopy.geocoders.SERVICE_TO_GEOCODER) or an instance of a
-        geopy Geocoder instance (e.g., geopy.geocoders.GoogleV3) may
-        be used.
+        geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
+        (e.g., geopy.geocoders.GoogleV3) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -111,17 +109,14 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
 def _query(data, forward, provider, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
     import geopy
-    from geopy.geocoders.base import Geocoder, GeocoderQueryError
+    from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
 
     if not isinstance(data, pd.Series):
         data = pd.Series(data)
 
-    if isinstance(provider, str):
+    if isinstance(provider, string_types):
         provider = get_geocoder_for_service(provider)
-    elif isinstance(provider, type):
-        if not issubclass(provider, Geocoder):
-            raise ValueError("provider must be a str or geopy Geocoder")
 
     coder = provider(**kwargs)
     results = {}
