@@ -402,8 +402,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     # Define `values` as a Series
     if categorical:
         if cmap is None:
-            if LooseVersion(matplotlib.__version__) >= '2.0':
+            if LooseVersion(matplotlib.__version__) >= '2.0.1':
                 cmap = 'tab10'
+            elif LooseVersion(matplotlib.__version__) >= '2.0.0':
+                # Erroneous name.
+                cmap = 'Vega10'
             else:
                 cmap = 'Set1'
         categories = list(set(df[column].values))
