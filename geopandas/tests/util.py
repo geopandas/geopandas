@@ -20,15 +20,19 @@ except ImportError:
     import mock
 
 
-def validate_boro_df(df):
+def validate_boro_df(df, case_sensitive=False):
     """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
     assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
     # were properly loaded as MultiPolygons
     assert len(df) == 5
-    columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
-    for col in columns:
-        assert col in df.columns
+    columns = ('BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area')
+    if case_sensitive:
+        for col in columns:
+            assert col in df.columns
+    else:
+        for col in columns:
+            assert col.lower() in (dfcol.lower() for dfcol in df.columns)
     assert all(df.geometry.type == 'MultiPolygon')
 
 
