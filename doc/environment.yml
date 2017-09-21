@@ -17,3 +17,4 @@ dependencies:
 - sphinx_rtd_theme
 - ipython
 - pillow
+- mock
