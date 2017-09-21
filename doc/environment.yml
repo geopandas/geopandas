@@ -15,6 +15,7 @@ dependencies:
 - pysal
 - sphinx
 - sphinx_rtd_theme
+- numpydoc
 - ipython
 - pillow
 - mock
