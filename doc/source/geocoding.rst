@@ -5,7 +5,7 @@ Geocoding
 [TO BE COMPLETED]
 
 
-.. function:: geopandas.geocode.geocode(strings, provider='googlev3', **kwargs)
+.. function:: geopandas.tools.geocode(strings, provider='googlev3', **kwargs)
 
   Geocode a list of strings and return a GeoDataFrame containing the
   resulting points in its ``geometry`` column.  Available
