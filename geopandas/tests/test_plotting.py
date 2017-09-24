@@ -272,6 +272,12 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), ['g'] * 2, alpha=0.4)
         _check_colors(2, ax.collections[0].get_edgecolors(), ['r'] * 2, alpha=0.4)
 
+    def test_legend_kwargs(self):
+
+        ax = self.df.plot(column='values', categorical=True, legend=True,
+                          legend_kwds={'frameon': False})
+        assert ax.get_legend().get_frame_on() is False
+
     def test_multipolygons(self):
 
         # MultiPolygons
