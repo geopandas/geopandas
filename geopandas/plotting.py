@@ -309,7 +309,8 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                    categorical=False, legend=False, scheme=None, k=5,
-                   vmin=None, vmax=None, figsize=None, **style_kwds):
+                   vmin=None, vmax=None, figsize=None, legend_kwds=None,
+                   **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -341,6 +342,9 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
 
     legend : bool (default False)
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
+
+    legend_kwds : dict (default None)
+        Keyword arguments to pass to ax.legend()
 
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
@@ -470,7 +474,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                     Line2D([0], [0], linestyle="none", marker="o",
                            alpha=style_kwds.get('alpha', 1), markersize=10,
                            markerfacecolor=n_cmap.to_rgba(value)))
-            ax.legend(patches, categories, numpoints=1, loc='best')
+            if legend_kwds is None:
+                legend_kwds = {}
+            legend_kwds.setdefault('numpoints', 1)
+            legend_kwds.setdefault('loc', 'best')
+            ax.legend(patches, categories, **legend_kwds)
         else:
             n_cmap.set_array([])
             ax.get_figure().colorbar(n_cmap, ax=ax)
