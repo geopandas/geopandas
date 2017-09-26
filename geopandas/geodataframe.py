@@ -65,7 +65,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
 
         geometry = kwargs.pop('geometry', 'geometry')
-        [arg] = args
+        [arg] = args if len(args) else [None]  # don't fail if no args present
 
         if isinstance(arg, BlockManager):
             super(GeoDataFrame, self).__init__(arg, **kwargs)
@@ -88,6 +88,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if isinstance(arg, (dict, list, pd.Series, np.ndarray)):
             arg = pd.DataFrame(arg, **kwargs)
+        elif arg is None:
+            arg = pd.DataFrame(**kwargs)
 
         assert isinstance(arg, pd.DataFrame)
 
@@ -115,6 +117,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                                        len(columns) + 1))
             columns = columns.append(pd.Index([geometry]))
             blocks = blocks + (geom_block,)
+
+        if not len(index):  # create dummy index in case of no data columns
+            index = pd.RangeIndex(len(geom))
 
         kwargs['columns'] = columns
         block_manager = BlockManager(blocks, [columns, index])

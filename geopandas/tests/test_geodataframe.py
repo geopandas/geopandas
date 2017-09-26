@@ -49,6 +49,13 @@ class TestDataFrame:
         assert type(self.df2) is GeoDataFrame
         assert self.df2.crs == self.crs
 
+    def test_only_geo_no_datacols(self):
+        location = [Point(x, y) for x, y in zip(range(5), range(5))]
+        df = GeoDataFrame(crs=self.crs, geometry=location)
+        assert 'geometry' in df
+        assert ['geometry'] == df.columns
+        assert df.shape == (5, 1)
+
     def test_different_geo_colname(self):
         data = {"A": range(5), "B": range(-5, 0),
                 "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
