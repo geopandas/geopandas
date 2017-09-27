@@ -1,4 +1,4 @@
-GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://coveralls.io/repos/geopandas/geopandas/badge.png)](https://coveralls.io/r/geopandas/geopandas)
+GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://codecov.io/gh/geopandas/geopandas/branch/master/graph/badge.svg)](https://codecov.io/gh/geopandas/geopandas) [![Join the chat at https://gitter.im/geopandas/geopandas](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/geopandas/geopandas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 =========
 
 Python tools for geographic data
@@ -19,6 +19,11 @@ automatically set when loading from a file.  Objects may be
 transformed to new coordinate systems with the `to_crs()` method.
 There is currently no enforcement of like coordinates for operations,
 but that may change in the future.
+
+Documentation is available at [geopandas.org](http://geopandas.org)
+(current release) and
+[Read the Docs](http://geopandas.readthedocs.io/en/latest/)
+(release and development versions).
 
 Install
 --------
@@ -80,9 +85,10 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
-    >>> boros = GeoDataFrame.from_file('nybb.shp')
+    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> boros = GeoDataFrame.from_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort()
     >>> boros
@@ -113,10 +119,3 @@ GeoPandas also implements alternate constructors that can read any data format r
     dtype: object
 
 ![Convex hulls of New York City boroughs](examples/nyc_hull.png)
-
-TODO
-----
-
-- Finish implementing and testing pandas methods on GeoPandas objects
-- The current GeoDataFrame does not do very much.
-- spatial joins, grouping and more...

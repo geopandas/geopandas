@@ -1,6 +1,7 @@
+import pandas as pd
 from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
-import pandas as pd
+
 from geopandas import GeoDataFrame, GeoSeries
 
 
@@ -17,7 +18,7 @@ def _uniquify(columns):
 
 
 def _extract_rings(df):
-    """Collects all inner and outer linear rings from a GeoDataFrame 
+    """Collects all inner and outer linear rings from a GeoDataFrame
     with (multi)Polygon geometeries
 
     Parameters
@@ -30,8 +31,10 @@ def _extract_rings(df):
     """
     poly_msg = "overlay only takes GeoDataFrames with (multi)polygon geometries"
     rings = []
+    geometry_column = df.geometry.name
+
     for i, feat in df.iterrows():
-        geom = feat.geometry
+        geom = feat[geometry_column]
 
         if geom.type not in ['Polygon', 'MultiPolygon']:
             raise TypeError(poly_msg)
@@ -53,22 +56,28 @@ def _extract_rings(df):
     return rings
 
 def overlay(df1, df2, how, use_sindex=True):
-    """Perform spatial overlay between two polygons
-    Currently only supports data GeoDataFrames with polygons
+    """Perform spatial overlay between two polygons.
 
-    Implements several methods (see `allowed_hows` list) that are
-    all effectively subsets of the union.
+    Currently only supports data GeoDataFrames with polygons.
+    Implements several methods that are all effectively subsets of
+    the union.
 
     Parameters
     ----------
     df1 : GeoDataFrame with MultiPolygon or Polygon geometry column
     df2 : GeoDataFrame with MultiPolygon or Polygon geometry column
-    how : method of spatial overlay
-    use_sindex : Boolean; Use the spatial index to speed up operation. Default is True.
+    how : string
+        Method of spatial overlay: 'intersection', 'union',
+        'identity', 'symmetric_difference' or 'difference'.
+    use_sindex : boolean, default True
+        Use the spatial index to speed up operation if available.
 
     Returns
     -------
-    df : GeoDataFrame with new set of polygons and attributes resulting from the overlay
+    df : GeoDataFrame
+        GeoDataFrame with new set of polygons and attributes
+        resulting from the overlay
+
     """
     allowed_hows = [
         'intersection',
@@ -81,6 +90,9 @@ def overlay(df1, df2, how, use_sindex=True):
     if how not in allowed_hows:
         raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
             (how, allowed_hows))
+
+    if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
+        raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
 
     # Collect the interior and exterior rings
     rings1 = _extract_rings(df1)
@@ -125,13 +137,13 @@ def overlay(df1, df2, how, use_sindex=True):
         prop2 = None
         for cand_id in candidates1:
             cand = df1.ix[cand_id]
-            if cent.intersects(cand.geometry):
+            if cent.intersects(cand[df1.geometry.name]):
                 df1_hit = True
                 prop1 = cand
                 break  # Take the first hit
         for cand_id in candidates2:
             cand = df2.ix[cand_id]
-            if cent.intersects(cand.geometry):
+            if cent.intersects(cand[df2.geometry.name]):
                 df2_hit = True
                 prop2 = cand
                 break  # Take the first hit

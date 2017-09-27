@@ -2,9 +2,7 @@ language: python
 
 sudo: false
 
-cache:
-  directories:
-    - ~/.cache/pip
+cache: pip
 
 addons:
   apt:
@@ -14,61 +12,56 @@ addons:
     - libgdal-dev
     - libspatialindex-dev
 
-env:
-  global:
-    - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
-    - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
-  
-# matrix creates 3+4x2 = 11 tests
 matrix:
   include:
     # Only one test for these Python versions
-    - python: 2.6
-      env: PANDAS_VERSION=0.15.2
-    - python: 3.3
-      env: PANDAS_VERSION=0.16.2
     - python: 3.4
-      env: PANDAS_VERSION=0.17.1
+      env: PANDAS=0.18.1 MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+    - python: 3.5
+      env: PANDAS=0.19.2 MATPLOTLIB=1.5.3
 
-    # Python 2.7 and 3.5 test all supported Pandas versions
+    # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
-      env: PANDAS_VERSION=0.15.2
+      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 2.7
-      env: PANDAS_VERSION=0.16.2
+      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 2.7
-      env: PANDAS_VERSION=0.17.1
+      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
     - python: 2.7
-      env: PANDAS_VERSION=master
-      
-    - python: 3.5
-      env: PANDAS_VERSION=0.15.2
-    - python: 3.5
-      env: PANDAS_VERSION=0.16.2
-    - python: 3.5
-      env: PANDAS_VERSION=0.17.1
-    - python: 3.5
-      env: PANDAS_VERSION=master
-  
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
+    - python: 2.7
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+    - python: 2.7
+      env: PANDAS=master  MATPLOTLIB=master
+
+    - python: 3.6
+      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+    - python: 3.6
+      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+    - python: 3.6
+      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
+    - python: 3.6
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
+    - python: 3.6
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+    - python: 3.6
+      env: PANDAS=master  MATPLOTLIB=master
 
 before_install:
   - pip install -U pip
-  - pip install wheel
 
 install:
-  - pip wheel numpy
-  - pip wheel -r requirements.txt
-  - pip wheel -r requirements.test.txt
-
   - pip install numpy
+  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip install matplotlib==$MATPLOTLIB; fi
+  - if [ -n "$SHAPELY" ]; then pip install shapely==$SHAPELY; fi
+
   - pip install -r requirements.txt
   - pip install -r requirements.test.txt
 
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install -r .requirements-2.6.txt; fi
-
-  - if [[ $PANDAS_VERSION == 'master' ]]; then git clone git://github.com/pydata/pandas.git; cd pandas; pip install -e .; cd ..  ; else pip wheel pandas==$PANDAS_VERSION; pip install pandas==$PANDAS_VERSION; fi
+  - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
 
 script:
-  - py.test tests --cov geopandas -v --cov-report term-missing
+  - py.test geopandas --cov geopandas -v --cov-report term-missing
 
 after_success:
-  - coveralls
+  - codecov

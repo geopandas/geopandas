@@ -10,8 +10,8 @@ readable code.  Performance matters, but not at the expense of those
 goals.
 
 In general, GeoPandas follows the conventions of the pandas project
-where applicable.  Please read [pandas contributing
-guidelines](https://github.com/pydata/pandas/blob/master/CONTRIBUTING.md).
+where applicable.  Please read the [pandas contributing
+guidelines](http://pandas.pydata.org/pandas-docs/stable/contributing.html).
 
 In particular, when submitting a pull request:
 
