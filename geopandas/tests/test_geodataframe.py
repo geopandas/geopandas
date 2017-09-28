@@ -570,7 +570,7 @@ class TestConstructor:
         df = GeoDataFrame(data)
 
         with pytest.raises(AttributeError):
-            df.geometry
+            _ = df.geometry
 
         df = df.set_geometry('other_geom')
         check_geodataframe(df, 'other_geom')
@@ -625,6 +625,7 @@ class TestConstructor:
             with pytest.raises(ValueError):
                 GeoDataFrame(df, geometry='other_geom')
 
+    def test_from_frame_specified_geometry(self):
         data = {"A": range(3), "B": np.arange(3.0),
                 "other_geom": [Point(x, x) for x in range(3)]}
 
@@ -635,3 +636,33 @@ class TestConstructor:
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df, geometry='other_geom')
             check_geodataframe(res, 'other_geom')
+
+        # when passing GeoDataFrame with custom geometry name to constructor
+        # an invalid geodataframe is the result TODO is this desired ?
+        df = GeoDataFrame(gpdf)
+        with pytest.raises(AttributeError):
+            df.geometry
+
+    def test_only_geometry(self):
+        df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
+        check_geodataframe(df)
+
+        df = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)]})
+        check_geodataframe(df)
+
+        df = GeoDataFrame({'other_geom': [Point(x, x) for x in range(3)]},
+                          geometry='other_geom')
+        check_geodataframe(df, 'other_geom')
+
+    def test_no_geometries(self):
+        # keeps GeoDataFrame class (no DataFrame)
+        data = {"A": range(3), "B": np.arange(3.0)}
+        df = GeoDataFrame(data)
+        assert type(df) == GeoDataFrame
+
+    def test_empty(self):
+        df = GeoDataFrame()
+        assert type(df) == GeoDataFrame
+
+        df = GeoDataFrame({'A': [], 'B': []}, geometry=[])
+        assert type(df) == GeoDataFrame
