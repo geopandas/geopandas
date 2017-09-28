@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 from pandas import Series
-import pyproj
 from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
@@ -268,6 +267,8 @@ class GeoSeries(GeoPandasBase, Series):
     # Additional methods
     #
 
+
+
     def to_crs(self, crs=None, epsg=None):
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
@@ -291,6 +292,8 @@ class GeoSeries(GeoPandasBase, Series):
             EPSG code specifying output projection.
         """
         from fiona.crs import from_epsg
+        from fiona.transform import transform as fiona_transform
+
         if self.crs is None:
             raise ValueError('Cannot transform naive geometries.  '
                              'Please set a crs on the object first.')
@@ -299,9 +302,7 @@ class GeoSeries(GeoPandasBase, Series):
                 crs = from_epsg(epsg)
             except TypeError:
                 raise TypeError('Must set either crs or epsg for output.')
-        proj_in = pyproj.Proj(self.crs, preserve_units=True)
-        proj_out = pyproj.Proj(crs, preserve_units=True)
-        project = partial(pyproj.transform, proj_in, proj_out)
+        project = partial(fiona_transform, self.crs, crs)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
