@@ -5,6 +5,8 @@ from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
 
+import pytest
+
 
 class TestMerging:
 
@@ -42,6 +44,8 @@ class TestMerging:
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res, 'points', self.gdf.crs)
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_concat_axis0(self):
 
         res = pd.concat([self.gdf, self.gdf])
@@ -51,6 +55,8 @@ class TestMerging:
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_concat_axis1(self):
 
         res = pd.concat([self.gdf, self.df], axis=1)

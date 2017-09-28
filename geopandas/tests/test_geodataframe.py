@@ -303,8 +303,9 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_to_file(self):
-        """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
         # Read layer back in
@@ -488,6 +489,8 @@ class TestDataFrame:
 
         validate_boro_df(df, case_sensitive=False)
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame({"A": range(len(self.df)), "location":
                            list(self.df.geometry)}, index=self.df.index)
@@ -576,6 +579,8 @@ class TestConstructor:
         assert_index_equal(df.columns, pd.Index(['A', 'geometry']))
         assert_series_equal(df['A'], pd.Series(range(3), name='A'))
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_dict_of_series(self):
 
         data = {"A": pd.Series(range(3)), "B": pd.Series(np.arange(3.0)),
@@ -595,6 +600,8 @@ class TestConstructor:
         with pytest.raises(ValueError):
             GeoDataFrame(data, index=[1, 2])
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_dict_specified_geometry(self):
 
         data = {"A": range(3), "B": np.arange(3.0),
@@ -641,6 +648,8 @@ class TestConstructor:
                           geometry='other_geom')
         check_geodataframe(df, 'other_geom')
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_from_frame(self):
         data = {"A": range(3), "B": np.arange(3.0),
                 "geometry": [Point(x, x) for x in range(3)]}
@@ -666,6 +675,8 @@ class TestConstructor:
             with pytest.raises(ValueError):
                 GeoDataFrame(df, geometry='other_geom')
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_from_frame_specified_geometry(self):
         data = {"A": range(3), "B": np.arange(3.0),
                 "other_geom": [Point(x, x) for x in range(3)]}
@@ -684,6 +695,8 @@ class TestConstructor:
         with pytest.raises(AttributeError):
             df.geometry
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_only_geometry(self):
         df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
         check_geodataframe(df)
@@ -704,6 +717,8 @@ class TestConstructor:
         gdf = GeoDataFrame({'x': [1]})
         assert list(gdf.x) == [1]
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_empty(self):
         df = GeoDataFrame()
         assert type(df) == GeoDataFrame

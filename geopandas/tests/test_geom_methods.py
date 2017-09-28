@@ -320,6 +320,8 @@ class TestGeomMethods:
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real('is_empty', expected, self.g1)
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_is_ring(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real('is_ring', expected, self.g1)

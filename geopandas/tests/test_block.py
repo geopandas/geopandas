@@ -1,5 +1,5 @@
+from distutils.version import LooseVersion
 
-import pytest
 import numpy as np
 import pandas as pd
 
@@ -8,6 +8,8 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas.vectorized import GeometryArray, from_shapely
 from geopandas._block import GeometryBlock
+
+import pytest
 
 
 def test_block():
@@ -32,11 +34,16 @@ def df():
     return pd.DataFrame(blk_mgr)
 
 
+@pytest.mark.cython
+@pytest.mark.xfail(str(pd.__version__) < LooseVersion('0.21'),
+                   reason="GEOPANDAS-CYTHON")
 def test_repr(df):
     assert 'POINT' in repr(df)
     assert 'POINT' in repr(df['geometry'])
 
 
+@pytest.mark.cython
+@pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
 def test_repr_truncated(df):
     with pd.option_context('display.max_rows', 4):
         repr(df)
