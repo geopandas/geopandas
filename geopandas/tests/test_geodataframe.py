@@ -13,11 +13,12 @@ import fiona
 import geopandas
 from geopandas import GeoDataFrame, read_file, GeoSeries
 
+import pytest
+from pandas.util.testing import (
+    assert_frame_equal, assert_index_equal, assert_series_equal)
 from geopandas.tests.util import (
     assert_geoseries_equal, connect, create_db, PACKAGE_DIR,
     validate_boro_df)
-from pandas.util.testing import assert_frame_equal
-import pytest
 
 
 class TestDataFrame:
@@ -525,3 +526,165 @@ class TestDataFrame:
         unpickled = pd.read_pickle(filename)
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
+
+
+def check_geodataframe(df, geometry_column='geometry'):
+    assert isinstance(df, GeoDataFrame)
+    assert isinstance(df.geometry, GeoSeries)
+    assert isinstance(df[geometry_column], GeoSeries)
+    assert df._geometry_column_name == geometry_column
+
+
+class TestConstructor:
+
+    def test_dict(self):
+        data = {"A": range(3), "B": np.arange(3.0),
+                "geometry": [Point(x, x) for x in range(3)]}
+        df = GeoDataFrame(data)
+        check_geodataframe(df)
+
+        # with specifying other kwargs
+        df = GeoDataFrame(data, index=list('abc'))
+        check_geodataframe(df)
+        assert_index_equal(df.index, pd.Index(list('abc')))
+
+        df = GeoDataFrame(data, columns=['B', 'A', 'geometry'])
+        check_geodataframe(df)
+        assert_index_equal(df.columns, pd.Index(['B', 'A', 'geometry']))
+
+        df = GeoDataFrame(data, columns=['A', 'geometry'])
+        check_geodataframe(df)
+        assert_index_equal(df.columns, pd.Index(['A', 'geometry']))
+        assert_series_equal(df['A'], pd.Series(range(3), name='A'))
+
+    def test_dict_of_series(self):
+
+        data = {"A": pd.Series(range(3)), "B": pd.Series(np.arange(3.0)),
+                "geometry": GeoSeries([Point(x, x) for x in range(3)])}
+
+        df = GeoDataFrame(data)
+        check_geodataframe(df)
+
+        df = GeoDataFrame(data, index=pd.Index([1, 2]))
+        check_geodataframe(df)
+        assert_index_equal(df.index, pd.Index([1, 2]))
+        assert df['A'].tolist() == [1, 2]
+
+        # one non-series -> lenght is not correct
+        data = {"A": pd.Series(range(3)), "B": np.arange(3.0),
+                "geometry": GeoSeries([Point(x, x) for x in range(3)])}
+        with pytest.raises(ValueError):
+            GeoDataFrame(data, index=[1, 2])
+
+    def test_dict_specified_geometry(self):
+
+        data = {"A": range(3), "B": np.arange(3.0),
+                "other_geom": [Point(x, x) for x in range(3)]}
+
+        df = GeoDataFrame(data, geometry='other_geom')
+        check_geodataframe(df, 'other_geom')
+
+        with pytest.raises(ValueError):
+            df = GeoDataFrame(data, geometry='geometry')
+
+        # when no geometry specified -> works but raises error once
+        # trying to access geometry
+        df = GeoDataFrame(data)
+
+        with pytest.raises(AttributeError):
+            _ = df.geometry
+
+        df = df.set_geometry('other_geom')
+        check_geodataframe(df, 'other_geom')
+
+        # combined with custom args
+        df = GeoDataFrame(data, geometry='other_geom',
+                          columns=['B', 'other_geom'])
+        check_geodataframe(df, 'other_geom')
+        assert_index_equal(df.columns, pd.Index(['B', 'other_geom']))
+        assert_series_equal(df['B'], pd.Series(np.arange(3.), name='B'))
+
+        df = GeoDataFrame(data, geometry='other_geom',
+                          columns=['other_geom', 'A'])
+        check_geodataframe(df, 'other_geom')
+        assert_index_equal(df.columns, pd.Index(['other_geom', 'A']))
+        assert_series_equal(df['A'], pd.Series(range(3), name='A'))
+
+    def test_array(self):
+        data = {"A": range(3), "B": np.arange(3.0),
+                "geometry": [Point(x, x) for x in range(3)]}
+        a = np.array([data['A'], data['B'], data['geometry']], dtype=object).T
+
+        df = GeoDataFrame(a, columns=['A', 'B', 'geometry'])
+        check_geodataframe(df)
+
+        df = GeoDataFrame(a, columns=['A', 'B', 'other_geom'],
+                          geometry='other_geom')
+        check_geodataframe(df, 'other_geom')
+
+    def test_from_frame(self):
+        data = {"A": range(3), "B": np.arange(3.0),
+                "geometry": [Point(x, x) for x in range(3)]}
+        gpdf = GeoDataFrame(data)
+        pddf = pd.DataFrame(data)
+        check_geodataframe(gpdf)
+        assert type(pddf) == pd.DataFrame
+
+        for df in [gpdf, pddf]:
+
+            res = GeoDataFrame(df)
+            check_geodataframe(res)
+
+            res = GeoDataFrame(df, index=pd.Index([0, 2]))
+            check_geodataframe(res)
+            assert_index_equal(res.index, pd.Index([0, 2]))
+            assert res['A'].tolist() == [0, 2]
+
+            res = GeoDataFrame(df, columns=['geometry', 'B'])
+            check_geodataframe(res)
+            assert_index_equal(res.columns, pd.Index(['geometry', 'B']))
+
+            with pytest.raises(ValueError):
+                GeoDataFrame(df, geometry='other_geom')
+
+    def test_from_frame_specified_geometry(self):
+        data = {"A": range(3), "B": np.arange(3.0),
+                "other_geom": [Point(x, x) for x in range(3)]}
+
+        gpdf = GeoDataFrame(data, geometry='other_geom')
+        check_geodataframe(gpdf, 'other_geom')
+        pddf = pd.DataFrame(data)
+
+        for df in [gpdf, pddf]:
+            res = GeoDataFrame(df, geometry='other_geom')
+            check_geodataframe(res, 'other_geom')
+
+        # when passing GeoDataFrame with custom geometry name to constructor
+        # an invalid geodataframe is the result TODO is this desired ?
+        df = GeoDataFrame(gpdf)
+        with pytest.raises(AttributeError):
+            df.geometry
+
+    def test_only_geometry(self):
+        df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
+        check_geodataframe(df)
+
+        df = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)]})
+        check_geodataframe(df)
+
+        df = GeoDataFrame({'other_geom': [Point(x, x) for x in range(3)]},
+                          geometry='other_geom')
+        check_geodataframe(df, 'other_geom')
+
+    def test_no_geometries(self):
+        # keeps GeoDataFrame class (no DataFrame)
+        data = {"A": range(3), "B": np.arange(3.0)}
+        df = GeoDataFrame(data)
+        assert type(df) == GeoDataFrame
+
+    def test_empty(self):
+        df = GeoDataFrame()
+        assert type(df) == GeoDataFrame
+
+        df = GeoDataFrame({'A': [], 'B': []}, geometry=[])
+        assert type(df) == GeoDataFrame
