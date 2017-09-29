@@ -54,6 +54,10 @@ class GeoSeries(GeoPandasBase, Series):
                 name = kwargs.get('name', None)
             else:
                 s = pd.Series(arg, index=index, **kwargs)
+                # prevent trying to convert non-geometry objects
+                if s.dtype != object:
+                    return s
+                # try to convert to GeometryArray, if fails return plain Series
                 try:
                     arg = from_shapely(s.values)
                 except TypeError:
