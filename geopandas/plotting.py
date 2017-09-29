@@ -255,6 +255,11 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
                       "(for consistency with pandas)", FutureWarning)
         ax = style_kwds.pop('axes')
 
+    if not s.shape[0]:
+        warnings.warn("The GeoDataFrame you are attempting to plot is "
+                "empty. Nothing has been displayed.", UserWarning)
+        return ax
+
     import matplotlib.pyplot as plt
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -396,98 +401,98 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     import matplotlib
     import matplotlib.pyplot as plt
 
-    if df.shape[0] > 0:
-        if column is None:
-            return plot_series(df.geometry, cmap=cmap, color=color, ax=ax,
-                               figsize=figsize, **style_kwds)
-
-        if df[column].dtype is np.dtype('O'):
-            categorical = True
-
-        # Define `values` as a Series
-        if categorical:
-            if cmap is None:
-                if LooseVersion(matplotlib.__version__) >= '2.0.1':
-                    cmap = 'tab10'
-                elif LooseVersion(matplotlib.__version__) >= '2.0.0':
-                    # Erroneous name.
-                    cmap = 'Vega10'
-                else:
-                    cmap = 'Set1'
-            categories = list(set(df[column].values))
-            categories.sort()
-            valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-            values = np.array([valuemap[k] for k in df[column]])
-        else:
-            values = df[column]
-        if scheme is not None:
-            binning = __pysal_choro(values, scheme, k=k)
-            # set categorical to True for creating the legend
-            categorical = True
-            binedges = [values.min()] + binning.bins.tolist()
-            categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
-                          for i in range(len(binedges)-1)]
-            values = np.array(binning.yb)
-
-        if ax is None:
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_aspect('equal')
-
-        mn = values.min() if vmin is None else vmin
-        mx = values.max() if vmax is None else vmax
-
-        geom_types = df.geometry.type
-        poly_idx = np.asarray((geom_types == 'Polygon')
-                              | (geom_types == 'MultiPolygon'))
-        line_idx = np.asarray((geom_types == 'LineString')
-                              | (geom_types == 'MultiLineString'))
-        point_idx = np.asarray(geom_types == 'Point')
-
-        # plot all Polygons and all MultiPolygon components in the same collection
-        polys = df.geometry[poly_idx]
-        if not polys.empty:
-            plot_polygon_collection(ax, polys, values[poly_idx],
-                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
-
-        # plot all LineStrings and MultiLineString components in same collection
-        lines = df.geometry[line_idx]
-        if not lines.empty:
-            plot_linestring_collection(ax, lines, values[line_idx],
-                                       vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
-
-        # plot all Points in the same collection
-        points = df.geometry[point_idx]
-        if not points.empty:
-            plot_point_collection(ax, points, values[point_idx],
-                                  vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
-
-        if legend and not color:
-            from matplotlib.lines import Line2D
-            from matplotlib.colors import Normalize
-            from matplotlib import cm
-
-            norm = Normalize(vmin=mn, vmax=mx)
-            n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
-            if categorical:
-                patches = []
-                for value, cat in enumerate(categories):
-                    patches.append(
-                        Line2D([0], [0], linestyle="none", marker="o",
-                               alpha=style_kwds.get('alpha', 1), markersize=10,
-                               markerfacecolor=n_cmap.to_rgba(value)))
-                if legend_kwds is None:
-                    legend_kwds = {}
-                legend_kwds.setdefault('numpoints', 1)
-                legend_kwds.setdefault('loc', 'best')
-                ax.legend(patches, categories, **legend_kwds)
-            else:
-                n_cmap.set_array([])
-                ax.get_figure().colorbar(n_cmap, ax=ax)
-
-        plt.draw()
-    else:
+    if not df.shape[0]:
         warnings.warn("The GeoDataFrame you are attempting to plot is "
                 "empty. Nothing has been displayed.", UserWarning)
+        return ax
+    if column is None:
+        return plot_series(df.geometry, cmap=cmap, color=color, ax=ax,
+                           figsize=figsize, **style_kwds)
+
+    if df[column].dtype is np.dtype('O'):
+        categorical = True
+
+    # Define `values` as a Series
+    if categorical:
+        if cmap is None:
+            if LooseVersion(matplotlib.__version__) >= '2.0.1':
+                cmap = 'tab10'
+            elif LooseVersion(matplotlib.__version__) >= '2.0.0':
+                # Erroneous name.
+                cmap = 'Vega10'
+            else:
+                cmap = 'Set1'
+        categories = list(set(df[column].values))
+        categories.sort()
+        valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
+        values = np.array([valuemap[k] for k in df[column]])
+    else:
+        values = df[column]
+    if scheme is not None:
+        binning = __pysal_choro(values, scheme, k=k)
+        # set categorical to True for creating the legend
+        categorical = True
+        binedges = [values.min()] + binning.bins.tolist()
+        categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
+                      for i in range(len(binedges)-1)]
+        values = np.array(binning.yb)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_aspect('equal')
+
+    mn = values.min() if vmin is None else vmin
+    mx = values.max() if vmax is None else vmax
+
+    geom_types = df.geometry.type
+    poly_idx = np.asarray((geom_types == 'Polygon')
+                          | (geom_types == 'MultiPolygon'))
+    line_idx = np.asarray((geom_types == 'LineString')
+                          | (geom_types == 'MultiLineString'))
+    point_idx = np.asarray(geom_types == 'Point')
+
+    # plot all Polygons and all MultiPolygon components in the same collection
+    polys = df.geometry[poly_idx]
+    if not polys.empty:
+        plot_polygon_collection(ax, polys, values[poly_idx],
+                                vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+
+    # plot all LineStrings and MultiLineString components in same collection
+    lines = df.geometry[line_idx]
+    if not lines.empty:
+        plot_linestring_collection(ax, lines, values[line_idx],
+                                   vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+
+    # plot all Points in the same collection
+    points = df.geometry[point_idx]
+    if not points.empty:
+        plot_point_collection(ax, points, values[point_idx],
+                              vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+
+    if legend and not color:
+        from matplotlib.lines import Line2D
+        from matplotlib.colors import Normalize
+        from matplotlib import cm
+
+        norm = Normalize(vmin=mn, vmax=mx)
+        n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+        if categorical:
+            patches = []
+            for value, cat in enumerate(categories):
+                patches.append(
+                    Line2D([0], [0], linestyle="none", marker="o",
+                           alpha=style_kwds.get('alpha', 1), markersize=10,
+                           markerfacecolor=n_cmap.to_rgba(value)))
+            if legend_kwds is None:
+                legend_kwds = {}
+            legend_kwds.setdefault('numpoints', 1)
+            legend_kwds.setdefault('loc', 'best')
+            ax.legend(patches, categories, **legend_kwds)
+        else:
+            n_cmap.set_array([])
+            ax.get_figure().colorbar(n_cmap, ax=ax)
+
+    plt.draw()
     return ax
 
 
