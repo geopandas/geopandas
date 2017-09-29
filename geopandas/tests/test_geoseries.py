@@ -14,6 +14,7 @@ from shapely.geometry import (Polygon, Point, LineString,
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame
+from geopandas.vectorized import GeometryArray
 
 import pytest
 from geopandas.tests.util import geom_equals
@@ -212,6 +213,26 @@ class TestSeries:
         self.g1.crs = 'foo'
         assert isinstance(self.g1.to_frame(), GeoDataFrame)
         assert self.g1.to_frame().crs == 'foo'
+
+
+# constructor tests
+
+
+def check_geoseries(s):
+    assert isinstance(s, GeoSeries)
+    assert isinstance(s.geometry, GeoSeries)
+    assert isinstance(s._geometry_array, GeometryArray)
+
+
+def test_constructor():
+    s = GeoSeries([Point(x, x) for x in range(3)])
+    check_geoseries(s)
+
+
+def test_constructor_no_geometries_fallback():
+    s = GeoSeries([True, False, True])
+    assert not isinstance(s, GeoSeries)
+    assert type(s) == pd.Series
 
 
 def test_construct_from_series():

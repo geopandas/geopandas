@@ -30,21 +30,14 @@ class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
     _metadata = ['name', 'crs']
 
-    def __new__(cls, *args, **kwargs):
-        kwargs.pop('crs', None)
-        arr = Series.__new__(cls)
-        if type(arr) is GeoSeries:
-            return arr
-        else:
-            return arr.view(GeoSeries)
-
-    def __init__(self, arg=None, index=None, crs=None, *args, **kwargs):
+    def __new__(cls, arg=None, index=None, crs=None, *args, **kwargs):
         # fix problem for scalar geometries passed
         if isinstance(arg, SingleBlockManager):
             if isinstance(arg.blocks[0], GeometryBlock):
+                self = super(GeoSeries, cls).__new__(cls)
                 super(GeoSeries, self).__init__(arg, index=index, **kwargs)
                 self.crs = crs
-                return
+                return self
             else:
                 values = np.asarray(arg.blocks[0].external_values())
 
@@ -61,16 +54,26 @@ class GeoSeries(GeoPandasBase, Series):
                 name = kwargs.get('name', None)
             else:
                 s = pd.Series(arg, index=index, **kwargs)
-                arg = from_shapely(s.values)
+                try:
+                    arg = from_shapely(s.values)
+                except TypeError:
+                    return s
                 index = s.index
                 name = s.name
             block = GeometryBlock(arg, placement=slice(0, len(arg), 1),
                                   ndim=1)
 
+        self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(block, index=index, name=name,
                                         fastpath=True)
         self.crs = crs
         self._invalidate_sindex()
+        return self
+
+    def __init__(self, *args, **kwargs):
+        # need to overwrite Series init to prevent converting the
+        # manually constructed GeometryBlock back to object block
+        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)
