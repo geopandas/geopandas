@@ -13,7 +13,6 @@ addons:
     - libspatialindex-dev
     - libgeos-dev
     - build-essential
-    - python-dev
 
 matrix:
   include:
@@ -38,18 +37,20 @@ matrix:
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
-before_install:
-  - pip install -U pip
-
 install:
-  - pip install numpy
-  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip install matplotlib==$MATPLOTLIB; fi
+  # Install conda
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update conda
+
+  # Install dependencies
+  - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest tstreamz ndas pyproj shapely fiona six rtree descartes matplotlib psycopg2 sqlalchemy pysal cython
+  - source activate test-geopandas
+  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - if [ -n "$SHAPELY" ]; then pip install shapely==$SHAPELY; fi
-
-  - pip install -r requirements.txt
-  - pip install -r requirements.test.txt
-
-  - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
+  - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; fi
 
   - make inplace
 
