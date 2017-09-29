@@ -46,7 +46,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest tstreamz ndas pyproj shapely fiona six rtree descartes matplotlib psycopg2 sqlalchemy pysal cython
+  - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest pandas pyproj shapely fiona six rtree descartes matplotlib psycopg2 sqlalchemy pysal cython
   - source activate test-geopandas
   - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - if [ -n "$SHAPELY" ]; then pip install shapely==$SHAPELY; fi
