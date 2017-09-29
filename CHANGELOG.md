@@ -1,6 +1,21 @@
 Changes
 =======
 
+Next
+----
+
+Improvements:
+
+* Pass keywords to control legend behavior (`legend_kwds`) to `plot` (#434)
+* Add basic support for reading remote datasets in `read_file` (#531)
+* Pass kwargs for `buffer` operation on GeoSeries (#535)
+* Expose all geopy services as options in geocoding (#550)
+
+Bug fixes :
+
+* Ensure that colorbars are plotted on the correct axis (#523)
+
+
 Version 0.3.0 (August 29, 2017)
 -------------------------------
 
