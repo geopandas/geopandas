@@ -39,6 +39,7 @@ class TestGeomMethods:
         self.g3 = GeoSeries([self.t1, self.t2])
         self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
+        self.g4.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, None])
         self.a1 = self.g1.copy()
@@ -185,6 +186,14 @@ class TestGeomMethods:
         gdf = self.gdf1.set_geometry(a)
         result = getattr(gdf, op)
         fcmp(result, expected)
+
+    def test_crs_warning(self):
+        # operations on geometries should warn for different CRS
+        no_crs_g3 = self.g3.copy()
+        no_crs_g3.crs = None
+        with pytest.warns(UserWarning):
+            self._test_binary_topological('intersection', self.g3,
+                                          self.g3, no_crs_g3)
 
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1,
