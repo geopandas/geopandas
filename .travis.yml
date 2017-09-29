@@ -2,18 +2,6 @@ language: python
 
 sudo: false
 
-cache: pip
-
-addons:
-  apt:
-    packages:
-    - libgdal1h
-    - gdal-bin
-    - libgdal-dev
-    - libspatialindex-dev
-    - libgeos-dev
-    - build-essential
-
 matrix:
   include:
     # Only one test for these Python versions
