@@ -39,7 +39,11 @@ install:
   - conda install pandas shapely fiona pyproj rtree matplotlib descartes
   - conda install pytest mock
   - conda install cython
-  - python setup.py build_ext --inplace --with-cython
+  - "set LIB=%LIBRARY_LIB%;%LIB%"
+  - "set LIBPATH=%LIBRARY_LIB%;%LIBPATH%"
+  - "set INCLUDE=%LIBRARY_INC%;%INCLUDE%;%RECIPE_DIR%"
+  - "set GEOS_LIBRARY_PATH=%LIBRARY_BIN%/geos_c.dll"
+  - "%PYTHON% setup.py build_ext --inplace -I %LIBRARY_INC% -L %LIBRARY_LIB% -l geos_c"
 
 test_script:
   - activate test-environment
