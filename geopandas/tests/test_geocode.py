@@ -91,6 +91,8 @@ class TestGeocode:
         assert coords[0] == pytest.approx(test[1])
         assert coords[1] == pytest.approx(test[0])
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_prepare_result_none(self):
         p0 = Point(12.3, -45.6)  # Treat these as lat/lon
         d = {'a': ('address0', p0.coords[0]),
