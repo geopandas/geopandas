@@ -39,6 +39,7 @@ class TestGeomMethods:
         self.g3 = GeoSeries([self.t1, self.t2])
         self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
+        self.g4.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, None])
         self.a1 = self.g1.copy()
