@@ -675,8 +675,6 @@ class TestConstructor:
             with pytest.raises(ValueError):
                 GeoDataFrame(df, geometry='other_geom')
 
-    @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_from_frame_specified_geometry(self):
         data = {"A": range(3), "B": np.arange(3.0),
                 "other_geom": [Point(x, x) for x in range(3)]}
