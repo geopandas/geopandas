@@ -340,6 +340,18 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             _ = self.gdf1.geometry.y
 
+    def test_centroid(self):
+        polygon = Polygon([(-1, -1), (1, -1), (1, 1), (-1, 1)])
+        point = Point(0, 0)
+        polygons = GeoSeries([polygon for i in range(3)])
+        points = GeoSeries([point for i in range(3)])
+        assert_geoseries_equal(polygons.centroid, points)
+
+    def test_convex_hull(self):
+        # the convex hull of a square should be the same as the square
+        squares = GeoSeries([self.sq for i in range(3)])
+        assert_geoseries_equal(squares, squares.convex_hull)
+
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
         for expected, computed in zip(exp_exterior, self.g3.exterior):
