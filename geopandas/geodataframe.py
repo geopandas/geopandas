@@ -80,7 +80,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             for i, (k, v) in list(enumerate(arg.items())):
                 if isinstance(v, GeoSeries):
                     if 'columns' in kwargs:
-                        columns = kwargs['columns'].copy()
+                        columns = list(kwargs['columns'])
                         columns.remove(k)
                         kwargs['columns'] = columns
                     gs[k] = arg.pop(k)
