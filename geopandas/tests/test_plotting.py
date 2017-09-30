@@ -347,13 +347,14 @@ class TestNonuniformGeometryPlotting:
 
 
 class TestPySALPlotting:
-
     @classmethod
     def setup_class(cls):
         try:
             import pysal as ps
         except ImportError:
             raise pytest.skip("PySAL is not installed")
+        except SyntaxError:
+            raise pytest.skip("PySAL fails Python 2 syntax")
 
         pth = ps.examples.get_path("columbus.shp")
         cls.df = read_file(pth)

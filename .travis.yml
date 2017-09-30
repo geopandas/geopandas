@@ -21,10 +21,6 @@ matrix:
   allow_failures:
     - python: 3.5
       env: PANDAS=0.19.2 MATPLOTLIB=1.5.3 SHAPELY=1.5.17
-    - python: 2.7
-      env: PANDAS=0.20.3  MATPLOTLIB=2.0.2 SHAPELY=1.5.17
-    - python: 2.7
-      env: PANDAS=master  MATPLOTLIB=master
 
 install:
   # Install conda
