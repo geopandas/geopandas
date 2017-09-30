@@ -235,6 +235,14 @@ def test_constructor_no_geometries_fallback():
     assert type(s) == pd.Series
 
 
+def test_constructor_empty():
+    s = GeoSeries([])
+    check_geoseries(s)
+
+    s = GeoSeries()
+    check_geoseries(s)
+
+
 def test_construct_from_series():
     shapes = [Polygon([(random.random(), random.random()) for _ in range(3)])
               for _ in range(10)]

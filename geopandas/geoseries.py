@@ -55,7 +55,7 @@ class GeoSeries(GeoPandasBase, Series):
             else:
                 s = pd.Series(arg, index=index, **kwargs)
                 # prevent trying to convert non-geometry objects
-                if s.dtype != object:
+                if s.dtype != object and not s.empty:
                     return s
                 # try to convert to GeometryArray, if fails return plain Series
                 try:
