@@ -70,8 +70,12 @@ class GeoSeries(GeoPandasBase, Series):
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = crs
                 return self
+            elif isinstance(data.blocks[0].values, GeometryArray):
+                # GeometryBlock sometimes gets converted by pandas
+                # to ObjectBlock with GeometryArray
+                data = data.blocks[0].values
             else:
-                values = np.asarray(data.blocks[0].external_values())
+                data = np.asarray(data.blocks[0].external_values())
 
         if isinstance(data, BaseGeometry):
             data = [data]
