@@ -27,50 +27,98 @@ def _is_empty(x):
 
 
 class GeoSeries(GeoPandasBase, Series):
-    """A Series object designed to store shapely geometry objects."""
+    """
+    A Series object designed to store shapely geometry objects.
+
+    Parameters
+    ----------
+    data : array-like, dict, scalar value
+        The geometries to store in the GeoSeries.
+    index : array-like or Index
+        The index for the GeoSeries.
+    crs : str, dict (optional)
+        Coordinate reference system.
+    kwargs
+        Additional arguments passed to the Series constructor,
+         e.g. ``name``.
+
+    Examples
+    --------
+
+    >>> from shapely.geometry import Point
+    >>> s = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    >>> s
+    0    POINT (1 1)
+    1    POINT (2 2)
+    2    POINT (3 3)
+    dtype: object
+
+    See Also
+    --------
+    GeoDataFrame
+    pandas.Series
+
+    """
     _metadata = ['name', 'crs']
 
-    def __new__(cls, *args, **kwargs):
-        kwargs.pop('crs', None)
-        arr = Series.__new__(cls)
-        if type(arr) is GeoSeries:
-            return arr
-        else:
-            return arr.view(GeoSeries)
-
-    def __init__(self, arg=None, index=None, crs=None, *args, **kwargs):
-        # fix problem for scalar geometries passed
-        if isinstance(arg, SingleBlockManager):
-            if isinstance(arg.blocks[0], GeometryBlock):
-                super(GeoSeries, self).__init__(arg, index=index, **kwargs)
+    def __new__(cls, data=None, index=None, crs=None, **kwargs):
+        # we need to use __new__ because we want to return Series instance
+        # instead of GeoSeries instance in case of non-geometry data
+        if isinstance(data, SingleBlockManager):
+            if isinstance(data.blocks[0], GeometryBlock):
+                self = super(GeoSeries, cls).__new__(cls)
+                super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = crs
-                return
+                return self
+            # GeometryBlock sometimes gets converted by pandas
+            # to ObjectBlock with GeometryArray
+            if index:
+                data = data.reindex(index)
             else:
-                values = np.asarray(arg.blocks[0].external_values())
+                index = data.index
+            if isinstance(data.blocks[0].values, GeometryArray):
+                data = data.blocks[0].values
+            else:
+                data = np.asarray(data.blocks[0].external_values())
 
-        if isinstance(arg, BaseGeometry):
-            arg = [arg]
+        if isinstance(data, BaseGeometry):
+            data = [data]
 
-        if isinstance(arg, GeoSeries):
-            block = arg._data._block
-            index = arg.index
-            name = arg.name
+        if isinstance(data, GeoSeries):
+            block = data._data._block
+            index = data.index
+            name = data.name
         else:
-            if isinstance(arg, GeometryArray):
-                index = index if index is not None else pd.Index(np.arange(len(arg)))
+            if isinstance(data, GeometryArray):
+                index = index if index is not None else pd.Index(np.arange(len(data)))
                 name = kwargs.get('name', None)
             else:
-                s = pd.Series(arg, index=index, **kwargs)
-                arg = from_shapely(s.values)
+                s = pd.Series(data, index=index, **kwargs)
+                # prevent trying to convert non-geometry objects
+                if s.dtype != object and not s.empty:
+                    return s
+                # try to convert to GeometryArray, if fails return plain Series
+                try:
+                    data = from_shapely(s.values)
+                except TypeError:
+                    return s
                 index = s.index
                 name = s.name
-            block = GeometryBlock(arg, placement=slice(0, len(arg), 1),
+            block = GeometryBlock(data, placement=slice(0, len(data), 1),
                                   ndim=1)
 
+        self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(block, index=index, name=name,
                                         fastpath=True)
         self.crs = crs
         self._invalidate_sindex()
+        return self
+
+    def __init__(self, *args, **kwargs):
+        # need to overwrite Series init to prevent converting the
+        # manually constructed GeometryBlock back to object block
+        # by calling the Series init
+        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)
