@@ -65,7 +65,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
 
         geometry = kwargs.pop('geometry', 'geometry')
-        [arg] = args
+        if not args:
+            arg = []
+        else:
+            [arg] = args
 
         if isinstance(arg, BlockManager):
             super(GeoDataFrame, self).__init__(arg, **kwargs)

@@ -490,7 +490,6 @@ class TestDataFrame:
         validate_boro_df(df, case_sensitive=False)
 
     @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame({"A": range(len(self.df)), "location":
                            list(self.df.geometry)}, index=self.df.index)
@@ -504,9 +503,8 @@ class TestDataFrame:
         gf2 = df.set_geometry('location', crs=self.df.crs, drop=True)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf2, GeoDataFrame)
-        assert gf2.geometry.name == 'geometry'
-        assert 'geometry' in gf2
-        assert 'location' not in gf2
+        assert gf2.geometry.name == 'location'
+        assert 'location' in gf2
         assert 'location' in df
 
         # should be a copy
@@ -694,7 +692,6 @@ class TestConstructor:
             df.geometry
 
     @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_only_geometry(self):
         df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
         check_geodataframe(df)
@@ -716,7 +713,6 @@ class TestConstructor:
         assert list(gdf.x) == [1]
 
     @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_empty(self):
         df = GeoDataFrame()
         assert type(df) == GeoDataFrame
