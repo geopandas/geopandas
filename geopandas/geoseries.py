@@ -71,7 +71,7 @@ class GeoSeries(GeoPandasBase, Series):
                 self.crs = crs
                 return self
             else:
-                data = np.asarray(data.blocks[0].external_values())
+                values = np.asarray(data.blocks[0].external_values())
 
         if isinstance(data, BaseGeometry):
             data = [data]
