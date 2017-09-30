@@ -66,6 +66,13 @@ def test_indexing(s, df):
     assert_geoseries_equal(df[mask]['geometry'], exp)
     assert_geoseries_equal(df.loc[mask, 'geometry'], exp)
 
+    # slices
+    s.index = [1, 2, 3]
+    exp = GeoSeries([Point(1, 1), Point(2, 2)], index=[2, 3])
+    assert_series_equal(s[1:], exp)
+    assert_series_equal(s.iloc[1:], exp)
+    assert_series_equal(s.loc[2:], exp)
+
 
 @pytest.mark.cython
 @pytest.mark.xfail(reason="GEOPANDAS-CYTHON not supported")
