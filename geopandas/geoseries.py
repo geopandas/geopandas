@@ -27,7 +27,38 @@ def _is_empty(x):
 
 
 class GeoSeries(GeoPandasBase, Series):
-    """A Series object designed to store shapely geometry objects."""
+    """
+    A Series object designed to store shapely geometry objects.
+
+    Parameters
+    ----------
+    data : array-like, dict, scalar value
+        The geometries to store in the GeoSeries.
+    index : array-like or Index
+        The index for the GeoSeries.
+    crs : str, dict (optional)
+        Coordinate reference system.
+    kwargs
+        Additional arguments passed to the Series constructor,
+         e.g. ``name``.
+
+    Examples
+    --------
+
+    >>> from shapely.geometry import Point
+    >>> s = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    >>> s
+    0    POINT (1 1)
+    1    POINT (2 2)
+    2    POINT (3 3)
+    dtype: object
+
+    See Also
+    --------
+    GeoDataFrame
+    pandas.Series
+
+    """
     _metadata = ['name', 'crs']
 
     def __new__(cls, arg=None, index=None, crs=None, *args, **kwargs):
