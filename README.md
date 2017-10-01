@@ -56,7 +56,7 @@ Use ``conda`` and the ``conda-forge`` channel to install GeoPandas on a clean en
 
 ```bash
 conda create -n geopandas
-source activate geopandas
+source activate geopandas  # 'activate geopandas' on Windows
 conda install -c conda-forge geopandas
 ```
 
