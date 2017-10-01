@@ -152,14 +152,14 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         """
 
         if dtype == np.object_:
-            values = self.values
+            values = self.to_dense()
         elif dtype == str:
-            values = np.array(list(map(str, self.values)))
+            values = np.array(list(map(str, self.to_dense())))
         else:
             if errors == 'raise':
                 raise TypeError('cannot astype geometries')
             else:
-                values = self.values
+                values = self.to_dense()
 
         if copy:
             values = values.copy()

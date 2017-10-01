@@ -489,7 +489,6 @@ class TestDataFrame:
 
         validate_boro_df(df, case_sensitive=False)
 
-    @pytest.mark.cython
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame({"A": range(len(self.df)), "location":
                            list(self.df.geometry)}, index=self.df.index)

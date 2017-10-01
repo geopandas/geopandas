@@ -176,7 +176,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
 
-        The original geometry column is replaced with the input.
+        The original geometry column is replaced with the input.  The geometry
+        column will have the same name as the selected column.
 
         Parameters
         ----------
@@ -198,7 +199,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Returns
         -------
         geodataframe : GeoDataFrame
-
         """
         if inplace:
             frame = self
