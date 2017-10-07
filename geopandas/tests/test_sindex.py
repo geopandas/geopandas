@@ -97,21 +97,21 @@ class TestJoinSindex:
         # First check that we gets hits from the boros frame.
         tree = self.boros.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [self.boros.ix[hit.object]['BoroName'] for hit in hits]
+        res = [self.boros.loc[hit.object]['BoroName'] for hit in hits]
         assert res == ['Bronx', 'Queens']
 
         # Check that we only get the Bronx from this view.
         first = self.boros[self.boros['BoroCode'] < 3]
         tree = first.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [first.ix[hit.object]['BoroName'] for hit in hits]
+        res = [first.loc[hit.object]['BoroName'] for hit in hits]
         assert res == ['Bronx']
 
         # Check that we only get Queens from this view.
         second = self.boros[self.boros['BoroCode'] >= 3]
         tree = second.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [second.ix[hit.object]['BoroName'] for hit in hits],
+        res = [second.loc[hit.object]['BoroName'] for hit in hits],
         assert res == ['Queens']
 
         # Get both the Bronx and Queens again.
@@ -120,5 +120,5 @@ class TestJoinSindex:
         assert merged.sindex.size == 5
         tree = merged.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [merged.ix[hit.object]['BoroName'] for hit in hits]
+        res = [merged.loc[hit.object]['BoroName'] for hit in hits]
         assert res == ['Bronx', 'Queens']
