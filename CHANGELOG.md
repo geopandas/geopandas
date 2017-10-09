@@ -56,7 +56,7 @@ Improvements:
 * Addition of the ``sindex`` attribute, a Spatial Index using the optional
   dependency ``rtree`` (``libspatialindex``) that can be used to speed up
   certain operations such as overlays (#140, #141).
-* Addition of the ``GeoSeries.ix`` coordinate indexer to slice a GeoSeries based
+* Addition of the ``GeoSeries.cx`` coordinate indexer to slice a GeoSeries based
   on a bounding box of the coordinates (#55).
 * Improvements to plotting: ability to specify edge colors (#173), support for
   the ``vmin``, ``vmax``, ``figsize``, ``linewidth`` keywords (#207), legends

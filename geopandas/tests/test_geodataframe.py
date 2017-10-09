@@ -495,9 +495,9 @@ class TestDataFrame:
         assert 'location' in df
 
         # should be a copy
-        df.ix[0, "A"] = 100
-        assert gf.ix[0, "A"] == 0
-        assert gf2.ix[0, "A"] == 0
+        df.loc[0, "A"] = 100
+        assert gf.loc[0, "A"] == 0
+        assert gf2.loc[0, "A"] == 0
 
         with pytest.raises(ValueError):
             df.set_geometry('location', inplace=True)

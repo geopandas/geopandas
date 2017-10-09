@@ -182,12 +182,12 @@ class TestSpatialJoinNYBB:
         # points within polygons
         df = sjoin(self.pointdf, self.polydf, how="left", op="within")
         assert df.shape == (21, 8)
-        assert df.ix[1]['BoroName'] == 'Staten Island'
+        assert df.loc[1]['BoroName'] == 'Staten Island'
 
         # points contain polygons? never happens so we should have nulls
         df = sjoin(self.pointdf, self.polydf, how="left", op="contains")
         assert df.shape == (21, 8)
-        assert np.isnan(df.ix[1]['Shape_Area'])
+        assert np.isnan(df.loc[1]['Shape_Area'])
 
     def test_sjoin_bad_op(self):
         # AttributeError: 'Point' object has no attribute 'spandex'
