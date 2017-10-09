@@ -31,10 +31,22 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
     """
+    original_op = op
+    original_how = how
     allowed_hows = ('left', 'right', 'inner')
     if how not in allowed_hows:
         raise ValueError("How keyword should be one of %s, got %s"
                          % (allowed_hows, how))
+
+    if op == "within":
+        # within implemented as the inverse of contains; swap names
+        # This is done for efficiency reasons
+        op = 'contains'
+        left_df, right_df = right_df, left_df
+        if how == 'left':
+            how = 'right'
+        elif how == 'right':
+            how = 'left'
 
     if left_df.crs != right_df.crs:
         print("Warning: CRS does not match")
@@ -61,6 +73,11 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
 
     left = left_df.take(left_indices)
     right = right_df.take(right_indices)
+
+    if original_op == 'within':  # switch back
+        left, right = right, left
+        n_left, n_right = n_right, n_left
+        how = original_how
 
     if how in ('inner', 'left'):
         del right[right._geometry_column_name]
