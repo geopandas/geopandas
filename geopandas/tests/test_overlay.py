@@ -53,6 +53,19 @@ class TestDataFrame:
         dfC = overlay(self.polydf, self.polydf2, how="union")
         assert dfC.shape == self.union_shape
 
+    def test_union_non_numeric_index(self):
+        import string
+        letters = list(string.ascii_letters)
+
+        polydf_alpha = self.polydf.copy()
+        polydf2_alpha = self.polydf2.copy()
+        polydf_alpha.index = letters[:len(polydf_alpha)]
+        polydf2_alpha.index = letters[:len(polydf2_alpha)]
+        df = overlay(polydf_alpha, polydf2_alpha, how="union")
+        assert type(df) is GeoDataFrame
+        assert df.shape == self.union_shape
+        assert 'value1' in df.columns and 'Shape_Area' in df.columns
+
     def test_intersection(self):
         df = overlay(self.polydf, self.polydf2, how="intersection")
         assert df['BoroName'][0] is not None
@@ -94,7 +107,7 @@ class TestDataFrame:
 
         df = overlay(polydf3, self.polydf2, how="union")
         assert type(df) is GeoDataFrame
-        
+
         df2 = overlay(self.polydf, self.polydf2, how="union")
         assert df.geom_almost_equals(df2).all()
 
