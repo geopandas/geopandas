@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from distutils.version import LooseVersion
+
 import pandas as pd
 from shapely.geometry import Point
 
@@ -36,7 +38,7 @@ class TestMerging:
         self._check_metadata(res)
 
         ## test that crs and other geometry name are preserved
-        self.gdf.crs = {'init' :'epsg:4326'}
+        self.gdf.crs = {'init': 'epsg:4326'}
         self.gdf = (self.gdf.rename(columns={'geometry': 'points'})
                             .set_geometry('points'))
         res = self.gdf.merge(self.df, left_on='values', right_on='col1')
@@ -45,15 +47,21 @@ class TestMerging:
         self._check_metadata(res, 'points', self.gdf.crs)
 
     @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
+    @pytest.mark.xfail(str(pd.__version__) < LooseVersion('0.21'),
+                       reason="GEOPANDAS-CYTHON")
     def test_concat_axis0(self):
-
+        # frame
         res = pd.concat([self.gdf, self.gdf])
-
         assert res.shape == (6, 2)
         assert isinstance(res, GeoDataFrame)
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
+
+        # series
+        res = pd.concat([self.gdf.geometry, self.gdf.geometry])
+        assert res.shape == (6, )
+        assert isinstance(res, GeoSeries)
+        assert isinstance(res.geometry, GeoSeries)
 
     @pytest.mark.cython
     @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
