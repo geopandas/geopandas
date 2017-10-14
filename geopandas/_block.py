@@ -6,13 +6,14 @@ from pandas.core.internals import Block, NonConsolidatableMixIn
 from pandas.core.common import is_null_slice
 from shapely.geometry.base import geom_factory, BaseGeometry
 
-from .vectorized import GeometryArray, to_shapely
+from .vectorized import GeometryArray, to_shapely, concat
 
 
 class GeometryBlock(NonConsolidatableMixIn, Block):
-    """ implement a geometry block with uint pointers to C objects
-    as underlying data"""
+    """ Pandas Geometry block with pointers to C GEOS objects """
     __slots__ = ()
+
+    _concatenator = concat
 
     @property
     def _holder(self):
