@@ -127,7 +127,7 @@ cpdef from_shapely(object L):
             try:
                 geos_geom = <np.uintp_t> g.__geom__
             except AttributeError:
-                msg = ("Inputs to from_shapely must be shapely eometries. "
+                msg = ("Inputs to from_shapely must be shapely geometries. "
                        "Got %s" % str(g))
                 raise TypeError(msg)
             geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc

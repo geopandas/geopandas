@@ -65,7 +65,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
 
         geometry = kwargs.pop('geometry', 'geometry')
-        [arg] = args
+        if not args:
+            arg = []
+        else:
+            [arg] = args
 
         if isinstance(arg, BlockManager):
             super(GeoDataFrame, self).__init__(arg, **kwargs)
@@ -173,7 +176,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
 
-        The original geometry column is replaced with the input.
+        The original geometry column is replaced with the input.  The geometry
+        column will have the same name as the selected column.
 
         Parameters
         ----------
@@ -195,7 +199,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Returns
         -------
         geodataframe : GeoDataFrame
-
         """
         if inplace:
             frame = self

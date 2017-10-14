@@ -109,9 +109,7 @@ def test_assign(df):
 
 
 @pytest.mark.cython
-@pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
 def test_astype(s):
-
     with pytest.raises(TypeError):
         s.astype(int)
 
