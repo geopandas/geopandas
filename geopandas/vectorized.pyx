@@ -77,8 +77,8 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
 
     handle = get_geos_context_handle()
 
-    if not geom:
-        geom = GEOSGeom_createEmptyPolygon_r(handle)
+    if geom is NULL:
+        return None
     else:
         geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
 
@@ -98,11 +98,11 @@ cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         geom = <GEOSGeometry *> geoms[i]
 
         if not geom:
-            geom = GEOSGeom_createEmptyPolygon_r(handle)
+            out[i] = None
         else:
             geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
+            out[i] = geom_factory(<np.uintp_t> geom)
 
-        out[i] = geom_factory(<np.uintp_t> geom)
 
     return out
 

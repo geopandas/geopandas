@@ -102,9 +102,9 @@ class TestSeries:
 
     def test_align(self):
         a1, a2 = self.a1.align(self.a2)
-        assert a2['A'].is_empty
+        assert not a2['A']
         assert a1['B'].equals(a2['B'])
-        assert a1['C'].is_empty
+        assert not a1['C']
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
@@ -158,8 +158,7 @@ class TestSeries:
     def test_fillna(self):
         # default is to fill with empty geometry
         na = self.na_none.fillna()
-        assert isinstance(na[2], BaseGeometry)
-        assert na[2].is_empty
+        assert not na[2]
         assert geom_equals(self.na_none[:2], na[:2])
         # XXX: method works inconsistently for different pandas versions
         # self.na_none.fillna(method='backfill')

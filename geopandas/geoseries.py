@@ -120,8 +120,9 @@ class GeoSeries(GeoPandasBase, Series):
         # by calling the Series init
         pass
 
-    def append(self, *args, **kwargs):
-        return self._wrapped_pandas_method('append', *args, **kwargs)
+    def append(self, *args):
+        from .geodataframe import concat
+        return concat((self,) + args)
 
     @property
     def geometry(self):
