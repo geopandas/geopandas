@@ -1566,7 +1566,9 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
     return left_out, right_out
 
 
-def concat(L):
+def concat(L, axis=0):
+    if axis != 0:
+        raise NotImplementedError("Can only concatenate geometries along axis=0")
     L = list(L)
     x = np.concatenate([ga.data for ga in L])
     return GeometryArray(x, base=set(L))
