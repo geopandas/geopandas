@@ -1210,6 +1210,26 @@ class GeometryArray(object):
         result.data[idx == -1] = 0
         return result
 
+    def fill(self, idx, value):
+        """ Fill index locations with value
+
+        Value should be a BaseGeometry
+
+        Returns a copy
+        """
+        base = [self]
+        if isinstance(value, BaseGeometry):
+            base.append(value)
+            value = value.__geom__
+        if value is None:
+            value = 0
+        new = GeometryArray(self.data.copy(), base=base)
+        new.data[idx] = value
+        return new
+
+    def fillna(self, value=None):
+        return self.fill(self.data == 0, value)
+
     def __len__(self):
         return len(self.data)
 

@@ -412,3 +412,10 @@ def test_concat():
 
     assert c.base == {a, b}
     assert len(c) == 5
+
+
+def test_fill():
+    p = Point(1, 2)
+    P2 = P.fill([0, 3], p)
+    assert P2[0].equals(p)
+    assert P2[3].equals(p)
