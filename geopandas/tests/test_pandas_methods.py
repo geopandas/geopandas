@@ -171,8 +171,6 @@ def test_select_dtypes(df):
 
 
 def test_fillna():
-    # this currently does not work (it seems to fill in the second coordinate
-    # of the point
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
     expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2)])
@@ -180,7 +178,6 @@ def test_fillna():
 
 
 def test_dropna():
-    # this currently does not work (doesn't drop)
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.dropna()
     exp = s2.loc[[0, 2]]
