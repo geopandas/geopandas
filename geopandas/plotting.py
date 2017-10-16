@@ -260,9 +260,9 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
-    if not s.shape[0]:
-        warnings.warn("The GeoDataFrame you are attempting to plot is "
-                "empty. Nothing has been displayed.", UserWarning)
+    if s.empty:
+        warnings.warn("The GeoSeries you are attempting to plot is "
+                      "empty. Nothing has been displayed.", UserWarning)
         return ax
 
     # if cmap is specified, create range of colors based on cmap
@@ -405,10 +405,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
-    if not df.shape[0]:
+    if df.empty:
         warnings.warn("The GeoDataFrame you are attempting to plot is "
-                "empty. Nothing has been displayed.", UserWarning)
+                      "empty. Nothing has been displayed.", UserWarning)
         return ax
+
     if column is None:
         return plot_series(df.geometry, cmap=cmap, color=color, ax=ax,
                            figsize=figsize, **style_kwds)
