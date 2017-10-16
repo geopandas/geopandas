@@ -105,14 +105,7 @@ def overlay(df1, df2, how, use_sindex=True):
     mls2 = MultiLineString(rings2)
 
     # Union and polygonize
-    try:
-        # calculating union (try the fast unary_union)
-        mm = unary_union([mls1, mls2])
-    except:
-        # unary_union FAILED
-        # see https://github.com/Toblerity/Shapely/issues/47#issuecomment-18506767
-        # calculating union again (using the slow a.union(b))
-        mm = mls1.union(mls2)
+    mm = unary_union([mls1, mls2])
     newpolys = polygonize(mm)
 
     # determine spatial relationship
