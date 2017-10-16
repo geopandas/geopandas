@@ -146,6 +146,15 @@ class TestPointPlotting:
         # last point == top of colorbar
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
+    def test_empty_plot(self):
+        s = GeoSeries([])
+        with pytest.warns(UserWarning):
+            ax = s.plot()
+        assert len(ax.collections) == 0
+        df = GeoDataFrame([])
+        with pytest.warns(UserWarning):
+            ax = df.plot()
+        assert len(ax.collections) == 0
 
 class TestPointZPlotting:
 
