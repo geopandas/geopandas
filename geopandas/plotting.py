@@ -260,6 +260,11 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
 
+    if s.empty:
+        warnings.warn("The GeoSeries you are attempting to plot is "
+                      "empty. Nothing has been displayed.", UserWarning)
+        return ax
+
     # if cmap is specified, create range of colors based on cmap
     values = None
     if cmap is not None:
@@ -396,6 +401,15 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     import matplotlib
     import matplotlib.pyplot as plt
 
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_aspect('equal')
+
+    if df.empty:
+        warnings.warn("The GeoDataFrame you are attempting to plot is "
+                      "empty. Nothing has been displayed.", UserWarning)
+        return ax
+
     if column is None:
         return plot_series(df.geometry, cmap=cmap, color=color, ax=ax,
                            figsize=figsize, **style_kwds)
@@ -427,10 +441,6 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         categories = ['{0:.2f} - {1:.2f}'.format(binedges[i], binedges[i+1])
                       for i in range(len(binedges)-1)]
         values = np.array(binning.yb)
-
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
 
     mn = values.min() if vmin is None else vmin
     mx = values.max() if vmax is None else vmax
