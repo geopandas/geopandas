@@ -70,6 +70,14 @@ class TestSpatialJoin:
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
+    def test_crs_mismatch(self, dfs):
+        index, df1, df2, expected = dfs
+        df1.crs = {'init': 'epsg:4326', 'no_defs': True}
+        with pytest.warns(UserWarning):
+            sjoin(df1, df2)
+
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
+                             indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
     def test_inner(self, op, dfs):
         index, df1, df2, expected = dfs

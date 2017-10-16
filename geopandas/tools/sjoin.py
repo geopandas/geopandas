@@ -1,3 +1,5 @@
+from warnings import warn
+
 import numpy as np
 import pandas as pd
 from shapely import prepared
@@ -30,16 +32,16 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
     allowed_hows = ['left', 'right', 'inner']
     if how not in allowed_hows:
-        raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
-            (how, allowed_hows))
+        raise ValueError("`how` was \"%s\" but is expected to be in %s" %
+                         (how, allowed_hows))
 
     allowed_ops = ['contains', 'within', 'intersects']
     if op not in allowed_ops:
-        raise ValueError("`op` was \"%s\" but is expected to be in %s" % \
-            (op, allowed_ops))
+        raise ValueError("`op` was \"%s\" but is expected to be in %s" %
+                         (op, allowed_ops))
 
     if left_df.crs != right_df.crs:
-        print('Warning: CRS does not match!')
+        warn('CRS of frames being joined does not match!')
 
     index_left = 'index_%s' % lsuffix
     index_right = 'index_%s' % rsuffix
