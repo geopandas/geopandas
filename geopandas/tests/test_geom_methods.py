@@ -187,6 +187,8 @@ class TestGeomMethods:
         result = getattr(gdf, op)
         fcmp(result, expected)
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_crs_warning(self):
         # operations on geometries should warn for different CRS
         no_crs_g3 = self.g3.copy()
