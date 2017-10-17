@@ -47,6 +47,11 @@ dependency. ``rtree`` requires the C library [``libspatialindex``](https://githu
 Then, installation works as normal: ``pip install geopandas``
 
 
+**Advanced**
+
+For development purposes, you can install directly from github using: ``pip install --upgrade git+git://github.com/geopandas/geopandas.git@geopandas-cython``
+
+
 Examples
 --------
 
