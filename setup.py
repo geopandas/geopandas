@@ -59,6 +59,7 @@ except ImportError:
     has_cython = False
 
 use_cython = False
+print('Print msg for PR#896, sys.argv:', sys.argv)
 if '--without-cython' in sys.argv:
     sys.argv.remove('--without-cython')
 
@@ -68,6 +69,18 @@ if '--with-cython' in sys.argv:
     if use_cython and not has_cython:
         raise RuntimeError('ERROR: Cython not found.  Exiting.\n       '
                            'Install Cython or don\'t use "--with-cython"')
+
+if 'pip-' in sys.argv[3] and (sys.argv[1] in ['egg_info', 'install']):
+    #catching pip install geopandas, see if can build cython extensions
+    #pip install .    --> sys.argv = ['-c', 'egg_info', '--egg-base', 'pip-egg-info']
+    #pip install git+ --> sys.argv = ['-c', 'install', '--record', '/tmp/pip-i_hrsvpw-record/install-record.txt', '--single-version-externally-managed', '--compile']
+    use_cython = True
+    if use_cython and not has_cython:
+        #do auto `pip install Cython`?
+        raise RuntimeError('ERROR: Cython not found.  Exiting.\n       '
+                           'Install Cython first with `pip install Cython`')
+
+print('Print msg for PR#896, use_cython:{}, has_cython:{}'.format(use_cython, has_cython))
 
 suffix = '.pyx' if use_cython else '.c'
 ext_modules = []
