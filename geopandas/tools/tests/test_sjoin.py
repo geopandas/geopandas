@@ -17,7 +17,6 @@ triangles = [Polygon([(random.random(), random.random())
                      for i in range(3)])
              for _ in range(10)]
 
-
 points = [Point(random.random(), random.random())
           for _ in range(20)]
 
@@ -84,6 +83,20 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
         for p in points2:
             if p:
                 assert any(p.equals(p2) for p2 in L)
+
+
+def test_crs_mismatch():
+    left = gpd.GeoDataFrame({'geometry': triangles,
+                             'x': np.random.random(len(triangles)),
+                             'y': np.random.random(len(triangles))},
+                            crs={'init': 'epsg:4326'})
+
+    right = gpd.GeoDataFrame({'geometry': points,
+                              'x': np.random.random(len(points)),
+                              'z': np.random.random(len(points))})
+
+    with pytest.warns(UserWarning):
+        sjoin(left, right)
 
 
 def test_errors():

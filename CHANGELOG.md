@@ -1,6 +1,21 @@
 Changes
 =======
 
+Next
+----
+
+Improvements:
+
+* Pass keywords to control legend behavior (`legend_kwds`) to `plot` (#434)
+* Add basic support for reading remote datasets in `read_file` (#531)
+* Pass kwargs for `buffer` operation on GeoSeries (#535)
+* Expose all geopy services as options in geocoding (#550)
+
+Bug fixes :
+
+* Ensure that colorbars are plotted on the correct axis (#523)
+
+
 Version 0.3.0 (August 29, 2017)
 -------------------------------
 
@@ -41,7 +56,7 @@ Improvements:
 * Addition of the ``sindex`` attribute, a Spatial Index using the optional
   dependency ``rtree`` (``libspatialindex``) that can be used to speed up
   certain operations such as overlays (#140, #141).
-* Addition of the ``GeoSeries.ix`` coordinate indexer to slice a GeoSeries based
+* Addition of the ``GeoSeries.cx`` coordinate indexer to slice a GeoSeries based
   on a bounding box of the coordinates (#55).
 * Improvements to plotting: ability to specify edge colors (#173), support for
   the ``vmin``, ``vmax``, ``figsize``, ``linewidth`` keywords (#207), legends

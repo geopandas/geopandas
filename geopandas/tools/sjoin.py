@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -49,7 +50,7 @@ def sjoin(left_df, right_df, op='intersects', how='inner',
             how = 'left'
 
     if left_df.crs != right_df.crs:
-        print("Warning: CRS does not match")
+        warn('CRS of frames being joined does not match!')
 
     left_indices, right_indices = cysjoin(left_df._geometry_array.data,
                                           right_df._geometry_array.data,

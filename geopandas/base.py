@@ -808,14 +808,3 @@ class _CoordinateIndexer(_NDFrameIndexer):
                    ys.stop if ys.stop is not None else ymax)
         idx = obj.intersects(bbox)
         return obj[idx]
-
-
-def _array_input(arr):
-    if isinstance(arr, (MultiPoint, MultiLineString, MultiPolygon)):
-        # Prevent against improper length detection when input is a
-        # Multi*
-        geom = arr
-        arr = np.empty(1, dtype=object)
-        arr[0] = geom
-
-    return arr
