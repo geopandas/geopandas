@@ -106,6 +106,16 @@ class TestSeries:
         assert a1['B'].equals(a2['B'])
         assert a1['C'].is_empty
 
+    def test_align_crs(self):
+        a1 = self.a1
+        a1.crs = {'init': 'epsg:4326', 'no_defs': True}
+        a2 = self.a2
+        a2.crs = {'init': 'epsg:31370', 'no_defs': True}
+
+        res1, res2 = a1.align(a2)
+        assert res1.crs == {'init': 'epsg:4326', 'no_defs': True}
+        assert res2.crs == {'init': 'epsg:31370', 'no_defs': True}
+
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
         assert np.all(self.g1.geom_almost_equals(self.g1))

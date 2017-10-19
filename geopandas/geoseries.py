@@ -250,8 +250,7 @@ class GeoSeries(GeoPandasBase, Series):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
-            if not hasattr(self, name):
-                object.__setattr__(self, name, getattr(other, name, None))
+            object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def copy(self, order='C'):
@@ -345,15 +344,7 @@ class GeoSeries(GeoPandasBase, Series):
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
-        # left = left.astype(np.uintp)  # TODO: maybe avoid this in pandas
-        # right = right.astype(np.uintp)
-        # left2 = GeoSeries(left)  # TODO: why do we do this?
-        left2 = left
-        if isinstance(other, GeoSeries):
-            right2 = GeoSeries(right)
-            return left2, right2
-        else:  # It is probably a Series, let's keep it that way
-            return left2, right
+        return left, right
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
