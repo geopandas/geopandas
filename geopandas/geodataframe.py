@@ -724,17 +724,27 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     return GeoDataFrame(self, geometry=col, crs=crs)
 
 
-def concat(L, axis=0, ignore_index=False):
-    """ Concatenate multiple GeoDataFrames or GeoSeries together
+def concat(objs, axis=0, ignore_index=False):
+    """Concatenate multiple GeoDataFrames or GeoSeries together
 
-    **Expectations**
-    -  Currently only works for axis=0
+    **Expectations for axis=0**
     -  Expects all input types to be either GeoDataFrame or GeoSeries
     -  CRS values should be the same
     -  Geometry names should be the same
+
+    **Expectatins for axis=1**
+    - Only one of the objects is a GeoDataFrame or GeoSeries
+
     """
-    if axis != 0:
-        raise NotImplementedError("Only axis=0 supported")
+    if axis == 0:
+        return _concat_axis0(objs, ignore_index=ignore_index)
+    elif axis == 1:
+        return _concat_axis1(objs, ignore_index=ignore_index)
+    else:
+        raise ValueError("Invalid axis value")
+
+
+def _concat_axis0(L, **kwargs):
 
     types = set(map(type, L))
     if types != {GeoDataFrame} and types != {GeoSeries}:
@@ -755,14 +765,41 @@ def concat(L, axis=0, ignore_index=False):
     geometry = vectorized.concat(df._geometry_array for df in L)
     if isinstance(L[0], GeoDataFrame):
         L = [df.drop(name, axis=1) for df in L]
-        new = pd.concat(L, ignore_index=ignore_index)
+        new = pd.concat(L, **kwargs)
         new = new.set_geometry(GeoSeries(geometry, name=name, index=new.index),
                                crs=L[0].crs)
     else:
         index = pd.concat([pd.Series(index=s.index) for s in L],
-                          ignore_index=ignore_index).index
+                          **kwargs).index
         new = GeoSeries(geometry, index=index, name=name, crs=L[0].crs)
     return new
+
+
+def _concat_axis1(objs, **kwargs):
+    is_geo = [isinstance(obj, (GeoDataFrame, GeoSeries)) for obj in objs]
+
+    if not sum(is_geo) == 1:
+        raise ValueError("'concat' with axis=1 currently only supports "
+                         "concatenating objects of which only one is a "
+                         "GeoDataFrame or Series")
+
+    geo_obj = objs[is_geo.index(True)]
+    if isinstance(geo_obj, GeoSeries):
+        geometry = geo_obj
+        temp_obj = pd.Series(0, index=geo_obj.index, name=geo_obj.name)
+    else:
+        geometry = geo_obj.geometry
+        temp_obj = geo_obj.copy()
+        temp_obj[geometry.name] = 1
+
+    objs[is_geo.index(True)] = temp_obj
+    result = pd.concat(objs, axis=1, **kwargs)
+
+    geometry_reindexed = geometry.reindex(result.index)
+
+    result[geometry.name] = geometry_reindexed
+
+    return result
 
 
 if PY3:
