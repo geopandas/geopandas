@@ -124,7 +124,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
 
         # TODO implement take_nd on GeometryArray
         # new_values = self.values.take_nd(indexer, fill_value=fill_value)
-        new_values = self.values[indexer]
+        new_values = self.values.take(indexer)
 
         # if we are a 1-dim object, then always place at 0
         if self.ndim == 1:
