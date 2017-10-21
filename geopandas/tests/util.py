@@ -113,7 +113,8 @@ def geom_equals(this, that):
                  attribute)
     """
 
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
+    return (this.geom_equals(that) | (this.is_empty & that.is_empty)
+            | this.isna() & that.isna()).all()
 
 
 def geom_almost_equals(this, that):
