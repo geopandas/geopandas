@@ -113,6 +113,15 @@ def geom_equals(this, that):
                  attribute)
     """
 
+    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
+
+
+def _geoms_equals(this, that):
+    """
+    Test that two GeoSeries objects have the same geometries.
+
+    """
+
     return (this.geom_equals(that) | (this.is_empty & that.is_empty)
             | this.isna() & that.isna()).all()
 
@@ -188,4 +197,4 @@ def assert_geoseries_equal(left, right, check_dtype=False,
     if check_less_precise:
         assert geom_almost_equals(left, right)
     else:
-        assert geom_equals(left, right)
+        assert _geoms_equals(left, right)
