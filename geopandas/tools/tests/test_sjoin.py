@@ -83,7 +83,7 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='inner', op=op)
-
+        
         exp = expected[op].dropna().copy()
         exp = exp.drop('geometry_y', axis=1).rename(
             columns={'geometry_x': 'geometry'})
@@ -207,6 +207,15 @@ class TestSpatialJoinNYBB:
         df = sjoin(pointdf2, self.polydf, how="left")
         assert 'Shape_Area_left' in df.columns
         assert 'Shape_Area_right' in df.columns
+
+    @pytest.mark.parametrize('how', ['left', 'right', 'inner'])
+    def test_sjoin_named_index(self,how):
+        #original index names should be unchanged
+        pointdf2 = self.pointdf.copy()
+        pointdf2.index.name = 'pointid'
+        df = sjoin(pointdf2, self.polydf, how=how)
+        assert pointdf2.index.name == 'pointid'
+        assert self.polydf.index.name == None
 
     def test_sjoin_values(self):
         # GH190
