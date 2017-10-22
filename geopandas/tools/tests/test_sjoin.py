@@ -133,3 +133,22 @@ def test_small(l, r):
                              index=list(string.ascii_lowercase[:len(points)])).iloc[:r]
 
     result = sjoin(left, right)
+
+
+@pytest.mark.parametrize('how', ['left', 'right', 'inner'])
+def test_sjoin_named_index(how):
+
+    left = gpd.GeoDataFrame({'geometry': triangles,
+                             'x': np.random.random(len(triangles)),
+                             'y': np.random.random(len(triangles))})
+
+    right = gpd.GeoDataFrame({'geometry': points,
+                              'x': np.random.random(len(points)),
+                              'z': np.random.random(len(points))})
+
+    # original index names should be unchanged
+    right2 = right.copy()
+    right2.index.name = 'pointid'
+    df = sjoin(right2, left, how=how)
+    assert right2.index.name == 'pointid'
+    assert right.index.name == None
