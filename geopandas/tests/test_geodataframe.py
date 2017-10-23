@@ -825,16 +825,16 @@ def test_concat_axis1():
     with pytest.raises(ValueError):
         gpd.concat([a_gdf, b_gdf], axis=1)
 
-    res = pd.concat([a_gdf, c_df], axis=1)
+    res = gpd.concat([a_gdf, c_df], axis=1)
     assert list(res.columns) == ['x1', 'geo1', 'x3']
     assert isinstance(res._geometry_array, GeometryArray)
 
-    res = pd.concat([a_gdf.geometry, c_df], axis=1)
+    res = gpd.concat([a_gdf.geometry, c_df], axis=1)
     assert list(res.columns) == ['geo1', 'x3']
     # assert isinstance(res._geometry_array, GeometryArray)
 
     c_df.index = [2, 3]
-    res = pd.concat([a_gdf, c_df], axis=1)
+    res = gpd.concat([a_gdf, c_df], axis=1)
     assert list(res.index) == [0, 1, 2, 3]
     # FIXME not yet valid geodataframe (densified) + assert_geoseries_equals fails
     # assert_geoseries_equal(res.geometry, GeoSeries(a_geoms + [None]))
