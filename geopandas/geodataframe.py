@@ -591,10 +591,35 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __setitem__(self, key, value):
         """If what is set is a GeoSeries, make sure the GeometryBlock
         is preserved"""
-        if isinstance(key, string_types) and isinstance(value, GeoSeries):
-            # TODO not densify
-            value = value.values
-        super(GeoDataFrame, self).__setitem__(key, value)
+        if (isinstance(key, string_types)
+                and (isinstance(value, GeoSeries)
+                     or isinstance(value, vectorized.GeometryArray))):
+            if isinstance(value, GeoSeries):
+                value = value.reindex(self.index)
+                value = value._geometry_array
+            else:
+                if not len(value) == len(self):
+                    raise ValueError("Length of values does not match length "
+                                     "of index")
+
+            if key not in self.columns:
+                self[key] = 1
+
+            key_loc = self.columns.get_loc(key)
+            block_loc = self._data._blknos[key_loc]
+
+            columns, index = self._data.axes
+            blocks = self._data.blocks
+            blocks = list(blocks)
+
+            orig_geom_block = blocks[block_loc]
+            new_geom_block = GeometryBlock(value, orig_geom_block.mgr_locs.as_slice)
+            blocks[block_loc] = new_geom_block
+
+            block_manager = BlockManager(blocks, [columns, index])
+            self._data = block_manager
+        else:
+            super(GeoDataFrame, self).__setitem__(key, value)
 
     #
     # Implement pandas methods
