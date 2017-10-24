@@ -120,8 +120,9 @@ class GeoSeries(GeoPandasBase, Series):
         # by calling the Series init
         pass
 
-    def append(self, *args, **kwargs):
-        return self._wrapped_pandas_method('append', *args, **kwargs)
+    def append(self, *args):
+        from .geodataframe import concat
+        return concat((self,) + args)
 
     @property
     def geometry(self):
@@ -296,9 +297,8 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSereies.notna : inverse of isna
 
         """
-        non_geo_null = super(GeoSeries, self).isnull()
-        val = self.apply(_is_empty)
-        return np.logical_or(non_geo_null, val)
+        return pd.Series(self._geometry_array.data == 0, index=self.index,
+                         name=self.name)
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -325,21 +325,23 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False,
-               **kwargs):
-        """Fill NA/NaN values with a geometry (empty polygon by default).
-
-        "method" is currently not implemented for pandas <= 0.12.
-        """
+    def fillna(self, value=None, method=None, inplace=False, **kwargs):
+        """ Fill NA/NaN values with a geometry (empty polygon by default) """
+        assert method is None and not inplace
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(value=value, method=method,
-                                             inplace=inplace, **kwargs)
+        return GeoSeries(self._geometry_array.fillna(value), index=self.index,
+                         crs=self.crs)
+
+    def dropna(self, method=None, inplace=False, **kwargs):
+        """ Fill NA/NaN values with a geometry (empty polygon by default) """
+        assert method is None and not inplace
+        return GeoSeries(self._geometry_array[~self.isna()],
+                         index=self.index[~self.isna()],
+                         crs=self.crs)
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=None, **kwargs):
-        if fill_value is None:
-            fill_value = BaseGeometry()
         left, right = super(GeoSeries, self).align(other, join=join,
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,

@@ -303,8 +303,6 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_to_file(self):
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
