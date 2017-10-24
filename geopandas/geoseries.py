@@ -298,9 +298,8 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSereies.notna : inverse of isna
 
         """
-        non_geo_null = super(GeoSeries, self).isnull()
-        val = self.apply(_is_empty)
-        return np.logical_or(non_geo_null, val)
+        return pd.Series(self._geometry_array.data == 0, index=self.index,
+                         name=self.name)
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -333,14 +332,13 @@ class GeoSeries(GeoPandasBase, Series):
         if value is None:
             value = BaseGeometry()
         return GeoSeries(self._geometry_array.fillna(value), index=self.index,
-                crs=self.crs)
+                         crs=self.crs)
 
     def dropna(self, method=None, inplace=False, **kwargs):
         """ Fill NA/NaN values with a geometry (empty polygon by default) """
         assert method is None and not inplace
-        geoms = self._geometry_array
-        return GeoSeries(geoms[geoms.data != 0],
-                         index=self.index[geoms.data != 0],
+        return GeoSeries(self._geometry_array[~self.isna()],
+                         index=self.index[~self.isna()],
                          crs=self.crs)
 
     def align(self, other, join='outer', level=None, copy=True,

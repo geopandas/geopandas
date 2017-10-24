@@ -251,3 +251,14 @@ def test_construct_from_series():
     assert [a.equals(b) for a, b in zip(s, g)]
     assert s.name == g.name
     assert s.index is g.index
+
+
+def test_missing_values():
+    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+
+    assert s.isna().tolist() == [False, True, True, False, False]
+    assert s.is_empty.tolist() == [False, False, False, True, True]
+    assert not s.fillna().isna().any()
+    assert len(s.fillna()) == 5
+    assert not s.dropna().isna().any()
+    assert len(s.dropna()) == 3
