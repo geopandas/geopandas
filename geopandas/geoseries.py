@@ -332,14 +332,17 @@ class GeoSeries(GeoPandasBase, Series):
         if value is None:
             value = BaseGeometry()
         return GeoSeries(self._geometry_array.fillna(value), index=self.index,
-                         crs=self.crs)
+                         crs=self.crs, name=self.name)
 
     def dropna(self, method=None, inplace=False, **kwargs):
-        """ Fill NA/NaN values with a geometry (empty polygon by default) """
+        """ Drop NA/NaN values
+
+        Note: the inplace keyword is not currently supported.
+        """
         assert method is None and not inplace
         return GeoSeries(self._geometry_array[~self.isna()],
                          index=self.index[~self.isna()],
-                         crs=self.crs)
+                         crs=self.crs, name=self.name)
 
     def align(self, other, join='outer', level=None, copy=True,
               fill_value=None, **kwargs):

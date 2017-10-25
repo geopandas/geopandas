@@ -1221,8 +1221,11 @@ class GeometryArray(object):
         if isinstance(value, BaseGeometry):
             base.append(value)
             value = value.__geom__
-        if value is None:
+        elif value is None:
             value = 0
+        else:
+            raise TypeError("Value should be either a BaseGeometry or None, "
+                            "got %s" % str(value))
         new = GeometryArray(self.data.copy(), base=base)
         new.data[idx] = value
         return new

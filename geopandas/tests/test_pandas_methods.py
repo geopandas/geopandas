@@ -184,7 +184,7 @@ def test_dropna():
     assert_geoseries_equal(res, exp)
 
 
-@pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
+@pytest.mark.parametrize("NA", [None, np.nan])
 def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)])
     exp = pd.Series([False, True, False])

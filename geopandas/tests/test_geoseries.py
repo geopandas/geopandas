@@ -102,9 +102,9 @@ class TestSeries:
 
     def test_align(self):
         a1, a2 = self.a1.align(self.a2)
-        assert not a2['A']
+        assert a2['A'] is None
         assert a1['B'].equals(a2['B'])
-        assert not a1['C']
+        assert a1['C'] is None
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter

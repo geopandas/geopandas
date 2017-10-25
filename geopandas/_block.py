@@ -13,8 +13,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
     """ Pandas Geometry block with pointers to C GEOS objects """
     __slots__ = ()
 
-    _concatenator = concat
-
     @property
     def _holder(self):
         return GeometryArray
