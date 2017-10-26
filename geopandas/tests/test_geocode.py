@@ -1,17 +1,17 @@
 from __future__ import absolute_import
 
-from fiona.crs import from_epsg
+import numpy as np
 import pandas as pd
-import pandas.util.testing as tm
+from fiona.crs import from_epsg
 from shapely.geometry import Point
-import geopandas as gpd
-import pytest
 
-from geopandas import GeoSeries
+from geopandas import GeoSeries, GeoDataFrame
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
-from geopandas.tests.util import unittest, mock, assert_geoseries_equal
+import pytest
+from pandas.util.testing import assert_series_equal
+from geopandas.tests.util import mock, assert_geoseries_equal
 
 
 def _skip_if_no_geopy():
@@ -58,8 +58,8 @@ class ReverseMock(mock.MagicMock):
         return super(ReverseMock, self).__call__(*args, **kwargs)
 
 
-class TestGeocode(unittest.TestCase):
-    def setUp(self):
+class TestGeocode:
+    def setup_method(self):
         _skip_if_no_geopy()
         self.locations = ['260 Broadway, New York, NY',
                           '77 Massachusetts Ave, Cambridge, MA']
@@ -69,75 +69,83 @@ class TestGeocode(unittest.TestCase):
     def test_prepare_result(self):
         # Calls _prepare_result with sample results from the geocoder call
         # loop
-        p0 = Point(12.3, -45.6) # Treat these as lat/lon
+        p0 = Point(12.3, -45.6)  # Treat these as lat/lon
         p1 = Point(-23.4, 56.7)
         d = {'a': ('address0', p0.coords[0]),
              'b': ('address1', p1.coords[0])}
 
         df = _prepare_geocode_result(d)
-        assert type(df) is gpd.GeoDataFrame
-        self.assertEqual(from_epsg(4326), df.crs)
-        self.assertEqual(len(df), 2)
-        self.assert_('address' in df)
+        assert type(df) is GeoDataFrame
+        assert from_epsg(4326) == df.crs
+        assert len(df) == 2
+        assert 'address' in df
 
         coords = df.loc['a']['geometry'].coords[0]
         test = p0.coords[0]
         # Output from the df should be lon/lat
-        self.assertAlmostEqual(coords[0], test[1])
-        self.assertAlmostEqual(coords[1], test[0])
+        assert coords[0] == pytest.approx(test[1])
+        assert coords[1] == pytest.approx(test[0])
 
         coords = df.loc['b']['geometry'].coords[0]
         test = p1.coords[0]
-        self.assertAlmostEqual(coords[0], test[1])
-        self.assertAlmostEqual(coords[1], test[0])
+        assert coords[0] == pytest.approx(test[1])
+        assert coords[1] == pytest.approx(test[0])
 
     def test_prepare_result_none(self):
-        p0 = Point(12.3, -45.6) # Treat these as lat/lon
+        p0 = Point(12.3, -45.6)  # Treat these as lat/lon
         d = {'a': ('address0', p0.coords[0]),
              'b': (None, None)}
 
         df = _prepare_geocode_result(d)
-        assert type(df) is gpd.GeoDataFrame
-        self.assertEqual(from_epsg(4326), df.crs)
-        self.assertEqual(len(df), 2)
-        self.assert_('address' in df)
+        assert type(df) is GeoDataFrame
+        assert from_epsg(4326) == df.crs
+        assert len(df) == 2
+        assert 'address' in df
 
         row = df.loc['b']
-        self.assertEqual(len(row['geometry'].coords), 0)
-        self.assert_(pd.np.isnan(row['address']))
-    
+        assert len(row['geometry'].coords) == 0
+        assert np.isnan(row['address'])
+
     def test_bad_provider_forward(self):
-        with self.assertRaises(ValueError):
+        from geopy.exc import GeocoderNotFound
+        with pytest.raises(GeocoderNotFound):
             geocode(['cambridge, ma'], 'badprovider')
 
     def test_bad_provider_reverse(self):
-        with self.assertRaises(ValueError):
+        from geopy.exc import GeocoderNotFound
+        with pytest.raises(GeocoderNotFound):
             reverse_geocode(['cambridge, ma'], 'badprovider')
 
     def test_forward(self):
-        with mock.patch('geopy.geocoders.googlev3.GoogleV3.geocode',
-                        ForwardMock()) as m:
-            g = geocode(self.locations, provider='googlev3', timeout=2)
-            self.assertEqual(len(self.locations), m.call_count)
+        from geopy.geocoders import GoogleV3
+        for provider in ['googlev3', GoogleV3]:
+            with mock.patch('geopy.geocoders.googlev3.GoogleV3.geocode',
+                            ForwardMock()) as m:
+                g = geocode(self.locations, provider=provider, timeout=2)
+                assert len(self.locations) == m.call_count
 
-        n = len(self.locations)
-        self.assertIsInstance(g, gpd.GeoDataFrame)
-        expected = GeoSeries([Point(float(x) + 0.5, float(x)) for x in range(n)],
-                             crs=from_epsg(4326))
-        assert_geoseries_equal(expected, g['geometry'])
-        tm.assert_series_equal(g['address'],
-                               pd.Series(self.locations, name='address'))
+            n = len(self.locations)
+            assert isinstance(g, GeoDataFrame)
+            expected = GeoSeries(
+                [Point(float(x) + 0.5, float(x)) for x in range(n)],
+                crs=from_epsg(4326))
+            assert_geoseries_equal(expected, g['geometry'])
+            assert_series_equal(g['address'],
+                                pd.Series(self.locations, name='address'))
 
     def test_reverse(self):
-        with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
-                        ReverseMock()) as m:
-            g = reverse_geocode(self.points, provider='googlev3', timeout=2)
-            self.assertEqual(len(self.points), m.call_count)
+        from geopy.geocoders import GoogleV3
+        for provider in ['googlev3', GoogleV3]:
+            with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
+                            ReverseMock()) as m:
+                g = reverse_geocode(self.points, provider=provider, timeout=2)
+                assert len(self.points) == m.call_count
 
-        self.assertIsInstance(g, gpd.GeoDataFrame)
+            assert isinstance(g, GeoDataFrame)
 
-        expected = GeoSeries(self.points, crs=from_epsg(4326))
-        assert_geoseries_equal(expected, g['geometry'])
-        address = pd.Series(['address' + str(x) for x in range(len(self.points))],
-                            name='address')
-        tm.assert_series_equal(g['address'], address)
+            expected = GeoSeries(self.points, crs=from_epsg(4326))
+            assert_geoseries_equal(expected, g['geometry'])
+            address = pd.Series(
+                ['address' + str(x) for x in range(len(self.points))],
+                name='address')
+            assert_series_equal(g['address'], address)

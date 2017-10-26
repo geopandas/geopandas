@@ -26,7 +26,12 @@ import sys, os
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['IPython.sphinxext.ipython_console_highlighting',
-              'IPython.sphinxext.ipython_directive']
+              'IPython.sphinxext.ipython_directive',
+              'sphinx.ext.autodoc',
+              'numpydoc']
+
+# Fix issue with warnings from numpydoc (see discussion in PR #534)
+numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 
@@ -43,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013-2016, GeoPandas developers'
+copyright = u'2013–2017, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
