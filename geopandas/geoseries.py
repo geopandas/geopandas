@@ -326,24 +326,18 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False, **kwargs):
+    def fillna(self, value=None):
         """ Fill NA/NaN values with a geometry (empty polygon by default) """
-        assert method is None and not inplace
         if value is None:
             value = BaseGeometry()
         return GeoSeries(self._geometry_array.fillna(value), index=self.index,
                          crs=self.crs, name=self.name)
 
-    def dropna(self, axis=0, inplace=False, **kwargs):
+    def dropna(self):
         """ Drop NA/NaN values
 
         Note: the inplace keyword is not currently supported.
         """
-        if inplace:
-            raise NotImplementedError("Inplace operation is not supported")
-        if axis != 0:
-            raise NotImplementedError(
-                    "Any value for axis other than 0 is not supported")
         return GeoSeries(self._geometry_array[~self.isna()],
                          index=self.index[~self.isna()],
                          crs=self.crs, name=self.name)
