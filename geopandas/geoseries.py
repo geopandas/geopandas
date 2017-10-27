@@ -334,12 +334,16 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoSeries(self._geometry_array.fillna(value), index=self.index,
                          crs=self.crs, name=self.name)
 
-    def dropna(self, method=None, inplace=False, **kwargs):
+    def dropna(self, axis=0, inplace=False, **kwargs):
         """ Drop NA/NaN values
 
         Note: the inplace keyword is not currently supported.
         """
-        assert method is None and not inplace
+        if inplace:
+            raise NotImplementedError("Inplace operation is not supported")
+        if axis != 0:
+            raise NotImplementedError(
+                    "Any value for axis other than 0 is not supported")
         return GeoSeries(self._geometry_array[~self.isna()],
                          index=self.index[~self.isna()],
                          crs=self.crs, name=self.name)
