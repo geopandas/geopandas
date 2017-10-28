@@ -102,9 +102,9 @@ class TestSeries:
 
     def test_align(self):
         a1, a2 = self.a1.align(self.a2)
-        assert a2['A'].is_empty
+        assert a2['A'] is None
         assert a1['B'].equals(a2['B'])
-        assert a1['C'].is_empty
+        assert a1['C'] is None
 
     def test_align_crs(self):
         a1 = self.a1
@@ -168,7 +168,6 @@ class TestSeries:
     def test_fillna(self):
         # default is to fill with empty geometry
         na = self.na_none.fillna()
-        assert isinstance(na[2], BaseGeometry)
         assert na[2].is_empty
         assert geom_equals(self.na_none[:2], na[:2])
         # XXX: method works inconsistently for different pandas versions
@@ -262,3 +261,14 @@ def test_construct_from_series():
     assert [a.equals(b) for a, b in zip(s, g)]
     assert s.name == g.name
     assert s.index is g.index
+
+
+def test_missing_values():
+    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+
+    assert s.isna().tolist() == [False, True, True, False, False]
+    assert s.is_empty.tolist() == [False, False, False, True, True]
+    assert not s.fillna().isna().any()
+    assert len(s.fillna()) == 5
+    assert not s.dropna().isna().any()
+    assert len(s.dropna()) == 3

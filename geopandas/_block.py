@@ -10,8 +10,7 @@ from .vectorized import GeometryArray, to_shapely, concat
 
 
 class GeometryBlock(NonConsolidatableMixIn, Block):
-    """ implement a geometry block with uint pointers to C objects
-    as underlying data"""
+    """ Pandas Geometry block with pointers to C GEOS objects """
     __slots__ = ()
 
     @property

@@ -77,8 +77,8 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
 
     handle = get_geos_context_handle()
 
-    if not geom:
-        geom = GEOSGeom_createEmptyPolygon_r(handle)
+    if geom is NULL:
+        return None
     else:
         geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
 
@@ -98,11 +98,11 @@ cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         geom = <GEOSGeometry *> geoms[i]
 
         if not geom:
-            geom = GEOSGeom_createEmptyPolygon_r(handle)
+            out[i] = None
         else:
             geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
+            out[i] = geom_factory(<np.uintp_t> geom)
 
-        out[i] = geom_factory(<np.uintp_t> geom)
 
     return out
 
@@ -1210,6 +1210,29 @@ class GeometryArray(object):
         result.data[idx == -1] = 0
         return result
 
+    def fill(self, idx, value):
+        """ Fill index locations with value
+
+        Value should be a BaseGeometry
+
+        Returns a copy
+        """
+        base = [self]
+        if isinstance(value, BaseGeometry):
+            base.append(value)
+            value = value.__geom__
+        elif value is None:
+            value = 0
+        else:
+            raise TypeError("Value should be either a BaseGeometry or None, "
+                            "got %s" % str(value))
+        new = GeometryArray(self.data.copy(), base=base)
+        new.data[idx] = value
+        return new
+
+    def fillna(self, value=None):
+        return self.fill(self.data == 0, value)
+
     def __len__(self):
         return len(self.data)
 
@@ -1566,7 +1589,9 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
     return left_out, right_out
 
 
-def concat(L):
+def concat(L, axis=0):
+    if axis != 0:
+        raise NotImplementedError("Can only concatenate geometries along axis=0")
     L = list(L)
     x = np.concatenate([ga.data for ga in L])
     return GeometryArray(x, base=set(L))
