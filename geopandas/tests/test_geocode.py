@@ -101,7 +101,7 @@ def test_prepare_result_none():
     assert "address" in df
 
     row = df.loc["b"]
-    assert len(row["geometry"].coords) == 0
+    assert not row["geometry"]
     assert np.isnan(row["address"])
 
 

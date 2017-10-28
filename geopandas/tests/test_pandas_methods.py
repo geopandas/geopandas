@@ -233,10 +233,11 @@ def test_select_dtypes(df):
 # Missing values
 
 
-def test_fillna(s):
+def test_fillna():
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
-    assert_geoseries_equal(res, s)
+    expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2)])
+    assert_geoseries_equal(res, expected)
 
 
 def test_dropna():

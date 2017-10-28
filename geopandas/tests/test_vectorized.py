@@ -424,3 +424,14 @@ def test_unary_union():
 def test_coords():
     L = T.exterior.coords
     assert L == [tuple(t.exterior.coords) for t in triangles]
+
+
+def test_fill():
+    p = shapely.geometry.Point(1, 2)
+    P2 = P._fill([0, 3], p)
+    assert P2[0].equals(p)
+    assert P2[3].equals(p)
+    with pytest.raises(TypeError) as info:
+        P._fill([1, 2], 123)
+
+    assert "123" in str(info.value)

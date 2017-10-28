@@ -345,15 +345,24 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False, **kwargs):
-        """Fill NA values with a geometry (empty polygon by default).
-
-        "method" is currently not implemented for pandas <= 0.12.
-        """
+    def fillna(self, value=None):
+        """Fill NA/NaN values with a geometry (empty polygon by default)"""
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(
-            value=value, method=method, inplace=inplace, **kwargs
+        return GeoSeries(
+            self.array.fillna(value), index=self.index, crs=self.crs, name=self.name
+        )
+
+    def dropna(self):
+        """ Drop NA/NaN values
+
+        Note: the inplace keyword is not currently supported.
+        """
+        return GeoSeries(
+            self.array[~self.isna()],
+            index=self.index[~self.isna()],
+            crs=self.crs,
+            name=self.name,
         )
 
     def __contains__(self, other):

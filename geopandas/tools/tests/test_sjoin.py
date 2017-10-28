@@ -65,7 +65,13 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
     right_touched = set()
     for left_index, left_row in left.iterrows():
         for right_index, right_row in right.iterrows():
-            if getattr(left_row["geometry"], op)(right_row["geometry"]):
+            left_geom = left_row["geometry"]
+            right_geom = right_row["geometry"]
+            if (
+                left_geom
+                and right_geom
+                and getattr(left_row["geometry"], op)(right_row["geometry"])
+            ):
                 left_out.append(left_index)
                 right_out.append(right_index)
 
@@ -81,7 +87,7 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
         L = list(result.geometry)
         for t in triangles2:
             if t:
-                assert any(t.equals(t2) for t2 in L)
+                assert any(t2 and t.equals(t2) for t2 in L)
 
     if how == "right":
         assert len(result) >= len(right_out)
@@ -89,7 +95,7 @@ def test_sjoin(op, lsuffix, rsuffix, how, missing):
         L = list(result.geometry)
         for p in points2:
             if p:
-                assert any(p.equals(p2) for p2 in L)
+                assert any(p2 and p.equals(p2) for p2 in L)
 
 
 def test_crs_mismatch():

@@ -818,14 +818,23 @@ class GeometryArray(ExtensionArray):
         """ Fill index locations with value
 
         Value should be a BaseGeometry
+
+        Returns a copy
         """
-        if not (isinstance(value, BaseGeometry) or value is None):
+        base = [self]
+        if isinstance(value, BaseGeometry):
+            base.append(value)
+            value = value.__geom__
+        elif value is None:
+            value = 0
+        else:
             raise TypeError(
-                "Value should be either a BaseGeometry or None, got %s" % str(value)
+                "Value should be either a BaseGeometry or None, " "got %s" % str(value)
             )
-        # self.data[idx] = value
-        self.data[idx] = np.array([value], dtype=object)
-        return self
+
+        new = GeometryArray(self.data.copy(), base=base)
+        new.data[idx] = value
+        return new
 
     def fillna(self, value=None, method=None, limit=None):
         """ Fill NA/NaN values using the specified method.
@@ -897,7 +906,7 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        return np.array([g is None for g in self], dtype="bool")
+        return self.data == 0
 
     def unique(self):
         """Compute the ExtensionArray of unique values.

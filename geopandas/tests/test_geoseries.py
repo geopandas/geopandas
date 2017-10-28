@@ -162,7 +162,6 @@ class TestSeries:
     def test_fillna(self):
         # default is to fill with empty geometry
         na = self.na_none.fillna()
-        assert isinstance(na[2], BaseGeometry)
         assert na[2].is_empty
         assert geom_equals(self.na_none[:2], na[:2])
         # XXX: method works inconsistently for different pandas versions
