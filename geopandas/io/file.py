@@ -104,7 +104,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     with fiona.drivers():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:
-            colxn.writerecords((i for i in df.iterfeatures()))
+            colxn.writerecords(df.iterfeatures())
 
 
 def infer_schema(df):
