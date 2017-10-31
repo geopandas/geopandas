@@ -732,7 +732,7 @@ def concat(objs, axis=0, ignore_index=False):
     -  CRS values should be the same
     -  Geometry names should be the same
 
-    **Expectatins for axis=1**
+    **Expectations for axis=1**
     - Only one of the objects is a GeoDataFrame or GeoSeries
 
     """
@@ -781,7 +781,7 @@ def _concat_axis1(objs, **kwargs):
     if not sum(is_geo) == 1:
         raise ValueError("'concat' with axis=1 currently only supports "
                          "concatenating objects of which only one is a "
-                         "GeoDataFrame or Series")
+                         "GeoDataFrame or GeoSeries")
 
     geo_obj = objs[is_geo.index(True)]
     if isinstance(geo_obj, GeoSeries):
