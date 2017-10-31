@@ -101,8 +101,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 gs['geometry'] = geometry
                 geometry = 'geometry'
+            if geometry in arg.columns:
+                arg.drop(geometry, axis=1, inplace=True)
 
-        if geometry in arg.columns:
+        elif geometry in arg.columns:
             arg = arg.copy()
             geom = arg.pop(geometry)
             geom = coerce_to_geoseries(geom, name=geometry)

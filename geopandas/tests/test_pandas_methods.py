@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import shapely
 from shapely.geometry import Point, Polygon
+from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal
@@ -189,25 +190,21 @@ def test_select_dtypes(df):
 # Missing values
 
 
-@pytest.mark.xfail
 def test_fillna():
-    # this currently does not work (it seems to fill in the second coordinate
-    # of the point
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
-    assert_geoseries_equal(res, s)
+    expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2)])
+    assert_geoseries_equal(res, expected)
 
 
-@pytest.mark.xfail
 def test_dropna():
-    # this currently does not work (doesn't drop)
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.dropna()
     exp = s2.loc[[0, 2]]
     assert_geoseries_equal(res, exp)
 
 
-@pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
+@pytest.mark.parametrize("NA", [None, np.nan])
 def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)])
     exp = pd.Series([False, True, False])

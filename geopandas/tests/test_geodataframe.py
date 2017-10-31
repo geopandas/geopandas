@@ -335,8 +335,6 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_to_file(self):
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
@@ -776,6 +774,14 @@ class TestConstructor:
 
         assert gdf._geometry_column_name == 'my_geom'
         assert gdf.geometry.name == 'my_geom'
+
+    def test_overwrite_geometry(self):
+        # GH602
+        data = pd.DataFrame({'geometry': [1, 2, 3], 'col1': [4, 5, 6]})
+        geoms = pd.Series([Point(i, i) for i in range(3)])
+        # passed geometry kwarg should overwrite geometry column in data
+        res = GeoDataFrame(data, geometry=geoms)
+        assert_geoseries_equal(res.geometry, GeoSeries(geoms))
 
 
 def test_set_geometry_null():
