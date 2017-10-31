@@ -112,15 +112,10 @@ class TestDataFrame:
         # non-aligned values
         s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
 
-        # setting geometry column
-        for vals in [s2, s._values]:
-            df['geometry'] = vals
-
-            assert_geoseries_equal(df['geometry'], s)
-            assert_geoseries_equal(df.geometry, s)
-            assert isinstance(df._geometry_array, GeometryArray)
-
-
+        df['geometry'] = s2
+        assert_geoseries_equal(df['geometry'], s)
+        assert_geoseries_equal(df.geometry, s)
+        assert isinstance(df._geometry_array, GeometryArray)
 
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
