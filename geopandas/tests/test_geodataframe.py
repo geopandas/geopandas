@@ -117,6 +117,14 @@ class TestDataFrame:
         assert_geoseries_equal(df.geometry, s)
         assert isinstance(df._geometry_array, GeometryArray)
 
+        # overwriting existing non-geometry column
+        data = {"A": range(5), "B": np.arange(5.), "other_geom": range(5),
+                "geometry": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data)
+        for vals in [s, s._values]:
+            df['other_geom'] = vals
+            assert isinstance(df['other_geom']._values, GeometryArray)
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                check_dtype=True, check_index_type=True)

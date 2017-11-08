@@ -604,10 +604,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     raise ValueError("Length of values does not match length "
                                      "of index")
 
-            # if column does not exist, add dummy column to create the
-            # correct final BlockManager structure
-            if key not in self.columns:
-                self[key] = 1
+            # if column does not exist, add dummy non-consolidatable
+            # (therefore categorical) column to create the correct final
+            # BlockManager structure
+            # do the same if column exists but is not yet a geometry
+            if (key not in self.columns
+                    or (key in self.columns
+                        and not isinstance(self[key]._data._block,
+                                           GeometryBlock))):
+                self[key] = pd.Categorical.from_codes([-1]*len(self), [])
 
             # determine location of the target GeometryBlock
             key_loc = self.columns.get_loc(key)
@@ -625,6 +630,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
             block_manager = BlockManager(blocks, [columns, index])
             self._data = block_manager
+            self._clear_item_cache(key)
         else:
             super(GeoDataFrame, self).__setitem__(key, value)
 
