@@ -138,12 +138,9 @@ cdef extern from "geos_c.h":
 
     int GEOSGetNumCoordinates_r(GEOSContextHandle_t, const GEOSGeometry*) nogil
 
+    GEOSContextHandle_t GEOS_init_r()
+    void GEOS_finish_r(GEOSContextHandle_t)
 
-cdef GEOSContextHandle_t get_geos_context_handle():
-    # Note: This requires that lgeos is defined, so needs to be imported as:
-    from shapely.geos import lgeos
-    cdef uintptr_t handle = lgeos.geos_handle
-    return <GEOSContextHandle_t>handle
 
 
 cdef GEOSPreparedGeometry *geos_from_prepared(shapely_geom) except *:

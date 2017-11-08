@@ -91,6 +91,32 @@ class TestDataFrame:
         # good if this changed in the future
         assert not isinstance(df['location'], GeoSeries)
 
+    def test_geo_setitem(self):
+        data = {"A": range(5), "B": np.arange(5.),
+                "geometry": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data)
+        s = GeoSeries([Point(x, y + 1) for x, y in zip(range(5), range(5))])
+
+        # setting geometry column
+        for vals in [s, s._values]:
+            df['geometry'] = vals
+            assert_geoseries_equal(df['geometry'], s)
+            assert_geoseries_equal(df.geometry, s)
+            assert isinstance(df._geometry_array, GeometryArray)
+
+        # setting other column with geometry values -> don't densify
+        for vals in [s, s._values]:
+            df['other_geom'] = vals
+            assert isinstance(df['other_geom']._values, GeometryArray)
+
+        # non-aligned values
+        s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
+
+        df['geometry'] = s2
+        assert_geoseries_equal(df['geometry'], s)
+        assert_geoseries_equal(df.geometry, s)
+        assert isinstance(df._geometry_array, GeometryArray)
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                check_dtype=True, check_index_type=True)
@@ -304,8 +330,6 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    @pytest.mark.cython
-    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
     def test_to_file(self):
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
         self.df.to_file(tempfilename)
@@ -745,6 +769,14 @@ class TestConstructor:
 
         assert gdf._geometry_column_name == 'my_geom'
         assert gdf.geometry.name == 'my_geom'
+
+    def test_overwrite_geometry(self):
+        # GH602
+        data = pd.DataFrame({'geometry': [1, 2, 3], 'col1': [4, 5, 6]})
+        geoms = pd.Series([Point(i, i) for i in range(3)])
+        # passed geometry kwarg should overwrite geometry column in data
+        res = GeoDataFrame(data, geometry=geoms)
+        assert_geoseries_equal(res.geometry, GeoSeries(geoms))
 
 
 def test_set_geometry_null():

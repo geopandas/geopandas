@@ -72,15 +72,13 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
     This allocates a new GEOSGeometry object
     """
     cdef GEOSGeometry *geom
-    cdef GEOSContextHandle_t handle
-    geom = <GEOSGeometry *> geoms[idx]
+    with get_geos_handle() as handle:
+        geom = <GEOSGeometry *> geoms[idx]
 
-    handle = get_geos_context_handle()
-
-    if not geom:
-        geom = GEOSGeom_createEmptyPolygon_r(handle)
-    else:
-        geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
+        if geom is NULL:
+            return None
+        else:
+            geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
 
     return geom_factory(<np.uintp_t> geom)
 
@@ -88,21 +86,21 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
 cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """ Convert array of pointers to an array of shapely objects """
     cdef GEOSGeometry *geom
-    cdef GEOSContextHandle_t handle
     cdef unsigned int n = geoms.size
     cdef np.ndarray[object, ndim=1] out = np.empty(n, dtype=object)
+    with get_geos_handle() as handle:
+        for i in range(n):
+            geom = <GEOSGeometry *> geoms[i]
 
-    handle = get_geos_context_handle()
+    with get_geos_handle() as handle:
+        for i in range(n):
+            geom = <GEOSGeometry *> geoms[i]
 
-    for i in range(n):
-        geom = <GEOSGeometry *> geoms[i]
-
-        if not geom:
-            geom = GEOSGeom_createEmptyPolygon_r(handle)
-        else:
-            geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
-
-        out[i] = geom_factory(<np.uintp_t> geom)
+            if not geom:
+                out[i] = None
+            else:
+                geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
+                out[i] = geom_factory(<np.uintp_t> geom)
 
     return out
 
@@ -110,30 +108,28 @@ cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 cpdef from_shapely(object L):
     """ Convert a list or array of shapely objects to a GeometryArray """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
     cdef unsigned int n
 
     n = len(L)
-
     cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
 
-    handle = get_geos_context_handle()
+    with get_geos_handle() as handle:
 
-    for idx in xrange(n):
-        g = L[idx]
-        if g is not None and not (isinstance(g, float) and np.isnan(g)):
-            try:
-                geos_geom = <np.uintp_t> g.__geom__
-            except AttributeError:
-                msg = ("Inputs to from_shapely must be shapely geometries. "
-                       "Got %s" % str(g))
-                raise TypeError(msg)
-            geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
-            out[idx] = <np.uintp_t> geom
-        else:
-            out[idx] = 0
+        for idx in xrange(n):
+            g = L[idx]
+            if g is not None and not (isinstance(g, float) and np.isnan(g)):
+                try:
+                    geos_geom = <np.uintp_t> g.__geom__
+                except AttributeError:
+                    msg = ("Inputs to from_shapely must be shapely geometries. "
+                           "Got %s" % str(g))
+                    raise TypeError(msg)
+                geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
+                out[idx] = <np.uintp_t> geom
+            else:
+                out[idx] = 0
 
     return GeometryArray(out)
 
@@ -144,24 +140,21 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
                      np.ndarray[double, ndim=1, cast=True] y):
     """ Convert numpy arrays of x and y values to a GeometryArray of points """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSCoordSequence *sequence
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
     cdef unsigned int n = x.size
-
     cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+    with get_geos_handle() as handle:
 
-    handle = get_geos_context_handle()
-
-    with nogil:
-        for idx in xrange(n):
-            sequence = GEOSCoordSeq_create_r(handle, 1, 2)
-            GEOSCoordSeq_setX_r(handle, sequence, 0, x[idx])
-            GEOSCoordSeq_setY_r(handle, sequence, 0, y[idx])
-            geom = GEOSGeom_createPoint_r(handle, sequence)
-            geos_geom = <np.uintp_t> geom
-            out[idx] = <np.uintp_t> geom
+        with nogil:
+            for idx in xrange(n):
+                sequence = GEOSCoordSeq_create_r(handle, 1, 2)
+                GEOSCoordSeq_setX_r(handle, sequence, 0, x[idx])
+                GEOSCoordSeq_setY_r(handle, sequence, 0, y[idx])
+                geom = GEOSGeom_createPoint_r(handle, sequence)
+                geos_geom = <np.uintp_t> geom
+                out[idx] = <np.uintp_t> geom
 
     return GeometryArray(out)
 
@@ -189,33 +182,32 @@ cpdef prepared_binary_predicate(str op,
     out: boolean array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t other_pointer
     cdef GEOSGeometry *other_geom
     cdef GEOSPreparedGeometry *prepared_geom
     cdef GEOSPreparedPredicate predicate
     cdef unsigned int n = geoms.size
-
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
-    handle = get_geos_context_handle()
     other_pointer = <np.uintp_t> other.__geom__
     other_geom = <GEOSGeometry *> other_pointer
 
-    prepared_geom = GEOSPrepare_r(handle, other_geom)
+    with get_geos_handle() as handle:
+        prepared_geom = GEOSPrepare_r(handle, other_geom)
 
-    predicate = get_prepared_predicate(op)
+        predicate = get_prepared_predicate(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom != NULL:
-                out[idx] = predicate(handle, prepared_geom, geom)
-            else:
-                out[idx] = 0
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom != NULL:
+                    out[idx] = predicate(handle, prepared_geom, geom)
+                else:
+                    out[idx] = 0
 
-    GEOSPreparedGeom_destroy_r(handle, prepared_geom)
+        GEOSPreparedGeom_destroy_r(handle, prepared_geom)
+
     return out
 
 
@@ -297,28 +289,25 @@ cpdef vector_binary_predicate(str op,
     out: boolean array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef GEOSPredicate func
     cdef unsigned int n = left.size
-
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
-
-    handle = get_geos_context_handle()
 
     func = get_predicate(op)
     if not func:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            right_geom = <GEOSGeometry *> right[idx]
-            if left_geom != NULL and right_geom != NULL:
-                out[idx] = func(handle, left_geom, right_geom)
-            else:
-                out[idx] = False
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                right_geom = <GEOSGeometry *> right[idx]
+                if left_geom != NULL and right_geom != NULL:
+                    out[idx] = func(handle, left_geom, right_geom)
+                else:
+                    out[idx] = False
 
     return out
 
@@ -336,28 +325,25 @@ cpdef vector_binary_predicate_with_arg(
     This is currently only used for equals_exact
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef unsigned int n = left.size
-
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
-
-    handle = get_geos_context_handle()
 
     if op == 'equals_exact':
         func = GEOSEqualsExact_r
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            right_geom = <GEOSGeometry *> right[idx]
-            if left_geom != NULL and right_geom != NULL:
-                out[idx] = func(handle, left_geom, right_geom, arg)
-            else:
-                out[idx] = False
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                right_geom = <GEOSGeometry *> right[idx]
+                if left_geom != NULL and right_geom != NULL:
+                    out[idx] = func(handle, left_geom, right_geom, arg)
+                else:
+                    out[idx] = False
 
     return out
 
@@ -380,13 +366,9 @@ cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     out: boolean array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef unsigned int n = geoms.size
-
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
-
-    handle = get_geos_context_handle()
 
     if op == 'is_empty':
         func = GEOSisEmpty_r
@@ -403,13 +385,14 @@ cpdef unary_predicate(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom is not NULL:
-                out[idx] = func(handle, geom)
-            else:
-                out[idx] = False
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom is not NULL:
+                    out[idx] = func(handle, geom)
+                else:
+                    out[idx] = False
 
     return out
 
@@ -434,28 +417,26 @@ cpdef binary_predicate(str op,
     out: boolean array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef GEOSGeometry *other_geom
     cdef uintptr_t other_pointer
     cdef unsigned int n = geoms.size
     cdef GEOSPredicate predicate
-
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
-    handle = get_geos_context_handle()
     other_pointer = <np.uintp_t> other.__geom__
     other_geom = <GEOSGeometry *> other_pointer
 
     predicate = get_predicate(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom is not NULL:
-                out[idx] = predicate(handle, geom, other_geom)
-            else:
-                out[idx] = False
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom is not NULL:
+                    out[idx] = predicate(handle, geom, other_geom)
+                else:
+                    out[idx] = False
 
     return out
 
@@ -471,15 +452,12 @@ cpdef binary_predicate_with_arg(str op,
     This is currently only used for equals_exact
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef GEOSGeometry *other_geom
     cdef uintptr_t other_pointer
     cdef unsigned int n = geoms.size
-
     cdef np.ndarray[np.uint8_t, ndim=1, cast=True] out = np.empty(n, dtype=np.bool_)
 
-    handle = get_geos_context_handle()
     other_pointer = <np.uintp_t> other.__geom__
     other_geom = <GEOSGeometry *> other_pointer
 
@@ -488,13 +466,14 @@ cpdef binary_predicate_with_arg(str op,
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom is not NULL:
-                out[idx] = func(handle, geom, other_geom, arg)
-            else:
-                out[idx] = False
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom is not NULL:
+                    out[idx] = func(handle, geom, other_geom, arg)
+                else:
+                    out[idx] = False
 
     return out
 
@@ -517,16 +496,13 @@ cpdef unary_vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms
     out: float array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef unsigned int n = geoms.size
     cdef double nan = np.nan
     cdef double * location
-
     cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
-    location = <double *> out.data  # need to pass a pointer to function
 
-    handle = get_geos_context_handle()
+    location = <double *> out.data  # need to pass a pointer to function
 
     if op == 'area':
         func = GEOSArea_r
@@ -535,13 +511,14 @@ cpdef unary_vector_float(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom != NULL:
-                func(handle, geom, <double*> location + idx)
-            else:
-                out[idx] = nan
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom != NULL:
+                    func(handle, geom, <double*> location + idx)
+                else:
+                    out[idx] = nan
 
     return out
 
@@ -566,31 +543,29 @@ cpdef binary_vector_float(str op,
     out: float array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef unsigned int n = left.size
     cdef double nan = np.nan
     cdef double * location
-
     cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
-    location = <double *> out.data  # need to pass a pointer to function
 
-    handle = get_geos_context_handle()
+    location = <double *> out.data  # need to pass a pointer to function
 
     if op == 'distance':
         func = GEOSDistance_r
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            right_geom = <GEOSGeometry *> right[idx]
-            if left_geom != NULL and right_geom != NULL:
-                func(handle, left_geom, right_geom, <double*> location + idx)
-            else:
-                out[idx] = nan
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                right_geom = <GEOSGeometry *> right[idx]
+                if left_geom != NULL and right_geom != NULL:
+                    func(handle, left_geom, right_geom, <double*> location + idx)
+                else:
+                    out[idx] = nan
 
     return out
 
@@ -615,15 +590,11 @@ cpdef binary_vector_float_return(str op,
     out: float array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef unsigned int n = left.size
     cdef double nan = np.nan
-
     cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
-
-    handle = get_geos_context_handle()
 
     if op == 'project':
         func = GEOSProject_r
@@ -632,14 +603,15 @@ cpdef binary_vector_float_return(str op,
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            right_geom = <GEOSGeometry *> right[idx]
-            if left_geom != NULL and right_geom != NULL:
-                out[idx] = <double>func(handle, left_geom, right_geom)
-            else:
-                out[idx] = nan
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                right_geom = <GEOSGeometry *> right[idx]
+                if left_geom != NULL and right_geom != NULL:
+                    out[idx] = <double>func(handle, left_geom, right_geom)
+                else:
+                    out[idx] = nan
 
     return out
 
@@ -664,34 +636,32 @@ cpdef binary_float(str op,
     out: float array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef uintptr_t right_ptr
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef unsigned int n = left.size
     cdef double nan = np.nan
     cdef double * location
-
     cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
+
     location = <double *> out.data  # need to pass a pointer to function
 
     right_ptr = <np.uintp_t> right.__geom__
     right_geom = <GEOSGeometry *> right_ptr
-
-    handle = get_geos_context_handle()
 
     if op == 'distance':
         func = GEOSDistance_r
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            if left_geom != NULL and right_geom != NULL:
-                func(handle, left_geom, right_geom, <double*> location + idx)
-            else:
-                out[idx] = nan
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                if left_geom != NULL and right_geom != NULL:
+                    func(handle, left_geom, right_geom, <double*> location + idx)
+                else:
+                    out[idx] = nan
 
     return out
 
@@ -716,19 +686,15 @@ cpdef binary_float_return(str op,
     out: float array
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef uintptr_t right_ptr
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef unsigned int n = left.size
     cdef double nan = np.nan
-
     cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float64)
 
     right_ptr = <np.uintp_t> right.__geom__
     right_geom = <GEOSGeometry *> right_ptr
-
-    handle = get_geos_context_handle()
 
     if op == 'project':
         func = GEOSProject_r
@@ -737,13 +703,14 @@ cpdef binary_float_return(str op,
     else:
         raise NotImplementedError(op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            if left_geom != NULL and right_geom != NULL:
-                out[idx] = <double>func(handle, left_geom, right_geom)
-            else:
-                out[idx] = nan
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                if left_geom != NULL and right_geom != NULL:
+                    out[idx] = <double>func(handle, left_geom, right_geom)
+                else:
+                    out[idx] = nan
 
     return out
 
@@ -768,15 +735,11 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     out: array of pointers to GEOSGeometry objects
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
     cdef GEOSGeometry *other_geom
     cdef unsigned int n = geoms.size
-
     cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
-
-    handle = get_geos_context_handle()
 
     if op == 'boundary':
         func = GEOSBoundary_r
@@ -793,14 +756,15 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     else:
         raise NotImplementedError("Op %s not known" % op)
 
-    with nogil:
-        for idx in xrange(n):
-            geos_geom = geoms[idx]
-            geom = <GEOSGeometry *> geos_geom
-            if geom is not NULL:
-                out[idx] = <np.uintp_t> func(handle, geom)
-            else:
-                out[idx] = 0
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geos_geom = geoms[idx]
+                geom = <GEOSGeometry *> geos_geom
+                if geom is not NULL:
+                    out[idx] = <np.uintp_t> func(handle, geom)
+                else:
+                    out[idx] = 0
 
     return GeometryArray(out)
 
@@ -827,14 +791,11 @@ cpdef vector_binary_geo(str op,
     out: array of pointers to GEOSGeometry objects
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef unsigned int n = left.size
 
     cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
-
-    handle = get_geos_context_handle()
 
     if op == 'difference':
         func = GEOSDifference_r
@@ -847,14 +808,15 @@ cpdef vector_binary_geo(str op,
     else:
         raise NotImplementedError("Op %s not known" % op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            right_geom = <GEOSGeometry *> right[idx]
-            if left_geom and right_geom:
-                out[idx] = <np.uintp_t> func(handle, left_geom, right_geom)
-            else:
-                out[idx] = 0
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                right_geom = <GEOSGeometry *> right[idx]
+                if left_geom and right_geom:
+                    out[idx] = <np.uintp_t> func(handle, left_geom, right_geom)
+                else:
+                    out[idx] = 0
 
     return GeometryArray(out)
 
@@ -881,7 +843,6 @@ cpdef binary_geo(str op,
     out: array of pointers to GEOSGeometry objects
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *left_geom
     cdef GEOSGeometry *right_geom
     cdef uintptr_t right_ptr
@@ -891,8 +852,6 @@ cpdef binary_geo(str op,
 
     right_ptr = <np.uintp_t> right.__geom__
     right_geom = <GEOSGeometry *> right_ptr
-
-    handle = get_geos_context_handle()
 
     if op == 'difference':
         func = GEOSDifference_r
@@ -905,13 +864,14 @@ cpdef binary_geo(str op,
     else:
         raise NotImplementedError("Op %s not known" % op)
 
-    with nogil:
-        for idx in xrange(n):
-            left_geom = <GEOSGeometry *> left[idx]
-            if left_geom and right_geom:
-                out[idx] = <np.uintp_t> func(handle, left_geom, right_geom)
-            else:
-                out[idx] = 0
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                left_geom = <GEOSGeometry *> left[idx]
+                if left_geom and right_geom:
+                    out[idx] = <np.uintp_t> func(handle, left_geom, right_geom)
+                else:
+                    out[idx] = 0
 
     return GeometryArray(out)
 
@@ -922,24 +882,23 @@ cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
             int resolution, int cap_style, int join_style, double mitre_limit):
     """ Buffer operation on array of GEOSGeometry objects """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
     cdef GEOSGeometry *other_geom
     cdef unsigned int n = geoms.size
 
     cdef np.ndarray[np.uintp_t, ndim=1, cast=True] out = np.empty(n, dtype=np.uintp)
-    handle = get_geos_context_handle()
 
-    with nogil:
-        for idx in xrange(n):
-            geos_geom = geoms[idx]
-            geom = <GEOSGeometry *> geos_geom
-            if geom is not NULL:
-                out[idx] = <np.uintp_t> GEOSBufferWithStyle_r(handle, geom,
-                        distance, resolution, cap_style, join_style, mitre_limit)
-            else:
-                out[idx] = 0
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geos_geom = geoms[idx]
+                geom = <GEOSGeometry *> geos_geom
+                if geom is not NULL:
+                    out[idx] = <np.uintp_t> GEOSBufferWithStyle_r(handle, geom,
+                            distance, resolution, cap_style, join_style, mitre_limit)
+                else:
+                    out[idx] = 0
 
     return GeometryArray(out)
 
@@ -951,15 +910,12 @@ cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
                           int coordinate):
     """ Get x, y, or z value for an array of points """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef GEOSCoordSequence *sequence
     cdef unsigned int n = geoms.size
     cdef double value
 
     cdef np.ndarray[double, ndim=1, cast=True] out = np.empty(n, dtype=np.float)
-
-    handle = get_geos_context_handle()
 
     if coordinate == 0:
         func = GEOSCoordSeq_getX_r
@@ -970,15 +926,16 @@ cdef get_coordinate_point(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms,
     else:
         raise NotImplementedError("Coordinate must be between 0-x, 1-y, 2-z")
 
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom is not NULL:
-                sequence = GEOSGeom_getCoordSeq_r(handle, geom)
-                func(handle, sequence, 0, &value)
-                out[idx] = value
-            else:
-                out[idx] = 0
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom is not NULL:
+                    sequence = GEOSGeom_getCoordSeq_r(handle, geom)
+                    func(handle, sequence, 0, &value)
+                    out[idx] = value
+                else:
+                    out[idx] = 0
 
     return out
 
@@ -998,7 +955,6 @@ cpdef serialize(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     deserialize
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
     cdef unsigned int n = geoms.size
@@ -1010,23 +966,23 @@ cpdef serialize(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef np.ndarray[np.uintp_t, ndim=1] sizes = np.empty(n, dtype=np.uintp)
     cdef bytearray out = bytearray()
 
-    handle = get_geos_context_handle()
+    with get_geos_handle() as handle:
+        writer = GEOSWKBWriter_create_r(handle)
 
-    writer = GEOSWKBWriter_create_r(handle)
+        for idx in xrange(n):
+            geos_geom = geoms[idx]
+            geom = <GEOSGeometry *> geos_geom
+            if geom is not NULL:
+                c_string = GEOSWKBWriter_write_r(handle, writer, geom, &size)
+                py_string = c_string[:size]
+                out.extend(py_string)
+                free(c_string)
+                sizes[idx] = size
+            else:
+                sizes[idx] = 0
 
-    for idx in xrange(n):
-        geos_geom = geoms[idx]
-        geom = <GEOSGeometry *> geos_geom
-        if geom is not NULL:
-            c_string = GEOSWKBWriter_write_r(handle, writer, geom, &size)
-            py_string = c_string[:size]
-            out.extend(py_string)
-            free(c_string)
-            sizes[idx] = size
-        else:
-            sizes[idx] = 0
+        GEOSWKBWriter_destroy_r(handle, writer)
 
-    GEOSWKBWriter_destroy_r(handle, writer)
     return out, sizes
 
 
@@ -1045,7 +1001,6 @@ cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast
     serialize
     """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef unsigned int n = sizes.size
     cdef size_t size
@@ -1053,21 +1008,21 @@ cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast
 
     cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
 
-    handle = get_geos_context_handle()
+    with get_geos_handle() as handle:
+        reader = GEOSWKBReader_create_r(handle)
 
-    reader = GEOSWKBReader_create_r(handle)
+        with nogil:
+            for idx in xrange(n):
+                size = sizes[idx]
+                if size:
+                    geom = GEOSWKBReader_read_r(handle, reader, data, size)
+                    out[idx] = <np.uintp_t> geom
+                else:
+                    out[idx] = 0
+                data += size  # march the data pointer forward
 
-    with nogil:
-        for idx in xrange(n):
-            size = sizes[idx]
-            if size:
-                geom = GEOSWKBReader_read_r(handle, reader, data, size)
-                out[idx] = <np.uintp_t> geom
-            else:
-                out[idx] = 0
-            data += size  # march the data pointer forward
+        GEOSWKBReader_destroy_r(handle, reader)
 
-    GEOSWKBReader_destroy_r(handle, reader)
     return out
 
 
@@ -1076,19 +1031,17 @@ cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast
 cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """ Free an array of GEOSGeometry pointers """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef uintptr_t geos_geom
     cdef unsigned int n = geoms.size
 
-    handle = get_geos_context_handle()
-
-    with nogil:
-        for idx in xrange(n):
-            geos_geom = geoms[idx]
-            geom = <GEOSGeometry *> geos_geom
-            if geom is not NULL:
-                GEOSGeom_destroy_r(handle, geom)
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geos_geom = geoms[idx]
+                geom = <GEOSGeometry *> geos_geom
+                if geom is not NULL:
+                    GEOSGeom_destroy_r(handle, geom)
 
 
 @cython.boundscheck(False)
@@ -1096,21 +1049,19 @@ cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """ Free an array of GEOSGeometry pointers """
     cdef Py_ssize_t idx
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef unsigned int n = geoms.size
 
     cdef np.ndarray[np.int8_t, ndim=1] out = np.empty(n, dtype=np.int8)
 
-    handle = get_geos_context_handle()
-
-    with nogil:
-        for idx in xrange(n):
-            geom = <GEOSGeometry *> geoms[idx]
-            if geom is NULL:
-                out[idx] = -1
-            else:
-                out[idx] = GEOSGeomTypeId_r(handle, geom)
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geom = <GEOSGeometry *> geoms[idx]
+                if geom is NULL:
+                    out[idx] = -1
+                else:
+                    out[idx] = GEOSGeomTypeId_r(handle, geom)
 
     return out
 
@@ -1118,20 +1069,19 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *collection
     cdef GEOSGeometry *out
     cdef size_t n
 
-    handle = get_geos_context_handle()
-    geoms = geoms[geoms != 0]
-    n = geoms.size
+    with get_geos_handle() as handle:
+        geoms = geoms[geoms != 0]
+        n = geoms.size
 
-    with nogil:
-        collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON,
-                                                 <GEOSGeometry **> geoms.data,
-                                                 n)
-        out = GEOSUnaryUnion_r(handle, collection)
+        with nogil:
+            collection = GEOSGeom_createCollection_r(handle, GEOS_MULTIPOLYGON,
+                                                     <GEOSGeometry **> geoms.data,
+                                                     n)
+            out = GEOSUnaryUnion_r(handle, collection)
 
     return geom_factory(<np.uintp_t> out)
 
@@ -1153,39 +1103,38 @@ cpdef coords(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
         List of tuples of coordinate points
     """
     cdef Py_ssize_t i, j
-    cdef GEOSContextHandle_t handle
     cdef GEOSGeometry *geom
     cdef GEOSCoordSequence *sequence
     cdef unsigned int n = geoms.size
     cdef double x, y, z
     cdef char has_z
 
-    handle = get_geos_context_handle()
-    out = []
+    with get_geos_handle() as handle:
+        out = []
 
-    for i in xrange(n):
-        geom = <GEOSGeometry *> geoms[i]
-        if geom is NULL:
-            out.append(())
-            continue
+        for i in xrange(n):
+            geom = <GEOSGeometry *> geoms[i]
+            if geom is NULL:
+                out.append(())
+                continue
 
-        sequence = GEOSGeom_getCoordSeq_r(handle, geom)
-        if sequence is NULL:
-            raise TypeError("Geometry must be LineString or Point")
+            sequence = GEOSGeom_getCoordSeq_r(handle, geom)
+            if sequence is NULL:
+                raise TypeError("Geometry must be LineString or Point")
 
-        L = []
+            L = []
 
-        has_z = GEOSHasZ_r(handle, geom)
+            has_z = GEOSHasZ_r(handle, geom)
 
-        for j in xrange(GEOSGetNumCoordinates_r(handle, geom)):
-            GEOSCoordSeq_getX_r(handle, sequence, j, &x)
-            GEOSCoordSeq_getY_r(handle, sequence, j, &y)
-            if has_z:
-                GEOSCoordSeq_getZ_r(handle, sequence, j, &z)
-                L.append(tuple((float(x), float(y), float(z))))
-            else:
-                L.append(tuple((float(x), float(y))))
-        out.append(tuple(L))
+            for j in xrange(GEOSGetNumCoordinates_r(handle, geom)):
+                GEOSCoordSeq_getX_r(handle, sequence, j, &x)
+                GEOSCoordSeq_getY_r(handle, sequence, j, &y)
+                if has_z:
+                    GEOSCoordSeq_getZ_r(handle, sequence, j, &z)
+                    L.append(tuple((float(x), float(y), float(z))))
+                else:
+                    L.append(tuple((float(x), float(y))))
+            out.append(tuple(L))
 
     return out
 
@@ -1209,6 +1158,29 @@ class GeometryArray(object):
         result = self[idx]
         result.data[idx == -1] = 0
         return result
+
+    def fill(self, idx, value):
+        """ Fill index locations with value
+
+        Value should be a BaseGeometry
+
+        Returns a copy
+        """
+        base = [self]
+        if isinstance(value, BaseGeometry):
+            base.append(value)
+            value = value.__geom__
+        elif value is None:
+            value = 0
+        else:
+            raise TypeError("Value should be either a BaseGeometry or None, "
+                            "got %s" % str(value))
+        new = GeometryArray(self.data.copy(), base=base)
+        new.data[idx] = value
+        return new
+
+    def fillna(self, value=None):
+        return self.fill(self.data == 0, value)
 
     def __len__(self):
         return len(self.data)
@@ -1535,7 +1507,6 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
     right_out: np.ndarray
         Array of indices to pass to take for the right side to match with left
     """
-    cdef GEOSContextHandle_t handle
     cdef GEOSPreparedPredicate predicate
     cdef size_vector sv
     cdef Py_ssize_t idx
@@ -1544,29 +1515,43 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
     cdef size_t left_size = left.size
     cdef size_t right_size = right.size
 
-    handle = get_geos_context_handle()
-    predicate = get_prepared_predicate(predicate_name)
-    if not predicate:
-        raise NotImplementedError(predicate_name)
+    with get_geos_handle() as handle:
+        predicate = get_prepared_predicate(predicate_name)
+        if not predicate:
+            raise NotImplementedError(predicate_name)
 
-    with nogil:
-        sv = sjoin(handle, predicate,
-                   <GEOSGeometry*> left.data, left_size,
-                   <GEOSGeometry*> right.data, right_size)
+        with nogil:
+            sv = sjoin(handle, predicate,
+                       <GEOSGeometry*> left.data, left_size,
+                       <GEOSGeometry*> right.data, right_size)
 
-    left_out = np.empty(sv.n // 2, dtype=np.uintp)
-    right_out = np.empty(sv.n // 2, dtype=np.uintp)
+        left_out = np.empty(sv.n // 2, dtype=np.uintp)
+        right_out = np.empty(sv.n // 2, dtype=np.uintp)
 
-    with nogil:
-        for idx in range(0, sv.n // 2):
-            left_out[idx] = sv.a[2 * idx]
-            right_out[idx] = sv.a[2 * idx + 1]
+        with nogil:
+            for idx in range(0, sv.n // 2):
+                left_out[idx] = sv.a[2 * idx]
+                right_out[idx] = sv.a[2 * idx + 1]
 
-    cfree(sv.a)
+        cfree(sv.a)
+
     return left_out, right_out
 
 
-def concat(L):
+def concat(L, axis=0):
+    if axis != 0:
+        raise NotImplementedError("Can only concatenate geometries along axis=0")
     L = list(L)
     x = np.concatenate([ga.data for ga in L])
     return GeometryArray(x, base=set(L))
+
+
+cdef class get_geos_handle:
+    cdef GEOSContextHandle_t handle
+
+    cdef GEOSContextHandle_t __enter__(self):
+        self.handle = GEOS_init_r()
+        return self.handle
+
+    def __exit__(self, type, value, traceback):
+        GEOS_finish_r(self.handle)

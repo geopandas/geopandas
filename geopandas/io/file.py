@@ -1,3 +1,5 @@
+import math
+from numbers import Number
 import os
 
 import fiona
@@ -144,7 +146,9 @@ def _common_geom_type(df):
     geom_types = df.geometry.geom_type.unique()
 
     from os.path import commonprefix   # To find longest common prefix
-    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]  # Reverse
+    geom_type = commonprefix([g[::-1] for g in geom_types if g and
+                              not (isinstance(g, Number) and math.isnan(g))]
+                              )[::-1]  # Reverse
     if not geom_type:
         geom_type = None
 
