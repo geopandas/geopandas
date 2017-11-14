@@ -133,6 +133,12 @@ class TestSeries:
         exp = pd.Series([False, True, False])
         assert_series_equal(res, exp)
 
+    def test_not_equal_comp_op(self):
+        s = GeoSeries([Point(x, x) for x in range(3)])
+        res = s != Point(1, 1)
+        exp = pd.Series([True, False, True])
+        assert_series_equal(res, exp)
+
     def test_to_file(self):
         """ Test to_file and from_file """
         tempfilename = os.path.join(self.tempdir, 'test.shp')
