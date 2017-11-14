@@ -84,7 +84,9 @@ class GeoSeries(GeoPandasBase, Series):
         if isinstance(data, BaseGeometry):
             data = [data]
 
-        if isinstance(data, GeoSeries):
+        if (isinstance(data, GeoSeries)
+                or (isinstance(data, Series) and isinstance(data._data._block,
+                                                            GeometryBlock))):
             block = data._data._block
             index = data.index
             name = data.name
