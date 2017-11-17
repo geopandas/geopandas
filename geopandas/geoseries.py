@@ -432,6 +432,12 @@ class GeoSeries(GeoPandasBase, Series):
     # Implement standard operators for GeoSeries
     #
 
+    def __eq__(self, other):
+        return self.geom_equals(other)
+
+    def __ne__(self, other):
+        return ~self.geom_equals(other)
+
     def __xor__(self, other):
         """Implement ^ operator as for builtin set type"""
         return self.symmetric_difference(other)

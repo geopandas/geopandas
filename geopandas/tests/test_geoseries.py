@@ -132,6 +132,27 @@ class TestSeries:
         res = s == Point(1, 1)
         exp = pd.Series([False, True, False])
         assert_series_equal(res, exp)
+        assert (s == s).all()
+        # non-geometry non-equality will raise a TypeError
+        with pytest.raises(TypeError):
+            res = s == 1
+        with pytest.raises(TypeError):
+            res = s == pd.Series([1, 2, 3])
+
+    def test_not_equal_comp_op(self):
+        s = GeoSeries([Point(x, x) for x in range(3)])
+        s2 = GeoSeries([Point(-x, -x) for x in range(3)])
+        res = s != Point(1, 1)
+        exp = pd.Series([True, False, True])
+        assert_series_equal(res, exp)
+        res = s != s2
+        exp = pd.Series([False, True, True])
+        assert_series_equal(res, exp)
+        # non-geometry non-equality will raise a TypeError
+        with pytest.raises(TypeError):
+            res = s != 1
+        with pytest.raises(TypeError):
+            res = s != pd.Series([1, 2, 3])
 
     def test_to_file(self):
         """ Test to_file and from_file """
