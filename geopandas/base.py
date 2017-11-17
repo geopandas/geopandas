@@ -329,8 +329,8 @@ class GeoPandasBase(object):
         try:
             return binary_predicate('equals', self, other)
         except TypeError:
-            raise TypeError("GeoSeries equality checks are only supported " +
-                            "with shapely geometries or other GeoSeries, " +
+            raise TypeError("GeoSeries equality checks are only supported "
+                            "with shapely geometries or other GeoSeries, "
                             "not type {}".format(type(other)))
 
     def geom_almost_equals(self, other, decimal=6):
