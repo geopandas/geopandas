@@ -27,6 +27,7 @@ such as PostGIS.
   :maxdepth: 2
 
   Installation <install>
+  Examples Gallery <gallery/index>
   Data Structures <data_structures>
   Reading and Writing Files <io>
   Indexing and Selecting Data <indexing>

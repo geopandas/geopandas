@@ -13,3 +13,8 @@ examples/nybb_*.zip
 *.so
 *.pyd
 *.swp
+.DS_Store
+.ipynb_checkpoints
+doc/source/gallery
+doc/source/api
+doc/source/savefig
