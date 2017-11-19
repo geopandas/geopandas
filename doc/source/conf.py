@@ -56,7 +56,7 @@ sphinx_gallery_conf = {
                       'numpy': 'http://docs.scipy.org/doc/numpy/reference',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
-    'backreferences_dir': 'api/_as_gen'
+    'backreferences_dir': 'reference'
 }
 
 # The suffix of source filenames.

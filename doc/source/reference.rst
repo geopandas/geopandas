@@ -143,7 +143,7 @@ API Pages
 .. currentmodule:: geopandas
 .. autosummary::
   :template: autosummary.rst
-  :toctree: api/_as_gen
+  :toctree: reference/
 
   GeoDataFrame
   GeoSeries
