@@ -424,6 +424,14 @@ class TestDataFrame:
         assert all(df2['geometry'].geom_almost_equals(utm['geometry'],
                                                       decimal=2))
 
+    def test_transform_inplace(self):
+        df2 = self.df2.copy()
+        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
+        lonlat = df2.to_crs(epsg=4326)
+        df2.to_crs(epsg=4326, inplace=True)
+        assert all(df2['geometry'].geom_almost_equals(lonlat['geometry'],
+                                                      decimal=2))
+
     def test_to_crs_geo_column_name(self):
         # Test to_crs() with different geometry column name (GH#339)
         df2 = self.df2.copy()
