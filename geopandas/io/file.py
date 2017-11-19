@@ -28,7 +28,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, **kwargs):
+def read_file(filename, bbox=None **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -37,6 +37,8 @@ def read_file(filename, **kwargs):
     filename: str
         Either the absolute or relative path to the file or URL to
         be opened.
+    bbox : tuple | GeoDataFrame, default None
+        Filter features by given bounding box or GeoDataFrame (crs mis-matches are automatically resolved when given a GeoDataFrame)
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -51,7 +53,6 @@ def read_file(filename, **kwargs):
     -------
     geodataframe : GeoDataFrame
     """
-    bbox = kwargs.pop('bbox', None)
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
@@ -62,6 +63,8 @@ def read_file(filename, **kwargs):
     with reader(path_or_bytes, **kwargs) as f:
         crs = f.crs
         if bbox is not None:
+            if isinstance(bbox, GeoDataFrame):
+                bbox = tuple(bbox.to_crs(crs).total_bounds)
             assert len(bbox) == 4
             f_filt = f.filter(bbox=bbox)
         else:
