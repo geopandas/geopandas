@@ -28,7 +28,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None **kwargs):
+def read_file(filename, bbox=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
