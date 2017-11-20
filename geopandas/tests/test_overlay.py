@@ -43,11 +43,11 @@ class TestDataFrame:
         assert 'value1' in df.columns and 'Shape_Area' in df.columns
 
     def test_union_no_index(self):
-        # explicitly ignore indicies
+        # explicitly ignore indices
         dfB = overlay(self.polydf, self.polydf2, how="union", use_sindex=False)
         assert dfB.shape == self.union_shape
 
-        # remove indicies from df
+        # remove indices from df
         self.polydf._sindex = None
         self.polydf2._sindex = None
         dfC = overlay(self.polydf, self.polydf2, how="union")

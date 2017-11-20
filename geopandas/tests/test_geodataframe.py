@@ -632,7 +632,7 @@ class TestConstructor:
         assert_index_equal(df.index, pd.Index([1, 2]))
         assert df['A'].tolist() == [1, 2]
 
-        # one non-series -> lenght is not correct
+        # one non-series -> length is not correct
         data = {"A": pd.Series(range(3)), "B": np.arange(3.0),
                 "geometry": GeoSeries([Point(x, x) for x in range(3)])}
         with pytest.raises(ValueError):
