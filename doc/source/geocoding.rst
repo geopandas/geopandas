@@ -6,7 +6,6 @@
    import geopandas as gpd
 
 
-
 Geocoding
 ==========
 
@@ -24,18 +23,19 @@ with the detailed borough boundary file included within ``geopandas``.
     boros = gpd.read_file(gpd.datasets.get_path("nybb"))
     print(boros.BoroName)
     boro_locations = gpd.tools.geocode(boros.BoroName, provider="google")
+    print(boro_locations)
 
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
 
     boros.to_crs({"init": "epsg:4326"}).plot(ax=ax, color="white", edgecolor="black");
-    boro_locations.plot(ax=ax, color="red");
     @savefig boro_centers_over_bounds.png
-    plt.show();
+    boro_locations.plot(ax=ax, color="red");
 
 
-Available ``provider`` arguments include ``'google'``, ``'bing'``,
-``'yahoo'``, and ``'openmapquest'``. See
+The argument to ``provider`` can either be a string referencing geocoding
+services, such as ``'google'``, ``'bing'``, ``'yahoo'``, and
+``'openmapquest'``, or an instance of a ``Geocoder`` from ``geopy``. See
 ``geopy.geocoders.SERVICE_TO_GEOCODER`` for the full list.
 For many providers, parameters such as API keys need to be passed as
 ``**kwargs`` in the ``geocode`` call.
