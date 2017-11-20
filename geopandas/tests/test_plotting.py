@@ -620,7 +620,7 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     expected_colors : sequence of RGBA tuples
     alpha : float (optional)
         If set, this alpha transparency will be applied to the
-        `expected_colors`. (Any transparency on the `collecton` is assumed
+        `expected_colors`. (Any transparency on the `collection` is assumed
         to be set in its own facecolor RGBA tuples.)
     """
     import matplotlib.colors as colors
