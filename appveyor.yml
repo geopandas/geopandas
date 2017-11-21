@@ -34,15 +34,12 @@ install:
   - conda update -q conda
   - conda config --add channels conda-forge
   - conda info -a
-  - "conda create --quiet --name test-environment python=%PYTHON_VERSION% pandas msinttypes --file requirements.txt --file requirements.test.txt"
+  - "conda create --quiet --name test-environment python=%PYTHON_VERSION% pandas --file requirements.txt --file requirements.test.txt"
 
 test_script:
   - activate test-environment
   - conda list
   - set GEOS_LIB=%CONDA_PREFIX%\\Library\\lib
   - set GEOS_HEADERS=%CONDA_PREFIX%\\Library\\include
-  # When building Python 2.7 we need msinttypes to provice stdint.h,
-  # but that still lacks stdbool.h
-  - copy appveyor\\stdbool.h %CONDA_PREFIX%\\Library\\include
   - python setup.py build_ext --inplace --with-cython
   - pytest geopandas -v
