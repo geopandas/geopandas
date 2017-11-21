@@ -3,10 +3,6 @@
 # https://packaging.python.org/en/latest/appveyor/
 # https://github.com/rmcgibbo/python-appveyor-conda-example
 
-
-matrix:
-  fast_finish: true     # immediately finish build once one of the jobs fails.
-
 environment:
   matrix:
     - PYTHON_VERSION: "2.7"
@@ -14,6 +10,10 @@ environment:
 
     - PYTHON_VERSION: "3.5"
       MINICONDA: C:\Miniconda35-x64
+
+matrix:
+  allow_failures:
+    - PYTHON_VERSION: "2.7"
 
 # all our python builds have to happen in tests_script...
 build: false
@@ -34,12 +34,12 @@ install:
   - conda update -q conda
   - conda config --add channels conda-forge
   - conda info -a
-  - "conda create -q -n test-environment python=%PYTHON_VERSION%"
-  - activate test-environment
-  - conda install pandas shapely=1.5 fiona pyproj rtree matplotlib descartes
-  - conda install pytest mock
+  - "conda create --quiet --name test-environment python=%PYTHON_VERSION% pandas --file requirements.txt --file requirements.test.txt"
 
 test_script:
   - activate test-environment
   - conda list
+  - set GEOS_LIB=%CONDA_PREFIX%\\Library\\lib
+  - set GEOS_HEADERS=%CONDA_PREFIX%\\Library\\include
+  - python setup.py build_ext --inplace --with-cython
   - pytest geopandas -v
