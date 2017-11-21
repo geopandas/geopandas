@@ -39,4 +39,7 @@ install:
 test_script:
   - activate test-environment
   - conda list
+  - set GEOS_HEADERS=%PREFIX%\include
+  - set GEOS_LIB=%PREFIX%\lib
+  - python setup.py build_ext --inplace --with-cython
   - pytest geopandas -v
