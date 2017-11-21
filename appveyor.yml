@@ -40,7 +40,10 @@ install:
 test_script:
   - activate test-environment
   - conda list
-  - set GEOS_LIB=%CONDA_PREFIX%\\Library\\\lib
-  - set GEOS_HEADERS=%CONDA_PREFIX%\\Library\\\include
+  - set GEOS_LIB=%CONDA_PREFIX%\\Library\\lib
+  - set GEOS_HEADERS=%CONDA_PREFIX%\\Library\\include
+  # When building Python 2.7 we need msinttypes to provice stdint.h,
+  # but that still lacks stdbool.h
+  - copy stdbool.h %CONDA_PREFIX%\\Library\\include
   - python setup.py build_ext --inplace --with-cython
   - pytest geopandas -v
