@@ -21,9 +21,9 @@ with the detailed borough boundary file included within ``geopandas``.
 .. ipython:: python
 
     boros = gpd.read_file(gpd.datasets.get_path("nybb"))
-    print(boros.BoroName)
+    boros.BoroName
     boro_locations = gpd.tools.geocode(boros.BoroName, provider="google")
-    print(boro_locations)
+    boro_locations
 
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
