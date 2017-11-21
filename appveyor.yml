@@ -13,6 +13,10 @@ environment:
       MINICONDA: C:\Miniconda37-x64
       ENV_FILE: "ci/travis/37-latest-conda-forge.yaml"
 
+matrix:
+  allow_failures:
+    - PYTHON_VERSION: "2.7"
+
 # all our python builds have to happen in tests_script...
 build: false
 
@@ -44,4 +48,7 @@ test_script:
   # this uses condabin/conda.bat because of our PATH modification above
   - conda activate test
   - conda list
+  - set GEOS_LIB=%CONDA_PREFIX%\\Library\\lib
+  - set GEOS_HEADERS=%CONDA_PREFIX%\\Library\\include
+  - python setup.py build_ext --inplace --with-cython
   - pytest geopandas -v
