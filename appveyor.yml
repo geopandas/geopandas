@@ -4,9 +4,6 @@
 # https://github.com/rmcgibbo/python-appveyor-conda-example
 
 
-matrix:
-  fast_finish: true     # immediately finish build once one of the jobs fails.
-
 environment:
   matrix:
     - PYTHON_VERSION: "2.7"
