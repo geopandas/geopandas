@@ -3,11 +3,6 @@
 # https://packaging.python.org/en/latest/appveyor/
 # https://github.com/rmcgibbo/python-appveyor-conda-example
 
-matrix:
-  fast_finish: true     # immediately finish build once one of the jobs fails.
-  allow_failures:
-    - PYTHON_VERSION: <value>
-
 environment:
   matrix:
     - PYTHON_VERSION: "2.7"
@@ -15,6 +10,10 @@ environment:
 
     - PYTHON_VERSION: "3.5"
       MINICONDA: C:\Miniconda35-x64
+
+matrix:
+  allow_failures:
+    - PYTHON_VERSION: "2.7"
 
 # all our python builds have to happen in tests_script...
 build: false
