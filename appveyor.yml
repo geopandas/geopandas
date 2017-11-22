@@ -11,10 +11,6 @@ environment:
     - PYTHON_VERSION: "3.5"
       MINICONDA: C:\Miniconda35-x64
 
-matrix:
-  allow_failures:
-    - PYTHON_VERSION: "2.7"
-
 # all our python builds have to happen in tests_script...
 build: false
 
