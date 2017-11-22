@@ -54,13 +54,13 @@ size_vector sjoin(GEOSContextHandle_t handle,
     // clock_t end, end_1, end_2;
     // double time_spent = 0, time_spent_1 = 0, time_spent_2 = 0;
 
+    GEOSSTRtree* tree;
     size_t l, r;                    // indices for left and right sides
     GEOSPreparedGeometry* prepared; // Temporary prepared geometry for right side
     size_vector out;                // Resizable output array of matching indices
     size_vector vec;                // Temporary array for matches for each geometry
     kv_init(out);
     kv_init(vec);
-    GEOSSTRtree* tree;
 
     // begin = clock();
     if (nright == 0)
