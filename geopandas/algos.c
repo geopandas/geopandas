@@ -60,12 +60,13 @@ size_vector sjoin(GEOSContextHandle_t handle,
     size_vector vec;                // Temporary array for matches for each geometry
     kv_init(out);
     kv_init(vec);
+    GEOSSTRtree* tree;
 
     // begin = clock();
     if (nright == 0)
         return out;
 
-    GEOSSTRtree* tree = create_index(handle, right, nright);
+    tree = create_index(handle, right, nright);
 
     // end = clock();
     // time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
