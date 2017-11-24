@@ -22,6 +22,7 @@ dependencies:
 - cartopy
 - sphinx-gallery
 - jinja2
-pip:
+- pip
+- pip:
   - sphinx_gallery
 
