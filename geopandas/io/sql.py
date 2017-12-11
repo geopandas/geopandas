@@ -51,7 +51,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     srid_col = "st_srid"
     if crs is None:
         unique_srid = df[srid_col].unique()
-        # only set a crs for frame if all polygons have the same one
+        # only set a crs for frame if all geometries have the same one
         if len(unique_srid) == 1:
             srid = unique_srid[0]
             crs = {"init": "epsg:{}".format(srid)}
