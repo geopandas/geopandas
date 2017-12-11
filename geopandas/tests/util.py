@@ -45,12 +45,11 @@ def connect(dbname):
     return con
 
 
-def create_db(df):
+def create_db(df, srid=None, geom_col="geom"):
     """
     Create a nybb table in the test_geopandas PostGIS database.
     Returns a boolean indicating whether the database table was successfully
     created
-
     """
     # Try to create the database, skip the db tests if something goes
     # wrong
@@ -62,23 +61,28 @@ def create_db(df):
     if con is None:
         return False
 
+    if srid is not None:
+        geom_schema = "geometry(MULTIPOLYGON, {})".format(srid)
+        geom_insert = ("ST_SetSRID(ST_GeometryFromText(%s), {})".format(srid))
+    else:
+        geom_schema = "geometry"
+        geom_insert = "ST_GeometryFromText(%s)"
     try:
         cursor = con.cursor()
         cursor.execute("DROP TABLE IF EXISTS nybb;")
 
         sql = """CREATE TABLE nybb (
-            geom        geometry,
-            borocode    integer,
-            boroname    varchar(40),
-            shape_leng  float,
-            shape_area  float
-        );"""
+            {geom_col}   {geom_schema},
+            borocode     integer,
+            boroname     varchar(40),
+            shape_leng   float,
+            shape_area   float
+            );""".format(geom_col=geom_col, geom_schema=geom_schema)
         cursor.execute(sql)
 
         for i, row in df.iterrows():
-            sql = """INSERT INTO nybb VALUES (
-                ST_GeometryFromText(%s), %s, %s, %s, %s
-            );"""
+            sql = """INSERT INTO nybb VALUES ({}, %s, %s, %s, %s
+            );""".format(geom_insert)
             cursor.execute(sql, (row['geometry'].wkt,
                                  row['BoroCode'],
                                  row['BoroName'],

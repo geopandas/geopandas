@@ -32,19 +32,34 @@ class TestIO:
 
     def test_read_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
-        if con is None or not create_db(self.df):
+        geom_col = "the_geom"
+        if con is None or not create_db(self.df, geom_col=geom_col):
             raise pytest.skip()
 
         try:
-            sql = """SELECT
-                     borocode, boroname, shape_leng, shape_area,
-                     geom AS __geometry__
-                     FROM nybb;"""
-            df = read_postgis(sql, con, geom_col='__geometry__')
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, con, geom_col=geom_col)
         finally:
             con.close()
 
         validate_boro_df(df)
+
+    def test_read_postgis_get_srid(self):
+        crs = {"init": "epsg:4269"}
+        df_reproj = self.df.to_crs(crs)
+        created = create_db(df_reproj, srid=4269)
+        con = connect('test_geopandas')
+        if con is None or not created:
+            raise pytest.skip()
+
+        try:
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, con)
+        finally:
+            con.close()
+
+        validate_boro_df(df)
+        assert(df.crs == crs)
 
     def test_read_file(self):
         df = self.df.rename(columns=lambda x: x.lower())

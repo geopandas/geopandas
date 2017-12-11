@@ -462,15 +462,13 @@ class TestDataFrame:
 
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
-        if con is None or not create_db(self.df):
+        geom_col = "the_geom"
+        if con is None or not create_db(self.df, geom_col=geom_col):
             raise pytest.skip()
 
         try:
-            sql = """SELECT
-                     borocode, boroname, shape_leng, shape_area,
-                     geom AS __geometry__
-                     FROM nybb;"""
-            df = GeoDataFrame.from_postgis(sql, con, geom_col='__geometry__')
+            sql = "SELECT * FROM nybb;"
+            df = GeoDataFrame.from_postgis(sql, con, geom_col=geom_col)
         finally:
             con.close()
 
