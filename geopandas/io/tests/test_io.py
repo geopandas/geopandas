@@ -44,6 +44,24 @@ class TestIO:
 
         validate_boro_df(df)
 
+    def test_read_postgis_select_geom_as(self):
+        con = connect('test_geopandas')
+        orig_geom = "geom"
+        out_geom = "the_geom"
+        if con is None or not create_db(self.df, geom_col=orig_geom):
+            raise pytest.skip()
+
+        try:
+            sql = """SELECT borocode, boroname, shape_leng, shape_area,
+                     {} as {} FROM nybb;""".format(orig_geom, out_geom)
+            df = read_postgis(sql, con, geom_col=out_geom)
+        finally:
+            con.close()
+
+        validate_boro_df(df)
+
+    # geopandas does not currently return use the SRID to set the frame CRS
+    @pytest.mark.xfail
     def test_read_postgis_get_srid(self):
         crs = {"init": "epsg:4269"}
         df_reproj = self.df.to_crs(crs)

@@ -37,25 +37,15 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     >>> df = geopandas.read_postgis(sql, con)
     """
 
-    # add SRID call to sql str
-    sql_srid = sql.lower().replace(" from ",
-                                   ",st_srid({}) from ".format(geom_col))
-    df = read_sql(sql_srid, con, index_col=index_col, coerce_float=coerce_float,
+    df = read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
                   params=params)
+
+    if geom_col not in df:
+        raise ValueError("Query missing geometry column '{}'".format(geom_col))
 
     wkb_geoms = df[geom_col]
 
     s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x.encode())))
     df[geom_col] = GeoSeries(s)
-
-    srid_col = "st_srid"
-    if crs is None:
-        unique_srid = df[srid_col].unique()
-        # only set a crs for frame if all geometries have the same one
-        if len(unique_srid) == 1:
-            srid = unique_srid[0]
-            crs = {"init": "epsg:{}".format(srid)}
-    # user didn't ask for the st_srid column, so get rid of it now
-    del(df[srid_col])
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
