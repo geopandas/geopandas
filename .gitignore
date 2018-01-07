@@ -9,3 +9,8 @@ geopandas/version.py
 doc/_static/world_*
 examples/nybb_*.zip
 .cache/
+.DS_Store
+.ipynb_checkpoints
+doc/source/gallery
+doc/source/api
+doc/source/savefig

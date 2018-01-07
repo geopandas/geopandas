@@ -378,6 +378,14 @@ class TestDataFrame:
         assert all(df2['geometry'].geom_almost_equals(utm['geometry'],
                                                       decimal=2))
 
+    def test_transform_inplace(self):
+        df2 = self.df2.copy()
+        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
+        lonlat = df2.to_crs(epsg=4326)
+        df2.to_crs(epsg=4326, inplace=True)
+        assert all(df2['geometry'].geom_almost_equals(lonlat['geometry'],
+                                                      decimal=2))
+
     def test_to_crs_geo_column_name(self):
         # Test to_crs() with different geometry column name (GH#339)
         df2 = self.df2.copy()
@@ -570,7 +578,7 @@ class TestConstructor:
         assert_index_equal(df.index, pd.Index([1, 2]))
         assert df['A'].tolist() == [1, 2]
 
-        # one non-series -> lenght is not correct
+        # one non-series -> length is not correct
         data = {"A": pd.Series(range(3)), "B": np.arange(3.0),
                 "geometry": GeoSeries([Point(x, x) for x in range(3)])}
         with pytest.raises(ValueError):

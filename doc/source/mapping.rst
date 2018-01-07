@@ -73,7 +73,7 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 Maps with Layers
 -----------------
 
-There are two strategies for making a map with multiple layers -- one more succinct, and one that is a littel more flexible.
+There are two strategies for making a map with multiple layers -- one more succinct, and one that is a little more flexible.
 
 Before combining maps, however, remember to always ensure they share a common CRS (so they will align).
 
