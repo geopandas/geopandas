@@ -331,6 +331,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             simplify: float
                 level of simplification (default: {0.0001})
         """
+        geotype = geopandas.io.file.common_geom_type(self)
+        if geotype != 'Polygon':
+            raise TypeError('Topojson is only applicable for polygons, got {}'.format(geotype))
+
         try:
             from topojson import topojson
             return topojson(self.to_geo(**kwargs),
