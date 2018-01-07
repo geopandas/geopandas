@@ -1,3 +1,5 @@
+.. _geometric_manipulations:
+
 Geometric Manipulations
 ========================
 
@@ -112,13 +114,14 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses `descartes`_
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by `fiona`_.  To read a `file containing the boroughs of New York City`_:
+GeoPandas also implements alternate constructors that can read any data format recognized by `fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
 
 .. sourcecode:: python
 
-    >>> boros = GeoDataFrame.from_file('nybb.shp')
-    >>> boros.set_index('BoroCode', inplace=True)
-    >>> boros.sort()
+    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> boros = GeoDataFrame.from_file(nybb_path)
+    >>> boros = boros.set_index('BoroCode')
+    >>> boros = boros.sort_index()
     >>> boros
                    BoroName    Shape_Area     Shape_Leng  \
     BoroCode
@@ -216,7 +219,7 @@ borough that are in the holes:
 .. _fiona: http://toblerity.github.io/fiona
 .. _geopy: https://github.com/geopy/geopy
 .. _geo_interface: https://gist.github.com/sgillies/2217756
-.. _file containing the boroughs of New York City: http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
+.. _borough boundaries of New York City: https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm
 
 .. toctree::
    :maxdepth: 2

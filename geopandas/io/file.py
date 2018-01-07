@@ -2,31 +2,71 @@ import os
 
 import fiona
 import numpy as np
-from shapely.geometry import mapping
+import six
 
-from six import iteritems
 from geopandas import GeoDataFrame
+
+# Adapted from pandas.io.common
+if six.PY3:
+    from urllib.request import urlopen as _urlopen
+    from urllib.parse import urlparse as parse_url
+    from urllib.parse import uses_relative, uses_netloc, uses_params
+else:
+    from urllib2 import urlopen as _urlopen
+    from urlparse import urlparse as parse_url
+    from urlparse import uses_relative, uses_netloc, uses_params
+
+_VALID_URLS = set(uses_relative + uses_netloc + uses_params)
+_VALID_URLS.discard('')
+
+
+def _is_url(url):
+    """Check to see if *url* has a valid protocol."""
+    try:
+        return parse_url(url).scheme in _VALID_URLS
+    except:
+        return False
 
 
 def read_file(filename, **kwargs):
     """
-    Returns a GeoDataFrame from a file.
+    Returns a GeoDataFrame from a file or URL.
 
-    *filename* is either the absolute or relative path to the file to be
-    opened and *kwargs* are keyword args to be passed to the `open` method
-    in the fiona library when opening the file. For more information on
-    possible keywords, type: ``import fiona; help(fiona.open)``
+    Parameters
+    ----------
+    filename: str
+        Either the absolute or relative path to the file or URL to
+        be opened.
+    **kwargs:
+        Keyword args to be passed to the `open` or `BytesCollection` method
+        in the fiona library when opening the file. For more information on
+        possible keywords, type:
+        ``import fiona; help(fiona.open)``
+
+    Examples
+    --------
+    >>> df = geopandas.read_file("nybb.shp")
+
+    Returns
+    -------
+    geodataframe : GeoDataFrame
     """
     bbox = kwargs.pop('bbox', None)
-    with fiona.open(filename, **kwargs) as f:
+    if _is_url(filename):
+        req = _urlopen(filename)
+        path_or_bytes = req.read()
+        reader = fiona.BytesCollection
+    else:
+        path_or_bytes = filename
+        reader = fiona.open
+    with reader(path_or_bytes, **kwargs) as f:
         crs = f.crs
         if bbox is not None:
-            assert len(bbox)==4
+            assert len(bbox) == 4
             f_filt = f.filter(bbox=bbox)
         else:
             f_filt = f
         gdf = GeoDataFrame.from_features(f_filt, crs=crs)
-
         # re-order with column order from metadata, with geometry last
         columns = list(f.meta["schema"]["properties"]) + ["geometry"]
         gdf = gdf[columns]
@@ -61,10 +101,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
-    with fiona.open(filename, 'w', driver=driver, crs=df.crs,
-                    schema=schema, **kwargs) as c:
-        for feature in df.iterfeatures():
-            c.write(feature)
+    with fiona.drivers():
+        with fiona.open(filename, 'w', driver=driver, crs=df.crs,
+                        schema=schema, **kwargs) as colxn:
+            colxn.writerecords(df.iterfeatures())
 
 
 def infer_schema(df):

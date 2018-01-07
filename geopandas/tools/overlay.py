@@ -1,6 +1,7 @@
+import pandas as pd
 from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
-import pandas as pd
+
 from geopandas import GeoDataFrame, GeoSeries
 from functools import reduce
 import numpy as np
@@ -101,14 +102,7 @@ def overlay_slow(df1, df2, how, use_sindex=True, **kwargs):
     mls2 = MultiLineString(rings2)
 
     # Union and polygonize
-    try:
-        # calculating union (try the fast unary_union)
-        mm = unary_union([mls1, mls2])
-    except:
-        # unary_union FAILED
-        # see https://github.com/Toblerity/Shapely/issues/47#issuecomment-18506767
-        # calculating union again (using the slow a.union(b))
-        mm = mls1.union(mls2)
+    mm = unary_union([mls1, mls2])
     newpolys = polygonize(mm)
 
     # determine spatial relationship
@@ -136,13 +130,13 @@ def overlay_slow(df1, df2, how, use_sindex=True, **kwargs):
         prop1 = None
         prop2 = None
         for cand_id in candidates1:
-            cand = df1.ix[cand_id]
+            cand = df1.loc[cand_id]
             if cent.intersects(cand[df1.geometry.name]):
                 df1_hit = True
                 prop1 = cand
                 break  # Take the first hit
         for cand_id in candidates2:
-            cand = df2.ix[cand_id]
+            cand = df2.loc[cand_id]
             if cent.intersects(cand[df2.geometry.name]):
                 df2_hit = True
                 prop2 = cand
@@ -180,7 +174,7 @@ def overlay_slow(df1, df2, how, use_sindex=True, **kwargs):
         out_series['geometry'] = newpoly
         collection.append(out_series)
 
-    # Return geodataframe with new indicies
+    # Return geodataframe with new indices
     return GeoDataFrame(collection, index=range(len(collection)))
 
 def overlay(df1, df2, how='intersection', reproject=True, use_sindex=None, **kwargs):

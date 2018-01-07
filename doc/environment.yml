@@ -2,7 +2,7 @@ name: geopandas_docs
 channels:
 - conda-forge
 dependencies:
-- python=3.4
+- python=3.5
 - pandas
 - shapely
 - fiona
@@ -15,4 +15,14 @@ dependencies:
 - pysal
 - sphinx
 - sphinx_rtd_theme
-- ipython=4.0.1
+- numpydoc
+- ipython
+- pillow
+- mock
+- cartopy
+- sphinx-gallery
+- jinja2
+- pip
+- pip:
+  - sphinx_gallery
+
