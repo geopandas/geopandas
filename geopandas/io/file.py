@@ -16,6 +16,8 @@ def read_file(filename, **kwargs):
     opened and *kwargs* are keyword args to be passed to the `open` method
     in the fiona library when opening the file. For more information on 
     possible keywords, type: ``import fiona; help(fiona.open)``
+
+    full list of supported formats: http://www.gdal.org/ogr_formats.html
     """
     bbox = kwargs.pop('bbox', None)
     with fiona.open(filename, **kwargs) as f:

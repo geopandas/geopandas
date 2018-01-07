@@ -317,6 +317,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
+    def _to_topo(self, quantization=1e6, simplify=0.0001, **kwargs):
+        """
+        Returns a topojson representation
+        of the GeoDataFrame.
+
+        NOTE: requires topojson.py package
+
+        Parameters
+        ----------
+            quantization: int
+                grid to snap polygons to (default: {1e6})
+            simplify: float
+                level of simplification (default: {0.0001})
+        """
+        try:
+            from topojson import topojson
+            return topojson(self.to_geo(**kwargs),
+                            quantization=quantization,
+                            simplify=simplify)
+
+        except ImportError as inst:
+            raise ImportError(inst)
+
     def to_file(self, filename, driver="ESRI Shapefile", schema=None,
                 **kwargs):
         """
