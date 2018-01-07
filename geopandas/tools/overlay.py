@@ -183,7 +183,7 @@ def overlay_slow(df1, df2, how, use_sindex=True, **kwargs):
     # Return geodataframe with new indicies
     return GeoDataFrame(collection, index=range(len(collection)))
 
-def overlay(df1, df2, how='intersection', reproject=True, **kwargs):
+def overlay(df1, df2, how='intersection', reproject=True, use_sindex=None, **kwargs):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -208,6 +208,9 @@ def overlay(df1, df2, how='intersection', reproject=True, **kwargs):
         resulting from the overlay
 
     """
+    if use_sindex is not None:
+        print('use_sindex is deprecated. If you are trying to use the old "overlay" function use "overlay_slow".')
+
     # Allowed operations
     allowed_hows = [
         'intersection',
