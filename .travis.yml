@@ -23,6 +23,7 @@ addons:
       - libgdal-dev
       - libatlas-dev
       - libatlas-base-dev
+      - libspatialindex-dev
 
 matrix:
   include:
