@@ -13,12 +13,6 @@ env:
      - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
      - GDALINST=$HOME/gdalinstall
      - GDALBUILD=$HOME/gdalbuild
-  matrix:
-    - GDALVERSION="1.11.5"
-    - GDALVERSION="2.0.3"
-    - GDALVERSION="2.1.1"
-    - GDALVERSION="2.2.2"
-    - GDALVERSION="trunk"
 
 addons:
   apt:
@@ -34,36 +28,48 @@ matrix:
   include:
     # Only one test for these Python versions
     - python: 3.4
-      env: PANDAS=0.18.1 MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+      env: PANDAS=0.18.1 MATPLOTLIB=1.4.3 SHAPELY=1.5.17 GDALVERSION=1.11.5
     - python: 3.5
-      env: PANDAS=0.19.2 MATPLOTLIB=1.5.3
+      env: PANDAS=0.19.2 MATPLOTLIB=1.5.3 GDALVERSION=1.11.5
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
-      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+      env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17 GDALVERSION=1.11.5
     - python: 2.7
-      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+      env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17 GDALVERSION=1.11.5
     - python: 2.7
-      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
+      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3 GDALVERSION=1.11.5
     - python: 2.7
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 GDALVERSION=1.11.5
     - python: 2.7
-      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=1.11.5
     - python: 2.7
-      env: PANDAS=master  MATPLOTLIB=master
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=2.0.3
+    - python: 2.7
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=2.1.1
+    - python: 2.7
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=2.2.2
+    - python: 2.7
+      env: PANDAS=master  MATPLOTLIB=master GDALVERSION=2.2.2
 
     - python: 3.6
       env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 3.6
       env: PANDAS=0.17.1  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 3.6
-      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3
+      env: PANDAS=0.18.1  MATPLOTLIB=1.5.3 GDALVERSION=1.11.5
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 GDALVERSION=1.11.5
     - python: 3.6
-      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=1.11.5
     - python: 3.6
-      env: PANDAS=master  MATPLOTLIB=master
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=2.0.3
+    - python: 3.6
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=2.1.1
+    - python: 3.6
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 GDALVERSION=2.2.2
+    - python: 3.6
+      env: PANDAS=master  MATPLOTLIB=master GDALVERSION=2.2.2
 
 before_install:
   - pip install -U pip
