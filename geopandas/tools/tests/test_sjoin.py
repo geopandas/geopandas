@@ -149,6 +149,24 @@ def test_sjoin_named_index(how):
     # original index names should be unchanged
     right2 = right.copy()
     right2.index.name = 'pointid'
-    df = sjoin(right2, left, how=how)
+    _ = sjoin(right2, left, how=how)
     assert right2.index.name == 'pointid'
-    assert right.index.name == None
+    assert right.index.name is None
+
+
+@pytest.mark.skipif(not gpd.base.HAS_SINDEX, reason='Rtree absent, skipping')
+class TestSpatialJoinNaturalEarth:
+
+    def setup_method(self):
+        world_path = gpd.datasets.get_path("naturalearth_lowres")
+        cities_path = gpd.datasets.get_path("naturalearth_cities")
+        self.world = gpd.read_file(world_path)
+        self.cities = gpd.read_file(cities_path)
+
+    def test_sjoin_inner(self):
+        # GH637
+        countries = self.world[["geometry", "name"]]
+        countries = countries.rename(columns={"name": "country"})
+        cities_with_country = sjoin(self.cities, countries, how="inner",
+                                    op="intersects")
+        assert cities_with_country.shape == (172, 4)
