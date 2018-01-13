@@ -2,15 +2,33 @@ language: python
 
 sudo: false
 
-cache: pip
+cache:
+  directories:
+    - $GDALINST
+    - ~/.cache/pip
+
+env:
+  global:
+     - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
+     - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
+     - GDALINST=$HOME/gdalinstall
+     - GDALBUILD=$HOME/gdalbuild
+  matrix:
+    - GDALVERSION="1.11.5"
+    - GDALVERSION="2.0.3"
+    - GDALVERSION="2.1.1"
+    - GDALVERSION="2.2.2"
+    - GDALVERSION="trunk"
 
 addons:
   apt:
     packages:
-    - libgdal1h
-    - gdal-bin
-    - libgdal-dev
-    - libspatialindex-dev
+      - gdal-bin
+      - libproj-dev
+      - libhdf5-serial-dev
+      - libgdal-dev
+      - libatlas-dev
+      - libatlas-base-dev
 
 matrix:
   include:
@@ -49,15 +67,22 @@ matrix:
 
 before_install:
   - pip install -U pip
+  - . ./scripts/travis_gdal_install.sh
+  - export PATH=$GDALINST/gdal-$GDALVERSION/bin:$PATH
+  - export LD_LIBRARY_PATH=$GDALINST/gdal-$GDALVERSION/lib:$LD_LIBRARY_PATH
+  - export GDAL_DATA=$GDALINST/gdal-$GDALVERSION/share/gdal
+  - export PROJ_LIB=/usr/share/proj
+  - gdal-config --version
 
 install:
   - pip install numpy
+  - if [ "$GDALVERSION" = "trunk" ]; then echo "Using gdal trunk"; elif [ $(gdal-config --version) == "$GDALVERSION" ]; then echo "Using gdal $GDALVERSION"; else echo "NOT using gdal $GDALVERSION as expected; aborting"; exit 1; fi
+  - pip install --upgrade --force-reinstall --global-option=build_ext --global-option='-I$GDALINST/gdal-$GDALVERSION/include' --global-option='-L$GDALINST/gdal-$GDALVERSION/lib' --global-option='-R$GDALINST/gdal-$GDALVERSION/lib' -e .
   - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip install matplotlib==$MATPLOTLIB; fi
   - if [ -n "$SHAPELY" ]; then pip install shapely==$SHAPELY; fi
-
   - pip install -r requirements.txt
   - pip install -r requirements.test.txt
-
+  - gdal-config --version
   - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
 
 script:
@@ -65,3 +90,6 @@ script:
 
 after_success:
   - codecov
+
+before_cache:
+  - if [ "$GDALVERSION" = "trunk" ]; then rm -rf $GDALINST/gdal-$GDALVERSION; fi
