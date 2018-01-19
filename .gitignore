@@ -1,20 +1,62 @@
-.coverage
-*.pyc
-build
-dist
-doc/_build
-geopandas.egg-info
-geopandas/version.py
-*.py~
-doc/_static/world_*
-examples/nybb_*.zip
-.cache/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
 *.c
 *.so
 *.pyd
 *.swp
-.DS_Store
+
+# Distribution / packaging
+.Python
+env/
+build/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Sphinx documentation
+doc/_build/
+
+# Jupyter Notebook
 .ipynb_checkpoints
+
+# projects
+.spyderproject
+.spyproject
+.idea
+.ropeproject
+
+*.py~
+.DS_Store
+
 doc/source/gallery
-doc/source/api
 doc/source/savefig
+doc/source/reference
+
+geopandas.egg-info
+geopandas/version.py
+
+.asv
