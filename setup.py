@@ -69,6 +69,16 @@ if '--with-cython' in sys.argv:
         raise RuntimeError('ERROR: Cython not found.  Exiting.\n       '
                            'Install Cython or don\'t use "--with-cython"')
 
+# User specified
+_geos_headers = os.environ.get('GEOS_HEADERS')
+_geos_lib = os.environ.get('GEOS_LIB')
+
+# Try to find it using shapely `get_geos_config`.
+if not _geos_headers:
+    _geos_headers = get_geos_config('--includes')
+if not _geos_lib:
+    _geos_lib = get_geos_config('--ldflags')[len('-L'):]
+
 suffix = '.pyx' if use_cython else '.c'
 ext_modules = []
 for modname in ['vectorized']:
@@ -76,9 +86,9 @@ for modname in ['vectorized']:
         Extension(
             'geopandas.' + modname,
             ['geopandas/' + modname + suffix],
-            include_dirs=[numpy.get_include(), get_geos_config('--includes')],
+            include_dirs=[numpy.get_include(), _geos_headers],
             libraries=['geos_c'],
-            library_dirs=[get_geos_config('--ldflags')[len('-L'):]],
+            library_dirs=[_geos_lib],
         )
     )
 if use_cython:

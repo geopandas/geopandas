@@ -84,7 +84,9 @@ class GeoSeries(GeoPandasBase, Series):
         if isinstance(data, BaseGeometry):
             data = [data]
 
-        if isinstance(data, GeoSeries):
+        if (isinstance(data, GeoSeries)
+                or (isinstance(data, Series) and isinstance(data._data._block,
+                                                            GeometryBlock))):
             block = data._data._block
             index = data.index
             name = data.name
@@ -429,6 +431,12 @@ class GeoSeries(GeoPandasBase, Series):
     #
     # Implement standard operators for GeoSeries
     #
+
+    def __eq__(self, other):
+        return self.geom_equals(other)
+
+    def __ne__(self, other):
+        return ~self.geom_equals(other)
 
     def __xor__(self, other):
         """Implement ^ operator as for builtin set type"""
