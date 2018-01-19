@@ -105,7 +105,7 @@ class TestPointPlotting:
             ax = self.df.plot(column='values', color='green')
             _check_colors(self.N, ax.collections[0].get_facecolors(), ['green']*self.N)
 
-    def test_style_kwargs(self):
+    def test_markersize(self):
 
         ax = self.points.plot(markersize=10)
         assert ax.collections[0].get_sizes() == [10]
@@ -115,6 +115,17 @@ class TestPointPlotting:
 
         ax = self.df.plot(column='values', markersize=10)
         assert ax.collections[0].get_sizes() == [10]
+
+        ax = self.df.plot(markersize='values')
+        assert (ax.collections[0].get_sizes() == self.df['values']).all()
+
+        ax = self.df.plot(column='values', markersize='values')
+        assert (ax.collections[0].get_sizes() == self.df['values']).all()
+
+    def test_style_kwargs(self):
+
+        ax = self.points.plot(edgecolors='k')
+        assert (ax.collections[0].get_edgecolor() == [0, 0, 0, 1]).all()
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
