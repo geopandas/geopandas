@@ -23,7 +23,7 @@ from pandas.util.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal)
 from geopandas.tests.util import (
     assert_geoseries_equal, connect, create_db, PACKAGE_DIR,
-    validate_boro_df)
+    validate_boro_df, geom_equals)
 
 
 class TestDataFrame:
@@ -859,3 +859,30 @@ def test_concat_errors():
         gpd.concat([a_gdf, c_gdf])
     with pytest.raises(ValueError):
         gpd.concat([a_gdf.geo, c_gdf.geometry])
+
+
+def test_concat_axis1():
+    a_geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+    a_gdf = GeoDataFrame({'x1': [1, 2, 3], 'geo1': a_geoms}, geometry='geo1')
+
+    b_geoms = [Point(4, 4), Point(5, 5)]
+    b_gdf = GeoDataFrame({'x2': [4, 5], 'geo2': b_geoms}, geometry='geo2')
+
+    c_df = pd.DataFrame({'x3': [4, 5]})
+
+    with pytest.raises(ValueError):
+        gpd.concat([a_gdf, b_gdf], axis=1)
+
+    res = gpd.concat([a_gdf, c_df], axis=1)
+    assert list(res.columns) == ['x1', 'geo1', 'x3']
+    assert isinstance(res._geometry_array, GeometryArray)
+
+    res = gpd.concat([a_gdf.geometry, c_df], axis=1)
+    assert list(res.columns) == ['geo1', 'x3']
+    # assert isinstance(res._geometry_array, GeometryArray)
+
+    c_df.index = [2, 3]
+    res = gpd.concat([a_gdf, c_df], axis=1)
+    assert list(res.index) == [0, 1, 2, 3]
+    # FIXME not yet valid geodataframe (densified) + assert_geoseries_equals fails
+    # assert_geoseries_equal(res.geometry, GeoSeries(a_geoms + [None]))
