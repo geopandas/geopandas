@@ -44,6 +44,7 @@ doc/_build/
 .spyderproject
 .spyproject
 .idea
+.ropeproject
 
 *.py~
 .DS_Store
