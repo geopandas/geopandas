@@ -120,8 +120,9 @@ def infer_schema(df):
         if out_type == 'long':
             out_type = 'int'
         if out_type == 'bool':
-            raise ValueError("column {} is boolean type, ".format(column) +
-                             "which is unsupported in file writing.")
+            raise ValueError('column "{}" is boolean type, '.format(column) +
+                             'which is unsupported in file writing. '
+                             'Consider casting the column to int type.')
         return out_type
 
     properties = OrderedDict([

@@ -311,7 +311,7 @@ class TestDataFrame:
         assert np.alltrue(df3['Name'].values == self.line_paths)
 
     def test_to_file_bool(self):
-        """Test error raise when writing with a boolean column."""
+        """Test error raise when writing with a boolean column (GH #437)."""
 
         # still want a temp dir in case this test passes
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
