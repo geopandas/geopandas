@@ -4,6 +4,10 @@
    :suppress:
 
    import geopandas as gpd
+   import matplotlib
+   orig = matplotlib.rcParams['figure.figsize']
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+
 
 
 Data Structures
@@ -93,7 +97,7 @@ An example using the ``worlds`` GeoDataFrame:
 
     world.head()
     #Plot countries
-    @savefig world_borders.png width=3in
+    @savefig world_borders.png
     world.plot();
 
 Currently, the column named "geometry" with country borders is the active
@@ -117,7 +121,7 @@ Now, we create centroids and make it the geometry:
     world['centroid_column'] = world.centroid
     world = world.set_geometry('centroid_column')
 
-    @savefig world_centroids.png width=3in
+    @savefig world_centroids.png
     world.plot();
 
 
@@ -133,3 +137,9 @@ Attributes and Methods
 Any of the attributes calls or methods described for a ``GeoSeries`` will work on a ``GeoDataFrame`` -- effectively, they are just applied to the "geometry" ``GeoSeries``.
 
 However, ``GeoDataFrames`` also have a few extra methods for input and output which are described on the :doc:`Input and Output <io>` page and for geocoding with are described in :doc:`Geocoding <geocoding>`.
+
+
+.. ipython:: python
+    :suppress:
+
+    matplotlib.rcParams['figure.figsize'] = orig

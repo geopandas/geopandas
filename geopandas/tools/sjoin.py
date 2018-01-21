@@ -69,6 +69,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     stream = ((i, b, None) for i, b in enumerate(right_df_bounds))
     tree_idx = rtree.index.Index(stream)
 
+
     idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
                 .apply(lambda x: list(tree_idx.intersection(x))))
     idxmatch = idxmatch[idxmatch.apply(len) > 0]
