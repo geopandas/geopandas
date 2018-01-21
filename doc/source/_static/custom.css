@@ -1,0 +1,4 @@
+/*This ensures that clickable links in the SG examples are the right color*/
+div.section a span {
+    color: #2980B9 !important
+}

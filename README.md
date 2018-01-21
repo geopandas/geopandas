@@ -1,4 +1,4 @@
-GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://coveralls.io/repos/geopandas/geopandas/badge.png)](https://coveralls.io/r/geopandas/geopandas)
+GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://codecov.io/gh/geopandas/geopandas/branch/master/graph/badge.svg)](https://codecov.io/gh/geopandas/geopandas) [![Join the chat at https://gitter.im/geopandas/geopandas](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/geopandas/geopandas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/geopandas/geopandas/master)
 =========
 
 Python tools for geographic data
@@ -44,8 +44,35 @@ dependency. ``rtree`` requires the C library [``libspatialindex``](https://githu
 
 **Install**
 
-Then, installation works as normal: ``pip install geopandas``
+GeoPandas depends on several low-level libraries for geospatial analysis. Depending on the system and package
+manager that you use, this may cause dependency conflicts if you are not careful.
 
+*Using `conda`*
+
+We suggest that you use the [anaconda distribution](https://conda.io/docs/user-guide/install/download.html)
+to install GeoPandas (``miniconda`` is fine as well).
+
+Use ``conda`` and the ``conda-forge`` channel to install GeoPandas on a clean environment:
+
+```bash
+conda create -n geopandas
+source activate geopandas  # 'activate geopandas' on Windows
+conda install -c conda-forge geopandas
+```
+
+**NOTE:** Creating a new environment is not strictly necessary, but installing other geospatial packages
+from a *different* channel than ``conda-forge`` may cause dependency conflicts, so we recommend starting
+fresh if possible. See the [conda-forge gotcha page](https://conda-forge.org/docs/conda-forge_gotchas.html)
+for more information.
+
+*Using `pip`*
+
+GeoPandas is also pip-installable. If you choose to use `pip`, make sure that you have the proper non-python
+libraries installed and linked properly.
+
+```bash
+pip install geopandas
+```
 
 Examples
 --------
@@ -85,9 +112,10 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona).  To read a [file containing the boroughs of New York City](http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/nybb_16a.zip):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
-    >>> boros = GeoDataFrame.from_file('nybb.shp')
+    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> boros = GeoDataFrame.from_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort()
     >>> boros

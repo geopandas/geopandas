@@ -26,11 +26,38 @@ import sys, os
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['IPython.sphinxext.ipython_console_highlighting',
-              'IPython.sphinxext.ipython_directive']
+              'IPython.sphinxext.ipython_directive',
+              'sphinx_gallery.gen_gallery',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.autodoc',
+              'numpydoc',
+]
+
+# Fix issue with warnings from numpydoc (see discussion in PR #534)
+numpydoc_show_class_members = False
+
+def setup(app):
+    app.add_stylesheet('custom.css')  # may also be an URL
 
 # Add any paths that contain templates here, relative to this directory.
 
 templates_path = ['_templates']
+
+autosummary_generate = True
+
+# Sphinx gallery configuration
+sphinx_gallery_conf = {
+    'examples_dirs': ['../../examples'],
+    'filename_pattern': '^((?!sgskip).)*$',
+    'gallery_dirs': ['gallery'],
+    'doc_module': ('geopandas',),
+    'reference_url': {'matplotlib': 'http://matplotlib.org',
+                      'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+                      'scipy': 'http://docs.scipy.org/doc/scipy/reference',
+                      'geopandas': None},
+    'backreferences_dir': 'reference'
+}
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -43,7 +70,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013-2016, GeoPandas developers'
+copyright = u'2013–2017, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

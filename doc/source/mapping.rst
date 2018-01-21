@@ -4,6 +4,10 @@
    :suppress:
 
    import geopandas as gpd
+   import matplotlib
+   orig = matplotlib.rcParams['figure.figsize']
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+
 
 
 Mapping Tools
@@ -27,23 +31,23 @@ We can now plot those GeoDataFrames:
     world.head()
 
     # Basic plot, random colors
-    @savefig world_randomcolors.png width=5in
+    @savefig world_randomcolors.png
     world.plot();
 
 Note that in general, any options one can pass to `pyplot <http://matplotlib.org/api/pyplot_api.html>`_ in ``matplotlib`` (or `style options that work for lines <http://matplotlib.org/api/lines_api.html>`_) can be passed to the ``plot()`` method.
 
 
-Chloropleth Maps
+Choropleth Maps
 -----------------
 
-*geopandas* makes it easy to create Chloropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
+*geopandas* makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
 
 .. ipython:: python
 
     # Plot by GDP per capta
     world = world[(world.pop_est>0) & (world.name!="Antarctica")]
     world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
-    @savefig world_gdp_per_cap.png width=5in
+    @savefig world_gdp_per_cap.png
     world.plot(column='gdp_per_cap');
 
 
@@ -54,7 +58,7 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
 
 .. ipython:: python
 
-    @savefig world_gdp_per_cap_red.png width=5in
+    @savefig world_gdp_per_cap_red.png
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
@@ -62,14 +66,14 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 
 .. ipython:: python
 
-    @savefig world_gdp_per_cap_quantiles.png width=5in
+    @savefig world_gdp_per_cap_quantiles.png
     world.plot(column='gdp_per_cap', cmap='OrRd', scheme='quantiles');
 
 
 Maps with Layers
 -----------------
 
-There are two strategies for making a map with multiple layers -- one more succinct, and one that is a littel more flexible.
+There are two strategies for making a map with multiple layers -- one more succinct, and one that is a little more flexible.
 
 Before combining maps, however, remember to always ensure they share a common CRS (so they will align).
 
@@ -77,7 +81,7 @@ Before combining maps, however, remember to always ensure they share a common CR
 
     # Look at capitals
     # Note use of standard `pyplot` line style options
-    @savefig capitals.png width=5in
+    @savefig capitals.png
     cities.plot(marker='*', color='green', markersize=5);
 
     # Check crs
@@ -91,8 +95,8 @@ Before combining maps, however, remember to always ensure they share a common CR
 
 .. ipython:: python
 
-    base = world.plot(color='white')
-    @savefig capitals_over_countries_1.png width=5in
+    base = world.plot(color='white', edgecolor='black')
+    @savefig capitals_over_countries_1.png
     cities.plot(ax=base, marker='o', color='red', markersize=5);
 
 **Method 2: Using matplotlib objects**
@@ -107,9 +111,9 @@ Before combining maps, however, remember to always ensure they share a common CR
     # working with pyplot directly.
     ax.set_aspect('equal')
 
-    world.plot(ax=ax, color='white')
+    world.plot(ax=ax, color='white', edgecolor='black')
     cities.plot(ax=ax, marker='o', color='red', markersize=5)
-    @savefig capitals_over_countries_2.png width=5in
+    @savefig capitals_over_countries_2.png
     plt.show();
 
 
@@ -118,3 +122,9 @@ Other Resources
 Links to jupyter Notebooks for different mapping tasks:
 
 `Making Heat Maps <http://nbviewer.jupyter.org/gist/perrygeo/c426355e40037c452434>`_
+
+
+.. ipython:: python
+    :suppress:
+
+    matplotlib.rcParams['figure.figsize'] = orig
