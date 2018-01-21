@@ -5,7 +5,7 @@ from fiona.crs import from_epsg
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point
-from six import iteritems
+from six import iteritems, string_types
 
 import geopandas as gpd
 
@@ -17,7 +17,8 @@ def _throttle_time(provider):
     require a maximum of 1 request per second.
     https://wiki.openstreetmap.org/wiki/Nominatim_usage_policy
     """
-    if provider == 'nominatim':
+    import geopy.geocoders
+    if provider == geopy.geocoders.Nominatim:
         return 1
     else:
         return 0
@@ -30,15 +31,14 @@ def geocode(strings, provider='googlev3', **kwargs):
     Parameters
     ----------
     strings : list or Series of addresses to geocode
-    provider : geopy geocoder to use, default 'googlev3'
+    provider : str or geopy.geocoder
+        Specifies geocoding service to use, default is 'googlev3'.
+        Either the string name used by geopy (as specified in
+        geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
+        (e.g., geopy.geocoders.GoogleV3) may be used.
+
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
-        * googlev3, default
-        * bing
-        * google
-        * yahoo
-        * mapquest
-        * openmapquest
 
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
@@ -74,16 +74,14 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
     points : list or Series of Shapely Point objects.
         x coordinate is longitude
         y coordinate is latitude
-    provider : geopy geocoder to use, default 'googlev3'
-        These are the same options as the geocode() function
+    provider : str or geopy.geocoder (opt)
+        Specifies geocoding service to use, default is 'googlev3'.
+        Either the string name used by geopy (as specified in
+        geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
+        (e.g., geopy.geocoders.GoogleV3) may be used.
+
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
-        * googlev3, default
-        * bing
-        * google
-        * yahoo
-        * mapquest
-        * openmapquest
 
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
@@ -109,28 +107,18 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
 
 
 def _query(data, forward, provider, **kwargs):
+    # generic wrapper for calls over lists to geopy Geocoders
     import geopy
     from geopy.geocoders.base import GeocoderQueryError
+    from geopy.geocoders import get_geocoder_for_service
 
     if not isinstance(data, pd.Series):
         data = pd.Series(data)
 
-    # workaround changed name in 0.96
-    try:
-        Yahoo = geopy.geocoders.YahooPlaceFinder
-    except AttributeError:
-        Yahoo = geopy.geocoders.Yahoo
+    if isinstance(provider, string_types):
+        provider = get_geocoder_for_service(provider)
 
-    coders = {'googlev3': geopy.geocoders.GoogleV3,
-              'bing': geopy.geocoders.Bing,
-              'yahoo': Yahoo,
-              'openmapquest': geopy.geocoders.OpenMapQuest,
-              'nominatim': geopy.geocoders.Nominatim}
-
-    if provider not in coders:
-        raise ValueError('Unknown geocoding provider: {0}'.format(provider))
-
-    coder = coders[provider](**kwargs)
+    coder = provider(**kwargs)
     results = {}
     for i, s in iteritems(data):
         try:

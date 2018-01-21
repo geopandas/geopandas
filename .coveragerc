@@ -5,3 +5,8 @@ exclude_lines =
     raise AssertionError
     raise NotImplementedError
     if __name__ == .__main__.:
+omit =
+    geopandas/tests/*
+    geopandas/io/tests/*
+    geopandas/tools/tests/*
+    geopandas/_version.py

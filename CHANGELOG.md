@@ -1,3 +1,46 @@
+Changes
+=======
+
+Next
+----
+
+Improvements:
+
+* Pass keywords to control legend behavior (`legend_kwds`) to `plot` (#434)
+* Add basic support for reading remote datasets in `read_file` (#531)
+* Pass kwargs for `buffer` operation on GeoSeries (#535)
+* Expose all geopy services as options in geocoding (#550)
+
+Bug fixes :
+
+* Ensure that colorbars are plotted on the correct axis (#523)
+
+
+Version 0.3.0 (August 29, 2017)
+-------------------------------
+
+Improvements:
+
+* Improve plotting performance using ``matplotlib.collections`` (#267)
+* Improve default plotting appearance. The defaults now follow the new matplotlib defaults (#318, #502, #510)
+* Provide access to x/y coordinates as attributes for Point GeoSeries (#383)
+* Make the NYBB dataset available through ``geopandas.datasets`` (#384)
+* Enable ``sjoin`` on non-integer-index GeoDataFrames (#422)
+* Add ``cx`` indexer to GeoDataFrame (#482)
+* ``GeoDataFrame.from_features`` now also accepts a Feature Collection (#225, #507)
+* Use index label instead of integer id in output of ``iterfeatures`` and
+  ``to_json`` (#421)
+* Return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)
+
+Bug fixes:
+
+* Compatibility with shapely 1.6.0 (#512)
+* Fix ``fiona.filter`` results when bbox is not None (#372)
+* Fix ``dissolve`` to retain CRS (#389)
+* Fix ``cx`` behavior when using index of 0 (#478)
+* Fix display of lower bin in legend label of choropleth plots using a PySAL scheme (#450)
+
+
 Version 0.2.0
 -------------
 
@@ -13,7 +56,7 @@ Improvements:
 * Addition of the ``sindex`` attribute, a Spatial Index using the optional
   dependency ``rtree`` (``libspatialindex``) that can be used to speed up
   certain operations such as overlays (#140, #141).
-* Addition of the ``GeoSeries.ix`` coordinate indexer to slice a GeoSeries based
+* Addition of the ``GeoSeries.cx`` coordinate indexer to slice a GeoSeries based
   on a bounding box of the coordinates (#55).
 * Improvements to plotting: ability to specify edge colors (#173), support for
   the ``vmin``, ``vmax``, ``figsize``, ``linewidth`` keywords (#207), legends
