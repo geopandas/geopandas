@@ -1,0 +1,15 @@
+{
+  "geopandas/io/tests/test_io.py": true,
+  "geopandas/tests/test_dissolve.py": true,
+  "geopandas/tests/test_geocode.py": true,
+  "geopandas/tests/test_geodataframe.py": true,
+  "geopandas/tests/test_geom_methods.py": true,
+  "geopandas/tests/test_geoseries.py": true,
+  "geopandas/tests/test_merge.py": true,
+  "geopandas/tests/test_overlay.py": true,
+  "geopandas/tests/test_plotting.py": true,
+  "geopandas/tests/test_sindex.py": true,
+  "geopandas/tests/test_types.py": true,
+  "geopandas/tools/tests/test_sjoin.py": true,
+  "geopandas/tools/tests/test_tools.py": true
+}
