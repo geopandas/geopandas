@@ -115,16 +115,20 @@ def infer_schema(df):
     except ImportError:
         from ordereddict import OrderedDict
 
-    def convert_type(in_type):
+    def convert_type(column, in_type):
         if in_type == object:
             return 'str'
         out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
         if out_type == 'long':
             out_type = 'int'
+        if out_type == 'bool':
+            raise ValueError('column "{}" is boolean type, '.format(column) +
+                             'which is unsupported in file writing. '
+                             'Consider casting the column to int type.')
         return out_type
 
     properties = OrderedDict([
-        (col, convert_type(_type)) for col, _type in
+        (col, convert_type(col, _type)) for col, _type in
         zip(df.columns, df.dtypes) if col != df._geometry_column_name
     ])
 
