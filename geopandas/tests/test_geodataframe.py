@@ -356,6 +356,16 @@ class TestDataFrame:
         assert len(df3) == 2
         assert np.alltrue(df3['Name'].values == self.line_paths)
 
+    def test_to_file_bool(self):
+        """Test error raise when writing with a boolean column (GH #437)."""
+
+        # still want a temp dir in case this test passes
+        tempfilename = os.path.join(self.tempdir, 'boros.shp')
+        df_with_bool = self.df.copy()
+        df_with_bool['bool_column'] = True
+        with pytest.raises(ValueError):
+            df_with_bool.to_file(tempfilename)
+
     def test_to_file_types(self):
         """ Test various integer type columns (GH#93) """
         tempfilename = os.path.join(self.tempdir, 'int.shp')
