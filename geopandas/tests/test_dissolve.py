@@ -21,6 +21,7 @@ def nybb_polydf():
     nybb_polydf.loc[3:4, 'manhattan_bronx'] = 6 
     return  nybb_polydf
 
+
 @pytest.fixture
 def test_merged_shapes(nybb_polydf):
     # Merged geometry
@@ -35,6 +36,7 @@ def test_merged_shapes(nybb_polydf):
 
     return test_merged_shapes
 
+
 @pytest.fixture
 def test_first(test_merged_shapes):
     test_first = test_merged_shapes.copy()
@@ -42,30 +44,36 @@ def test_first(test_merged_shapes):
     test_first['BoroCode'] = [5, 1]
     return test_first
 
+
 @pytest.fixture
 def expected_mean(test_merged_shapes):
     test_mean = test_merged_shapes.copy()
     test_mean['BoroCode'] = [4, 1.5]
     return test_mean
 
+
 def test_geom_dissolve(nybb_polydf, test_first):
     test = nybb_polydf.dissolve('manhattan_bronx')
     assert test.geometry.name == 'myshapes'
     assert test.geom_almost_equals(test_first).all()
+
 
 def test_dissolve_retains_existing_crs(nybb_polydf):
     assert nybb_polydf.crs is not None
     test = nybb_polydf.dissolve('manhattan_bronx')
     assert test.crs is not None
 
+
 def test_dissolve_retains_nonexisting_crs(nybb_polydf):
     nybb_polydf.crs = None
     test = nybb_polydf.dissolve('manhattan_bronx')
     assert test.crs is None
 
+
 def test_first_dissolve(nybb_polydf, test_first):
     test = nybb_polydf.dissolve('manhattan_bronx')
     assert_frame_equal(test_first, test, check_column_type=False)
+
 
 def test_mean_dissolve(nybb_polydf, test_first, expected_mean):
     test = nybb_polydf.dissolve('manhattan_bronx', aggfunc='mean')
@@ -73,6 +81,7 @@ def test_mean_dissolve(nybb_polydf, test_first, expected_mean):
 
     test = nybb_polydf.dissolve('manhattan_bronx', aggfunc=np.mean)
     assert_frame_equal(expected_mean, test, check_column_type=False)
+
 
 def test_multicolumn_dissolve(nybb_polydf, test_first):
     multi = nybb_polydf.copy()
@@ -85,6 +94,7 @@ def test_multicolumn_dissolve(nybb_polydf, test_first):
     first_copy = first_copy.set_index([first_copy.index, 'dup_col'])
 
     assert_frame_equal(multi_test, first_copy, check_column_type=False)
+
 
 def test_reset_index(nybb_polydf, test_first):
     test = nybb_polydf.dissolve('manhattan_bronx', as_index=False)
