@@ -134,6 +134,40 @@ cpdef from_shapely(object L):
     return GeometryArray(out)
 
 
+cpdef from_wkb(object L):
+    """ Convert a list or array of WKB objects to a GeometryArray """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef unsigned int n
+    cdef unsigned char* c_string
+    cdef bytes py_wkb
+    cdef size_t size
+
+    n = len(L)
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    with get_geos_handle() as handle:
+        reader = GEOSWKBReader_create_r(handle)
+
+        for idx in xrange(n):
+            py_wkb = L[idx]
+            if py_wkb is not None:
+                size = len(py_wkb)
+                if size:
+                    c_string = <unsigned char*> py_wkb
+                    geom = GEOSWKBReader_read_r(handle, reader, c_string, size)
+                    out[idx] = <np.uintp_t> geom
+                    #free(c_string)
+                else:
+                    out[idx] = 0
+            else:
+                out[idx] = 0
+
+        GEOSWKBReader_destroy_r(handle, reader)
+
+    return GeometryArray(out)
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,

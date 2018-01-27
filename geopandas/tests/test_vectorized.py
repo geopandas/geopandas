@@ -1,8 +1,11 @@
 import time
 import random
 import shapely
-from geopandas.vectorized import (GeometryArray, points_from_xy,
-        from_shapely, serialize, deserialize, cysjoin, concat)
+import shapely.wkb
+
+from geopandas.vectorized import (
+    GeometryArray, points_from_xy, from_shapely, from_wkb,
+    serialize, deserialize, cysjoin, concat)
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 from shapely.geometry import Point
 
@@ -41,6 +44,25 @@ def test_from_shapely():
     assert isinstance(T, GeometryArray)
     assert [v.equals(t) for v, t in zip(T, triangles)]
     # TODO: handle gc
+
+
+def test_from_wkb():
+    # list
+    L_wkb = [p.to_wkb() for p in points]
+    res = from_wkb(L_wkb)
+    assert isinstance(res, GeometryArray)
+    assert all(v.equals(t) for v, t in zip(res, points))
+
+    # array
+    res = from_wkb(np.array(L_wkb, dtype=object))
+    assert isinstance(res, GeometryArray)
+    assert all(v.equals(t) for v, t in zip(res, points))
+
+    # missing values
+    L_wkb.extend([b'', None])
+    res = from_wkb(L_wkb)
+    assert res[-1] is None
+    assert res[-2] is None
 
 
 @pytest.mark.parametrize('attr,args', [
