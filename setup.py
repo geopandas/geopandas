@@ -50,7 +50,7 @@ such as PostGIS.
 if os.environ.get('READTHEDOCS', False) == 'True':
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ['pandas', 'shapely', 'fiona', 'descartes', 'pyproj']
+    INSTALL_REQUIRES = ['pandas', 'shapely', 'fiona', 'pyproj']
 
 try:
     from Cython.Build import cythonize
