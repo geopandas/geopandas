@@ -10,21 +10,19 @@ from geopandas import GeoDataFrame, read_file
 
 from pandas.util.testing import assert_frame_equal
 
-@pytest.fixture()
-def nybb_polydf():
+@pytest.fixture
+def nybb_polydf():    
     nybb_filename = geopandas.datasets.get_path('nybb')
-    return read_file(nybb_filename)
-
-@pytest.fixture()
-def test_merged_shapes(nybb_polydf):
+    nybb_polydf = read_file(nybb_filename)
     nybb_polydf = nybb_polydf[['geometry', 'BoroName', 'BoroCode']]
-
     nybb_polydf = nybb_polydf.rename(columns={'geometry': 'myshapes'})
     nybb_polydf = nybb_polydf.set_geometry('myshapes')
-
     nybb_polydf['manhattan_bronx'] = 5
-    nybb_polydf.loc[3:4, 'manhattan_bronx'] = 6
+    nybb_polydf.loc[3:4, 'manhattan_bronx'] = 6 
+    return  nybb_polydf
 
+@pytest.fixture
+def test_merged_shapes(nybb_polydf):
     # Merged geometry
     manhattan_bronx = nybb_polydf.loc[3:4, ]
     others = nybb_polydf.loc[0:2, ]
@@ -37,19 +35,18 @@ def test_merged_shapes(nybb_polydf):
 
     return test_merged_shapes
 
-@pytest.fixture()
+@pytest.fixture
 def test_first(test_merged_shapes):
     test_first = test_merged_shapes.copy()
     test_first['BoroName'] = ['Staten Island', 'Manhattan']
     test_first['BoroCode'] = [5, 1]
     return test_first
 
-@pytest.fixture()
+@pytest.fixture
 def expected_mean(test_merged_shapes):
     test_mean = test_merged_shapes.copy()
     test_mean['BoroCode'] = [4, 1.5]
     return test_mean
-
 
 def test_geom_dissolve(nybb_polydf, test_first):
     test = nybb_polydf.dissolve('manhattan_bronx')
