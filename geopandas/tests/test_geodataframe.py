@@ -320,12 +320,23 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df_with_bool.to_file(tempfilename)
 
-    def test_to_file_with_z(self):
+    def test_to_file_with_point_z(self):
         """Test that 3D geometries are retained in writes (GH #612)."""
 
-        tempfilename = os.path.join(self.tempdir, 'test3D.shp')
+        tempfilename = os.path.join(self.tempdir, 'test3Dpoint.shp')
         point = Point(0, 0, 500)
         df = GeoDataFrame({'a': [1]}, geometry=[point], crs={})
+        df.to_file(tempfilename)
+        df_read = GeoDataFrame.from_file(tempfilename)
+        assert_frame_equal(df, df_read)
+        assert_geoseries_equal(df.geometry, df_read.geometry)
+
+    def test_to_file_with_poly_z(self):
+        """Test that 3D geometries are retained in writes (GH #612)."""
+
+        tempfilename = os.path.join(self.tempdir, 'test_3Dpoly.shp')
+        poly = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
+        df = GeoDataFrame({'a': [1]}, geometry=[poly], crs={})
         df.to_file(tempfilename)
         df_read = GeoDataFrame.from_file(tempfilename)
         assert_frame_equal(df, df_read)
