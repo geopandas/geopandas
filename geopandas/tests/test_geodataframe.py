@@ -320,6 +320,17 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df_with_bool.to_file(tempfilename)
 
+    def test_to_file_with_z(self):
+        """Test that 3D geometries are retained in writes (GH #612)."""
+
+        tempfilename = os.path.join(self.tempdir, 'test3D.shp')
+        point = Point(0, 0, 500)
+        df = GeoDataFrame({'a': [1]}, geometry=[point], crs={})
+        df.to_file(tempfilename)
+        df_read = GeoDataFrame.from_file(tempfilename)
+        assert_frame_equal(df, df_read)
+        assert_geoseries_equal(df.geometry, df_read.geometry)
+
     def test_to_file_types(self):
         """ Test various integer type columns (GH#93) """
         tempfilename = os.path.join(self.tempdir, 'int.shp')
