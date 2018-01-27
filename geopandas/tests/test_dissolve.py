@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import pytest
+
 import numpy as np
 import pandas as pd
 
@@ -8,78 +10,86 @@ from geopandas import GeoDataFrame, read_file
 
 from pandas.util.testing import assert_frame_equal
 
+@pytest.fixture()
+def nybb_polydf():
+    nybb_filename = geopandas.datasets.get_path('nybb')
+    return read_file(nybb_filename)
 
-class TestDataFrame:
+@pytest.fixture()
+def test_merged_shapes(nybb_polydf):
+    nybb_polydf = nybb_polydf[['geometry', 'BoroName', 'BoroCode']]
 
-    def setup_method(self):
+    nybb_polydf = nybb_polydf.rename(columns={'geometry': 'myshapes'})
+    nybb_polydf = nybb_polydf.set_geometry('myshapes')
 
-        nybb_filename = geopandas.datasets.get_path('nybb')
-        self.polydf = read_file(nybb_filename)
-        self.polydf = self.polydf[['geometry', 'BoroName', 'BoroCode']]
+    nybb_polydf['manhattan_bronx'] = 5
+    nybb_polydf.loc[3:4, 'manhattan_bronx'] = 6
 
-        self.polydf = self.polydf.rename(columns={'geometry': 'myshapes'})
-        self.polydf = self.polydf.set_geometry('myshapes')
+    # Merged geometry
+    manhattan_bronx = nybb_polydf.loc[3:4, ]
+    others = nybb_polydf.loc[0:2, ]
 
-        self.polydf['manhattan_bronx'] = 5
-        self.polydf.loc[3:4, 'manhattan_bronx'] = 6
+    collapsed = [others.geometry.unary_union,
+                 manhattan_bronx.geometry.unary_union]
+    test_merged_shapes = GeoDataFrame(
+        {'myshapes': collapsed}, geometry='myshapes',
+        index=pd.Index([5, 6], name='manhattan_bronx'))
 
-        # Merged geometry
-        manhattan_bronx = self.polydf.loc[3:4, ]
-        others = self.polydf.loc[0:2, ]
+    return test_merged_shapes
 
-        collapsed = [others.geometry.unary_union,
-                     manhattan_bronx.geometry.unary_union]
-        merged_shapes = GeoDataFrame(
-            {'myshapes': collapsed}, geometry='myshapes',
-            index=pd.Index([5, 6], name='manhattan_bronx'))
+@pytest.fixture()
+def test_first(test_merged_shapes):
+    test_first = test_merged_shapes.copy()
+    test_first['BoroName'] = ['Staten Island', 'Manhattan']
+    test_first['BoroCode'] = [5, 1]
+    return test_first
 
-        # Different expected results
-        self.first = merged_shapes.copy()
-        self.first['BoroName'] = ['Staten Island', 'Manhattan']
-        self.first['BoroCode'] = [5, 1]
+@pytest.fixture()
+def expected_mean(test_merged_shapes):
+    test_mean = test_merged_shapes.copy()
+    test_mean['BoroCode'] = [4, 1.5]
+    return test_mean
 
-        self.mean = merged_shapes.copy()
-        self.mean['BoroCode'] = [4, 1.5]
 
-    def test_geom_dissolve(self):
-        test = self.polydf.dissolve('manhattan_bronx')
-        assert test.geometry.name == 'myshapes'
-        assert test.geom_almost_equals(self.first).all()
+def test_geom_dissolve(nybb_polydf, test_first):
+    test = nybb_polydf.dissolve('manhattan_bronx')
+    assert test.geometry.name == 'myshapes'
+    assert test.geom_almost_equals(test_first).all()
 
-    def test_dissolve_retains_existing_crs(self):
-        assert self.polydf.crs is not None
-        test = self.polydf.dissolve('manhattan_bronx')
-        assert test.crs is not None
+def test_dissolve_retains_existing_crs(nybb_polydf):
+    assert nybb_polydf.crs is not None
+    test = nybb_polydf.dissolve('manhattan_bronx')
+    assert test.crs is not None
 
-    def test_dissolve_retains_nonexisting_crs(self):
-        self.polydf.crs = None
-        test = self.polydf.dissolve('manhattan_bronx')
-        assert test.crs is None
+def test_dissolve_retains_nonexisting_crs(nybb_polydf):
+    nybb_polydf.crs = None
+    test = nybb_polydf.dissolve('manhattan_bronx')
+    assert test.crs is None
 
-    def test_first_dissolve(self):
-        test = self.polydf.dissolve('manhattan_bronx')
-        assert_frame_equal(self.first, test, check_column_type=False)
+def test_first_dissolve(nybb_polydf, test_first):
+    test = nybb_polydf.dissolve('manhattan_bronx')
+    assert_frame_equal(test_first, test, check_column_type=False)
 
-    def test_mean_dissolve(self):
-        test = self.polydf.dissolve('manhattan_bronx', aggfunc='mean')
-        assert_frame_equal(self.mean, test, check_column_type=False)
+def test_mean_dissolve(nybb_polydf, test_first, expected_mean):
+    test = nybb_polydf.dissolve('manhattan_bronx', aggfunc='mean')
+    assert_frame_equal(expected_mean, test, check_column_type=False)
 
-        test = self.polydf.dissolve('manhattan_bronx', aggfunc=np.mean)
-        assert_frame_equal(self.mean, test, check_column_type=False)
+    test = nybb_polydf.dissolve('manhattan_bronx', aggfunc=np.mean)
+    assert_frame_equal(expected_mean, test, check_column_type=False)
 
-    def test_multicolumn_dissolve(self):
-        multi = self.polydf.copy()
-        multi['dup_col'] = multi.manhattan_bronx
-        multi_test = multi.dissolve(['manhattan_bronx', 'dup_col'],
-                                    aggfunc='first')
+def test_multicolumn_dissolve(nybb_polydf, test_first):
+    multi = nybb_polydf.copy()
+    multi['dup_col'] = multi.manhattan_bronx
+    multi_test = multi.dissolve(['manhattan_bronx', 'dup_col'],
+                                aggfunc='first')
 
-        first = self.first.copy()
-        first['dup_col'] = first.index
-        first = first.set_index([first.index, 'dup_col'])
+    first_copy = test_first.copy()
+    first_copy['dup_col'] = first_copy.index
+    first_copy = first_copy.set_index([first_copy.index, 'dup_col'])
 
-        assert_frame_equal(multi_test, first, check_column_type=False)
+    assert_frame_equal(multi_test, first_copy, check_column_type=False)
 
-    def test_reset_index(self):
-        test = self.polydf.dissolve('manhattan_bronx', as_index=False)
-        comparison = self.first.reset_index()
-        assert_frame_equal(comparison, test, check_column_type=False)
+def test_reset_index(nybb_polydf, test_first):
+    test = nybb_polydf.dissolve('manhattan_bronx', as_index=False)
+    comparison = test_first.reset_index()
+    assert_frame_equal(comparison, test, check_column_type=False)
