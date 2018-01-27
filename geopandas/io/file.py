@@ -67,9 +67,14 @@ def read_file(filename, **kwargs):
         else:
             f_filt = f
         gdf = GeoDataFrame.from_features(f_filt, crs=crs)
-        # re-order with column order from metadata, with geometry last
+
         columns = list(f.meta["schema"]["properties"]) + ["geometry"]
-        gdf = gdf[columns]
+        if gdf.empty:
+            # make sure the empty result has the correct column names
+            gdf = GeoDataFrame(columns=columns)
+        else:
+            # re-order with column order from metadata, with geometry last
+            gdf = gdf[columns]
 
     return gdf
 
