@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import sys
 import numpy as np
 import pandas as pd
 from fiona.crs import from_epsg
@@ -14,15 +15,9 @@ from pandas.util.testing import assert_series_equal
 from geopandas.tests.util import mock, assert_geoseries_equal
 
 
-def _skip_if_no_geopy():
-    try:
-        import geopy
-    except ImportError:
-        raise pytest.skip("Geopy not installed. Skipping tests.")
-    except SyntaxError:
-        raise pytest.skip("Geopy is known to be broken on Python 3.2. "
-                          "Skipping tests.")
-
+@pytest.mark.skipif(
+    sys.version_info[0], sys.version_info[1]== (3,2),
+    reason="Geopy is known to be broken on Python 3.2.")
 
 class ForwardMock(mock.MagicMock):
     """
@@ -57,10 +52,8 @@ class ReverseMock(mock.MagicMock):
         self._n += 1
         return super(ReverseMock, self).__call__(*args, **kwargs)
 
-
 class TestGeocode:
     def setup_method(self):
-        _skip_if_no_geopy()
         self.locations = ['260 Broadway, New York, NY',
                           '77 Massachusetts Ave, Cambridge, MA']
         self.points = [Point(-71.0597732, 42.3584308),
@@ -107,16 +100,19 @@ class TestGeocode:
         assert np.isnan(row['address'])
 
     def test_bad_provider_forward(self):
+        geopy = pytest.importorskip("geopy")
         from geopy.exc import GeocoderNotFound
         with pytest.raises(GeocoderNotFound):
             geocode(['cambridge, ma'], 'badprovider')
 
     def test_bad_provider_reverse(self):
+        geopy = pytest.importorskip("geopy")
         from geopy.exc import GeocoderNotFound
         with pytest.raises(GeocoderNotFound):
             reverse_geocode(['cambridge, ma'], 'badprovider')
 
     def test_forward(self):
+        geopy = pytest.importorskip("geopy")
         from geopy.geocoders import GoogleV3
         for provider in ['googlev3', GoogleV3]:
             with mock.patch('geopy.geocoders.googlev3.GoogleV3.geocode',
@@ -134,6 +130,7 @@ class TestGeocode:
                                 pd.Series(self.locations, name='address'))
 
     def test_reverse(self):
+        geopy = pytest.importorskip("geopy")
         from geopy.geocoders import GoogleV3
         for provider in ['googlev3', GoogleV3]:
             with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
