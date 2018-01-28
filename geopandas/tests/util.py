@@ -14,6 +14,7 @@ except ImportError:
     class OperationalError(Exception):
         pass
 
+# mock not used here, but the import from here is used in other modules
 try:
     import unittest.mock as mock
 except ImportError:
@@ -21,7 +22,7 @@ except ImportError:
 
 
 def validate_boro_df(df, case_sensitive=False):
-    """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
+    """Tests a GeoDataFrame that has been read in from the nybb dataset."""
     assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
     # were properly loaded as MultiPolygons

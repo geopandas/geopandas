@@ -29,6 +29,9 @@ class TestIO:
             con.close()
 
         validate_boro_df(df)
+        # no crs defined on the created geodatabase, and none specified
+        # by user; should not be set to 0, as from get_srid failure
+        assert df.crs is None
 
     def test_read_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
@@ -45,6 +48,7 @@ class TestIO:
         validate_boro_df(df)
 
     def test_read_postgis_select_geom_as(self):
+        """Tests that a SELECT {geom} AS {some_other_geom} works."""
         con = connect('test_geopandas')
         orig_geom = "geom"
         out_geom = "the_geom"
@@ -60,9 +64,8 @@ class TestIO:
 
         validate_boro_df(df)
 
-    # geopandas does not currently return use the SRID to set the frame CRS
-    @pytest.mark.xfail
     def test_read_postgis_get_srid(self):
+        """Tests that an SRID can be read from a geodatabase (GH #451)."""
         crs = {"init": "epsg:4269"}
         df_reproj = self.df.to_crs(crs)
         created = create_db(df_reproj, srid=4269)
@@ -78,6 +81,23 @@ class TestIO:
 
         validate_boro_df(df)
         assert(df.crs == crs)
+
+    def test_read_postgis_override_srid(self):
+        """Tests that a user specified CRS overrides the geodatabase SRID."""
+        orig_crs = self.df.crs
+        created = create_db(self.df, srid=4269)
+        con = connect('test_geopandas')
+        if con is None or not created:
+            raise pytest.skip()
+
+        try:
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, con, crs=orig_crs)
+        finally:
+            con.close()
+
+        validate_boro_df(df)
+        assert(df.crs == orig_crs)
 
     def test_read_file(self):
         df = self.df.rename(columns=lambda x: x.lower())
