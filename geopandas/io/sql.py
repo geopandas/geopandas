@@ -1,13 +1,11 @@
-import binascii
-
 from pandas import read_sql
 import shapely.wkb
 
 from geopandas import GeoSeries, GeoDataFrame
 
 
-def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
-                 coerce_float=True, params=None):
+def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
+                 index_col=None, coerce_float=True, params=None):
     """
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column.
@@ -21,7 +19,12 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     geom_col : string, default 'geom'
         column name to convert to shapely geometries
     crs : dict or str, optional
-        CRS to use for the returned GeoDataFrame
+        CRS to use for the returned GeoDataFrame; if not set, tries to
+        determine CRS from the SRID associated with geometries in the
+        database.
+    hex_encoded : bool, optional
+        Whether the geometry is in a hex-encoded string. Default is True,
+        standard for postGIS.
 
     See the documentation for pandas.read_sql for further explanation
     of the following parameters:
@@ -43,9 +46,20 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
 
+    def load_geom(x):
+        return shapely.wkb.loads(str(x), hex=hex_encoded)
     wkb_geoms = df[geom_col]
+    df[geom_col] = GeoSeries(wkb_geoms.apply(load_geom))
 
-    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x.encode())))
-    df[geom_col] = GeoSeries(s)
+    if crs is None:
+        def get_srid(x):
+            return shapely.geos.lgeos.GEOSGetSRID(x._geom)
+        unique_srids = df[geom_col].apply(get_srid).unique()
+        # only set a srs for frame if all polygons have the same one
+        if len(unique_srids) == 1:
+            unique_srid = unique_srids[0]
+            # if no defined SRID in geodatabase, returns SRID of 0
+            if unique_srid != 0:
+                crs = {"init": "epsg:{}".format(unique_srid)}
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
