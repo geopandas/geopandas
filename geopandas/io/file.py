@@ -59,17 +59,17 @@ def read_file(filename, **kwargs):
     else:
         path_or_bytes = filename
         reader = fiona.open
-    with reader(path_or_bytes, **kwargs) as f:
-        crs = f.crs
+
+    with reader(path_or_bytes, **kwargs) as features:
+        crs = features.crs
         if bbox is not None:
             assert len(bbox) == 4
-            f_filt = f.filter(bbox=bbox)
+            f_filt = features.filter(bbox=bbox)
         else:
-            f_filt = f
-        gdf = GeoDataFrame.from_features(f_filt, crs=crs)
-        # re-order with column order from metadata, with geometry last
-        columns = list(f.meta["schema"]["properties"]) + ["geometry"]
-        gdf = gdf[columns]
+            f_filt = features
+
+        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+        gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 
