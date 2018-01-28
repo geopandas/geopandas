@@ -3,6 +3,7 @@ import os
 import fiona
 import numpy as np
 import six
+from shapely.geometry import shape
 
 from geopandas import GeoDataFrame
 
@@ -59,22 +60,24 @@ def read_file(filename, **kwargs):
     else:
         path_or_bytes = filename
         reader = fiona.open
-    with reader(path_or_bytes, **kwargs) as f:
-        crs = f.crs
+
+    with reader(path_or_bytes, **kwargs) as features:
+        crs = features.crs
         if bbox is not None:
             assert len(bbox) == 4
-            f_filt = f.filter(bbox=bbox)
+            f_filt = features.filter(bbox=bbox)
         else:
-            f_filt = f
-        gdf = GeoDataFrame.from_features(f_filt, crs=crs)
+            f_filt = features
 
-        columns = list(f.meta["schema"]["properties"]) + ["geometry"]
-        if gdf.empty:
-            # make sure the empty result has the correct column names
-            gdf = GeoDataFrame(columns=columns)
-        else:
-            # re-order with column order from metadata, with geometry last
-            gdf = gdf[columns]
+        rows = []
+        for f in f_filt:
+            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
+            d.update(f['properties'])
+            rows.append(d)
+
+        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+        gdf = GeoDataFrame(rows, columns=columns)
+        gdf.crs = crs
 
     return gdf
 
