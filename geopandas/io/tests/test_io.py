@@ -73,7 +73,7 @@ class TestIO:
         assert full_df_shape != filtered_df_shape
         assert filtered_df_shape == (2, 5)
 
-    def test_emtpy_shapefile(self, tmpdir):
+    def test_empty_shapefile(self, tmpdir):
 
         # create empty shapefile
         meta = {'crs': {},

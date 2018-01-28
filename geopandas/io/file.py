@@ -3,7 +3,6 @@ import os
 import fiona
 import numpy as np
 import six
-from shapely.geometry import shape
 
 from geopandas import GeoDataFrame
 
