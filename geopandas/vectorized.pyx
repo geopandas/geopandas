@@ -127,6 +127,69 @@ cpdef from_shapely(object L):
     return out
 
 
+cpdef from_wkb(object L):
+    """ Convert a list or array of WKB objects to a GeometryArray """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef unsigned int n
+    cdef unsigned char* c_string
+    cdef bytes py_wkb
+    cdef size_t size
+
+    n = len(L)
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    with get_geos_handle() as handle:
+        reader = GEOSWKBReader_create_r(handle)
+
+        for idx in xrange(n):
+            py_wkb = L[idx]
+            if py_wkb is not None:
+                size = len(py_wkb)
+                if size:
+                    c_string = <unsigned char*> py_wkb
+                    geom = GEOSWKBReader_read_r(handle, reader, c_string, size)
+                    out[idx] = <np.uintp_t> geom
+                else:
+                    out[idx] = 0
+            else:
+                out[idx] = 0
+
+        GEOSWKBReader_destroy_r(handle, reader)
+
+    return out
+
+
+cpdef from_wkt(object L):
+    """ Convert a list or array of WKT objects to a GeometryArray """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef unsigned int n
+    cdef char* c_string
+    #cdef bytes py_wkt
+
+    n = len(L)
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    with get_geos_handle() as handle:
+        reader = GEOSWKTReader_create_r(handle)
+
+        for idx in xrange(n):
+            py_wkt = L[idx]
+            if isinstance(py_wkt, unicode):
+                py_wkt = (<unicode>py_wkt).encode('utf8')
+            if py_wkt:
+                c_string = <char*> py_wkt
+                geom = GEOSWKTReader_read_r(handle, reader, c_string)
+                out[idx] = <np.uintp_t> geom
+            else:
+                out[idx] = 0
+
+        GEOSWKTReader_destroy_r(handle, reader)
+
+    return out
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
