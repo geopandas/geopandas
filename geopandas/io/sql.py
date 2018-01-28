@@ -20,8 +20,8 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
         column name to convert to shapely geometries
     crs : dict or str, optional
         CRS to use for the returned GeoDataFrame; if not set, tries to
-        determine CRS from the SRID associated with geometries in the
-        database.
+        determine CRS from the SRID associated with the first geometry in
+        the database, and assigns that to all geometries.
     hex_encoded : bool, optional
         Whether the geometry is in a hex-encoded string. Default is True,
         standard for postGIS.
@@ -48,18 +48,14 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
 
     def load_geom(x):
         return shapely.wkb.loads(str(x), hex=hex_encoded)
-    wkb_geoms = df[geom_col]
-    df[geom_col] = GeoSeries(wkb_geoms.apply(load_geom))
+    geoms = df[geom_col].apply(load_geom)
+    df[geom_col] = GeoSeries(geoms)
 
     if crs is None:
-        def get_srid(x):
-            return shapely.geos.lgeos.GEOSGetSRID(x._geom)
-        unique_srids = df[geom_col].apply(get_srid).unique()
-        # only set a srs for frame if all polygons have the same one
-        if len(unique_srids) == 1:
-            unique_srid = unique_srids[0]
+        if len(geoms) > 0:
+            srid = shapely.geos.lgeos.GEOSGetSRID(geoms[0]._geom)
             # if no defined SRID in geodatabase, returns SRID of 0
-            if unique_srid != 0:
-                crs = {"init": "epsg:{}".format(unique_srid)}
+            if srid != 0:
+                crs = {"init": "epsg:{}".format(srid)}
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
