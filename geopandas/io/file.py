@@ -69,15 +69,8 @@ def read_file(filename, **kwargs):
         else:
             f_filt = features
 
-        rows = []
-        for f in f_filt:
-            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
-            d.update(f['properties'])
-            rows.append(d)
-
         columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-        gdf = GeoDataFrame(rows, columns=columns)
-        gdf.crs = crs
+        gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 
