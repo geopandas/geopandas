@@ -17,7 +17,6 @@ def _flatten_multi_geoms(geoms, colors=None):
 
     Returns
     -------
-
     components : list of geometry
 
     component_colors : list of whatever type `colors` contains
@@ -42,39 +41,32 @@ def _flatten_multi_geoms(geoms, colors=None):
     return components, component_colors
 
 
-def plot_polygon_collection(ax, geoms, values=None, color=None,
-                            cmap=None, vmin=None, vmax=None, **kwargs):
+def _plot_polygon_collection(ax, geoms, values=None, color=None,
+                             cmap=None, vmin=None, vmax=None, **kwargs):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
 
     Parameters
     ----------
-
     ax : matplotlib.axes.Axes
         where shapes will be plotted
-
     geoms : a sequence of `N` Polygons and/or MultiPolygons (can be mixed)
 
     values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
         Otherwise follows `color` / `facecolor` kwargs.
-
     edgecolor : single color or sequence of `N` colors
         Color for the edge of the polygons
-
     facecolor : single color or sequence of `N` colors
         Color to fill the polygons. Cannot be used together with `values`.
-
     color : single color or sequence of `N` colors
         Sets both `edgecolor` and `facecolor`
-
     **kwargs
         Additional keyword arguments passed to the collection
 
     Returns
     -------
-
     collection : matplotlib.collections.Collection that was plotted
     """
     from descartes.patch import PolygonPatch
@@ -105,32 +97,26 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
     return collection
 
 
-def plot_linestring_collection(ax, geoms, values=None, color=None,
-                               cmap=None, vmin=None, vmax=None, **kwargs):
+def _plot_linestring_collection(ax, geoms, values=None, color=None,
+                                cmap=None, vmin=None, vmax=None, **kwargs):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
 
     Parameters
     ----------
-
     ax : matplotlib.axes.Axes
         where shapes will be plotted
-
     geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be
             mixed)
-
     values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
-
     color : single color or sequence of `N` colors
         Cannot be used together with `values`.
 
     Returns
     -------
-
     collection : matplotlib.collections.Collection that was plotted
-
     """
     from matplotlib.collections import LineCollection
 
@@ -159,9 +145,9 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
     return collection
 
 
-def plot_point_collection(ax, geoms, values=None, color=None,
-                          cmap=None, vmin=None, vmax=None,
-                          marker='o', markersize=None, **kwargs):
+def _plot_point_collection(ax, geoms, values=None, color=None,
+                           cmap=None, vmin=None, vmax=None,
+                           marker='o', markersize=None, **kwargs):
     """
     Plots a collection of Point geometries to `ax`
 
@@ -281,22 +267,22 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         if color is not None:
             facecolor = color
         values_ = values[poly_idx] if cmap else None
-        plot_polygon_collection(ax, polys, values_, facecolor=facecolor,
-                                cmap=cmap, **style_kwds)
+        _plot_polygon_collection(ax, polys, values_, facecolor=facecolor,
+                                 cmap=cmap, **style_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
     lines = s.geometry[line_idx]
     if not lines.empty:
         values_ = values[line_idx] if cmap else None
-        plot_linestring_collection(ax, lines, values_, color=color, cmap=cmap,
-                                   **style_kwds)
+        _plot_linestring_collection(ax, lines, values_, color=color, cmap=cmap,
+                                    **style_kwds)
 
     # plot all Points in the same collection
     points = s.geometry[point_idx]
     if not points.empty:
         values_ = values[point_idx] if cmap else None
-        plot_point_collection(ax, points, values_, color=color, cmap=cmap,
-                              **style_kwds)
+        _plot_point_collection(ax, points, values_, color=color, cmap=cmap,
+                               **style_kwds)
 
     plt.draw()
     return ax
@@ -421,7 +407,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     else:
         values = df[column]
     if scheme is not None:
-        binning = __pysal_choro(values, scheme, k=k)
+        binning = _pysal_choro(values, scheme, k=k)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [values.min()] + binning.bins.tolist()
@@ -442,23 +428,23 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = df.geometry[poly_idx]
     if not polys.empty:
-        plot_polygon_collection(ax, polys, values[poly_idx],
-                                vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+        _plot_polygon_collection(ax, polys, values[poly_idx],
+                                 vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
     # plot all LineStrings and MultiLineString components in same collection
     lines = df.geometry[line_idx]
     if not lines.empty:
-        plot_linestring_collection(ax, lines, values[line_idx],
-                                   vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+        _plot_linestring_collection(ax, lines, values[line_idx],
+                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
     # plot all Points in the same collection
     points = df.geometry[point_idx]
     if not points.empty:
         if isinstance(markersize, np.ndarray):
             markersize = markersize[point_idx]
-        plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx,
-                              markersize=markersize, cmap=cmap,
-                              **style_kwds)
+        _plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx,
+                               markersize=markersize, cmap=cmap,
+                               **style_kwds)
 
     if legend and not color:
         from matplotlib.lines import Line2D
@@ -487,7 +473,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     return ax
 
 
-def __pysal_choro(values, scheme, k=5):
+def _pysal_choro(values, scheme, k=5):
     """
     Wrapper for choropleth schemes from PySAL for use with plot_dataframe
 
@@ -506,7 +492,6 @@ def __pysal_choro(values, scheme, k=5):
     binning
         Binning objects that holds the Series with values replaced with
         class identifier and the bins.
-
     """
     try:
         from pysal.esda.mapclassify import (
