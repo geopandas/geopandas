@@ -24,7 +24,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
         the database, and assigns that to all geometries.
     hex_encoded : bool, optional
         Whether the geometry is in a hex-encoded string. Default is True,
-        standard for postGIS.
+        standard for postGIS. Use hex_encoded=False for sqlite databases.
 
     See the documentation for pandas.read_sql for further explanation
     of the following parameters:
@@ -47,7 +47,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
 
     def load_geom(x):
-        return shapely.wkb.loads(str(x), hex=hex_encoded)
+        return shapely.wkb.loads(x, hex=hex_encoded)
     geoms = df[geom_col].apply(load_geom)
     df[geom_col] = GeoSeries(geoms)
 

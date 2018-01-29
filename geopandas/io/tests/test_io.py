@@ -1,11 +1,12 @@
 from __future__ import absolute_import
+import sqlite3
+import os
 
 import fiona
+import pytest
 
 import geopandas
 from geopandas import read_postgis, read_file
-
-import pytest
 from geopandas.tests.util import connect, create_db, validate_boro_df
 
 
@@ -16,6 +17,14 @@ class TestIO:
         with fiona.open(nybb_zip_path) as f:
             self.crs = f.crs
             self.columns = list(f.meta["schema"]["properties"].keys())
+
+    def test_read_sqlite(self):
+        nybb_sqlite = os.path.join(geopandas.datasets._module_path,
+                                   "nybb.sqlite")
+        con = sqlite3.connect(nybb_sqlite)
+        sql = "SELECT * FROM nybb"
+        df = read_postgis(sql, con, geom_col="GEOMETRY", hex_encoded=False)
+        validate_boro_df(df)
 
     def test_read_postgis_default(self):
         con = connect('test_geopandas')
