@@ -1,11 +1,13 @@
-from pandas import read_sql
+import functools
+
+import pandas as pd
 import shapely.wkb
 
 from geopandas import GeoSeries, GeoDataFrame
 
 
-def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
-                 index_col=None, coerce_float=True, params=None):
+def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
+             index_col=None, coerce_float=True, params=None):
     """
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column.
@@ -40,8 +42,8 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
     >>> df = geopandas.read_postgis(sql, con)
     """
 
-    df = read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
-                  params=params)
+    df = pd.read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
+                     params=params)
 
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
@@ -62,3 +64,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
                 crs = {"init": "epsg:{}".format(srid)}
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
+
+
+read_postgis = functools.partial(read_sql, hex_encoded=True)
+read_sqlite = functools.partial(read_sql, hex_encoded=False)
