@@ -55,8 +55,6 @@ def create_sqlite(df, filename, geom_col="geom"):
 
     con = sqlite3.connect(filename)
     cur = con.cursor()
-    cur.execute("PRAGMA foreign_keys=OFF;")
-    cur.execute("BEGIN TRANSACTION;")
     cur.execute("CREATE TABLE IF NOT EXISTS 'nybb' "
                 "( ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "'{}' BLOB, 'borocode' INTEGER, ".format(geom_col) +
@@ -68,8 +66,8 @@ def create_sqlite(df, filename, geom_col="geom"):
                                                         hex=True),
                                    row['BoroCode'], row['BoroName'],
                                    row['Shape_Leng'], row['Shape_Area']))
-    cur.execute("COMMIT;")
     con.commit()
+    con.close()
 
 
 def create_postgis(df, srid=None, geom_col="geom"):
