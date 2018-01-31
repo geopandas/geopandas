@@ -366,6 +366,33 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df_with_bool.to_file(tempfilename)
 
+    @pytest.mark.cython
+    @pytest.mark.xfail(reason="GEOPANDAS-CYTHON")
+    def test_to_file_with_point_z(self):
+        # failing due to problem with iterrows -> overridden implementation
+        # in geodataframe.py has a problem when the number of columns
+        # matches the number of coordinates
+        """Test that 3D geometries are retained in writes (GH #612)."""
+
+        tempfilename = os.path.join(self.tempdir, 'test_3Dpoint.shp')
+        point3d = Point(0, 0, 500)
+        point2d = Point(1, 1)
+        df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d], crs={})
+        df.to_file(tempfilename)
+        df_read = GeoDataFrame.from_file(tempfilename)
+        assert_geoseries_equal(df.geometry, df_read.geometry)
+
+    def test_to_file_with_poly_z(self):
+        """Test that 3D geometries are retained in writes (GH #612)."""
+
+        tempfilename = os.path.join(self.tempdir, 'test_3Dpoly.shp')
+        poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
+        poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
+        df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d], crs={})
+        df.to_file(tempfilename)
+        df_read = GeoDataFrame.from_file(tempfilename)
+        assert_geoseries_equal(df.geometry, df_read.geometry)
+
     def test_to_file_types(self):
         """ Test various integer type columns (GH#93) """
         tempfilename = os.path.join(self.tempdir, 'int.shp')

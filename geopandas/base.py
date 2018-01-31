@@ -192,6 +192,13 @@ class GeoPandasBase(object):
         x = vectorized.unary_predicate('is_ring', self._geometry_array.data)
         return Series(x, index=self.index)
 
+    @property
+    def has_z(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        features that have a z-component."""
+        # operates on the exterior, so can't use _series_unary_op()
+        return _series_unary_op(self, 'has_z', null_value=False)
+
     #
     # Unary operations that return a GeoSeries
     #
