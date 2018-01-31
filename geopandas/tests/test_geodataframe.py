@@ -17,7 +17,7 @@ import pytest
 from pandas.util.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal)
 from geopandas.tests.util import (
-    assert_geoseries_equal, connect, create_db, PACKAGE_DIR,
+    assert_geoseries_equal, connect, create_postgis, PACKAGE_DIR,
     validate_boro_df)
 
 
@@ -449,7 +449,7 @@ class TestDataFrame:
 
     def test_from_postgis_default(self):
         con = connect('test_geopandas')
-        if con is None or not create_db(self.df):
+        if con is None or not create_postgis(self.df):
             raise pytest.skip()
 
         try:
@@ -463,7 +463,7 @@ class TestDataFrame:
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
         geom_col = "the_geom"
-        if con is None or not create_db(self.df, geom_col=geom_col):
+        if con is None or not create_postgis(self.df, geom_col=geom_col):
             raise pytest.skip()
 
         try:

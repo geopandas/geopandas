@@ -6,8 +6,28 @@ import fiona
 import pytest
 
 import geopandas
-from geopandas import read_postgis, read_file
-from geopandas.tests.util import connect, create_db, validate_boro_df
+from geopandas import read_postgis, read_file, read_sqlite
+from geopandas.tests.util import (connect, create_postgis, create_sqlite,
+                                  validate_boro_df)
+
+
+@pytest.fixture
+def nybb_df():
+    nybb_path = geopandas.datasets.get_path('nybb')
+    df = read_file(nybb_path)
+
+    return df
+
+
+def test_read_sqlite(tmpdir, nybb_df):
+    tmp_filename = os.path.join(str(tmpdir), "nybb.sqlite")
+    create_sqlite(nybb_df, tmp_filename)
+    con = sqlite3.connect(tmp_filename)
+    try:
+        sqlite_df = read_sqlite("SELECT * FROM nybb;", con)
+    finally:
+        con.close()
+    validate_boro_df(sqlite_df)
 
 
 class TestIO:
@@ -18,17 +38,9 @@ class TestIO:
             self.crs = f.crs
             self.columns = list(f.meta["schema"]["properties"].keys())
 
-    def test_read_sqlite(self):
-        nybb_sqlite = os.path.join(geopandas.datasets._module_path,
-                                   "nybb.sqlite")
-        con = sqlite3.connect(nybb_sqlite)
-        sql = "SELECT * FROM nybb"
-        df = read_postgis(sql, con, geom_col="GEOMETRY", hex_encoded=False)
-        validate_boro_df(df)
-
     def test_read_postgis_default(self):
         con = connect('test_geopandas')
-        if con is None or not create_db(self.df):
+        if con is None or not create_postgis(self.df):
             raise pytest.skip()
 
         try:
@@ -45,7 +57,7 @@ class TestIO:
     def test_read_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
         geom_col = "the_geom"
-        if con is None or not create_db(self.df, geom_col=geom_col):
+        if con is None or not create_postgis(self.df, geom_col=geom_col):
             raise pytest.skip()
 
         try:
@@ -61,7 +73,7 @@ class TestIO:
         con = connect('test_geopandas')
         orig_geom = "geom"
         out_geom = "the_geom"
-        if con is None or not create_db(self.df, geom_col=orig_geom):
+        if con is None or not create_postgis(self.df, geom_col=orig_geom):
             raise pytest.skip()
 
         try:
@@ -77,7 +89,7 @@ class TestIO:
         """Tests that an SRID can be read from a geodatabase (GH #451)."""
         crs = {"init": "epsg:4269"}
         df_reproj = self.df.to_crs(crs)
-        created = create_db(df_reproj, srid=4269)
+        created = create_postgis(df_reproj, srid=4269)
         con = connect('test_geopandas')
         if con is None or not created:
             raise pytest.skip()
@@ -94,7 +106,7 @@ class TestIO:
     def test_read_postgis_override_srid(self):
         """Tests that a user specified CRS overrides the geodatabase SRID."""
         orig_crs = self.df.crs
-        created = create_db(self.df, srid=4269)
+        created = create_postgis(self.df, srid=4269)
         con = connect('test_geopandas')
         if con is None or not created:
             raise pytest.skip()

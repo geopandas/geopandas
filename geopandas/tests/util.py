@@ -1,6 +1,8 @@
 import os.path
+import sqlite3
 
 from geopandas import GeoDataFrame, GeoSeries
+import shapely.wkb
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -46,7 +48,31 @@ def connect(dbname):
     return con
 
 
-def create_db(df, srid=None, geom_col="geom"):
+def create_sqlite(df, filename, geom_col="geom"):
+    """
+    Create a sqlite database with the nybb table.
+    """
+
+    con = sqlite3.connect(filename)
+    cur = con.cursor()
+    cur.execute("PRAGMA foreign_keys=OFF;")
+    cur.execute("BEGIN TRANSACTION;")
+    cur.execute("CREATE TABLE IF NOT EXISTS 'nybb' "
+                "( ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "'{}' BLOB, 'borocode' INTEGER, ".format(geom_col) +
+                "'boroname' VARCHAR(32), 'shape_leng' FLOAT, "
+                "'shape_area' FLOAT);")
+    sql_row = "INSERT INTO nybb VALUES({},X'{}',{},'{}',{},{});"
+    for i, row in df.iterrows():
+        cur.execute(sql_row.format(i, shapely.wkb.dumps(row['geometry'],
+                                                        hex=True),
+                                   row['BoroCode'], row['BoroName'],
+                                   row['Shape_Leng'], row['Shape_Area']))
+    cur.execute("COMMIT;")
+    con.commit()
+
+
+def create_postgis(df, srid=None, geom_col="geom"):
     """
     Create a nybb table in the test_geopandas PostGIS database.
     Returns a boolean indicating whether the database table was successfully
