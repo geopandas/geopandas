@@ -15,7 +15,8 @@ def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
     Parameters
     ----------
     sql : string
-        SQL query to execute in selecting entries from database.
+        SQL query to execute in selecting entries from database, or name
+        of the table to read from the database.
     con : DB connection object or SQLAlchemy engine
         Active connection to the database to query.
     geom_col : string, default 'geom'
@@ -34,7 +35,7 @@ def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
 
     Returns
     -------
-    geodataframe : GeoDataFrame
+    GeoDataFrame
 
     Example
     -------
@@ -54,7 +55,7 @@ def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
         else:
             return shapely.wkb.loads(str(x), hex=hex_encoded)
     geoms = df[geom_col].apply(load_geom)
-    df[geom_col] = GeoSeries(geoms)
+    df[geom_col] = geoms
 
     if crs is None:
         if len(geoms) > 0:
