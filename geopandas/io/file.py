@@ -146,9 +146,14 @@ def _common_geom_type(df):
     # Point, LineString, or Polygon
     geom_types = df.geometry.geom_type.unique()
 
-    from os.path import commonprefix   # To find longest common prefix
-    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]  # Reverse
+    from os.path import commonprefix
+    # use reversed geom types and commonprefix to find the common suffix,
+    # then reverse the result to get back to a geom type
+    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
     if not geom_type:
-        geom_type = None
+        return None
+
+    if df.geometry.has_z.any():
+        geom_type = "3D " + geom_type
 
     return geom_type
