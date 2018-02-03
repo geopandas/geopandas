@@ -6,7 +6,8 @@ import fiona
 import pytest
 
 import geopandas
-from geopandas import read_postgis, read_file, read_sqlite
+from geopandas import read_postgis, read_file
+from geopandas.io.sql import read_sql
 from geopandas.tests.util import (connect, create_postgis, create_sqlite,
                                   validate_boro_df)
 
@@ -24,7 +25,7 @@ def test_read_sqlite(tmpdir, nybb_df):
     create_sqlite(nybb_df, tmp_filename)
     con = sqlite3.connect(tmp_filename)
     try:
-        sqlite_df = read_sqlite("SELECT * FROM nybb;", con)
+        sqlite_df = read_sql("SELECT * FROM nybb;", con, hex_encoded=False)
     finally:
         con.close()
     validate_boro_df(sqlite_df)
