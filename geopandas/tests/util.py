@@ -50,7 +50,10 @@ def connect(dbname):
 
 def create_sqlite(df, filename, geom_col="geom"):
     """
-    Create a sqlite database with the nybb table.
+    Create a sqlite database with the nybb table. This was the result of
+    using ogr2ogr to create a sqlite database from a shapefile, and then
+    the .dump command within sqlite to produce the commands to reproduce the
+    database, so may not representative of standard sqlite databases.
     """
 
     con = sqlite3.connect(filename)

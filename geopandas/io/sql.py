@@ -68,4 +68,3 @@ def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
 
 
 read_postgis = functools.partial(read_sql, hex_encoded=True)
-read_sqlite = functools.partial(read_sql, hex_encoded=False)
