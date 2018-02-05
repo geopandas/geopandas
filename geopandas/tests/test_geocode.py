@@ -14,6 +14,10 @@ import pytest
 from pandas.util.testing import assert_series_equal
 from geopandas.tests.util import mock, assert_geoseries_equal
 
+geopy = pytest.importorskip("geopy")
+
+from geopy.exc import GeocoderNotFound
+from geopy.geocoders import GoogleV3
 
 @pytest.mark.skipif(
     sys.version_info[0], sys.version_info[1]== (3,2),
@@ -108,20 +112,14 @@ def test_prepare_result_none():
     assert np.isnan(row['address'])
 
 def test_bad_provider_forward():
-    geopy = pytest.importorskip("geopy")
-    from geopy.exc import GeocoderNotFound
-    with pytest.raises(GeocoderNotFound):
+     with pytest.raises(GeocoderNotFound):
         geocode(['cambridge, ma'], 'badprovider')
 
 def test_bad_provider_reverse():
-    geopy = pytest.importorskip("geopy")
-    from geopy.exc import GeocoderNotFound
     with pytest.raises(GeocoderNotFound):
         reverse_geocode(['cambridge, ma'], 'badprovider')
 
 def test_forward(locations, points):
-    geopy = pytest.importorskip("geopy")
-    from geopy.geocoders import GoogleV3
     for provider in ['googlev3', GoogleV3]:
         with mock.patch('geopy.geocoders.googlev3.GoogleV3.geocode',
                         ForwardMock()) as m:
@@ -138,8 +136,6 @@ def test_forward(locations, points):
                             pd.Series(locations, name='address'))
 
 def test_reverse(locations, points):
-    geopy = pytest.importorskip("geopy")
-    from geopy.geocoders import GoogleV3
     for provider in ['googlev3', GoogleV3]:
         with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
                         ReverseMock()) as m:
