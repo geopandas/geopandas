@@ -11,5 +11,5 @@ test: inplace
 	py.test geopandas
 
 clean:
-	rm -f geopandas/vectorized.c geopandas/*.so geopandas/*.o
+	rm -f geopandas/vectorized.c geopandas/array.c geopandas/*.so geopandas/*.o
 	rm -rf build/ geopandas/__pycache__/ geopandas/*/__pycache__/

@@ -6,9 +6,10 @@ import numpy as np
 import shapely
 import shapely.wkb
 
-from geopandas.vectorized import (
-    GeometryArray, points_from_xy, from_shapely, from_wkb, from_wkt,
-    serialize, deserialize, cysjoin, concat)
+from geopandas.vectorized import serialize, deserialize, cysjoin
+from geopandas.array import (
+    GeometryArray, points_from_xy, from_shapely, from_wkb, from_wkt)
+from geopandas.geodataframe import _concat_arrays as concat
 from shapely.geometry.base import (CAP_STYLE, JOIN_STYLE)
 from shapely.geometry import Point
 

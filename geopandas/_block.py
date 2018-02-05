@@ -6,7 +6,7 @@ from pandas.core.internals import Block, NonConsolidatableMixIn
 from pandas.core.common import is_null_slice
 from shapely.geometry.base import geom_factory, BaseGeometry
 
-from .vectorized import GeometryArray, to_shapely, concat
+from .array import GeometryArray, to_shapely
 
 
 class GeometryBlock(NonConsolidatableMixIn, Block):
@@ -190,6 +190,7 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         """
         Concatenate list of single blocks of the same type.
         """
-        values = concat([blk.values for blk in to_concat])
+        from .geodataframe import _concat_arrays
+        values = _concat_arrays([blk.values for blk in to_concat])
         return self.make_block_same_class(
             values, placement=placement or slice(0, len(values), 1))
