@@ -14,12 +14,9 @@ import pytest
 from pandas.util.testing import assert_series_equal
 from geopandas.tests.util import mock, assert_geoseries_equal
 
+
 geopy = pytest.importorskip("geopy")
 
-
-@pytest.mark.skipif(
-    sys.version_info[0], sys.version_info[1]== (3,2),
-    reason="Geopy is known to be broken on Python 3.2.")
 
 class ForwardMock(mock.MagicMock):
     """
