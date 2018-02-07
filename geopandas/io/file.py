@@ -130,11 +130,11 @@ def infer_schema(df):
         zip(df.columns, df.dtypes) if col != df._geometry_column_name
     ])
 
+    if df.empty:
+        raise ValueError("Cannot write empty DataFrame to file.")
+
     geom_type = _common_geom_type(df)
     
-    if df.empty:
-        raise ValueError("Can not write empty DataFrame to file.")
-
     if not geom_type:
         raise ValueError("Geometry column cannot contain mutiple "
                          "geometry types when writing to file.")
