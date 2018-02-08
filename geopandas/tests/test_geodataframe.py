@@ -365,7 +365,7 @@ class TestDataFrame:
         input_empty_df = GeoDataFrame()
         tempfilename = os.path.join(self.tempdir, 'test.shp')
         with pytest.raises(
-            ValueError, message="Cannot write empty DataFrame to file."):
+            ValueError, match="Cannot write empty DataFrame to file."):
             input_empty_df.to_file(tempfilename)
 
 
