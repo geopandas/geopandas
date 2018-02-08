@@ -361,6 +361,13 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             s.to_file(tempfilename)
 
+    def test_empty_to_file(self):
+        input_empty_df = GeoDataFrame()
+        tempfilename = os.path.join(self.tempdir, 'test.shp')
+        with pytest.raises(
+            ValueError, match="Cannot write empty DataFrame to file."):
+            input_empty_df.to_file(tempfilename)
+
     def test_to_file_schema(self):
         """
         Ensure that the file is written according to the schema
