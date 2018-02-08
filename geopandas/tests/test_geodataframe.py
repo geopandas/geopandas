@@ -368,7 +368,6 @@ class TestDataFrame:
             ValueError, match="Cannot write empty DataFrame to file."):
             input_empty_df.to_file(tempfilename)
 
-
     def test_to_file_schema(self):
         """
         Ensure that the file is written according to the schema
