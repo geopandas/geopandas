@@ -275,7 +275,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
-    res = df.groupby('value2')['geometry'].apply(lambda x: x.cascaded_union)
+    res = df.groupby('value2')['geometry'].apply(lambda x: x.unary_union)
     exp = pd.Series([shapely.geometry.MultiPoint([(0, 0), (2, 2)]),
                      Point(1, 1)],
                     index=pd.Index([1, 2], name='value2'), name='geometry')

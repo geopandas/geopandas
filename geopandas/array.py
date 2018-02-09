@@ -6,6 +6,9 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.base import (
     GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE, JOIN_STYLE)
 
+from pandas.core.arrays import ExtensionArray
+from pandas.core.dtypes.base import ExtensionDtype
+
 import numpy as np
 
 from . import vectorized
@@ -53,10 +56,30 @@ def points_from_xy(x, y):
     return GeometryArray(out)
 
 
-class GeometryArray(object):
-    dtype = np.dtype('O')
+class GeometryDtype(ExtensionDtype):
+    type = BaseGeometry
+    name = 'geometry'
+
+    @classmethod
+    def construct_from_string(cls, string):
+        if string == cls.name:
+            return cls()
+        else:
+            raise TypeError("Cannot construct a '{}' from "
+                            "'{}'".format(cls, string))
+
+
+class GeometryArray(ExtensionArray):
+    dtype = GeometryDtype()
 
     def __init__(self, data, base=False):
+        if isinstance(data, self.__class__):
+            base = [data]
+            data = data.data
+        elif not (getattr(data, 'dtype', None) == np.uintp):
+            data = from_shapely(data)
+            base = [data]
+            data = data.data
         self.data = data
         self.base = base
 
@@ -91,7 +114,7 @@ class GeometryArray(object):
     def copy(self):
         return self  # assume immutable for now
 
-    def take(self, idx):
+    def take(self, idx, **kwargs):
 
         # take on empty array
         if not len(self):
@@ -127,8 +150,58 @@ class GeometryArray(object):
         new.data[idx] = value
         return new
 
-    def fillna(self, value=None):
-        return self.fill(self.data == 0, value)
+    def fillna(self, value=None, method=None, limit=None):
+        """ Fill NA/NaN values using the specified method.
+
+        Parameters
+        ----------
+        value : scalar, array-like
+            If a scalar value is passed it is used to fill all missing values.
+            Alternatively, an array-like 'value' can be given. It's expected
+            that the array-like have the same length as 'self'.
+        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
+            Method to use for filling holes in reindexed Series
+            pad / ffill: propagate last valid observation forward to next valid
+            backfill / bfill: use NEXT valid observation to fill gap
+        limit : int, default None
+            If method is specified, this is the maximum number of consecutive
+            NaN values to forward/backward fill. In other words, if there is
+            a gap with more than this number of consecutive NaNs, it will only
+            be partially filled. If method is not specified, this is the
+            maximum number of entries along the entire axis where NaNs will be
+            filled.
+
+        Returns
+        -------
+        filled : ExtensionArray with NA/NaN filled
+        """
+        from pandas.api.types import is_array_like
+        from pandas.util._validators import validate_fillna_kwargs
+        from pandas.core.missing import pad_1d, backfill_1d
+
+        value, method = validate_fillna_kwargs(value, method)
+
+        mask = self.isna()
+
+        if is_array_like(value):
+            # if len(value) != len(self):
+            #     raise ValueError("Length of 'value' does not match. Got ({}) "
+            #                      " expected {}".format(len(value), len(self)))
+            # value = value[mask]
+            raise NotImplementedError
+
+        if mask.any():
+            if method is not None:
+                func = pad_1d if method == 'pad' else backfill_1d
+                new_values = func(self.astype(object), limit=limit,
+                                  mask=mask)
+                new_values = self._constructor_from_sequence(new_values)
+            else:
+                # fill with value
+                new_values = self.fill(self.data == 0, value)
+        else:
+            new_values = self.copy()
+        return new_values
 
     def __getstate__(self):
         return vectorized.serialize(self.data)
@@ -362,31 +435,7 @@ class GeometryArray(object):
         -------
         shape : tuple
         """
-
         return tuple([len(self)])
-
-    def ravel(self, order='C'):
-        """ Return a flattened (numpy) array.
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        raveled : numpy array
-        """
-        return np.array(self)
-
-    def view(self):
-        """Return a view of myself.
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        view : Categorical
-           Returns `self`!
-        """
-        return self
 
     def to_dense(self):
         """Return my 'dense' representation
@@ -399,25 +448,106 @@ class GeometryArray(object):
         """
         return to_shapely(self.data)
 
-    def get_values(self):
-        """ Return the values.
+    def isna(self):
+        """
+        Boolean NumPy array indicating if each value is missing
+        """
+        return self.data == 0
 
-        For internal compatibility with pandas formatting.
+    def unique(self):
+        """Compute the ExtensionArray of unique values.
 
         Returns
         -------
-        values : numpy array
-            A numpy array of the same dtype as categorical.categories.dtype or
-            Index if datetime / periods
+        uniques : ExtensionArray
         """
-        # if we are a datetime and period index, return Index to keep metadata
-        return to_shapely(self.data)
+        from pandas import factorize
+        _, uniques = factorize(self)
+        return uniques
 
-    def tolist(self):
+    @property
+    def nbytes(self):
+        return self.data.nbytes
+
+    # ExtensionArray specific
+
+    @classmethod
+    def _constructor_from_sequence(cls, scalars):
+        """Construct a new ExtensionArray from a sequence of scalars.
+
+        Parameters
+        ----------
+        scalars : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        Returns
+        -------
+        ExtensionArray
         """
-        Return the array as a list of geometries
+        return from_shapely(scalars)
+
+    @classmethod
+    def _from_factorized(cls, values, original):
+        """Reconstruct an ExtensionArray after factorization.
+
+        Parameters
+        ----------
+        values : ndarray
+            An integer ndarray with the factorized values.
+        original : ExtensionArray
+            The original ExtensionArray that factorize was called on.
+
+        See Also
+        --------
+        pandas.factorize
+        ExtensionArray.factorize
         """
-        return self.to_dense().tolist()
+        return from_wkb(values)
+
+    def _values_for_argsort(self):
+        # type: () -> ndarray
+        """Return values for sorting.
+
+        Returns
+        -------
+        ndarray
+            The transformed values should maintain the ordering between values
+            within the array.
+
+        See Also
+        --------
+        ExtensionArray.argsort
+        """
+        # Note: this is used in `ExtensionArray.argsort`.
+        raise TypeError("geometries are not orderable")
+
+    def _values_for_factorize(self):
+        # type: () -> Tuple[ndarray, Any]
+        """Return an array and missing value suitable for factorization.
+
+        Returns
+        -------
+        values : ndarray
+            An array suitable for factoraization. This should maintain order
+            and be a supported dtype (Float64, Int64, UInt64, String, Object).
+            By default, the extension array is cast to object dtype.
+        na_value : object
+            The value in `values` to consider missing. This will be treated
+            as NA in the factorization routines, so it will be coded as
+            `na_sentinal` and not included in `uniques`. By default,
+            ``np.nan`` is used.
+        """
+        vals = np.array([getattr(x, 'wkb', None) for x in self], dtype=object)
+        return vals, None
+
+    @classmethod
+    def _concat_same_type(cls, to_concat):
+        """
+        Concatenate list of single blocks of the same type.
+        """
+        L = list(to_concat)
+        x = np.concatenate([ga.data for ga in L])
+        return GeometryArray(x, base=set(L))
 
     def __array__(self, dtype=None):
         """

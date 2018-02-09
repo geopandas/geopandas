@@ -5,7 +5,7 @@ import shapely.geometry
 import numpy as np
 
 import geopandas as gpd
-from geopandas.array import GeometryArray, from_shapely
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 
 triangles = [shapely.geometry.Polygon([(random.random(), random.random())
@@ -20,7 +20,7 @@ point = points[0]
 
 def test_shapely_coercion():
     s = gpd.GeoSeries(triangles)
-    assert s.values.dtype == object
+    assert s.values.dtype == GeometryDtype()
     assert isinstance(s.iloc[0], shapely.geometry.base.BaseGeometry)
 
 

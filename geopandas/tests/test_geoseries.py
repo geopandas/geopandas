@@ -14,7 +14,7 @@ from shapely.geometry import (Polygon, Point, LineString,
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame
-from geopandas.array import GeometryArray
+from geopandas.array import GeometryArray, from_shapely
 
 import pytest
 from geopandas.tests.util import geom_equals
@@ -282,12 +282,20 @@ def test_constructor_empty():
 def test_construct_from_series():
     shapes = [Polygon([(random.random(), random.random()) for _ in range(3)])
               for _ in range(10)]
-    s = pd.Series(shapes, index=list('abcdefghij'), name='foo')
-    g = GeoSeries(s)
+    for data in [shapes, from_shapely(shapes)]:
+        s = pd.Series(data, index=list('abcdefghij'), name='foo')
+        g = GeoSeries(s)
 
-    assert [a.equals(b) for a, b in zip(s, g)]
-    assert s.name == g.name
-    assert s.index is g.index
+        assert [a.equals(b) for a, b in zip(s, g)]
+        assert s.name == g.name
+        assert s.index is g.index
+
+        s = pd.Series(data, index=list('abcdefghij'), name='foo')
+        g = GeoSeries(s, name='bar')
+
+        assert [a.equals(b) for a, b in zip(s, g)]
+        assert g.name == 'bar'
+        assert s.index is g.index
 
 
 def test_missing_values():

@@ -7,7 +7,7 @@ from pandas import Series, DataFrame, MultiIndex
 from shapely.geometry import (
     Point, LinearRing, LineString, Polygon, MultiPoint)
 from shapely.geometry.collection import GeometryCollection
-from shapely.ops import unary_union
+from shapely.ops import unary_union, cascaded_union
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.base import GeoPandasBase
@@ -279,6 +279,16 @@ class TestGeomMethods:
             expected = unary_union([x for x in L if x is not None])
             g = GeoSeries(L)
             assert g.unary_union.equals(expected)
+
+    def test_cascaded_union(self):
+        p1 = self.t1
+        p2 = Polygon([(2, 0), (3, 0), (3, 1)])
+        point = Point(5, 5)
+
+        for L in [[p1, p2], [point, p2], [p1, p2]]:
+            expected = cascaded_union([x for x in L if x is not None])
+            g = GeoSeries(L)
+            assert g.cascaded_union.equals(expected)
 
     def test_contains(self):
         expected = [True, False, True, False, False, False]

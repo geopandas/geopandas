@@ -14,7 +14,7 @@ import shapely.affinity as affinity
 
 from . import vectorized
 from . import array
-from .array import GeometryArray
+from .array import GeometryArray, GeometryDtype
 
 try:
     from rtree.core import RTreeError
@@ -23,6 +23,15 @@ except ImportError:
     class RTreeError(Exception):
         pass
     HAS_SINDEX = False
+
+
+def is_geometry_type(data):
+
+    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+        # GeometryArray and Series[GeometryArray]
+        return True
+    else:
+        return False
 
 
 def binary_geo(op, left, right):
@@ -284,7 +293,7 @@ class GeoPandasBase(object):
     @property
     def cascaded_union(self):
         """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(self.geometry.values)
+        return cascaded_union(np.array(self.geometry.values))
 
     @property
     def unary_union(self):

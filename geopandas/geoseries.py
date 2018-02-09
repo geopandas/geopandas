@@ -14,8 +14,9 @@ from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
-from .base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
-from .array import from_shapely, GeometryArray
+from .base import (
+    GeoPandasBase, _series_unary_op, _CoordinateIndexer, is_geometry_type)
+from .array import from_shapely, GeometryArray, GeometryDtype
 from ._block import GeometryBlock
 
 
@@ -65,15 +66,15 @@ class GeoSeries(GeoPandasBase, Series):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
         if isinstance(data, SingleBlockManager):
-            if isinstance(data.blocks[0], GeometryBlock):
+            if isinstance(data.blocks[0], GeometryBlock) or is_geometry_type(data.blocks[0].dtype):
                 self = super(GeoSeries, cls).__new__(cls)
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = crs
                 return self
             # GeometryBlock sometimes gets converted by pandas
             # to ObjectBlock with GeometryArray
-            if index:
-                data = data.reindex(index)
+            if index is not None:
+                data = data.reindex_axis(index, axis=0)
             else:
                 index = data.index
             if isinstance(data.blocks[0].values, GeometryArray):
@@ -87,34 +88,51 @@ class GeoSeries(GeoPandasBase, Series):
             n = len(index) if index is not None else 1
             data = [data] * n
 
-        if (isinstance(data, GeoSeries)
-                or (isinstance(data, Series) and isinstance(data._data._block,
-                                                            GeometryBlock))):
-            block = data._data._block
-            index = data.index
-            name = data.name
-        else:
-            if isinstance(data, GeometryArray):
-                index = index if index is not None else pd.Index(np.arange(len(data)))
-                name = kwargs.get('name', None)
-            else:
-                s = pd.Series(data, index=index, **kwargs)
-                # prevent trying to convert non-geometry objects
-                if s.dtype != object and not s.empty:
-                    return s
-                # try to convert to GeometryArray, if fails return plain Series
-                try:
-                    data = from_shapely(s.values)
-                except TypeError:
-                    return s
-                index = s.index
-                name = s.name
-            block = GeometryBlock(data, placement=slice(0, len(data), 1),
-                                  ndim=1)
+        # if (isinstance(data, GeoSeries)
+        #         or (isinstance(data, Series) and isinstance(data._data._block,
+        #                                                     GeometryBlock))):
+        #     block = data._data._block
+        #     index = data.index
+        #     name = data.name
+        # else:
+        #     if isinstance(data, GeometryArray):
+        #         index = index if index is not None else pd.Index(np.arange(len(data)))
+        #         name = kwargs.get('name', None)
+        #     else:
+        #         s = pd.Series(data, index=index, **kwargs)
+        #         # prevent trying to convert non-geometry objects
+        #         if s.dtype != object and not s.empty:
+        #             return s
+        #         # try to convert to GeometryArray, if fails return plain Series
+        #         try:
+        #             data = from_shapely(s.values)
+        #         except TypeError:
+        #             return s
+        #         index = s.index
+        #         name = s.name
+        #     block = GeometryBlock(data, placement=slice(0, len(data), 1),
+        #                         ndim=1)
+
+        # self = super(GeoSeries, cls).__new__(cls)
+        # super(GeoSeries, self).__init__(block, index=index, name=name,
+        #                                 fastpath=True)
+
+        name = kwargs.pop('name', None)
+        if not is_geometry_type(data):
+            s = pd.Series(data, index=index, name=name, **kwargs)
+            # prevent trying to convert non-geometry objects
+            if s.dtype != object and not s.empty:
+                return s
+            # try to convert to GeometryArray, if fails return plain Series
+            try:
+                data = from_shapely(s.values)
+            except TypeError:
+                return s
+            index = s.index
+            name = s.name
 
         self = super(GeoSeries, cls).__new__(cls)
-        super(GeoSeries, self).__init__(block, index=index, name=name,
-                                        fastpath=True)
+        super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
 
         self.crs = crs
         self._invalidate_sindex()
@@ -218,19 +236,22 @@ class GeoSeries(GeoPandasBase, Series):
             val._invalidate_sindex()
         return val
 
-    def __getitem__(self, key):
-        if isinstance(key, (slice, list, Series, np.ndarray)):
-            block = self._data._block._getitem(key)
-            index = self.index[key]
-            return GeoSeries(SingleBlockManager(block, axis=index),
-                             crs=self.crs, index=index)
-        try:
-            if key in self.index:
-                loc = self.index.get_loc(key)
-                return self._geometry_array[loc]
-        except TypeError:
-            pass
-        raise KeyError(key)
+    # def __getitem__(self, key):
+    #     result = super(GeoSeries, self).__getitem__(key)
+    #     return result
+
+    #     if isinstance(key, (slice, list, Series, np.ndarray)):
+    #         block = self._data._block._getitem(key)
+    #         index = self.index[key]
+    #         return GeoSeries(SingleBlockManager(block, axis=index),
+    #                          crs=self.crs, index=index)
+    #     try:
+    #         if key in self.index:
+    #             loc = self.index.get_loc(key)
+    #             return self._geometry_array[loc]
+    #     except TypeError:
+    #         pass
+    #     raise KeyError(key)
 
     def __iter__(self):
         return iter(self._geometry_array)
