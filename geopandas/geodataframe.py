@@ -5,8 +5,8 @@ import json
 
 import numpy as np
 import pandas as pd
-from pandas.core.internals import BlockManager
 from pandas import DataFrame, Series, Index
+from pandas.core.internals import BlockManager
 
 from six import string_types, PY3
 
@@ -16,6 +16,7 @@ from .geoseries import GeoSeries
 from .base import GeoPandasBase, _CoordinateIndexer
 from .plotting import plot_dataframe
 from . import vectorized
+from . import _block
 from ._block import GeometryBlock
 
 
@@ -96,10 +97,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if not isinstance(geometry, str):
             if isinstance(geometry, Series) and geometry.name:
-                gs[geometry.name] = geometry
+                gs[geometry.name] = coerce_to_geoseries(geometry)
                 geometry = geometry.name
             else:
-                gs['geometry'] = geometry
+                gs['geometry'] = coerce_to_geoseries(geometry)
                 geometry = 'geometry'
             if geometry in arg.columns:
                 arg.drop(geometry, axis=1, inplace=True)
@@ -110,19 +111,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             geom = coerce_to_geoseries(geom, name=geometry)
             gs[geometry] = geom
 
-        columns, index = arg._data.axes
-        blocks = arg._data.blocks
-        for k, geom in gs.items():
-            geom = coerce_to_geoseries(geom)
-            geom.name = geometry
-            geom_block = geom._data._block
-            geom_block = GeometryBlock(geom._values, slice(len(columns),
-                                       len(columns) + 1))
-            columns = columns.append(pd.Index([geometry]))
-            blocks = blocks + (geom_block,)
-
-        kwargs['columns'] = columns
-        block_manager = BlockManager(blocks, [columns, index])
+        block_manager = _block.add_geometries(arg._data, gs)
+        kwargs['columns'] = block_manager.axes[0]
 
         super(GeoDataFrame, self).__init__(block_manager, **kwargs)
 
@@ -249,16 +239,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level = GeoSeries(level)
             level, _ = level.align(frame, join='right')
         else:
-            level= GeoSeries(level, index=frame.index)
+            level = GeoSeries(level, index=frame.index)
 
-        columns, index = frame._data.axes
-        blocks = frame._data.blocks
-
-        geom_block = level._data._block
-        geom_block = GeometryBlock(geom_block.values,
-                                   slice(len(columns), len(columns) + 1))
-        columns = columns.append(pd.Index([geo_column_name]))
-        blk_mgr = BlockManager(blocks + (geom_block,), [columns, index])
+        blk_mgr = _block.add_geometries(frame._data, {geo_column_name: level})
 
         # frame[geo_column_name] = level
         # frame._geometry_column_name = geo_column_name
@@ -604,33 +587,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     raise ValueError("Length of values does not match length "
                                      "of index")
 
-            # if column does not exist, add dummy non-consolidatable
-            # (therefore categorical) column to create the correct final
-            # BlockManager structure
-            # do the same if column exists but is not yet a geometry
-            if (key not in self.columns
-                    or (key in self.columns
-                        and not isinstance(self[key]._data._block,
-                                           GeometryBlock))):
-                self[key] = pd.Categorical.from_codes([-1]*len(self), [])
+            _block.frame_set_geometry(self, key, value)
 
-            # determine location of the target GeometryBlock
-            key_loc = self.columns.get_loc(key)
-            block_loc = self._data._blknos[key_loc]
-
-            columns, index = self._data.axes
-            blocks = self._data.blocks
-            blocks = list(blocks)
-
-            # create new GeometryBlock and update existing blocks
-            orig_geom_block = blocks[block_loc]
-            new_geom_block = GeometryBlock(value,
-                                           orig_geom_block.mgr_locs.as_slice)
-            blocks[block_loc] = new_geom_block
-
-            block_manager = BlockManager(blocks, [columns, index])
-            self._data = block_manager
-            self._clear_item_cache(key)
         else:
             super(GeoDataFrame, self).__setitem__(key, value)
 

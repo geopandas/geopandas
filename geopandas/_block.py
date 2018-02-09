@@ -2,7 +2,8 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from pandas.core.internals import Block, NonConsolidatableMixIn
+import pandas as pd
+from pandas.core.internals import Block, NonConsolidatableMixIn, BlockManager
 from pandas.core.common import is_null_slice
 from shapely.geometry.base import geom_factory, BaseGeometry
 
@@ -193,3 +194,48 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         values = concat([blk.values for blk in to_concat])
         return self.make_block_same_class(
             values, placement=placement or slice(0, len(values), 1))
+
+
+def add_geometries(blk_mgr, geo_items):
+    # blk_mgr: BlockManager, geo_items: Dict[name: GeoSeries] -> BlockManager
+    columns, index = blk_mgr.axes
+    blocks = blk_mgr.blocks
+    for name, geom in geo_items.items():
+        geom_block = geom._data._block
+        geom_block = GeometryBlock(geom_block.values,
+                                   slice(len(columns), len(columns) + 1))
+        columns = columns.append(pd.Index([name]))
+        blocks = blocks + (geom_block,)
+
+    block_manager = BlockManager(blocks, [columns, index])
+    return block_manager
+
+
+def frame_set_geometry(frame, key, geoms):
+    # frame: DataFrame, key: str, geoms: GeometryArray -> None (edit in place)
+
+    # if column does not exist, add dummy non-consolidatable
+    # (therefore categorical) column to create the correct final
+    # BlockManager structure
+    # do the same if column exists but is not yet a geometry
+    if (key not in frame.columns
+            or (key in frame.columns
+                and not isinstance(frame[key]._data._block, GeometryBlock))):
+        frame[key] = pd.Categorical.from_codes([-1]*len(frame), [])
+
+    # determine location of the target GeometryBlock
+    key_loc = frame.columns.get_loc(key)
+    block_loc = frame._data._blknos[key_loc]
+
+    columns, index = frame._data.axes
+    blocks = frame._data.blocks
+    blocks = list(blocks)
+
+    # create new GeometryBlock and update existing blocks
+    orig_geom_block = blocks[block_loc]
+    new_geom_block = GeometryBlock(geoms, orig_geom_block.mgr_locs.as_slice)
+    blocks[block_loc] = new_geom_block
+
+    block_manager = BlockManager(blocks, [columns, index])
+    frame._data = block_manager
+    frame._clear_item_cache(key)
