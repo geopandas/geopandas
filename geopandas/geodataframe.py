@@ -459,6 +459,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = DataFrame
         return result
 
+
+    def explode(self):
+        """
+        Overriden from GeoPandasBase, returns rest of the dataframe joined to 
+        exploded geometry column.
+        """
+        exploded = self._get_geometry().explode().reset_index(level=1, drop=True)
+        geo_df = self.drop(columns='geometry').join(exploded)
+        return geo_df
+
+
     #
     # Implement pandas methods
     #
