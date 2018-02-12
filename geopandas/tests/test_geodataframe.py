@@ -442,7 +442,7 @@ class TestDataFrame:
         df = GeoDataFrame({'geometry': s, 'col': [1, 2]})
         test_df = df.explode()
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
-        expected_df = GeoDataFrame({'geometry': s, 'col': [1, 1, 2]})
+        expected_df = GeoDataFrame({'geometry': expected_s, 'col': [1, 1, 2]})
         expected_df = expected_df.set_index([[0,0,1]])
         assert_frame_equal(test_df, expected_df)
 
