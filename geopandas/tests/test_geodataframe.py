@@ -7,7 +7,7 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, MultiPoint, Polygon
 import fiona
 
 import geopandas
@@ -436,6 +436,16 @@ class TestDataFrame:
         assert lonlat.geometry.name == 'geom'
         assert utm.geometry.name == 'geom'
         assert all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2))
+
+    def test_geodataframe_explode(self):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({'geometry': s, 'col': [1, 2]})
+        test_df = df.explode()
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({'geometry': s, 'col': [1, 1, 2]})
+        expected_df = expected_df.set_index([[0,0,1]])
+        assert_frame_equal(test_df, expected_df)
+
 
     def test_from_features(self):
         nybb_filename = geopandas.datasets.get_path('nybb')
