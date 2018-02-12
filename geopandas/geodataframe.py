@@ -460,16 +460,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return result
 
 
-    def explode(self):
-        """
-        Overriden from GeoPandasBase, returns rest of the dataframe joined to 
-        exploded geometry column.
-        """
-        exploded = self._get_geometry().explode().reset_index(level=1, drop=True)
-        geo_df = self.drop(columns='geometry').join(exploded)
-        return geo_df
-
-
     #
     # Implement pandas methods
     #
@@ -585,6 +575,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             aggregated = aggregated.reset_index()
 
         return aggregated
+
+    # overrides GeoPandasBase method
+    def explode(self):
+        """
+        Explode multi-part geometries into multiple single geometries.
+
+        Single rows can become multiple rows.
+        This is analogous to PostGIS's ST_Dump(). 
+
+        Returns
+        ------
+        A GeoDataFrame with rows containing MultiPoints expanded into single
+        Point rows. The rest of the original columns are preserved.
+        """
+        exploded = self.geometry.explode().reset_index(level=1, drop=True)
+        geo_df = self.drop(self._geometry_column_name, axis=1).join(exploded)
+        return geo_df
+
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
