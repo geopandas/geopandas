@@ -479,7 +479,7 @@ class TestGeomMethods:
                            'col1': range(len(self.landmarks))})
         assert tuple(df.total_bounds) == bbox
 
-    def test_explode(self):
+    def test_explode_geoseries(self):
         s = GeoSeries([MultiPoint([(0, 0), (1, 1)]),
                        MultiPoint([(2, 2), (3, 3), (4, 4)])])
 
@@ -490,8 +490,14 @@ class TestGeomMethods:
 
         assert_geoseries_equal(expected, s.explode())
 
-        df = self.gdf1[:2].set_geometry(s)
-        assert_geoseries_equal(expected, df.explode())
+    def test_explode_geodataframe(self):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({'geometry': s, 'col': [1, 2]})
+        test_df = df.explode()
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({'geometry': expected_s, 'col': [1, 1, 2]})
+        expected_df = expected_df.set_index([[0,0,1]])
+        assert_frame_equal(test_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'
