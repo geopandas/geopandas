@@ -384,12 +384,12 @@ class GeoPandasBase(object):
         return _series_op(self, other, 'within')
 
     def distance(self, other):
-        """Returns a ``Series`` containing the minimum distance to `other`.
+        """Returns a ``Series`` containing the distance to `other`.
 
         Parameters
         ----------
         other : Geoseries or geometric object
-            The Geoseries (elementwise) or geometric object to find the minimum
+            The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
         return _series_op(self, other, 'distance')
