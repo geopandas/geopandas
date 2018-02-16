@@ -658,7 +658,8 @@ class GeoPandasBase(object):
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and an integer that counts the number of single geometries within a multi-part geometry.
+        original index and an integer that counts the number of single    
+        geometries within a multi-part geometry.
 
         Example
         -------
