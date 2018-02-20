@@ -4,6 +4,7 @@ from shapely.geometry import Point, MultiPoint, LineString
 
 from geopandas import GeoSeries
 from geopandas.tools import collect
+from geopandas.tools.crs import explicit_crs_from_epsg
 
 import pytest
 
@@ -51,3 +52,9 @@ class TestTools:
     def test_collect_mixed_multi(self):
         with pytest.raises(ValueError):
             collect([self.mpc, self.mp1])
+
+    def test_explicit_crs_from_epsg(self):
+        assert explicit_crs_from_epsg(epsg=4326) == {'no_defs': True, 'proj': 'longlat', 'datum': 'WGS84', 'init': 'epsg:4326'}
+
+    def test_explicit_crs_from_crs(self):
+        assert explicit_crs_from_epsg(crs={'init': 'epsg:4326'}) == {'no_defs': True, 'proj': 'longlat', 'datum': 'WGS84', 'init': 'epsg:4326'}
