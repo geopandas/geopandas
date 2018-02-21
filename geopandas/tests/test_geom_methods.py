@@ -32,6 +32,7 @@ class TestGeomMethods:
         self.nested_squares = Polygon(self.sq.boundary,
                                       [self.inner_sq.boundary])
         self.p0 = Point(5, 5)
+        self.p3d = Point(5, 5, 5)
         self.g0 = GeoSeries([self.t1, self.t2, self.sq, self.inner_sq,
                              self.nested_squares, self.p0])
         self.g1 = GeoSeries([self.t1, self.sq])
@@ -40,6 +41,7 @@ class TestGeomMethods:
         self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.g4 = GeoSeries([self.t2, self.t1])
         self.g4.crs = {'init': 'epsg:4326', 'no_defs': True}
+        self.g_3d = GeoSeries([self.p0, self.p3d])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, None])
         self.a1 = self.g1.copy()
@@ -333,6 +335,10 @@ class TestGeomMethods:
     def test_is_simple(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real('is_simple', expected, self.g1)
+
+    def test_has_z(self):
+        expected = Series([False, True], self.g_3d.index)
+        self._test_unary_real('has_z', expected, self.g_3d)
 
     def test_xy_points(self):
         expected_x = [-73.9847, -74.0446]

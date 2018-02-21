@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from collections import OrderedDict
+
 import fiona
 
 import geopandas
@@ -72,6 +74,27 @@ class TestIO:
         filtered_df_shape = filtered_df.shape
         assert full_df_shape != filtered_df_shape
         assert filtered_df_shape == (2, 5)
+
+    def test_empty_shapefile(self, tmpdir):
+
+        # create empty shapefile
+        meta = {'crs': {},
+                'crs_wkt': '',
+                'driver': 'ESRI Shapefile',
+                'schema':
+                    {'geometry': 'Point',
+                     'properties': OrderedDict([('A', 'int:9'),
+                                                ('Z', 'float:24.15')])}}
+
+        fname = str(tmpdir.join("test_empty.shp"))
+
+        with fiona.drivers():
+            with fiona.open(fname, 'w', **meta) as _:
+                pass
+
+        empty = read_file(fname)
+        assert isinstance(empty, geopandas.GeoDataFrame)
+        assert all(empty.columns == ['A', 'Z', 'geometry'])
 
     def test_filtered_read_file_with_gdf_boundary(self):
         full_df_shape = self.df.shape

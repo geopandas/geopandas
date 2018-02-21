@@ -83,7 +83,7 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='inner', op=op)
-        
+
         exp = expected[op].dropna().copy()
         exp = exp.drop('geometry_y', axis=1).rename(
             columns={'geometry_x': 'geometry'})
@@ -209,7 +209,7 @@ class TestSpatialJoinNYBB:
         assert 'Shape_Area_right' in df.columns
 
     @pytest.mark.parametrize('how', ['left', 'right', 'inner'])
-    def test_sjoin_named_index(self,how):
+    def test_sjoin_named_index(self, how):
         #original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = 'pointid'
@@ -282,3 +282,21 @@ class TestSpatialJoinNYBB:
     def test_sjoin_outer(self):
         df = sjoin(self.pointdf, self.polydf, how="outer")
         assert df.shape == (21, 8)
+
+
+@pytest.mark.skipif(not base.HAS_SINDEX, reason='Rtree absent, skipping')
+class TestSpatialJoinNaturalEarth:
+
+    def setup_method(self):
+        world_path = geopandas.datasets.get_path("naturalearth_lowres")
+        cities_path = geopandas.datasets.get_path("naturalearth_cities")
+        self.world = read_file(world_path)
+        self.cities = read_file(cities_path)
+
+    def test_sjoin_inner(self):
+        # GH637
+        countries = self.world[["geometry", "name"]]
+        countries = countries.rename(columns={"name": "country"})
+        cities_with_country = sjoin(self.cities, countries, how="inner",
+                                    op="intersects")
+        assert cities_with_country.shape == (172, 4)
