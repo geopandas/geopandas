@@ -99,8 +99,10 @@ class TestIO:
     def test_filtered_read_file_with_gdf_boundary(self):
         full_df_shape = self.df.shape
         nybb_filename = geopandas.datasets.get_path('nybb')
-        bbox = geopandas.GeoDataFrame(data={'a': ['a']}, geometry=[(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
-                                                                    244317.30894023244)], crs=self.crs)
+        bbox = geopandas.GeoDataFrame(
+            geometry=[box(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
+                          244317.30894023244)],
+            crs=self.crs)
         filtered_df = read_file(nybb_filename, bbox=bbox)
         filtered_df_shape = filtered_df.shape
         assert full_df_shape != filtered_df_shape
