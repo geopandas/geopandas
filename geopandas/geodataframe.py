@@ -591,11 +591,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         exploded_geom = self.geometry.explode().reset_index()
         exploded_geom.rename(columns={0:'geometry'})
-        geo_df = exploded_geom.merge(
+        df = exploded_geom.merge(
             self.drop('geometry', axis=1),
             left_on='level_0',
             right_index=True)
-        geo_df.set_index(['level_0', 'level_1'], inplace=True)
+        df.set_index(['level_0', 'level_1'], inplace=True)
+        geo_df = df.set_geometry('geometry')
         return geo_df
 
 
