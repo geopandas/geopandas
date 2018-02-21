@@ -115,7 +115,7 @@ class TestIO:
             geometry=[box(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
                           244317.30894023244)],
             crs=self.crs)
-        bbox.to_crs(epsg=4436, inplace=True)
+        bbox.to_crs(epsg=4326, inplace=True)
         filtered_df = read_file(nybb_filename, bbox=bbox)
         filtered_df_shape = filtered_df.shape
         assert full_df_shape != filtered_df_shape
