@@ -589,8 +589,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         A GeoDataFrame with rows containing MultiPoints expanded into single
         Point rows. The rest of the original columns are preserved.
         """
-        exploded = self.geometry.explode().reset_index(level=1, drop=True)
-        geo_df = self.drop(self._geometry_column_name, axis=1).join(exploded)
+        exploded_geom = self.geometry.explode().reset_index()
+        exploded_geom.rename(columns={0:'geometry'})
+        geo_df = exploded_geom.merge(
+            self.drop('geometry', axis=1),
+            left_on='level_0',
+            right_index=True)
+        geo_df.set_index(['level_0', 'level_1'], inplace=True)
         return geo_df
 
 
