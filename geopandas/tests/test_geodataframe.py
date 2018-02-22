@@ -7,7 +7,7 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, MultiPoint, Polygon
+from shapely.geometry import Point, Polygon
 import fiona
 
 import geopandas

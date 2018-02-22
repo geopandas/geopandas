@@ -459,7 +459,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = DataFrame
         return result
 
-
     #
     # Implement pandas methods
     #
