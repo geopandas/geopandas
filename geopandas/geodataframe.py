@@ -577,16 +577,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     # overrides GeoPandasBase method
     def explode(self):
-        """
-        Explode multi-part geometries into multiple single geometries.
+        """    
+        Explode the geodataframe's muti-part geometries into single geometries.
 
-        Single rows can become multiple rows.
-        This is analogous to PostGIS's ST_Dump(). 
+        Each row containing a multi-part geometry will be split into
+        multiple rows with single geometries, thereby increasing the vertical size
+        of the geodataframe. The index of the input geodataframe is no longer
+        unique and is replaced with a multi-index. 
 
+        The output geodataframe has an index based on two columns (multi-index) 
+        i.e. 'level_0' (index of input geodataframe) and 'level_1' which is a new
+        zero-based index for each single part geometry per multi-part geometry
+
+            
         Returns
-        ------
-        A GeoDataFrame with rows containing MultiPoints expanded into single
-        Point rows. The rest of the original columns are preserved.
+        -------
+        geo_df (GeoDataFrame) : exploded geodataframe with each single geometry
+            as a separate entry in the geodataframe. The GeoDataFrame has a
+            multi-index set to columns level_0 and level_1.
+            
         """
         df_copy = self.copy() 
         # for the case where the index is not named, set to equal level = 0
