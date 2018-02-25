@@ -38,7 +38,8 @@ def read_file(filename, bbox=None, **kwargs):
         Either the absolute or relative path to the file or URL to
         be opened.
     bbox : tuple | GeoDataFrame or GeoSeries, default None
-        Filter features by given bounding box, GeoSeries, or GeoDataFrame (crs mis-matches are automatically resolved when given a GeoSeries or GeoDataFrame)
+        Filter features by given bounding box, GeoSeries, or GeoDataFrame.
+        CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
