@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -603,15 +604,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not self.index.name:
             df_copy.index.name = 'level_0'
 
-        exploded_geom = df_copy._get_geometry().explode().reset_index()
-        exploded_geom.rename(
-            columns={0:'geometry','level_0':df_copy.index.name}, inplace=True)
-        df = exploded_geom.merge(
-            df_copy.drop(df_copy._geometry_column_name, axis=1),
-            left_on=df_copy.index.name,
-            right_index=True)
-        df.set_index([df_copy.index.name, 'level_1'], inplace=True)
-        geo_df = df.set_geometry('geometry')
+        exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
+        df = pd.concat(
+            [df_copy.drop(df_copy._geometry_column_name, axis=1),
+            exploded_geom], axis=1)
+        # reset to MultiIndex, otherwise df index is only first level of exploded
+        # GeoSeries index.
+        df.set_index([df.index, 'level_1'], inplace=True)
+        geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
 

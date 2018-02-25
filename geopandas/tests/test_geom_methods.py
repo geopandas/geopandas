@@ -491,18 +491,19 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, s.explode())
 
     def test_explode_geodataframe(self):
+        import pdb
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
         df = GeoDataFrame({'col': [1, 2], 'geometry': s})
         test_df = df.explode()
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
-        expected_df = DataFrame.from_items(
-            [('geometry', expected_s), ('col',[1, 1, 2])])
-        expected_index = index = MultiIndex(
+        expected_df = GeoDataFrame({'geometry': expected_s, 'col':[1, 1, 2]})
+        expected_index = MultiIndex(
             levels=[[0, 1], [0, 1]],
             labels=[[0, 0, 1], [0, 1, 0]],
             names=['level_0', 'level_1'])
 
         expected_df = expected_df.set_index(expected_index)
+        #pdb.set_trace()
         assert_frame_equal(test_df, expected_df)
 
     #
