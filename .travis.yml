@@ -31,6 +31,8 @@ matrix:
       env: PANDAS=0.19.2  MATPLOTLIB=1.5.3
     - python: 2.7
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+    - python: 2.7
+      env: PANDAS=master  MATPLOTLIB=2.1.2
 
     - python: 3.6
       env: PANDAS=0.16.2  MATPLOTLIB=1.4.3 SHAPELY=1.5.17
