@@ -12,7 +12,7 @@ matrix:
     - python: 2.7
       env: PANDAS=0.20.3  MATPLOTLIB=2.0.2 SHAPELY=1.5.17
     - python: 2.7
-      env: PANDAS=master  MATPLOTLIB=master
+      env: PANDAS=master  MATPLOTLIB=2.1.2
 
     - python: 3.6
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 SHAPELY=1.5.17
