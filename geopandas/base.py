@@ -461,12 +461,12 @@ class GeoPandasBase(object):
 
     def distance(self, other):
         """
-        Returns a ``Series`` containing the minimum distance to `other`.
+        Returns a ``Series`` containing the distance to `other`.
 
         Parameters
         ----------
         other : Geoseries or geometric object
-            The Geoseries (elementwise) or geometric object to find the minimum
+            The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
         return binary_float('distance', self, other)
