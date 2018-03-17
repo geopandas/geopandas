@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import string
 
 import numpy as np
-from pandas import Series, DataFrame, MultiIndex, RangeIndex
+from pandas import Series, DataFrame, MultiIndex
 from shapely.geometry import (
     Point, LinearRing, LineString, Polygon, MultiPoint)
 from shapely.geometry.collection import GeometryCollection
