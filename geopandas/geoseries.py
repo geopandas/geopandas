@@ -82,7 +82,10 @@ class GeoSeries(GeoPandasBase, Series):
                 data = np.asarray(data.blocks[0].external_values())
 
         if isinstance(data, BaseGeometry):
-            data = [data]
+            # fix problem for scalar geometries passed, ensure the list of
+            # scalars is of correct length if index is specified
+            n = len(index) if index is not None else 1
+            data = [data] * n
 
         if (isinstance(data, GeoSeries)
                 or (isinstance(data, Series) and isinstance(data._data._block,
@@ -112,6 +115,7 @@ class GeoSeries(GeoPandasBase, Series):
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(block, index=index, name=name,
                                         fastpath=True)
+
         self.crs = crs
         self._invalidate_sindex()
         return self
