@@ -102,7 +102,7 @@ def _geo_unary_op(this, op):
 def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
     return Series([getattr(geom, op, null_value) for geom in this.geometry],
-                     index=this.index)
+                     index=this.index, dtype=np.dtype(type(null_value)))
 
 
 class GeoPandasBase(object):
