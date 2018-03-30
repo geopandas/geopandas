@@ -16,7 +16,7 @@ import fiona
 import geopandas
 import geopandas as gpd
 from geopandas import GeoDataFrame, read_file, GeoSeries
-from geopandas.vectorized import GeometryArray
+from geopandas.array import GeometryArray
 
 import pytest
 from pandas.util.testing import (

@@ -15,7 +15,7 @@ from shapely.geometry import mapping, shape
 from .geoseries import GeoSeries
 from .base import GeoPandasBase, _CoordinateIndexer
 from .plotting import plot_dataframe
-from . import vectorized
+from .array import GeometryArray, from_shapely
 from . import _block
 from ._block import GeometryBlock
 
@@ -23,14 +23,14 @@ from ._block import GeometryBlock
 def coerce_to_geoseries(x, **kwargs):
     if isinstance(x, GeoSeries):
         return x
-    if isinstance(x, vectorized.GeometryArray):
+    if isinstance(x, GeometryArray):
         return GeoSeries(x, **kwargs)
     if isinstance(x, pd.Series):
         kwargs['name'] = kwargs.get('name', x.name)
         kwargs['index'] = kwargs.get('index', x.index)
-        return GeoSeries(vectorized.from_shapely(x.values), **kwargs)
+        return GeoSeries(from_shapely(x.values), **kwargs)
     if isinstance(x, Iterable):
-        return GeoSeries(vectorized.from_shapely(list(x)), **kwargs)
+        return GeoSeries(from_shapely(list(x)), **kwargs)
     raise TypeError(type(x))
 
 
@@ -156,7 +156,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if isinstance(col, GeoSeries):
             self.set_geometry(col, inplace=True)
         elif isinstance(col, (list, np.ndarray, Series)):
-            col = vectorized.from_shapely(col)
+            col = from_shapely(col)
             self.set_geometry(col, inplace=True)
 
 
@@ -202,8 +202,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray,
-                            vectorized.GeometryArray)):
+        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
             to_remove = geo_column_name
             if isinstance(col, Series):
@@ -578,7 +577,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         is preserved"""
         if (isinstance(key, string_types)
                 and (isinstance(value, GeoSeries)
-                     or isinstance(value, vectorized.GeometryArray))):
+                     or isinstance(value, GeometryArray))):
             if isinstance(value, GeoSeries):
                 value = value.reindex(self.index)
                 value = value._geometry_array
@@ -604,7 +603,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.crs = self.crs
             values = result[geo_col]._values
             if isinstance(values, np.ndarray):
-                g = vectorized.from_shapely(values)
+                g = from_shapely(values)
             else:
                 g = values
             result[geo_col] = list(g)
@@ -740,6 +739,14 @@ def concat(objs, axis=0, ignore_index=False):
         raise ValueError("Invalid axis value")
 
 
+def _concat_arrays(L, axis=0):
+    if axis != 0:
+        raise NotImplementedError("Can only concatenate geometries along axis=0")
+    L = list(L)
+    x = np.concatenate([ga.data for ga in L])
+    return GeometryArray(x, base=set(L))
+
+
 def _concat_axis0(L, **kwargs):
 
     types = set(map(type, L))
@@ -758,7 +765,7 @@ def _concat_axis0(L, **kwargs):
             raise ValueError("Expected all geometry names to be the same")
         name = L[0].name
 
-    geometry = vectorized.concat(df._geometry_array for df in L)
+    geometry = _concat_arrays(df._geometry_array for df in L)
     if isinstance(L[0], GeoDataFrame):
         L = [df.drop(name, axis=1) for df in L]
         new = pd.concat(L, **kwargs)

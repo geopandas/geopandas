@@ -7,7 +7,6 @@ from libc.stdlib cimport free as cfree
 
 import shapely
 import shapely.prepared
-from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry, geom_factory
 from shapely.ops import cascaded_union
 import shapely.affinity as affinity
@@ -22,8 +21,7 @@ import numpy as np
 
 include "geopandas/_geos.pxi"
 
-from shapely.geometry.base import (GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE,
-        JOIN_STYLE)
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 cdef extern from "algos.h":
     ctypedef char (*GEOSPredicate)(GEOSContextHandle_t handler,
@@ -52,20 +50,7 @@ cdef int GEOS_MULTIPOLYGON = 6
 cdef int GEOS_GEOMETRYCOLLECTION = 7
 
 
-GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
-
-opposite_predicates = {'contains': 'within',
-                       'intersects': 'intersects',
-                       'touches': 'touches',
-                       'covers': 'covered_by',
-                       'crosses': 'crosses',
-                       'overlaps': 'overlaps'}
-
-for k, v in list(opposite_predicates.items()):
-    opposite_predicates[v] = k
-
-
-cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
+cpdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
     """
     Get a single shape from a GeometryArray as a Shapely object
 
@@ -131,7 +116,7 @@ cpdef from_shapely(object L):
             else:
                 out[idx] = 0
 
-    return GeometryArray(out)
+    return out
 
 
 cpdef from_wkb(object L):
@@ -164,7 +149,7 @@ cpdef from_wkb(object L):
 
         GEOSWKBReader_destroy_r(handle, reader)
 
-    return GeometryArray(out)
+    return out
 
 
 cpdef from_wkt(object L):
@@ -194,7 +179,7 @@ cpdef from_wkt(object L):
 
         GEOSWKTReader_destroy_r(handle, reader)
 
-    return GeometryArray(out)
+    return out
 
 
 @cython.boundscheck(False)
@@ -219,7 +204,7 @@ cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
                 geos_geom = <np.uintp_t> geom
                 out[idx] = <np.uintp_t> geom
 
-    return GeometryArray(out)
+    return out
 
 
 @cython.boundscheck(False)
@@ -778,8 +763,6 @@ cpdef binary_float_return(str op,
     return out
 
 
-
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
@@ -829,7 +812,7 @@ cpdef geo_unary_op(str op, np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
                 else:
                     out[idx] = 0
 
-    return GeometryArray(out)
+    return out
 
 
 @cython.boundscheck(False)
@@ -881,7 +864,7 @@ cpdef vector_binary_geo(str op,
                 else:
                     out[idx] = 0
 
-    return GeometryArray(out)
+    return out
 
 
 @cython.boundscheck(False)
@@ -936,12 +919,12 @@ cpdef binary_geo(str op,
                 else:
                     out[idx] = 0
 
-    return GeometryArray(out)
+    return out
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
+cpdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
             int resolution, int cap_style, int join_style, double mitre_limit):
     """ Buffer operation on array of GEOSGeometry objects """
     cdef Py_ssize_t idx
@@ -963,8 +946,7 @@ cdef buffer(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, double distance,
                 else:
                     out[idx] = 0
 
-    return GeometryArray(out)
-
+    return out
 
 
 @cython.boundscheck(False)
@@ -1091,7 +1073,7 @@ cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cpdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """ Free an array of GEOSGeometry pointers """
     cdef Py_ssize_t idx
     cdef GEOSGeometry *geom
@@ -1109,7 +1091,7 @@ cdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cpdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     """ Free an array of GEOSGeometry pointers """
     cdef Py_ssize_t idx
     cdef GEOSGeometry *geom
@@ -1131,7 +1113,7 @@ cdef geom_type(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+cpdef unary_union(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     cdef GEOSGeometry *collection
     cdef GEOSGeometry *out
     cdef size_t n
@@ -1202,353 +1184,6 @@ cpdef coords(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
     return out
 
 
-class GeometryArray(object):
-    dtype = np.dtype('O')
-
-    def __init__(self, data, base=False):
-        self.data = data
-        self.base = base
-
-    def __getitem__(self, idx):
-        if isinstance(idx, numbers.Integral):
-            return get_element(self.data, idx)
-        elif isinstance(idx, (collections.Iterable, slice)):
-            return GeometryArray(self.data[idx], base=self)
-        else:
-            raise TypeError("Index type not supported", idx)
-
-    def take(self, idx):
-        result = self[idx]
-        result.data[idx == -1] = 0
-        return result
-
-    def fill(self, idx, value):
-        """ Fill index locations with value
-
-        Value should be a BaseGeometry
-
-        Returns a copy
-        """
-        base = [self]
-        if isinstance(value, BaseGeometry):
-            base.append(value)
-            value = value.__geom__
-        elif value is None:
-            value = 0
-        else:
-            raise TypeError("Value should be either a BaseGeometry or None, "
-                            "got %s" % str(value))
-        new = GeometryArray(self.data.copy(), base=base)
-        new.data[idx] = value
-        return new
-
-    def fillna(self, value=None):
-        return self.fill(self.data == 0, value)
-
-    def __len__(self):
-        return len(self.data)
-
-    @property
-    def size(self):
-        return len(self.data)
-
-    def __del__(self):
-        if self.base is False:
-            vec_free(self.data)
-
-    def copy(self):
-        return self  # assume immutable for now
-
-    @property
-    def ndim(self):
-        return 1
-
-    def __getstate__(self):
-        return serialize(self.data)
-
-    def __setstate__(self, state):
-        geoms = deserialize(*state)
-        self.data = geoms
-        self.base = None
-
-    def binary_geo(self, other, op):
-        """ Apply geometry-valued operation
-
-        Supports:
-
-        -   difference
-        -   symmetric_difference
-        -   intersection
-        -   union
-
-        Parameters
-        ----------
-        other: GeometryArray or single shapely BaseGeoemtry
-        op: string
-        """
-        if isinstance(other, BaseGeometry):
-            return binary_geo(op, self.data, other)
-        elif isinstance(other, GeometryArray):
-            if len(self) != len(other):
-                msg = ("Lengths of inputs to not match.  Left: %d, Right: %d" %
-                        (len(self), len(other)))
-                raise ValueError(msg)
-            return vector_binary_geo(op, self.data, other.data)
-        else:
-            raise NotImplementedError("type not known %s" % type(other))
-
-    def binop_predicate(self, other, op, extra=None):
-        """ Apply boolean-valued operation
-
-        Supports:
-
-        -  contains
-        -  disjoint
-        -  intersects
-        -  touches
-        -  crosses
-        -  within
-        -  overlaps
-        -  covers
-        -  covered_by
-        -  equals
-
-        Parameters
-        ----------
-        other: GeometryArray or single shapely BaseGeoemtry
-        op: string
-        """
-        if isinstance(other, BaseGeometry):
-            if extra is not None:
-                return binary_predicate_with_arg(op, self.data, other, extra)
-            elif op in opposite_predicates:
-                op2 = opposite_predicates[op]
-                return prepared_binary_predicate(op2, self.data, other)
-            else:
-                return binary_predicate(op, self.data, other)
-        elif isinstance(other, GeometryArray):
-            if len(self) != len(other):
-                msg = ("Shapes of inputs to not match.  Left: %d, Right: %d" %
-                        (len(self), len(other)))
-                raise ValueError(msg)
-            if extra is not None:
-                return vector_binary_predicate_with_arg(op, self.data, other.data, extra)
-            else:
-                return vector_binary_predicate(op, self.data, other.data)
-        else:
-            raise NotImplementedError("type not known %s" % type(other))
-
-    def covers(self, other):
-        return self.binop_predicate(other, 'covers')
-
-    def contains(self, other):
-        return self.binop_predicate(other, 'contains')
-
-    def crosses(self, other):
-        return self.binop_predicate(other, 'crosses')
-
-    def disjoint(self, other):
-        return self.binop_predicate(other, 'disjoint')
-
-    def equals(self, other):
-        return self.binop_predicate(other, 'equals')
-
-    def intersects(self, other):
-        return self.binop_predicate(other, 'intersects')
-
-    def overlaps(self, other):
-        return self.binop_predicate(other, 'overlaps')
-
-    def touches(self, other):
-        return self.binop_predicate(other, 'touches')
-
-    def within(self, other):
-        return self.binop_predicate(other, 'within')
-
-    def equals_exact(self, other, tolerance):
-        return self.binop_predicate(other, 'equals_exact', tolerance)
-
-    def is_valid(self):
-        return unary_predicate('is_valid', self.data)
-
-    def is_empty(self):
-        return unary_predicate('is_empty', self.data)
-
-    def is_simple(self):
-        return unary_predicate('is_simple', self.data)
-
-    def is_ring(self):
-        return unary_predicate('is_ring', self.data)
-
-    def has_z(self):
-        return unary_predicate('has_z', self.data)
-
-    def is_closed(self):
-        return unary_predicate('is_closed', self.data)
-
-    def boundary(self):
-        return geo_unary_op('boundary', self.data)
-
-    def centroid(self):
-        return geo_unary_op('centroid', self.data)
-
-    def convex_hull(self):
-        return geo_unary_op('convex_hull', self.data)
-
-    def envelope(self):
-        return geo_unary_op('envelope', self.data)
-
-    def exterior(self):
-        out = geo_unary_op('exterior', self.data)
-        out.base = self  # exterior shares data with self
-        return out
-
-    def representative_point(self):
-        return geo_unary_op('representative_point', self.data)
-
-    def distance(self, other):
-        if isinstance(other, GeometryArray):
-            return binary_vector_float('distance', self.data, other.data)
-        else:
-            return binary_float('distance', self.data, other)
-
-    def project(self, other, normalized=False):
-        op = 'project' if not normalized else 'project-normalized'
-        if isinstance(other, GeometryArray):
-            return binary_vector_float_return(op, self.data, other.data)
-        else:
-            return binary_float_return(op, self.data, other)
-
-    def area(self):
-        return unary_vector_float('area', self.data)
-
-    def length(self):
-        return unary_vector_float('length', self.data)
-
-    def difference(self, other):
-        return self.binary_geo(other, 'difference')
-
-    def symmetric_difference(self, other):
-        return self.binary_geo(other, 'symmetric_difference')
-
-    def union(self, other):
-        return self.binary_geo(other, 'union')
-
-    def intersection(self, other):
-        return self.binary_geo(other, 'intersection')
-
-    def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
-              join_style=JOIN_STYLE.round, mitre_limit=5.0):
-        """ Buffer operation on array of GEOSGeometry objects """
-        return buffer(self.data, distance, resolution, cap_style, join_style,
-                      mitre_limit)
-
-    def geom_type(self):
-        """
-        Types of the underlying Geometries
-
-        Returns
-        -------
-        Pandas categorical with types for each geometry
-        """
-        x = geom_type(self.data)
-
-        import pandas as pd
-        return pd.Categorical.from_codes(x, GEOMETRY_NAMES)
-
-    # for Series/ndarray like compat
-
-    @property
-    def shape(self):
-        """ Shape of the ...
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        shape : tuple
-        """
-
-        return tuple([len(self)])
-
-    def ravel(self, order='C'):
-        """ Return a flattened (numpy) array.
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        raveled : numpy array
-        """
-        return np.array(self)
-
-    def view(self):
-        """Return a view of myself.
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        view : Categorical
-           Returns `self`!
-        """
-        return self
-
-    def to_dense(self):
-        """Return my 'dense' representation
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        dense : array
-        """
-        return to_shapely(self.data)
-
-    def get_values(self):
-        """ Return the values.
-
-        For internal compatibility with pandas formatting.
-
-        Returns
-        -------
-        values : numpy array
-            A numpy array of the same dtype as categorical.categories.dtype or
-            Index if datetime / periods
-        """
-        # if we are a datetime and period index, return Index to keep metadata
-        return to_shapely(self.data)
-
-    def tolist(self):
-        """
-        Return the array as a list of geometries
-        """
-        return self.to_dense().tolist()
-
-    def __array__(self, dtype=None):
-        """
-        The numpy array interface.
-
-        Returns
-        -------
-        values : numpy array
-            A numpy array of either the specified dtype or,
-            if dtype==None (default), the same dtype as
-            categorical.categories.dtype
-        """
-        return to_shapely(self.data)
-
-    def unary_union(self):
-        """ Unary union.
-
-        Returns a single shapely geometry
-        """
-        return unary_union(self.data)
-
-    def coords(self):
-        return coords(self.data)
-
-
 cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
               np.ndarray[np.uintp_t, ndim=1, cast=True] right,
               str predicate_name):
@@ -1599,14 +1234,6 @@ cpdef cysjoin(np.ndarray[np.uintp_t, ndim=1, cast=True] left,
         cfree(sv.a)
 
     return left_out, right_out
-
-
-def concat(L, axis=0):
-    if axis != 0:
-        raise NotImplementedError("Can only concatenate geometries along axis=0")
-    L = list(L)
-    x = np.concatenate([ga.data for ga in L])
-    return GeometryArray(x, base=set(L))
 
 
 cdef class get_geos_handle:

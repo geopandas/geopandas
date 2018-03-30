@@ -13,6 +13,8 @@ from shapely.ops import cascaded_union
 import shapely.affinity as affinity
 
 from . import vectorized
+from . import array
+from .array import GeometryArray
 
 try:
     from rtree.core import RTreeError
@@ -32,10 +34,10 @@ def binary_geo(op, left, right):
         t = left._geometry_array
         o = right._geometry_array
         x = vectorized.vector_binary_geo(op, t.data, o.data)
-        return GeoSeries(x, index=left.index, crs=left.crs)
+        return GeoSeries(GeometryArray(x), index=left.index, crs=left.crs)
     elif isinstance(right, BaseGeometry):
         x = vectorized.binary_geo(op, left._geometry_array.data, right)
-        return GeoSeries(x, index=left.index, crs=left.crs)
+        return GeoSeries(GeometryArray(x), index=left.index, crs=left.crs)
     else:
         raise TypeError(type(left), type(right))
 
@@ -55,8 +57,8 @@ def binary_predicate(op, this, other, *args):
     elif isinstance(other, BaseGeometry):
         if args:
             x = vectorized.binary_predicate_with_arg(op, this._geometry_array.data, other, *args)
-        elif op in vectorized.opposite_predicates:
-            op2 = vectorized.opposite_predicates[op]
+        elif op in array.opposite_predicates:
+            op2 = array.opposite_predicates[op]
             x = vectorized.prepared_binary_predicate(op2, this._geometry_array.data, other)
         else:
             x = vectorized.binary_predicate(op, this._geometry_array.data, other)
@@ -197,7 +199,7 @@ class GeoPandasBase(object):
     def unary_geo(self, op):
         from .geoseries import GeoSeries
         x = vectorized.geo_unary_op(op, self._geometry_array.data)
-        return GeoSeries(x, index=self.index, crs=self.crs)
+        return GeoSeries(GeometryArray(x), index=self.index, crs=self.crs)
 
     def coords(self):
         x = vectorized.coords(self._geometry_array.data)

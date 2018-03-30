@@ -14,7 +14,7 @@ from shapely.geometry import (Polygon, Point, LineString,
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame
-from geopandas.vectorized import GeometryArray
+from geopandas.array import GeometryArray
 
 import pytest
 from geopandas.tests.util import geom_equals

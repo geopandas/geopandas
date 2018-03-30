@@ -6,7 +6,7 @@ import pandas as pd
 import shapely
 from shapely.geometry.base import BaseGeometry
 
-from geopandas.vectorized import GeometryArray, from_shapely
+from geopandas.array import GeometryArray, from_shapely
 from geopandas._block import GeometryBlock
 
 import pytest

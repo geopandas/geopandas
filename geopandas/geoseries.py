@@ -15,7 +15,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from .base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
-from .vectorized import from_shapely, GeometryArray
+from .array import from_shapely, GeometryArray
 from ._block import GeometryBlock
 
 
