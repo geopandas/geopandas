@@ -2,15 +2,13 @@ import collections
 import numbers
 
 import shapely
-from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import (
+    GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE, JOIN_STYLE)
 
 import numpy as np
 
-from geopandas import vectorized
-
-from shapely.geometry.base import (
-    GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE, JOIN_STYLE)
+from . import vectorized
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -124,7 +122,7 @@ class GeometryArray(object):
         self.data = geoms
         self.base = None
 
-    def binary_geo(self, other, op):
+    def _binary_geo(self, other, op):
         """ Apply geometry-valued operation
 
         Supports:
@@ -144,13 +142,14 @@ class GeometryArray(object):
         elif isinstance(other, GeometryArray):
             if len(self) != len(other):
                 msg = ("Lengths of inputs to not match.  Left: %d, Right: %d" %
-                        (len(self), len(other)))
+                       (len(self), len(other)))
                 raise ValueError(msg)
-            return GeometryArray(vectorized.vector_binary_geo(op, self.data, other.data))
+            return GeometryArray(
+                vectorized.vector_binary_geo(op, self.data, other.data))
         else:
             raise NotImplementedError("type not known %s" % type(other))
 
-    def binop_predicate(self, other, op, extra=None):
+    def _binop_predicate(self, other, op, extra=None):
         """ Apply boolean-valued operation
 
         Supports:
@@ -173,53 +172,57 @@ class GeometryArray(object):
         """
         if isinstance(other, BaseGeometry):
             if extra is not None:
-                return vectorized.binary_predicate_with_arg(op, self.data, other, extra)
+                return vectorized.binary_predicate_with_arg(
+                    op, self.data, other, extra)
             elif op in opposite_predicates:
                 op2 = opposite_predicates[op]
-                return vectorized.prepared_binary_predicate(op2, self.data, other)
+                return vectorized.prepared_binary_predicate(
+                    op2, self.data, other)
             else:
                 return vectorized.binary_predicate(op, self.data, other)
         elif isinstance(other, GeometryArray):
             if len(self) != len(other):
                 msg = ("Shapes of inputs to not match.  Left: %d, Right: %d" %
-                        (len(self), len(other)))
+                       (len(self), len(other)))
                 raise ValueError(msg)
             if extra is not None:
-                return vectorized.vector_binary_predicate_with_arg(op, self.data, other.data, extra)
+                return vectorized.vector_binary_predicate_with_arg(
+                    op, self.data, other.data, extra)
             else:
-                return vectorized.vector_binary_predicate(op, self.data, other.data)
+                return vectorized.vector_binary_predicate(
+                    op, self.data, other.data)
         else:
             raise NotImplementedError("type not known %s" % type(other))
 
     def covers(self, other):
-        return self.binop_predicate(other, 'covers')
+        return self._binop_predicate(other, 'covers')
 
     def contains(self, other):
-        return self.binop_predicate(other, 'contains')
+        return self._binop_predicate(other, 'contains')
 
     def crosses(self, other):
-        return self.binop_predicate(other, 'crosses')
+        return self._binop_predicate(other, 'crosses')
 
     def disjoint(self, other):
-        return self.binop_predicate(other, 'disjoint')
+        return self._binop_predicate(other, 'disjoint')
 
     def equals(self, other):
-        return self.binop_predicate(other, 'equals')
+        return self._binop_predicate(other, 'equals')
 
     def intersects(self, other):
-        return self.binop_predicate(other, 'intersects')
+        return self._binop_predicate(other, 'intersects')
 
     def overlaps(self, other):
-        return self.binop_predicate(other, 'overlaps')
+        return self._binop_predicate(other, 'overlaps')
 
     def touches(self, other):
-        return self.binop_predicate(other, 'touches')
+        return self._binop_predicate(other, 'touches')
 
     def within(self, other):
-        return self.binop_predicate(other, 'within')
+        return self._binop_predicate(other, 'within')
 
     def equals_exact(self, other, tolerance):
-        return self.binop_predicate(other, 'equals_exact', tolerance)
+        return self._binop_predicate(other, 'equals_exact', tolerance)
 
     def is_valid(self):
         return vectorized.unary_predicate('is_valid', self.data)
@@ -264,14 +267,16 @@ class GeometryArray(object):
 
     def distance(self, other):
         if isinstance(other, GeometryArray):
-            return vectorized.binary_vector_float('distance', self.data, other.data)
+            return vectorized.binary_vector_float(
+                'distance', self.data, other.data)
         else:
             return vectorized.binary_float('distance', self.data, other)
 
     def project(self, other, normalized=False):
         op = 'project' if not normalized else 'project-normalized'
         if isinstance(other, GeometryArray):
-            return vectorized.binary_vector_float_return(op, self.data, other.data)
+            return vectorized.binary_vector_float_return(
+                op, self.data, other.data)
         else:
             return vectorized.binary_float_return(op, self.data, other)
 
@@ -282,19 +287,19 @@ class GeometryArray(object):
         return vectorized.unary_vector_float('length', self.data)
 
     def difference(self, other):
-        return self.binary_geo(other, 'difference')
+        return self._binary_geo(other, 'difference')
 
     def symmetric_difference(self, other):
-        return self.binary_geo(other, 'symmetric_difference')
+        return self._binary_geo(other, 'symmetric_difference')
 
     def union(self, other):
-        return self.binary_geo(other, 'union')
+        return self._binary_geo(other, 'union')
 
     def intersection(self, other):
-        return self.binary_geo(other, 'intersection')
+        return self._binary_geo(other, 'intersection')
 
     def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
-              join_style=JOIN_STYLE.round, mitre_limit=5.0):
+               join_style=JOIN_STYLE.round, mitre_limit=5.0):
         """ Buffer operation on array of GEOSGeometry objects """
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution, cap_style,

@@ -7,7 +7,6 @@ from libc.stdlib cimport free as cfree
 
 import shapely
 import shapely.prepared
-from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry, geom_factory
 from shapely.ops import cascaded_union
 import shapely.affinity as affinity
