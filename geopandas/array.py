@@ -49,6 +49,8 @@ def from_wkt(L):
 
 def points_from_xy(x, y):
     """ Convert numpy arrays of x and y values to a GeometryArray of points """
+    x = np.asarray(x, dtype='float64')
+    y = np.asarray(y, dtype='float64')
     out = vectorized.points_from_xy(x, y)
     return GeometryArray(out)
 

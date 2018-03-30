@@ -43,6 +43,11 @@ def test_points():
 
     assert isinstance(points[0], shapely.geometry.Point)
 
+    # non-float
+    points = points_from_xy(np.array([1]), np.array([1]))
+    points[0].equals(Point(1., 1.))
+    points = points_from_xy([1], [1])
+    points[0].equals(Point(1., 1.))
 
 def test_from_shapely():
     assert isinstance(T, GeometryArray)
