@@ -66,6 +66,7 @@ class TestGeomMethods:
         self.empty = GeoSeries([])
         self.empty.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.empty_poly = Polygon()
+        self.missing = GeoSeries([None, None])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -212,7 +213,7 @@ class TestGeomMethods:
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1,
                                       self.g1, self.g2)
-        self._test_binary_topological('intersection', self.empty_poly,
+        self._test_binary_topological('intersection', self.missing,
                                       self.g1, self.empty)
 
     def test_union_series(self):

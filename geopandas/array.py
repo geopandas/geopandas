@@ -92,6 +92,17 @@ class GeometryArray(object):
         return self  # assume immutable for now
 
     def take(self, idx):
+
+        # take on empty array
+        if not len(self):
+            # only valid if result is an all-missing array
+            if (np.asarray(idx) == -1).all():
+                return GeometryArray(
+                    np.array([0]*len(idx), dtype=self.data.dtype))
+            else:
+                raise IndexError(
+                    "cannot do a non-empty take from an empty array.")
+
         result = self[idx]
         result.data[idx == -1] = 0
         return result
