@@ -81,7 +81,7 @@ if not _geos_lib:
 
 suffix = '.pyx' if use_cython else '.c'
 ext_modules = []
-for modname in ['vectorized', 'array']:
+for modname in ['vectorized']:
     ext_modules.append(
         Extension(
             'geopandas.' + modname,

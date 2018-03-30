@@ -51,7 +51,7 @@ cdef int GEOS_MULTIPOLYGON = 6
 cdef int GEOS_GEOMETRYCOLLECTION = 7
 
 
-cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
+cpdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
     """
     Get a single shape from a GeometryArray as a Shapely object
 
@@ -67,6 +67,145 @@ cdef get_element(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms, int idx):
             geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
 
     return geom_factory(<np.uintp_t> geom)
+
+
+cpdef to_shapely(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Convert array of pointers to an array of shapely objects """
+    cdef GEOSGeometry *geom
+    cdef unsigned int n = geoms.size
+    cdef np.ndarray[object, ndim=1] out = np.empty(n, dtype=object)
+    with get_geos_handle() as handle:
+        for i in range(n):
+            geom = <GEOSGeometry *> geoms[i]
+
+    with get_geos_handle() as handle:
+        for i in range(n):
+            geom = <GEOSGeometry *> geoms[i]
+
+            if not geom:
+                out[i] = None
+            else:
+                geom = GEOSGeom_clone_r(handle, geom)  # create a copy rather than deal with gc
+                out[i] = geom_factory(<np.uintp_t> geom)
+
+    return out
+
+
+cpdef from_shapely(object L):
+    """ Convert a list or array of shapely objects to a GeometryArray """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n
+
+    n = len(L)
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    with get_geos_handle() as handle:
+
+        for idx in xrange(n):
+            g = L[idx]
+            if g is not None and not (isinstance(g, float) and np.isnan(g)):
+                try:
+                    geos_geom = <np.uintp_t> g.__geom__
+                except AttributeError:
+                    msg = ("Inputs to from_shapely must be shapely geometries. "
+                           "Got %s" % str(g))
+                    raise TypeError(msg)
+                geom = GEOSGeom_clone_r(handle, <GEOSGeometry *> geos_geom)  # create a copy rather than deal with gc
+                out[idx] = <np.uintp_t> geom
+            else:
+                out[idx] = 0
+
+    return out
+
+
+cpdef from_wkb(object L):
+    """ Convert a list or array of WKB objects to a GeometryArray """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef unsigned int n
+    cdef unsigned char* c_string
+    cdef bytes py_wkb
+    cdef size_t size
+
+    n = len(L)
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    with get_geos_handle() as handle:
+        reader = GEOSWKBReader_create_r(handle)
+
+        for idx in xrange(n):
+            py_wkb = L[idx]
+            if py_wkb is not None:
+                size = len(py_wkb)
+                if size:
+                    c_string = <unsigned char*> py_wkb
+                    geom = GEOSWKBReader_read_r(handle, reader, c_string, size)
+                    out[idx] = <np.uintp_t> geom
+                else:
+                    out[idx] = 0
+            else:
+                out[idx] = 0
+
+        GEOSWKBReader_destroy_r(handle, reader)
+
+    return out
+
+
+cpdef from_wkt(object L):
+    """ Convert a list or array of WKT objects to a GeometryArray """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef unsigned int n
+    cdef char* c_string
+    #cdef bytes py_wkt
+
+    n = len(L)
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+
+    with get_geos_handle() as handle:
+        reader = GEOSWKTReader_create_r(handle)
+
+        for idx in xrange(n):
+            py_wkt = L[idx]
+            if isinstance(py_wkt, unicode):
+                py_wkt = (<unicode>py_wkt).encode('utf8')
+            if py_wkt:
+                c_string = <char*> py_wkt
+                geom = GEOSWKTReader_read_r(handle, reader, c_string)
+                out[idx] = <np.uintp_t> geom
+            else:
+                out[idx] = 0
+
+        GEOSWKTReader_destroy_r(handle, reader)
+
+    return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
+                     np.ndarray[double, ndim=1, cast=True] y):
+    """ Convert numpy arrays of x and y values to a GeometryArray of points """
+    cdef Py_ssize_t idx
+    cdef GEOSCoordSequence *sequence
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n = x.size
+    cdef np.ndarray[np.uintp_t, ndim=1] out = np.empty(n, dtype=np.uintp)
+    with get_geos_handle() as handle:
+
+        with nogil:
+            for idx in xrange(n):
+                sequence = GEOSCoordSeq_create_r(handle, 1, 2)
+                GEOSCoordSeq_setX_r(handle, sequence, 0, x[idx])
+                GEOSCoordSeq_setY_r(handle, sequence, 0, y[idx])
+                geom = GEOSGeom_createPoint_r(handle, sequence)
+                geos_geom = <np.uintp_t> geom
+                out[idx] = <np.uintp_t> geom
+
+    return out
 
 
 @cython.boundscheck(False)
@@ -931,6 +1070,24 @@ cpdef deserialize(const unsigned char* data, np.ndarray[np.uintp_t, ndim=1, cast
         GEOSWKBReader_destroy_r(handle, reader)
 
     return out
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef vec_free(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Free an array of GEOSGeometry pointers """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n = geoms.size
+
+    with get_geos_handle() as handle:
+        with nogil:
+            for idx in xrange(n):
+                geos_geom = geoms[idx]
+                geom = <GEOSGeometry *> geos_geom
+                if geom is not NULL:
+                    GEOSGeom_destroy_r(handle, geom)
 
 
 @cython.boundscheck(False)
