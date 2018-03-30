@@ -66,7 +66,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
 
         geometry = kwargs.pop('geometry', 'geometry')
+        if not isinstance(geometry, str):
+            geometry = coerce_to_geoseries(geometry)
+            if not geometry.name:
+                geometry.name = 'geometry'
+
         if not args:
+            if not isinstance(geometry, str):
+                # ensure correct length of the empty frame
+                n = len(geometry)
+                kwargs['index'] = kwargs.pop('index', range(n))
             arg = []
         else:
             [arg] = args
@@ -96,12 +105,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         assert isinstance(arg, pd.DataFrame)
 
         if not isinstance(geometry, str):
-            if isinstance(geometry, Series) and geometry.name:
-                gs[geometry.name] = coerce_to_geoseries(geometry)
-                geometry = geometry.name
-            else:
-                gs['geometry'] = coerce_to_geoseries(geometry)
-                geometry = 'geometry'
+            gs[geometry.name] = coerce_to_geoseries(geometry)
+            geometry = geometry.name
             if geometry in arg.columns:
                 arg.drop(geometry, axis=1, inplace=True)
 

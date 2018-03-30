@@ -636,6 +636,7 @@ def check_geodataframe(df, geometry_column='geometry'):
     assert isinstance(df, GeoDataFrame)
     assert isinstance(df.geometry, GeoSeries)
     assert isinstance(df[geometry_column], GeoSeries)
+    assert len(df) == len(df.geometry._geometry_array)
     assert df._geometry_column_name == geometry_column
 
 
