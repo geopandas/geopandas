@@ -68,6 +68,29 @@ class GeometryArray(object):
         else:
             raise TypeError("Index type not supported", idx)
 
+    def __len__(self):
+        return len(self.data)
+
+    @property
+    def size(self):
+        return len(self.data)
+
+    @property
+    def ndim(self):
+        return 1
+
+    def __del__(self):
+        if self.base is False:
+            try:
+                vectorized.vec_free(self.data)
+            except (TypeError, AttributeError):
+                # the vectorized module can already be removed, therefore
+                # ignoring such an error to not output this as a warning
+                pass
+
+    def copy(self):
+        return self  # assume immutable for now
+
     def take(self, idx):
         result = self[idx]
         result.data[idx == -1] = 0
@@ -96,29 +119,6 @@ class GeometryArray(object):
     def fillna(self, value=None):
         return self.fill(self.data == 0, value)
 
-    def __len__(self):
-        return len(self.data)
-
-    @property
-    def size(self):
-        return len(self.data)
-
-    def __del__(self):
-        if self.base is False:
-            try:
-                vectorized.vec_free(self.data)
-            except (TypeError, AttributeError):
-                # the vectorized module can already be removed, therefore
-                # ignoring such an error to not output this as a warning
-                pass
-
-    def copy(self):
-        return self  # assume immutable for now
-
-    @property
-    def ndim(self):
-        return 1
-
     def __getstate__(self):
         return vectorized.serialize(self.data)
 
@@ -126,6 +126,10 @@ class GeometryArray(object):
         geoms = vectorized.deserialize(*state)
         self.data = geoms
         self.base = None
+
+    # -------------------------------------------------------------------------
+    # Geometry related methods
+    # -------------------------------------------------------------------------
 
     def _binary_geo(self, other, op):
         """ Apply geometry-valued operation
@@ -323,7 +327,19 @@ class GeometryArray(object):
         import pandas as pd
         return pd.Categorical.from_codes(x, GEOMETRY_NAMES)
 
+    def unary_union(self):
+        """ Unary union.
+
+        Returns a single shapely geometry
+        """
+        return vectorized.unary_union(self.data)
+
+    def coords(self):
+        return vectorized.coords(self.data)
+
+    # -------------------------------------------------------------------------
     # for Series/ndarray like compat
+    # -------------------------------------------------------------------------
 
     @property
     def shape(self):
@@ -404,13 +420,3 @@ class GeometryArray(object):
             categorical.categories.dtype
         """
         return to_shapely(self.data)
-
-    def unary_union(self):
-        """ Unary union.
-
-        Returns a single shapely geometry
-        """
-        return vectorized.unary_union(self.data)
-
-    def coords(self):
-        return vectorized.coords(self.data)
