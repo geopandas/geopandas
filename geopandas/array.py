@@ -105,7 +105,12 @@ class GeometryArray(object):
 
     def __del__(self):
         if self.base is False:
-            vectorized.vec_free(self.data)
+            try:
+                vectorized.vec_free(self.data)
+            except (TypeError, AttributeError):
+                # the vectorized module can already be removed, therefore
+                # ignoring such an error to not output this as a warning
+                pass
 
     def copy(self):
         return self  # assume immutable for now
