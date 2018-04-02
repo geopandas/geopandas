@@ -47,6 +47,7 @@ class TestSeries:
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+        self.empty = GeoSeries([])
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -115,6 +116,11 @@ class TestSeries:
         res1, res2 = a1.align(a2)
         assert res1.crs == {'init': 'epsg:4326', 'no_defs': True}
         assert res2.crs == {'init': 'epsg:31370', 'no_defs': True}
+
+    def test_align_empty(self):
+        left, right = self.g1.align(self.empty)
+        assert_series_equal(left, self.g1)
+        assert_series_equal(right, GeoSeries([None, None]))
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter

@@ -66,7 +66,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
 
         geometry = kwargs.pop('geometry', 'geometry')
+        if not isinstance(geometry, str):
+            geometry = coerce_to_geoseries(geometry)
+            if not geometry.name:
+                geometry.name = 'geometry'
+
         if not args:
+            if not isinstance(geometry, str):
+                # ensure correct length of the empty frame
+                n = len(geometry)
+                kwargs['index'] = kwargs.pop('index', range(n))
             arg = []
         else:
             [arg] = args
@@ -96,12 +105,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         assert isinstance(arg, pd.DataFrame)
 
         if not isinstance(geometry, str):
-            if isinstance(geometry, Series) and geometry.name:
-                gs[geometry.name] = coerce_to_geoseries(geometry)
-                geometry = geometry.name
-            else:
-                gs['geometry'] = coerce_to_geoseries(geometry)
-                geometry = 'geometry'
+            gs[geometry.name] = coerce_to_geoseries(geometry)
+            geometry = geometry.name
             if geometry in arg.columns:
                 arg.drop(geometry, axis=1, inplace=True)
 
@@ -284,7 +289,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None):
+    def from_features(cls, features, crs=None, columns=None):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -300,6 +305,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               ``__geo_interface__``.
         crs : str or dict (optional)
             Coordinate reference system to set on the resulting frame.
+        columns : list of column names, optional
+            Optionally specify the column names to include in the output frame.
+            This does not overwrite the property names of the input, but can
+            ensure a consistent output format.
 
         Returns
         -------
@@ -332,7 +341,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
             d.update(f['properties'])
             rows.append(d)
-        df = GeoDataFrame.from_dict(rows)
+        df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
         return df
 

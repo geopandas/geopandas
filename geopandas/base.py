@@ -102,7 +102,7 @@ def _geo_unary_op(this, op):
 def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
     return Series([getattr(geom, op, null_value) for geom in this.geometry],
-                     index=this.index)
+                     index=this.index, dtype=np.dtype(type(null_value)))
 
 
 class GeoPandasBase(object):
@@ -191,6 +191,13 @@ class GeoPandasBase(object):
         # operates on the exterior, so can't use _series_unary_op()
         x = vectorized.unary_predicate('is_ring', self._geometry_array.data)
         return Series(x, index=self.index)
+
+    @property
+    def has_z(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        features that have a z-component."""
+        # operates on the exterior, so can't use _series_unary_op()
+        return _series_unary_op(self, 'has_z', null_value=False)
 
     #
     # Unary operations that return a GeoSeries
@@ -454,12 +461,12 @@ class GeoPandasBase(object):
 
     def distance(self, other):
         """
-        Returns a ``Series`` containing the minimum distance to `other`.
+        Returns a ``Series`` containing the distance to `other`.
 
         Parameters
         ----------
         other : Geoseries or geometric object
-            The Geoseries (elementwise) or geometric object to find the minimum
+            The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
         return binary_float('distance', self, other)

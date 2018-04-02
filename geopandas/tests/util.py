@@ -92,18 +92,6 @@ def create_db(df):
     return True
 
 
-def assert_seq_equal(left, right):
-    """
-    Poor man's version of assert_almost_equal which isn't working with Shapely
-    objects right now
-    """
-    assert (len(left) == len(right),
-            "Mismatched lengths: %d != %d" % (len(left), len(right)))
-
-    for elem_left, elem_right in zip(left, right):
-        assert elem_left == elem_right, "%r != %r" % (left, right)
-
-
 def geom_equals(this, that):
     """Test for geometric equality. Empty geometries are considered equal.
 

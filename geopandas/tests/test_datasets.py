@@ -1,18 +1,13 @@
 from __future__ import absolute_import
 
+import pytest
+
 from geopandas import read_file, GeoDataFrame
 from geopandas.datasets import get_path
 
-
-class TestDatasets:
-
-    def test_read_paths(self):
-
-        gdf = read_file(get_path('naturalearth_lowres'))
-        assert isinstance(gdf, GeoDataFrame)
-
-        gdf = read_file(get_path('naturalearth_cities'))
-        assert isinstance(gdf, GeoDataFrame)
-
-        gdf = read_file(get_path('nybb'))
-        assert isinstance(gdf, GeoDataFrame)
+@pytest.mark.parametrize("test_dataset",
+                         ['naturalearth_lowres',
+                          'naturalearth_cities',
+                          'nybb'])
+def test_read_paths(test_dataset):
+    assert isinstance(read_file(get_path(test_dataset)), GeoDataFrame)

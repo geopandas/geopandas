@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from shapely.affinity import rotate
-from shapely.geometry import MultiPolygon, Polygon, LineString, Point
+from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
 
@@ -34,8 +34,14 @@ class TestPointPlotting:
     def setup_method(self):
         self.N = 10
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
+
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+        multipoint1 = MultiPoint(self.points)
+        multipoint2 = rotate(multipoint1, 90)
+        self.df2 = GeoDataFrame({'geometry': [multipoint1, multipoint2],
+                                 'values': [0, 1]})
 
     def test_figsize(self):
 
@@ -166,6 +172,20 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
+
+    def test_multipoints(self):
+
+        # MultiPoints
+        ax = self.df2.plot()
+        _check_colors(4, ax.collections[0].get_facecolors(),
+                      [MPL_DFT_COLOR] * 4)
+
+
+        ax = self.df2.plot(column='values')
+        cmap = plt.get_cmap()
+        expected_colors = [cmap(0)]* self.N + [cmap(1)] * self.N
+        _check_colors(2, ax.collections[0].get_facecolors(),
+                      expected_colors)
 
 class TestPointZPlotting:
 
