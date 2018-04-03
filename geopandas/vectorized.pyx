@@ -192,8 +192,8 @@ cpdef from_wkt(object L):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef points_from_xy(np.ndarray[double, ndim=1, cast=True] x,
-                     np.ndarray[double, ndim=1, cast=True] y):
+cpdef points_from_xy(np.ndarray[double, ndim=1] x,
+                     np.ndarray[double, ndim=1] y):
     """ Convert numpy arrays of x and y values to a GeometryArray of points """
     cdef Py_ssize_t idx
     cdef GEOSCoordSequence *sequence
