@@ -469,9 +469,14 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
         from matplotlib import cm
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
 
         norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1)
+
         if categorical:
             patches = []
             for value, cat in enumerate(categories):
@@ -486,7 +491,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             ax.legend(patches, categories, **legend_kwds)
         else:
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, ax=ax)
+            ax.get_figure().colorbar(n_cmap, cax=cax)
 
     plt.draw()
     return ax
