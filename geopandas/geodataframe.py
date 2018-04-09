@@ -122,7 +122,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # super(GeoDataFrame, self).__init__(block_manager, **kwargs)
         for k, geom in gs.items():
             arg[k] = geom
-        super(GeoDataFrame, self).__init__(arg, **kwargs)
+        super(GeoDataFrame, self).__init__(arg._data) #, **kwargs)
 
         self.crs = crs
         self._geometry_column_name = geometry
