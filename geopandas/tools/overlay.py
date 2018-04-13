@@ -3,7 +3,8 @@ from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
 
 from geopandas import GeoDataFrame, GeoSeries
-
+from functools import reduce
+import numpy as np
 
 def _uniquify(columns):
     ucols = []
@@ -56,7 +57,7 @@ def _extract_rings(df):
     return rings
 
 
-def overlay(df1, df2, how, use_sindex=True):
+def overlay_slow(df1, df2, how, use_sindex=True, **kwargs):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -143,7 +144,6 @@ def overlay(df1, df2, how, use_sindex=True):
                 df2_hit = True
                 prop2 = cand
                 break  # Take the first hit
-
         # determine spatial relationship based on type of overlay
         hit = False
         if how == "intersection" and (df1_hit and df2_hit):
@@ -178,3 +178,143 @@ def overlay(df1, df2, how, use_sindex=True):
 
     # Return geodataframe with new indices
     return GeoDataFrame(collection, index=range(len(collection)))
+
+def overlay(df1, df2, how='intersection', reproject=True, use_sindex=None, **kwargs):
+    """Perform spatial overlay between two polygons.
+
+    Currently only supports data GeoDataFrames with polygons.
+    Implements several methods that are all effectively subsets of
+    the union.
+
+    Parameters
+    ----------
+    df1 : GeoDataFrame with MultiPolygon or Polygon geometry column
+    df2 : GeoDataFrame with MultiPolygon or Polygon geometry column
+    how : string
+        Method of spatial overlay: 'intersection', 'union',
+        'identity', 'symmetric_difference' or 'difference'.
+    reproject : boolean, default True
+        If GeoDataFrames do not have same projection, reproject
+        df2 to same projection of df1 before performing overlay
+
+    Returns
+    -------
+    df : GeoDataFrame
+        GeoDataFrame with new set of polygons and attributes
+        resulting from the overlay
+
+    """
+    if use_sindex is not None:
+        print('use_sindex is deprecated. If you are trying to use the old "overlay" function use "overlay_slow".')
+
+    # Allowed operations
+    allowed_hows = [
+        'intersection',
+        'union',
+        'identity',
+        'symmetric_difference',
+        'difference',  # aka erase
+    ]
+    # Error Messages
+    if how not in allowed_hows:
+        raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
+            (how, allowed_hows))
+
+    if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
+        raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
+
+    if (df1.geom_type.apply(lambda x: x in ['Polygon', 'MultiPolygon']).sum()!=len(df1.index) or 
+        df2.geom_type.apply(lambda x: x in ['Polygon', 'MultiPolygon']).sum()!=len(df2.index)):
+        raise TypeError("overlay only takes GeoDataFrames with (multi)polygon geometries") 
+
+    # Computations
+    df1 = df1.copy()
+    df2 = df2.copy()
+    df1['geometry'] = df1.geometry.buffer(0)
+    df2['geometry'] = df2.geometry.buffer(0)
+    if df1.crs!=df2.crs and reproject:
+        print('Data has different projections.')
+        print('Converted data to projection of first GeoPandas DatFrame')
+        df2.to_crs(crs=df1.crs, inplace=True)
+    if how=='intersection':
+        # Spatial Index to create intersections
+        spatial_index = df2.sindex
+        df1['bbox'] = df1.geometry.apply(lambda x: x.bounds)
+        df1['sidx']=df1.bbox.apply(lambda x:list(spatial_index.intersection(x)))
+        pairs = df1['sidx'].to_dict()
+        nei = []
+        for i,j in pairs.items():
+            for k in j:
+                nei.append([i,k])
+        if nei!=[]:
+            pairs = GeoDataFrame(nei, columns=['idx1','idx2'], crs=df1.crs)
+            pairs = pairs.merge(df1, left_on='idx1', right_index=True)
+            pairs = pairs.merge(df2, left_on='idx2', right_index=True, suffixes=['_1','_2'])
+            pairs['Intersection'] = pairs.apply(lambda x: (x['geometry_1'].intersection(x['geometry_2'])).buffer(0), axis=1)
+            pairs = GeoDataFrame(pairs, columns=pairs.columns, crs=df1.crs)
+            cols = pairs.columns.tolist()
+            cols.remove('geometry_1')
+            cols.remove('geometry_2')
+            cols.remove('sidx')
+            cols.remove('bbox')
+            cols.remove('Intersection')
+            dfinter = pairs[cols+['Intersection']].copy()
+            dfinter.rename(columns={'Intersection':'geometry'}, inplace=True)
+            dfinter = GeoDataFrame(dfinter, columns=dfinter.columns, crs=pairs.crs)
+            dfinter = dfinter.loc[dfinter.geometry.is_empty==False]
+            #dfinter.drop(['idx1','idx2'], inplace=True, axis=1)
+            dfinter.reset_index(inplace=True, drop=True)
+            return dfinter
+        else:
+            return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
+    elif how=='difference':
+        spatial_index = df2.sindex
+        df1['bbox'] = df1.geometry.apply(lambda x: x.bounds)
+        df1['sidx']=df1.bbox.apply(lambda x:list(spatial_index.intersection(x)))
+        df1['new_g'] = df1.apply(lambda x: reduce(lambda x, y: x.difference(y).buffer(0), 
+                                 [x.geometry]+list(df2.iloc[x.sidx].geometry)) , axis=1)
+        df1.geometry = df1.new_g
+        df1 = df1.loc[df1.geometry.is_empty==False].copy()
+        df1.drop(['bbox', 'sidx', 'new_g'], axis=1, inplace=True)
+        df1.reset_index(inplace=True, drop=True)
+        return df1
+    elif how=='symmetric_difference':
+        df1['idx1'] = df1.index.tolist()
+        df2['idx2'] = df2.index.tolist()
+        df1['idx2'] = np.nan
+        df2['idx1'] = np.nan
+        dfsym = df1.merge(df2, on=['idx1','idx2'], how='outer', suffixes=['_1','_2'])
+        dfsym['geometry'] = dfsym.geometry_1
+        dfsym.loc[dfsym.geometry_2.isnull()==False, 'geometry'] = dfsym.loc[dfsym.geometry_2.isnull()==False, 'geometry_2']
+        dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
+        dfsym = GeoDataFrame(dfsym, columns=dfsym.columns, crs=df1.crs)
+        spatial_index = dfsym.sindex
+        dfsym['bbox'] = dfsym.geometry.apply(lambda x: x.bounds)
+        dfsym['sidx'] = dfsym.bbox.apply(lambda x:list(spatial_index.intersection(x)))
+        dfsym['idx'] = dfsym.index.values
+        dfsym.apply(lambda x: x.sidx.remove(x.idx), axis=1)
+        dfsym['new_g'] = dfsym.apply(lambda x: reduce(lambda x, y: x.difference(y).buffer(0), 
+                         [x.geometry]+list(dfsym.iloc[x.sidx].geometry)) , axis=1)
+        dfsym.geometry = dfsym.new_g
+        dfsym = dfsym.loc[dfsym.geometry.is_empty==False].copy()
+        dfsym.drop(['bbox', 'sidx', 'idx', 'idx1','idx2', 'new_g'], axis=1, inplace=True)
+        dfsym.reset_index(inplace=True, drop=True)
+        return dfsym
+    elif how=='union':
+        dfinter = overlay(df1, df2, how='intersection')
+        dfsym = overlay(df1, df2, how='symmetric_difference')
+        dfunion = dfinter.append(dfsym)
+        dfunion.reset_index(inplace=True, drop=True)
+        return dfunion
+    elif how=='identity':
+        dfunion = overlay(df1, df2, how='union')
+        cols1 = df1.columns.tolist()
+        cols2 = df2.columns.tolist()
+        cols1.remove('geometry')
+        cols2.remove('geometry')
+        cols2 = set(cols2).intersection(set(cols1))
+        cols1 = list(set(cols1).difference(set(cols2)))
+        cols2 = [col+'_1' for col in cols2]
+        dfunion = dfunion[(dfunion[cols1+cols2].isnull()==False).values]
+        dfunion.reset_index(inplace=True, drop=True)
+        return dfunion
