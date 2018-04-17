@@ -130,7 +130,11 @@ def assert_geodataframe_equal(left, right,
         If `check_frame_type` is True, then also check that the
         crs matches.
     """
-    from pandas.testing import assert_frame_equal, assert_index_equal
+    try:
+        # added from pandas 0.20
+        from pandas.testing import assert_frame_equal, assert_index_equal
+    except ImportError:
+        from pandas.util.testing import assert_frame_equal, assert_index_equal
 
     # instance validation
     if check_frame_type:
