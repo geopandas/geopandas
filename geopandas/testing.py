@@ -166,7 +166,7 @@ def assert_geodataframe_equal(left, right,
         check_geom_type=check_geom_type, check_crs=False)
 
     # drop geometries and check remaining columns
-    left2 = left.drop(columns=[left._geometry_column_name])
-    right2 = left.drop(columns=[right._geometry_column_name])
-    assert_frame_equal(left2, right2, check_dtype=check_dtype, 
+    left2 = left.drop([left._geometry_column_name], axis=1)
+    right2 = left.drop([right._geometry_column_name], axis=1)
+    assert_frame_equal(left2, right2, check_dtype=check_dtype,
                        check_index_type=check_index_type, obj='GeoDataFrame')
