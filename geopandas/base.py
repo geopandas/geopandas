@@ -14,7 +14,8 @@ import shapely.affinity as affinity
 
 from . import vectorized
 from . import array
-from .array import GeometryArray, GeometryDtype
+from .array import GeometryArray, GeometryDtype, _HAS_EXTENSION_ARRAY
+from ._block import GeometryBlock
 
 try:
     from rtree.core import RTreeError
@@ -27,11 +28,20 @@ except ImportError:
 
 def is_geometry_type(data):
 
-    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
-        # GeometryArray and Series[GeometryArray]
-        return True
+    if _HAS_EXTENSION_ARRAY:
+        if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+            # GeometryArray and Series[GeometryArray]
+            return True
+        else:
+            return False
     else:
-        return False
+        if isinstance(data, GeometryArray):
+            return True
+        elif (isinstance(data, Series)
+                and isinstance(data._data._block, GeometryBlock)):
+            return True
+        else:
+            return False
 
 
 def binary_geo(op, left, right):

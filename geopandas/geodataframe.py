@@ -15,7 +15,7 @@ from shapely.geometry import mapping, shape
 from .geoseries import GeoSeries
 from .base import GeoPandasBase, _CoordinateIndexer, is_geometry_type
 from .plotting import plot_dataframe
-from .array import GeometryArray, from_shapely
+from .array import GeometryArray, from_shapely, _HAS_EXTENSION_ARRAY
 from . import _block
 from ._block import GeometryBlock
 
@@ -116,13 +116,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             geom = coerce_to_geoseries(geom, name=geometry)
             gs[geometry] = geom
 
-        # block_manager = _block.add_geometries(arg._data, gs)
-        # kwargs['columns'] = block_manager.axes[0]
-
-        # super(GeoDataFrame, self).__init__(block_manager, **kwargs)
-        for k, geom in gs.items():
-            arg[k] = geom
-        super(GeoDataFrame, self).__init__(arg._data) #, **kwargs)
+        if not _HAS_EXTENSION_ARRAY:
+            block_manager = _block.add_geometries(arg._data, gs)
+            kwargs['columns'] = block_manager.axes[0]
+            super(GeoDataFrame, self).__init__(block_manager, **kwargs)
+        else:
+            for k, geom in gs.items():
+                arg[k] = geom
+            super(GeoDataFrame, self).__init__(arg._data) #, **kwargs)
 
         self.crs = crs
         self._geometry_column_name = geometry
@@ -248,21 +249,22 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             level = GeoSeries(level, index=frame.index)
 
-        # blk_mgr = _block.add_geometries(frame._data, {geo_column_name: level})
+        if not _HAS_EXTENSION_ARRAY:
+            blk_mgr = _block.add_geometries(frame._data, {geo_column_name: level})
 
-        # # frame[geo_column_name] = level
-        # # frame._geometry_column_name = geo_column_name
-        # # frame.crs = crs
-        # # frame._invalidate_sindex()
-        # if inplace:
-        #     frame._data = blk_mgr
-        #     frame._geometry_column_name = geo_column_name
-        #     frame.crs = crs
-        #     frame._invalidate_sindex()
-        # else:
-        #     frame = self._constructor(blk_mgr, geometry=geo_column_name,
-        #                                 crs=crs)
-        #     return frame
+            # frame[geo_column_name] = level
+            # frame._geometry_column_name = geo_column_name
+            # frame.crs = crs
+            # frame._invalidate_sindex()
+            if inplace:
+                frame._data = blk_mgr
+                frame._geometry_column_name = geo_column_name
+                frame.crs = crs
+                frame._invalidate_sindex()
+            else:
+                frame = self._constructor(blk_mgr, geometry=geo_column_name,
+                                          crs=crs)
+                return frame
 
         frame[geo_column_name] = level._data._block.values
         frame._geometry_column_name = geo_column_name
@@ -591,24 +593,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = DataFrame
         return result
 
-    # def __setitem__(self, key, value):
-    #     """If what is set is a GeoSeries, make sure the GeometryBlock
-    #     is preserved"""
-    #     if (isinstance(key, string_types)
-    #             and (isinstance(value, GeoSeries)
-    #                  or isinstance(value, GeometryArray))):
-    #         if isinstance(value, GeoSeries):
-    #             value = value.reindex(self.index)
-    #             value = value._geometry_array
-    #         else:
-    #             if not len(value) == len(self):
-    #                 raise ValueError("Length of values does not match length "
-    #                                  "of index")
+    def __setitem__(self, key, value):
+        """If what is set is a GeoSeries, make sure the GeometryBlock
+        is preserved"""
+        if _HAS_EXTENSION_ARRAY:
+            super(GeoDataFrame, self).__setitem__(key, value)
+        else:
+            if (isinstance(key, string_types)
+                    and (isinstance(value, GeoSeries)
+                        or isinstance(value, GeometryArray))):
+                if isinstance(value, GeoSeries):
+                    value = value.reindex(self.index)
+                    value = value._geometry_array
+                else:
+                    if not len(value) == len(self):
+                        raise ValueError("Length of values does not match length "
+                                        "of index")
 
-    #         _block.frame_set_geometry(self, key, value)
+                _block.frame_set_geometry(self, key, value)
 
-    #     else:
-    #         super(GeoDataFrame, self).__setitem__(key, value)
+            else:
+                super(GeoDataFrame, self).__setitem__(key, value)
 
     #
     # Implement pandas methods

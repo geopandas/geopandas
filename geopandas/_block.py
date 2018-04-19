@@ -19,7 +19,6 @@ class GeometryBlock(NonConsolidatableMixIn, Block):
         return GeometryArray
 
     def __init__(self, values, placement, ndim=2, **kwargs):
-        print("Ai, I am constructing a GeometryBlock")
 
         if not isinstance(values, self._holder):
             raise TypeError("values must be a GeometryArray object")

@@ -1,15 +1,35 @@
 import collections
 import numbers
 
+import numpy as np
+
 import shapely
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.base import (
     GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE, JOIN_STYLE)
 
-from pandas.core.arrays import ExtensionArray
-from pandas.core.dtypes.base import ExtensionDtype
+try:
+    from pandas.core.arrays import ExtensionArray
+    from pandas.core.dtypes.base import ExtensionDtype
 
-import numpy as np
+    class GeometryDtype(ExtensionDtype):
+        type = BaseGeometry
+        name = 'geometry'
+
+        @classmethod
+        def construct_from_string(cls, string):
+            if string == cls.name:
+                return cls()
+            else:
+                raise TypeError("Cannot construct a '{}' from "
+                                "'{}'".format(cls, string))
+    
+    _HAS_EXTENSION_ARRAY = True
+except ImportError:
+    ExtensionArray = object
+    GeometryDtype = lambda: np.dtype('object')
+    _HAS_EXTENSION_ARRAY = False
+
 
 from . import vectorized
 
@@ -54,19 +74,6 @@ def points_from_xy(x, y):
     """ Convert numpy arrays of x and y values to a GeometryArray of points """
     out = vectorized.points_from_xy(x, y)
     return GeometryArray(out)
-
-
-class GeometryDtype(ExtensionDtype):
-    type = BaseGeometry
-    name = 'geometry'
-
-    @classmethod
-    def construct_from_string(cls, string):
-        if string == cls.name:
-            return cls()
-        else:
-            raise TypeError("Cannot construct a '{}' from "
-                            "'{}'".format(cls, string))
 
 
 class GeometryArray(ExtensionArray):
@@ -561,3 +568,53 @@ class GeometryArray(ExtensionArray):
             categorical.categories.dtype
         """
         return to_shapely(self.data)
+
+    # -------------------------------------------------------------------------
+    # for Block compatibility (pandas < 0.23)
+    # -------------------------------------------------------------------------
+
+    def ravel(self, order='C'):
+        """ Return a flattened (numpy) array.
+        For internal compatibility with numpy arrays.
+        Returns
+        -------
+        raveled : numpy array
+        """
+        return np.array(self)
+
+    def view(self):
+        """Return a view of myself.
+        For internal compatibility with numpy arrays.
+        Returns
+        -------
+        view : Categorical
+           Returns `self`!
+        """
+        return self
+
+    def to_dense(self):
+        """Return my 'dense' representation
+        For internal compatibility with numpy arrays.
+        Returns
+        -------
+        dense : array
+        """
+        return to_shapely(self.data)
+
+    def get_values(self):
+        """ Return the values.
+        For internal compatibility with pandas formatting.
+        Returns
+        -------
+        values : numpy array
+            A numpy array of the same dtype as categorical.categories.dtype or
+            Index if datetime / periods
+        """
+        # if we are a datetime and period index, return Index to keep metadata
+        return to_shapely(self.data)
+
+    def tolist(self):
+        """
+        Return the array as a list of geometries
+        """
+        return self.to_dense().tolist()
