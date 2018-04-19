@@ -1,3 +1,5 @@
+import operator
+
 import numpy as np
 import pandas as pd
 
@@ -114,6 +116,125 @@ class TestReshaping(base.BaseReshapingTests):
 
 class TestGetitem(base.BaseGetitemTests):
     pass
+
+
+class TestSetitem(base.BaseSetitemTests):
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_scalar_series(self, data):
+        arr = pd.Series(data)
+        arr[0] = data[1]
+        assert arr[0] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_sequence(self, data):
+        arr = pd.Series(data)
+        original = data.copy()
+
+        arr[[0, 1]] = [data[1], data[0]]
+        assert arr[0] == original[1]
+        assert arr[1] == original[0]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_empty_indxer(self, data):
+        ser = pd.Series(data)
+        original = ser.copy()
+        ser[[]] = []
+        self.assert_series_equal(ser, original)
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_sequence_broadcasts(self, data):
+        arr = pd.Series(data)
+
+        arr[[0, 1]] = data[2]
+        assert arr[0] == data[2]
+        assert arr[1] == data[2]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    @pytest.mark.parametrize('setter', ['loc', 'iloc'])
+    def test_setitem_scalar(self, data, setter):
+        arr = pd.Series(data)
+        setter = getattr(arr, setter)
+        operator.setitem(setter, 0, data[1])
+        assert arr[0] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_loc_scalar_mixed(self, data):
+        df = pd.DataFrame({"A": np.arange(len(data)), "B": data})
+        df.loc[0, 'B'] = data[1]
+        assert df.loc[0, 'B'] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_loc_scalar_single(self, data):
+        df = pd.DataFrame({"B": data})
+        df.loc[10, 'B'] = data[1]
+        assert df.loc[10, 'B'] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_loc_scalar_multiple_homogoneous(self, data):
+        df = pd.DataFrame({"A": data, "B": data})
+        df.loc[10, 'B'] = data[1]
+        assert df.loc[10, 'B'] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_iloc_scalar_mixed(self, data):
+        df = pd.DataFrame({"A": np.arange(len(data)), "B": data})
+        df.iloc[0, 1] = data[1]
+        assert df.loc[0, 'B'] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_iloc_scalar_single(self, data):
+        df = pd.DataFrame({"B": data})
+        df.iloc[10, 0] = data[1]
+        assert df.loc[10, 'B'] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    def test_setitem_iloc_scalar_multiple_homogoneous(self, data):
+        df = pd.DataFrame({"A": data, "B": data})
+        df.iloc[10, 1] = data[1]
+        assert df.loc[10, 'B'] == data[1]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    @pytest.mark.parametrize('as_callable', [True, False])
+    @pytest.mark.parametrize('setter', ['loc', None])
+    def test_setitem_mask_aligned(self, data, as_callable, setter):
+        ser = pd.Series(data)
+        mask = np.zeros(len(data), dtype=bool)
+        mask[:2] = True
+
+        if as_callable:
+            mask2 = lambda x: mask
+        else:
+            mask2 = mask
+
+        if setter:
+            # loc
+            target = getattr(ser, setter)
+        else:
+            # Series.__setitem__
+            target = ser
+
+        operator.setitem(target, mask2, data[5:7])
+
+        ser[mask2] = data[5:7]
+        assert ser[0] == data[5]
+        assert ser[1] == data[6]
+
+    @pytest.mark.skip(reason="Setting not supported")
+    @pytest.mark.parametrize('setter', ['loc', None])
+    def test_setitem_mask_broadcast(self, data, setter):
+        ser = pd.Series(data)
+        mask = np.zeros(len(data), dtype=bool)
+        mask[:2] = True
+
+        if setter:   # loc
+            target = getattr(ser, setter)
+        else:  # __setitem__
+            target = ser
+
+        operator.setitem(target, mask, data[10])
+        assert ser[0] == data[10]
+        assert ser[1] == data[10]
 
 
 class TestMissing(base.BaseMissingTests):
