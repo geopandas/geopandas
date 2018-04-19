@@ -5,14 +5,20 @@ import pandas as pd
 
 import shapely.geometry
 
-from geopandas.array import GeometryDtype, from_shapely, _HAS_EXTENSION_ARRAY
+from geopandas.array import GeometryDtype, from_shapely
 
 import pytest
-from pandas.tests.extension import base
 
-
-if not _HAS_EXTENSION_ARRAY:
+try:
+    from pandas.tests.extension import base
+except ImportError:
     pytestmark = pytest.mark.skip("pandas has no ExtensionArray support")
+
+    class Base(object):
+        def __getattr__(self, key):
+            return object
+
+    base = Base()
 
 
 @pytest.fixture
