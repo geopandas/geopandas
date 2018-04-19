@@ -84,7 +84,7 @@ class GeometryArray(ExtensionArray):
                 or not getattr(data, 'dtype', None) == np.uintp):
             raise TypeError(
                 "data should be array of pointers. Use from_shapely, "
-                "from_wkb, from_wkt functions to construct aGeometryArray.")
+                "from_wkb, from_wkt functions to construct a GeometryArray.")
         self.data = data
         self.base = base
 
@@ -180,30 +180,19 @@ class GeometryArray(ExtensionArray):
         -------
         filled : ExtensionArray with NA/NaN filled
         """
-        from pandas.api.types import is_array_like
-        from pandas.util._validators import validate_fillna_kwargs
-        from pandas.core.missing import pad_1d, backfill_1d
-
-        value, method = validate_fillna_kwargs(value, method)
+        if method is not None:
+            raise NotImplementedError(
+                "fillna with a method is not yet supported")
+        elif not isinstance(value, BaseGeometry):
+            raise NotImplementedError(
+                "fillna currently only supports filling with a scalar "
+                "geometry")
 
         mask = self.isna()
 
-        if is_array_like(value):
-            # if len(value) != len(self):
-            #     raise ValueError("Length of 'value' does not match. Got ({}) "
-            #                      " expected {}".format(len(value), len(self)))
-            # value = value[mask]
-            raise NotImplementedError
-
         if mask.any():
-            if method is not None:
-                func = pad_1d if method == 'pad' else backfill_1d
-                new_values = func(self.astype(object), limit=limit,
-                                  mask=mask)
-                new_values = self._constructor_from_sequence(new_values)
-            else:
-                # fill with value
-                new_values = self.fill(self.data == 0, value)
+            # fill with value
+            new_values = self.fill(self.data == 0, value)
         else:
             new_values = self.copy()
         return new_values

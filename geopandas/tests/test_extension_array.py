@@ -248,13 +248,14 @@ class TestSetitem(base.BaseSetitemTests):
 
 
 class TestMissing(base.BaseMissingTests):
-    
+
     def test_fillna_series(self, data_missing):
         fill_value = data_missing[1]
         ser = pd.Series(data_missing)
 
         result = ser.fillna(fill_value)
-        expected = pd.Series(type(data_missing)([fill_value, fill_value]))
+        expected = pd.Series(data_missing._constructor_from_sequence(
+            [fill_value, fill_value]))
         self.assert_series_equal(result, expected)
 
         # filling with array-like not yet supported
@@ -266,6 +267,18 @@ class TestMissing(base.BaseMissingTests):
         # # Fill with a series not affecting the missing values
         # result = ser.fillna(ser)
         # self.assert_series_equal(result, ser)
+
+    @pytest.mark.skip("fillna method not supported")
+    def test_fillna_limit_pad(self, data_missing):
+        pass
+
+    @pytest.mark.skip("fillna method not supported")
+    def test_fillna_limit_backfill(self, data_missing):
+        pass
+
+    @pytest.mark.skip("fillna method not supported")
+    def test_fillna_series_method(self, data_missing, method):
+        pass
 
 
 class TestCasting(base.BaseCastingTests):
