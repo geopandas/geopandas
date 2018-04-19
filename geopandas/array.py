@@ -80,10 +80,13 @@ class GeometryArray(ExtensionArray):
     dtype = GeometryDtype()
 
     def __init__(self, data, base=False):
-        if (not isinstance(data, np.ndarray)
+        if isinstance(data, self.__class__):
+            base = [data]
+            data = data.data
+        elif (not isinstance(data, np.ndarray)
                 or not getattr(data, 'dtype', None) == np.uintp):
             raise TypeError(
-                "data should be array of pointers. Use from_shapely, "
+                "'data' should be array of pointers. Use from_shapely, "
                 "from_wkb, from_wkt functions to construct a GeometryArray.")
         self.data = data
         self.base = base
