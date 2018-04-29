@@ -107,8 +107,7 @@ def to_wkb(geoms):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    out = [geom.wkb if geom is not None else None for geom in geoms]
-    return np.array(out, dtype=object)
+    return vectorized.to_wkb(geoms.data)
 
 
 def from_wkt(data):

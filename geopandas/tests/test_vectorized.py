@@ -9,6 +9,7 @@ from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 from geopandas.array import GeometryArray
 from geopandas.array import points_from_xy, from_shapely, from_wkb, from_wkt
+from geopandas.array import to_wkb
 from geopandas.vectorized import serialize, deserialize, cysjoin
 
 import pytest
@@ -42,9 +43,10 @@ def test_points():
 
     # non-float
     points = points_from_xy(np.array([1]), np.array([1]))
-    points[0].equals(Point(1., 1.))
+    points[0].equals(shapely.geometry.Point(1.0, 1.0))
     points = points_from_xy([1], [1])
-    points[0].equals(Point(1., 1.))
+    points[0].equals(shapely.geometry.Point(1.0, 1.0))
+
 
 def test_from_shapely():
     assert isinstance(T, GeometryArray)
@@ -69,6 +71,17 @@ def test_from_wkb():
     res = from_wkb(L_wkb)
     assert res[-1] is None
     assert res[-2] is None
+
+
+def test_to_wkb():
+    res = to_wkb(P)
+    exp = np.array([p.wkb for p in points], dtype=object)
+    assert isinstance(res, np.ndarray)
+    np.testing.assert_array_equal(res, exp)
+
+    a = from_shapely([None, points[0]])
+    res = to_wkb(a)
+    assert res[0] is None
 
 
 @pytest.mark.parametrize("string_type", ["str", "bytes"])
