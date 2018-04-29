@@ -4,7 +4,7 @@ import fiona
 import numpy as np
 import six
 
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
 if six.PY3:
@@ -28,7 +28,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, **kwargs):
+def read_file(filename, bbox=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -37,6 +37,9 @@ def read_file(filename, **kwargs):
     filename: str
         Either the absolute or relative path to the file or URL to
         be opened.
+    bbox : tuple | GeoDataFrame or GeoSeries, default None
+        Filter features by given bounding box, GeoSeries, or GeoDataFrame.
+        CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -51,7 +54,6 @@ def read_file(filename, **kwargs):
     -------
     geodataframe : GeoDataFrame
     """
-    bbox = kwargs.pop('bbox', None)
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
@@ -63,6 +65,8 @@ def read_file(filename, **kwargs):
     with reader(path_or_bytes, **kwargs) as features:
         crs = features.crs
         if bbox is not None:
+            if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
+                bbox = tuple(bbox.to_crs(crs).total_bounds)
             assert len(bbox) == 4
             f_filt = features.filter(bbox=bbox)
         else:

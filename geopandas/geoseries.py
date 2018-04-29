@@ -32,9 +32,11 @@ class GeoSeries(GeoPandasBase, Series):
             return arr.view(GeoSeries)
 
     def __init__(self, *args, **kwargs):
-        # fix problem for scalar geometries passed
+        # fix problem for scalar geometries passed, ensure the list of
+        # scalars is of correct length if index is specified
         if len(args) == 1 and isinstance(args[0], BaseGeometry):
-            args = ([args[0]],)
+            n = len(kwargs.get('index', [1]))
+            args = ([args[0]] * n,)
 
         crs = kwargs.pop('crs', None)
 

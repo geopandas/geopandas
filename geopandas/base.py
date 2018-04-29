@@ -40,7 +40,7 @@ def _geo_op(this, other, op):
 # TODO: think about merging with _geo_op
 def _series_op(this, other, op, **kwargs):
     """Geometric operation that returns a pandas Series"""
-    null_val = False if op != 'distance' else np.nan
+    null_val = False if op not in ['distance', 'project'] else np.nan
 
     if isinstance(other, GeoPandasBase):
         this = this.geometry
@@ -48,10 +48,11 @@ def _series_op(this, other, op, **kwargs):
         return Series([getattr(this_elem, op)(other_elem, **kwargs)
                     if not this_elem.is_empty | other_elem.is_empty else null_val
                     for this_elem, other_elem in zip(this, other)],
-                    index=this.index)
+                    index=this.index, dtype=np.dtype(type(null_val)))
     else:
         return Series([getattr(s, op)(other, **kwargs) if s else null_val
-                      for s in this.geometry], index=this.index)
+                       for s in this.geometry],
+                      index=this.index, dtype=np.dtype(type(null_val)))
 
 
 def _geo_unary_op(this, op):
@@ -63,7 +64,7 @@ def _geo_unary_op(this, op):
 def _series_unary_op(this, op, null_value=False):
     """Unary operation that returns a Series"""
     return Series([getattr(geom, op, null_value) for geom in this.geometry],
-                     index=this.index)
+                     index=this.index, dtype=np.dtype(type(null_value)))
 
 
 class GeoPandasBase(object):
@@ -384,12 +385,12 @@ class GeoPandasBase(object):
         return _series_op(self, other, 'within')
 
     def distance(self, other):
-        """Returns a ``Series`` containing the minimum distance to `other`.
+        """Returns a ``Series`` containing the distance to `other`.
 
         Parameters
         ----------
         other : Geoseries or geometric object
-            The Geoseries (elementwise) or geometric object to find the minimum
+            The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
         return _series_op(self, other, 'distance')
