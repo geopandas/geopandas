@@ -6,7 +6,7 @@ import numpy as np
 import shapely
 import shapely.wkb
 
-from geopandas.vectorized import serialize, deserialize, cysjoin
+from geopandas.vectorized import serialize, deserialize, cysjoin, to_wkb
 from geopandas.array import (
     GeometryArray, points_from_xy, from_shapely, from_wkb, from_wkt)
 from geopandas.geodataframe import _concat_arrays as concat
@@ -72,6 +72,17 @@ def test_from_wkb():
     res = from_wkb(L_wkb)
     assert res[-1] is None
     assert res[-2] is None
+
+
+def test_to_wkb():
+    res = to_wkb(P.data)
+    exp = np.array([p.wkb for p in points], dtype=object)
+    assert isinstance(res, np.ndarray)
+    np.testing.assert_array_equal(res, exp)
+
+    a = from_shapely([None, points[0]])
+    res = to_wkb(a.data)
+    assert res[0] is None
 
 
 @pytest.mark.parametrize('string_type', ['str', 'bytes'])

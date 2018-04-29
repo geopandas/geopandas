@@ -152,6 +152,37 @@ cpdef from_wkb(object L):
     return out
 
 
+cpdef to_wkb(np.ndarray[np.uintp_t, ndim=1, cast=True] geoms):
+    """ Convert array of pointers to an array of WKB objects """
+    cdef Py_ssize_t idx
+    cdef GEOSGeometry *geom
+    cdef uintptr_t geos_geom
+    cdef unsigned int n = geoms.size
+    cdef np.ndarray[object, ndim=1] out = np.empty(n, dtype=object)
+    cdef GEOSWKBWriter *writer
+    cdef size_t size
+    cdef unsigned char* c_string
+    cdef bytes py_string
+
+    with get_geos_handle() as handle:
+        writer = GEOSWKBWriter_create_r(handle)
+
+        for idx in xrange(n):
+            geos_geom = geoms[idx]
+            geom = <GEOSGeometry *> geos_geom
+            if geom is not NULL:
+                c_string = GEOSWKBWriter_write_r(handle, writer, geom, &size)
+                py_string = c_string[:size]
+                out[idx] = py_string
+                free(c_string)
+            else:
+                out[idx] = None
+
+        GEOSWKBWriter_destroy_r(handle, writer)
+
+    return out
+
+
 cpdef from_wkt(object L):
     """ Convert a list or array of WKT objects to a GeometryArray """
     cdef Py_ssize_t idx
