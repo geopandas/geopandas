@@ -1,20 +1,16 @@
 from __future__ import absolute_import
 
-import tempfile
-import shutil
-
-import numpy as np
-
-from pandas.util.testing import assert_frame_equal
-
+import pandas as pd
 from shapely.geometry import Point, Polygon
 
-from geopandas import GeoDataFrame, GeoSeries, read_file
-from geopandas.tests.util import unittest, download_nybb, assert_geoseries_equal
-from geopandas import overlay
+import geopandas
+from geopandas import GeoDataFrame, GeoSeries, read_file, overlay
+from geopandas.testing import assert_geodataframe_equal
+
+import pytest
 
 
-class TestOverlayNYBB(unittest.TestCase):
+class TestOverlayNYBB:
 
     def setup_method(self):
         N = 10
@@ -123,100 +119,131 @@ class TestOverlayNYBB(unittest.TestCase):
             overlay(self.polydf, self.polydf2.geometry, how="union")
 
 
-class TestOverlay(unittest.TestCase):
-
-    use_sindex = True
-
-    def setUp(self):
-
-        s1 = GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
-                        Polygon([(2,2), (4,2), (4,4), (2,4)])])
-        s2 = GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
-                        Polygon([(3,3), (5,3), (5,5), (3,5)])])
-
-        self.df1 = GeoDataFrame({'geometry': s1, 'col1':[1,2]})
-        self.df2 = GeoDataFrame({'geometry': s2, 'col2':[1,2]})
-
-        self.result  = GeoDataFrame(
-            {'col1': [1, 1, np.nan, np.nan, 2, 2, 2, np.nan, 2],
-             'col2': [np.nan, 1, 1, 1, np.nan, 1, np.nan, 2, 2],
-             'geometry': [Polygon([(2, 1), (2, 0), (0, 0), (0, 2), (1, 2), (1, 1), (2, 1)]),
-                          Polygon([(2, 1), (1, 1), (1, 2), (2, 2), (2, 1)]),
-                          Polygon([(2, 1), (2, 2), (3, 2), (3, 1), (2, 1)]),
-                          Polygon([(2, 2), (1, 2), (1, 3), (2, 3), (2, 2)]),
-                          Polygon([(3, 2), (3, 3), (4, 3), (4, 2), (3, 2)]),
-                          Polygon([(3, 3), (3, 2), (2, 2), (2, 3), (3, 3)]),
-                          Polygon([(3, 3), (2, 3), (2, 4), (3, 4), (3, 3)]),
-                          Polygon([(4, 3), (4, 4), (3, 4), (3, 5), (5, 5), (5, 3), (4, 3)]),
-                          Polygon([(3, 4), (4, 4), (4, 3), (3, 3), (3, 4)])]
-            })
-
-    def test_union(self):
-        res = overlay(self.df1, self.df2, how='union',
-                      use_sindex=self.use_sindex)
-        exp = self.result
-        assert_frame_equal(res, exp)
-        assert_geoseries_equal(res.geometry, exp.geometry)
-
-    def test_intersection(self):
-        res = overlay(self.df1, self.df2, how='intersection',
-                      use_sindex=self.use_sindex)
-        exp = self.result.dropna(subset=['col1', 'col2'], how='any')
-        exp = exp.reset_index(drop=True)
-        exp[['col1', 'col2']] = exp[['col1', 'col2']].astype('int64')
-        print(exp)
-        print(res)
-        print(self.result.geometry[7])
-        print(self.result.geometry[7].representative_point())
-        print(list(self.df1.sindex.intersection(self.result.geometry[7].bounds)))
-        cent = self.result.geometry[7].representative_point()
-        print(cent.intersects(self.df1.geometry[1]))
-        assert_frame_equal(res, exp)
-        assert_geoseries_equal(res.geometry, exp.geometry)
-
-    def test_symdiff(self):
-        res = overlay(self.df1, self.df2, how='symmetric_difference',
-                      use_sindex=self.use_sindex)
-        exp = self.result[self.result[['col1', 'col2']].isnull().sum(1) == 1]
-        exp = exp.reset_index(drop=True)
-        assert_frame_equal(res, exp)
-        assert_geoseries_equal(res.geometry, exp.geometry)
-
-    def test_difference(self):
-        res = overlay(self.df1, self.df2, how='difference',
-                      use_sindex=self.use_sindex)
-        exp = self.result.loc[[0, 4, 6]]
-        exp = exp.reset_index(drop=True)
-        exp['col1'] = exp['col1'].astype('int64')
-        exp['col2'] = np.array([None, None, None], dtype='O')
-        print(exp)
-        print(res)
-        assert_frame_equal(res, exp)
-        assert_geoseries_equal(res.geometry, exp.geometry)
-
-    def test_identity(self):
-        res = overlay(self.df1, self.df2, how='identity',
-                      use_sindex=self.use_sindex)
-        exp = self.result.dropna(subset=['col1'])
-        exp = exp.reset_index(drop=True)
-        exp['col1'] = exp['col1'].astype('int64')
-        print(exp)
-        print(res)
-        assert_frame_equal(res, exp)
-        assert_geoseries_equal(res.geometry, exp.geometry)
-
-    def test_nondefault_index(self):
-        df1 = self.df1.copy()
+@pytest.fixture(params=[False, True], ids=['default-index', 'string-index'])
+def dfs(request):
+    s1 = GeoSeries([Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+                    Polygon([(2, 2), (4, 2), (4, 4), (2, 4)])])
+    s2 = GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                    Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
+    df1 = GeoDataFrame({'geometry': s1, 'col1': [1, 2]})
+    df2 = GeoDataFrame({'geometry': s2, 'col2': [1, 2]})
+    if request.param:
         df1.index = ['row1', 'row2']
-        res = overlay(df1, self.df2, how='intersection',
-                      use_sindex=self.use_sindex)
-        exp = self.result.dropna(subset=['col1', 'col2'], how='any')
-        exp = exp.reset_index(drop=True)
-        exp[['col1', 'col2']] = exp[['col1', 'col2']].astype('int64')
-        assert_frame_equal(res, exp)
-        assert_geoseries_equal(res.geometry, exp.geometry)
+    return df1, df2
 
 
-class TestOverlayNoSIndex(TestOverlay):
+@pytest.fixture(params=['union', 'intersection', 'difference',
+                        'symmetric_difference', 'identity'])
+def how(request):
+    return request.param
 
-    use_sindex = False
+
+@pytest.fixture(params=[True, False])
+def use_sindex(request):
+    return request.param
+
+
+@pytest.fixture
+def expected_features():
+    expected = {}
+    expected['union'] = {
+        "type": "FeatureCollection",
+        "features": [
+            {"type": "Feature", "properties": { "col1": 1.0, "col2": 1.0 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 1.0, 2.0 ], [ 2.0, 2.0 ], [ 2.0, 1.0 ], [ 1.0, 1.0 ], [ 1.0, 2.0 ] ] ] } },
+            {"type": "Feature", "properties": { "col1": 1.0, "col2": None },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 2.0 ], [ 1.0, 2.0 ], [ 1.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
+            {"type": "Feature", "properties": { "col1": 2.0, "col2": 1.0 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 2.0, 2.0 ], [ 2.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 2.0 ], [ 2.0, 2.0 ] ] ] } },
+            {"type": "Feature", "properties": { "col1": 2.0, "col2": 2.0 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 4.0, 4.0 ], [ 4.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 4.0 ] ] ] } },
+            {"type": "Feature", "properties": { "col1": 2.0, "col2": None },
+                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ], [ 3.0, 3.0 ], [ 2.0, 3.0 ] ] ], [ [ [ 4.0, 3.0 ], [ 4.0, 2.0 ], [ 3.0, 2.0 ], [ 3.0, 3.0 ], [ 4.0, 3.0 ] ] ] ] } },
+            {"type": "Feature", "properties": { "col1": None, "col2": 1.0 },
+                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 1.0, 2.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ], [ [ [ 3.0, 2.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 2.0 ], [ 3.0, 2.0 ] ] ] ] } },
+            {"type": "Feature", "properties": { "col1": None, "col2": 2.0 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 3.0 ], [ 4.0, 3.0 ], [ 4.0, 4.0 ], [ 3.0, 4.0 ] ] ] } }
+            ]
+        }
+
+    expected['intersection'] = {
+        "type": "FeatureCollection",
+        "features": [
+            { "type": "Feature", "properties": { "col1": 1, "col2": 1 },
+            "geometry": { "type": "Polygon", "coordinates": [ [ [ 1.0, 2.0 ], [ 2.0, 2.0 ], [ 2.0, 1.0 ], [ 1.0, 1.0 ], [ 1.0, 2.0 ] ] ] } },
+            { "type": "Feature", "properties": { "col1": 2, "col2": 1 },
+            "geometry": { "type": "Polygon", "coordinates": [ [ [ 2.0, 2.0 ], [ 2.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 2.0 ], [ 2.0, 2.0 ] ] ] } },
+            { "type": "Feature", "properties": { "col1": 2, "col2": 2 },
+            "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 4.0, 4.0 ], [ 4.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 4.0 ] ] ] } }
+            ]
+        }
+
+    expected['symmetric_difference'] = {
+        "type": "FeatureCollection",
+        "features": [
+            {"type": "Feature", "properties": { "col1": 1.0, "col2": None },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 2.0 ], [ 1.0, 2.0 ], [ 1.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
+            {"type": "Feature", "properties": { "col1": 2.0, "col2": None },
+                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ], [ 3.0, 3.0 ], [ 2.0, 3.0 ] ] ], [ [ [ 4.0, 3.0 ], [ 4.0, 2.0 ], [ 3.0, 2.0 ], [ 3.0, 3.0 ], [ 4.0, 3.0 ] ] ] ] } },
+            {"type": "Feature", "properties": { "col1": None, "col2": 1.0 },
+                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 1.0, 2.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ], [ [ [ 3.0, 2.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 2.0 ], [ 3.0, 2.0 ] ] ] ] } },
+            {"type": "Feature", "properties": { "col1": None, "col2": 2.0 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 3.0 ], [ 4.0, 3.0 ], [ 4.0, 4.0 ], [ 3.0, 4.0 ] ] ] } }
+            ]
+        }
+
+    expected['difference'] = {
+        "type": "FeatureCollection",
+        "features": [
+            {"type": "Feature", "properties": { "col1": 1 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 2.0 ], [ 1.0, 2.0 ], [ 1.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
+            {"type": "Feature", "properties": { "col1": 2 },
+                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ], [ 3.0, 3.0 ], [ 2.0, 3.0 ] ] ], [ [ [ 4.0, 3.0 ], [ 4.0, 2.0 ], [ 3.0, 2.0 ], [ 3.0, 3.0 ], [ 4.0, 3.0 ] ] ] ] } }
+            ]
+        }
+
+    expected['difference_inverse'] = {
+        "type": "FeatureCollection",
+        "features": [
+            {"type": "Feature", "properties": { "col2": 1 },
+                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 1.0, 2.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ], [ [ [ 3.0, 2.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 2.0 ], [ 3.0, 2.0 ] ] ] ] } },
+            {"type": "Feature", "properties": { "col2": 2 },
+                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 3.0 ], [ 4.0, 3.0 ], [ 4.0, 4.0 ], [ 3.0, 4.0 ] ] ] } }
+            ]
+        }
+
+    return expected
+
+
+def test_overlay(dfs, how, use_sindex, expected_features):
+    """
+    Basic overlay test with small dummy example dataframes (from docs).
+    Results obtained using QGIS 2.16 (Vector -> Geoprocessing Tools ->
+    Intersection / Union / ...), saved to GeoJSON and pasted here
+    """
+    df1, df2 = dfs
+    result = overlay(df1, df2, how=how, use_sindex=use_sindex)
+
+    # construction of result
+    if how == 'identity':
+        expected = pd.concat([
+            GeoDataFrame.from_features(expected_features['intersection']),
+            GeoDataFrame.from_features(expected_features['difference'])
+        ], ignore_index=True)
+    else:
+        expected = GeoDataFrame.from_features(expected_features[how])
+
+    # TODO needed adaptations to result
+    if how == 'union':
+        result = result.drop(['idx1', 'idx2'], axis=1).sort_values(['col1', 'col2']).reset_index(drop=True)
+    elif how in ('intersection', 'identity'):
+        result = result.drop(['idx1', 'idx2'], axis=1)
+
+    assert_geodataframe_equal(result, expected)
+
+    # for difference also reversed
+    if how == 'difference':
+        result = overlay(df2, df1, how=how, use_sindex=use_sindex)
+        expected = GeoDataFrame.from_features(
+            expected_features['difference_inverse'])
+        assert_geodataframe_equal(result, expected)
