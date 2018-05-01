@@ -5,6 +5,18 @@ import warnings
 import numpy as np
 
 
+def deprecated(new):
+    """Helper to provide deprecation warning."""
+
+    def old(*args, **kwargs):
+        warnings.warn("{} is intended for internal ".format(new.__name__[1:]) +
+                      "use only, and will be deprecated.", DeprecationWarning,
+                      stacklevel=2)
+        new(*args, **kwargs)
+
+    return old
+
+
 def _flatten_multi_geoms(geoms, colors=None):
     """
     Returns Series like geoms and colors, except that any Multi geometries
@@ -97,6 +109,9 @@ def _plot_polygon_collection(ax, geoms, values=None, color=None,
     return collection
 
 
+plot_polygon_collection = deprecated(_plot_polygon_collection)
+
+
 def _plot_linestring_collection(ax, geoms, values=None, color=None,
                                 cmap=None, vmin=None, vmax=None, **kwargs):
     """
@@ -145,6 +160,9 @@ def _plot_linestring_collection(ax, geoms, values=None, color=None,
     return collection
 
 
+plot_linestring_collection = deprecated(_plot_linestring_collection)
+
+
 def _plot_point_collection(ax, geoms, values=None, color=None,
                            cmap=None, vmin=None, vmax=None,
                            marker='o', markersize=None, **kwargs):
@@ -184,6 +202,9 @@ def _plot_point_collection(ax, geoms, values=None, color=None,
     collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
                             marker=marker, **kwargs)
     return collection
+
+
+plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
