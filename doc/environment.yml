@@ -21,5 +21,6 @@ dependencies:
 - pillow
 - mock
 - cartopy
+- contextily
 - sphinx-gallery
 - jinja2
