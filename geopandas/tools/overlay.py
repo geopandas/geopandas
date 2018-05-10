@@ -218,21 +218,25 @@ def overlay_intersection(df1, df2):
 
 
 def overlay_difference(df1, df2):
-    ''''
+    """
     Overlay Difference operation used in overlay function
-    '''
+    """
     # Spatial Index to create intersections
     spatial_index = df2.sindex
     bbox = df1.geometry.apply(lambda x: x.bounds)
-    df1['sidx'] = bbox.apply(lambda x:list(spatial_index.intersection(x)))
-    # Cretae differences
-    df1['new_g'] = df1.apply(lambda x: reduce(lambda x, y: x.difference(y).buffer(0), 
-                             [x.geometry]+list(df2.iloc[x.sidx].geometry)) , axis=1)
-    df1.geometry = df1.new_g
-    df1 = df1.loc[df1.geometry.is_empty==False].copy()
-    df1.drop(['sidx', 'new_g'], axis=1, inplace=True)
-    df1 = df1.reset_index(drop=True)
-    return df1
+    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    # Create differences
+    new_g = []
+    for geom, neighbours in zip(df1.geometry, sidx):
+        new = reduce(lambda x, y: x.difference(y).buffer(0),
+                     [geom] + list(df2.geometry.iloc[neighbours]))
+        new_g.append(new)
+    differences = GeoSeries(new_g, index=df1.index)
+    geom_diff = differences[~differences.is_empty].copy()
+    dfdiff = df1[~differences.is_empty]
+    dfdiff[dfdiff._geometry_column_name] = geom_diff
+    return dfdiff
+
 
 def overlay_symmetric_diff(df1, df2):
     ''''
