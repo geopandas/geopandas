@@ -22,7 +22,7 @@ df = gpd.read_file(path)
 # Add a column we'll use later
 df['gdp_pp'] = df['gdp_md_est'] / df['pop_est']
 
-boroughs = gpd.read_file(gpd.datasets.get_path('nybb'))
+boroughs = gpd.read_file(gpd.datasets.get_path('nybb')).to_crs(epsg='4326')
 from quilt.data.ResidentMario import geoplot_data
 injurious_collisions = gpd.read_file(geoplot_data.nyc_injurious_collisions())
 
@@ -58,13 +58,6 @@ gplt.choropleth(df, hue='gdp_pp', cmap='Greens', figsize=(8, 4))
 
 gplt.cartogram(df[df['continent'] == 'Africa'],
                scale='pop_est', limits=(0.2, 1), figsize=(7, 8))
-
-###############################################################################
-# Let's import some data we will use for the remaining examples.
-
-from quilt.data.ResidentMario import geoplot_data
-boroughs = gpd.read_file(geoplot_data.nyc_boroughs())
-injurious_collisions = gpd.read_file(geoplot_data.nyc_injurious_collisions())
 
 ###############################################################################
 # If we have data in the shape of points in space, we may generate a
