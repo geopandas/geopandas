@@ -184,12 +184,11 @@ def overlay_intersection(df1, df2):
     '''
     # Spatial Index to create intersections
     spatial_index = df2.sindex
-    df1['bbox'] = df1.geometry.apply(lambda x: x.bounds)
-    df1['sidx'] = df1.bbox.apply(lambda x:list(spatial_index.intersection(x)))
+    bbox = df1.geometry.apply(lambda x: x.bounds)
+    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
     # Create pairs of geometries in both dataframes to be intersected
-    pairs = df1['sidx'].to_dict()
     nei = []
-    for i,j in pairs.items():
+    for i,j in sidx.items():
         for k in j:
             nei.append([i,k])
     if nei!=[]:
@@ -213,14 +212,14 @@ def overlay_difference(df1, df2):
     '''
     # Spatial Index to create intersections
     spatial_index = df2.sindex
-    df1['bbox'] = df1.geometry.apply(lambda x: x.bounds)
-    df1['sidx'] = df1.bbox.apply(lambda x:list(spatial_index.intersection(x)))
+    bbox = df1.geometry.apply(lambda x: x.bounds)
+    df1['sidx'] = bbox.apply(lambda x:list(spatial_index.intersection(x)))
     # Cretae differences
     df1['new_g'] = df1.apply(lambda x: reduce(lambda x, y: x.difference(y).buffer(0), 
                              [x.geometry]+list(df2.iloc[x.sidx].geometry)) , axis=1)
     df1.geometry = df1.new_g
     df1 = df1.loc[df1.geometry.is_empty==False].copy()
-    df1.drop(['bbox', 'sidx', 'new_g'], axis=1, inplace=True)
+    df1.drop(['sidx', 'new_g'], axis=1, inplace=True)
     df1 = df1.reset_index(drop=True)
     return df1
 
@@ -305,8 +304,9 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
     df1['geometry'] = df1.geometry.buffer(0)
     df2['geometry'] = df2.geometry.buffer(0)
     if df1.crs!=df2.crs and reproject:
-        warnings.warn('Data has different projections.', UserWarning)
-        warnings.warn('Converted data to projection of first GeoPandas DataFrame', UserWarning)
+        warnings.warn('Data has different projections. '
+                      'Converted data to projection of first GeoPandas DataFrame',
+                      UserWarning)
         df2.to_crs(crs=df1.crs, inplace=True)
     if how=='intersection':
         return overlay_intersection(df1, df2)
@@ -315,8 +315,8 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
     elif how=='symmetric_difference':
         return overlay_symmetric_diff(df1, df2)
     elif how=='union':
-        dfinter = overlay(df1, df2, how='intersection')
-        dfsym = overlay(df1, df2, how='symmetric_difference')
+        dfinter = overlay_intersection(df1, df2)
+        dfsym = overlay_symmetric_diff(df1, df2)
         dfunion = dfinter.append(dfsym)
         dfunion = dfunion.reset_index(drop=True)
         return dfunion
