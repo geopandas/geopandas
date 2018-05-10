@@ -4,7 +4,7 @@ import fiona
 import numpy as np
 import six
 
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
 if six.PY3:
@@ -28,7 +28,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, **kwargs):
+def read_file(filename, bbox=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -37,6 +37,9 @@ def read_file(filename, **kwargs):
     filename: str
         Either the absolute or relative path to the file or URL to
         be opened.
+    bbox : tuple | GeoDataFrame or GeoSeries, default None
+        Filter features by given bounding box, GeoSeries, or GeoDataFrame.
+        CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -51,7 +54,6 @@ def read_file(filename, **kwargs):
     -------
     geodataframe : GeoDataFrame
     """
-    bbox = kwargs.pop('bbox', None)
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
@@ -59,17 +61,19 @@ def read_file(filename, **kwargs):
     else:
         path_or_bytes = filename
         reader = fiona.open
-    with reader(path_or_bytes, **kwargs) as f:
-        crs = f.crs
+
+    with reader(path_or_bytes, **kwargs) as features:
+        crs = features.crs
         if bbox is not None:
+            if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
+                bbox = tuple(bbox.to_crs(crs).total_bounds)
             assert len(bbox) == 4
-            f_filt = f.filter(bbox=bbox)
+            f_filt = features.filter(bbox=bbox)
         else:
-            f_filt = f
-        gdf = GeoDataFrame.from_features(f_filt, crs=crs)
-        # re-order with column order from metadata, with geometry last
-        columns = list(f.meta["schema"]["properties"]) + ["geometry"]
-        gdf = gdf[columns]
+            f_filt = features
+
+        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+        gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 
@@ -113,20 +117,28 @@ def infer_schema(df):
     except ImportError:
         from ordereddict import OrderedDict
 
-    def convert_type(in_type):
+    def convert_type(column, in_type):
         if in_type == object:
             return 'str'
         out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
         if out_type == 'long':
             out_type = 'int'
+        if out_type == 'bool':
+            raise ValueError('column "{}" is boolean type, '.format(column) +
+                             'which is unsupported in file writing. '
+                             'Consider casting the column to int type.')
         return out_type
 
     properties = OrderedDict([
-        (col, convert_type(_type)) for col, _type in
+        (col, convert_type(col, _type)) for col, _type in
         zip(df.columns, df.dtypes) if col != df._geometry_column_name
     ])
 
+    if df.empty:
+        raise ValueError("Cannot write empty DataFrame to file.")
+
     geom_type = _common_geom_type(df)
+    
     if not geom_type:
         raise ValueError("Geometry column cannot contain mutiple "
                          "geometry types when writing to file.")
@@ -142,9 +154,14 @@ def _common_geom_type(df):
     # Point, LineString, or Polygon
     geom_types = df.geometry.geom_type.unique()
 
-    from os.path import commonprefix   # To find longest common prefix
-    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]  # Reverse
+    from os.path import commonprefix
+    # use reversed geom types and commonprefix to find the common suffix,
+    # then reverse the result to get back to a geom type
+    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
     if not geom_type:
-        geom_type = None
+        return None
+
+    if df.geometry.has_z.any():
+        geom_type = "3D " + geom_type
 
     return geom_type
