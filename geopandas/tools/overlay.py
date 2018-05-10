@@ -178,33 +178,44 @@ def _overlay_old(df1, df2, how, use_sindex=True, **kwargs):
     # Return geodataframe with new indices
     return GeoDataFrame(collection, index=range(len(collection)))
 
+
 def overlay_intersection(df1, df2):
-    ''''
+    """
     Overlay Intersection operation used in overlay function
-    '''
+    """
     # Spatial Index to create intersections
     spatial_index = df2.sindex
     bbox = df1.geometry.apply(lambda x: x.bounds)
     sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
     # Create pairs of geometries in both dataframes to be intersected
     nei = []
-    for i,j in sidx.items():
+    for i, j in sidx.items():
         for k in j:
-            nei.append([i,k])
-    if nei!=[]:
-        pairs = GeoDataFrame(nei, columns=['idx1','idx2'], crs=df1.crs)
-        pairs = pairs.merge(df1, left_on='idx1', right_index=True)
-        pairs = pairs.merge(df2, left_on='idx2', right_index=True, suffixes=['_1','_2'])
-        pairs['Intersection'] = pairs.apply(lambda x: (x['geometry_1'].intersection(x['geometry_2'])).buffer(0), axis=1)
-        pairs = GeoDataFrame(pairs, columns=pairs.columns, crs=df1.crs)
-        dfinter = pairs.drop(['geometry_1', 'geometry_2', 'sidx', 'bbox'], axis=1)
-        dfinter.rename(columns={'Intersection':'geometry'}, inplace=True)
-        dfinter = GeoDataFrame(dfinter, columns=dfinter.columns, crs=pairs.crs)
-        dfinter = dfinter.loc[dfinter.geometry.is_empty==False]
-        dfinter = dfinter.reset_index(drop=True)
-        return dfinter
+            nei.append([i, k])
+    if nei != []:
+        pairs = pd.DataFrame(nei, columns=['idx1','idx2'])
+        left = df1.geometry.take(pairs['idx1'].values)
+        left.reset_index(drop=True, inplace=True)
+        right = df2.geometry.take(pairs['idx2'].values)
+        right.reset_index(drop=True, inplace=True)
+        intersections = left.intersection(right).buffer(0)
+
+        # only keep actual intersecting geometries
+        pairs_intersect = pairs[~intersections.is_empty]
+        geom_intersect = intersections[~intersections.is_empty]
+
+        # merge data for intersecting geometries
+        dfinter = pairs_intersect.merge(
+            df1.drop(df1._geometry_column_name, axis=1),
+            left_on='idx1', right_index=True)
+        dfinter = dfinter.merge(
+            df2.drop(df2._geometry_column_name, axis=1),
+            left_on='idx2', right_index=True, suffixes=['_1', '_2'])
+
+        return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
         return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
+
 
 def overlay_difference(df1, df2):
     ''''
