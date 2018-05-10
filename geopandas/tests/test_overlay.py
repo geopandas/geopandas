@@ -220,7 +220,8 @@ class TestOverlayNYBB:
             overlay(self.polydf, self.polydf2.geometry, how="union")
 
 
-@pytest.fixture(params=[False, True], ids=['default-index', 'string-index'])
+@pytest.fixture(params=[False, pytest.param(True, marks=pytest.mark.skip)],
+                ids=['default-index', 'string-index'])
 def dfs(request):
     s1 = GeoSeries([Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
                     Polygon([(2, 2), (4, 2), (4, 4), (2, 4)])])
@@ -316,7 +317,6 @@ def expected_features():
     return expected
 
 
-@pytest.mark.skip(reason="overlay not correctly implemented")
 def test_overlay(dfs, how, use_sindex, expected_features):
     """
     Basic overlay test with small dummy example dataframes (from docs).
@@ -336,10 +336,10 @@ def test_overlay(dfs, how, use_sindex, expected_features):
         expected = GeoDataFrame.from_features(expected_features[how])
 
     # TODO needed adaptations to result
-    # if how == 'union':
-    #     result = result.drop(['idx1', 'idx2'], axis=1).sort_values(['col1', 'col2']).reset_index(drop=True)
-    # elif how in ('intersection', 'identity'):
-    #     result = result.drop(['idx1', 'idx2'], axis=1)
+    if how == 'union':
+        result = result.drop(['idx1', 'idx2'], axis=1).sort_values(['col1', 'col2']).reset_index(drop=True)
+    elif how in ('intersection', 'identity'):
+        result = result.drop(['idx1', 'idx2'], axis=1)
 
     assert_geodataframe_equal(result, expected)
 
