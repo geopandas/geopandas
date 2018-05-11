@@ -239,31 +239,36 @@ def overlay_difference(df1, df2):
 
 
 def overlay_symmetric_diff(df1, df2):
-    ''''
+    """
     Overlay Symmetric Difference operation used in overlay function
-    '''
+    """
     df1['idx1'] = df1.index
     df2['idx2'] = df2.index
     df1['idx2'] = np.nan
     df2['idx1'] = np.nan
-    dfsym = df1.merge(df2, on=['idx1','idx2'], how='outer', suffixes=['_1','_2'])
+    dfsym = df1.merge(df2, on=['idx1', 'idx2'], how='outer',
+                      suffixes=['_1','_2'])
     dfsym['geometry'] = dfsym.geometry_1
-    dfsym.loc[dfsym.geometry_2.isnull()==False, 'geometry'] = dfsym.loc[dfsym.geometry_2.isnull()==False, 'geometry_2']
+    dfsym.loc[dfsym.geometry_1.isna(), 'geometry'] = dfsym.loc[dfsym.geometry_1.isna(), 'geometry_2']
     dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
-    dfsym = GeoDataFrame(dfsym, columns=dfsym.columns, crs=df1.crs)
+    dfsym = GeoDataFrame(dfsym, geometry='geometry', crs=df1.crs)
     # Spatial Index to create intersections
     spatial_index = dfsym.sindex
-    dfsym['bbox'] = dfsym.geometry.apply(lambda x: x.bounds)
-    dfsym['sidx'] = dfsym.bbox.apply(lambda x:list(spatial_index.intersection(x)))
-    dfsym['idx'] = dfsym.index.values
-    dfsym.apply(lambda x: x.sidx.remove(x.idx), axis=1)
-    dfsym['new_g'] = dfsym.apply(lambda x: reduce(lambda x, y: x.difference(y).buffer(0), 
-                     [x.geometry]+list(dfsym.iloc[x.sidx].geometry)) , axis=1)
-    dfsym.geometry = dfsym.new_g
-    dfsym = dfsym.loc[dfsym.geometry.is_empty==False].copy()
-    dfsym.drop(['bbox', 'sidx', 'idx', 'idx1','idx2', 'new_g'], axis=1, inplace=True)
-    dfsym = dfsym.reset_index(drop=True)
+    bbox = dfsym.geometry.apply(lambda x: x.bounds)
+    sidx = bbox.apply(lambda x:list(spatial_index.intersection(x)))
+    # Create symmetric differences
+    new_g = []
+    for i, geom, neighbours in zip(dfsym.index, dfsym.geometry, sidx):
+        neighbours.remove(i)
+        new = reduce(lambda x, y: x.difference(y).buffer(0),
+                     [geom] + list(dfsym.geometry.iloc[neighbours]))
+        new_g.append(new)
+    dfsym['geometry'] = new_g
+    dfsym = dfsym[~dfsym.geometry.is_empty].copy()
+    dfsym.drop(['idx1','idx2'], axis=1, inplace=True)
+    dfsym.reset_index(drop=True, inplace=True)
     return dfsym
+
 
 def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_sindex=None, **kwargs):
     """Perform spatial overlay between two polygons.
@@ -323,19 +328,18 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
                       'Converted data to projection of first GeoPandas DataFrame',
                       UserWarning)
         df2.to_crs(crs=df1.crs, inplace=True)
-    if how=='intersection':
+    if how == 'intersection':
         return overlay_intersection(df1, df2)
-    elif how=='difference':
+    elif how == 'difference':
         return overlay_difference(df1, df2)
-    elif how=='symmetric_difference':
+    elif how == 'symmetric_difference':
         return overlay_symmetric_diff(df1, df2)
-    elif how=='union':
+    elif how == 'union':
         dfinter = overlay_intersection(df1, df2)
         dfsym = overlay_symmetric_diff(df1, df2)
-        dfunion = dfinter.append(dfsym)
-        dfunion = dfunion.reset_index(drop=True)
+        dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
         return dfunion
-    elif how=='identity':
+    elif how == 'identity':
         dfunion = overlay(df1, df2, how='union')
         cols1 = df1.columns.tolist()
         cols2 = df2.columns.tolist()
@@ -344,6 +348,6 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
         cols2 = set(cols2).intersection(set(cols1))
         cols1 = list(set(cols1).difference(set(cols2)))
         cols2 = [col+'_1' for col in cols2]
-        dfunion = dfunion[(dfunion[cols1+cols2].isnull()==False).values]
-        dfunion = dfunion.reset_index(drop=True)
+        dfunion = dfunion[dfunion[cols1+cols2].notna().values]
+        dfunion.reset_index(drop=True, inplace=True)
         return dfunion
