@@ -10,10 +10,17 @@ Improvements:
 * Add basic support for reading remote datasets in `read_file` (#531)
 * Pass kwargs for `buffer` operation on GeoSeries (#535)
 * Expose all geopy services as options in geocoding (#550)
+* Faster write speeds to GeoPackage (#605)
+* Permit `read_file` filtering with a bounding box from a GeoDataFrame (#613)
+* Permit setting markersize for Point GeoSeries plots with column values (#633)
 
 Bug fixes :
 
 * Ensure that colorbars are plotted on the correct axis (#523)
+* Handle plotting empty GeoDataFrame (#571)
+* Save z-dimension when writing files (#652)
+* Handle reading empty shapefiles (#653)
+
 
 
 Version 0.3.0 (August 29, 2017)

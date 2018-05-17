@@ -62,7 +62,7 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
-The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). By default, ``scheme`` is set to 'equal_intervals', but it can also be adjusted to any other `pysal option <http://pysal.org/1.2/library/esda/mapclassify.html>`_, like 'quantiles', 'percentiles', etc.
+The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). The ``scheme`` option can be set to 'equal_interval', 'quantiles' or 'percentiles'. See the `PySAL documentation <http://pysal.readthedocs.io/en/latest/library/esda/mapclassify.html>`_ for further details about these map classification schemes.
 
 .. ipython:: python
 
@@ -73,7 +73,7 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 Maps with Layers
 -----------------
 
-There are two strategies for making a map with multiple layers -- one more succinct, and one that is a littel more flexible.
+There are two strategies for making a map with multiple layers -- one more succinct, and one that is a little more flexible.
 
 Before combining maps, however, remember to always ensure they share a common CRS (so they will align).
 

@@ -2,6 +2,8 @@ from __future__ import absolute_import
 import sqlite3
 import os
 
+from collections import OrderedDict
+
 import fiona
 import pytest
 
@@ -145,3 +147,49 @@ class TestIO:
         filtered_df_shape = filtered_df.shape
         assert full_df_shape != filtered_df_shape
         assert filtered_df_shape == (2, 5)
+
+    def test_filtered_read_file_with_gdf_boundary(self):
+        full_df_shape = self.df.shape
+        nybb_filename = geopandas.datasets.get_path('nybb')
+        bbox = geopandas.GeoDataFrame(
+            geometry=[box(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
+                          244317.30894023244)],
+            crs=self.crs)
+        filtered_df = read_file(nybb_filename, bbox=bbox)
+        filtered_df_shape = filtered_df.shape
+        assert full_df_shape != filtered_df_shape
+        assert filtered_df_shape == (2, 5)
+
+    def test_filtered_read_file_with_gdf_boundary_mismatched_crs(self):
+        full_df_shape = self.df.shape
+        nybb_filename = geopandas.datasets.get_path('nybb')
+        bbox = geopandas.GeoDataFrame(
+            geometry=[box(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
+                          244317.30894023244)],
+            crs=self.crs)
+        bbox.to_crs(epsg=4326, inplace=True)
+        filtered_df = read_file(nybb_filename, bbox=bbox)
+        filtered_df_shape = filtered_df.shape
+        assert full_df_shape != filtered_df_shape
+        assert filtered_df_shape == (2, 5)
+        
+    def test_empty_shapefile(self, tmpdir):
+
+        # create empty shapefile
+        meta = {'crs': {},
+                'crs_wkt': '',
+                'driver': 'ESRI Shapefile',
+                'schema':
+                    {'geometry': 'Point',
+                     'properties': OrderedDict([('A', 'int:9'),
+                                                ('Z', 'float:24.15')])}}
+
+        fname = str(tmpdir.join("test_empty.shp"))
+
+        with fiona.drivers():
+            with fiona.open(fname, 'w', **meta) as _:
+                pass
+
+        empty = read_file(fname)
+        assert isinstance(empty, geopandas.GeoDataFrame)
+        assert all(empty.columns == ['A', 'Z', 'geometry'])

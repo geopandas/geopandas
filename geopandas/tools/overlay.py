@@ -174,5 +174,5 @@ def overlay(df1, df2, how, use_sindex=True):
         out_series['geometry'] = newpoly
         collection.append(out_series)
 
-    # Return geodataframe with new indicies
+    # Return geodataframe with new indices
     return GeoDataFrame(collection, index=range(len(collection)))

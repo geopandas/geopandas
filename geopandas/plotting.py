@@ -1,5 +1,4 @@
 from __future__ import print_function
-
 from distutils.version import LooseVersion
 import warnings
 
@@ -164,20 +163,17 @@ def plot_point_collection(ax, geoms, values=None, color=None,
                           cmap=None, vmin=None, vmax=None,
                           marker='o', markersize=None, **kwargs):
     """
-    Plots a collection of Point geometries to `ax`
+    Plots a collection of Point and MultiPoint geometries to `ax`
 
     Parameters
     ----------
-
     ax : matplotlib.axes.Axes
         where shapes will be plotted
-
-    geoms : sequence of `N` Points
+    geoms : sequence of `N` Points or MultiPoints
 
     values : a sequence of `N` values, optional
         Values mapped to colors using vmin, vmax, and cmap.
         Cannot be specified together with `color`.
-
     markersize : scalar or array-like, optional
         Size of the markers. Note that under the hood ``scatter`` is
         used, so the specified value will be proportional to the
@@ -190,8 +186,11 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    x = geoms.x.values
-    y = geoms.y.values
+    geoms, values = _flatten_multi_geoms(geoms, values)
+    if None in values:
+        values = None
+    x = [p.x for p in geoms]
+    y = [p.y for p in geoms]
 
     # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:
@@ -212,30 +211,25 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
     Parameters
     ----------
-
     s : Series
-        The GeoSeries to be plotted.  Currently Polygon,
+        The GeoSeries to be plotted. Currently Polygon,
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
-
     cmap : str (default None)
-        The name of a colormap recognized by matplotlib.  Any
+        The name of a colormap recognized by matplotlib. Any
         colormap will work, but categorical colormaps are
-        generally recommended.  Examples of useful discrete
+        generally recommended. Examples of useful discrete
         colormaps include:
 
             tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
 
     color : str (default None)
         If specified, all objects will be colored uniformly.
-
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
-
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
-
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -243,8 +237,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
     Returns
     -------
-
-    matplotlib axes instance
+    ax : matplotlib axes instance
     """
     if 'colormap' in style_kwds:
         warnings.warn("'colormap' is deprecated, please use 'cmap' instead "
@@ -279,7 +272,8 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
                           | (geom_types == 'MultiPolygon'))
     line_idx = np.asarray((geom_types == 'LineString')
                           | (geom_types == 'MultiLineString'))
-    point_idx = np.asarray(geom_types == 'Point')
+    point_idx = np.asarray((geom_types == 'Point')
+                          | (geom_types == 'MultiPoint'))
 
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = s.geometry[poly_idx]
@@ -314,8 +308,8 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                    categorical=False, legend=False, scheme=None, k=5,
-                   vmin=None, vmax=None, figsize=None, legend_kwds=None,
-                   **style_kwds):
+                   vmin=None, vmax=None, markersize=None, figsize=None,
+                   legend_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -325,55 +319,48 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
 
     Parameters
     ----------
-
     df : GeoDataFrame
         The GeoDataFrame to be plotted.  Currently Polygon,
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
-
     column : str (default None)
         The name of the column to be plotted. Ignored if `color` is also set.
-
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
-
+    color : str (default None)
+        If specified, all objects will be colored uniformly.
+    ax : matplotlib.pyplot.Artist (default None)
+        axes on which to draw the plot
     categorical : bool (default False)
         If False, cmap will reflect numerical values of the
         column being plotted.  For non-numerical columns, this
         will be set to True.
-
-    color : str (default None)
-        If specified, all objects will be colored uniformly.
-
     legend : bool (default False)
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
-
-    legend_kwds : dict (default None)
-        Keyword arguments to pass to ax.legend()
-
-    ax : matplotlib.pyplot.Artist (default None)
-        axes on which to draw the plot
-
     scheme : str (default None)
         Name of a choropleth classification scheme (requires PySAL).
         A pysal.esda.mapclassify.Map_Classifier object will be used
         under the hood. Supported schemes: 'Equal_interval', 'Quantiles',
         'Fisher_Jenks'
-
-    k   : int (default 5)
+    k : int (default 5)
         Number of classes (ignored if scheme is None)
-
     vmin : None or float (default None)
         Minimum value of cmap. If None, the minimum data value
         in the column to be plotted is used.
-
     vmax : None or float (default None)
         Maximum value of cmap. If None, the maximum data value
         in the column to be plotted is used.
-
-    figsize
+    markersize : str or float or sequence (default None)
+        Only applies to point geometries within a frame.
+        If a str, will use the values in the column of the frame specified
+        by markersize to set the size of markers. Otherwise can be a value
+        to apply to all points, or a sequence of the same length as the
+        number of points.
+    figsize : tuple of integers (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
+    legend_kwds : dict (default None)
+        Keyword arguments to pass to ax.legend()
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -382,7 +369,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
 
     Returns
     -------
-    matplotlib axes instance
+    ax : matplotlib axes instance
 
     """
     if 'colormap' in style_kwds:
@@ -410,9 +397,13 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                       "empty. Nothing has been displayed.", UserWarning)
         return ax
 
+    if isinstance(markersize, str):
+        markersize = df[markersize].values
+
     if column is None:
         return plot_series(df.geometry, cmap=cmap, color=color, ax=ax,
-                           figsize=figsize, **style_kwds)
+                           figsize=figsize, markersize=markersize,
+                           **style_kwds)
 
     if df[column].dtype is np.dtype('O'):
         categorical = True
@@ -450,7 +441,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                           | (geom_types == 'MultiPolygon'))
     line_idx = np.asarray((geom_types == 'LineString')
                           | (geom_types == 'MultiLineString'))
-    point_idx = np.asarray(geom_types == 'Point')
+    point_idx = np.asarray((geom_types == 'Point')
+                          | (geom_types == 'MultiPoint'))
 
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = df.geometry[poly_idx]
@@ -467,8 +459,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     # plot all Points in the same collection
     points = df.geometry[point_idx]
     if not points.empty:
-        plot_point_collection(ax, points, values[point_idx],
-                              vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+        if isinstance(markersize, np.ndarray):
+            markersize = markersize[point_idx]
+        plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx,
+                              markersize=markersize, cmap=cmap,
+                              **style_kwds)
 
     if legend and not color:
         from matplotlib.lines import Line2D
@@ -503,20 +498,16 @@ def __pysal_choro(values, scheme, k=5):
 
     Parameters
     ----------
-
     values
         Series to be plotted
-
-    scheme
-        pysal.esda.mapclassify classificatin scheme
-        ['Equal_interval'|'Quantiles'|'Fisher_Jenks']
-
-    k
+    scheme : str
+        One of pysal.esda.mapclassify classification schemes
+        Options are 'Equal_interval', 'Quantiles', 'Fisher_Jenks'
+    k : int
         number of classes (2 <= k <=9)
 
     Returns
     -------
-
     binning
         Binning objects that holds the Series with values replaced with
         class identifier and the bins.
