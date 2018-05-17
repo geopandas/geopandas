@@ -1,6 +1,7 @@
 import os.path
 import sqlite3
 
+import shapely.wkb
 from geopandas import GeoDataFrame
 from geopandas.testing import (
     geom_equals, geom_almost_equals, assert_geoseries_equal)  # flake8: noqa
@@ -122,5 +123,3 @@ def create_postgis(df, srid=None, geom_col="geom"):
         con.close()
 
     return True
-
-

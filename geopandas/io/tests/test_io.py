@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 import fiona
 import pytest
+from shapely.geometry import box
 
 import geopandas
 from geopandas import read_postgis, read_file
@@ -172,7 +173,7 @@ class TestIO:
         filtered_df_shape = filtered_df.shape
         assert full_df_shape != filtered_df_shape
         assert filtered_df_shape == (2, 5)
-        
+
     def test_empty_shapefile(self, tmpdir):
 
         # create empty shapefile
