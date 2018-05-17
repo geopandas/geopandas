@@ -120,6 +120,9 @@ def infer_schema(df):
     def convert_type(column, in_type):
         if in_type == object:
             return 'str'
+        if in_type.name.startswith('datetime64'):
+            # numpy datetime type regardless of frequency
+            return 'datetime'
         out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
         if out_type == 'long':
             out_type = 'int'
@@ -138,7 +141,7 @@ def infer_schema(df):
         raise ValueError("Cannot write empty DataFrame to file.")
 
     geom_type = _common_geom_type(df)
-    
+
     if not geom_type:
         raise ValueError("Geometry column cannot contain mutiple "
                          "geometry types when writing to file.")
