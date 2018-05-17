@@ -39,8 +39,39 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
 
     wkb_geoms = df[geom_col]
 
-    s = wkb_geoms.apply(lambda x: shapely.wkb.loads(binascii.unhexlify(x.encode())))
+    def convert_geometry(binary_geom):
+        return shapely.wkb.loads(binascii.unhexlify(binary_geom.encode()))
+
+    s = wkb_geoms.apply(convert_geometry)
 
     df[geom_col] = GeoSeries(s)
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
+
+
+def to_postgis(df, name, con, **kwargs):
+    """
+    Writes a geodataframe to a postgis database.
+
+    Parameters
+    ----------
+    df : geodataframe
+    name : str
+        Name of table in database
+    con : SQLAlchemy engine
+
+    **kwargs are passed to pandas.to_sql; see documentation for available
+    parameters
+    """
+
+    geom = df.geometry
+    temp_df = df.copy()
+
+    def convert_geometry(geom):
+        return binascii.hexlify(shapely.wkb.dumps(geom)).decode()
+
+    temp_df[temp_df.geometry.name] = geom.apply(convert_geometry)
+    temp_df.to_sql(name, con, **kwargs)
+    alter_command = "ALTER TABLE {name} ALTER COLUMN {geom_name} TYPE geometry;"
+    alter_args = {"name": name, "geom_name": temp_df.geometry.name}
+    con.execute(alter_command.format(**alter_args))

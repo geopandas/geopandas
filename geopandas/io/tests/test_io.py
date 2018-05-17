@@ -19,6 +19,28 @@ class TestIO:
             self.crs = f.crs
             self.columns = list(f.meta["schema"]["properties"].keys())
 
+    def test_to_postgis(self):
+        try:
+            import sqlalchemy
+        except ImportError:
+            raise unittest.case.SkipTest()
+
+        engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
+        try:
+            con = engine.connect()
+        except sqlalchemy.exc.OperationalError:
+            raise unittest.case.SkipTest()
+
+        try:
+            db_name = "nybb_write"
+            self.df.to_postgis(db_name, engine, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), engine,
+                                geom_col="geometry")
+        finally:
+            con.close()
+        back = back.rename(columns=lambda x: x.lower())
+        validate_boro_df(self, back)
+
     def test_read_postgis_default(self):
         con = connect('test_geopandas')
         if con is None or not create_db(self.df):
