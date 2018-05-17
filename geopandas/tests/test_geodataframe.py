@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from datetime import datetime
 import json
 import os
 import tempfile
@@ -319,6 +320,20 @@ class TestDataFrame:
         df_with_bool['bool_column'] = True
         with pytest.raises(ValueError):
             df_with_bool.to_file(tempfilename)
+
+    def test_to_file_datetime(self):
+        """Test writing a data file with the datetime column type"""
+        tempfilename = os.path.join(self.tempdir, 'test_datetime.shp')
+        point = Point(0, 0)
+        now = datetime.now()
+        df = GeoDataFrame(
+            {'a': [1, 2], 'b': [now, now]},
+            geometry=[point, point],
+            crs={}
+        )
+        df.to_file(tempfilename)
+        df_read = GeoDataFrame.from_file(tempfilename)
+        assert_geoseries_equal(df.geometry, df_read.geometry)
 
     def test_to_file_with_point_z(self):
         """Test that 3D geometries are retained in writes (GH #612)."""
