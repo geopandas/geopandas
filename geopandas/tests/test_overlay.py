@@ -220,8 +220,7 @@ class TestOverlayNYBB:
             overlay(self.polydf, self.polydf2.geometry, how="union")
 
 
-@pytest.fixture(params=[False, pytest.param(True, marks=pytest.mark.skip)],
-                ids=['default-index', 'string-index'])
+@pytest.fixture(params=['default-index', 'int-index', 'string-index'])
 def dfs(request):
     s1 = GeoSeries([Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
                     Polygon([(2, 2), (4, 2), (4, 4), (2, 4)])])
@@ -229,7 +228,10 @@ def dfs(request):
                     Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
     df1 = GeoDataFrame({'geometry': s1, 'col1': [1, 2]})
     df2 = GeoDataFrame({'geometry': s2, 'col2': [1, 2]})
-    if request.param:
+    if request.param == 'int-index':
+        df1.index = [1, 2]
+        df2.index = [0, 2]
+    if request.param == 'string-index':
         df1.index = ['row1', 'row2']
     return df1, df2
 

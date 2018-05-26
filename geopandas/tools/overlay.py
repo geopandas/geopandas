@@ -189,11 +189,11 @@ def overlay_intersection(df1, df2):
     sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
     # Create pairs of geometries in both dataframes to be intersected
     nei = []
-    for i, j in sidx.items():
+    for i, j in enumerate(sidx):
         for k in j:
             nei.append([i, k])
     if nei != []:
-        pairs = pd.DataFrame(nei, columns=['idx1','idx2'])
+        pairs = pd.DataFrame(nei, columns=['idx1', 'idx2'])
         left = df1.geometry.take(pairs['idx1'].values)
         left.reset_index(drop=True, inplace=True)
         right = df2.geometry.take(pairs['idx2'].values)
@@ -205,6 +205,8 @@ def overlay_intersection(df1, df2):
         geom_intersect = intersections[~intersections.is_empty]
 
         # merge data for intersecting geometries
+        df1 = df1.reset_index(drop=True)
+        df2 = df2.reset_index(drop=True)
         dfinter = pairs_intersect.merge(
             df1.drop(df1._geometry_column_name, axis=1),
             left_on='idx1', right_index=True)
