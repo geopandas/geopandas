@@ -35,7 +35,7 @@ First, let's look at the most simple case where we just want continent shapes an
 
     continents.head()
 
-If we are interested in aggregate populations, however, we can pass different functions to the ``dissolve`` method to aggregate populations using the ``aggfun =`` argument:
+If we are interested in aggregate populations, however, we can pass different functions to the ``dissolve`` method to aggregate populations using the ``aggfunc =`` argument:
 
 .. ipython:: python
 
@@ -58,13 +58,14 @@ If we are interested in aggregate populations, however, we can pass different fu
 .. toctree::
    :maxdepth: 2
 
-### Dissolve Arguments
+Dissolve Arguments
+~~~~~~~~~~~~~~~~~~
 
-The ``aggfun =`` argument defaults to 'first' which means that the first row of attributes values found in the dissolve routine will be applied to the resultant dissolved geodataframe.
+The ``aggfunc =`` argument defaults to 'first' which means that the first row of attributes values found in the dissolve routine will be assigned to the resultant dissolved geodataframe.
 However it also accepts other summary statistic options as allowed by ``pandas.groupby()`` including:
 
-* first
-* last
-* min
-* max
-* sum
+* 'first'
+* 'last'
+* 'min'
+* 'max'
+* 'sum'
