@@ -163,13 +163,13 @@ def plot_point_collection(ax, geoms, values=None, color=None,
                           cmap=None, vmin=None, vmax=None,
                           marker='o', markersize=None, **kwargs):
     """
-    Plots a collection of Point geometries to `ax`
+    Plots a collection of Point and MultiPoint geometries to `ax`
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
         where shapes will be plotted
-    geoms : sequence of `N` Points
+    geoms : sequence of `N` Points or MultiPoints
 
     values : a sequence of `N` values, optional
         Values mapped to colors using vmin, vmax, and cmap.
@@ -186,8 +186,11 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    x = geoms.x.values
-    y = geoms.y.values
+    geoms, values = _flatten_multi_geoms(geoms, values)
+    if None in values:
+        values = None
+    x = [p.x for p in geoms]
+    y = [p.y for p in geoms]
 
     # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:
@@ -269,7 +272,8 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
                           | (geom_types == 'MultiPolygon'))
     line_idx = np.asarray((geom_types == 'LineString')
                           | (geom_types == 'MultiLineString'))
-    point_idx = np.asarray(geom_types == 'Point')
+    point_idx = np.asarray((geom_types == 'Point')
+                          | (geom_types == 'MultiPoint'))
 
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = s.geometry[poly_idx]
@@ -437,7 +441,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                           | (geom_types == 'MultiPolygon'))
     line_idx = np.asarray((geom_types == 'LineString')
                           | (geom_types == 'MultiLineString'))
-    point_idx = np.asarray(geom_types == 'Point')
+    point_idx = np.asarray((geom_types == 'Point')
+                          | (geom_types == 'MultiPoint'))
 
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = df.geometry[poly_idx]
