@@ -417,18 +417,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Transform all geometries in a GeoSeries to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
         be set.  Either ``crs`` in string or dictionary form or an EPSG code
-        may be specified for output.
+        may be specified for output. crs proj4 strings can be found at 
+        https://epsg.io/ . Make sure to click proj4 instead of copying the
+        definition string on top of the page.
 
         This method will transform all points in all objects.  It has no notion
         or projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics.  Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
+        
+        
+        
 
         Parameters
         ----------
         crs : dict or str
-            Output projection parameters as string or in dictionary form.
+            Output projection parameters as proj4 string or in dictionary form.
         epsg : int
             EPSG code specifying output projection.
         inplace : bool, optional, default: False
