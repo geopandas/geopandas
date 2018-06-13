@@ -309,7 +309,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, **style_kwds):
+                   legend_kwds=None, colorbar_kwds={}, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -361,6 +361,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
         Keyword arguments to pass to ax.legend()
+    colorbar_kwds : dict (default {})
+        Keyword arguments to pass to ax.get_figure().colorbar()
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -486,7 +488,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             ax.legend(patches, categories, **legend_kwds)
         else:
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, ax=ax)
+            ax.get_figure().colorbar(n_cmap, ax=ax, **colorbar_kwds)
 
     plt.draw()
     return ax
