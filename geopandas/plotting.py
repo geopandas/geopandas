@@ -88,7 +88,7 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
     if 'markersize' in kwargs:
         del kwargs['markersize']
 
-    # color=None overwrites specified facecolor/edgecolor with default color
+    # color=None overwrites specified facecolor/edgecolor with default color 
     if color is not None:
         kwargs['color'] = color
 
