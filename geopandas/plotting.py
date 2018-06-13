@@ -309,7 +309,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, cbar_kwds={}, **style_kwds):
+                   legend_kwds=None, colorbar_kwds={}, **style_kwds):
     """
     Plot a GeoDataFrame.
 
