@@ -79,7 +79,7 @@ def read_file(filename, bbox=None, **kwargs):
 
 
 def to_file(df, filename, driver="ESRI Shapefile", schema=None,
-            **kwargs):
+            encoding=None, **kwargs):
     """
     Write this GeoDataFrame to an OGR data source
 
@@ -98,6 +98,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
         will determine the schema based on each column's dtype
+    encoding : string, default None
+        If specified, the encoding is passed to Fiona open method.
+        Otherwise, the drivers used by Fiona will try to detect the
+        encoding of data files.
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
@@ -107,7 +111,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     filename = os.path.abspath(os.path.expanduser(filename))
     with fiona.drivers():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
-                        schema=schema, **kwargs) as colxn:
+                        schema=schema, encoding=encoding, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
 
 
