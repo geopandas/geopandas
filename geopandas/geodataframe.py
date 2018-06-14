@@ -401,6 +401,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
+        encoding : string, default: None
+            If specified, the encoding is passed to Fiona open method.
+            Otherwise, the drivers used by Fiona will try to detect the
+            encoding of data files.
 
         Notes
         -----
