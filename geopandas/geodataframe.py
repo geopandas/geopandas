@@ -382,7 +382,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geo
 
     def to_file(self, filename, driver="ESRI Shapefile", schema=None,
-                **kwargs):
+                encoding=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -409,7 +409,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         (zip files), etc.
         """
         from geopandas.io.file import to_file
-        to_file(self, filename, driver, schema, **kwargs)
+        to_file(self, filename, driver, schema, encoding, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
