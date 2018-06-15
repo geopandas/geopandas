@@ -411,6 +411,34 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         from geopandas.io.file import to_file
         to_file(self, filename, driver, schema, **kwargs)
 
+    def set_crs(self, crs=None, epsg=None, inplace=False):
+        """Transform geometries to a new coordinate reference system.
+
+        Set the coordinate reference system in a GeoSeries without transforming
+        geometry.  The ``crs`` attribute on the current GeoSeries does not have
+        to be set.  Either ``crs`` in string or dictionary form or an EPSG code
+        may be specified for output.
+
+        Parameters
+        ----------
+        crs : dict or str
+            Output projection parameters as string or in dictionary form.
+        epsg : int
+            EPSG code specifying output projection.
+        inplace : bool, optional, default: False
+            Whether to return a new GeoDataFrame or do the transformation in
+            place.
+        """
+        if inplace:
+            df = self
+        else:
+            df = self.copy()
+        geom = df.geometry.set_crs(crs=crs, epsg=epsg)
+        df.geometry = geom
+        df.crs = geom.crs
+        if not inplace:
+            return df
+
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
 

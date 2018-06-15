@@ -270,6 +270,33 @@ class GeoSeries(GeoPandasBase, Series):
     # Additional methods
     #
 
+    def set_crs(self, crs=None, epsg=None):
+        """Returns a ``GeoSeries`` with all geometries transformed to a new
+        coordinate reference system.
+
+        Set the coordinate reference system in a GeoSeries without transforming
+        geometry.  The ``crs`` attribute on the current GeoSeries does not have
+        to be set.  Either ``crs`` in string or dictionary form or an EPSG code
+        may be specified for output.
+
+        Parameters
+        ----------
+        crs : dict or str
+            Output projection parameters as string or in dictionary form.
+        epsg : int
+            EPSG code specifying output projection.
+        """
+        from fiona.crs import from_epsg
+        if crs is None:
+            try:
+                crs = from_epsg(epsg)
+            except TypeError:
+                raise TypeError('Must set either crs or epsg for output.')
+        result = self
+        result.crs = crs
+        return result
+
+
     def to_crs(self, crs=None, epsg=None):
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
