@@ -204,3 +204,8 @@ class TestSeries:
         reprojected_string = self.g3.to_crs('+proj=utm +zone=30N')
         reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+
+    def test_set_crs(self):
+        naive = self.g3.copy()
+        naive.crs = None
+        assert naive.set_crs(self.g3.crs).crs == self.g3.crs
