@@ -235,7 +235,7 @@ def overlay_difference(df1, df2):
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index)
     geom_diff = differences[~differences.is_empty].copy()
-    dfdiff = df1[~differences.is_empty]
+    dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff
     return dfdiff
 
@@ -244,29 +244,18 @@ def overlay_symmetric_diff(df1, df2):
     """
     Overlay Symmetric Difference operation used in overlay function
     """
-    df1['idx1'] = df1.index
-    df2['idx2'] = df2.index
-    df1['idx2'] = np.nan
-    df2['idx1'] = np.nan
-    dfsym = df1.merge(df2, on=['idx1', 'idx2'], how='outer',
-                      suffixes=['_1','_2'])
+    dfdiff1 = overlay_difference(df1, df2)
+    dfdiff2 = overlay_difference(df2, df1)
+    dfdiff1['idx1'] = dfdiff1.index
+    dfdiff2['idx2'] = dfdiff2.index
+    dfdiff1['idx2'] = np.nan
+    dfdiff2['idx1'] = np.nan
+    dfsym = dfdiff1.merge(dfdiff2, on=['idx1', 'idx2'], how='outer',
+                          suffixes=['_1', '_2'])
     dfsym['geometry'] = dfsym.geometry_1
     dfsym.loc[dfsym.geometry_1.isna(), 'geometry'] = dfsym.loc[dfsym.geometry_1.isna(), 'geometry_2']
     dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry='geometry', crs=df1.crs)
-    # Spatial Index to create intersections
-    spatial_index = dfsym.sindex
-    bbox = dfsym.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x:list(spatial_index.intersection(x)))
-    # Create symmetric differences
-    new_g = []
-    for i, geom, neighbours in zip(dfsym.index, dfsym.geometry, sidx):
-        neighbours.remove(i)
-        new = reduce(lambda x, y: x.difference(y).buffer(0),
-                     [geom] + list(dfsym.geometry.iloc[neighbours]))
-        new_g.append(new)
-    dfsym['geometry'] = new_g
-    dfsym = dfsym[~dfsym.geometry.is_empty].copy()
     dfsym.drop(['idx1','idx2'], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
     return dfsym
