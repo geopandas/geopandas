@@ -179,6 +179,19 @@ def _overlay_old(df1, df2, how, use_sindex=True, **kwargs):
     return GeoDataFrame(collection, index=range(len(collection)))
 
 
+def _ensure_geometry_column(df):
+    """
+    Helper function to ensure the geometry column is called 'geometry'.
+    If another column with that name exists, it will be dropped.
+    """
+    if not df._geometry_column_name == 'geometry':
+        if 'geometry' in df.columns:
+            df.drop('geometry', axis=1, inplace=True)
+        df.rename(columns={df._geometry_column_name: 'geometry'},
+                  copy=False, inplace=True)
+        df.set_geometry('geometry', inplace=True)
+
+
 def overlay_intersection(df1, df2):
     """
     Overlay Intersection operation used in overlay function
@@ -250,6 +263,10 @@ def overlay_symmetric_diff(df1, df2):
     dfdiff2['idx2'] = dfdiff2.index
     dfdiff1['idx2'] = np.nan
     dfdiff2['idx1'] = np.nan
+    # ensure geometry name (otherwise merge goes wrong)
+    _ensure_geometry_column(dfdiff1)
+    _ensure_geometry_column(dfdiff2)
+    # combine both 'difference' dataframes
     dfsym = dfdiff1.merge(dfdiff2, on=['idx1', 'idx2'], how='outer',
                           suffixes=['_1', '_2'])
     dfsym['geometry'] = dfsym.geometry_1
@@ -312,8 +329,8 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
     # Computations
     df1 = df1.copy()
     df2 = df2.copy()
-    df1['geometry'] = df1.geometry.buffer(0)
-    df2['geometry'] = df2.geometry.buffer(0)
+    df1[df1._geometry_column_name] = df1.geometry.buffer(0)
+    df2[df2._geometry_column_name] = df2.geometry.buffer(0)
     if df1.crs!=df2.crs and reproject:
         warnings.warn('Data has different projections. '
                       'Converted data to projection of first GeoPandas DataFrame',
@@ -334,8 +351,16 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
         dfunion = overlay(df1, df2, how='union')
         cols1 = df1.columns.tolist()
         cols2 = df2.columns.tolist()
-        cols1.remove('geometry')
-        cols2.remove('geometry')
+        cols1.remove(df1._geometry_column_name)
+        cols2.remove(df2._geometry_column_name)
+        try:
+            cols1.remove('geometry')
+        except ValueError:
+            pass
+        try:
+            cols2.remove('geometry')
+        except ValueError:
+            pass
         cols2 = set(cols2).intersection(set(cols1))
         cols1 = list(set(cols1).difference(set(cols2)))
         cols2 = [col+'_1' for col in cols2]

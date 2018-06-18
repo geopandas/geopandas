@@ -7,7 +7,7 @@ from shapely.geometry import Point, Polygon
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file, overlay
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas import datasets
 
 import pytest
@@ -204,28 +204,13 @@ class TestOverlayNYBB:
         self.assertTrue('Shape_Area_2' in df.columns and 'Shape_Area_1' in df.columns)
         assert 'Shape_Area_2' in df.columns and 'Shape_Area' in df.columns
 
-    def test_geometry_not_named_geometry(self):
-        # Issue #306
-        # Add points and flip names
-        polydf3 = self.polydf.copy()
-        polydf3 = polydf3.rename(columns={'geometry': 'polygons'})
-        polydf3 = polydf3.set_geometry('polygons')
-        polydf3['geometry'] = self.pointdf.geometry.loc[0:4]
-        assert polydf3.geometry.name == 'polygons'
-
-        df = overlay(polydf3, self.polydf2, how="union")
-        assert type(df) is GeoDataFrame
-
-        df2 = overlay(self.polydf, self.polydf2, how="union")
-        assert df.geom_almost_equals(df2).all()
-
     def test_geoseries_warning(self):
         # Issue #305
         with pytest.raises(NotImplementedError):
             overlay(self.polydf, self.polydf2.geometry, how="union")
 
 
-@pytest.fixture(params=['default-index', 'int-index', 'string-index'])
+@pytest.fixture
 def dfs(request):
     s1 = GeoSeries([Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
                     Polygon([(2, 2), (4, 2), (4, 4), (2, 4)])])
@@ -233,6 +218,12 @@ def dfs(request):
                     Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
     df1 = GeoDataFrame({'geometry': s1, 'col1': [1, 2]})
     df2 = GeoDataFrame({'geometry': s2, 'col2': [1, 2]})
+    return df1, df2
+
+
+@pytest.fixture(params=['default-index', 'int-index', 'string-index'])
+def dfs_index(request, dfs):
+    df1, df2 = dfs
     if request.param == 'int-index':
         df1.index = [1, 2]
         df2.index = [0, 2]
@@ -324,13 +315,13 @@ def expected_features():
     return expected
 
 
-def test_overlay(dfs, how, use_sindex, expected_features):
+def test_overlay(dfs_index, how, use_sindex, expected_features):
     """
     Basic overlay test with small dummy example dataframes (from docs).
     Results obtained using QGIS 2.16 (Vector -> Geoprocessing Tools ->
     Intersection / Union / ...), saved to GeoJSON and pasted here
     """
-    df1, df2 = dfs
+    df1, df2 = dfs_index
     result = overlay(df1, df2, how=how, use_sindex=use_sindex)
 
     # construction of result
@@ -410,3 +401,48 @@ def test_overlay_overlap(how):
 
     assert_geodataframe_equal(result, expected,
                               check_less_precise=True)
+
+
+@pytest.mark.parametrize('other_geometry', [False, True])
+def test_geometry_not_named_geometry(dfs, how, other_geometry):
+    # Issue #306
+    # Add points and flip names
+    df1, df2 = dfs
+    df3 = df1.copy()
+    df3 = df3.rename(columns={'geometry': 'polygons'})
+    df3 = df3.set_geometry('polygons')
+    if other_geometry:
+        df3['geometry'] = df1.centroid.geometry
+    assert df3.geometry.name == 'polygons'
+
+    res1 = overlay(df1, df2, how=how)
+    res2 = overlay(df3, df2, how=how)
+
+    assert df3.geometry.name == 'polygons'
+
+    if how == 'difference':
+        # in case of 'difference', column names of left frame are preserved
+        assert res2.geometry.name == 'polygons'
+        if other_geometry:
+            assert 'geometry' in res2.columns
+            assert_geoseries_equal(res2['geometry'], df3['geometry'],
+                                   check_series_type=False)
+            res2 = res2.drop(['geometry'], axis=1)
+        res2 = res2.rename(columns={'polygons':'geometry'})
+        res2 = res2.set_geometry('geometry')
+
+    # TODO if existing column is overwritten -> geometry not last column
+    if other_geometry and how == 'intersection':
+        res2 = res2.reindex(columns=res1.columns)
+    assert_geodataframe_equal(res1, res2)
+
+    df4 = df2.copy()
+    df4 = df4.rename(columns={'geometry': 'geom'})
+    df4 = df4.set_geometry('geom')
+    if other_geometry:
+        df4['geometry'] = df2.centroid.geometry
+    assert df4.geometry.name == 'geom'
+
+    res1 = overlay(df1, df2, how=how)
+    res2 = overlay(df1, df4, how=how)
+    assert_geodataframe_equal(res1, res2)
