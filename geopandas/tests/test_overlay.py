@@ -190,25 +190,6 @@ class TestOverlayNYBB:
         df = overlay(self.polydf, self.polydf2, how="difference")
         assert df.shape == (86, 7)
 
-    def test_bad_how(self):
-        with pytest.raises(ValueError):
-            overlay(self.polydf, self.polydf, how="spandex")
-
-    def test_nonpoly(self):
-        with pytest.raises(TypeError):
-            overlay(self.pointdf, self.polydf, how="union")
-
-    def test_duplicate_column_name(self):
-        polydf2r = self.polydf2.rename(columns={'value2': 'Shape_Area'})
-        df = overlay(self.polydf, polydf2r, how="union")
-        self.assertTrue('Shape_Area_2' in df.columns and 'Shape_Area_1' in df.columns)
-        assert 'Shape_Area_2' in df.columns and 'Shape_Area' in df.columns
-
-    def test_geoseries_warning(self):
-        # Issue #305
-        with pytest.raises(NotImplementedError):
-            overlay(self.polydf, self.polydf2.geometry, how="union")
-
 
 @pytest.fixture
 def dfs(request):
@@ -446,3 +427,32 @@ def test_geometry_not_named_geometry(dfs, how, other_geometry):
     res1 = overlay(df1, df2, how=how)
     res2 = overlay(df1, df4, how=how)
     assert_geodataframe_equal(res1, res2)
+
+
+def test_bad_how(dfs):
+    df1, df2 = dfs
+    with pytest.raises(ValueError):
+        overlay(df1, df2, how="spandex")
+
+
+def test_raise_nonpoly(dfs):
+    polydf, _ = dfs
+    pointdf = polydf.copy()
+    pointdf['geometry'] = pointdf.geometry.centroid
+
+    with pytest.raises(TypeError):
+        overlay(pointdf, polydf, how="union")
+
+
+def test_duplicate_column_name(dfs):
+    df1, df2 = dfs
+    df2r = df2.rename(columns={'col2': 'col1'})
+    res = overlay(df1, df2r, how="union")
+    assert ('col1_1' in res.columns) and ('col1_2' in res.columns)
+
+
+def test_geoseries_warning(dfs):
+    df1, df2 = dfs
+    # Issue #305
+    with pytest.raises(NotImplementedError):
+        overlay(df1, df2.geometry, how="union")

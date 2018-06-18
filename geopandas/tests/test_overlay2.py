@@ -8,6 +8,7 @@ from shapely.geometry import Point
 from geopandas import GeoDataFrame, read_file
 from geopandas import overlay
 from geopandas import datasets
+from geopandas.testing import assert_geodataframe_equal
 
 import unittest
 
@@ -59,31 +60,37 @@ class TestDataFrame(unittest.TestCase):
         df = overlay(self.polydf, self.polydf2, how="union")
         df.sort_values(cols, inplace=True)
         df.reset_index(inplace=True, drop=True)
+        df = df.drop(['idx1', 'idx2'], axis=1)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEqual(df.shape, union_qgis.shape)
         self.assertTrue('df2' in df.columns and 'df1' in df.columns)
         self.assertTrue((df.area/union_qgis.area).mean()==1)
         self.assertTrue((df.boundary.length/union_qgis.boundary.length).mean()==1)
+        assert_geodataframe_equal(df, union_qgis)
 
     def test_intersection(self):
         df = overlay(self.polydf, self.polydf2, how="intersection")
         df.sort_values(cols, inplace=True)
         df.reset_index(inplace=True, drop=True)
+        df = df.drop(['idx1', 'idx2'], axis=1)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEqual(df.shape, intersect_qgis.shape)
         self.assertTrue('df2' in df.columns and 'df1' in df.columns)
         self.assertTrue((df.area/intersect_qgis.area).mean()==1)
         self.assertTrue((df.boundary.length/intersect_qgis.boundary.length).mean()==1)
+        assert_geodataframe_equal(df, intersect_qgis)
 
     def test_identity(self):
         df = overlay(self.polydf, self.polydf2, how="identity")
         df.sort_values(cols, inplace=True)
         df.reset_index(inplace=True, drop=True)
+        df = df.drop(['idx1', 'idx2'], axis=1)
         self.assertTrue(type(df) is GeoDataFrame)
         self.assertEqual(df.shape, ident_qgis.shape)
         self.assertTrue('df2' in df.columns and 'df1' in df.columns)
         self.assertTrue((df.area/ident_qgis.area).mean()==1)
         self.assertTrue((df.boundary.length/ident_qgis.boundary.length).mean()==1)
+        assert_geodataframe_equal(df, ident_qgis)
 
     def test_symmetric_difference(self):
         df = overlay(self.polydf, self.polydf2, how="symmetric_difference")
@@ -94,6 +101,7 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue('df2' in df.columns and 'df1' in df.columns)
         self.assertTrue((df.area/symdiff_qgis.area).mean()==1)
         self.assertTrue((df.boundary.length/symdiff_qgis.boundary.length).mean()==1)
+        assert_geodataframe_equal(df, symdiff_qgis)
 
     def test_difference(self):
         df = overlay(self.polydf, self.polydf2, how="difference")
@@ -104,29 +112,4 @@ class TestDataFrame(unittest.TestCase):
         self.assertTrue('df2' not in df.columns and 'df1' in df.columns)
         self.assertTrue((df.area/diff_qgis.area).mean()==1)
         self.assertTrue((df.boundary.length/diff_qgis.boundary.length).mean()==1)
-
-    def test_bad_how(self):
-        self.assertRaises(ValueError,
-                          overlay, self.polydf, self.polydf, how="spandex")
-
-    def test_nonpoly(self):
-        df2c = df2.copy()
-        df2c.geometry = df2c.geometry.centroid
-        self.assertRaises(TypeError,
-                          overlay, self.polydf, df2c, how="union")
-
-    def test_duplicate_column_name(self):
-        polydf2r = self.polydf2.rename(columns={'df2': 'df1'})
-        df = overlay(self.polydf, polydf2r, how="union")
-        self.assertTrue('df1_2' in df.columns and 'df1_1' in df.columns)
-
-    def test_geoseries_warning(self):
-        # Issue #305
-        def f():
-            overlay(self.polydf, self.polydf2.geometry, how="union")
-        self.assertRaises(NotImplementedError, f)
-
-
-
-
-
+        assert_geodataframe_equal(df, diff_qgis)
