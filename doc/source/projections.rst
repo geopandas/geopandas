@@ -39,7 +39,7 @@ Be aware that **most of the time** you don't have to set a projection. Data load
 
 From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
 
-For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the ``crs`` attribute or by passing the same CRS to the GeoSeries' ``set_crs()`` method.  The follwing approaches are all equivalent:
+For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the ``crs`` attribute or by passing the same CRS to the GeoSeries' ``set_crs()`` method.  The following approaches are all equivalent:
 
 .. sourcecode:: python
 
