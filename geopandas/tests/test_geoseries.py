@@ -7,6 +7,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+from fiona.crs import from_epsg
 from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
@@ -208,4 +209,7 @@ class TestSeries:
     def test_set_crs(self):
         naive = self.g3.copy()
         naive.crs = None
-        assert naive.set_crs(self.g3.crs).crs == self.g3.crs
+        assert naive.set_crs(crs=self.g3.crs).crs == self.g3.crs
+        assert naive.set_crs(epsg=4326).crs == from_epsg(4326)
+        with pytest.raises(TypeError):
+            naive.set_crs(crs=None, epsg=None)
