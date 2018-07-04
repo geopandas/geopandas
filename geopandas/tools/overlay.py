@@ -278,6 +278,20 @@ def overlay_symmetric_diff(df1, df2):
     return dfsym
 
 
+def overlay_union(df1, df2):
+    """
+    Overlay Union operation used in overlay function
+    """
+    dfinter = overlay_intersection(df1, df2)
+    dfsym = overlay_symmetric_diff(df1, df2)
+    dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
+    # keep geometry column last
+    columns = list(dfunion.columns)
+    columns.remove('geometry')
+    columns = columns + ['geometry']
+    return dfunion.reindex(columns=columns)
+
+
 def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_sindex=None, **kwargs):
     """Perform spatial overlay between two polygons.
 
@@ -347,15 +361,11 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
         result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
         return result
     elif how == 'union':
-        dfinter = overlay_intersection(df1, df2)
-        dfsym = overlay_symmetric_diff(df1, df2)
-        dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
-        dfunion.drop(['__idx1', '__idx2'], axis=1, inplace=True)
-        return dfunion
+        result = overlay_union(df1, df2)
+        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+        return result
     elif how == 'identity':
-        dfinter = overlay_intersection(df1, df2)
-        dfsym = overlay_symmetric_diff(df1, df2)
-        dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
+        dfunion = overlay_union(df1, df2)
         result = dfunion[dfunion['__idx1'].notna()].copy()
         result.reset_index(drop=True, inplace=True)
         result.drop(['__idx1', '__idx2'], axis=1, inplace=True)

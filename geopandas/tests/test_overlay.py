@@ -134,13 +134,15 @@ def test_overlay_nybb(how):
         expected = expected[expected.BoroCode.notna()].copy()
 
     # Order GeoDataFrames
-    expected.sort_values(cols, inplace=True)
-    expected.reset_index(inplace=True, drop=True)
+    expected = expected.sort_values(cols).reset_index(drop=True)
 
     # TODO needed adaptations to result
     result = result.sort_values(cols).reset_index(drop=True)
 
     if how in ('union', 'identity'):
+        # concat < 0.23 sorts, so changes the order of the columns
+        # but at least we ensure 'geometry' is the last column
+        assert result.columns[-1] == 'geometry'
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)
 
