@@ -224,95 +224,32 @@ def use_sindex(request):
     return request.param
 
 
-@pytest.fixture
-def expected_features():
-    expected = {}
-    expected['union'] = {
-        "type": "FeatureCollection",
-        "features": [
-            {"type": "Feature", "properties": { "col1": 1.0, "col2": 1.0 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 1.0, 2.0 ], [ 2.0, 2.0 ], [ 2.0, 1.0 ], [ 1.0, 1.0 ], [ 1.0, 2.0 ] ] ] } },
-            {"type": "Feature", "properties": { "col1": 1.0, "col2": None },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 2.0 ], [ 1.0, 2.0 ], [ 1.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
-            {"type": "Feature", "properties": { "col1": 2.0, "col2": 1.0 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 2.0, 2.0 ], [ 2.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 2.0 ], [ 2.0, 2.0 ] ] ] } },
-            {"type": "Feature", "properties": { "col1": 2.0, "col2": 2.0 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 4.0, 4.0 ], [ 4.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 4.0 ] ] ] } },
-            {"type": "Feature", "properties": { "col1": 2.0, "col2": None },
-                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ], [ 3.0, 3.0 ], [ 2.0, 3.0 ] ] ], [ [ [ 4.0, 3.0 ], [ 4.0, 2.0 ], [ 3.0, 2.0 ], [ 3.0, 3.0 ], [ 4.0, 3.0 ] ] ] ] } },
-            {"type": "Feature", "properties": { "col1": None, "col2": 1.0 },
-                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 1.0, 2.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ], [ [ [ 3.0, 2.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 2.0 ], [ 3.0, 2.0 ] ] ] ] } },
-            {"type": "Feature", "properties": { "col1": None, "col2": 2.0 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 3.0 ], [ 4.0, 3.0 ], [ 4.0, 4.0 ], [ 3.0, 4.0 ] ] ] } }
-            ]
-        }
-
-    expected['intersection'] = {
-        "type": "FeatureCollection",
-        "features": [
-            { "type": "Feature", "properties": { "col1": 1, "col2": 1 },
-            "geometry": { "type": "Polygon", "coordinates": [ [ [ 1.0, 2.0 ], [ 2.0, 2.0 ], [ 2.0, 1.0 ], [ 1.0, 1.0 ], [ 1.0, 2.0 ] ] ] } },
-            { "type": "Feature", "properties": { "col1": 2, "col2": 1 },
-            "geometry": { "type": "Polygon", "coordinates": [ [ [ 2.0, 2.0 ], [ 2.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 2.0 ], [ 2.0, 2.0 ] ] ] } },
-            { "type": "Feature", "properties": { "col1": 2, "col2": 2 },
-            "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 4.0, 4.0 ], [ 4.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 4.0 ] ] ] } }
-            ]
-        }
-
-    expected['symmetric_difference'] = {
-        "type": "FeatureCollection",
-        "features": [
-            {"type": "Feature", "properties": { "col1": 1.0, "col2": None },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 2.0 ], [ 1.0, 2.0 ], [ 1.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
-            {"type": "Feature", "properties": { "col1": 2.0, "col2": None },
-                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ], [ 3.0, 3.0 ], [ 2.0, 3.0 ] ] ], [ [ [ 4.0, 3.0 ], [ 4.0, 2.0 ], [ 3.0, 2.0 ], [ 3.0, 3.0 ], [ 4.0, 3.0 ] ] ] ] } },
-            {"type": "Feature", "properties": { "col1": None, "col2": 1.0 },
-                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 1.0, 2.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ], [ [ [ 3.0, 2.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 2.0 ], [ 3.0, 2.0 ] ] ] ] } },
-            {"type": "Feature", "properties": { "col1": None, "col2": 2.0 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 3.0 ], [ 4.0, 3.0 ], [ 4.0, 4.0 ], [ 3.0, 4.0 ] ] ] } }
-            ]
-        }
-
-    expected['difference'] = {
-        "type": "FeatureCollection",
-        "features": [
-            {"type": "Feature", "properties": { "col1": 1 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 2.0 ], [ 1.0, 2.0 ], [ 1.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
-            {"type": "Feature", "properties": { "col1": 2 },
-                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ], [ 3.0, 3.0 ], [ 2.0, 3.0 ] ] ], [ [ [ 4.0, 3.0 ], [ 4.0, 2.0 ], [ 3.0, 2.0 ], [ 3.0, 3.0 ], [ 4.0, 3.0 ] ] ] ] } }
-            ]
-        }
-
-    expected['difference_inverse'] = {
-        "type": "FeatureCollection",
-        "features": [
-            {"type": "Feature", "properties": { "col2": 1 },
-                "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 1.0, 2.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ], [ [ [ 3.0, 2.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 2.0, 2.0 ], [ 3.0, 2.0 ] ] ] ] } },
-            {"type": "Feature", "properties": { "col2": 2 },
-                "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 3.0 ], [ 4.0, 3.0 ], [ 4.0, 4.0 ], [ 3.0, 4.0 ] ] ] } }
-            ]
-        }
-
-    return expected
-
-
-def test_overlay(dfs_index, how, use_sindex, expected_features):
+def test_overlay(dfs_index, how, use_sindex):
     """
     Basic overlay test with small dummy example dataframes (from docs).
     Results obtained using QGIS 2.16 (Vector -> Geoprocessing Tools ->
-    Intersection / Union / ...), saved to GeoJSON and pasted here
+    Intersection / Union / ...), saved to GeoJSON
     """
     df1, df2 = dfs_index
     result = overlay(df1, df2, how=how, use_sindex=use_sindex)
 
     # construction of result
+
+    def _read(name):
+        expected = read_file(
+            os.path.join(DATA, 'polys', 'df1_df2-{0}.geojson'.format(name)))
+        expected.crs = None
+        return expected
+
     if how == 'identity':
+        expected_intersection = _read('intersection')
+        expected_difference = _read('difference')
         expected = pd.concat([
-            GeoDataFrame.from_features(expected_features['intersection']),
-            GeoDataFrame.from_features(expected_features['difference'])
+            expected_intersection,
+            expected_difference
         ], ignore_index=True)
     else:
-        expected = GeoDataFrame.from_features(expected_features[how])
+        expected = _read(how)
 
     # TODO needed adaptations to result
     if how == 'union':
@@ -328,8 +265,7 @@ def test_overlay(dfs_index, how, use_sindex, expected_features):
     if how == 'difference':
         result = overlay(df2, df1, how=how, use_sindex=use_sindex)
         result = result.reset_index(drop=True)
-        expected = GeoDataFrame.from_features(
-            expected_features['difference_inverse'])
+        expected = _read('difference-inverse')
         assert_geodataframe_equal(result, expected)
 
 
