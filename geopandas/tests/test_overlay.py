@@ -107,10 +107,8 @@ def test_overlay_nybb(how):
     result = overlay(polydf, polydf2, how=how)
 
     cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
-    cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
     if how == 'difference':
         cols = cols[:-2]
-    result = result.sort_values(cols).reset_index(drop=True)
 
     # expected result
 
@@ -140,9 +138,8 @@ def test_overlay_nybb(how):
     expected.reset_index(inplace=True, drop=True)
 
     # TODO needed adaptations to result
-    if how == 'identity':
-        result = result[~result.duplicated(subset=cols)].copy()
-        result = result.reset_index(drop=True)
+    result = result.sort_values(cols).reset_index(drop=True)
+
     if how in ('union', 'identity'):
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)

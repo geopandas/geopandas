@@ -227,7 +227,6 @@ def overlay_intersection(df1, df2):
             df2.drop(df2._geometry_column_name, axis=1),
             left_on='__idx2', right_index=True, suffixes=['_1', '_2'])
 
-        dfinter.drop(['__idx1', '__idx2'], axis=1, inplace=True)
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
         return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
@@ -273,8 +272,7 @@ def overlay_symmetric_diff(df1, df2):
     geometry = dfsym.geometry_1.copy()
     geometry[dfsym.geometry_1.isna()] = \
         dfsym.loc[dfsym.geometry_1.isna(), 'geometry_2']
-    dfsym.drop(['geometry_1', 'geometry_2', '__idx1', '__idx2'],
-               axis=1, inplace=True)
+    dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
     return dfsym
@@ -339,33 +337,26 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
                       UserWarning)
         df2.to_crs(crs=df1.crs, inplace=True)
     if how == 'intersection':
-        return overlay_intersection(df1, df2)
+        result = overlay_intersection(df1, df2)
+        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+        return result
     elif how == 'difference':
         return overlay_difference(df1, df2)
     elif how == 'symmetric_difference':
-        return overlay_symmetric_diff(df1, df2)
+        result = overlay_symmetric_diff(df1, df2)
+        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+        return result
     elif how == 'union':
         dfinter = overlay_intersection(df1, df2)
         dfsym = overlay_symmetric_diff(df1, df2)
         dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
+        dfunion.drop(['__idx1', '__idx2'], axis=1, inplace=True)
         return dfunion
     elif how == 'identity':
-        dfunion = overlay(df1, df2, how='union')
-        cols1 = df1.columns.tolist()
-        cols2 = df2.columns.tolist()
-        cols1.remove(df1._geometry_column_name)
-        cols2.remove(df2._geometry_column_name)
-        try:
-            cols1.remove('geometry')
-        except ValueError:
-            pass
-        try:
-            cols2.remove('geometry')
-        except ValueError:
-            pass
-        cols2 = set(cols2).intersection(set(cols1))
-        cols1 = list(set(cols1).difference(set(cols2)))
-        cols2 = [col+'_1' for col in cols2]
-        dfunion = dfunion[dfunion[cols1+cols2].notna().values]
-        dfunion.reset_index(drop=True, inplace=True)
-        return dfunion
+        dfinter = overlay_intersection(df1, df2)
+        dfsym = overlay_symmetric_diff(df1, df2)
+        dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
+        result = dfunion[dfunion['__idx1'].notna()].copy()
+        result.reset_index(drop=True, inplace=True)
+        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+        return result
