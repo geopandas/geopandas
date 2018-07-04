@@ -106,7 +106,8 @@ def test_overlay_nybb(how):
 
     result = overlay(polydf, polydf2, how=how)
 
-    cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
+    cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area',
+            'value1', 'value2']
     if how == 'difference':
         cols = cols[:-2]
 
@@ -114,11 +115,11 @@ def test_overlay_nybb(how):
 
     if how == 'identity':
         # read union one, further down below we take the appropriate subset
-        expected = read_file(
-            os.path.join(DATA, 'overlay_nybb_qgis', 'qgis-union.shp'))
+        expected = read_file(os.path.join(
+            DATA, 'overlay_nybb_qgis', 'qgis-union.shp'))
     else:
-        expected = read_file(
-            os.path.join(DATA, 'overlay_nybb_qgis', 'qgis-{0}.shp'.format(how)))
+        expected = read_file(os.path.join(
+            DATA, 'overlay_nybb_qgis', 'qgis-{0}.shp'.format(how)))
 
     # The result of QGIS for 'union' contains incorrect geometries:
     # 24 is a full original circle overlapping with unioned geometries, and
@@ -184,16 +185,17 @@ def test_overlay_overlap(how):
     if how == 'identity':
         raise pytest.skip()
 
-    expected = read_file(os.path.join(DATA, 'df1_df2_overlap-{0}.geojson'.format(how)))
+    expected = read_file(os.path.join(
+        DATA, 'df1_df2_overlap-{0}.geojson'.format(how)))
+
+    if how == 'union':
+        # the QGIS result has the last row duplicated, so removing this
+        expected = expected.iloc[:-1]
 
     # TODO needed adaptations to result
     result = result.reset_index(drop=True)
     if how == 'union':
         result = result.sort_values(['col1', 'col2']).reset_index(drop=True)
-
-    if how == 'union':
-        # the QGIS result has the last row duplicated, so removing this
-        expected = expected.iloc[:-1]
 
     assert_geodataframe_equal(result, expected,
                               check_less_precise=True)
@@ -224,7 +226,7 @@ def test_geometry_not_named_geometry(dfs, how, other_geometry):
             assert_geoseries_equal(res2['geometry'], df3['geometry'],
                                    check_series_type=False)
             res2 = res2.drop(['geometry'], axis=1)
-        res2 = res2.rename(columns={'polygons':'geometry'})
+        res2 = res2.rename(columns={'polygons': 'geometry'})
         res2 = res2.set_geometry('geometry')
 
     # TODO if existing column is overwritten -> geometry not last column

@@ -1,11 +1,13 @@
+import warnings
+from functools import reduce
+
+import numpy as np
 import pandas as pd
 from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
 
 from geopandas import GeoDataFrame, GeoSeries
-from functools import reduce
-import numpy as np
-import warnings
+
 
 def _uniquify(columns):
     ucols = []
@@ -56,6 +58,7 @@ def _extract_rings(df):
             rings.extend(geom.interiors)
 
     return rings
+
 
 def _overlay_old(df1, df2, how, use_sindex=True, **kwargs):
     """Perform spatial overlay between two polygons.
@@ -229,7 +232,10 @@ def overlay_intersection(df1, df2):
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
-        return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
+        return GeoDataFrame(
+            [],
+            columns=list(set(df1.columns).union(df2.columns)),
+            crs=df1.crs)
 
 
 def overlay_difference(df1, df2):
@@ -292,7 +298,8 @@ def overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_sindex=None, **kwargs):
+def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
+            use_sindex=None):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -318,7 +325,9 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
 
     """
     if use_sindex is not None:
-        print('use_sindex is deprecated. If you are trying to use the old "overlay" function use "overlay_slow".')
+        warnings.warn("'use_sindex' is deprecated. The overlay operation "
+                      "always requires a spatial index (rtree).",
+                      DeprecationWarning, stacklevel=2)
 
     # Allowed operations
     allowed_hows = [
@@ -330,24 +339,26 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True, use_s
     ]
     # Error Messages
     if how not in allowed_hows:
-        raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
-            (how, allowed_hows))
+        raise ValueError("`how` was '{0}' but is expected to be "
+                         "in %s".format(how, allowed_hows))
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
-        raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
+        raise NotImplementedError("overlay currently only implemented for "
+                                  "GeoDataFrames")
 
-    if (df1.geom_type.apply(lambda x: x in ['Polygon', 'MultiPolygon']).sum()!=len(df1.index) or 
-        df2.geom_type.apply(lambda x: x in ['Polygon', 'MultiPolygon']).sum()!=len(df2.index)):
-        raise TypeError("overlay only takes GeoDataFrames with (multi)polygon geometries") 
+    if (not df1.geom_type.isin(['Polygon', 'MultiPolygon']).all()
+            or not df2.geom_type.isin(['Polygon', 'MultiPolygon']).all()):
+        raise TypeError("overlay only takes GeoDataFrames with (multi)polygon "
+                        " geometries.")
 
     # Computations
     df1 = df1.copy()
     df2 = df2.copy()
     df1[df1._geometry_column_name] = df1.geometry.buffer(0)
     df2[df2._geometry_column_name] = df2.geometry.buffer(0)
-    if df1.crs!=df2.crs and reproject:
-        warnings.warn('Data has different projections. '
-                      'Converted data to projection of first GeoPandas DataFrame',
+    if df1.crs != df2.crs and reproject:
+        warnings.warn("Data has different projections. Converted data to "
+                      "projection of first GeoPandas GeoDataFrame",
                       UserWarning)
         df2.to_crs(crs=df1.crs, inplace=True)
     if how == 'intersection':
