@@ -206,10 +206,10 @@ def overlay_intersection(df1, df2):
         for k in j:
             nei.append([i, k])
     if nei != []:
-        pairs = pd.DataFrame(nei, columns=['idx1', 'idx2'])
-        left = df1.geometry.take(pairs['idx1'].values)
+        pairs = pd.DataFrame(nei, columns=['__idx1', '__idx2'])
+        left = df1.geometry.take(pairs['__idx1'].values)
         left.reset_index(drop=True, inplace=True)
-        right = df2.geometry.take(pairs['idx2'].values)
+        right = df2.geometry.take(pairs['__idx2'].values)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right).buffer(0)
 
@@ -222,11 +222,12 @@ def overlay_intersection(df1, df2):
         df2 = df2.reset_index(drop=True)
         dfinter = pairs_intersect.merge(
             df1.drop(df1._geometry_column_name, axis=1),
-            left_on='idx1', right_index=True)
+            left_on='__idx1', right_index=True)
         dfinter = dfinter.merge(
             df2.drop(df2._geometry_column_name, axis=1),
-            left_on='idx2', right_index=True, suffixes=['_1', '_2'])
+            left_on='__idx2', right_index=True, suffixes=['_1', '_2'])
 
+        dfinter.drop(['__idx1', '__idx2'], axis=1, inplace=True)
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
         return GeoDataFrame([], columns=list(set(df1.columns).union(df2.columns)), crs=df1.crs)
@@ -259,22 +260,23 @@ def overlay_symmetric_diff(df1, df2):
     """
     dfdiff1 = overlay_difference(df1, df2)
     dfdiff2 = overlay_difference(df2, df1)
-    dfdiff1['idx1'] = dfdiff1.index
-    dfdiff2['idx2'] = dfdiff2.index
-    dfdiff1['idx2'] = np.nan
-    dfdiff2['idx1'] = np.nan
+    dfdiff1['__idx1'] = dfdiff1.index
+    dfdiff2['__idx2'] = dfdiff2.index
+    dfdiff1['__idx2'] = np.nan
+    dfdiff2['__idx1'] = np.nan
     # ensure geometry name (otherwise merge goes wrong)
     _ensure_geometry_column(dfdiff1)
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
-    dfsym = dfdiff1.merge(dfdiff2, on=['idx1', 'idx2'], how='outer',
+    dfsym = dfdiff1.merge(dfdiff2, on=['__idx1', '__idx2'], how='outer',
                           suffixes=['_1', '_2'])
-    dfsym['geometry'] = dfsym.geometry_1
-    dfsym.loc[dfsym.geometry_1.isna(), 'geometry'] = dfsym.loc[dfsym.geometry_1.isna(), 'geometry_2']
-    dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
-    dfsym = GeoDataFrame(dfsym, geometry='geometry', crs=df1.crs)
-    dfsym.drop(['idx1','idx2'], axis=1, inplace=True)
+    geometry = dfsym.geometry_1.copy()
+    geometry[dfsym.geometry_1.isna()] = \
+        dfsym.loc[dfsym.geometry_1.isna(), 'geometry_2']
+    dfsym.drop(['geometry_1', 'geometry_2', '__idx1', '__idx2'],
+               axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
+    dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
     return dfsym
 
 

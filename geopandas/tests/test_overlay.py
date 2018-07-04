@@ -77,9 +77,7 @@ def test_overlay(dfs_index, how, use_sindex):
 
     # TODO needed adaptations to result
     if how == 'union':
-        result = result.drop(['idx1', 'idx2'], axis=1).sort_values(['col1', 'col2']).reset_index(drop=True)
-    elif how in ('intersection', 'identity'):
-        result = result.drop(['idx1', 'idx2'], axis=1)
+        result = result.sort_values(['col1', 'col2']).reset_index(drop=True)
     elif how == 'difference':
         result = result.reset_index(drop=True)
 
@@ -142,8 +140,6 @@ def test_overlay_nybb(how):
     expected.reset_index(inplace=True, drop=True)
 
     # TODO needed adaptations to result
-    if how in ('intersection', 'union', 'identity'):
-        result = result.drop(['idx1', 'idx2'], axis=1)
     if how == 'identity':
         result = result[~result.duplicated(subset=cols)].copy()
         result = result.reset_index(drop=True)
@@ -192,7 +188,7 @@ def test_overlay_overlap(how):
     expected = read_file(os.path.join(DATA, 'df1_df2_overlap-{0}.geojson'.format(how)))
 
     # TODO needed adaptations to result
-    result = result.drop(['idx1', 'idx2'], axis=1, errors='ignore').reset_index(drop=True)
+    result = result.reset_index(drop=True)
     if how == 'union':
         result = result.sort_values(['col1', 'col2']).reset_index(drop=True)
 
