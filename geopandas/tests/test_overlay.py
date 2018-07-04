@@ -8,187 +8,11 @@ from shapely.geometry import Point, Polygon
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file, overlay
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from geopandas import datasets
 
 import pytest
 
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
-
-
-# Load qgis overlays
-qgispath = datasets._module_path+'/qgis_overlay/'
-union_qgis = read_file(qgispath+'union_qgis.shp')
-diff_qgis = read_file(qgispath+'diff_qgis.shp')
-symdiff_qgis = read_file(qgispath+'symdiff_qgis.shp')
-intersect_qgis = read_file(qgispath+'intersect_qgis.shp')
-ident_qgis = union_qgis[union_qgis.BoroCode.isnull()==False].copy()
-df1 = read_file(qgispath+'polydf.shp')
-df2 = read_file(qgispath+'polydf2.shp')
-# Eliminate observations without geometries (issue from QGIS)
-union_qgis = union_qgis[union_qgis.is_valid]
-union_qgis.reset_index(inplace=True, drop=True)
-diff_qgis = diff_qgis[diff_qgis.is_valid]
-diff_qgis.reset_index(inplace=True, drop=True)
-symdiff_qgis = symdiff_qgis[symdiff_qgis.is_valid]
-symdiff_qgis.reset_index(inplace=True, drop=True)
-intersect_qgis = intersect_qgis[intersect_qgis.is_valid]
-intersect_qgis.reset_index(inplace=True, drop=True)
-ident_qgis = ident_qgis[ident_qgis.is_valid]
-ident_qgis.reset_index(inplace=True, drop=True)
-# Order GeoDataFrames
-cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
-union_qgis.sort_values(cols, inplace=True)
-union_qgis.reset_index(inplace=True, drop=True)
-symdiff_qgis.sort_values(cols, inplace=True)
-symdiff_qgis.reset_index(inplace=True, drop=True)
-intersect_qgis.sort_values(cols, inplace=True)
-intersect_qgis.reset_index(inplace=True, drop=True)
-ident_qgis.sort_values(cols, inplace=True)
-ident_qgis.reset_index(inplace=True, drop=True)
-diff_qgis.sort_values(cols[:-2], inplace=True)
-diff_qgis.reset_index(inplace=True, drop=True)
-
-
-class TestDataFrame():
-    def setUp(self):
-        # Create original data again
-        N = 10
-        nybb_filename = geopandas.datasets.get_path('nybb')
-        self.polydf = read_file(nybb_filename)
-        self.tempdir = tempfile.mkdtemp()
-        self.crs = {'init': 'epsg:4326'}
-        b = [int(x) for x in self.polydf.total_bounds]
-        self.polydf2 = GeoDataFrame([
-            {'geometry' : Point(x, y).buffer(10000), 'value1': x + y, 'value2': x - y}
-            for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                            range(b[1], b[3], int((b[3]-b[1])/N)))], crs=self.polydf.crs)
-        self.pointdf = GeoDataFrame([
-            {'geometry' : Point(x, y), 'value1': x + y, 'value2': x - y}
-            for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                            range(b[1], b[3], int((b[3]-b[1])/N)))], crs=self.polydf.crs)
-
-class TestOverlayNYBB:
-
-    def setup_method(self):
-        N = 10
-
-        nybb_filename = geopandas.datasets.get_path('nybb')
-
-        self.polydf = read_file(nybb_filename)
-        self.crs = {'init': 'epsg:4326'}
-        b = [int(x) for x in self.polydf.total_bounds]
-        self.polydf2 = GeoDataFrame(
-            [{'geometry': Point(x, y).buffer(10000), 'value1': x + y,
-              'value2': x - y}
-             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                             range(b[1], b[3], int((b[3]-b[1])/N)))],
-            crs=self.crs)
-        self.pointdf = GeoDataFrame(
-            [{'geometry': Point(x, y), 'value1': x + y, 'value2': x - y}
-             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                             range(b[1], b[3], int((b[3]-b[1])/N)))],
-            crs=self.crs)
-
-        # TODO this appears to be necessary;
-        # why is the sindex not generated automatically?
-        #self.polydf2._generate_sindex()
-
-        self.union_shape = union_qgis.shape
-
-    def test_union(self):
-        df = overlay(self.polydf, self.polydf2, how="union")
-        df.sort_values(cols, inplace=True)
-        df.reset_index(inplace=True, drop=True)
-        self.assertTrue(type(df) is GeoDataFrame)
-        self.assertEqual(df.shape, union_qgis.shape)
-        self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertTrue((df.area/union_qgis.area).mean()==1)
-        self.assertTrue((df.boundary.length/union_qgis.boundary.length).mean()==1)
-        assert type(df) is GeoDataFrame
-        assert df.shape == self.union_shape
-        assert 'value1' in df.columns and 'Shape_Area' in df.columns
-
-    def test_intersection(self):
-        df = overlay(self.polydf, self.polydf2, how="intersection")
-        df.sort_values(cols, inplace=True)
-        df.reset_index(inplace=True, drop=True)
-        self.assertTrue(type(df) is GeoDataFrame)
-        self.assertEqual(df.shape, intersect_qgis.shape)
-        self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertTrue((df.area/intersect_qgis.area).mean()==1)
-        self.assertTrue((df.boundary.length/intersect_qgis.boundary.length).mean()==1)
-
-    def test_identity(self):
-        df = overlay(self.polydf, self.polydf2, how="identity")
-        df.sort_values(cols, inplace=True)
-        df.reset_index(inplace=True, drop=True)
-        self.assertTrue(type(df) is GeoDataFrame)
-        self.assertEqual(df.shape, ident_qgis.shape)
-        self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertTrue((df.area/ident_qgis.area).mean()==1)
-        self.assertTrue((df.boundary.length/ident_qgis.boundary.length).mean()==1)
-
-    def test_symmetric_difference(self):
-        df = overlay(self.polydf, self.polydf2, how="symmetric_difference")
-        df.sort_values(cols, inplace=True)
-        df.reset_index(inplace=True, drop=True)
-        self.assertTrue(type(df) is GeoDataFrame)
-        self.assertEqual(df.shape, symdiff_qgis.shape)
-        self.assertTrue('value1' in df.columns and 'Shape_Area' in df.columns)
-        self.assertTrue((df.area/symdiff_qgis.area).mean()==1)
-        self.assertTrue((df.boundary.length/symdiff_qgis.boundary.length).mean()==1)
-
-    def test_difference(self):
-        df = overlay(self.polydf, self.polydf2, how="difference")
-        df.sort_values(cols[:-2], inplace=True)
-        df.reset_index(inplace=True, drop=True)
-        self.assertTrue(type(df) is GeoDataFrame)
-        self.assertEqual(df.shape, diff_qgis.shape)
-        self.assertTrue('value1' not in df.columns and 'Shape_Area' in df.columns)
-        self.assertTrue((df.area/diff_qgis.area).mean()==1)
-        self.assertTrue((df.boundary.length/diff_qgis.boundary.length).mean()==1)
-
-    def test_union_no_index(self):
-        # explicitly ignore indices
-        dfB = overlay(self.polydf, self.polydf2, how="union", use_sindex=False)
-        assert dfB.shape == self.union_shape
-
-        # remove indices from df
-        self.polydf._sindex = None
-        self.polydf2._sindex = None
-        dfC = overlay(self.polydf, self.polydf2, how="union")
-        assert dfC.shape == self.union_shape
-
-    def test_union_non_numeric_index(self):
-        import string
-        letters = list(string.ascii_letters)
-
-        polydf_alpha = self.polydf.copy()
-        polydf2_alpha = self.polydf2.copy()
-        polydf_alpha.index = letters[:len(polydf_alpha)]
-        polydf2_alpha.index = letters[:len(polydf2_alpha)]
-        df = overlay(polydf_alpha, polydf2_alpha, how="union")
-        assert type(df) is GeoDataFrame
-        assert df.shape == self.union_shape
-        assert 'value1' in df.columns and 'Shape_Area' in df.columns
-
-    def test_intersection(self):
-        df = overlay(self.polydf, self.polydf2, how="intersection")
-        assert df['BoroName'][0] is not None
-        assert df.shape == (68, 7)
-
-    def test_identity(self):
-        df = overlay(self.polydf, self.polydf2, how="identity")
-        assert df.shape == (154, 7)
-
-    def test_symmetric_difference(self):
-        df = overlay(self.polydf, self.polydf2, how="symmetric_difference")
-        assert df.shape == (122, 7)
-
-    def test_difference(self):
-        df = overlay(self.polydf, self.polydf2, how="difference")
-        assert df.shape == (86, 7)
 
 
 @pytest.fixture
@@ -269,6 +93,67 @@ def test_overlay(dfs_index, how, use_sindex):
         assert_geodataframe_equal(result, expected)
 
 
+def test_overlay_nybb(how):
+    polydf = read_file(geopandas.datasets.get_path('nybb'))
+
+    # construct circles dataframe
+    N = 10
+    b = [int(x) for x in polydf.total_bounds]
+    polydf2 = GeoDataFrame(
+            [{'geometry': Point(x, y).buffer(10000), 'value1': x + y,
+              'value2': x - y}
+             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
+                             range(b[1], b[3], int((b[3]-b[1])/N)))],
+            crs=polydf.crs)
+
+    result = overlay(polydf, polydf2, how=how)
+
+    cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
+    cols = ['BoroCode', 'BoroName', 'Shape_Leng', 'Shape_Area', 'value1', 'value2']
+    if how == 'difference':
+        cols = cols[:-2]
+    result = result.sort_values(cols).reset_index(drop=True)
+
+    # expected result
+
+    if how == 'identity':
+        # read union one, further down below we take the appropriate subset
+        expected = read_file(
+            os.path.join(DATA, 'overlay_nybb_qgis', 'qgis-union.shp'))
+    else:
+        expected = read_file(
+            os.path.join(DATA, 'overlay_nybb_qgis', 'qgis-{0}.shp'.format(how)))
+
+    # The result of QGIS for 'union' contains incorrect geometries:
+    # 24 is a full original circle overlapping with unioned geometries, and
+    # 27 is a completely duplicated row)
+    if how == 'union':
+        expected = expected.drop([24, 27])
+        expected.reset_index(inplace=True, drop=True)
+    # Eliminate observations without geometries (issue from QGIS)
+    expected = expected[expected.is_valid]
+    expected.reset_index(inplace=True, drop=True)
+
+    if how == 'identity':
+        expected = expected[expected.BoroCode.notna()].copy()
+
+    # Order GeoDataFrames
+    expected.sort_values(cols, inplace=True)
+    expected.reset_index(inplace=True, drop=True)
+
+    # TODO needed adaptations to result
+    if how in ('intersection', 'union', 'identity'):
+        result = result.drop(['idx1', 'idx2'], axis=1)
+    if how == 'identity':
+        result = result[~result.duplicated(subset=cols)].copy()
+        result = result.reset_index(drop=True)
+    if how in ('union', 'identity'):
+        assert len(result.columns) == len(expected.columns)
+        result = result.reindex(columns=expected.columns)
+
+    assert_geodataframe_equal(result, expected, check_crs=False)
+
+
 def test_overlay_overlap(how):
     """
     Overlay test with overlapping geometries in both dataframes.
@@ -305,7 +190,6 @@ def test_overlay_overlap(how):
         raise pytest.skip()
 
     expected = read_file(os.path.join(DATA, 'df1_df2_overlap-{0}.geojson'.format(how)))
-
 
     # TODO needed adaptations to result
     result = result.drop(['idx1', 'idx2'], axis=1, errors='ignore').reset_index(drop=True)
