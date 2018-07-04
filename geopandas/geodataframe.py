@@ -578,25 +578,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     # overrides GeoPandasBase method
     def explode(self):
-        """    
-        Explode the geodataframe's muti-part geometries into single geometries.
+        """
+        Explode muti-part geometries into multiple single geometries.
 
         Each row containing a multi-part geometry will be split into
-        multiple rows with single geometries, thereby increasing the vertical size
-        of the geodataframe. The index of the input geodataframe is no longer
-        unique and is replaced with a multi-index. 
+        multiple rows with single geometries, thereby increasing the vertical
+        size of the GeoDataFrame.
 
-        The output geodataframe has an index based on two columns (multi-index) 
-        i.e. 'level_0' (index of input geodataframe) and 'level_1' which is a new
-        zero-based index for each single part geometry per multi-part geometry
+        The index of the input geodataframe is no longer unique and is
+        replaced with a multi-index (original index with additional level
+        indicating the multiple geometries: a new zero-based index for each
+        single part geometry per multi-part geometry).
 
-            
         Returns
         -------
-        geo_df (GeoDataFrame) : exploded geodataframe with each single geometry
-            as a separate entry in the geodataframe. The GeoDataFrame has a
-            multi-index set to columns level_0 and level_1.
-            
+        GeoDataFrame
+            Exploded geodataframe with each single geometry
+            as a separate entry in the geodataframe.
+
         """
         df_copy = self.copy() 
         # for the case where the index is not named, set to equal level = 0
@@ -607,13 +606,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         df = pd.concat(
             [df_copy.drop(df_copy._geometry_column_name, axis=1),
-            exploded_geom], axis=1)
-        # reset to MultiIndex, otherwise df index is only first level of exploded
-        # GeoSeries index.
+             exploded_geom], axis=1)
+        # reset to MultiIndex, otherwise df index is only first level of
+        # exploded GeoSeries index.
         df.set_index([df.index, 'level_1'], inplace=True)
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
-
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

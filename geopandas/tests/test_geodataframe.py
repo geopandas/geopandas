@@ -437,7 +437,6 @@ class TestDataFrame:
         assert utm.geometry.name == 'geom'
         assert all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2))
 
-
     def test_from_features(self):
         nybb_filename = geopandas.datasets.get_path('nybb')
         with fiona.open(nybb_filename) as f:
