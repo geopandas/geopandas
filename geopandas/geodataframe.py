@@ -238,8 +238,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     @classmethod
-    def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
-                     coerce_float=True, params=None):
+    def from_postgis(cls, sql, con, geom_col='geom', crs=None,
+                     hex_encoded=True, index_col=None, coerce_float=True,
+                     params=None):
         """Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column.
 
@@ -251,6 +252,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             column name to convert to shapely geometries
         crs : optional
             Coordinate reference system to use for the returned GeoDataFrame
+        hex_encoded : bool, optional
+            Whether the geometry is in a hex-encoded string. Default is True,
+            standard for postGIS.
         index_col : string or list of strings, optional, default: None
             Column(s) to set as index(MultiIndex)
         coerce_float : boolean, default True
@@ -261,15 +265,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> sql = "SELECT geom, highway FROM roads;"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
-                     coerce_float, params)
+
+        df = geopandas.io.sql.read_postgis(
+                sql, con, geom_col=geom_col, crs=crs, hex_encoded=hex_encoded,
+                index_col=index_col, coerce_float=coerce_float, params=params)
+        return df
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
-        """Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
+        """
+        Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
         Parameters
         ----------
