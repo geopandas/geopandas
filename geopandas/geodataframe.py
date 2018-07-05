@@ -604,19 +604,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             as a separate entry in the geodataframe.
 
         """
-        df_copy = self.copy() 
-        # for the case where the index is not named, set to equal level = 0
-        # so merge operation on index name can generalise
-        if not self.index.name:
-            df_copy.index.name = 'level_0'
+        df_copy = self.copy()
 
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
+        exploded_index = exploded_geom.columns[0]
+
         df = pd.concat(
             [df_copy.drop(df_copy._geometry_column_name, axis=1),
              exploded_geom], axis=1)
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
-        df.set_index([df.index, 'level_1'], inplace=True)
+        df.set_index(exploded_index, append=True, inplace=True)
+        df.index.names = list(self.index.names) + [None]
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 

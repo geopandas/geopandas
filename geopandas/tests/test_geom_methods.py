@@ -513,21 +513,19 @@ class TestGeomMethods:
                                 index, names=expected_index_name))
         assert_geoseries_equal(expected, s.explode())
 
-    @pytest.mark.parametrize("test_index_name, expected_index",
-        [('test', MultiIndex(levels=[[0, 1], [0, 1]],
-                           labels=[[0, 0, 1], [0, 1, 0]],
-                           names=['test', 'level_1'])),
-         (None, MultiIndex(levels=[[0, 1], [0, 1]],
-                           labels=[[0, 0, 1], [0, 1, 0]],
-                           names=['level_0', 'level_1']))
-        ])
-    def test_explode_geodataframe(self, test_index_name, expected_index):
+    @pytest.mark.parametrize("index_name", [None, 'test'])
+    def test_explode_geodataframe(self, index_name):
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
         df = GeoDataFrame({'col': [1, 2], 'geometry': s})
-        df.index.name = test_index_name
+        df.index.name = index_name
+
         test_df = df.explode()
+
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
-        expected_df = GeoDataFrame({'geometry': expected_s, 'col':[1, 1, 2]})
+        expected_df = GeoDataFrame({'geometry': expected_s, 'col': [1, 1, 2]})
+        expected_index = MultiIndex(levels=[[0, 1], [0, 1]],
+                                    labels=[[0, 0, 1], [0, 1, 0]],
+                                    names=[index_name, None])
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
