@@ -688,8 +688,8 @@ class GeoPandasBase(object):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        return gpd.GeoSeries(geometries,
-            index=MultiIndex.from_tuples(index)).__finalize__(self)
+        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
 
 class _CoordinateIndexer(_NDFrameIndexer):
