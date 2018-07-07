@@ -501,19 +501,33 @@ class TestGeomMethods:
                            'col1': range(len(self.landmarks))})
         assert tuple(df.total_bounds) == bbox
 
-    def test_explode(self):
+    def test_explode_geoseries(self):
         s = GeoSeries([MultiPoint([(0, 0), (1, 1)]),
                        MultiPoint([(2, 2), (3, 3), (4, 4)])])
-
+        s.index.name = 'test_index_name'
+        expected_index_name = ['test_index_name', None]
         index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
         expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2),
                               Point(3, 3), Point(4, 4)],
-                             index=MultiIndex.from_tuples(index))
-
+                             index=MultiIndex.from_tuples(
+                                index, names=expected_index_name))
         assert_geoseries_equal(expected, s.explode())
 
-        df = self.gdf1[:2].set_geometry(s)
-        assert_geoseries_equal(expected, df.explode())
+    @pytest.mark.parametrize("index_name", [None, 'test'])
+    def test_explode_geodataframe(self, index_name):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({'col': [1, 2], 'geometry': s})
+        df.index.name = index_name
+
+        test_df = df.explode()
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({'geometry': expected_s, 'col': [1, 1, 2]})
+        expected_index = MultiIndex(levels=[[0, 1], [0, 1]],
+                                    labels=[[0, 0, 1], [0, 1, 0]],
+                                    names=[index_name, None])
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'
