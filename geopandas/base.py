@@ -659,7 +659,8 @@ class GeoPandasBase(object):
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and an integer.
+        original index and a zero-based integer index that counts the 
+        number of single geometries within a multi-part geometry. 
 
         Example
         -------
@@ -687,8 +688,8 @@ class GeoPandasBase(object):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        return gpd.GeoSeries(geometries,
-            index=MultiIndex.from_tuples(index)).__finalize__(self)
+        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
 
 class _CoordinateIndexer(_NDFrameIndexer):

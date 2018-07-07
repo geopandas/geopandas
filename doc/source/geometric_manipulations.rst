@@ -62,7 +62,7 @@ Affine transformations
 
   Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
 
-.. method:: GeoSeries.translate(self, angle, origin='center', use_radians=False)
+.. method:: GeoSeries.translate(self, xoff=0.0, yoff=0.0, zoff=0.0)
 
   Shift the coordinates of the GeoSeries.
 
