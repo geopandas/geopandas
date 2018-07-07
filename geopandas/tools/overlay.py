@@ -346,8 +346,9 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
         raise NotImplementedError("overlay currently only implemented for "
                                   "GeoDataFrames")
 
-    if (not df1.geom_type.isin(['Polygon', 'MultiPolygon']).all()
-            or not df2.geom_type.isin(['Polygon', 'MultiPolygon']).all()):
+    accepted_types = ['Polygon', 'MultiPolygon']
+    if (not df1.geom_type.isin(accepted_types).all()
+            or not df2.geom_type.isin(accepted_types).all()):
         raise TypeError("overlay only takes GeoDataFrames with (multi)polygon "
                         " geometries.")
 
@@ -361,23 +362,17 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
                       "projection of first GeoPandas GeoDataFrame",
                       UserWarning)
         df2.to_crs(crs=df1.crs, inplace=True)
-    if how == 'intersection':
-        result = overlay_intersection(df1, df2)
-        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
-        return result
-    elif how == 'difference':
+    if how == 'difference':
         return overlay_difference(df1, df2)
+    elif how == 'intersection':
+        result = overlay_intersection(df1, df2)
     elif how == 'symmetric_difference':
         result = overlay_symmetric_diff(df1, df2)
-        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
-        return result
     elif how == 'union':
         result = overlay_union(df1, df2)
-        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
-        return result
     elif how == 'identity':
         dfunion = overlay_union(df1, df2)
         result = dfunion[dfunion['__idx1'].notna()].copy()
         result.reset_index(drop=True, inplace=True)
-        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
-        return result
+    result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+    return result
