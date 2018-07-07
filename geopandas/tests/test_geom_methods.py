@@ -522,7 +522,7 @@ class TestGeomMethods:
         test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
-        expected_df = GeoDataFrame({'geometry': expected_s, 'col': [1, 1, 2]})
+        expected_df = GeoDataFrame({'col': [1, 1, 2], 'geometry': expected_s})
         expected_index = MultiIndex(levels=[[0, 1], [0, 1]],
                                     labels=[[0, 0, 1], [0, 1, 0]],
                                     names=[index_name, None])

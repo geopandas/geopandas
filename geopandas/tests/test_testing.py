@@ -12,8 +12,8 @@ s1 = GeoSeries([Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
 s2 = GeoSeries([Polygon([(0, 2), (0, 0), (2, 0), (2, 2)]),
                 Polygon([(2, 2), (4, 2), (4, 4), (2, 4)])])
 
-df1 = GeoDataFrame({'geometry': s1, 'col1': [1, 2]})
-df2 = GeoDataFrame({'geometry': s2, 'col1': [1, 2]})
+df1 = GeoDataFrame({'col1': [1, 2], 'geometry': s1})
+df2 = GeoDataFrame({'col1': [1, 2], 'geometry': s2})
 
 
 def test_geoseries():
