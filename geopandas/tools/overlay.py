@@ -372,7 +372,7 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
         result = overlay_union(df1, df2)
     elif how == 'identity':
         dfunion = overlay_union(df1, df2)
-        result = dfunion[dfunion['__idx1'].notna()].copy()
+        result = dfunion[dfunion['__idx1'].notnull()].copy()
         result.reset_index(drop=True, inplace=True)
     result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
     return result
