@@ -49,6 +49,23 @@ def connect(dbname):
     return con
 
 
+def connect_sqlalchemy():
+    """Try to create a sqlalchemy connection, raise skip in case of failure."""
+
+    try:
+        import sqlalchemy
+    except ImportError:
+        raise pytest.skip()
+
+    engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
+    try:
+        con = engine.connect()
+    except sqlalchemy.exc.OperationalError:
+        raise pytest.skip()
+
+    return con
+
+
 def create_sqlite(df, filename, geom_col="geom"):
     """
     Create a sqlite database with the nybb table. This was the result of

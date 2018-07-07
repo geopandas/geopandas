@@ -12,7 +12,7 @@ import geopandas
 from geopandas import read_postgis, read_file
 from geopandas.io.sql import read_sql
 from geopandas.tests.util import (connect, create_postgis, create_sqlite,
-                                  validate_boro_df)
+                                  validate_boro_df, connect_sqlalchemy)
 
 
 @pytest.fixture
@@ -34,23 +34,6 @@ def test_read_sqlite(tmpdir, nybb_df):
     validate_boro_df(sqlite_df)
 
 
-def sqlalchemy_connect():
-    """Try to create a sqlalchemy connection, raise skip in case of failure."""
-
-    try:
-        import sqlalchemy
-    except ImportError:
-        raise pytest.skip()
-
-    engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
-    try:
-        con = engine.connect()
-    except sqlalchemy.exc.OperationalError:
-        raise pytest.skip()
-
-    return con
-
-
 class TestIO:
     def setup_method(self):
         nybb_zip_path = geopandas.datasets.get_path('nybb')
@@ -61,7 +44,7 @@ class TestIO:
 
     def test_to_postgis(self):
 
-        con = sqlalchemy_connect()
+        con = connect_sqlalchemy()
 
         try:
             db_name = "nybb_write"
@@ -74,7 +57,7 @@ class TestIO:
 
     def test_to_postgis_set_srid(self):
 
-        con = sqlalchemy_connect()
+        con = connect_sqlalchemy()
 
         crs = {"init": "epsg:4326"}
         df_reproj = self.df.to_crs(crs)
@@ -92,7 +75,7 @@ class TestIO:
 
     def test_to_postgis_no_srid(self):
 
-        con = sqlalchemy_connect()
+        con = connect_sqlalchemy()
 
         df_noproj = self.df.copy()
         df_noproj.crs = None
