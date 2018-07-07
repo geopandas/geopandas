@@ -117,17 +117,22 @@ class TestSpatialJoin:
 
         assert_frame_equal(res, exp)
 
-        # Check empty joins on left
-        polygons = geopandas.GeoDataFrame({'col2': [1, 2], 
-                                           'geometry':  [Polygon([(0, 0), (1, 0), 
-                                                                  (1, 1), (0, 1)]), 
-                                                         Polygon([(1, 0), (2, 0), 
-                                                                  (2, 1), (1, 1)])
-                                                         ]})
-        not_in = geopandas.GeoDataFrame({'col1': [1], 
-                                         'geometry': [Point(-0.5, 0.5)]})
-        empty = sjoin(not_in, polygons, how='left', op='intersects')
-        assert empty.index_right.isnull().all()
+    def test_empty_join(self):
+            # Check empty joins on left
+            polygons = geopandas.GeoDataFrame({'col2': [1, 2], 
+                                               'geometry':  [Polygon([(0, 0), (1, 0), 
+                                                                      (1, 1), (0, 1)]), 
+                                                             Polygon([(1, 0), (2, 0), 
+                                                                      (2, 1), (1, 1)])
+                                                             ]})
+            not_in = geopandas.GeoDataFrame({'col1': [1], 
+                                             'geometry': [Point(-0.5, 0.5)]})
+            empty = sjoin(not_in, polygons, how='left', op='intersects')
+            assert empty.index_right.isnull().all()
+            empty = sjoin(not_in, polygons, how='right', op='intersects')
+            assert empty.index_left.isnull().all()
+            empty = sjoin(not_in, polygons, how='inner', op='intersects')
+            assert empty.empty
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
