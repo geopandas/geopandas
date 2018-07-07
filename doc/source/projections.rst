@@ -16,7 +16,7 @@ Coordinate Reference Systems
 
 CRS are important because the geometric shapes in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in an arbitrary space. A CRS tells Python how those coordinates related to places on the Earth.
 
-CRS are referred to using codes called `proj4 strings <https://en.wikipedia.org/wiki/PROJ.4>`_. You can find the codes for most commonly used projections from `www.spatialreference.org <http://spatialreference.org/>`_ or `remotesensing.org <http://www.remotesensing.org/geotiff/proj_list/>`_.
+CRS are referred to using codes called `proj4 strings <https://en.wikipedia.org/wiki/PROJ.4>`_. You can find the codes for most commonly used projections from `www.spatialreference.org <http://spatialreference.org/>`_.
 
 The same CRS can often be referred to in many ways. For example, one of the most commonly used CRS is the WGS84 latitude-longitude projection. One `proj4` representation of this projection is: ``"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"``. But common projections can also be referred to by `EPSG` codes, so this same projection can also called using the `proj4` string ``"+init=epsg:4326"``.
 
@@ -61,11 +61,13 @@ Re-projecting is the process of changing the representation of locations from on
     world.crs
 
     # Visualize
-    @savefig world_starting.png width=3in
-    world.plot();
+    ax = world.plot()
+    @savefig world_starting.png
+    ax.set_title("WGS84 (lat/lon)");
 
     # Reproject to Mercator (after dropping Antartica)
     world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
     world = world.to_crs({'init': 'epsg:3395'}) # world.to_crs(epsg=3395) would also work
-    @savefig world_reproj.png width=3in
-    world.plot();
+    ax = world.plot()
+    @savefig world_reproj.png
+    ax.set_title("Mercator");
