@@ -276,8 +276,8 @@ def overlay_symmetric_diff(df1, df2):
     dfsym = dfdiff1.merge(dfdiff2, on=['__idx1', '__idx2'], how='outer',
                           suffixes=['_1', '_2'])
     geometry = dfsym.geometry_1.copy()
-    geometry[dfsym.geometry_1.isna()] = \
-        dfsym.loc[dfsym.geometry_1.isna(), 'geometry_2']
+    geometry[dfsym.geometry_1.isnull()] = \
+        dfsym.loc[dfsym.geometry_1.isnull(), 'geometry_2']
     dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
