@@ -2,6 +2,7 @@ import functools
 
 import fiona.crs
 import pandas as pd
+from pandas.io import sql as pdsql
 import shapely.wkb
 
 from geopandas import GeoSeries, GeoDataFrame
@@ -82,6 +83,9 @@ def get_srid(crs):
         If unsuccessful, returns None.
     """
 
+    if not crs:
+        return
+
     if isinstance(crs, str):
         crs = fiona.crs.from_string(crs)
 
@@ -102,7 +106,7 @@ def to_postgis(df, name, con, hex_encoded=True, **kwargs):
     df : geodataframe
     name : str
         Name of table in database
-    con : SQLAlchemy engine
+    engine : SQLAlchemy engine
 
     **kwargs are passed to pandas.to_sql; see documentation for available
     parameters
@@ -117,12 +121,12 @@ def to_postgis(df, name, con, hex_encoded=True, **kwargs):
     temp_df[temp_df.geometry.name] = geom.apply(convert_geometry)
     temp_df.to_sql(name, con, **kwargs)
     alter_args = {"name": name, "geom_name": temp_df.geometry.name}
-    alter_cmd = "ALTER TABLE {name} ALTER COLUMN {geom_name} TYPE geometry;"
-    con.execute(alter_cmd.format(**alter_args))
-
+    alter_cmd = "ALTER TABLE {name} ALTER COLUMN {geom_name} TYPE geometry"
     srid = get_srid(df.crs)
+
     if srid is not None:
-        srid_cmd = "SELECT UpdateGeometrySRID('{name}', '{geom_name}', {srid});"
+        alter_cmd += " USING ST_SetSRID({geom_name}, {srid})"
         alter_args["srid"] = srid
-        print(srid_cmd.format(**alter_args))
-        con.execute(srid_cmd.format(**alter_args))
+
+    alter_cmd += ";"
+    pdsql.execute(alter_cmd.format(**alter_args), con)

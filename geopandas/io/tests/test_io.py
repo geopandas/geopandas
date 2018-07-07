@@ -34,6 +34,23 @@ def test_read_sqlite(tmpdir, nybb_df):
     validate_boro_df(sqlite_df)
 
 
+def sqlalchemy_connect():
+    """Try to create a sqlalchemy connection, raise skip in case of failure."""
+
+    try:
+        import sqlalchemy
+    except ImportError:
+        raise pytest.skip()
+
+    engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
+    try:
+        con = engine.connect()
+    except sqlalchemy.exc.OperationalError:
+        raise pytest.skip()
+
+    return con
+
+
 class TestIO:
     def setup_method(self):
         nybb_zip_path = geopandas.datasets.get_path('nybb')
@@ -43,26 +60,52 @@ class TestIO:
             self.columns = list(f.meta["schema"]["properties"].keys())
 
     def test_to_postgis(self):
-        try:
-            import sqlalchemy
-        except ImportError:
-            raise unittest.case.SkipTest()
 
-        engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
-        try:
-            con = engine.connect()
-        except sqlalchemy.exc.OperationalError:
-            raise unittest.case.SkipTest()
+        con = sqlalchemy_connect()
 
         try:
             db_name = "nybb_write"
-            self.df.to_postgis(db_name, engine, if_exists="replace")
-            back = read_postgis("SELECT * FROM {};".format(db_name), engine,
+            self.df.to_postgis(db_name, con, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), con,
                                 geom_col="geometry")
         finally:
             con.close()
-        back = back.rename(columns=lambda x: x.lower())
-        validate_boro_df(self, back)
+        validate_boro_df(back)
+
+    def test_to_postgis_set_srid(self):
+
+        con = sqlalchemy_connect()
+
+        crs = {"init": "epsg:4326"}
+        df_reproj = self.df.to_crs(crs)
+
+        try:
+            db_name = "nybb4326_write"
+            df_reproj.to_postgis(db_name, con, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), con,
+                                geom_col="geometry")
+        finally:
+            con.close()
+
+        validate_boro_df(back)
+        assert back.crs == crs
+
+    def test_to_postgis_no_srid(self):
+
+        con = sqlalchemy_connect()
+
+        df_noproj = self.df.copy()
+        df_noproj.crs = None
+
+        try:
+            db_name = "nybb_nocrs_write"
+            df_noproj.to_postgis(db_name, con, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), con,
+                                geom_col="geometry")
+        finally:
+            con.close()
+        validate_boro_df(back)
+        assert back.crs is None
 
     def test_read_postgis_default(self):
         con = connect('test_geopandas')
