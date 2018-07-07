@@ -265,8 +265,8 @@ def overlay_symmetric_diff(df1, df2):
     """
     dfdiff1 = overlay_difference(df1, df2)
     dfdiff2 = overlay_difference(df2, df1)
-    dfdiff1['__idx1'] = dfdiff1.index
-    dfdiff2['__idx2'] = dfdiff2.index
+    dfdiff1['__idx1'] = range(len(dfdiff1))
+    dfdiff2['__idx2'] = range(len(dfdiff2))
     dfdiff1['__idx2'] = np.nan
     dfdiff2['__idx1'] = np.nan
     # ensure geometry name (otherwise merge goes wrong)
