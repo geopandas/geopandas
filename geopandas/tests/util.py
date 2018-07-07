@@ -1,4 +1,5 @@
 import os.path
+import pytest
 import sqlite3
 
 import shapely.wkb
