@@ -72,7 +72,7 @@ def read_file(filename, bbox=None, **kwargs):
         else:
             f_filt = features
 
-        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+        columns = list(features.meta["schema"]["properties"]) + [six.text_type("geometry")]
         gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
