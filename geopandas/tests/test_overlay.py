@@ -81,14 +81,14 @@ def test_overlay(dfs_index, how, use_sindex):
     elif how == 'difference':
         result = result.reset_index(drop=True)
 
-    assert_geodataframe_equal(result, expected)
+    assert_geodataframe_equal(result, expected, check_column_type=False)
 
     # for difference also reversed
     if how == 'difference':
         result = overlay(df2, df1, how=how, use_sindex=use_sindex)
         result = result.reset_index(drop=True)
         expected = _read('difference-inverse')
-        assert_geodataframe_equal(result, expected)
+        assert_geodataframe_equal(result, expected, check_column_type=False)
 
 
 def test_overlay_nybb(how):
@@ -147,7 +147,8 @@ def test_overlay_nybb(how):
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)
 
-    assert_geodataframe_equal(result, expected, check_crs=False)
+    assert_geodataframe_equal(result, expected, check_crs=False,
+                              check_column_type=False,)
 
 
 def test_overlay_overlap(how):
@@ -197,7 +198,7 @@ def test_overlay_overlap(how):
     if how == 'union':
         result = result.sort_values(['col1', 'col2']).reset_index(drop=True)
 
-    assert_geodataframe_equal(result, expected,
+    assert_geodataframe_equal(result, expected, check_column_type=False,
                               check_less_precise=True)
 
 
