@@ -274,3 +274,14 @@ def test_geoseries_warning(dfs):
     # Issue #305
     with pytest.raises(NotImplementedError):
         overlay(df1, df2.geometry, how="union")
+
+
+def test_preserve_crs(dfs, how):
+    df1, df2 = dfs
+    result = overlay(df1, df2, how=how)
+    assert result.crs is None
+    crs = {'init': 'epsg:4326'}
+    df1.crs = crs
+    df2.crs = crs
+    result = overlay(df1, df2, how=how)
+    assert result.crs == crs

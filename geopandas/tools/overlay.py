@@ -298,8 +298,7 @@ def overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
-            use_sindex=None):
+def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -313,9 +312,6 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
     how : string
         Method of spatial overlay: 'intersection', 'union',
         'identity', 'symmetric_difference' or 'difference'.
-    reproject : boolean, default True
-        If GeoDataFrames do not have same projection, reproject
-        df2 to same projection of df1 before performing overlay
 
     Returns
     -------
@@ -357,11 +353,7 @@ def overlay(df1, df2, how='intersection', make_valid=True, reproject=True,
     df2 = df2.copy()
     df1[df1._geometry_column_name] = df1.geometry.buffer(0)
     df2[df2._geometry_column_name] = df2.geometry.buffer(0)
-    if df1.crs != df2.crs and reproject:
-        warnings.warn("Data has different projections. Converted data to "
-                      "projection of first GeoPandas GeoDataFrame",
-                      UserWarning)
-        df2.to_crs(crs=df1.crs, inplace=True)
+
     if how == 'difference':
         return overlay_difference(df1, df2)
     elif how == 'intersection':
