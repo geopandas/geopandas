@@ -77,7 +77,12 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
 
     collection : matplotlib.collections.Collection that was plotted
     """
-    from descartes.patch import PolygonPatch
+
+    try:
+        from descartes.patch import PolygonPatch
+    except ImportError:
+        raise ImportError("The descartes package is required"
+                          " for plotting polygons in geopandas.")
     from matplotlib.collections import PatchCollection
 
     geoms, values = _flatten_multi_geoms(geoms, values)
