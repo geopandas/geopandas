@@ -195,7 +195,7 @@ def _ensure_geometry_column(df):
         df.set_geometry('geometry', inplace=True)
 
 
-def overlay_intersection(df1, df2):
+def _overlay_intersection(df1, df2):
     """
     Overlay Intersection operation used in overlay function
     """
@@ -238,7 +238,7 @@ def overlay_intersection(df1, df2):
             crs=df1.crs)
 
 
-def overlay_difference(df1, df2):
+def _overlay_difference(df1, df2):
     """
     Overlay Difference operation used in overlay function
     """
@@ -259,12 +259,12 @@ def overlay_difference(df1, df2):
     return dfdiff
 
 
-def overlay_symmetric_diff(df1, df2):
+def _overlay_symmetric_diff(df1, df2):
     """
     Overlay Symmetric Difference operation used in overlay function
     """
-    dfdiff1 = overlay_difference(df1, df2)
-    dfdiff2 = overlay_difference(df2, df1)
+    dfdiff1 = _overlay_difference(df1, df2)
+    dfdiff2 = _overlay_difference(df2, df1)
     dfdiff1['__idx1'] = range(len(dfdiff1))
     dfdiff2['__idx2'] = range(len(dfdiff2))
     dfdiff1['__idx2'] = np.nan
@@ -284,12 +284,12 @@ def overlay_symmetric_diff(df1, df2):
     return dfsym
 
 
-def overlay_union(df1, df2):
+def _overlay_union(df1, df2):
     """
     Overlay Union operation used in overlay function
     """
-    dfinter = overlay_intersection(df1, df2)
-    dfsym = overlay_symmetric_diff(df1, df2)
+    dfinter = _overlay_intersection(df1, df2)
+    dfsym = _overlay_symmetric_diff(df1, df2)
     dfunion = pd.concat([dfinter, dfsym], ignore_index=True)
     # keep geometry column last
     columns = list(dfunion.columns)
@@ -355,15 +355,15 @@ def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
     df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
     if how == 'difference':
-        return overlay_difference(df1, df2)
+        return _overlay_difference(df1, df2)
     elif how == 'intersection':
-        result = overlay_intersection(df1, df2)
+        result = _overlay_intersection(df1, df2)
     elif how == 'symmetric_difference':
-        result = overlay_symmetric_diff(df1, df2)
+        result = _overlay_symmetric_diff(df1, df2)
     elif how == 'union':
-        result = overlay_union(df1, df2)
+        result = _overlay_union(df1, df2)
     elif how == 'identity':
-        dfunion = overlay_union(df1, df2)
+        dfunion = _overlay_union(df1, df2)
         result = dfunion[dfunion['__idx1'].notnull()].copy()
         result.reset_index(drop=True, inplace=True)
     result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
