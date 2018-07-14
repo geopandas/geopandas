@@ -14,17 +14,16 @@ library refer to `its documentation
 
 First we'll load in the data using GeoPandas.
 """
-import geopandas as gpd
-from cartopy import crs as ccrs
+import geopandas
 
-path = gpd.datasets.get_path('naturalearth_lowres')
-df = gpd.read_file(path)
+path = geopandas.datasets.get_path('naturalearth_lowres')
+df = geopandas.read_file(path)
 # Add a column we'll use later
 df['gdp_pp'] = df['gdp_md_est'] / df['pop_est']
 
-boroughs = gpd.read_file(gpd.datasets.get_path('nybb')).to_crs(epsg='4326')
-from quilt.data.ResidentMario import geoplot_data
-injurious_collisions = gpd.read_file(geoplot_data.nyc_injurious_collisions())
+boroughs = geopandas.read_file(geopandas.datasets.get_path('nybb')).to_crs(epsg='4326')
+injurious_collisions = geopandas.read_file(
+    "https://github.com/ResidentMario/geoplot-data/raw/master/nyc-injurious-collisions.geojson")
 
 
 ###############################################################################
@@ -32,9 +31,9 @@ injurious_collisions = gpd.read_file(geoplot_data.nyc_injurious_collisions())
 # =====================
 #
 # We start out by replicating the basic GeoPandas world plot using Geoplot.
+import geoplot
 
-import geoplot as gplt
-gplt.polyplot(df, figsize=(8, 4))
+geoplot.polyplot(df, figsize=(8, 4))
 
 ###############################################################################
 # Geoplot can re-project data into any of the map projections provided by
@@ -42,45 +41,44 @@ gplt.polyplot(df, figsize=(8, 4))
 # `here <http://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_).
 
 import geoplot.crs as gcrs
-ax = gplt.polyplot(df, projection=gcrs.Orthographic(), figsize=(8, 4))
-ax.set_global(); ax.outline_patch.set_visible(True)
+ax = geoplot.polyplot(df, projection=gcrs.Orthographic(), figsize=(8, 4))
+ax.set_global()
+ax.outline_patch.set_visible(True)
 
 ###############################################################################
 # ``polyplot`` is trivial and can only plot the geometries you pass to it. If
 # you want to use color as a visual variable, specify a ``choropleth``. Here
 # we sort GDP per person by country into five buckets by color.
 
-gplt.choropleth(df, hue='gdp_pp', cmap='Greens', figsize=(8, 4))
+geoplot.choropleth(df, hue='gdp_pp', cmap='Greens', figsize=(8, 4))
 
 ###############################################################################
 # If you want to use size as a visual variable, you want a ``cartogram``. Here
 # are population estimates for countries in Africa.
 
-gplt.cartogram(df[df['continent'] == 'Africa'],
-               scale='pop_est', limits=(0.2, 1), figsize=(7, 8))
+geoplot.cartogram(df[df['continent'] == 'Africa'],
+                  scale='pop_est', limits=(0.2, 1), figsize=(7, 8))
 
 ###############################################################################
 # If we have data in the shape of points in space, we may generate a
 # three-dimensional heatmap on it using ``kdeplot``. This example also
 # demonstrates how easy it is to stack plots on top of one another.
 
-import numpy as np; np.random.seed(42)  # set a random seed
-ax = gplt.kdeplot(injurious_collisions.sample(1000),
-                  shade=True, shade_lowest=False,
-                  clip=boroughs.geometry)
-gplt.polyplot(boroughs, ax=ax)
+ax = geoplot.kdeplot(injurious_collisions.sample(1000),
+                     shade=True, shade_lowest=False,
+                     clip=boroughs.geometry)
+geoplot.polyplot(boroughs, ax=ax)
 
 ###############################################################################
 # Alternatively, we may partition the space into neighborhoods automatically,
 # using Voronoi tessellation.
 
-import numpy as np; np.random.seed(42)  # set a random seed
-ax = gplt.voronoi(
+ax = geoplot.voronoi(
     injurious_collisions.sample(1000),
     hue='NUMBER OF PERSONS INJURED', cmap='Reds', scheme='fisher_jenks',
     clip=boroughs.geometry,
     linewidth=0)
-gplt.polyplot(boroughs, ax=ax)
+geoplot.polyplot(boroughs, ax=ax)
 
 ###############################################################################
 # Again, these are just some of the plots you can make with Geoplot. There are
