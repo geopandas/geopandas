@@ -12,7 +12,8 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
 
 
-DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+DATA = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)), 'data', 'overlay')
 
 
 @pytest.fixture
@@ -116,10 +117,10 @@ def test_overlay_nybb(how):
     if how == 'identity':
         # read union one, further down below we take the appropriate subset
         expected = read_file(os.path.join(
-            DATA, 'overlay_nybb_qgis', 'qgis-union.shp'))
+            DATA, 'nybb_qgis', 'qgis-union.shp'))
     else:
         expected = read_file(os.path.join(
-            DATA, 'overlay_nybb_qgis', 'qgis-{0}.shp'.format(how)))
+            DATA, 'nybb_qgis', 'qgis-{0}.shp'.format(how)))
 
     # The result of QGIS for 'union' contains incorrect geometries:
     # 24 is a full original circle overlapping with unioned geometries, and
@@ -178,8 +179,8 @@ def test_overlay_overlap(how):
     (Vector -> Geoprocessing Tools -> Intersection / Union / ...),
     saved to GeoJSON.
     """
-    df1 = read_file(os.path.join(DATA, 'df1_overlap.geojson'))
-    df2 = read_file(os.path.join(DATA, 'df2_overlap.geojson'))
+    df1 = read_file(os.path.join(DATA, 'overlap', 'df1_overlap.geojson'))
+    df2 = read_file(os.path.join(DATA, 'overlap', 'df2_overlap.geojson'))
 
     result = overlay(df1, df2, how=how)
 
@@ -187,7 +188,7 @@ def test_overlay_overlap(how):
         raise pytest.skip()
 
     expected = read_file(os.path.join(
-        DATA, 'df1_df2_overlap-{0}.geojson'.format(how)))
+        DATA, 'overlap', 'df1_df2_overlap-{0}.geojson'.format(how)))
 
     if how == 'union':
         # the QGIS result has the last row duplicated, so removing this
