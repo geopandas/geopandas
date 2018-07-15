@@ -12,7 +12,13 @@ Improvements:
 * Expose all geopy services as options in geocoding (#550)
 * Faster write speeds to GeoPackage (#605)
 * Permit `read_file` filtering with a bounding box from a GeoDataFrame (#613)
+* Set CRS on frames read from SQL databases (#627)
 * Permit setting markersize for Point GeoSeries plots with column values (#633)
+* Add `explode` method to GeoDataFrame (#671)
+* Add support for plotting MultiPoints (#683)
+* Set equal aspect on active axis on multi-axis figures (#718)
+* Pass array of values to column argument in `plot` (#770)
+
 
 Bug fixes :
 
@@ -20,7 +26,8 @@ Bug fixes :
 * Handle plotting empty GeoDataFrame (#571)
 * Save z-dimension when writing files (#652)
 * Handle reading empty shapefiles (#653)
-
+* Explicity set dtype for `Series` returned by geometry operations (#686)
+* Fix empty `sjoin` handling for pandas>=0.23 (#762)
 
 
 Version 0.3.0 (August 29, 2017)
