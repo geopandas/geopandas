@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
@@ -21,8 +21,8 @@ Loading some example data:
 
 .. ipython:: python
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-    cities = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
 We can now plot those GeoDataFrames:
 

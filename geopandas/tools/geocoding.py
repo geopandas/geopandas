@@ -7,7 +7,7 @@ import pandas as pd
 from shapely.geometry import Point
 from six import iteritems, string_types
 
-import geopandas as gpd
+import geopandas
 
 
 def _throttle_time(provider):
@@ -162,7 +162,7 @@ def _prepare_geocode_result(results):
         d['address'].append(address)
         index.append(i)
 
-    df = gpd.GeoDataFrame(d, index=index)
+    df = geopandas.GeoDataFrame(d, index=index)
     df.crs = from_epsg(4326)
 
     return df

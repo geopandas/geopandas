@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
 
 
 Indexing and Selecting Data
@@ -23,7 +23,7 @@ countries whose boundaries extend into the southern hemisphere.
 
 .. ipython:: python
 
-   world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
    southern_world = world.cx[:, :0]
    @savefig world_southern.png
    southern_world.plot(figsize=(10, 3));

@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
 
 
 Managing Projections
@@ -54,7 +54,7 @@ Re-projecting is the process of changing the representation of locations from on
 .. ipython:: python
 
     # load example data
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 
     # Check original projection
     # (it's Platte Carre! x-y are long and lat)
