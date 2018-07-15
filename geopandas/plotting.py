@@ -77,7 +77,12 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
 
     collection : matplotlib.collections.Collection that was plotted
     """
-    from descartes.patch import PolygonPatch
+
+    try:
+        from descartes.patch import PolygonPatch
+    except ImportError:
+        raise ImportError("The descartes package is required"
+                          " for plotting polygons in geopandas.")
     from matplotlib.collections import PatchCollection
 
     geoms, values = _flatten_multi_geoms(geoms, values)
@@ -251,7 +256,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     import matplotlib.pyplot as plt
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    ax.set_aspect('equal')
 
     if s.empty:
         warnings.warn("The GeoSeries you are attempting to plot is "
@@ -390,7 +395,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    ax.set_aspect('equal')
 
     if df.empty:
         warnings.warn("The GeoDataFrame you are attempting to plot is "
