@@ -330,9 +330,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         geometries can be plotted.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
-        If np.array or pd.Series are used then it must have same lenght as
-        dataframe. Values are used to color the plot.Ignored if `color` is
-        also set.
+        If np.array or pd.Series are used then it must have same length as
+        dataframe. Values are used to color the plot if `color` is also set.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -413,12 +412,12 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                            figsize=figsize, markersize=markersize,
                            **style_kwds)
 
-    # To accept series and nparrays as column
+    # To accept pd.Series and np.arrays as column
     if isinstance(column, (np.ndarray, pd.Series)) :
         if column.shape[0] != df.shape[0] :
             raise ValueError("The dataframe and given column have different "
                              "number of rows.")
-        else :
+        else:
             values = np.asarray(column)
     else:
         values = np.asarray(df[column])
@@ -507,10 +506,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             ax.get_figure().colorbar(n_cmap, ax=ax)
 
     plt.draw()
-
-
     return ax
-
 
 
 def __pysal_choro(values, scheme, k=5):
