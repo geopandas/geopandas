@@ -114,7 +114,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
     else:
         # when output from the join has no overlapping geometries
-        result = pd.DataFrame(columns=['_key_left', '_key_right'])
+        result = pd.DataFrame(columns=['_key_left', '_key_right'], dtype=float)
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
