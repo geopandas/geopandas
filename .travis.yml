@@ -37,7 +37,7 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes --set changeps1 no
   - conda update conda
-  - if [ -n "$CHANNEL" ]; conda config --add channels $CHANNEL; fi
+  - if [ -n "$CHANNEL" ]; then conda config --add channels $CHANNEL; fi
 
   # Install dependencies
   - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy codecov pytest-cov mock
