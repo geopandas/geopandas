@@ -633,10 +633,10 @@ class TestPlotCollections:
 
 
 def test_column_values():
-    '''
+    """
     Check that the dataframe plot method returns same values with an
     input string (column in df), pd.Series, or np.array
-    '''
+    """
     # Build test data
     t1 = Polygon([(0, 0), (1, 0), (1, 1)])
     t2 = Polygon([(1, 0), (2, 0), (2, 1)])
@@ -652,7 +652,6 @@ def test_column_values():
     ax = df.plot(column=df['values'].values)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
-
 
     # Test with categorical values
     ax = df.plot(column='values', categorical=True)
