@@ -21,5 +21,6 @@ dependencies:
 - mock
 - cartopy
 - contextily
+- geoplot
 - sphinx-gallery
 - jinja2
