@@ -7,13 +7,13 @@ matrix:
   include:
     # Only one test for these Python versions
     - python: 3.4
-      env: PANDAS=0.19.2 MATPLOTLIB=1.4.3 SHAPELY=1.5.17
+      env: PANDAS=0.19.2 MATPLOTLIB=1.4.3 SHAPELY=1.5
     - python: 3.5
       env: PANDAS=0.20.2 MATPLOTLIB=1.5.3
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5.17
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5
     - python: 2.7
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
     - python: 2.7
@@ -23,7 +23,7 @@ matrix:
     - python: 2.7
 
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5.17
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5
     - python: 3.6
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
     - python: 3.6
@@ -43,7 +43,7 @@ install:
   - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy codecov pytest-cov mock
   - source activate test-geopandas
   - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
-  - if [ -n "$SHAPELY" ]; then conda install shapely==$SHAPELY; else conda install shapely; fi
+  - if [ -n "$SHAPELY" ]; then conda install shapely=$SHAPELY; else conda install shapely; fi
   - conda install pysal pyproj fiona descartes rtree
 
   - if [[ $PANDAS != 'master' ]]; then conda install pandas==$PANDAS; fi
