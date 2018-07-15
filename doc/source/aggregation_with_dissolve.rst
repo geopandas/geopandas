@@ -1,7 +1,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
@@ -26,7 +26,7 @@ First, let's look at the most simple case where we just want continent shapes an
 
 .. ipython:: python
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
     world = world[['continent', 'geometry']]
     continents = world.dissolve(by='continent')
 
@@ -39,7 +39,7 @@ If we are interested in aggregate populations, however, we can pass different fu
 
 .. ipython:: python
 
-   world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
    world = world[['continent', 'geometry', 'pop_est']]
    continents = world.dissolve(by='continent', aggfunc='sum')
 

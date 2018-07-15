@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
 
 
 Merging Data
@@ -19,8 +19,8 @@ In the following examples, we use these datasets:
 
 .. ipython:: python
 
-   world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-   cities = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+   cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
    # For attribute join
    country_shapes = world[['geometry', 'iso_a3']]
@@ -68,7 +68,7 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 
    # Execute spatial join
 
-   cities_with_country = gpd.sjoin(cities, countries, how="inner", op='intersects')
+   cities_with_country = geopandas.sjoin(cities, countries, how="inner", op='intersects')
    cities_with_country.head()
 
 
