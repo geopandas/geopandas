@@ -2,6 +2,8 @@
    :suppress:
 
    import geopandas
+   import matplotlib.pyplot as plt
+   plt.close('all')
 
 
 Set-Operations with Overlay
@@ -182,6 +184,11 @@ Changing the "how" option allows for different types of overlay operations. For 
    country_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 
+.. ipython:: python
+    :suppress:
+
+    import matplotlib.pyplot as plt
+    plt.close('all')
 
 
 More Examples

@@ -7,7 +7,8 @@
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
-
+   import matplotlib.pyplot as plt
+   plt.close('all')
 
 
 Mapping Tools
@@ -128,3 +129,10 @@ Links to jupyter Notebooks for different mapping tasks:
     :suppress:
 
     matplotlib.rcParams['figure.figsize'] = orig
+
+
+.. ipython:: python
+    :suppress:
+
+    import matplotlib.pyplot as plt
+    plt.close('all')
