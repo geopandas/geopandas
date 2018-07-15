@@ -7,7 +7,7 @@ matrix:
   include:
     # Only one test for these Python versions
     - python: 3.4
-      env: PANDAS=0.19.2 MATPLOTLIB=1.4.3 SHAPELY=1.5
+      env: PANDAS=0.19.2 MATPLOTLIB=1.4.3 SHAPELY=1.5 CHANNEL=conda-forge
     - python: 3.5
       env: PANDAS=0.20.2 MATPLOTLIB=1.5.3
 
@@ -20,10 +20,9 @@ matrix:
       env: PANDAS=0.23.2  MATPLOTLIB=2.1.2
     - python: 2.7
       env: PANDAS=master  MATPLOTLIB=2.2.2
-    - python: 2.7
 
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5 CHANNEL=conda-forge
     - python: 3.6
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
     - python: 3.6
@@ -38,6 +37,7 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes --set changeps1 no
   - conda update conda
+  - if [ -n "$CHANNEL" ]; conda config --add channels $CHANNEL; fi
 
   # Install dependencies
   - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy codecov pytest-cov mock
@@ -47,7 +47,7 @@ install:
   - conda install pysal pyproj fiona descartes rtree
 
   - if [[ $PANDAS != 'master' ]]; then conda install pandas==$PANDAS; fi
-  - if [[ $PANDAS == 'master' ]]; then conda install pandas; pip install git+https://github.com/pydata/pandas.git; fi
+  - if [[ $PANDAS == 'master' ]]; then conda install pandas cython; pip install git+https://github.com/pydata/pandas.git; fi
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
