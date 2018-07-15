@@ -1,13 +1,11 @@
-import functools
-
 import pandas as pd
 import shapely.wkb
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame
 
 
-def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
-             index_col=None, coerce_float=True, params=None):
+def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
+                 index_col=None, coerce_float=True, params=None):
     """
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column.
@@ -65,6 +63,3 @@ def read_sql(sql, con, geom_col='geom', crs=None, hex_encoded=True,
                 crs = {"init": "epsg:{}".format(srid)}
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
-
-
-read_postgis = functools.partial(read_sql, hex_encoded=True)
