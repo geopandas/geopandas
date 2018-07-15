@@ -133,7 +133,7 @@ def test_overlay_nybb(how):
     expected.reset_index(inplace=True, drop=True)
 
     if how == 'identity':
-        expected = expected[expected.BoroCode.notna()].copy()
+        expected = expected[expected.BoroCode.notnull()].copy()
 
     # Order GeoDataFrames
     expected = expected.sort_values(cols).reset_index(drop=True)
