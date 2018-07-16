@@ -23,10 +23,18 @@ to multiple geometries to shapely.  GeoPandas enables you to easily do
 operations in python that would otherwise require a spatial database
 such as PostGIS.
 
+
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
+  :caption: Getting Started
 
   Installation <install>
+  Examples Gallery <gallery/index>
+
+.. toctree::
+  :maxdepth: 1
+  :caption: User Guide
+
   Data Structures <data_structures>
   Reading and Writing Files <io>
   Indexing and Selecting Data <indexing>
@@ -37,9 +45,20 @@ such as PostGIS.
   Aggregation with dissolve <aggregation_with_dissolve>
   Merging Data <mergingdata>
   Geocoding <geocoding>
+
+.. toctree::
+  :maxdepth: 1
+  :caption: Reference Guide
+
   Reference to All Attributes and Methods <reference>
+
+
+.. toctree::
+  :maxdepth: 1
+  :caption: Developer
+
   Contributing to GeoPandas <contributing>
-  About <about>
+
 
 Indices and tables
 ==================

@@ -1,3 +1,5 @@
+.. _geometric_manipulations:
+
 Geometric Manipulations
 ========================
 
@@ -60,7 +62,7 @@ Affine transformations
 
   Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
 
-.. method:: GeoSeries.translate(self, angle, origin='center', use_radians=False)
+.. method:: GeoSeries.translate(self, xoff=0.0, yoff=0.0, zoff=0.0)
 
   Shift the coordinates of the GeoSeries.
 
@@ -118,8 +120,8 @@ GeoPandas also implements alternate constructors that can read any data format r
 
     >>> nybb_path = geopandas.datasets.get_path('nybb')
     >>> boros = GeoDataFrame.from_file(nybb_path)
-    >>> boros.set_index('BoroCode', inplace=True)
-    >>> boros.sort()
+    >>> boros = boros.set_index('BoroCode')
+    >>> boros = boros.sort_index()
     >>> boros
                    BoroName    Shape_Area     Shape_Leng  \
     BoroCode

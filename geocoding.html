@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geocoding &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Geocoding &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Reference" href="reference.html"/>
         <link rel="prev" title="Merging Data" href="mergingdata.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -104,9 +111,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -172,19 +184,50 @@
             
   <div class="section" id="geocoding">
 <h1>Geocoding<a class="headerlink" href="#geocoding" title="Permalink to this headline">¶</a></h1>
-<p>[TO BE COMPLETED]</p>
-<dl class="function">
-<dt id="geopandas.geocode.geocode">
-<code class="descclassname">geopandas.geocode.</code><code class="descname">geocode</code><span class="sig-paren">(</span><em>strings</em>, <em>provider='googlev3'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.geocode.geocode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Geocode a list of strings and return a GeoDataFrame containing the
-resulting points in its <code class="docutils literal"><span class="pre">geometry</span></code> column.  Available
-<code class="docutils literal"><span class="pre">provider``s</span> <span class="pre">include</span> <span class="pre">``googlev3</span></code>, <code class="docutils literal"><span class="pre">bing</span></code>, <code class="docutils literal"><span class="pre">google</span></code>, <code class="docutils literal"><span class="pre">yahoo</span></code>,
-<code class="docutils literal"><span class="pre">mapquest</span></code>, and <code class="docutils literal"><span class="pre">openmapquest</span></code>.  <code class="docutils literal"><span class="pre">**kwargs</span></code> will be passed as
-parameters to the appropriate geocoder.</p>
-<p>Requires <a href="#id1"><span class="problematic" id="id2">`geopy`_</span></a>.  Please consult the Terms of Service for the
-chosen provider.</p>
-</dd></dl>
+<p><code class="docutils literal"><span class="pre">geopandas</span></code> supports geocoding (i.e., converting place names to
+location on Earth) through <a class="reference external" href="http://geopy.readthedocs.io/">geopy</a>, an optional dependency of <code class="docutils literal"><span class="pre">geopandas</span></code>.
+The following example shows how to use the <a class="reference external" href="https://developers.google.com/maps/documentation/geocoding/start">Google geocoding API</a> to get the
+locations of boroughs in New York City, and plots those locations along
+with the detailed borough boundary file included within <code class="docutils literal"><span class="pre">geopandas</span></code>.</p>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">boros</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;nybb&quot;</span><span class="p">))</span>
 
+<span class="gp">In [2]: </span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span>
+<span class="gh">Out[2]: </span><span class="go"></span>
+<span class="go">0    Staten Island</span>
+<span class="go">1           Queens</span>
+<span class="go">2         Brooklyn</span>
+<span class="go">3        Manhattan</span>
+<span class="go">4            Bronx</span>
+<span class="go">Name: BoroName, dtype: object</span>
+
+<span class="gp">In [3]: </span><span class="n">boro_locations</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span><span class="p">,</span> <span class="n">provider</span><span class="o">=</span><span class="s2">&quot;google&quot;</span><span class="p">)</span>
+
+<span class="gp">In [4]: </span><span class="n">boro_locations</span>
+<span class="gh">Out[4]: </span><span class="go"></span>
+<span class="go">                                geometry                       address</span>
+<span class="go">0         POINT (-74.1502007 40.5795317)        Staten Island, NY, USA</span>
+<span class="go">1         POINT (-73.7948516 40.7282239)               Queens, NY, USA</span>
+<span class="go">2  POINT (-73.94415789999999 40.6781784)             Brooklyn, NY, USA</span>
+<span class="go">3         POINT (-73.9712488 40.7830603)  Manhattan, New York, NY, USA</span>
+<span class="go">4         POINT (-73.8648268 40.8447819)                Bronx, NY, USA</span>
+
+<span class="gp">In [5]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="gp">In [6]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+<span class="gp">In [7]: </span><span class="n">boros</span><span class="o">.</span><span class="n">to_crs</span><span class="p">({</span><span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="s2">&quot;epsg:4326&quot;</span><span class="p">})</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">);</span>
+
+<span class="gp">In [8]: </span><span class="n">boro_locations</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="_images/boro_centers_over_bounds.png" src="_images/boro_centers_over_bounds.png" />
+<p>The argument to <code class="docutils literal"><span class="pre">provider</span></code> can either be a string referencing geocoding
+services, such as <code class="docutils literal"><span class="pre">'google'</span></code>, <code class="docutils literal"><span class="pre">'bing'</span></code>, <code class="docutils literal"><span class="pre">'yahoo'</span></code>, and
+<code class="docutils literal"><span class="pre">'openmapquest'</span></code>, or an instance of a <code class="docutils literal"><span class="pre">Geocoder</span></code> from <code class="docutils literal"><span class="pre">geopy</span></code>. See
+<code class="docutils literal"><span class="pre">geopy.geocoders.SERVICE_TO_GEOCODER</span></code> for the full list.
+For many providers, parameters such as API keys need to be passed as
+<code class="docutils literal"><span class="pre">**kwargs</span></code> in the <code class="docutils literal"><span class="pre">geocode</span></code> call.</p>
+<p>Please consult the Terms of Service for the chosen provider.</p>
 </div>
 
 
@@ -209,7 +252,7 @@ chosen provider.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -231,7 +274,7 @@ chosen provider.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -1,0 +1,16 @@
+geopandas\.sjoin
+================
+
+
+.. currentmodule:: geopandas
+
+.. autofunction:: sjoin
+
+
+
+.. include:: geopandas.sjoin.examples
+
+.. raw:: html
+
+    <div class="clear"></div>
+

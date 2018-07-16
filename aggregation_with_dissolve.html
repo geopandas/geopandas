@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Aggregation with dissolve &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Aggregation with dissolve &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Merging Data" href="mergingdata.html"/>
         <link rel="prev" title="Set-Operations with Overlay" href="set_operations.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -109,9 +116,14 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -184,7 +196,7 @@
 <h2><code class="docutils literal"><span class="pre">dissolve</span></code> Example<a class="headerlink" href="#dissolve-example" title="Permalink to this headline">¶</a></h2>
 <p>Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in <em>geopandas</em>. We can easily convert this to a continent-level dataset.</p>
 <p>First, let’s look at the most simple case where we just want continent shapes and names. By default, <code class="docutils literal"><span class="pre">dissolve</span></code> will pass <code class="docutils literal"><span class="pre">'first'</span></code> to <code class="docutils literal"><span class="pre">groupby.aggregate</span></code>.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [2]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span>
 
@@ -205,7 +217,7 @@
 </div>
 <img alt="_images/continents1.png" src="_images/continents1.png" />
 <p>If we are interested in aggregate populations, however, we can pass different functions to the <code class="docutils literal"><span class="pre">dissolve</span></code> method to aggregate populations:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [7]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="s1">&#39;pop_est&#39;</span><span class="p">]]</span>
 
@@ -252,7 +264,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -274,7 +286,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reading and Writing Files &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Reading and Writing Files &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Indexing and Selecting Data" href="indexing.html"/>
         <link rel="prev" title="Data Structures" href="data_structures.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reading and Writing Files</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#reading-spatial-data">Reading Spatial Data</a></li>
@@ -108,9 +115,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -175,11 +187,11 @@
            <div itemprop="articleBody">
             
   <div class="section" id="reading-and-writing-files">
-<h1>Reading and Writing Files<a class="headerlink" href="#reading-and-writing-files" title="Permalink to this headline">¶</a></h1>
+<span id="io"></span><h1>Reading and Writing Files<a class="headerlink" href="#reading-and-writing-files" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="reading-spatial-data">
 <h2>Reading Spatial Data<a class="headerlink" href="#reading-spatial-data" title="Permalink to this headline">¶</a></h2>
 <p><em>geopandas</em> can read almost any vector-based spatial data format including ESRI shapefile, GeoJSON files and more using the command:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">()</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>which returns a GeoDataFrame object. (This is possible because <em>geopandas</em> makes use of the great <a class="reference external" href="http://toblerity.org/fiona/manual.html">fiona</a> library, which in turn makes use of a massive open-source program called <a class="reference external" href="http://www.gdal.org/">GDAL/OGR</a> designed to facilitate spatial data transformations).</p>
@@ -188,6 +200,12 @@
 </pre></div>
 </div>
 <p>Among other things, one can explicitly set the driver (shapefile, GeoJSON) with the <code class="docutils literal"><span class="pre">driver</span></code> keyword, or pick a single layer from a multi-layered file with the <code class="docutils literal"><span class="pre">layer</span></code> keyword.</p>
+<p>Where supported in <code class="docutils literal"><span class="pre">fiona</span></code>, <em>geopandas</em> can also load resources directly from
+a web URL, for example for GeoJSON files from <a class="reference external" href="http://geojson.xyz/">geojson.xyz</a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson&quot;</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</pre></div>
+</div>
 <p><em>geopandas</em> can also get data from a PostGIS database using the <code class="docutils literal"><span class="pre">read_postgis()</span></code> command.</p>
 </div>
 <div class="section" id="writing-spatial-data">
@@ -218,7 +236,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -240,7 +258,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

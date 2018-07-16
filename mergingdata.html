@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Merging Data &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Merging Data &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Geocoding" href="geocoding.html"/>
         <link rel="prev" title="Aggregation with dissolve" href="aggregation_with_dissolve.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -108,9 +115,14 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -180,9 +192,9 @@
 <p>In an attribute join, a <code class="docutils literal"><span class="pre">GeoSeries</span></code> or <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> is combined with a regular <em>pandas</em> <code class="docutils literal"><span class="pre">Series</span></code> or <code class="docutils literal"><span class="pre">DataFrame</span></code> based on a common variable. This is analogous to normal merging or joining in <em>pandas</em>.</p>
 <p>In a Spatial Join, observations from to <code class="docutils literal"><span class="pre">GeoSeries</span></code> or <code class="docutils literal"><span class="pre">GeoDataFrames</span></code> are combined based on their spatial relationship to one another.</p>
 <p>In the following examples, we use these datasets:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
-<span class="gp">In [2]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
+<span class="gp">In [2]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
 
 <span class="go"># For attribute join</span>
 <span class="gp">In [3]: </span><span class="n">country_shapes</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="s1">&#39;iso_a3&#39;</span><span class="p">]]</span>
@@ -224,19 +236,14 @@
 
 <span class="gp">In [10]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[10]: </span><span class="go"></span>
-<span class="go">                                            geometry iso_a3  \</span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...    AFG   </span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...    AGO   </span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...    ALB   </span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...    ARE   </span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...    ARG   </span>
+<span class="go">                                            geometry          ...                           name</span>
+<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...          ...                    Afghanistan</span>
+<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...          ...                         Angola</span>
+<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...          ...                        Albania</span>
+<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...          ...           United Arab Emirates</span>
+<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...          ...                      Argentina</span>
 
-<span class="go">                   name  </span>
-<span class="go">0           Afghanistan  </span>
-<span class="go">1                Angola  </span>
-<span class="go">2               Albania  </span>
-<span class="go">3  United Arab Emirates  </span>
-<span class="go">4             Argentina  </span>
+<span class="go">[5 rows x 3 columns]</span>
 </pre></div>
 </div>
 </div>
@@ -264,23 +271,18 @@
 <span class="go">4       Palikir  POINT (158.1499743237623 6.916643696007725)</span>
 
 <span class="go"># Execute spatial join</span>
-<span class="gp">In [13]: </span><span class="n">cities_with_country</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cities</span><span class="p">,</span> <span class="n">countries</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
+<span class="gp">In [13]: </span><span class="n">cities_with_country</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cities</span><span class="p">,</span> <span class="n">countries</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
 
 <span class="gp">In [14]: </span><span class="n">cities_with_country</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[14]: </span><span class="go"></span>
-<span class="go">             name                                     geometry  index_right  \</span>
-<span class="go">0    Vatican City  POINT (12.45338654497177 41.90328217996012)           79   </span>
-<span class="go">1      San Marino    POINT (12.44177015780014 43.936095834768)           79   </span>
-<span class="go">192          Rome    POINT (12.481312562874 41.89790148509894)           79   </span>
-<span class="go">2           Vaduz  POINT (9.516669472907267 47.13372377429357)            9   </span>
-<span class="go">184        Vienna  POINT (16.36469309674374 48.20196113681686)            9   </span>
+<span class="go">             name   ...     country</span>
+<span class="go">0    Vatican City   ...       Italy</span>
+<span class="go">1      San Marino   ...       Italy</span>
+<span class="go">192          Rome   ...       Italy</span>
+<span class="go">2           Vaduz   ...     Austria</span>
+<span class="go">184        Vienna   ...     Austria</span>
 
-<span class="go">     country  </span>
-<span class="go">0      Italy  </span>
-<span class="go">1      Italy  </span>
-<span class="go">192    Italy  </span>
-<span class="go">2    Austria  </span>
-<span class="go">184  Austria  </span>
+<span class="go">[5 rows x 4 columns]</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal"><span class="pre">op</span></code> options determines the type of join operation to apply. <code class="docutils literal"><span class="pre">op</span></code> can be set to “intersects”, “within” or “contains” (these are all equivalent when joining points to polygons, but differ when joining polygons to other polygons or lines).</p>
@@ -310,7 +312,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -332,7 +334,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

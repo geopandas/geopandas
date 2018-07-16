@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Managing Projections &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Managing Projections &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Geometric Manipulations" href="geometric_manipulations.html"/>
         <link rel="prev" title="Mapping Tools" href="mapping.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -109,9 +116,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -180,7 +192,7 @@
 <div class="section" id="coordinate-reference-systems">
 <h2>Coordinate Reference Systems<a class="headerlink" href="#coordinate-reference-systems" title="Permalink to this headline">¶</a></h2>
 <p>CRS are important because the geometric shapes in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in an arbitrary space. A CRS tells Python how those coordinates related to places on the Earth.</p>
-<p>CRS are referred to using codes called <a class="reference external" href="https://en.wikipedia.org/wiki/PROJ.4">proj4 strings</a>. You can find the codes for most commonly used projections from <a class="reference external" href="http://spatialreference.org/">www.spatialreference.org</a> or <a class="reference external" href="http://www.remotesensing.org/geotiff/proj_list/">remotesensing.org</a>.</p>
+<p>CRS are referred to using codes called <a class="reference external" href="https://en.wikipedia.org/wiki/PROJ.4">proj4 strings</a>. You can find the codes for most commonly used projections from <a class="reference external" href="http://spatialreference.org/">www.spatialreference.org</a>.</p>
 <p>The same CRS can often be referred to in many ways. For example, one of the most commonly used CRS is the WGS84 latitude-longitude projection. One <cite>proj4</cite> representation of this projection is: <code class="docutils literal"><span class="pre">&quot;+proj=longlat</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+no_defs&quot;</span></code>. But common projections can also be referred to by <cite>EPSG</cite> codes, so this same projection can also called using the <cite>proj4</cite> string <code class="docutils literal"><span class="pre">&quot;+init=epsg:4326&quot;</span></code>.</p>
 <p><em>geopandas</em> can accept lots of representations of CRS, including the <cite>proj4</cite> string itself (<code class="docutils literal"><span class="pre">&quot;+proj=longlat</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+no_defs&quot;</span></code>) or parameters broken out in a dictionary: <code class="docutils literal"><span class="pre">{'proj':</span> <span class="pre">'latlong',</span> <span class="pre">'ellps':</span> <span class="pre">'WGS84',</span> <span class="pre">'datum':</span> <span class="pre">'WGS84',</span> <span class="pre">'no_defs':</span> <span class="pre">True}</span></code>). In addition, some functions will take <cite>EPSG</cite> codes directly.</p>
 <p>For reference, a few very common projections and their proj4 strings:</p>
@@ -205,7 +217,7 @@
 <h2>Re-Projecting<a class="headerlink" href="#re-projecting" title="Permalink to this headline">¶</a></h2>
 <p>Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane <a class="reference external" href="https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F">are distortions</a>, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the <code class="docutils literal"><span class="pre">to_crs</span></code> command:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># load example data</span>
-<span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="go"># Check original projection</span>
 <span class="go"># (it&#39;s Platte Carre! x-y are long and lat)</span>
@@ -254,7 +266,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -276,7 +288,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

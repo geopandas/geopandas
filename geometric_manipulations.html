@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geometric Manipulations &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Geometric Manipulations &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Set-Operations with Overlay" href="set_operations.html"/>
         <link rel="prev" title="Managing Projections" href="projections.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -113,9 +120,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -180,7 +192,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="geometric-manipulations">
-<h1>Geometric Manipulations<a class="headerlink" href="#geometric-manipulations" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Geometric Manipulations<a class="headerlink" href="#geometric-manipulations" title="Permalink to this headline">¶</a></h1>
 <p><em>geopandas</em> makes available all the tools for geometric manipulations in the <a class="reference external" href="http://toblerity.org/shapely/manual.html">*shapely* library</a>.</p>
 <p>Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets – like creating intersections, or differences – can be found on the <a class="reference internal" href="set_operations.html"><span class="doc">set operations</span></a> page.</p>
 <div class="section" id="constructive-methods">
@@ -258,7 +270,7 @@ each object.</p>
 
 <dl class="method">
 <dt id="GeoSeries.translate">
-<code class="descclassname">GeoSeries.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>self</em>, <em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.translate" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">GeoSeries.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>self</em>, <em>xoff=0.0</em>, <em>yoff=0.0</em>, <em>zoff=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.translate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shift the coordinates of the GeoSeries.</p>
 </dd></dl>
 
@@ -301,8 +313,8 @@ each object.</p>
 <p>GeoPandas also implements alternate constructors that can read any data format recognized by <a class="reference external" href="http://toblerity.github.io/fiona">fiona</a>.  To read a zip file containing an ESRI shapefile with the <a class="reference external" href="https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm">borough boundaries of New York City</a> (GeoPandas includes this as an example dataset):</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nybb_path</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;nybb&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">nybb_path</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;BoroCode&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">boros</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;BoroCode&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">boros</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span>
 <span class="go">               BoroName    Shape_Area     Shape_Leng  \</span>
 <span class="go">BoroCode</span>
@@ -406,7 +418,7 @@ borough that are in the holes:</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -428,7 +440,7 @@ borough that are in the holes:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

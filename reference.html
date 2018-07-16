@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Reference &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,15 +30,17 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
-        <link rel="next" title="Contributing to GeoPandas" href="contributing.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
+        <link rel="next" title="geopandas.GeoDataFrame" href="reference/geopandas.GeoDataFrame.html"/>
         <link rel="prev" title="Geocoding" href="geocoding.html"/> 
 
   
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -104,12 +111,28 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reference to All Attributes and Methods</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#geoseries">GeoSeries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#geodataframe">GeoDataFrame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-pages">API Pages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.overlay.html">geopandas.overlay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.read_file.html">geopandas.read_file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.sjoin.html">geopandas.sjoin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
 </li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -174,317 +197,727 @@
            <div itemprop="articleBody">
             
   <div class="section" id="reference">
-<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="geoseries">
+<h2>GeoSeries<a class="headerlink" href="#geoseries" title="Permalink to this headline">¶</a></h2>
 <p>The following Shapely methods and attributes are available on
 <code class="docutils literal"><span class="pre">GeoSeries</span></code> objects:</p>
 <dl class="attribute">
-<dt id="GeoSeries.area">
-<code class="descclassname">GeoSeries.</code><code class="descname">area</code><a class="headerlink" href="#GeoSeries.area" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> containing the area of each geometry in the <code class="docutils literal"><span class="pre">GeoSeries</span></code>.</p>
+<dt id="geopandas.GeoSeries.area">
+<code class="descclassname">GeoSeries.</code><code class="descname">area</code><a class="headerlink" href="#geopandas.GeoSeries.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> containing the area of each geometry in the
+<code class="docutils literal"><span class="pre">GeoSeries</span></code>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.bounds">
-<code class="descclassname">GeoSeries.</code><code class="descname">bounds</code><a class="headerlink" href="#GeoSeries.bounds" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.bounds">
+<code class="descclassname">GeoSeries.</code><code class="descname">bounds</code><a class="headerlink" href="#geopandas.GeoSeries.bounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">DataFrame</span></code> with columns <code class="docutils literal"><span class="pre">minx</span></code>, <code class="docutils literal"><span class="pre">miny</span></code>, <code class="docutils literal"><span class="pre">maxx</span></code>,
-<code class="docutils literal"><span class="pre">maxy</span></code> values containing the bounds for each geometry.
-(see <code class="docutils literal"><span class="pre">GeoSeries.total_bounds</span></code> for the limits of the entire series).</p>
+<code class="docutils literal"><span class="pre">maxy</span></code> values containing the bounds for each geometry.</p>
+<p>See <code class="docutils literal"><span class="pre">GeoSeries.total_bounds</span></code> for the limits of the entire series.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.length">
-<code class="descclassname">GeoSeries.</code><code class="descname">length</code><a class="headerlink" href="#GeoSeries.length" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.length">
+<code class="descclassname">GeoSeries.</code><code class="descname">length</code><a class="headerlink" href="#geopandas.GeoSeries.length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> containing the length of each geometry.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.geom_type">
-<code class="descclassname">GeoSeries.</code><code class="descname">geom_type</code><a class="headerlink" href="#GeoSeries.geom_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of strings specifying the <cite>Geometry Type</cite> of
-each object.</p>
+<dt id="geopandas.GeoSeries.geom_type">
+<code class="descclassname">GeoSeries.</code><code class="descname">geom_type</code><a class="headerlink" href="#geopandas.GeoSeries.geom_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of strings specifying the <cite>Geometry Type</cite> of each
+object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.distance">
-<code class="descclassname">GeoSeries.</code><code class="descname">distance</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.distance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> containing the minimum distance to the <cite>other</cite>
-<code class="docutils literal"><span class="pre">GeoSeries</span></code> (elementwise) or geometric object.</p>
+<dt id="geopandas.GeoSeries.distance">
+<code class="descclassname">GeoSeries.</code><code class="descname">distance</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> containing the distance to <cite>other</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : Geoseries or geometric object</p>
+<blockquote class="last">
+<div><p>The Geoseries (elementwise) or geometric object to find the
+distance to.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.representative_point">
-<code class="descclassname">GeoSeries.</code><code class="descname">representative_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.representative_point" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.representative_point">
+<code class="descclassname">GeoSeries.</code><code class="descname">representative_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.representative_point" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of (cheaply computed) points that are
 guaranteed to be within each geometry.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.exterior">
-<code class="descclassname">GeoSeries.</code><code class="descname">exterior</code><a class="headerlink" href="#GeoSeries.exterior" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.exterior">
+<code class="descclassname">GeoSeries.</code><code class="descname">exterior</code><a class="headerlink" href="#geopandas.GeoSeries.exterior" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of LinearRings representing the outer
-boundary of each polygon in the GeoSeries.  (Applies to GeoSeries
-containing only Polygons).</p>
+boundary of each polygon in the GeoSeries.</p>
+<p>Applies to GeoSeries containing only Polygons.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.interiors">
-<code class="descclassname">GeoSeries.</code><code class="descname">interiors</code><a class="headerlink" href="#GeoSeries.interiors" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.interiors">
+<code class="descclassname">GeoSeries.</code><code class="descname">interiors</code><a class="headerlink" href="#geopandas.GeoSeries.interiors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of InteriorRingSequences representing the
-inner rings of each polygon in the GeoSeries.  (Applies to GeoSeries
-containing only Polygons).</p>
+inner rings of each polygon in the GeoSeries.</p>
+<p>Applies to GeoSeries containing only Polygons.</p>
 </dd></dl>
 
 <p><cite>Unary Predicates</cite></p>
 <dl class="attribute">
-<dt id="GeoSeries.is_empty">
-<code class="descclassname">GeoSeries.</code><code class="descname">is_empty</code><a class="headerlink" href="#GeoSeries.is_empty" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.is_empty">
+<code class="descclassname">GeoSeries.</code><code class="descname">is_empty</code><a class="headerlink" href="#geopandas.GeoSeries.is_empty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
 empty geometries.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.is_ring">
-<code class="descclassname">GeoSeries.</code><code class="descname">is_ring</code><a class="headerlink" href="#GeoSeries.is_ring" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.is_ring">
+<code class="descclassname">GeoSeries.</code><code class="descname">is_ring</code><a class="headerlink" href="#geopandas.GeoSeries.is_ring" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
 features that are closed.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.is_simple">
-<code class="descclassname">GeoSeries.</code><code class="descname">is_simple</code><a class="headerlink" href="#GeoSeries.is_simple" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.is_simple">
+<code class="descclassname">GeoSeries.</code><code class="descname">is_simple</code><a class="headerlink" href="#geopandas.GeoSeries.is_simple" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
-geometries that do not cross themselves (meaningful only for
-<cite>LineStrings</cite> and <cite>LinearRings</cite>).</p>
+geometries that do not cross themselves.</p>
+<p>This is meaningful only for <cite>LineStrings</cite> and <cite>LinearRings</cite>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.is_valid">
-<code class="descclassname">GeoSeries.</code><code class="descname">is_valid</code><a class="headerlink" href="#GeoSeries.is_valid" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.is_valid">
+<code class="descclassname">GeoSeries.</code><code class="descname">is_valid</code><a class="headerlink" href="#geopandas.GeoSeries.is_valid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
 geometries that are valid.</p>
 </dd></dl>
 
 <p><cite>Binary Predicates</cite></p>
 <dl class="method">
-<dt id="GeoSeries.almost_equals">
-<code class="descclassname">GeoSeries.</code><code class="descname">almost_equals</code><span class="sig-paren">(</span><em>other</em><span class="optional">[</span>, <em>decimal=6</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.almost_equals" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.geom_almost_equals">
+<code class="descclassname">GeoSeries.</code><code class="descname">geom_almost_equals</code><span class="sig-paren">(</span><em>other</em>, <em>decimal=6</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.geom_almost_equals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-each object is approximately equal to the <cite>other</cite> at all
-points to specified <cite>decimal</cite> place precision.  (See also <a class="reference internal" href="#GeoSeries.equals" title="GeoSeries.equals"><code class="xref py py-meth docutils literal"><span class="pre">equals()</span></code></a>)</p>
+each geometry is approximately equal to <cite>other</cite>.</p>
+<p>Approximate equality is tested at all points to the specified <cite>decimal</cite>
+place precision.  See also <code class="xref py py-meth docutils literal"><span class="pre">equals()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote>
+<div><p>The GeoSeries (elementwise) or geometric object to compare to.</p>
+</div></blockquote>
+<p><strong>decimal</strong> : int</p>
+<blockquote class="last">
+<div><p>Decimal place presion used when testing for approximate equality.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.contains">
-<code class="descclassname">GeoSeries.</code><code class="descname">contains</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.contains" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-each object’s <cite>interior</cite> contains the <cite>boundary</cite> and
-<cite>interior</cite> of the other object and their boundaries do not touch at all.</p>
+<dt id="geopandas.GeoSeries.contains">
+<code class="descclassname">GeoSeries.</code><code class="descname">contains</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.contains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry that contains <cite>other</cite>.</p>
+<p>An object is said to contain <cite>other</cite> if its <cite>interior</cite> contains the
+<cite>boundary</cite> and <cite>interior</cite> of the other object and their boundaries do
+not touch at all.</p>
+<p>This is the inverse of <a class="reference internal" href="#geopandas.GeoSeries.within" title="geopandas.GeoSeries.within"><code class="xref py py-meth docutils literal"><span class="pre">within()</span></code></a> in the sense that the expression
+<code class="docutils literal"><span class="pre">a.contains(b)</span> <span class="pre">==</span> <span class="pre">b.within(a)</span></code> always evaluates to <code class="docutils literal"><span class="pre">True</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test if is
+contained.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.crosses">
-<code class="descclassname">GeoSeries.</code><code class="descname">crosses</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.crosses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-the <cite>interior</cite> of each object intersects the <cite>interior</cite> of
-the other but does not contain it, and the dimension of the intersection is
-less than the dimension of the one or the other.</p>
+<dt id="geopandas.GeoSeries.crosses">
+<code class="descclassname">GeoSeries.</code><code class="descname">crosses</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.crosses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry that cross <cite>other</cite>.</p>
+<p>An object is said to cross <cite>other</cite> if its <cite>interior</cite> intersects the
+<cite>interior</cite> of the other but does not contain it, and the dimension of
+the intersection is less than the dimension of the one or the other.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test if is
+crossed.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.disjoint">
-<code class="descclassname">GeoSeries.</code><code class="descname">disjoint</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.disjoint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-the <cite>boundary</cite> and <cite>interior</cite> of each object does not
-intersect at all with those of the other.</p>
+<dt id="geopandas.GeoSeries.disjoint">
+<code class="descclassname">GeoSeries.</code><code class="descname">disjoint</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.disjoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry disjoint to <cite>other</cite>.</p>
+<p>An object is said to be disjoint to <cite>other</cite> if its <cite>boundary</cite> and
+<cite>interior</cite> does not intersect at all with those of the other.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test if is
+disjoint.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.equals">
-<code class="descclassname">GeoSeries.</code><code class="descname">equals</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.equals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-if the set-theoretic <cite>boundary</cite>, <cite>interior</cite>, and <cite>exterior</cite>
-of each object coincides with those of the other.</p>
+<dt id="geopandas.GeoSeries.geom_equals">
+<code class="descclassname">GeoSeries.</code><code class="descname">geom_equals</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.geom_equals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry equal to <cite>other</cite>.</p>
+<p>An object is said to be equal to <cite>other</cite> if its set-theoretic
+<cite>boundary</cite>, <cite>interior</cite>, and <cite>exterior</cite> coincides with those of the
+other.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test for
+equality.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.intersects">
-<code class="descclassname">GeoSeries.</code><code class="descname">intersects</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.intersects" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-if the <cite>boundary</cite> and <cite>interior</cite> of each object intersects in
-any way with those of the other.</p>
+<dt id="geopandas.GeoSeries.intersects">
+<code class="descclassname">GeoSeries.</code><code class="descname">intersects</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.intersects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry that intersects <cite>other</cite>.</p>
+<p>An object is said to intersect <cite>other</cite> if its <cite>boundary</cite> and <cite>interior</cite>
+intersects in any way with those of the other.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test if is
+intersected.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.touches">
-<code class="descclassname">GeoSeries.</code><code class="descname">touches</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.touches" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-the objects have at least one point in common and their
-interiors do not intersect with any part of the other.</p>
+<dt id="geopandas.GeoSeries.touches">
+<code class="descclassname">GeoSeries.</code><code class="descname">touches</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.touches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry that touches <cite>other</cite>.</p>
+<p>An object is said to touch <cite>other</cite> if it has at least one point in
+common with <cite>other</cite> and its interior does not intersect with any part
+of the other.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test if is
+touched.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.within">
-<code class="descclassname">GeoSeries.</code><code class="descname">within</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.within" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> if
-each object’s <cite>boundary</cite> and <cite>interior</cite> intersect only
-with the <cite>interior</cite> of the other (not its <cite>boundary</cite> or <cite>exterior</cite>).
-(Inverse of <a class="reference internal" href="#GeoSeries.contains" title="GeoSeries.contains"><code class="xref py py-meth docutils literal"><span class="pre">contains()</span></code></a>)</p>
+<dt id="geopandas.GeoSeries.within">
+<code class="descclassname">GeoSeries.</code><code class="descname">within</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.within" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">Series</span></code> of <code class="docutils literal"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal"><span class="pre">True</span></code> for
+each geometry that is within <cite>other</cite>.</p>
+<p>An object is said to be within <cite>other</cite> if its <cite>boundary</cite> and <cite>interior</cite>
+intersects only with the <cite>interior</cite> of the other (not its <cite>boundary</cite> or
+<cite>exterior</cite>).</p>
+<p>This is the inverse of <a class="reference internal" href="#geopandas.GeoSeries.contains" title="geopandas.GeoSeries.contains"><code class="xref py py-meth docutils literal"><span class="pre">contains()</span></code></a> in the sense that the
+expression <code class="docutils literal"><span class="pre">a.within(b)</span> <span class="pre">==</span> <span class="pre">b.contains(a)</span></code> always evaluates to
+<code class="docutils literal"><span class="pre">True</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : GeoSeries or geometric object</p>
+<blockquote class="last">
+<div><p>The GeoSeries (elementwise) or geometric object to test if each
+geometry is within.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <p><cite>Set-theoretic Methods</cite></p>
 <dl class="method">
-<dt id="GeoSeries.difference">
-<code class="descclassname">GeoSeries.</code><code class="descname">difference</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.difference" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.difference">
+<code class="descclassname">GeoSeries.</code><code class="descname">difference</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.difference" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the points in each geometry that
-are not in the <em>other</em> object.</p>
+are not in <cite>other</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : Geoseries or geometric object</p>
+<blockquote class="last">
+<div><p>The Geoseries (elementwise) or geometric object to find the
+difference to.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.intersection">
-<code class="descclassname">GeoSeries.</code><code class="descname">intersection</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.intersection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the intersection of each object with the <cite>other</cite>
-geometric object.</p>
+<dt id="geopandas.GeoSeries.intersection">
+<code class="descclassname">GeoSeries.</code><code class="descname">intersection</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.intersection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the intersection of points in each
+geometry with <cite>other</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : Geoseries or geometric object</p>
+<blockquote class="last">
+<div><p>The Geoseries (elementwise) or geometric object to find the
+intersection with.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.symmetric_difference">
-<code class="descclassname">GeoSeries.</code><code class="descname">symmetric_difference</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.symmetric_difference" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the points in each object not in the <cite>other</cite>
-geometric object, and the points in the <cite>other</cite> not in this object.</p>
+<dt id="geopandas.GeoSeries.symmetric_difference">
+<code class="descclassname">GeoSeries.</code><code class="descname">symmetric_difference</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.symmetric_difference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the symmetric difference of points in
+each geometry with <cite>other</cite>.</p>
+<p>For each geometry, the symmetric difference consists of points in the
+geometry not in <cite>other</cite>, and points in <cite>other</cite> not in the geometry.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : Geoseries or geometric object</p>
+<blockquote class="last">
+<div><p>The Geoseries (elementwise) or geometric object to find the
+symmetric difference to.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.union">
-<code class="descclassname">GeoSeries.</code><code class="descname">union</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.union" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the union of points from each object and the
-<cite>other</cite> geometric object.</p>
+<dt id="geopandas.GeoSeries.union">
+<code class="descclassname">GeoSeries.</code><code class="descname">union</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.union" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of the union of points in each geometry with
+<cite>other</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>other</strong> : Geoseries or geometric object</p>
+<blockquote class="last">
+<div><p>The Geoseries (elementwise) or geometric object to find the union
+with.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <p><cite>Constructive Methods</cite></p>
 <dl class="method">
-<dt id="GeoSeries.buffer">
-<code class="descclassname">GeoSeries.</code><code class="descname">buffer</code><span class="sig-paren">(</span><em>distance</em>, <em>resolution=16</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.buffer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of geometries representing all points within a given <cite>distance</cite>
-of each geometric object.</p>
+<dt id="geopandas.GeoSeries.buffer">
+<code class="descclassname">GeoSeries.</code><code class="descname">buffer</code><span class="sig-paren">(</span><em>distance</em>, <em>resolution=16</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of geometries representing all points within
+a given <cite>distance</cite> of each geometric object.</p>
+<p>See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#object.buffer">http://shapely.readthedocs.io/en/latest/manual.html#object.buffer</a>
+for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>distance</strong> : float</p>
+<blockquote>
+<div><p>The radius of the buffer.</p>
+</div></blockquote>
+<p><strong>resolution: float</strong></p>
+<blockquote class="last">
+<div><p>Optional, the resolution of the buffer around each vertex.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.boundary">
-<code class="descclassname">GeoSeries.</code><code class="descname">boundary</code><a class="headerlink" href="#GeoSeries.boundary" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.boundary">
+<code class="descclassname">GeoSeries.</code><code class="descname">boundary</code><a class="headerlink" href="#geopandas.GeoSeries.boundary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of lower dimensional objects representing
 each geometries’s set-theoretic <cite>boundary</cite>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.centroid">
-<code class="descclassname">GeoSeries.</code><code class="descname">centroid</code><a class="headerlink" href="#GeoSeries.centroid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of points for each geometric centroid.</p>
+<dt id="geopandas.GeoSeries.centroid">
+<code class="descclassname">GeoSeries.</code><code class="descname">centroid</code><a class="headerlink" href="#geopandas.GeoSeries.centroid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of points representing the centroid of each
+geometry.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.convex_hull">
-<code class="descclassname">GeoSeries.</code><code class="descname">convex_hull</code><a class="headerlink" href="#GeoSeries.convex_hull" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of geometries representing the smallest
-convex <cite>Polygon</cite> containing all the points in each object unless the
-number of points in the object is less than three. For two points,
-the convex hull collapses to a <cite>LineString</cite>; for 1, a <cite>Point</cite>.</p>
+<dt id="geopandas.GeoSeries.convex_hull">
+<code class="descclassname">GeoSeries.</code><code class="descname">convex_hull</code><a class="headerlink" href="#geopandas.GeoSeries.convex_hull" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of geometries representing the convex hull
+of each geometry.</p>
+<p>The convex hull of a geometry is the smallest convex <cite>Polygon</cite>
+containing all the points in each geometry, unless the number of points
+in the geometric object is less than three. For two points, the convex
+hull collapses to a <cite>LineString</cite>; for 1, a <cite>Point</cite>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.envelope">
-<code class="descclassname">GeoSeries.</code><code class="descname">envelope</code><a class="headerlink" href="#GeoSeries.envelope" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of geometries representing the point or
-smallest rectangular polygon (with sides parallel to the coordinate
-axes) that contains each object.</p>
+<dt id="geopandas.GeoSeries.envelope">
+<code class="descclassname">GeoSeries.</code><code class="descname">envelope</code><a class="headerlink" href="#geopandas.GeoSeries.envelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> of geometries representing the envelope of
+each geometry.</p>
+<p>The envelope of a geometry is the bounding rectangle. That is, the
+point or smallest rectangular polygon (with sides parallel to the
+coordinate axes) that contains the geometry.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.simplify">
-<code class="descclassname">GeoSeries.</code><code class="descname">simplify</code><span class="sig-paren">(</span><em>tolerance</em>, <em>preserve_topology=True</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.simplify" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoSeries.simplify">
+<code class="descclassname">GeoSeries.</code><code class="descname">simplify</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.simplify" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> containing a simplified representation of
-each object.</p>
+each geometry.</p>
+<p>See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#object.simplify">http://shapely.readthedocs.io/en/latest/manual.html#object.simplify</a>
+for details</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tolerance</strong> : float</p>
+<blockquote>
+<div><p>All points in a simplified geometry will be no more than
+<cite>tolerance</cite> distance from the original.</p>
+</div></blockquote>
+<p><strong>preserve_topology: bool</strong></p>
+<blockquote class="last">
+<div><p>False uses a quicker algorithm, but may produce self-intersecting
+or otherwise invalid geometries.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <p><cite>Affine transformations</cite></p>
 <dl class="method">
-<dt id="GeoSeries.rotate">
-<code class="descclassname">GeoSeries.</code><code class="descname">rotate</code><span class="sig-paren">(</span><em>self</em>, <em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.rotate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rotate the coordinates of the GeoSeries.</p>
+<dt id="geopandas.GeoSeries.rotate">
+<code class="descclassname">GeoSeries.</code><code class="descname">rotate</code><span class="sig-paren">(</span><em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.rotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> with rotated geometries.</p>
+<p>See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate">http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate</a>
+for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>angle</strong> : float</p>
+<blockquote>
+<div><p>The angle of rotation can be specified in either degrees (default)
+or radians by setting use_radians=True. Positive angles are
+counter-clockwise and negative are clockwise rotations.</p>
+</div></blockquote>
+<p><strong>origin</strong> : string, Point, or tuple (x, y)</p>
+<blockquote>
+<div><p>The point of origin can be a keyword ‘center’ for the bounding box
+center (default), ‘centroid’ for the geometry’s centroid, a Point
+object or a coordinate tuple (x, y).</p>
+</div></blockquote>
+<p><strong>use_radians</strong> : boolean</p>
+<blockquote class="last">
+<div><p>Whether to interpret the angle of rotation as degrees or radians</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.scale">
-<code class="descclassname">GeoSeries.</code><code class="descname">scale</code><span class="sig-paren">(</span><em>self</em>, <em>xfact=1.0</em>, <em>yfact=1.0</em>, <em>zfact=1.0</em>, <em>origin='center'</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.scale" title="Permalink to this definition">¶</a></dt>
-<dd><p>Scale the geometries of the GeoSeries along each (x, y, z) dimensio.</p>
+<dt id="geopandas.GeoSeries.scale">
+<code class="descclassname">GeoSeries.</code><code class="descname">scale</code><span class="sig-paren">(</span><em>xfact=1.0</em>, <em>yfact=1.0</em>, <em>zfact=1.0</em>, <em>origin='center'</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> with scaled geometries.</p>
+<p>The geometries can be scaled by different factors along each
+dimension. Negative scale factors will mirror or reflect coordinates.</p>
+<p>See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.scale">http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.scale</a>
+for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>xfact, yfact, zfact</strong> : float, float, float</p>
+<blockquote>
+<div><p>Scaling factors for the x, y, and z dimensions respectively.</p>
+</div></blockquote>
+<p><strong>origin</strong> : string, Point, or tuple</p>
+<blockquote class="last">
+<div><p>The point of origin can be a keyword ‘center’ for the 2D bounding
+box center (default), ‘centroid’ for the geometry’s 2D centroid, a
+Point object or a coordinate tuple (x, y, z).</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.skew">
-<code class="descclassname">GeoSeries.</code><code class="descname">skew</code><span class="sig-paren">(</span><em>self</em>, <em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.skew" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.</p>
+<dt id="geopandas.GeoSeries.skew">
+<code class="descclassname">GeoSeries.</code><code class="descname">skew</code><span class="sig-paren">(</span><em>xs=0.0</em>, <em>ys=0.0</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.skew" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> with skewed geometries.</p>
+<p>The geometries are sheared by angles along the x and y dimensions.</p>
+<p>See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.skew">http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.skew</a>
+for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>xs, ys</strong> : float, float</p>
+<blockquote>
+<div><p>The shear angle(s) for the x and y axes respectively. These can be
+specified in either degrees (default) or radians by setting
+use_radians=True.</p>
+</div></blockquote>
+<p><strong>origin</strong> : string, Point, or tuple (x, y)</p>
+<blockquote>
+<div><p>The point of origin can be a keyword ‘center’ for the bounding box
+center (default), ‘centroid’ for the geometry’s centroid, a Point
+object or a coordinate tuple (x, y).</p>
+</div></blockquote>
+<p><strong>use_radians</strong> : boolean</p>
+<blockquote class="last">
+<div><p>Whether to interpret the shear angle(s) as degrees or radians</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.translate">
-<code class="descclassname">GeoSeries.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>self</em>, <em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.translate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shift the coordinates of the GeoSeries.</p>
+<dt id="geopandas.GeoSeries.translate">
+<code class="descclassname">GeoSeries.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>xoff=0.0</em>, <em>yoff=0.0</em>, <em>zoff=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.translate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> with translated geometries.</p>
+<p>See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate">http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate</a>
+for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>xoff, yoff, zoff</strong> : float, float, float</p>
+<blockquote class="last">
+<div><p>Amount of offset along each dimension.
+xoff, yoff, and zoff for translation along the x, y, and z
+dimensions respectively.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <p><cite>Aggregating methods</cite></p>
 <dl class="attribute">
-<dt id="GeoSeries.unary_union">
-<code class="descclassname">GeoSeries.</code><code class="descname">unary_union</code><a class="headerlink" href="#GeoSeries.unary_union" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a geometry containing the union of all geometries in the <code class="docutils literal"><span class="pre">GeoSeries</span></code>.</p>
+<dt id="geopandas.GeoSeries.unary_union">
+<code class="descclassname">GeoSeries.</code><code class="descname">unary_union</code><a class="headerlink" href="#geopandas.GeoSeries.unary_union" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a geometry containing the union of all geometries in the
+<code class="docutils literal"><span class="pre">GeoSeries</span></code>.</p>
 </dd></dl>
 
 <p>Additionally, the following methods are implemented:</p>
-<dl class="method">
-<dt id="GeoSeries.from_file">
-<code class="descclassname">GeoSeries.</code><code class="descname">from_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.from_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a <code class="docutils literal"><span class="pre">GeoSeries</span></code> from a file from any format recognized by
-<a href="#id1"><span class="problematic" id="id2">`fiona`_</span></a>.</p>
+<dl class="classmethod">
+<dt id="geopandas.GeoSeries.from_file">
+<em class="property">classmethod </em><code class="descclassname">GeoSeries.</code><code class="descname">from_file</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor to create a <code class="docutils literal"><span class="pre">GeoSeries</span></code> from a file.</p>
+<p>Can load a <code class="docutils literal"><span class="pre">GeoSeries</span></code> from a file from any format recognized by
+<cite>fiona</cite>. See <a class="reference external" href="http://toblerity.org/fiona/manual.html">http://toblerity.org/fiona/manual.html</a> for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> : str</p>
+<blockquote>
+<div><p>File path or file handle to read from. Depending on which kwargs
+are included, the content of filename may vary. See
+<a class="reference external" href="http://toblerity.org/fiona/README.html#usage">http://toblerity.org/fiona/README.html#usage</a> for usage details.</p>
+</div></blockquote>
+<p><strong>kwargs</strong> : key-word arguments</p>
+<blockquote class="last">
+<div><p>These arguments are passed to fiona.open, and can be used to
+access multi-layer data, data stored within archives (zip files),
+etc.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.to_crs">
-<code class="descclassname">GeoSeries.</code><code class="descname">to_crs</code><span class="sig-paren">(</span><em>crs=None</em>, <em>epsg=None</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.to_crs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform all geometries in a GeoSeries to a different coordinate
-reference system.  The <code class="docutils literal"><span class="pre">crs</span></code> attribute on the current GeoSeries
-must be set.  Either <code class="docutils literal"><span class="pre">crs</span></code> in dictionary form or an EPSG code may
-be specified for output.</p>
-<p>This method will transform all points in all objects.  It has no
-notion or projecting entire geometries.  All segments joining points
-are assumed to be lines in the current projection, not geodesics.
-Objects crossing the dateline (or other projection boundary) will
-have undesirable behavior.</p>
+<dt id="geopandas.GeoSeries.to_crs">
+<code class="descclassname">GeoSeries.</code><code class="descname">to_crs</code><span class="sig-paren">(</span><em>crs=None</em>, <em>epsg=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.to_crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> with all geometries transformed to a new
+coordinate reference system.</p>
+<p>Transform all geometries in a GeoSeries to a different coordinate
+reference system.  The <code class="docutils literal"><span class="pre">crs</span></code> attribute on the current GeoSeries must
+be set.  Either <code class="docutils literal"><span class="pre">crs</span></code> in string or dictionary form or an EPSG code
+may be specified for output.</p>
+<p>This method will transform all points in all objects.  It has no notion
+or projecting entire geometries.  All segments joining points are
+assumed to be lines in the current projection, not geodesics.  Objects
+crossing the dateline (or other projection boundary) will have
+undesirable behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>crs</strong> : dict or str</p>
+<blockquote>
+<div><p>Output projection parameters as string or in dictionary form.</p>
+</div></blockquote>
+<p><strong>epsg</strong> : int</p>
+<blockquote class="last">
+<div><p>EPSG code specifying output projection.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.plot">
-<code class="descclassname">GeoSeries.</code><code class="descname">plot</code><span class="sig-paren">(</span><em>colormap='Set1'</em>, <em>alpha=0.5</em>, <em>axes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a plot of the geometries in the <code class="docutils literal"><span class="pre">GeoSeries</span></code>.
-<code class="docutils literal"><span class="pre">colormap</span></code> can be any recognized by matplotlib, but discrete
-colormaps such as <code class="docutils literal"><span class="pre">Accent</span></code>, <code class="docutils literal"><span class="pre">Dark2</span></code>, <code class="docutils literal"><span class="pre">Paired</span></code>, <code class="docutils literal"><span class="pre">Pastel1</span></code>,
-<code class="docutils literal"><span class="pre">Pastel2</span></code>, <code class="docutils literal"><span class="pre">Set1</span></code>, <code class="docutils literal"><span class="pre">Set2</span></code>, or <code class="docutils literal"><span class="pre">Set3</span></code> are recommended.
-Wraps the <code class="docutils literal"><span class="pre">plot_series()</span></code> function.</p>
+<dt id="geopandas.GeoSeries.plot">
+<code class="descclassname">GeoSeries.</code><code class="descname">plot</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a GeoSeries.</p>
+<p>Generate a plot of a GeoSeries geometry with matplotlib.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>s</strong> : Series</p>
+<blockquote>
+<div><p>The GeoSeries to be plotted. Currently Polygon,
+MultiPolygon, LineString, MultiLineString and Point
+geometries can be plotted.</p>
+</div></blockquote>
+<p><strong>cmap</strong> : str (default None)</p>
+<blockquote>
+<div><p>The name of a colormap recognized by matplotlib. Any
+colormap will work, but categorical colormaps are
+generally recommended. Examples of useful discrete
+colormaps include:</p>
+<blockquote>
+<div><p>tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2</p>
+</div></blockquote>
+</div></blockquote>
+<p><strong>color</strong> : str (default None)</p>
+<blockquote>
+<div><p>If specified, all objects will be colored uniformly.</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.pyplot.Artist (default None)</p>
+<blockquote>
+<div><p>axes on which to draw the plot</p>
+</div></blockquote>
+<p><strong>figsize</strong> : pair of floats (default None)</p>
+<blockquote>
+<div><p>Size of the resulting matplotlib.figure.Figure. If the argument
+ax is given explicitly, figsize is ignored.</p>
+</div></blockquote>
+<p><strong>**style_kwds</strong> : dict</p>
+<blockquote>
+<div><p>Color options to be passed on to the actual plot function, such
+as <code class="docutils literal"><span class="pre">edgecolor</span></code>, <code class="docutils literal"><span class="pre">facecolor</span></code>, <code class="docutils literal"><span class="pre">linewidth</span></code>, <code class="docutils literal"><span class="pre">markersize</span></code>,
+<code class="docutils literal"><span class="pre">alpha</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>ax</strong> : matplotlib axes instance</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.total_bounds">
-<code class="descclassname">GeoSeries.</code><code class="descname">total_bounds</code><a class="headerlink" href="#GeoSeries.total_bounds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a tuple containing <code class="docutils literal"><span class="pre">minx</span></code>, <code class="docutils literal"><span class="pre">miny</span></code>, <code class="docutils literal"><span class="pre">maxx</span></code>,
-<code class="docutils literal"><span class="pre">maxy</span></code> values for the bounds of the series as a whole.
-See <code class="docutils literal"><span class="pre">GeoSeries.bounds</span></code> for the bounds of the geometries contained
-in the series.</p>
+<dt id="geopandas.GeoSeries.total_bounds">
+<code class="descclassname">GeoSeries.</code><code class="descname">total_bounds</code><a class="headerlink" href="#geopandas.GeoSeries.total_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tuple containing <code class="docutils literal"><span class="pre">minx</span></code>, <code class="docutils literal"><span class="pre">miny</span></code>, <code class="docutils literal"><span class="pre">maxx</span></code>, <code class="docutils literal"><span class="pre">maxy</span></code>
+values for the bounds of the series as a whole.</p>
+<p>See <code class="docutils literal"><span class="pre">GeoSeries.bounds</span></code> for the bounds of the geometries contained in
+the series.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoSeries.__geo_interface__">
-<code class="descclassname">GeoSeries.</code><code class="descname">__geo_interface__</code><a class="headerlink" href="#GeoSeries.__geo_interface__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implements the <a href="#id3"><span class="problematic" id="id4">`geo_interface`_</span></a>. Returns a python data structure
-to represent the <code class="docutils literal"><span class="pre">GeoSeries</span></code> as a GeoJSON-like <code class="docutils literal"><span class="pre">FeatureCollection</span></code>.
-Note that the features will have an empty <code class="docutils literal"><span class="pre">properties</span></code> dict as they don’t
-have associated attributes (geometry only).</p>
+<dt id="geopandas.GeoSeries.__geo_interface__">
+<code class="descclassname">GeoSeries.</code><code class="descname">__geo_interface__</code><a class="headerlink" href="#geopandas.GeoSeries.__geo_interface__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoSeries</span></code> as a python feature collection.</p>
+<p>Implements the <cite>geo_interface</cite>. The returned python data structure
+represents the <code class="docutils literal"><span class="pre">GeoSeries</span></code> as a GeoJSON-like <code class="docutils literal"><span class="pre">FeatureCollection</span></code>.
+Note that the features will have an empty <code class="docutils literal"><span class="pre">properties</span></code> dict as they
+don’t have associated attributes (geometry only).</p>
 </dd></dl>
 
 <p>Methods of pandas <code class="docutils literal"><span class="pre">Series</span></code> objects are also available, although not
@@ -493,75 +926,344 @@ all are applicable to geometric objects and some may return a
 <code class="docutils literal"><span class="pre">copy()</span></code>, <code class="docutils literal"><span class="pre">align()</span></code>, <code class="docutils literal"><span class="pre">isnull()</span></code> and <code class="docutils literal"><span class="pre">fillna()</span></code> have been
 implemented specifically for <code class="docutils literal"><span class="pre">GeoSeries</span></code> and are expected to work
 correctly.</p>
+</div>
 <div class="section" id="geodataframe">
 <h2>GeoDataFrame<a class="headerlink" href="#geodataframe" title="Permalink to this headline">¶</a></h2>
 <p>A <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> is a tablular data structure that contains a column
 called <code class="docutils literal"><span class="pre">geometry</span></code> which contains a <cite>GeoSeries`</cite>.</p>
 <p>Currently, the following methods are implemented for a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code>:</p>
 <dl class="classmethod">
-<dt id="GeoDataFrame.from_file">
-<em class="property">classmethod </em><code class="descclassname">GeoDataFrame.</code><code class="descname">from_file</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoDataFrame.from_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> from a file from any format recognized by
-<a href="#id5"><span class="problematic" id="id6">`fiona`_</span></a>.  See <code class="docutils literal"><span class="pre">read_file()</span></code>.</p>
+<dt id="geopandas.GeoDataFrame.from_file">
+<em class="property">classmethod </em><code class="descclassname">GeoDataFrame.</code><code class="descname">from_file</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor to create a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> from a file.</p>
+<p>Can load a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> from a file in any format recognized by
+<cite>fiona</cite>. See <a class="reference external" href="http://toblerity.org/fiona/manual.html">http://toblerity.org/fiona/manual.html</a> for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> : str</p>
+<blockquote>
+<div><p>File path or file handle to read from. Depending on which kwargs
+are included, the content of filename may vary. See
+<a class="reference external" href="http://toblerity.org/fiona/README.html#usage">http://toblerity.org/fiona/README.html#usage</a> for usage details.</p>
+</div></blockquote>
+<p><strong>kwargs</strong> : key-word arguments</p>
+<blockquote class="last">
+<div><p>These arguments are passed to fiona.open, and can be used to
+access multi-layer data, data stored within archives (zip files),
+etc.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;nybb.shp&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="GeoDataFrame.from_postgis">
-<em class="property">classmethod </em><code class="descclassname">GeoDataFrame.</code><code class="descname">from_postgis</code><span class="sig-paren">(</span><em>sql</em>, <em>con</em>, <em>geom_col='geom'</em>, <em>crs=None</em>, <em>index_col=None</em>, <em>coerce_float=True</em>, <em>params=None</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoDataFrame.from_postgis" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> from a file from a PostGIS database.
-See <code class="docutils literal"><span class="pre">read_postgis()</span></code>.</p>
+<dt id="geopandas.GeoDataFrame.from_postgis">
+<em class="property">classmethod </em><code class="descclassname">GeoDataFrame.</code><code class="descname">from_postgis</code><span class="sig-paren">(</span><em>sql</em>, <em>con</em>, <em>geom_col='geom'</em>, <em>crs=None</em>, <em>hex_encoded=True</em>, <em>index_col=None</em>, <em>coerce_float=True</em>, <em>params=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.from_postgis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor to create a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> from a sql query
+containing a geometry column.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>sql</strong> : string</p>
+<p><strong>con</strong> : DB connection object or SQLAlchemy engine</p>
+<p><strong>geom_col</strong> : string, default ‘geom’</p>
+<blockquote>
+<div><p>column name to convert to shapely geometries</p>
+</div></blockquote>
+<p><strong>crs</strong> : optional</p>
+<blockquote>
+<div><p>Coordinate reference system to use for the returned GeoDataFrame</p>
+</div></blockquote>
+<p><strong>hex_encoded</strong> : bool, optional</p>
+<blockquote>
+<div><p>Whether the geometry is in a hex-encoded string. Default is True,
+standard for postGIS.</p>
+</div></blockquote>
+<p><strong>index_col</strong> : string or list of strings, optional, default: None</p>
+<blockquote>
+<div><p>Column(s) to set as index(MultiIndex)</p>
+</div></blockquote>
+<p><strong>coerce_float</strong> : boolean, default True</p>
+<blockquote>
+<div><p>Attempt to convert values of non-string, non-numeric objects (like
+decimal.Decimal) to floating point, useful for SQL result sets</p>
+</div></blockquote>
+<p><strong>params</strong> : list, tuple or dict, optional, default: None</p>
+<blockquote class="last">
+<div><p>List of parameters to pass to execute method.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT geom, highway FROM roads;&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_postgis</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descclassname">GeoSeries.</code><code class="descname">to_crs</code><span class="sig-paren">(</span><em>crs=None</em>, <em>epsg=None</em>, <em>inplace=False</em><span class="sig-paren">)</span></dt>
-<dd><p>Transform all geometries in the <code class="docutils literal"><span class="pre">geometry</span></code> column of a
-GeoDataFrame to a different coordinate reference system.  The
-<code class="docutils literal"><span class="pre">crs</span></code> attribute on the current GeoSeries must be set.  Either
-<code class="docutils literal"><span class="pre">crs</span></code> in dictionary form or an EPSG code may be specified for
-output.  If <code class="docutils literal"><span class="pre">inplace=True</span></code> the geometry column will be replaced in
-the current dataframe, otherwise a new GeoDataFrame will be returned.</p>
-<p>This method will transform all points in all objects.  It has no
-notion or projecting entire geometries.  All segments joining points
-are assumed to be lines in the current projection, not geodesics.
-Objects crossing the dateline (or other projection boundary) will
-have undesirable behavior.</p>
+<dt id="geopandas.GeoDataFrame.to_crs">
+<code class="descclassname">GeoDataFrame.</code><code class="descname">to_crs</code><span class="sig-paren">(</span><em>crs=None</em>, <em>epsg=None</em>, <em>inplace=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform geometries to a new coordinate reference system.</p>
+<p>Transform all geometries in a GeoSeries to a different coordinate
+reference system.  The <code class="docutils literal"><span class="pre">crs</span></code> attribute on the current GeoSeries must
+be set.  Either <code class="docutils literal"><span class="pre">crs</span></code> in string or dictionary form or an EPSG code
+may be specified for output.</p>
+<p>This method will transform all points in all objects.  It has no notion
+or projecting entire geometries.  All segments joining points are
+assumed to be lines in the current projection, not geodesics.  Objects
+crossing the dateline (or other projection boundary) will have
+undesirable behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>crs</strong> : dict or str</p>
+<blockquote>
+<div><p>Output projection parameters as string or in dictionary form.</p>
+</div></blockquote>
+<p><strong>epsg</strong> : int</p>
+<blockquote>
+<div><p>EPSG code specifying output projection.</p>
+</div></blockquote>
+<p><strong>inplace</strong> : bool, optional, default: False</p>
+<blockquote class="last">
+<div><p>Whether to return a new GeoDataFrame or do the transformation in
+place.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.to_file">
-<code class="descclassname">GeoSeries.</code><code class="descname">to_file</code><span class="sig-paren">(</span><em>filename</em>, <em>driver=&quot;ESRI Shapefile&quot;</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.to_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write the <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> to a file.  By default, an ESRI shapefile
-is written, but any OGR data source supported by Fiona can be
-written.  <code class="docutils literal"><span class="pre">**kwargs</span></code> are passed to the Fiona driver.</p>
+<dt id="geopandas.GeoDataFrame.to_file">
+<code class="descclassname">GeoDataFrame.</code><code class="descname">to_file</code><span class="sig-paren">(</span><em>filename</em>, <em>driver='ESRI Shapefile'</em>, <em>schema=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> to a file.</p>
+<p>By default, an ESRI shapefile is written, but any OGR data source
+supported by Fiona can be written. A dictionary of supported OGR
+providers is available via:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fiona</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fiona</span><span class="o">.</span><span class="n">supported_drivers</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> : string</p>
+<blockquote>
+<div><p>File path or file handle to write to.</p>
+</div></blockquote>
+<p><strong>driver</strong> : string, default: ‘ESRI Shapefile’</p>
+<blockquote>
+<div><p>The OGR format driver used to write the vector file.</p>
+</div></blockquote>
+<p><strong>schema</strong> : dict, default: None</p>
+<blockquote class="last">
+<div><p>If specified, the schema dictionary is passed to Fiona to
+better control how the file is written.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The extra keyword arguments <code class="docutils literal"><span class="pre">**kwargs</span></code> are passed to fiona.open and
+can be used to write to multi-layer data, store data within archives
+(zip files), etc.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoSeries.to_json">
-<code class="descclassname">GeoSeries.</code><code class="descname">to_json</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.to_json" title="Permalink to this definition">¶</a></dt>
+<dt id="geopandas.GeoDataFrame.to_json">
+<code class="descclassname">GeoDataFrame.</code><code class="descname">to_json</code><span class="sig-paren">(</span><em>na='null'</em>, <em>show_bbox=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_json" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a GeoJSON representation of the <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> as a string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>na</strong> : {‘null’, ‘drop’, ‘keep’}, default ‘null’</p>
+<blockquote>
+<div><p>Indicates how to output missing (NaN) values in the GeoDataFrame.
+See below.</p>
+</div></blockquote>
+<p><strong>show_bbox</strong> : bool, optional, default: False</p>
+<blockquote class="last">
+<div><p>Include bbox (bounds) in the geojson</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The remaining <em>kwargs</em> are passed to json.dumps().</p>
+<p>Missing (NaN) values in the GeoDataFrame can be represented as follows:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">null</span></code>: output the missing entries as JSON null.</li>
+<li><code class="docutils literal"><span class="pre">drop</span></code>: remove the property from the feature. This applies to each
+feature individually so that features may have different properties.</li>
+<li><code class="docutils literal"><span class="pre">keep</span></code>: output the missing entries as NaN.</li>
+</ul>
 </dd></dl>
 
 <dl class="method">
-<dt id="GeoDataFrame.plot">
-<code class="descclassname">GeoDataFrame.</code><code class="descname">plot</code><span class="sig-paren">(</span><em>column=None</em>, <em>colormap=None</em>, <em>alpha=0.5</em>, <em>categorical=False</em>, <em>legend=False</em>, <em>axes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoDataFrame.plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a plot of the geometries in the <code class="docutils literal"><span class="pre">GeoDataFrame</span></code>.  If the
-<code class="docutils literal"><span class="pre">column</span></code> parameter is given, colors plot according to values in
-that column, otherwise calls <code class="docutils literal"><span class="pre">GeoSeries.plot()</span></code> on the
-<code class="docutils literal"><span class="pre">geometry</span></code> column.  Wraps the <code class="docutils literal"><span class="pre">plot_dataframe()</span></code> function.</p>
+<dt id="geopandas.GeoDataFrame.plot">
+<code class="descclassname">GeoDataFrame.</code><code class="descname">plot</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a GeoDataFrame.</p>
+<p>Generate a plot of a GeoDataFrame with matplotlib.  If a
+column is specified, the plot coloring will be based on values
+in that column.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>df</strong> : GeoDataFrame</p>
+<blockquote>
+<div><p>The GeoDataFrame to be plotted.  Currently Polygon,
+MultiPolygon, LineString, MultiLineString and Point
+geometries can be plotted.</p>
+</div></blockquote>
+<p><strong>column</strong> : str, np.array, pd.Series (default None)</p>
+<blockquote>
+<div><p>The name of the dataframe column, np.array, or pd.Series to be plotted.
+If np.array or pd.Series are used then it must have same length as
+dataframe. Values are used to color the plot. Ignored if <cite>color</cite> is
+also set.</p>
+</div></blockquote>
+<p><strong>cmap</strong> : str (default None)</p>
+<blockquote>
+<div><p>The name of a colormap recognized by matplotlib.</p>
+</div></blockquote>
+<p><strong>color</strong> : str (default None)</p>
+<blockquote>
+<div><p>If specified, all objects will be colored uniformly.</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.pyplot.Artist (default None)</p>
+<blockquote>
+<div><p>axes on which to draw the plot</p>
+</div></blockquote>
+<p><strong>categorical</strong> : bool (default False)</p>
+<blockquote>
+<div><p>If False, cmap will reflect numerical values of the
+column being plotted.  For non-numerical columns, this
+will be set to True.</p>
+</div></blockquote>
+<p><strong>legend</strong> : bool (default False)</p>
+<blockquote>
+<div><p>Plot a legend. Ignored if no <cite>column</cite> is given, or if <cite>color</cite> is given.</p>
+</div></blockquote>
+<p><strong>scheme</strong> : str (default None)</p>
+<blockquote>
+<div><p>Name of a choropleth classification scheme (requires PySAL).
+A pysal.esda.mapclassify.Map_Classifier object will be used
+under the hood. Supported schemes: ‘Equal_interval’, ‘Quantiles’,
+‘Fisher_Jenks’</p>
+</div></blockquote>
+<p><strong>k</strong> : int (default 5)</p>
+<blockquote>
+<div><p>Number of classes (ignored if scheme is None)</p>
+</div></blockquote>
+<p><strong>vmin</strong> : None or float (default None)</p>
+<blockquote>
+<div><p>Minimum value of cmap. If None, the minimum data value
+in the column to be plotted is used.</p>
+</div></blockquote>
+<p><strong>vmax</strong> : None or float (default None)</p>
+<blockquote>
+<div><p>Maximum value of cmap. If None, the maximum data value
+in the column to be plotted is used.</p>
+</div></blockquote>
+<p><strong>markersize</strong> : str or float or sequence (default None)</p>
+<blockquote>
+<div><p>Only applies to point geometries within a frame.
+If a str, will use the values in the column of the frame specified
+by markersize to set the size of markers. Otherwise can be a value
+to apply to all points, or a sequence of the same length as the
+number of points.</p>
+</div></blockquote>
+<p><strong>figsize</strong> : tuple of integers (default None)</p>
+<blockquote>
+<div><p>Size of the resulting matplotlib.figure.Figure. If the argument
+axes is given explicitly, figsize is ignored.</p>
+</div></blockquote>
+<p><strong>legend_kwds</strong> : dict (default None)</p>
+<blockquote>
+<div><p>Keyword arguments to pass to ax.legend()</p>
+</div></blockquote>
+<p><strong>**style_kwds</strong> : dict</p>
+<blockquote>
+<div><p>Color options to be passed on to the actual plot function, such
+as <code class="docutils literal"><span class="pre">edgecolor</span></code>, <code class="docutils literal"><span class="pre">facecolor</span></code>, <code class="docutils literal"><span class="pre">linewidth</span></code>, <code class="docutils literal"><span class="pre">markersize</span></code>,
+<code class="docutils literal"><span class="pre">alpha</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>ax</strong> : matplotlib axes instance</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GeoDataFrame.__geo_interface__">
-<code class="descclassname">GeoDataFrame.</code><code class="descname">__geo_interface__</code><a class="headerlink" href="#GeoDataFrame.__geo_interface__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implements the <a href="#id7"><span class="problematic" id="id8">`geo_interface`_</span></a>. Returns a python data structure
-to represent the <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> as a GeoJSON-like <code class="docutils literal"><span class="pre">FeatureCollection</span></code>.</p>
+<dt id="geopandas.GeoDataFrame.__geo_interface__">
+<code class="descclassname">GeoDataFrame.</code><code class="descname">__geo_interface__</code><a class="headerlink" href="#geopandas.GeoDataFrame.__geo_interface__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> as a python feature collection.</p>
+<p>Implements the <cite>geo_interface</cite>. The returned python data structure
+represents the <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> as a GeoJSON-like
+<code class="docutils literal"><span class="pre">FeatureCollection</span></code>.</p>
+<p>This differs from <cite>_to_geo()</cite> only in that it is a property with
+default args instead of a method</p>
 </dd></dl>
 
 <p>All pandas <code class="docutils literal"><span class="pre">DataFrame</span></code> methods are also available, although they may
 not operate in a meaningful way on the <code class="docutils literal"><span class="pre">geometry</span></code> column and may not
 return a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> result even when it would be appropriate to
 do so.</p>
+</div>
+<div class="section" id="api-pages">
+<h2>API Pages<a class="headerlink" href="#api-pages" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal"><span class="pre">GeoDataFrame</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td>A GeoDataFrame object is a pandas.DataFrame that has a column with geometry.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-obj docutils literal"><span class="pre">GeoSeries</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td>A Series object designed to store shapely geometry objects.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="reference/geopandas.overlay.html#geopandas.overlay" title="geopandas.overlay"><code class="xref py py-obj docutils literal"><span class="pre">overlay</span></code></a>(df1,&nbsp;df2[,&nbsp;how,&nbsp;make_valid,&nbsp;use_sindex])</td>
+<td>Perform spatial overlay between two polygons.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-obj docutils literal"><span class="pre">read_file</span></code></a>(filename[,&nbsp;bbox])</td>
+<td>Returns a GeoDataFrame from a file or URL.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="reference/geopandas.sjoin.html#geopandas.sjoin" title="geopandas.sjoin"><code class="xref py py-obj docutils literal"><span class="pre">sjoin</span></code></a>(left_df,&nbsp;right_df[,&nbsp;how,&nbsp;op,&nbsp;lsuffix,&nbsp;…])</td>
+<td>Spatial join of two GeoDataFrames.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="reference/geopandas.tools.geocode.html#geopandas.tools.geocode" title="geopandas.tools.geocode"><code class="xref py py-obj docutils literal"><span class="pre">tools.geocode</span></code></a>(strings[,&nbsp;provider])</td>
+<td>Geocode a set of strings and get a GeoDataFrame of the resulting points.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="geopandas.datasets.get_path"><code class="xref py py-obj docutils literal"><span class="pre">datasets.get_path</span></code></a>(dataset)</td>
+<td>Get the path to the data file.</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
@@ -575,7 +1277,7 @@ do so.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing to GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="reference/geopandas.GeoDataFrame.html" class="btn btn-neutral float-right" title="geopandas.GeoDataFrame" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="geocoding.html" class="btn btn-neutral" title="Geocoding" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -587,7 +1289,7 @@ do so.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -609,7 +1311,7 @@ do so.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

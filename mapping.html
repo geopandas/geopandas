@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mapping Tools &mdash; GeoPandas 0.3.0+56.gd3df5eb documentation</title>
+  <title>Mapping Tools &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -36,12 +36,10 @@
   
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0+56.gd3df5eb documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Managing Projections" href="projections.html"/>
         <link rel="prev" title="Indexing and Selecting Data" href="indexing.html"/> 
 
@@ -72,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0+56.gd3df5eb
+                0.4.0
               </div>
             
           
@@ -96,9 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -117,9 +119,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -187,28 +194,23 @@
 <h1>Mapping Tools<a class="headerlink" href="#mapping-tools" title="Permalink to this headline">¶</a></h1>
 <p><em>geopandas</em> provides a high-level interface to the <code class="docutils literal"><span class="pre">matplotlib</span></code> library for making maps. Mapping shapes is as easy as using the <code class="docutils literal"><span class="pre">plot()</span></code> method on a <code class="docutils literal"><span class="pre">GeoSeries</span></code> or <code class="docutils literal"><span class="pre">GeoDataFrame</span></code>.</p>
 <p>Loading some example data:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
-<span class="gp">In [2]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
+<span class="gp">In [2]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>We can now plot those GeoDataFrames:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># Examine country GeoDataFrame</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[3]: </span><span class="go"></span>
-<span class="go">      pop_est      continent                  name iso_a3  gdp_md_est  \</span>
-<span class="go">0  28400000.0           Asia           Afghanistan    AFG     22270.0   </span>
-<span class="go">1  12799293.0         Africa                Angola    AGO    110300.0   </span>
-<span class="go">2   3639453.0         Europe               Albania    ALB     21810.0   </span>
-<span class="go">3   4798491.0           Asia  United Arab Emirates    ARE    184300.0   </span>
-<span class="go">4  40913584.0  South America             Argentina    ARG    573900.0   </span>
+<span class="go">      pop_est                        ...                                                                   geometry</span>
+<span class="go">0  28400000.0                        ...                          POLYGON ((61.21081709172574 35.65007233330923,...</span>
+<span class="go">1  12799293.0                        ...                          (POLYGON ((16.32652835456705 -5.87747039146621...</span>
+<span class="go">2   3639453.0                        ...                          POLYGON ((20.59024743010491 41.85540416113361,...</span>
+<span class="go">3   4798491.0                        ...                          POLYGON ((51.57951867046327 24.24549713795111,...</span>
+<span class="go">4  40913584.0                        ...                          (POLYGON ((-65.50000000000003 -55.199999999999...</span>
 
-<span class="go">                                            geometry  </span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...  </span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...  </span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...  </span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...  </span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...  </span>
+<span class="go">[5 rows x 6 columns]</span>
 
 <span class="go"># Basic plot, random colors</span>
 <span class="gp">In [4]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
@@ -277,10 +279,10 @@
 <span class="gp">In [16]: </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
 
 <span class="gp">In [17]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
-<span class="gh">Out[17]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fa1a458b1d0&gt;</span>
+<span class="gh">Out[17]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fb7ac190048&gt;</span>
 
 <span class="gp">In [18]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">                                                                   Out[18]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x7fa1a458b1d0&gt;</span>
+<span class="go">                                                                   Out[18]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x7fb7ac190048&gt;</span>
 
 <span class="gp">In [19]: </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">();</span>
 </pre></div>
@@ -316,7 +318,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -338,7 +340,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0+56.gd3df5eb',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

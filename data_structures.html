@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Data Structures &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Data Structures &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,16 +30,18 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Reading and Writing Files" href="io.html"/>
-        <link rel="prev" title="Installation" href="install.html"/> 
+        <link rel="prev" title="Plotting with CartoPy and GeoPandas" href="gallery/cartopy_convert.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Data Structures</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#geoseries">GeoSeries</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview-of-attributes-and-methods">Overview of Attributes and Methods</a><ul>
@@ -119,9 +126,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -257,23 +269,18 @@ in <a class="reference internal" href="geometric_manipulations.html"><span class
 <p>The “geometry” column – no matter its name – can be accessed through the <code class="docutils literal"><span class="pre">geometry</span></code> attribute (<code class="docutils literal"><span class="pre">gdf.geometry</span></code>), and the name of the <code class="docutils literal"><span class="pre">geometry</span></code> column can be found by typing <code class="docutils literal"><span class="pre">gdf.geometry.name</span></code>.</p>
 <p>A <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the <code class="docutils literal"><span class="pre">set_geometry</span></code> method.</p>
 <p>An example using the <code class="docutils literal"><span class="pre">worlds</span></code> GeoDataFrame:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [2]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[2]: </span><span class="go"></span>
-<span class="go">      pop_est      continent                  name iso_a3  gdp_md_est  \</span>
-<span class="go">0  28400000.0           Asia           Afghanistan    AFG     22270.0   </span>
-<span class="go">1  12799293.0         Africa                Angola    AGO    110300.0   </span>
-<span class="go">2   3639453.0         Europe               Albania    ALB     21810.0   </span>
-<span class="go">3   4798491.0           Asia  United Arab Emirates    ARE    184300.0   </span>
-<span class="go">4  40913584.0  South America             Argentina    ARG    573900.0   </span>
+<span class="go">      pop_est                        ...                                                                   geometry</span>
+<span class="go">0  28400000.0                        ...                          POLYGON ((61.21081709172574 35.65007233330923,...</span>
+<span class="go">1  12799293.0                        ...                          (POLYGON ((16.32652835456705 -5.87747039146621...</span>
+<span class="go">2   3639453.0                        ...                          POLYGON ((20.59024743010491 41.85540416113361,...</span>
+<span class="go">3   4798491.0                        ...                          POLYGON ((51.57951867046327 24.24549713795111,...</span>
+<span class="go">4  40913584.0                        ...                          (POLYGON ((-65.50000000000003 -55.199999999999...</span>
 
-<span class="go">                                            geometry  </span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...  </span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...  </span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...  </span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...  </span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...  </span>
+<span class="go">[5 rows x 6 columns]</span>
 
 <span class="go">#Plot countries</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
@@ -328,7 +335,7 @@ geometry column:</p>
         <a href="io.html" class="btn btn-neutral float-right" title="Reading and Writing Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="install.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="gallery/cartopy_convert.html" class="btn btn-neutral" title="Plotting with CartoPy and GeoPandas" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -337,7 +344,7 @@ geometry column:</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -359,7 +366,7 @@ geometry column:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

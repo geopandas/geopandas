@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Set-Operations with Overlay &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>Set-Operations with Overlay &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
         <link rel="next" title="Aggregation with dissolve" href="aggregation_with_dissolve.html"/>
         <link rel="prev" title="Geometric Manipulations" href="geometric_manipulations.html"/> 
 
@@ -68,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -92,8 +94,13 @@
               
             
             
-              <ul class="current">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -111,9 +118,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -201,17 +213,17 @@ the complexities of applying set operations to two <em>GeoSeries</em>. The stand
 <p>First, we create some example data:</p>
 <div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
 
-<span class="gp">In [2]: </span><span class="n">polys1</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)]),</span>
-<span class="gp">   ...: </span>                        <span class="n">Polygon</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)])])</span>
+<span class="gp">In [2]: </span><span class="n">polys1</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)]),</span>
+<span class="gp">   ...: </span>                              <span class="n">Polygon</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)])])</span>
 <span class="gp">   ...: </span>
 
-<span class="gp">In [3]: </span><span class="n">polys2</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)]),</span>
-<span class="gp">   ...: </span>                        <span class="n">Polygon</span><span class="p">([(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)])])</span>
+<span class="gp">In [3]: </span><span class="n">polys2</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)]),</span>
+<span class="gp">   ...: </span>                              <span class="n">Polygon</span><span class="p">([(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)])])</span>
 <span class="gp">   ...: </span>
 
-<span class="gp">In [4]: </span><span class="n">df1</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">polys1</span><span class="p">,</span> <span class="s1">&#39;df1&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span>
+<span class="gp">In [4]: </span><span class="n">df1</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">polys1</span><span class="p">,</span> <span class="s1">&#39;df1&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span>
 
-<span class="gp">In [5]: </span><span class="n">df2</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">polys2</span><span class="p">,</span> <span class="s1">&#39;df2&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span>
+<span class="gp">In [5]: </span><span class="n">df2</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">polys2</span><span class="p">,</span> <span class="s1">&#39;df2&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span>
 </pre></div>
 </div>
 <p>These two GeoDataFrames have some overlapping areas:</p>
@@ -227,20 +239,20 @@ from overlaying the two input GeoDataFrames. This result covers the area covered
 by the two input GeoDataFrames, and also preserves all unique regions defined by
 the combined boundaries of the two GeoDataFrames.</p>
 <p>When using <code class="docutils literal"><span class="pre">how='union'</span></code>, all those possible geometries are returned:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [8]: </span><span class="n">res_union</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;union&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [8]: </span><span class="n">res_union</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;union&#39;</span><span class="p">)</span>
 
 <span class="gp">In [9]: </span><span class="n">res_union</span>
 <span class="gh">Out[9]: </span><span class="go"></span>
-<span class="go">   df1  df2                                       geometry</span>
-<span class="go">0  1.0  NaN  POLYGON ((2 1, 2 0, 0 0, 0 2, 1 2, 1 1, 2 1))</span>
-<span class="go">1  1.0  1.0            POLYGON ((2 1, 1 1, 1 2, 2 2, 2 1))</span>
-<span class="go">2  NaN  1.0            POLYGON ((2 1, 2 2, 3 2, 3 1, 2 1))</span>
-<span class="go">3  NaN  1.0            POLYGON ((2 2, 1 2, 1 3, 2 3, 2 2))</span>
-<span class="go">4  2.0  NaN            POLYGON ((3 2, 3 3, 4 3, 4 2, 3 2))</span>
-<span class="go">5  2.0  1.0            POLYGON ((3 3, 3 2, 2 2, 2 3, 3 3))</span>
-<span class="go">6  2.0  NaN            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
-<span class="go">7  NaN  2.0  POLYGON ((4 3, 4 4, 3 4, 3 5, 5 5, 5 3, 4 3))</span>
-<span class="go">8  2.0  2.0            POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
+<span class="go">   df1                        ...                                                                   geometry</span>
+<span class="go">0  1.0                        ...                                        POLYGON ((1 2, 2 2, 2 1, 1 1, 1 2))</span>
+<span class="go">1  2.0                        ...                                        POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))</span>
+<span class="go">2  2.0                        ...                                        POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
+<span class="go">3  1.0                        ...                              POLYGON ((0 0, 0 2, 1 2, 1 1, 2 1, 2 0, 0 0))</span>
+<span class="go">4  2.0                        ...                          (POLYGON ((2 3, 2 4, 3 4, 3 3, 2 3)), POLYGON ...</span>
+<span class="go">5  NaN                        ...                          (POLYGON ((1 2, 1 3, 2 3, 2 2, 1 2)), POLYGON ...</span>
+<span class="go">6  NaN                        ...                              POLYGON ((3 4, 3 5, 5 5, 5 3, 4 3, 4 4, 3 4))</span>
+
+<span class="go">[7 rows x 3 columns]</span>
 
 <span class="gp">In [10]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_union</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
@@ -253,14 +265,16 @@ the combined boundaries of the two GeoDataFrames.</p>
 <p>The other <code class="docutils literal"><span class="pre">how</span></code> operations will return different subsets of those geometries.
 With <code class="docutils literal"><span class="pre">how='intersection'</span></code>, it returns only those geometries that are contained
 by both GeoDataFrames:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [13]: </span><span class="n">res_intersection</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [13]: </span><span class="n">res_intersection</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
 
 <span class="gp">In [14]: </span><span class="n">res_intersection</span>
 <span class="gh">Out[14]: </span><span class="go"></span>
-<span class="go">   df1  df2                             geometry</span>
-<span class="go">0    1    1  POLYGON ((2 1, 1 1, 1 2, 2 2, 2 1))</span>
-<span class="go">1    2    1  POLYGON ((3 3, 3 2, 2 2, 2 3, 3 3))</span>
-<span class="go">2    2    2  POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
+<span class="go">   df1                 ...                                              geometry</span>
+<span class="go">0    1                 ...                   POLYGON ((1 2, 2 2, 2 1, 1 1, 1 2))</span>
+<span class="go">1    2                 ...                   POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))</span>
+<span class="go">2    2                 ...                   POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
+
+<span class="go">[3 rows x 3 columns]</span>
 
 <span class="gp">In [15]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_intersection</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
@@ -272,17 +286,17 @@ by both GeoDataFrames:</p>
 <a class="reference internal image-reference" href="_images/overlay_example_intersection.png"><img alt="_images/overlay_example_intersection.png" src="_images/overlay_example_intersection.png" style="width: 5in;" /></a>
 <p><code class="docutils literal"><span class="pre">how='symmetric_difference'</span></code> is the opposite of <code class="docutils literal"><span class="pre">'intersection'</span></code> and returns
 the geometries that are only part of one of the GeoDataFrames but not of both:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [18]: </span><span class="n">res_symdiff</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;symmetric_difference&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [18]: </span><span class="n">res_symdiff</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;symmetric_difference&#39;</span><span class="p">)</span>
 
 <span class="gp">In [19]: </span><span class="n">res_symdiff</span>
 <span class="gh">Out[19]: </span><span class="go"></span>
-<span class="go">   df1  df2                                       geometry</span>
-<span class="go">0  1.0  NaN  POLYGON ((2 1, 2 0, 0 0, 0 2, 1 2, 1 1, 2 1))</span>
-<span class="go">1  NaN  1.0            POLYGON ((2 1, 2 2, 3 2, 3 1, 2 1))</span>
-<span class="go">2  NaN  1.0            POLYGON ((2 2, 1 2, 1 3, 2 3, 2 2))</span>
-<span class="go">3  2.0  NaN            POLYGON ((3 2, 3 3, 4 3, 4 2, 3 2))</span>
-<span class="go">4  2.0  NaN            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
-<span class="go">5  NaN  2.0  POLYGON ((4 3, 4 4, 3 4, 3 5, 5 5, 5 3, 4 3))</span>
+<span class="go">   df1                        ...                                                                   geometry</span>
+<span class="go">0  1.0                        ...                              POLYGON ((0 0, 0 2, 1 2, 1 1, 2 1, 2 0, 0 0))</span>
+<span class="go">1  2.0                        ...                          (POLYGON ((2 3, 2 4, 3 4, 3 3, 2 3)), POLYGON ...</span>
+<span class="go">2  NaN                        ...                          (POLYGON ((1 2, 1 3, 2 3, 2 2, 1 2)), POLYGON ...</span>
+<span class="go">3  NaN                        ...                              POLYGON ((3 4, 3 5, 5 5, 5 3, 4 3, 4 4, 3 4))</span>
+
+<span class="go">[4 rows x 3 columns]</span>
 
 <span class="gp">In [20]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_symdiff</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
@@ -294,14 +308,13 @@ the geometries that are only part of one of the GeoDataFrames but not of both:</
 <a class="reference internal image-reference" href="_images/overlay_example_symdiff.png"><img alt="_images/overlay_example_symdiff.png" src="_images/overlay_example_symdiff.png" style="width: 5in;" /></a>
 <p>To obtain the geometries that are part of <code class="docutils literal"><span class="pre">df1</span></code> but are not contained in
 <code class="docutils literal"><span class="pre">df2</span></code>, you can use <code class="docutils literal"><span class="pre">how='difference'</span></code>:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [23]: </span><span class="n">res_difference</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;difference&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [23]: </span><span class="n">res_difference</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;difference&#39;</span><span class="p">)</span>
 
 <span class="gp">In [24]: </span><span class="n">res_difference</span>
 <span class="gh">Out[24]: </span><span class="go"></span>
-<span class="go">   df1   df2                                       geometry</span>
-<span class="go">0    1  None  POLYGON ((2 1, 2 0, 0 0, 0 2, 1 2, 1 1, 2 1))</span>
-<span class="go">1    2  None            POLYGON ((3 2, 3 3, 4 3, 4 2, 3 2))</span>
-<span class="go">2    2  None            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
+<span class="go">                                            geometry  df1</span>
+<span class="go">0      POLYGON ((0 0, 0 2, 1 2, 1 1, 2 1, 2 0, 0 0))    1</span>
+<span class="go">1  (POLYGON ((2 3, 2 4, 3 4, 3 3, 2 3)), POLYGON ...    2</span>
 
 <span class="gp">In [25]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_difference</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
@@ -313,17 +326,18 @@ the geometries that are only part of one of the GeoDataFrames but not of both:</
 <a class="reference internal image-reference" href="_images/overlay_example_difference.png"><img alt="_images/overlay_example_difference.png" src="_images/overlay_example_difference.png" style="width: 5in;" /></a>
 <p>Finally, with <code class="docutils literal"><span class="pre">how='identity'</span></code>, the result consists of the surface of <code class="docutils literal"><span class="pre">df1</span></code>,
 but with the geometries obtained from overlaying <code class="docutils literal"><span class="pre">df1</span></code> with <code class="docutils literal"><span class="pre">df2</span></code>:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [28]: </span><span class="n">res_identity</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [28]: </span><span class="n">res_identity</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">)</span>
 
 <span class="gp">In [29]: </span><span class="n">res_identity</span>
 <span class="gh">Out[29]: </span><span class="go"></span>
-<span class="go">   df1  df2                                       geometry</span>
-<span class="go">0    1  NaN  POLYGON ((2 1, 2 0, 0 0, 0 2, 1 2, 1 1, 2 1))</span>
-<span class="go">1    1  1.0            POLYGON ((2 1, 1 1, 1 2, 2 2, 2 1))</span>
-<span class="go">2    2  NaN            POLYGON ((3 2, 3 3, 4 3, 4 2, 3 2))</span>
-<span class="go">3    2  1.0            POLYGON ((3 3, 3 2, 2 2, 2 3, 3 3))</span>
-<span class="go">4    2  NaN            POLYGON ((3 3, 2 3, 2 4, 3 4, 3 3))</span>
-<span class="go">5    2  2.0            POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
+<span class="go">   df1                        ...                                                                   geometry</span>
+<span class="go">0  1.0                        ...                                        POLYGON ((1 2, 2 2, 2 1, 1 1, 1 2))</span>
+<span class="go">1  2.0                        ...                                        POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))</span>
+<span class="go">2  2.0                        ...                                        POLYGON ((3 4, 4 4, 4 3, 3 3, 3 4))</span>
+<span class="go">3  1.0                        ...                              POLYGON ((0 0, 0 2, 1 2, 1 1, 2 1, 2 0, 0 0))</span>
+<span class="go">4  2.0                        ...                          (POLYGON ((2 3, 2 4, 3 4, 3 3, 2 3)), POLYGON ...</span>
+
+<span class="go">[5 rows x 3 columns]</span>
 
 <span class="gp">In [30]: </span><span class="n">ax</span> <span class="o">=</span> <span class="n">res_identity</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
 
@@ -337,9 +351,9 @@ but with the geometries obtained from overlaying <code class="docutils literal">
 <div class="section" id="overlay-countries-example">
 <h2>Overlay Countries Example<a class="headerlink" href="#overlay-countries-example" title="Permalink to this headline">¶</a></h2>
 <p>First, we load the countries and cities example datasets and select :</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [33]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [33]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
-<span class="gp">In [34]: </span><span class="n">capitals</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
+<span class="gp">In [34]: </span><span class="n">capitals</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
 
 <span class="go"># Select South Amarica and some columns</span>
 <span class="gp">In [35]: </span><span class="n">countries</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;continent&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;South America&quot;</span><span class="p">]</span>
@@ -373,14 +387,14 @@ wishes to identify the “core” portion of each country – defined as areas w
 <a class="reference internal image-reference" href="_images/world_basic.png"><img alt="_images/world_basic.png" src="_images/world_basic.png" style="width: 5in;" /></a>
 <a class="reference internal image-reference" href="_images/capital_buffers.png"><img alt="_images/capital_buffers.png" src="_images/capital_buffers.png" style="width: 5in;" /></a>
 <p>To select only the portion of countries within 500km of a capital, we specify the <code class="docutils literal"><span class="pre">how</span></code> option to be “intersect”, which creates a new set of polygons where these two layers overlap:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [43]: </span><span class="n">country_cores</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">capitals</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [43]: </span><span class="n">country_cores</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">capitals</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
 
 <span class="gp">In [44]: </span><span class="n">country_cores</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/country_cores.png"><img alt="_images/country_cores.png" src="_images/country_cores.png" style="width: 5in;" /></a>
 <p>Changing the “how” option allows for different types of overlay operations. For example, if we were interested in the portions of countries <em>far</em> from capitals (the peripheries), we would compute the difference of the two.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [45]: </span><span class="n">country_peripheries</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">capitals</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;difference&#39;</span><span class="p">)</span>
+<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [45]: </span><span class="n">country_peripheries</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">capitals</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;difference&#39;</span><span class="p">)</span>
 
 <span class="gp">In [46]: </span><span class="n">country_peripheries</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">);</span>
 </pre></div>
@@ -417,7 +431,7 @@ wishes to identify the “core” portion of each country – defined as areas w
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -439,7 +453,7 @@ wishes to identify the “core” portion of each country – defined as areas w
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

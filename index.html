@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>GeoPandas 0.3.0 &mdash; GeoPandas 0.3.0 documentation</title>
+  <title>GeoPandas 0.4.0 &mdash; GeoPandas 0.4.0 documentation</title>
   
 
   
@@ -30,14 +30,16 @@
   
 
   
+    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
   
-        <link rel="author" title="About these documents"
-              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.3.0 documentation" href="#"/>
+    <link rel="top" title="GeoPandas 0.4.0 documentation" href="#"/>
         <link rel="next" title="Installation" href="install.html"/> 
 
   
@@ -67,7 +69,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -91,8 +93,13 @@
               
             
             
-              <ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
@@ -103,9 +110,14 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 </ul>
 
             
@@ -150,7 +162,7 @@
     
       <li><a href="#">Docs</a> &raquo;</li>
         
-      <li>GeoPandas 0.3.0</li>
+      <li>GeoPandas 0.4.0</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -170,7 +182,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="geopandas-version">
-<h1>GeoPandas 0.3.0<a class="headerlink" href="#geopandas-version" title="Permalink to this headline">¶</a></h1>
+<h1>GeoPandas 0.4.0<a class="headerlink" href="#geopandas-version" title="Permalink to this headline">¶</a></h1>
 <p>GeoPandas is an open source project to make working with geospatial
 data in python easier.  GeoPandas extends the datatypes used by
 <a class="reference external" href="http://pandas.pydata.org">pandas</a> to allow spatial operations on geometric types.  Geometric
@@ -185,75 +197,37 @@ to multiple geometries to shapely.  GeoPandas enables you to easily do
 operations in python that would otherwise require a spatial database
 such as PostGIS.</p>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="install.html#installing-geopandas">Installing GeoPandas</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_structures.html#geoseries">GeoSeries</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_structures.html#geodataframe">GeoDataFrame</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="io.html#reading-spatial-data">Reading Spatial Data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="io.html#writing-spatial-data">Writing Spatial Data</a></li>
-</ul>
-</li>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="mapping.html#chloropleth-maps">Chloropleth Maps</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mapping.html#maps-with-layers">Maps with Layers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mapping.html#other-resources">Other Resources</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="projections.html#coordinate-reference-systems">Coordinate Reference Systems</a></li>
-<li class="toctree-l2"><a class="reference internal" href="projections.html#setting-a-projection">Setting a Projection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="projections.html#re-projecting">Re-Projecting</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="geometric_manipulations.html#constructive-methods">Constructive Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="geometric_manipulations.html#affine-transformations">Affine transformations</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="set_operations.html#the-different-overlay-operations">The different Overlay operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="set_operations.html#overlay-countries-example">Overlay Countries Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="set_operations.html#more-examples">More Examples</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="aggregation_with_dissolve.html#dissolve-example"><code class="docutils literal"><span class="pre">dissolve</span></code> Example</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="mergingdata.html#attribute-joins">Attribute Joins</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mergingdata.html#spatial-joins">Spatial Joins</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#geodataframe">GeoDataFrame</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#forking-the-geopandas-repository-using-git">1) Forking the <em>geopandas</em> repository using Git</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#creating-a-development-environment">2) Creating a development environment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#installing-dependencies">3) Installing Dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#making-a-development-build">4) Making a development build</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#making-changes-and-writing-tests">5) Making changes and writing tests</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#updating-the-documentation">6) Updating the Documentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#submitting-a-pull-request">7) Submitting a Pull Request</a></li>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="about.html#known-issues">Known issues</a></li>
-</ul>
-</li>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
 </ul>
 </div>
 </div>
@@ -287,7 +261,7 @@ such as PostGIS.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2017, GeoPandas developers.
+        &copy; Copyright 2013–2018, GeoPandas developers.
 
     </p>
   </div>
@@ -309,7 +283,7 @@ such as PostGIS.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
