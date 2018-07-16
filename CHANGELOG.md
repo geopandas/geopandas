@@ -1,7 +1,7 @@
 Changes
 =======
 
-Version 0.4.0 (July ??, 2017)
+Version 0.4.0 (July 15, 2017)
 -----------------------------
 
 Improvements:
