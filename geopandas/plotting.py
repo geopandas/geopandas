@@ -438,7 +438,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                 cmap = 'Set1'
         categories = list(set(values))
         categories.sort()
-        valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
+        valuemap = dict((k, v) for (v, k) in enumerate(categories))
         values = np.array([valuemap[k] for k in values])
 
     if scheme is not None:
