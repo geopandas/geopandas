@@ -495,14 +495,24 @@ class GeoPandasBase(object):
 
         Parameters
         ----------
-        distance : float
-            The radius of the buffer.
+        distance : float, np.array, pd.Series
+            The radius of the buffer. If np.array or pd.Series are used
+            then it must have same length as the GeoSeries.
         resolution: float
             Optional, the resolution of the buffer around each vertex.
         """
+        if isinstance(distance, (np.ndarray, pd.Series)):
+            if distance.shape[0] != self.shape[0]:
+                raise ValueError("Length of distance sequence does not match "
+                                 "length of the GeoSeries")
+            return gpd.GeoSeries(
+                    [geom.buffer(dist, resolution, **kwargs)
+                    for geom, dist in zip(self.geometry, distance)],
+                    index=self.index, crs=self.crs)
+
         return gpd.GeoSeries([geom.buffer(distance, resolution, **kwargs)
                              for geom in self.geometry],
-                         index=self.index, crs=self.crs)
+                             index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
         """Returns a ``GeoSeries`` containing a simplified representation of
@@ -551,11 +561,21 @@ class GeoPandasBase(object):
         Parameters
         ----------
         distance : float or Series of floats
-            Distance(s) along the geometries at which a point should be returned
+            Distance(s) along the geometries at which a point should be returned.
+            If np.array or pd.Series are used then it must have same length
+            as the GeoSeries.
         normalized : boolean
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
+        if isinstance(distance, (np.ndarray, pd.Series)):
+            if distance.shape[0] != self.shape[0]:
+                raise ValueError("Length of distance sequence does not match "
+                                 "length of the GeoSeries")
+            return gpd.GeoSeries(
+                    [s.interpolate(dist, normalized)
+                    for (s, dist) in zip(self.geometry, distance)],
+                index=self.index, crs=self.crs)
 
         return gpd.GeoSeries([s.interpolate(distance, normalized)
                              for s in self.geometry],
