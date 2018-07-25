@@ -26,6 +26,9 @@ def _flatten_multi_geoms(geoms, colors=None):
         colors = [None] * len(geoms)
 
     components, component_colors = [], []
+    
+    if not geoms.geom_type.str.startswith('Multi').any():
+        return geoms, colors
 
     # precondition, so zip can't short-circuit
     assert len(geoms) == len(colors)
