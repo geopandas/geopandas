@@ -1,4 +1,4 @@
-.. image:: _static/geopandas.png :height: 220px :align: left
+.. image:: _static/logo.png :height: 220px :align: left
 
 GeoPandas |version|
 ===================
