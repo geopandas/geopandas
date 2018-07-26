@@ -1,3 +1,5 @@
+.. image:: _static/geopandas.png :height: 220px :align: left
+
 GeoPandas |version|
 ===================
 
