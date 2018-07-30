@@ -56,9 +56,18 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if right_df._sindex_generated:
         tree_idx = right_df.sindex
         tree_idx_df = 'right'
-    else:
+    elif left_df._sindex_generated:
         tree_idx = left_df.sindex
         tree_idx_df = 'left'
+    else:
+        # generate whichever is shortest
+        if left_df.shape[0] < right_df.shape[0]:
+            tree_idx = left_df.sindex
+            tree_idx_df = 'left'
+        else:
+            tree_idx = right_df.sindex
+            tree_idx_df = 'right'
+
 
     # the rtree spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
