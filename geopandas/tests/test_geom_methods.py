@@ -421,7 +421,7 @@ class TestGeomMethods:
     def test_interpolate_distance_wrong_length(self):
         distances = np.array([1, 2, 3])
         with pytest.raises(ValueError):
-            self.g5.buffer(distances)
+            self.g5.interpolate(distances)
 
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)

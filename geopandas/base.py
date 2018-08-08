@@ -573,11 +573,11 @@ class GeoPandasBase(object):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
             return gpd.GeoSeries(
-                    [s.interpolate(dist, normalized)
+                    [s.interpolate(dist, normalized=normalized)
                     for (s, dist) in zip(self.geometry, distance)],
                 index=self.index, crs=self.crs)
 
-        return gpd.GeoSeries([s.interpolate(distance, normalized)
+        return gpd.GeoSeries([s.interpolate(distance, normalized=normalized)
                              for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -679,8 +679,8 @@ class GeoPandasBase(object):
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and a zero-based integer index that counts the 
-        number of single geometries within a multi-part geometry. 
+        original index and a zero-based integer index that counts the
+        number of single geometries within a multi-part geometry.
 
         Example
         -------
