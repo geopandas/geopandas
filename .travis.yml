@@ -13,18 +13,18 @@ matrix:
     - python: 2.7
       env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5
     - python: 2.7
-      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 CHANNEL=conda-forge
     - python: 2.7
       env: PANDAS=0.23.2  MATPLOTLIB=2.1.2
     - python: 2.7
       env: PANDAS=master  MATPLOTLIB=2.2.2
 
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5 CHANNEL=conda-forge
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5 CHANNEL=conda-forge # conda-forge is needed here for this combination
     - python: 3.6
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
     - python: 3.6
-      env: PANDAS=0.23.2  MATPLOTLIB=2.2.2
+      env: PANDAS=0.23.2  MATPLOTLIB=2.2.2 CHANNEL=conda-forge
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
@@ -38,7 +38,7 @@ install:
   - if [ -n "$CHANNEL" ]; then conda config --add channels $CHANNEL; fi
 
   # Install dependencies
-  - conda create -n test-geopandas -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy codecov pytest-cov mock
+  - conda create -n test-geopandas python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy pytest-cov mock
   - source activate test-geopandas
   - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - if [ -n "$SHAPELY" ]; then conda install shapely=$SHAPELY; else conda install shapely; fi
@@ -46,6 +46,9 @@ install:
 
   - if [[ $PANDAS != 'master' ]]; then conda install pandas==$PANDAS; fi
   - if [[ $PANDAS == 'master' ]]; then conda install pandas cython; pip install git+https://github.com/pydata/pandas.git; fi
+
+  # codecov is not available from defaults
+  - conda install -c conda-forge codecov
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
