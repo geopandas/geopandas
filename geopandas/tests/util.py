@@ -1,7 +1,10 @@
 import os.path
+import sqlite3
 
-from geopandas import GeoDataFrame, GeoSeries
-
+import shapely.wkb
+from geopandas import GeoDataFrame
+from geopandas.testing import (
+    geom_equals, geom_almost_equals, assert_geoseries_equal)  # flake8: noqa
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
@@ -14,6 +17,7 @@ except ImportError:
     class OperationalError(Exception):
         pass
 
+# mock not used here, but the import from here is used in other modules
 try:
     import unittest.mock as mock
 except ImportError:
@@ -21,7 +25,7 @@ except ImportError:
 
 
 def validate_boro_df(df, case_sensitive=False):
-    """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
+    """Tests a GeoDataFrame that has been read in from the nybb dataset."""
     assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
     # were properly loaded as MultiPolygons
@@ -45,12 +49,36 @@ def connect(dbname):
     return con
 
 
-def create_db(df):
+def create_sqlite(df, filename, geom_col="geom"):
+    """
+    Create a sqlite database with the nybb table. This was the result of
+    using ogr2ogr to create a sqlite database from a shapefile, and then
+    the .dump command within sqlite to produce the commands to reproduce the
+    database, so may not representative of standard sqlite databases.
+    """
+
+    con = sqlite3.connect(filename)
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS 'nybb' "
+                "( ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "'{}' BLOB, 'borocode' INTEGER, ".format(geom_col) +
+                "'boroname' VARCHAR(32), 'shape_leng' FLOAT, "
+                "'shape_area' FLOAT);")
+    sql_row = "INSERT INTO nybb VALUES({},X'{}',{},'{}',{},{});"
+    for i, row in df.iterrows():
+        cur.execute(sql_row.format(i, shapely.wkb.dumps(row['geometry'],
+                                                        hex=True),
+                                   row['BoroCode'], row['BoroName'],
+                                   row['Shape_Leng'], row['Shape_Area']))
+    con.commit()
+    con.close()
+
+
+def create_postgis(df, srid=None, geom_col="geom"):
     """
     Create a nybb table in the test_geopandas PostGIS database.
     Returns a boolean indicating whether the database table was successfully
     created
-
     """
     # Try to create the database, skip the db tests if something goes
     # wrong
@@ -62,23 +90,28 @@ def create_db(df):
     if con is None:
         return False
 
+    if srid is not None:
+        geom_schema = "geometry(MULTIPOLYGON, {})".format(srid)
+        geom_insert = ("ST_SetSRID(ST_GeometryFromText(%s), {})".format(srid))
+    else:
+        geom_schema = "geometry"
+        geom_insert = "ST_GeometryFromText(%s)"
     try:
         cursor = con.cursor()
         cursor.execute("DROP TABLE IF EXISTS nybb;")
 
         sql = """CREATE TABLE nybb (
-            geom        geometry,
-            borocode    integer,
-            boroname    varchar(40),
-            shape_leng  float,
-            shape_area  float
-        );"""
+            {geom_col}   {geom_schema},
+            borocode     integer,
+            boroname     varchar(40),
+            shape_leng   float,
+            shape_area   float
+            );""".format(geom_col=geom_col, geom_schema=geom_schema)
         cursor.execute(sql)
 
         for i, row in df.iterrows():
-            sql = """INSERT INTO nybb VALUES (
-                ST_GeometryFromText(%s), %s, %s, %s, %s
-            );"""
+            sql = """INSERT INTO nybb VALUES ({}, %s, %s, %s, %s
+            );""".format(geom_insert)
             cursor.execute(sql, (row['geometry'].wkt,
                                  row['BoroCode'],
                                  row['BoroName'],
@@ -90,101 +123,3 @@ def create_db(df):
         con.close()
 
     return True
-
-
-def assert_seq_equal(left, right):
-    """
-    Poor man's version of assert_almost_equal which isn't working with Shapely
-    objects right now
-    """
-    assert (len(left) == len(right),
-            "Mismatched lengths: %d != %d" % (len(left), len(right)))
-
-    for elem_left, elem_right in zip(left, right):
-        assert elem_left == elem_right, "%r != %r" % (left, right)
-
-
-def geom_equals(this, that):
-    """Test for geometric equality. Empty geometries are considered equal.
-
-    Parameters
-    ----------
-    this, that : arrays of Geo objects (or anything that has an `is_empty`
-                 attribute)
-    """
-
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
-
-
-def geom_almost_equals(this, that):
-    """Test for 'almost' geometric equality. Empty geometries considered equal.
-
-    Parameters
-    ----------
-    this, that : arrays of Geo objects (or anything that has an `is_empty`
-                 property)
-    """
-
-    return (this.geom_almost_equals(that) |
-            (this.is_empty & that.is_empty)).all()
-
-
-def assert_geoseries_equal(left, right, check_dtype=False,
-                           check_index_type=False,
-                           check_series_type=True,
-                           check_less_precise=False,
-                           check_geom_type=False,
-                           check_crs=True):
-    """Test util for checking that two GeoSeries are equal.
-
-    Parameters
-    ----------
-    left, right : two GeoSeries
-    check_dtype : bool, default False
-        if True, check geo dtype [only included so it's a drop-in replacement
-        for assert_series_equal]
-    check_index_type : bool, default False
-        check that index types are equal
-    check_series_type : bool, default True
-        check that both are same type (*and* are GeoSeries). If False,
-        will attempt to convert both into GeoSeries.
-    check_less_precise : bool, default False
-        if True, use geom_almost_equals. if False, use geom_equals.
-    check_geom_type : bool, default False
-        if True, check that all the geom types are equal.
-    check_crs: bool, default True
-        if check_series_type is True, then also check that the
-        crs matches
-    """
-    assert len(left) == len(right), "%d != %d" % (len(left), len(right))
-
-    if check_index_type:
-        assert isinstance(left.index, type(right.index))
-
-    if check_dtype:
-        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype,
-                                                               right.dtype)
-
-    if check_series_type:
-        assert isinstance(left, GeoSeries)
-        assert isinstance(left, type(right))
-
-        if check_crs:
-            assert(left.crs == right.crs)
-    else:
-        if not isinstance(left, GeoSeries):
-            left = GeoSeries(left)
-        if not isinstance(right, GeoSeries):
-            right = GeoSeries(right, index=left.index)
-
-    assert left.index.equals(right.index), "index: %s != %s" % (left.index,
-                                                                right.index)
-
-    if check_geom_type:
-        assert (left.type == right.type).all(), "type: %s != %s" % (left.type,
-                                                                    right.type)
-
-    if check_less_precise:
-        assert geom_almost_equals(left, right)
-    else:
-        assert geom_equals(left, right)

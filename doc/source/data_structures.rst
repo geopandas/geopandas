@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
@@ -93,7 +93,7 @@ An example using the ``worlds`` GeoDataFrame:
 
 .. ipython:: python
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 
     world.head()
     #Plot countries

@@ -83,7 +83,7 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how='inner', op=op)
-        
+
         exp = expected[op].dropna().copy()
         exp = exp.drop('geometry_y', axis=1).rename(
             columns={'geometry_x': 'geometry'})
@@ -116,6 +116,23 @@ class TestSpatialJoin:
         exp.index.name = None
 
         assert_frame_equal(res, exp)
+
+    def test_empty_join(self):
+        # Check empty joins
+        polygons = geopandas.GeoDataFrame({'col2': [1, 2], 
+                                           'geometry':  [Polygon([(0, 0), (1, 0), 
+                                                                  (1, 1), (0, 1)]), 
+                                                         Polygon([(1, 0), (2, 0), 
+                                                                  (2, 1), (1, 1)])
+                                                        ]})
+        not_in = geopandas.GeoDataFrame({'col1': [1], 
+                             'geometry': [Point(-0.5, 0.5)]})
+        empty = sjoin(not_in, polygons, how='left', op='intersects')
+        assert empty.index_right.isnull().all()
+        empty = sjoin(not_in, polygons, how='right', op='intersects')
+        assert empty.index_left.isnull().all()
+        empty = sjoin(not_in, polygons, how='inner', op='intersects')
+        assert empty.empty
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
@@ -209,7 +226,7 @@ class TestSpatialJoinNYBB:
         assert 'Shape_Area_right' in df.columns
 
     @pytest.mark.parametrize('how', ['left', 'right', 'inner'])
-    def test_sjoin_named_index(self,how):
+    def test_sjoin_named_index(self, how):
         #original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = 'pointid'
@@ -282,3 +299,21 @@ class TestSpatialJoinNYBB:
     def test_sjoin_outer(self):
         df = sjoin(self.pointdf, self.polydf, how="outer")
         assert df.shape == (21, 8)
+
+
+@pytest.mark.skipif(not base.HAS_SINDEX, reason='Rtree absent, skipping')
+class TestSpatialJoinNaturalEarth:
+
+    def setup_method(self):
+        world_path = geopandas.datasets.get_path("naturalearth_lowres")
+        cities_path = geopandas.datasets.get_path("naturalearth_cities")
+        self.world = read_file(world_path)
+        self.cities = read_file(cities_path)
+
+    def test_sjoin_inner(self):
+        # GH637
+        countries = self.world[["geometry", "name"]]
+        countries = countries.rename(columns={"name": "country"})
+        cities_with_country = sjoin(self.cities, countries, how="inner",
+                                    op="intersects")
+        assert cities_with_country.shape == (172, 4)

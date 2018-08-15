@@ -35,11 +35,11 @@ For the installation of GeoPandas, the following packages are required:
 - ``pandas``
 - ``shapely``
 - ``fiona``
-- ``descartes``
 - ``pyproj``
 
-Further, [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
+for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
+dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
 
 
 **Install**
@@ -80,7 +80,7 @@ Examples
     >>> p1 = Polygon([(0, 0), (1, 0), (1, 1)])
     >>> p2 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     >>> p3 = Polygon([(2, 0), (3, 0), (3, 1), (2, 1)])
-    >>> g = GeoSeries([p1, p2, p3])
+    >>> g = geopandas.GeoSeries([p1, p2, p3])
     >>> g
     0    POLYGON ((0.0000000000000000 0.000000000000000...
     1    POLYGON ((0.0000000000000000 0.000000000000000...
@@ -115,7 +115,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
     >>> nybb_path = geopandas.datasets.get_path('nybb')
-    >>> boros = GeoDataFrame.from_file(nybb_path)
+    >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort()
     >>> boros

@@ -3,11 +3,12 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
-
+   import matplotlib.pyplot as plt
+   plt.close('all')
 
 
 Mapping Tools
@@ -20,8 +21,8 @@ Loading some example data:
 
 .. ipython:: python
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-    cities = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
 We can now plot those GeoDataFrames:
 
@@ -62,7 +63,7 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
-The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). By default, ``scheme`` is set to 'equal_intervals', but it can also be adjusted to any other `pysal option <http://pysal.org/1.2/library/esda/mapclassify.html>`_, like 'quantiles', 'percentiles', etc.
+The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). The ``scheme`` option can be set to 'equal_interval', 'quantiles' or 'fisher_jenks'. See the `PySAL documentation <http://pysal.readthedocs.io/en/latest/library/esda/mapclassify.html>`_ for further details about these map classification schemes.
 
 .. ipython:: python
 
@@ -128,3 +129,10 @@ Links to jupyter Notebooks for different mapping tasks:
     :suppress:
 
     matplotlib.rcParams['figure.figsize'] = orig
+
+
+.. ipython:: python
+    :suppress:
+
+    import matplotlib.pyplot as plt
+    plt.close('all')

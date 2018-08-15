@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -180,7 +181,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None):
+    def from_features(cls, features, crs=None, columns=None):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -196,6 +197,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               ``__geo_interface__``.
         crs : str or dict (optional)
             Coordinate reference system to set on the resulting frame.
+        columns : list of column names, optional
+            Optionally specify the column names to include in the output frame.
+            This does not overwrite the property names of the input, but can
+            ensure a consistent output format.
 
         Returns
         -------
@@ -228,13 +233,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
             d.update(f['properties'])
             rows.append(d)
-        df = GeoDataFrame.from_dict(rows)
+        df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
         return df
 
     @classmethod
-    def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
-                     coerce_float=True, params=None):
+    def from_postgis(cls, sql, con, geom_col='geom', crs=None,
+                     hex_encoded=True, index_col=None, coerce_float=True,
+                     params=None):
         """Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column.
 
@@ -246,6 +252,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             column name to convert to shapely geometries
         crs : optional
             Coordinate reference system to use for the returned GeoDataFrame
+        hex_encoded : bool, optional
+            Whether the geometry is in a hex-encoded string. Default is True,
+            standard for postGIS.
         index_col : string or list of strings, optional, default: None
             Column(s) to set as index(MultiIndex)
         coerce_float : boolean, default True
@@ -256,15 +265,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> sql = "SELECT geom, highway FROM roads;"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
-                     coerce_float, params)
+
+        df = geopandas.io.sql.read_postgis(
+                sql, con, geom_col=geom_col, crs=crs, hex_encoded=hex_encoded,
+                index_col=index_col, coerce_float=coerce_float, params=params)
+        return df
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
-        """Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
+        """
+        Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
         Parameters
         ----------
@@ -570,6 +582,43 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             aggregated = aggregated.reset_index()
 
         return aggregated
+
+    # overrides GeoPandasBase method
+    def explode(self):
+        """
+        Explode muti-part geometries into multiple single geometries.
+
+        Each row containing a multi-part geometry will be split into
+        multiple rows with single geometries, thereby increasing the vertical
+        size of the GeoDataFrame.
+
+        The index of the input geodataframe is no longer unique and is
+        replaced with a multi-index (original index with additional level
+        indicating the multiple geometries: a new zero-based index for each
+        single part geometry per multi-part geometry).
+
+        Returns
+        -------
+        GeoDataFrame
+            Exploded geodataframe with each single geometry
+            as a separate entry in the geodataframe.
+
+        """
+        df_copy = self.copy()
+
+        exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
+        exploded_index = exploded_geom.columns[0]
+
+        df = pd.concat(
+            [df_copy.drop(df_copy._geometry_column_name, axis=1),
+             exploded_geom], axis=1)
+        # reset to MultiIndex, otherwise df index is only first level of
+        # exploded GeoSeries index.
+        df.set_index(exploded_index, append=True, inplace=True)
+        df.index.names = list(self.index.names) + [None]
+        geo_df = df.set_geometry(self._geometry_column_name)
+        return geo_df
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:

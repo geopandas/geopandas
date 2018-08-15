@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from shapely.affinity import rotate
-from shapely.geometry import MultiPolygon, Polygon, LineString, Point
+from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
 
@@ -34,8 +34,14 @@ class TestPointPlotting:
     def setup_method(self):
         self.N = 10
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
+
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+        multipoint1 = MultiPoint(self.points)
+        multipoint2 = rotate(multipoint1, 90)
+        self.df2 = GeoDataFrame({'geometry': [multipoint1, multipoint2],
+                                 'values': [0, 1]})
 
     def test_figsize(self):
 
@@ -105,7 +111,7 @@ class TestPointPlotting:
             ax = self.df.plot(column='values', color='green')
             _check_colors(self.N, ax.collections[0].get_facecolors(), ['green']*self.N)
 
-    def test_style_kwargs(self):
+    def test_markersize(self):
 
         ax = self.points.plot(markersize=10)
         assert ax.collections[0].get_sizes() == [10]
@@ -115,6 +121,17 @@ class TestPointPlotting:
 
         ax = self.df.plot(column='values', markersize=10)
         assert ax.collections[0].get_sizes() == [10]
+
+        ax = self.df.plot(markersize='values')
+        assert (ax.collections[0].get_sizes() == self.df['values']).all()
+
+        ax = self.df.plot(column='values', markersize='values')
+        assert (ax.collections[0].get_sizes() == self.df['values']).all()
+
+    def test_style_kwargs(self):
+
+        ax = self.points.plot(edgecolors='k')
+        assert (ax.collections[0].get_edgecolor() == [0, 0, 0, 1]).all()
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -155,6 +172,20 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
+
+    def test_multipoints(self):
+
+        # MultiPoints
+        ax = self.df2.plot()
+        _check_colors(4, ax.collections[0].get_facecolors(),
+                      [MPL_DFT_COLOR] * 4)
+
+
+        ax = self.df2.plot(column='values')
+        cmap = plt.get_cmap()
+        expected_colors = [cmap(0)]* self.N + [cmap(1)] * self.N
+        _check_colors(2, ax.collections[0].get_facecolors(),
+                      expected_colors)
 
 class TestPointZPlotting:
 
@@ -599,6 +630,42 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ['g'] * self.N)
         ax.cla()
+
+
+def test_column_values():
+    """
+    Check that the dataframe plot method returns same values with an
+    input string (column in df), pd.Series, or np.array
+    """
+    # Build test data
+    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    t2 = Polygon([(1, 0), (2, 0), (2, 1)])
+    polys = GeoSeries([t1, t2], index=list('AB'))
+    df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+
+    # Test with continous values
+    ax = df.plot(column='values')
+    colors = ax.collections[0].get_facecolors()
+    ax = df.plot(column=df['values'])
+    colors_series = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_series)
+    ax = df.plot(column=df['values'].values)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with categorical values
+    ax = df.plot(column='values', categorical=True)
+    colors = ax.collections[0].get_facecolors()
+    ax = df.plot(column=df['values'], categorical=True)
+    colors_series = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_series)
+    ax = df.plot(column=df['values'].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Check raised error: is df rows number equal to column legth?
+    with pytest.raises(ValueError, match="different number of rows"):
+        ax = df.plot(column=np.array([1, 2, 3]))
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
