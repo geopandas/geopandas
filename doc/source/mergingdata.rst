@@ -78,6 +78,7 @@ Sjoin Arguments
 ``sjoin.()`` has two core arguments: ``how`` and ``op``.
 
 **op**
+
 The ```op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
 
 * `intersects`: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.
@@ -87,10 +88,11 @@ The ```op`` argument specifies how ``geopandas`` decides whether or not to join 
 You can read more about each join type in the `Shapely documentation <http://toblerity.org/shapely/manual.html#binary-predicates>`__.
 
 **how**
+
 The `how` argument specifies the type of join that will occur and which geometry is retained in the resultant geodataframe. It accepts the following options:
 
-* ``left``: use the index from the first (or left_df) geodataframe that you provide to sjoin; retain only the left_df geometry column
-* ``right``: use index from second (or right_df); retain only the right_df geometry column
-* ``inner``: use intersection of index values from both geodataframes; retain only the left_df geometry column
+* ``left``: use the index from the first (or `left_df`) geodataframe that you provide to ``sjoin``; retain only the `left_df` geometry column
+* ``right``: use index from second (or `right_df`); retain only the `right_df` geometry column
+* ``inner``: use intersection of index values from both geodataframes; retain only the `left_df` geometry column
 
 Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the ``buffer`` method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.

@@ -69,3 +69,5 @@ However it also accepts other summary statistic options as allowed by ``pandas.g
 * 'min'
 * 'max'
 * 'sum'
+* 'mean'
+* 'median'
