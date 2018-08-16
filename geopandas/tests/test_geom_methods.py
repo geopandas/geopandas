@@ -423,6 +423,11 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
 
+    def test_interpolate_distance_wrong_length(self):
+        distances = Series([1, 2], index=[99, 98])
+        with pytest.raises(ValueError):
+            self.g5.interpolate(distances)
+
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
         p = Point(1.0, 0.5)
@@ -507,12 +512,17 @@ class TestGeomMethods:
              Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
              ])
         calculated = original.buffer(np.array([1, 5]), resolution=1)
-        for _expected, _calculated in zip(expected, calculated):
-            assert _calculated.almost_equals(_expected)
+        assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
     def test_buffer_distance_wrong_length(self):
         original = GeoSeries([self.p0, self.p0])
         distances = np.array([1, 2, 3])
+        with pytest.raises(ValueError):
+            original.buffer(distances)
+
+    def test_buffer_distance_wrong_index(self):
+        original = GeoSeries([self.p0, self.p0], index=[0, 1])
+        distances = Series(data=[1, 2], index=[99, 98])
         with pytest.raises(ValueError):
             original.buffer(distances)
 

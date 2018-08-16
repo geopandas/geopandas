@@ -502,9 +502,13 @@ class GeoPandasBase(object):
             Optional, the resolution of the buffer around each vertex.
         """
         if isinstance(distance, (np.ndarray, pd.Series)):
-            if distance.shape[0] != self.shape[0]:
+            if len(distance) != len(self.index):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
+            if isinstance(distance, pd.Series):
+                if not (distance.index == self.index).all():
+                    raise ValueError("Index values of distance sequence does "
+                                     "not match index values of the GeoSeries")
             return gpd.GeoSeries(
                     [geom.buffer(dist, resolution, **kwargs)
                     for geom, dist in zip(self.geometry, distance)],
@@ -569,9 +573,13 @@ class GeoPandasBase(object):
             of the geometric object's length.
         """
         if isinstance(distance, (np.ndarray, pd.Series)):
-            if distance.shape[0] != self.shape[0]:
+            if len(distance) != len(self.index):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
+            if isinstance(distance, pd.Series):
+                if not (distance.index == self.index).all():
+                    raise ValueError("Index values of distance sequence does "
+                                     "not match index values of the GeoSeries")
             return gpd.GeoSeries(
                     [s.interpolate(dist, normalized=normalized)
                     for (s, dist) in zip(self.geometry, distance)],
