@@ -506,7 +506,7 @@ class GeoPandasBase(object):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
             if isinstance(distance, pd.Series):
-                if not (distance.index == self.index).all():
+                if not self.index.equals(distance.index):
                     raise ValueError("Index values of distance sequence does "
                                      "not match index values of the GeoSeries")
             return gpd.GeoSeries(
@@ -577,7 +577,7 @@ class GeoPandasBase(object):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
             if isinstance(distance, pd.Series):
-                if not (distance.index == self.index).all():
+                if not self.index.equals(distance.index):
                     raise ValueError("Index values of distance sequence does "
                                      "not match index values of the GeoSeries")
             return gpd.GeoSeries(
