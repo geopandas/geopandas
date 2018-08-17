@@ -2,7 +2,10 @@ from functools import partial
 import json
 
 import numpy as np
+import pandas as pd
 from pandas import Series
+from pandas.core.internals import SingleBlockManager
+
 import pyproj
 from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
@@ -10,6 +13,9 @@ from shapely.ops import transform
 
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
+
+from .array import GeometryArray, from_shapely
+from .base import is_geometry_type
 
 
 def _is_empty(x):
@@ -31,18 +37,40 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return arr.view(GeoSeries)
 
-    def __init__(self, *args, **kwargs):
-        # fix problem for scalar geometries passed, ensure the list of
-        # scalars is of correct length if index is specified
-        if len(args) == 1 and isinstance(args[0], BaseGeometry):
-            n = len(kwargs.get('index', [1]))
-            args = ([args[0]] * n,)
+    def __new__(cls, data=None, index=None, crs=None, **kwargs):
 
-        crs = kwargs.pop('crs', None)
+        if isinstance(data, BaseGeometry):
+            # fix problem for scalar geometries passed, ensure the list of
+            # scalars is of correct length if index is specified
+            n = len(index) if index is not None else 1
+            data = [data] * n
 
-        super(GeoSeries, self).__init__(*args, **kwargs)
+        name = kwargs.pop('name', None)
+
+        if not is_geometry_type(data):
+            s = pd.Series(data, index=index, name=name, **kwargs)
+            # prevent trying to convert non-geometry objects
+            if s.dtype != object and not s.empty:
+                return s
+            # try to convert to GeometryArray, if fails return plain Series
+            try:
+                data = from_shapely(s.values)
+            except TypeError:
+                return s
+            index = s.index
+            name = s.name
+
+        self = super(GeoSeries, cls).__new__(cls)
+        super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
         self.crs = crs
         self._invalidate_sindex()
+        return self
+
+    def __init__(self, *args, **kwargs):
+        # need to overwrite Series init to prevent converting the
+        # manually constructed GeometryBlock back to object block
+        # by calling the Series init
+        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)
@@ -242,7 +270,6 @@ class GeoSeries(GeoPandasBase, Series):
             return GeoSeries(left), GeoSeries(right)
         else: # It is probably a Series, let's keep it that way
             return GeoSeries(left), right
-
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
