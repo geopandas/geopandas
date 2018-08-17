@@ -373,5 +373,6 @@ def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
         dfunion = _overlay_union(df1, df2)
         result = dfunion[dfunion['__idx1'].notnull()].copy()
         result.reset_index(drop=True, inplace=True)
-    result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+    if set(result.columns).intersection(['__idx1', '__idx2'])!=set():
+        result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
     return result
