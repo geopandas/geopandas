@@ -393,6 +393,24 @@ class TestDataFrame:
 
         assert result_schema == schema
 
+    def test_to_file_crs(self):
+        """
+        Ensure that the file is written according to the crs
+        if it is specified
+
+        """
+        tempfilename = os.path.join(self.tempdir, 'crs.shp')
+        self.df.to_file(tempfilename, crs=self.df.crs)
+        # Read layer back in
+        df = GeoDataFrame.from_file(tempfilename)
+        assert 'geometry' in df
+        assert len(df) == 5
+        assert np.alltrue(df['BoroName'].values == self.boros)
+        # add oherwise failed
+        df.crs["x_0"] = int(df.crs["x_0"])
+        df.crs['wktext'] = True
+        assert self.df.crs == df.crs
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df['BoroName'].str.contains('B')]
