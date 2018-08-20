@@ -303,4 +303,4 @@ def test_empty_intersection(dfs):
     expected = GeoDataFrame([], columns=['df1', 'df3', 'geometry'])
     result = overlay(df1, df3)
     assert_geodataframe_equal(result, expected, check_column_type=False,
-                              check_less_precise=True)
+                              check_less_precise=True, check_crs=False)
