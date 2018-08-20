@@ -298,9 +298,9 @@ def test_empty_intersection(dfs):
     df1, df2 = dfs
     polys3 = GeoSeries([Polygon([(-1,-1), (-3,-1), (-3,-3), (-1,-3)]),
                         Polygon([(-3,-3), (-5,-3), (-5,-5), (-3,-5)])])
-    df3 = GeoDataFrame({'geometry': polys3, 'df3':[1,2]},
+    df3 = GeoDataFrame({'geometry': polys3, 'col3':[1,2]},
                         crs={'init': 'epsg:4326', 'no_defs': True})
-    expected = GeoDataFrame([], columns=['df1', 'df3', 'geometry'])
+    expected = GeoDataFrame([], columns=['col1', 'col3', 'geometry'])
     result = overlay(df1, df3)
     assert_geodataframe_equal(result, expected, check_column_type=False,
                               check_less_precise=True, check_crs=False)
