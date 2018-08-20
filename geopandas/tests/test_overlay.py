@@ -300,7 +300,7 @@ def test_empty_intersection(dfs):
                         Polygon([(-3,-3), (-5,-3), (-5,-5), (-3,-5)])])
     df3 = GeoDataFrame({'geometry': polys3, 'df3':[1,2]},
                         crs={'init': 'epsg:4326', 'no_defs': True})
-    expected = gpd.GeoDataFrame([], columns=['df1', 'df3', 'geometry'])
+    expected = GeoDataFrame([], columns=['df1', 'df3', 'geometry'])
     result = overlay(df1, df3)
     assert_geodataframe_equal(result, expected, check_column_type=False,
                               check_less_precise=True)
