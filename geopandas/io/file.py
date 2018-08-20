@@ -78,7 +78,7 @@ def read_file(filename, bbox=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None,
+def to_file(df, filename, driver="ESRI Shapefile", schema=None, crs=None,
             **kwargs):
     """
     Write this GeoDataFrame to an OGR data source
@@ -98,15 +98,21 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
         will determine the schema based on each column's dtype
+    crs : dict, default None
+       If specified, the crs dictionary is passed to Fiona to
+        better control how the file is written. If None, GeoPandas
+        will determine the crs based on crs df attribute
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     """
     if schema is None:
         schema = infer_schema(df)
+    if crs is None:
+        crs = df.crs
     filename = os.path.abspath(os.path.expanduser(filename))
     with fiona.drivers():
-        with fiona.open(filename, 'w', driver=driver, crs=df.crs,
+        with fiona.open(filename, 'w', driver=driver, crs=crs,
                         schema=schema, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
 
@@ -138,7 +144,7 @@ def infer_schema(df):
         raise ValueError("Cannot write empty DataFrame to file.")
 
     geom_type = _common_geom_type(df)
-    
+
     if not geom_type:
         raise ValueError("Geometry column cannot contain mutiple "
                          "geometry types when writing to file.")
