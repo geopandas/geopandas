@@ -409,6 +409,25 @@ class TestGeomMethods:
         self._test_binary_topological('interpolate', expected, self.g5,
                                       1.5)
 
+    def test_interpolate_distance_array(self):
+        expected = GeoSeries([Point(0.0, 0.75), Point(1.0, 0.5)])
+        self._test_binary_topological('interpolate', expected, self.g5,
+                                      np.array([0.75, 1.5]))
+
+        expected = GeoSeries([Point(0.5, 1.0), Point(0.0, 1.0)])
+        self._test_binary_topological('interpolate', expected, self.g5,
+                                      np.array([0.75, 1.5]), normalized=True)
+
+    def test_interpolate_distance_wrong_length(self):
+        distances = np.array([1, 2, 3])
+        with pytest.raises(ValueError):
+            self.g5.interpolate(distances)
+
+    def test_interpolate_distance_wrong_length(self):
+        distances = Series([1, 2], index=[99, 98])
+        with pytest.raises(ValueError):
+            self.g5.interpolate(distances)
+
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
         p = Point(1.0, 0.5)
@@ -485,6 +504,27 @@ class TestGeomMethods:
         for original, calculated in zip(self.g0, calculated_series):
             expected = original.buffer(10, **args)
             assert calculated.equals(expected)
+
+    def test_buffer_distance_array(self):
+        original = GeoSeries([self.p0, self.p0])
+        expected = GeoSeries(
+            [Polygon(((6, 5), (5, 4), (4, 5), (5, 6), (6, 5))),
+             Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
+             ])
+        calculated = original.buffer(np.array([1, 5]), resolution=1)
+        assert_geoseries_equal(calculated, expected, check_less_precise=True)
+
+    def test_buffer_distance_wrong_length(self):
+        original = GeoSeries([self.p0, self.p0])
+        distances = np.array([1, 2, 3])
+        with pytest.raises(ValueError):
+            original.buffer(distances)
+
+    def test_buffer_distance_wrong_index(self):
+        original = GeoSeries([self.p0, self.p0], index=[0, 1])
+        distances = Series(data=[1, 2], index=[99, 98])
+        with pytest.raises(ValueError):
+            original.buffer(distances)
 
     def test_envelope(self):
         e = self.g3.envelope
