@@ -423,7 +423,7 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
 
-    def test_interpolate_distance_wrong_length(self):
+    def test_interpolate_distance_wrong_index(self):
         distances = Series([1, 2], index=[99, 98])
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
