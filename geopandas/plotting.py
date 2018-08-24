@@ -498,7 +498,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                 patches.append(
                     Line2D([0], [0], linestyle="none", marker="o",
                            alpha=style_kwds.get('alpha', 1), markersize=10,
-                           markerfacecolor=n_cmap.to_rgba(value)))
+                           markerfacecolor=n_cmap.to_rgba(value),
+                           markeredgewidth=0))
             if legend_kwds is None:
                 legend_kwds = {}
             legend_kwds.setdefault('numpoints', 1)
