@@ -241,7 +241,7 @@ def _overlay_intersection(df1, df2):
     else:
         return GeoDataFrame(
             [],
-            columns=list(set(df1.columns).union(df2.columns)),
+            columns=list(set(df1.columns).union(df2.columns)) + ['__idx1', '__idx2'],
             crs=df1.crs)
 
 
