@@ -14,7 +14,7 @@ from shapely.ops import transform
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
 
-from .array import GeometryArray, from_shapely
+from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 
 
@@ -29,15 +29,16 @@ class GeoSeries(GeoPandasBase, Series):
     """A Series object designed to store shapely geometry objects."""
     _metadata = ['name', 'crs']
 
-    def __new__(cls, *args, **kwargs):
-        kwargs.pop('crs', None)
-        arr = Series.__new__(cls)
-        if type(arr) is GeoSeries:
-            return arr
-        else:
-            return arr.view(GeoSeries)
-
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
+        # we need to use __new__ because we want to return Series instance
+        # instead of GeoSeries instance in case of non-geometry data
+        if isinstance(data, SingleBlockManager):
+            if isinstance(data.blocks[0].dtype, GeometryDtype):
+                self = super(GeoSeries, cls).__new__(cls)
+                super(GeoSeries, self).__init__(data, index=index, **kwargs)
+                self.crs = crs
+                return self
+            return Series(data, index=index, **kwargs)
 
         if isinstance(data, BaseGeometry):
             # fix problem for scalar geometries passed, ensure the list of
