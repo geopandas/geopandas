@@ -40,20 +40,21 @@ def geocode(strings, provider='googlev3', **kwargs):
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
 
+    Notes
+    -----
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
 
     Geocoding requires geopy. Install it using 'pip install geopy'. See also
     https://github.com/geopy/geopy
 
-    Example
-    -------
+    Examples
+    --------
     >>> df = geocode(['boston, ma', '1600 pennsylvania ave. washington, dc'])
-
-                                                 address  \
+    >>> df
+                                                 address  \\
     0                                    Boston, MA, USA
     1  1600 Pennsylvania Avenue Northwest, President'...
-
                              geometry
     0  POINT (-71.0597732 42.3584308)
     1  POINT (-77.0365305 38.8977332)
@@ -83,21 +84,21 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
 
+    Notes
+    -----
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
 
     Reverse geocoding requires geopy. Install it using 'pip install geopy'.
     See also https://github.com/geopy/geopy
 
-    Example
-    -------
+    Examples
+    --------
     >>> df = reverse_geocode([Point(-71.0594869, 42.3584697),
                               Point(-77.0365305, 38.8977332)])
-
-                                             address  \
+                                             address  \\
     0             29 Court Square, Boston, MA 02108, USA
     1  1600 Pennsylvania Avenue Northwest, President'...
-
                              geometry
     0  POINT (-71.0594869 42.3584697)
     1  POINT (-77.0365305 38.8977332)
