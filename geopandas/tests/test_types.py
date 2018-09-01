@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import warnings
 
 from pandas import Series, DataFrame
-import pytest
 from shapely.geometry import Point
 
 from geopandas import GeoSeries, GeoDataFrame
