@@ -96,6 +96,7 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
     --------
     >>> df = reverse_geocode([Point(-71.0594869, 42.3584697),
                               Point(-77.0365305, 38.8977332)])
+    >>> df
                                              address  \\
     0             29 Court Square, Boston, MA 02108, USA
     1  1600 Pennsylvania Avenue Northwest, President'...
@@ -109,7 +110,6 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
 
 def _query(data, forward, provider, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
-    import geopy
     from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
 
