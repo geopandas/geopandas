@@ -401,6 +401,7 @@ class TestPySALPlotting:
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
+            # warning coming from pysal / scipy.stats
             ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
                               cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
