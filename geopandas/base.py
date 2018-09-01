@@ -22,14 +22,15 @@ except ImportError:
 def _geo_op(this, other, op):
     """Operation that returns a GeoSeries"""
     if isinstance(other, GeoPandasBase):
-        this = this.geometry
+        this = this.geometry.fillna()
+        other = other.geometry.fillna()
         crs = this.crs
         if crs != other.crs:
             warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
                                                               other.crs))
         if not this.index.equals(other.index):
             warn('The index of the two GeoSeries are different')
-            this, other = this.align(other.geometry)
+            this, other = this.align(other)
         return gpd.GeoSeries([getattr(this_elem, op)(other_elem)
                              for this_elem, other_elem in zip(this, other)],
                              index=this.index, crs=crs)
@@ -45,10 +46,11 @@ def _series_op(this, other, op, **kwargs):
     null_val = False if op not in ['distance', 'project'] else np.nan
 
     if isinstance(other, GeoPandasBase):
-        this = this.geometry
+        this = this.geometry.fillna()
+        other = other.geometry.fillna()
         if not this.index.equals(other.index):
             warn('The index of the two GeoSeries are different')
-            this, other = this.align(other.geometry)
+            this, other = this.align(other)
         return Series([getattr(this_elem, op)(other_elem, **kwargs)
                     if not this_elem.is_empty | other_elem.is_empty else null_val
                     for this_elem, other_elem in zip(this, other)],
