@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import warnings
+
 from pandas import Series, DataFrame
 import pytest
 from shapely.geometry import Point
@@ -43,7 +45,9 @@ class TestSeries:
         assert type(self.pts.take(list(range(0, self.N, 2)))) is GeoSeries
 
     def test_select(self):
-        with pytest.warns(FutureWarning):
+        with warnings.catch_warnings(record=True) as _:
+            # depending on pandas version this raises FutureWarning ->
+            # suppress it
             assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
 
     def test_groupby(self):
