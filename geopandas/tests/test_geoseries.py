@@ -92,7 +92,8 @@ class TestSeries:
         assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
     def test_geom_equals_align(self):
-        a = self.a1.geom_equals(self.a2)
+        with pytest.warns(UserWarning, match="The index .+ different"):
+            a = self.a1.geom_equals(self.a2)
         exp = pd.Series([False, True, False], index=['A', 'B', 'C'])
         assert_series_equal(a, exp)
 
