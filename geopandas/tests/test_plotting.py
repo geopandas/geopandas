@@ -400,8 +400,9 @@ class TestPySALPlotting:
         cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
 
     def test_legend(self):
-        ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
-                          cmap='OrRd', legend=True)
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
+                              cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.18 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
         assert labels == expected
