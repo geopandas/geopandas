@@ -53,7 +53,7 @@ sphinx_gallery_conf = {
     'gallery_dirs': ['gallery'],
     'doc_module': ('geopandas',),
     'reference_url': {'matplotlib': 'http://matplotlib.org',
-                      'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+                      'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
     'backreferences_dir': 'reference'
