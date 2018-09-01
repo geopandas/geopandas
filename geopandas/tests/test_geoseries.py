@@ -102,6 +102,14 @@ class TestSeries:
         assert a1['B'].equals(a2['B'])
         assert a1['C'].is_empty
 
+    def test_warning_if_not_aligned(self):
+        # Test that warning is issued when operating on non-aligned series
+        with pytest.warns(UserWarning):
+            self.a1.contains(self.a2)
+
+        with pytest.warns(UserWarning):
+            self.a1.union(self.a2)
+
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
         assert np.all(self.g1.geom_almost_equals(self.g1))
