@@ -1,3 +1,10 @@
+"""
+Script that generates the included dataset 'naturalearth_lowres.shp'.
+
+Raw data: https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-countries/
+Current version used: version 4.1.0
+
+"""
 import geopandas as gpd
 world_raw = gpd.read_file("zip://./ne_110m_admin_0_countries.zip") #reads the zip file from https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_0_countries.zip 
 #current version 4.1.0
