@@ -55,10 +55,10 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     # Attempt to re-use spatial indexes, otherwise generate the spatial index for the longer dataframe
     if right_df._sindex_generated or (not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]):
         tree_idx = right_df.sindex
-        tree_idx_df = 'right'
+        tree_idx_right = True
     else:
         tree_idx = left_df.sindex
-        tree_idx_df = 'left'
+        tree_idx_right = False
 
 
     # the rtree spatial index only allows limited (numeric) index types, but an
@@ -75,12 +75,12 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if op == "within":
         # within implemented as the inverse of contains; swap names
         left_df, right_df = right_df, left_df
-        tree_idx_df = 'left' if tree_idx_df == 'left' else 'right'
+        tree_idx_right = not tree_idx_right
 
     r_idx = np.empty([0, 0])
     l_idx = np.empty([0, 0])
     # get rtree spatial index
-    if tree_idx_df == 'right':
+    if tree_idx_right:
         idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
                     .apply(lambda x: list(tree_idx.intersection(x))))
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
