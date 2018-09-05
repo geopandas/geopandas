@@ -75,6 +75,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     if op == "within":
         # within implemented as the inverse of contains; swap names
         left_df, right_df = right_df, left_df
+        tree_idx_df = 'left' if tree_idx_df == 'left' else 'right'
+
     r_idx = np.empty([0, 0])
     l_idx = np.empty([0, 0])
     # get rtree spatial index
