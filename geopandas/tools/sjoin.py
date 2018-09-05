@@ -6,7 +6,7 @@ from shapely import prepared
 
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
-          lsuffix='left', rsuffix='right'):
+           lsuffix='left', rsuffix='right'):
     """Spatial join of two GeoDataFrames.
 
     Parameters
@@ -52,21 +52,13 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         raise ValueError("'{0}' and '{1}' cannot be names in the frames being"
                          " joined".format(index_left, index_right))
 
-    # Attempt to re-use spatial indexes
-    if right_df._sindex_generated:
+    # Attempt to re-use spatial indexes, otherwise generate the spatial index for the longer dataframe
+    if right_df._sindex_generated or (not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]):
         tree_idx = right_df.sindex
         tree_idx_df = 'right'
-    elif left_df._sindex_generated:
+    else:
         tree_idx = left_df.sindex
         tree_idx_df = 'left'
-    else:
-        # generate whichever is shortest
-        if left_df.shape[0] < right_df.shape[0]:
-            tree_idx = left_df.sindex
-            tree_idx_df = 'left'
-        else:
-            tree_idx = right_df.sindex
-            tree_idx_df = 'right'
 
 
     # the rtree spatial index only allows limited (numeric) index types, but an
@@ -87,7 +79,6 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     l_idx = np.empty([0, 0])
     # get rtree spatial index
     if tree_idx_df == 'right':
-        tree_idx = right_df.sindex
         idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
                     .apply(lambda x: list(tree_idx.intersection(x))))
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
@@ -95,8 +86,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         if idxmatch.shape[0] > 0:
             r_idx = np.concatenate(idxmatch.values)
             l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    else:
-        tree_idx = left_df.sindex
+    else: #  tree_idx_df == 'left':
         idxmatch = (right_df.geometry.apply(lambda x: x.bounds)
                     .apply(lambda x: list(tree_idx.intersection(x))))
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
