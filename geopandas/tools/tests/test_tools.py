@@ -58,4 +58,4 @@ class TestTools:
         assert explicit_crs_from_epsg(epsg=4326) == expected
         assert explicit_crs_from_epsg(epsg='4326') == expected
         assert explicit_crs_from_epsg(crs={'init': 'epsg:4326'}) == expected
-        assert explicit_crs_from_epsg(crs="{'init': 'epsg:4326'}") == expected
+        assert explicit_crs_from_epsg(crs="+init=epsg:4326") == expected
