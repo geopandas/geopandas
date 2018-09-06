@@ -54,7 +54,8 @@ class TestTools:
             collect([self.mpc, self.mp1])
 
     def test_explicit_crs_from_epsg(self):
-        assert explicit_crs_from_epsg(epsg=4326) == {'no_defs': True, 'proj': 'longlat', 'datum': 'WGS84', 'init': 'epsg:4326'}
-
-    def test_explicit_crs_from_crs(self):
-        assert explicit_crs_from_epsg(crs={'init': 'epsg:4326'}) == {'no_defs': True, 'proj': 'longlat', 'datum': 'WGS84', 'init': 'epsg:4326'}
+        expected = {'no_defs': True, 'proj': 'longlat', 'datum': 'WGS84', 'init': 'epsg:4326'}
+        assert explicit_crs_from_epsg(epsg=4326) == expected
+        assert explicit_crs_from_epsg(epsg='4326') == expected
+        assert explicit_crs_from_epsg(crs={'init': 'epsg:4326'}) == expected
+        assert explicit_crs_from_epsg(crs="{'init': 'epsg:4326'}") == expected
