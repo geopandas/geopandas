@@ -10,29 +10,45 @@ def explicit_crs_from_epsg(crs=None, epsg=None):
 
     Parameters
     ----------
-     crs : dict or string, default None
-         An existing crs dict or string with the 'init' key specifying an EPSG code
-     epsg : string or int, default None
-        The EPSG code to lookup
+    crs : dict or string, default None
+        An existing crs dict or Proj string with the 'init' key specifying an EPSG code
+    epsg : string or int, default None
+       The EPSG code to lookup
     """
-
+    if epsg is None and crs is not None:
+        epsg = epsg_from_crs(crs)
     if epsg is None:
-        if crs is not None:
-            if isinstance(crs, str):
-                crs = fiona.crs.from_string(crs)
-            if 'init' in crs and crs['init'].lower().startswith('epsg:'):
-                epsg = crs['init'].split(':')[1]
+        raise ValueError('No epsg code provided or epsg code could not be identified from the provided crs.')
 
-    if epsg is None:
-        raise ValueError('No epsg code provided.')
-
-    with open(os.path.join(pyproj.pyproj_datadir, 'epsg')) as f:
-        data = f.read()
-
-    _crs = re.search('\n<{}>\s*(.+?)\s*<>'.format(epsg), data)
+    _crs = re.search('\n<{}>\s*(.+?)\s*<>'.format(epsg), get_epsg_file_contents())
     if _crs is None:
         raise ValueError('EPSG code "{}" not found.'.format(epsg))
     _crs = fiona.crs.from_string(_crs.group(1))
     # preserve the epsg code for future reference
     _crs['init'] = 'epsg:{}'.format(epsg)
     return _crs
+
+
+def epsg_from_crs(crs):
+    """
+    Returns an epsg code from a crs dict or Proj string.
+
+    Parameters
+    ----------
+    crs : dict or string, default None
+        A crs dict or Proj string
+
+    """
+    if crs is None:
+        raise ValueError('No crs provided.')
+    if isinstance(crs, str):
+        crs = fiona.crs.from_string(crs)
+    if not crs:
+        raise ValueError('Empty or invalid crs provided')
+    if 'init' in crs and crs['init'].lower().startswith('epsg:'):
+        return int(crs['init'].split(':')[1])
+
+
+def get_epsg_file_contents():
+    with open(os.path.join(pyproj.pyproj_datadir, 'epsg')) as f:
+        return f.read()
