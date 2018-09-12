@@ -2,6 +2,7 @@ import pandas as pd
 import shapely.wkb
 
 from geopandas import GeoDataFrame
+from geopandas.tools.util import crs_to_srid
 
 
 def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
@@ -52,6 +53,7 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
             return shapely.wkb.loads(x, hex=hex_encoded)
         else:
             return shapely.wkb.loads(str(x), hex=hex_encoded)
+
     geoms = df[geom_col].apply(load_geom)
     df[geom_col] = geoms
 
@@ -63,3 +65,70 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
                 crs = {"init": "epsg:{}".format(srid)}
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
+
+
+def write_postgis(df, name, con, **kwargs):
+    """
+    Writes a GeoDataFrame to a PostGIS database. Converts the type and the crs from the geometry,
+    unless it is specified in the kwargs. See the pd.read_sql() method and the `dtype` argument for more details.
+
+    Parameters
+    ----------
+    df : GeoDataFrame
+    name : str
+        Name of table in PostGIS
+    con : DB connection object or SQLAlchemy engine
+        Active connection to the database to query.
+    kwargs :
+        passed to pandas.to_sql() see documentation for available parameters
+
+    Notes:
+    ------
+    Geometry is converted to `WKTElements` object using `geoalchemy2` library.
+    The original frame is copied to not mutate it.
+    Only one column with shapely objets is supported.
+
+    """
+    from geoalchemy2 import WKTElement, Geometry
+
+    temp_df = df.copy()
+    postgis_geom_type = _geom_type_to_postgis(temp_df.geometry)
+    srid = crs_to_srid(temp_df.crs)
+    kwargs.setdefault('dtype', {})
+    kwargs['dtype'].setdefault(
+        temp_df.geometry.name, Geometry(postgis_geom_type, srid=srid))
+    geom = temp_df.geometry
+    temp_df[temp_df.geometry.name] = geom.map(
+        lambda x: WKTElement(x.wkt, srid=srid))
+    temp_df.to_sql(name, con, **kwargs)
+
+
+def _geom_type_to_postgis(gdf):
+    """
+    Convert the geometry type of a GeoDataFrame to the PostGIS equivalent one.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+
+    Returns
+    -------
+    str:
+    """
+    if all(gdf.geom_type == 'Polygon'):
+        postgis_geom_type = 'POLYGON'
+    elif all(gdf.geom_type == 'MultiPolygon'):
+        postgis_geom_type = 'MULTIPOLYGON'
+    elif all(gdf.geom_type == 'Point'):
+        postgis_geom_type = 'POINT'
+    elif all(gdf.geom_type == 'LineString'):
+        postgis_geom_type = 'LINESTRING'
+    elif all(gdf.geom_type == 'MultiPoint'):
+        postgis_geom_type = 'MULTIPOINT'
+    elif all(gdf.geom_type == 'GeometryCollection'):
+        postgis_geom_type = 'GEOMETRYCOLLECTION'
+    elif all(gdf.geom_type == 'MultiLineString'):
+        postgis_geom_type = 'MULTILINESTRING'
+    else:
+        postgis_geom_type = 'GEOMETRY'
+    return postgis_geom_type
