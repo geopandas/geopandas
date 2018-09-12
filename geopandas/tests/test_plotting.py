@@ -400,8 +400,10 @@ class TestPySALPlotting:
         cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
 
     def test_legend(self):
-        ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
-                          cmap='OrRd', legend=True)
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            # warning coming from pysal / scipy.stats
+            ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
+                              cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'0.18 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
         assert labels == expected
@@ -630,6 +632,42 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ['g'] * self.N)
         ax.cla()
+
+
+def test_column_values():
+    """
+    Check that the dataframe plot method returns same values with an
+    input string (column in df), pd.Series, or np.array
+    """
+    # Build test data
+    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    t2 = Polygon([(1, 0), (2, 0), (2, 1)])
+    polys = GeoSeries([t1, t2], index=list('AB'))
+    df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+
+    # Test with continous values
+    ax = df.plot(column='values')
+    colors = ax.collections[0].get_facecolors()
+    ax = df.plot(column=df['values'])
+    colors_series = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_series)
+    ax = df.plot(column=df['values'].values)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with categorical values
+    ax = df.plot(column='values', categorical=True)
+    colors = ax.collections[0].get_facecolors()
+    ax = df.plot(column=df['values'], categorical=True)
+    colors_series = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_series)
+    ax = df.plot(column=df['values'].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Check raised error: is df rows number equal to column legth?
+    with pytest.raises(ValueError, match="different number of rows"):
+        ax = df.plot(column=np.array([1, 2, 3]))
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):

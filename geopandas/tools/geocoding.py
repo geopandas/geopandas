@@ -7,7 +7,7 @@ import pandas as pd
 from shapely.geometry import Point
 from six import iteritems, string_types
 
-import geopandas as gpd
+import geopandas
 
 
 def _throttle_time(provider):
@@ -40,20 +40,21 @@ def geocode(strings, provider='googlev3', **kwargs):
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
 
+    Notes
+    -----
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
 
     Geocoding requires geopy. Install it using 'pip install geopy'. See also
     https://github.com/geopy/geopy
 
-    Example
-    -------
+    Examples
+    --------
     >>> df = geocode(['boston, ma', '1600 pennsylvania ave. washington, dc'])
-
-                                                 address  \
+    >>> df
+                                                 address  \\
     0                                    Boston, MA, USA
     1  1600 Pennsylvania Avenue Northwest, President'...
-
                              geometry
     0  POINT (-71.0597732 42.3584308)
     1  POINT (-77.0365305 38.8977332)
@@ -83,21 +84,22 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
 
+    Notes
+    -----
     Ensure proper use of the results by consulting the Terms of Service for
     your provider.
 
     Reverse geocoding requires geopy. Install it using 'pip install geopy'.
     See also https://github.com/geopy/geopy
 
-    Example
-    -------
+    Examples
+    --------
     >>> df = reverse_geocode([Point(-71.0594869, 42.3584697),
                               Point(-77.0365305, 38.8977332)])
-
-                                             address  \
+    >>> df
+                                             address  \\
     0             29 Court Square, Boston, MA 02108, USA
     1  1600 Pennsylvania Avenue Northwest, President'...
-
                              geometry
     0  POINT (-71.0594869 42.3584697)
     1  POINT (-77.0365305 38.8977332)
@@ -108,7 +110,6 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
 
 def _query(data, forward, provider, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
-    import geopy
     from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
 
@@ -162,7 +163,7 @@ def _prepare_geocode_result(results):
         d['address'].append(address)
         index.append(i)
 
-    df = gpd.GeoDataFrame(d, index=index)
+    df = geopandas.GeoDataFrame(d, index=index)
     df.crs = from_epsg(4326)
 
     return df

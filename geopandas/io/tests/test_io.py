@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-import sqlite3
-import os
 
 from collections import OrderedDict
 
@@ -10,9 +8,8 @@ from shapely.geometry import box
 
 import geopandas
 from geopandas import read_postgis, read_file
-from geopandas.io.sql import read_sql
-from geopandas.tests.util import (connect, create_postgis, create_sqlite,
-                                  validate_boro_df, connect_sqlalchemy)
+from geopandas.tests.util import (connect, create_postgis, validate_boro_df,
+                                  connect_sqlalchemy)
 
 
 @pytest.fixture
@@ -21,17 +18,6 @@ def nybb_df():
     df = read_file(nybb_path)
 
     return df
-
-
-def test_read_sqlite(tmpdir, nybb_df):
-    tmp_filename = os.path.join(str(tmpdir), "nybb.sqlite")
-    create_sqlite(nybb_df, tmp_filename)
-    con = sqlite3.connect(tmp_filename)
-    try:
-        sqlite_df = read_sql("SELECT * FROM nybb;", con, hex_encoded=False)
-    finally:
-        con.close()
-    validate_boro_df(sqlite_df)
 
 
 class TestIO:
@@ -201,8 +187,8 @@ class TestIO:
         full_df_shape = self.df.shape
         nybb_filename = geopandas.datasets.get_path('nybb')
         bbox = geopandas.GeoDataFrame(
-            geometry=[box(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
-                          244317.30894023244)],
+            geometry=[box(1031051.7879884212, 224272.49231459625,
+                          1047224.3104931959, 244317.30894023244)],
             crs=self.crs)
         filtered_df = read_file(nybb_filename, bbox=bbox)
         filtered_df_shape = filtered_df.shape
@@ -213,8 +199,8 @@ class TestIO:
         full_df_shape = self.df.shape
         nybb_filename = geopandas.datasets.get_path('nybb')
         bbox = geopandas.GeoDataFrame(
-            geometry=[box(1031051.7879884212, 224272.49231459625, 1047224.3104931959,
-                          244317.30894023244)],
+            geometry=[box(1031051.7879884212, 224272.49231459625,
+                          1047224.3104931959, 244317.30894023244)],
             crs=self.crs)
         bbox.to_crs(epsg=4326, inplace=True)
         filtered_df = read_file(nybb_filename, bbox=bbox)

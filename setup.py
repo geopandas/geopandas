@@ -41,6 +41,8 @@ for item in os.listdir("geopandas/datasets"):
         elif item.endswith('.zip'):
             data_files.append(os.path.join("datasets", item))
 
+data_files.append('tests/data/*')
+
 
 setup(name='geopandas',
       version=versioneer.get_version(),
