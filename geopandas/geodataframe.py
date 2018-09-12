@@ -12,7 +12,6 @@ from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
-
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
 
@@ -146,7 +145,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         if not all(isinstance(item, BaseGeometry) or not item for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
+            raise TypeError(
+                "Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
@@ -270,9 +270,32 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
 
         df = geopandas.io.sql.read_postgis(
-                sql, con, geom_col=geom_col, crs=crs, hex_encoded=hex_encoded,
-                index_col=index_col, coerce_float=coerce_float, params=params)
+            sql, con, geom_col=geom_col, crs=crs, hex_encoded=hex_encoded,
+            index_col=index_col, coerce_float=coerce_float, params=params)
         return df
+
+    def to_postgis(self, name, con, **kwargs):
+        """
+        Writes a GeoDataFrame to a PostGIS database. Converts the type and the crs from the geometry,
+        unless it is specified in the kwargs. See the pd.read_sql() method and the `dtype` argument for more details.
+
+        Parameters
+        ----------
+        name : str
+            Name of table in PostGIS
+        con : DB connection object or SQLAlchemy engine
+            Active connection to the database to query.
+        kwargs :
+            passed to pandas.to_sql() see documentation for available parameters
+
+        Notes:
+        ------
+        Geometry is converted to `WKTElements` object using `geoalchemy2` library.
+        The original frame is copied to not mutate it.
+        Only one column with shapely objets is supported.
+
+        """
+        return geopandas.io.sql.write_postgis(self, name, con, **kwargs)
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
         """
@@ -330,6 +353,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         show_bbox : include bbox (bounds) in the geojson. default False
 
         """
+
         def fill_none(row):
             """
             Takes in a Series, converts to a dictionary with null values
@@ -360,7 +384,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 'type': 'Feature',
                 'properties': properties,
                 'geometry': mapping(row[self._geometry_column_name])
-                            if row[self._geometry_column_name] else None
+                if row[self._geometry_column_name] else None
             }
 
             if show_bbox:
@@ -496,7 +520,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # concat operation: using metadata of the first object
         elif method == 'concat':
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                object.__setattr__(self, name, getattr(
+                    other.objs[0], name, None))
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
@@ -535,7 +560,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     plot.__doc__ = plot_dataframe.__doc__
 
-
     def dissolve(self, by=None, aggfunc='first', as_index=True):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -564,16 +588,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(by=by).agg(aggfunc)
 
-
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(merge_geometries)
+        g = self.groupby(by=by, group_keys=False)[
+            self.geometry.name].agg(merge_geometries)
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = GeoDataFrame(
+            g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
@@ -628,12 +653,13 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     # this will copy so that BlockManager gets copied
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 
+
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry
 else:
     import types
+
     DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
                                               DataFrame)
-
 
 GeoDataFrame._create_indexer('cx', _CoordinateIndexer)

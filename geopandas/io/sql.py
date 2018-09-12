@@ -98,6 +98,9 @@ def write_postgis(df, name, con, **kwargs):
     kwargs['dtype'].setdefault(
         temp_df.geometry.name, Geometry(postgis_geom_type, srid=srid))
     geom = temp_df.geometry
+
+    # Do not use `geoalchemy.sql.from_shape()` 
+    # See https://github.com/geoalchemy/geoalchemy2/issues/132
     temp_df[temp_df.geometry.name] = geom.map(
         lambda x: WKTElement(x.wkt, srid=srid))
     temp_df.to_sql(name, con, **kwargs)
