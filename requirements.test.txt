@@ -11,3 +11,4 @@ rtree>=0.8
 pysal
 geoalchemy2
 boto3
+fiona
