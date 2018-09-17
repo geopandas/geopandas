@@ -1,4 +1,4 @@
-import fiona
+from fiona.crs import from_string
 import pandas as pd
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
@@ -61,7 +61,7 @@ def crs_to_srid(crs):
     srid = -1
 
     if isinstance(crs, str):
-        crs = fiona.crs.from_string(crs)
+        crs = from_string(crs)
     if isinstance(crs, dict):
         srid = int(crs.get('init').split(':')[-1])
 
