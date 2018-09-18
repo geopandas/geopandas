@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 import warnings
 
 import numpy as np
-
+import pandas as pd
 
 def _flatten_multi_geoms(geoms, colors=None):
     """
@@ -26,6 +26,9 @@ def _flatten_multi_geoms(geoms, colors=None):
         colors = [None] * len(geoms)
 
     components, component_colors = [], []
+    
+    if not geoms.geom_type.str.startswith('Multi').any():
+        return geoms, colors
 
     # precondition, so zip can't short-circuit
     assert len(geoms) == len(colors)
@@ -77,7 +80,12 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
 
     collection : matplotlib.collections.Collection that was plotted
     """
-    from descartes.patch import PolygonPatch
+
+    try:
+        from descartes.patch import PolygonPatch
+    except ImportError:
+        raise ImportError("The descartes package is required"
+                          " for plotting polygons in geopandas.")
     from matplotlib.collections import PatchCollection
 
     geoms, values = _flatten_multi_geoms(geoms, values)
@@ -251,7 +259,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     import matplotlib.pyplot as plt
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    ax.set_aspect('equal')
 
     if s.empty:
         warnings.warn("The GeoSeries you are attempting to plot is "
@@ -323,8 +331,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         The GeoDataFrame to be plotted.  Currently Polygon,
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
-    column : str (default None)
-        The name of the column to be plotted. Ignored if `color` is also set.
+    column : str, np.array, pd.Series (default None)
+        The name of the dataframe column, np.array, or pd.Series to be plotted.
+        If np.array or pd.Series are used then it must have same length as
+        dataframe. Values are used to color the plot. Ignored if `color` is
+        also set.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -380,7 +391,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
         ax = style_kwds.pop('axes')
-    if column and color:
+    if column is not None and color is not None:
         warnings.warn("Only specify one of 'column' or 'color'. Using "
                       "'color'.", UserWarning)
         column = None
@@ -390,7 +401,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    ax.set_aspect('equal')
 
     if df.empty:
         warnings.warn("The GeoDataFrame you are attempting to plot is "
@@ -405,7 +416,17 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                            figsize=figsize, markersize=markersize,
                            **style_kwds)
 
-    if df[column].dtype is np.dtype('O'):
+    # To accept pd.Series and np.arrays as column
+    if isinstance(column, (np.ndarray, pd.Series)):
+        if column.shape[0] != df.shape[0]:
+            raise ValueError("The dataframe and given column have different "
+                             "number of rows.")
+        else:
+            values = np.asarray(column)
+    else:
+        values = np.asarray(df[column])
+
+    if values.dtype is np.dtype('O'):
         categorical = True
 
     # Define `values` as a Series
@@ -418,12 +439,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                 cmap = 'Vega10'
             else:
                 cmap = 'Set1'
-        categories = list(set(df[column].values))
+        categories = list(set(values))
         categories.sort()
-        valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-        values = np.array([valuemap[k] for k in df[column]])
-    else:
-        values = df[column]
+        valuemap = dict((k, v) for (v, k) in enumerate(categories))
+        values = np.array([valuemap[k] for k in values])
+
     if scheme is not None:
         binning = __pysal_choro(values, scheme, k=k)
         # set categorical to True for creating the legend
@@ -478,7 +498,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                 patches.append(
                     Line2D([0], [0], linestyle="none", marker="o",
                            alpha=style_kwds.get('alpha', 1), markersize=10,
-                           markerfacecolor=n_cmap.to_rgba(value)))
+                           markerfacecolor=n_cmap.to_rgba(value),
+                           markeredgewidth=0))
             if legend_kwds is None:
                 legend_kwds = {}
             legend_kwds.setdefault('numpoints', 1)

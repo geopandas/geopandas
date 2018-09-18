@@ -28,7 +28,7 @@ In particular, when submitting a pull request:
 
 - Classes, methods, functions, etc. should have docstrings.  The first
   line of a docstring should be a standalone summary.  Parameters and
-  return values should be ducumented explicitly.
+  return values should be documented explicitly.
 
 Improving the documentation and testing for code already in GeoPandas
 is a great way to get started if you'd like to make a contribution.

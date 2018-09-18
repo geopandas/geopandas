@@ -15,11 +15,11 @@ First we'll load in the data using GeoPandas.
 """
 # sphinx_gallery_thumbnail_number = 7
 import matplotlib.pyplot as plt
-import geopandas as gpd
+import geopandas
 from cartopy import crs as ccrs
 
-path = gpd.datasets.get_path('naturalearth_lowres')
-df = gpd.read_file(path)
+path = geopandas.datasets.get_path('naturalearth_lowres')
+df = geopandas.read_file(path)
 # Add a column we'll use later
 df['gdp_pp'] = df['gdp_md_est'] / df['pop_est']
 
@@ -85,8 +85,8 @@ ax.add_geometries(new_geometries, crs=crs_new)
 # Now that we've created new Shapely objects with the CartoPy CRS,
 # we can use this to create a GeoDataFrame.
 
-df_aea = gpd.GeoDataFrame(df['gdp_pp'], geometry=new_geometries,
-                          crs=crs_new.proj4_init)
+df_aea = geopandas.GeoDataFrame(df['gdp_pp'], geometry=new_geometries,
+                                crs=crs_new.proj4_init)
 df_aea.plot()
 
 ###############################################################################

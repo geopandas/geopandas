@@ -495,14 +495,28 @@ class GeoPandasBase(object):
 
         Parameters
         ----------
-        distance : float
-            The radius of the buffer.
+        distance : float, np.array, pd.Series
+            The radius of the buffer. If np.array or pd.Series are used
+            then it must have same length as the GeoSeries.
         resolution: float
             Optional, the resolution of the buffer around each vertex.
         """
+        if isinstance(distance, (np.ndarray, pd.Series)):
+            if len(distance) != len(self.index):
+                raise ValueError("Length of distance sequence does not match "
+                                 "length of the GeoSeries")
+            if isinstance(distance, pd.Series):
+                if not self.index.equals(distance.index):
+                    raise ValueError("Index values of distance sequence does "
+                                     "not match index values of the GeoSeries")
+            return gpd.GeoSeries(
+                    [geom.buffer(dist, resolution, **kwargs)
+                    for geom, dist in zip(self.geometry, distance)],
+                    index=self.index, crs=self.crs)
+
         return gpd.GeoSeries([geom.buffer(distance, resolution, **kwargs)
                              for geom in self.geometry],
-                         index=self.index, crs=self.crs)
+                             index=self.index, crs=self.crs)
 
     def simplify(self, *args, **kwargs):
         """Returns a ``GeoSeries`` containing a simplified representation of
@@ -551,13 +565,27 @@ class GeoPandasBase(object):
         Parameters
         ----------
         distance : float or Series of floats
-            Distance(s) along the geometries at which a point should be returned
+            Distance(s) along the geometries at which a point should be returned.
+            If np.array or pd.Series are used then it must have same length
+            as the GeoSeries.
         normalized : boolean
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
+        if isinstance(distance, (np.ndarray, pd.Series)):
+            if len(distance) != len(self.index):
+                raise ValueError("Length of distance sequence does not match "
+                                 "length of the GeoSeries")
+            if isinstance(distance, pd.Series):
+                if not self.index.equals(distance.index):
+                    raise ValueError("Index values of distance sequence does "
+                                     "not match index values of the GeoSeries")
+            return gpd.GeoSeries(
+                    [s.interpolate(dist, normalized=normalized)
+                    for (s, dist) in zip(self.geometry, distance)],
+                index=self.index, crs=self.crs)
 
-        return gpd.GeoSeries([s.interpolate(distance, normalized)
+        return gpd.GeoSeries([s.interpolate(distance, normalized=normalized)
                              for s in self.geometry],
             index=self.index, crs=self.crs)
 
@@ -659,7 +687,8 @@ class GeoPandasBase(object):
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and an integer.
+        original index and a zero-based integer index that counts the
+        number of single geometries within a multi-part geometry.
 
         Example
         -------
@@ -687,8 +716,8 @@ class GeoPandasBase(object):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        return gpd.GeoSeries(geometries,
-            index=MultiIndex.from_tuples(index)).__finalize__(self)
+        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
 
 class _CoordinateIndexer(_NDFrameIndexer):

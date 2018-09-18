@@ -64,7 +64,6 @@ class TestGeomMethods:
         self.g5 = GeoSeries([self.l1, self.l2])
         self.g6 = GeoSeries([self.p0, self.t3])
         self.empty = GeoSeries([])
-        self.empty.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.empty_poly = Polygon()
 
         # Crossed lines
@@ -409,6 +408,25 @@ class TestGeomMethods:
         self._test_binary_topological('interpolate', expected, self.g5,
                                       1.5)
 
+    def test_interpolate_distance_array(self):
+        expected = GeoSeries([Point(0.0, 0.75), Point(1.0, 0.5)])
+        self._test_binary_topological('interpolate', expected, self.g5,
+                                      np.array([0.75, 1.5]))
+
+        expected = GeoSeries([Point(0.5, 1.0), Point(0.0, 1.0)])
+        self._test_binary_topological('interpolate', expected, self.g5,
+                                      np.array([0.75, 1.5]), normalized=True)
+
+    def test_interpolate_distance_wrong_length(self):
+        distances = np.array([1, 2, 3])
+        with pytest.raises(ValueError):
+            self.g5.interpolate(distances)
+
+    def test_interpolate_distance_wrong_index(self):
+        distances = Series([1, 2], index=[99, 98])
+        with pytest.raises(ValueError):
+            self.g5.interpolate(distances)
+
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
         p = Point(1.0, 0.5)
@@ -486,6 +504,27 @@ class TestGeomMethods:
             expected = original.buffer(10, **args)
             assert calculated.equals(expected)
 
+    def test_buffer_distance_array(self):
+        original = GeoSeries([self.p0, self.p0])
+        expected = GeoSeries(
+            [Polygon(((6, 5), (5, 4), (4, 5), (5, 6), (6, 5))),
+             Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
+             ])
+        calculated = original.buffer(np.array([1, 5]), resolution=1)
+        assert_geoseries_equal(calculated, expected, check_less_precise=True)
+
+    def test_buffer_distance_wrong_length(self):
+        original = GeoSeries([self.p0, self.p0])
+        distances = np.array([1, 2, 3])
+        with pytest.raises(ValueError):
+            original.buffer(distances)
+
+    def test_buffer_distance_wrong_index(self):
+        original = GeoSeries([self.p0, self.p0], index=[0, 1])
+        distances = Series(data=[1, 2], index=[99, 98])
+        with pytest.raises(ValueError):
+            original.buffer(distances)
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))
@@ -501,19 +540,33 @@ class TestGeomMethods:
                            'col1': range(len(self.landmarks))})
         assert tuple(df.total_bounds) == bbox
 
-    def test_explode(self):
+    def test_explode_geoseries(self):
         s = GeoSeries([MultiPoint([(0, 0), (1, 1)]),
                        MultiPoint([(2, 2), (3, 3), (4, 4)])])
-
+        s.index.name = 'test_index_name'
+        expected_index_name = ['test_index_name', None]
         index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
         expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2),
                               Point(3, 3), Point(4, 4)],
-                             index=MultiIndex.from_tuples(index))
-
+                             index=MultiIndex.from_tuples(
+                                index, names=expected_index_name))
         assert_geoseries_equal(expected, s.explode())
 
-        df = self.gdf1[:2].set_geometry(s)
-        assert_geoseries_equal(expected, df.explode())
+    @pytest.mark.parametrize("index_name", [None, 'test'])
+    def test_explode_geodataframe(self, index_name):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({'col': [1, 2], 'geometry': s})
+        df.index.name = index_name
+
+        test_df = df.explode()
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({'col': [1, 1, 2], 'geometry': expected_s})
+        expected_index = MultiIndex(levels=[[0, 1], [0, 1]],
+                                    labels=[[0, 0, 1], [0, 1, 0]],
+                                    names=[index_name, None])
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'

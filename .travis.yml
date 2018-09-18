@@ -2,55 +2,53 @@ language: python
 
 sudo: false
 
-cache: pip
-
-addons:
-  apt:
-    packages:
-    - libgdal1h
-    - gdal-bin
-    - libgdal-dev
-    - libspatialindex-dev
 
 matrix:
   include:
     # Only one test for these Python versions
-    - python: 3.4
-      env: PANDAS=0.19.2 MATPLOTLIB=1.4.3 SHAPELY=1.5.17
     - python: 3.5
       env: PANDAS=0.20.2 MATPLOTLIB=1.5.3
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5.17
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5
     - python: 2.7
-      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
+      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 CHANNEL=conda-forge
     - python: 2.7
-      env: PANDAS=0.22.0  MATPLOTLIB=2.1.2
+      env: PANDAS=0.23.2  MATPLOTLIB=2.1.2
     - python: 2.7
       env: PANDAS=master  MATPLOTLIB=2.2.2
 
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5.17
+      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5 CHANNEL=conda-forge # conda-forge is needed here for this combination
     - python: 3.6
       env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
     - python: 3.6
-      env: PANDAS=0.22.0  MATPLOTLIB=2.2.2
+      env: PANDAS=0.23.2  MATPLOTLIB=2.2.2 CHANNEL=conda-forge
     - python: 3.6
       env: PANDAS=master  MATPLOTLIB=master
 
-before_install:
-  - pip install -U pip
-
 install:
-  - pip install numpy
-  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; else pip install matplotlib==$MATPLOTLIB; fi
-  - if [ -n "$SHAPELY" ]; then pip install shapely==$SHAPELY; fi
+  # Install conda
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update conda
+  - if [ -n "$CHANNEL" ]; then conda config --add channels $CHANNEL; fi
 
-  - pip install -r requirements.txt
-  - pip install -r requirements.test.txt
+  # Install dependencies
+  - conda create -n test-geopandas python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy pytest-cov mock
+  - source activate test-geopandas
+  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
+  - if [ -n "$SHAPELY" ]; then conda install shapely=$SHAPELY; else conda install shapely; fi
+  - conda install pysal pyproj fiona descartes rtree
 
-  - if [[ $PANDAS == 'master' ]]; then pip install git+https://github.com/pydata/pandas.git; else pip install pandas==$PANDAS; fi
+  - if [[ $PANDAS != 'master' ]]; then conda install pandas==$PANDAS; fi
+  - if [[ $PANDAS == 'master' ]]; then conda install pandas cython; pip install git+https://github.com/pydata/pandas.git; fi
+
+  # codecov is not available from defaults
+  - conda install -c conda-forge codecov
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing

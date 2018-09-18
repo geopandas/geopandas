@@ -53,7 +53,7 @@ sphinx_gallery_conf = {
     'gallery_dirs': ['gallery'],
     'doc_module': ('geopandas',),
     'reference_url': {'matplotlib': 'http://matplotlib.org',
-                      'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+                      'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
     'backreferences_dir': 'reference'
@@ -70,7 +70,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013–2017, GeoPandas developers'
+copyright = u'2013–2018, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
