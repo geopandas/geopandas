@@ -138,10 +138,6 @@ def infer_schema(df):
         raise ValueError("Cannot write empty DataFrame to file.")
 
     geom_type = _common_geom_type(df)
-    
-    if not geom_type:
-        raise ValueError("Geometry column cannot contain mutiple "
-                         "geometry types when writing to file.")
 
     schema = {'geometry': geom_type, 'properties': properties}
 
@@ -159,7 +155,7 @@ def _common_geom_type(df):
     # then reverse the result to get back to a geom type
     geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
     if not geom_type:
-        return None
+        return 'Unknown'
 
     if df.geometry.has_z.any():
         geom_type = "3D " + geom_type
