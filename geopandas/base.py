@@ -53,9 +53,11 @@ def binary_geo(op, left, right):
         # l = left._geometry_array
         # r = right._geometry_array
 
-        data = np.array(
-            [getattr(this_elem, op)(other_elem)
-             for this_elem, other_elem in zip(left, right)], dtype=object)
+        # intersection can return empty GeometryCollections, and if the result
+        # are only those, numpy will coerce it to empty 2D array
+        data = np.empty(len(left), dtype=object)
+        data[:] = [getattr(this_elem, op)(other_elem)
+                   for this_elem, other_elem in zip(left, right)]
 
         return GeoSeries(GeometryArray(data), index=left.index, crs=left.crs)
 
