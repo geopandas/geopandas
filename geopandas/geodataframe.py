@@ -7,6 +7,7 @@ from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
+from geopandas.array import GeometryArray
 from geopandas.base import GeoPandasBase, _CoordinateIndexer
 from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
@@ -119,7 +120,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray)):
+        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
