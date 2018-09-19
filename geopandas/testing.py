@@ -2,7 +2,19 @@
 Testing functionality for geopandas objects.
 """
 
+import pandas as pd
+
 from geopandas import GeoSeries, GeoDataFrame
+
+
+def _isna(this):
+    """isna version that works for both scalars and (Geo)Series"""
+    if hasattr(this, 'isna'):
+        return this.isna()
+    elif hasattr(this, 'isnull'):
+        return this.isnull()
+    else:
+        return pd.isnull(this)
 
 
 def geom_equals(this, that):
@@ -17,7 +29,7 @@ def geom_equals(this, that):
     """
 
     return (this.geom_equals(that) | (this.is_empty & that.is_empty)
-            | (this.isna() & that.isna())).all()
+            | (_isna(this) & _isna(that))).all()
 
 
 def geom_almost_equals(this, that):
