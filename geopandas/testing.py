@@ -7,7 +7,8 @@ from geopandas import GeoSeries, GeoDataFrame
 
 def geom_equals(this, that):
     """
-    Test for geometric equality. Empty geometries are considered equal.
+    Test for geometric equality. Empty or missing geometries are considered
+    equal.
 
     Parameters
     ----------
@@ -15,12 +16,14 @@ def geom_equals(this, that):
                  attribute)
     """
 
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
+    return (this.geom_equals(that) | (this.is_empty & that.is_empty)
+            | (this.isna() & that.isna())).all()
 
 
 def geom_almost_equals(this, that):
     """
-    Test for 'almost' geometric equality. Empty geometries considered equal.
+    Test for 'almost' geometric equality. Empty or missing geometries
+    considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.
@@ -31,8 +34,9 @@ def geom_almost_equals(this, that):
                  property)
     """
 
-    return (this.geom_almost_equals(that) |
-            (this.is_empty & that.is_empty)).all()
+    return (this.geom_almost_equals(that)
+            | (this.is_empty & that.is_empty)
+            | (this.isna() & that.isna())).all()
 
 
 def assert_geoseries_equal(left, right,
