@@ -48,7 +48,7 @@ def geom_almost_equals(this, that):
 
     return (this.geom_almost_equals(that)
             | (this.is_empty & that.is_empty)
-            | (this.isna() & that.isna())).all()
+            | (_isna(this) & _isna(that))).all()
 
 
 def assert_geoseries_equal(left, right,
