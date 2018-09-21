@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from collections import OrderedDict
 
+from sqlalchemy import create_engine
 import fiona
 import pytest
 from shapely.geometry import box
@@ -9,6 +10,7 @@ from shapely.geometry import box
 import geopandas
 from geopandas import read_postgis, read_file
 from geopandas.tests.util import connect, create_postgis, validate_boro_df
+from geopandas.testing import assert_geodataframe_equal
 
 
 @pytest.fixture
@@ -179,3 +181,27 @@ class TestIO:
         empty = read_file(fname)
         assert isinstance(empty, geopandas.GeoDataFrame)
         assert all(empty.columns == ['A', 'Z', 'geometry'])
+
+    def test_write_postgis(self):
+        # The original crs is not standard
+        crs = {"init": "epsg:4326"}
+        df = self.df.to_crs(crs)
+
+        # For consistency
+        df = df.set_index('BoroCode').sort_index()
+
+        # This connector works better than the native `psycopg2.connect()`
+        connection_string = 'postgresql://:@localhost:5432/test_geopandas'
+        db = create_engine(connection_string, echo=False)
+        con = db.connect()
+        if con is None:
+            raise pytest.skip()
+
+        table_name = 'write_test'
+        df.to_postgis(table_name, con, if_exists='replace')
+        retrieved_df = geopandas.read_postgis(table_name, con, geom_col='geometry')
+
+        # Compare with df before indexing
+        retrieved_df = retrieved_df.set_index('BoroCode').sort_index()
+        assert_geodataframe_equal(df, retrieved_df, check_geom_type=True, check_less_precise=True)
+
