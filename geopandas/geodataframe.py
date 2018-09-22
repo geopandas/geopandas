@@ -276,23 +276,58 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def to_postgis(self, name, con, **kwargs):
         """
-        Writes a GeoDataFrame to a PostGIS database. Converts the type and the crs from the geometry,
-        unless it is specified in the kwargs. See the pd.read_sql() method and the `dtype` argument for more details.
+        Write a GeoDataFrame to a PostGIS table.
+
+        Tables can be newly created, appended to, or overwritten.
+        The type and the crs of the GeoDataFrame geometry is converted automatically to match PostGIS format.
+        This behavior can be changed as shown in the Examples section.
 
         Parameters
         ----------
-        name : str
-            Name of table in PostGIS
-        con : DB connection object or SQLAlchemy engine
-            Active connection to the database to query.
+        df : GeoDataFrame
+        name : string
+            Name of PostGIS table
+        con : sqlalchemy.engine.Engine or DB connection object
+            Active connection to the database.
         kwargs :
-            passed to pandas.to_sql() see documentation for available parameters
+            passed to pandas.to_sq. See documentation for available parameters
 
-        Notes:
+        Raises
+        ------
+        ValueError
+            When the table already exists and `if_exists` is 'fail' (the
+            default).
+
+        See Also
+        --------
+        pandas.read_sql : pass kwargs to this function
+
+        References
+        ----------
+        .. [1] http://docs.sqlalchemy.org
+        .. [2] https://www.python.org/dev/peps/pep-0249/
+        .. [3] https://geoalchemy-2.readthedocs.io/en/latest/
+
+        Notes
         ------
         Geometry is converted to `WKTElements` object using `geoalchemy2` library.
         The original frame is copied to not mutate it.
         Only one column with shapely objets is supported.
+
+        Examples:
+        ---------
+        Create a connection object to PostGIS (5432 is the default port)
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine('postgis://user:password@domain_name/5432', echo=False)
+        >>> con = engine.connect()
+
+        Create a PostGIS table with the type and the crs defined in the GeoDataFrame
+        >>> table_name = 'test'
+        >>> df.to_postgis(table_name, con, if_exists='replace')
+
+        Override PostGIS geometry type and crs using the geoalchemy library
+        >>> import geoalchemy2
+        >>> df.to_postgis(table_name, con, dtype={'geometry': geoalchemy2.Geometry('POLYGON', 4326)})
 
         """
         return geopandas.io.sql.write_postgis(self, name, con, **kwargs)
