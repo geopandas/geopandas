@@ -182,6 +182,63 @@ class TestDataFrame:
         assert 'simplified_geometry' not in df3
         assert_geoseries_equal(df3.geometry, g_simplified)
 
+    def test_set_geometry_col_arg_position(self):
+        # with the addition of the x, y, z kwargs, the first argument col was
+        # assigned a default None. In order to keep backward compatibility, it
+        # will be important to keep it in the first position.
+        #
+        # This test can be removed should it not be desirable/necessary
+        # anymore at some point that .set_geometry() can be accessed without
+        # specifying the col keyword.
+        g = self.df.geometry
+        g_simplified = g.simplify(100)
+        self.df['simplified_geometry'] = g_simplified
+        df1 = self.df.set_geometry('simplified_geometry')
+        df2 = self.df.set_geometry(col='simplified_geometry')
+        assert_geoseries_equal(df1.geometry,df2.geometry)
+
+    def test_set_geometry_xyz(self):
+        df = GeoDataFrame([
+            {'other_geom' : Point(x, x), 'x': x, 'y': x, 'z': x}
+            for x in range(10)])
+        gs = GeoSeries([Point(x, x) for x in range(10)])
+        gsz = GeoSeries([Point(x, x, x) for x in range(10)])
+        df1 = df.set_geometry(x='x',y='y')
+        df2 = df.set_geometry(x='x',y='y',z='z')
+        assert_geoseries_equal (df1.geometry,gs)
+        assert_geoseries_equal (df2.geometry,gsz)
+
+        # using GeoSeries or numpy arrays or lists
+        for s in [GeoSeries(range(10)), np.arange(10), list(range(10))]:
+            df1 = df.set_geometry(x=s,y=s)
+            df2 = df.set_geometry(x=s,y=s,z=s)
+            assert_geoseries_equal (df1.geometry,gs)
+            assert_geoseries_equal (df2.geometry,gsz)
+
+        # Using incomplete arguments should throw error
+        with pytest.raises(ValueError):
+            df.set_geometry(x=s)
+            df.set_geometry(y=s)
+            df.set_geometry(z=s)
+
+        # drop argument obeyed?
+        # False by default
+        df3 = df.set_geometry(x='x',y='y',drop=True)
+        assert 'x' not in df3
+        assert 'y' not in df3
+        df4 = df.set_geometry(x='x',y='y',z='z',drop=True)
+        assert 'x' not in df4
+        assert 'y' not in df4
+        assert 'z' not in df4
+        df5 = df.set_geometry(x='x',y='y')
+        assert 'x' in df5
+        assert 'y' in df5
+        df6 = df.set_geometry(x='x',y='y',z='z')
+        assert 'x' in df6
+        assert 'y' in df6
+        assert 'z' in df6
+
+
     def test_set_geometry_inplace(self):
         geom = [Point(x, y) for x, y in zip(range(5), range(5))]
         ret = self.df.set_geometry(geom, inplace=True)

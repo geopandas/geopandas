@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, Point, shape
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
@@ -80,7 +80,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry = property(fget=_get_geometry, fset=_set_geometry,
                         doc="Geometry data for GeoDataFrame")
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None):
+    def set_geometry(self, col=None, drop=False, inplace=False, crs=None, **kwargs):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -89,8 +89,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        keys : column label or array
-        drop : boolean, default True
+        col : column label or array, default None
+        x, y, z : column label or array, default None.
+            Converts each (x,y[, z]) data point to the corresponding shapely
+            Point and inserts them into a geometry column called "geometry".
+            Requires col==None.
+        drop : boolean, default False
             Delete column to be used as the new geometry
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
@@ -103,6 +107,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df1 = df.set_geometry([Point(0,0), Point(1,1), Point(2,2)])
         >>> df2 = df.set_geometry('geom1')
+        >>> df3 = df.set_geometry(x='Longitude',y='Latitude',z='Altitude')
 
         Returns
         -------
@@ -117,27 +122,60 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not crs:
             crs = getattr(col, 'crs', self.crs)
 
-        to_remove = None
-        geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray)):
-            level = col
-        elif hasattr(col, 'ndim') and col.ndim != 1:
-            raise ValueError("Must pass array with one dimension only.")
-        else:
-            try:
-                level = frame[col].values
-            except KeyError:
-                raise ValueError("Unknown column %s" % col)
-            except:
-                raise
-            if drop:
-                to_remove = col
-                geo_column_name = self._geometry_column_name
-            else:
-                geo_column_name = col
+        x = kwargs.pop('x', None)
+        y = kwargs.pop('y', None)
+        z = kwargs.pop('z', None)
+        if col is None and (x is None or y is None):
+            raise ValueError("If col is not given, both x and y must be "
+                "specified.")
 
-        if to_remove:
-            del frame[to_remove]
+        def _get_listlike(colarg, frame):
+            # Retrieve list of values either from colarg (one of col, x, y, z
+            # arguments) or from frame (the GeoDataFrame itself).
+            if isinstance(colarg, (Series, list, np.ndarray)):
+                level = colarg
+            elif hasattr(colarg, 'ndim') and colarg.ndim != 1:
+                raise ValueError("Must pass array with one dimension only.")
+            else:
+                try:
+                    level = frame[colarg].values
+                except KeyError:
+                    raise ValueError("Unknown column %s" % colarg)
+                except:
+                    raise
+            return level
+
+        to_remove = []
+        geo_column_name = self._geometry_column_name
+        if col is None:
+            # use x, y, z kwargs to set geometry column
+            X = _get_listlike(x, frame)
+            Y = _get_listlike(y, frame)
+            if not len(X) == len(Y):
+                raise ValueError("x and y arrays must be equal length.")
+            if z is not None:
+                Z = _get_listlike(z, frame)
+                if not len(Z) == len(X):
+                    raise ValueError("z array must be same length as x and y.")
+                level = [Point(i, j, k) for i, j, k in zip(X, Y, Z)]
+            else:
+                level = [Point(i, j) for i, j in zip(X, Y)]
+            if drop and isinstance(x, str) and isinstance(y, str):
+                to_remove.append(x)
+                to_remove.append(y)
+                if z is not None and isinstance(z, str):
+                    to_remove.append(z)
+        else:
+            # use col argument to set geometry column
+            level = _get_listlike(col, frame)
+            if isinstance(col, str):
+                if drop:
+                    to_remove.append(col)
+                else:
+                    geo_column_name = col
+
+        for remove in to_remove:
+            del frame[remove]
 
         if isinstance(level, GeoSeries) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
