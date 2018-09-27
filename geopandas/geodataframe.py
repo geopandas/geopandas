@@ -23,8 +23,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     with geometry. In addition to the standard DataFrame constructor arguments,
     GeoDataFrame also accepts the following keyword arguments:
 
-    Keyword Arguments
-    -----------------
+    Parameters
+    ----------
     crs : str (optional)
         Coordinate system
     geometry : str or array (optional)

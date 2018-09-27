@@ -2,12 +2,25 @@
 Testing functionality for geopandas objects.
 """
 
+import pandas as pd
+
 from geopandas import GeoSeries, GeoDataFrame
+
+
+def _isna(this):
+    """isna version that works for both scalars and (Geo)Series"""
+    if hasattr(this, 'isna'):
+        return this.isna()
+    elif hasattr(this, 'isnull'):
+        return this.isnull()
+    else:
+        return pd.isnull(this)
 
 
 def geom_equals(this, that):
     """
-    Test for geometric equality. Empty geometries are considered equal.
+    Test for geometric equality. Empty or missing geometries are considered
+    equal.
 
     Parameters
     ----------
@@ -15,12 +28,14 @@ def geom_equals(this, that):
                  attribute)
     """
 
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
+    return (this.geom_equals(that) | (this.is_empty & that.is_empty)
+            | (_isna(this) & _isna(that))).all()
 
 
 def geom_almost_equals(this, that):
     """
-    Test for 'almost' geometric equality. Empty geometries considered equal.
+    Test for 'almost' geometric equality. Empty or missing geometries
+    considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.
@@ -31,8 +46,9 @@ def geom_almost_equals(this, that):
                  property)
     """
 
-    return (this.geom_almost_equals(that) |
-            (this.is_empty & that.is_empty)).all()
+    return (this.geom_almost_equals(that)
+            | (this.is_empty & that.is_empty)
+            | (_isna(this) & _isna(that))).all()
 
 
 def assert_geoseries_equal(left, right,

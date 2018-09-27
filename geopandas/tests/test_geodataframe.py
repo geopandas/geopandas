@@ -220,6 +220,62 @@ class TestDataFrame:
         # TODO should this column be there or not?
         # assert 'geometry' not in df.columns
 
+    def test_align(self):
+        df = self.df2
+
+        res1, res2 = df.align(df)
+        assert_geodataframe_equal(res1, df)
+        assert_geodataframe_equal(res2, df)
+
+        res1, res2 = df.align(df.copy())
+        assert_geodataframe_equal(res1, df)
+        assert_geodataframe_equal(res2, df)
+
+        # assert crs is / is not preserved on mixed dataframes
+        df_nocrs = df.copy()
+        df_nocrs.crs = None
+        res1, res2 = df.align(df_nocrs)
+        assert_geodataframe_equal(res1, df)
+        assert res1.crs is not None
+        assert_geodataframe_equal(res2, df_nocrs)
+        assert res2.crs is None
+
+        # mixed GeoDataFrame / DataFrame
+        df_nogeom = pd.DataFrame(df.drop('geometry', axis=1))
+        res1, res2 = df.align(df_nogeom, axis=0)
+        assert_geodataframe_equal(res1, df)
+        assert type(res2) == pd.DataFrame
+        assert_frame_equal(res2, df_nogeom)
+
+        # same as above but now with actual alignment
+        df1 = df.iloc[1:].copy()
+        df2 = df.iloc[:-1].copy()
+
+        exp1 = df.copy()
+        exp1.iloc[0] = np.nan
+        exp2 = df.copy()
+        exp2.iloc[-1] = np.nan
+        res1, res2 = df1.align(df2)
+        assert_geodataframe_equal(res1, exp1)
+        assert_geodataframe_equal(res2, exp2)
+
+        df2_nocrs = df2.copy()
+        df2_nocrs.crs = None
+        exp2_nocrs = exp2.copy()
+        exp2_nocrs.crs = None
+        res1, res2 = df1.align(df2_nocrs)
+        assert_geodataframe_equal(res1, exp1)
+        assert res1.crs is not None
+        assert_geodataframe_equal(res2, exp2_nocrs)
+        assert res2.crs is None
+
+        df2_nogeom = pd.DataFrame(df2.drop('geometry', axis=1))
+        exp2_nogeom = pd.DataFrame(exp2.drop('geometry', axis=1))
+        res1, res2 = df1.align(df2_nogeom, axis=0)
+        assert_geodataframe_equal(res1, exp1)
+        assert type(res2) == pd.DataFrame
+        assert_frame_equal(res2, exp2_nogeom)
+
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
