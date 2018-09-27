@@ -12,13 +12,14 @@ import fiona
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, GeoSeries
+from geopandas.array import GeometryArray, GeometryDtype
 
 import pytest
 from pandas.util.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal)
+from geopandas.testing import assert_geoseries_equal, assert_geodataframe_equal
 from geopandas.tests.util import (
-    assert_geoseries_equal, connect, create_postgis, PACKAGE_DIR,
-    validate_boro_df)
+    connect, create_postgis, PACKAGE_DIR, validate_boro_df)
 
 
 class TestDataFrame:
@@ -209,6 +210,15 @@ class TestDataFrame:
         for i, r in df.iterrows():
             assert i == r['geometry'].x
             assert i == r['geometry'].y
+
+    def test_set_geometry_series_name(self):
+        geom = [Point(x, y) for x, y in zip(range(5), range(5))]
+        g = GeoSeries(geom, name='my_geom')
+        df = self.df.set_geometry(g)
+        assert df._geometry_column_name == 'my_geom'
+        assert df.geometry.name == 'my_geom'
+        # TODO should this column be there or not?
+        # assert 'geometry' not in df.columns
 
     def test_to_json(self):
         text = self.df.to_json()
@@ -578,6 +588,9 @@ def check_geodataframe(df, geometry_column='geometry'):
     assert isinstance(df.geometry, GeoSeries)
     assert isinstance(df[geometry_column], GeoSeries)
     assert df._geometry_column_name == geometry_column
+    assert df.geometry.name == geometry_column
+    assert isinstance(df.geometry.values, GeometryArray)
+    assert isinstance(df.geometry.dtype, GeometryDtype)
 
 
 class TestConstructor:
@@ -711,15 +724,23 @@ class TestConstructor:
             df.geometry
 
     def test_only_geometry(self):
+        exp = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)],
+                            'other': range(3)})[['geometry']]
+
         df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
         check_geodataframe(df)
+        assert_geodataframe_equal(df, exp)
 
         df = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)]})
         check_geodataframe(df)
+        assert_geodataframe_equal(df, exp)
 
         df = GeoDataFrame({'other_geom': [Point(x, x) for x in range(3)]},
                           geometry='other_geom')
         check_geodataframe(df, 'other_geom')
+        exp = (exp.rename(columns={'geometry': 'other_geom'})
+                  .set_geometry('other_geom'))
+        assert_geodataframe_equal(df, exp)
 
     def test_no_geometries(self):
         # keeps GeoDataFrame class (no DataFrame)
@@ -727,9 +748,43 @@ class TestConstructor:
         df = GeoDataFrame(data)
         assert type(df) == GeoDataFrame
 
+        gdf = GeoDataFrame({'x': [1]})
+        assert list(gdf.x) == [1]
+
     def test_empty(self):
         df = GeoDataFrame()
         assert type(df) == GeoDataFrame
 
         df = GeoDataFrame({'A': [], 'B': []}, geometry=[])
         assert type(df) == GeoDataFrame
+
+    def test_column_ordering(self):
+        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        gs = GeoSeries(geoms)
+        gdf = GeoDataFrame({'a': [1, 2, 3], 'geometry': gs},
+                           columns=['geometry', 'a'],
+                           geometry='geometry')
+
+        check_geodataframe(gdf)
+        gdf.columns == ['geometry', 'a']
+
+    def test_preserve_series_name(self):
+        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        gs = GeoSeries(geoms)
+        gdf = GeoDataFrame({'a': [1, 2, 3]}, geometry=gs)
+
+        check_geodataframe(gdf, geometry_column='geometry')
+
+        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        gs = GeoSeries(geoms, name='my_geom')
+        gdf = GeoDataFrame({'a': [1, 2, 3]}, geometry=gs)
+
+        check_geodataframe(gdf, geometry_column='my_geom')
+
+    def test_overwrite_geometry(self):
+        # GH602
+        data = pd.DataFrame({'geometry': [1, 2, 3], 'col1': [4, 5, 6]})
+        geoms = pd.Series([Point(i, i) for i in range(3)])
+        # passed geometry kwarg should overwrite geometry column in data
+        res = GeoDataFrame(data, geometry=geoms)
+        assert_geoseries_equal(res.geometry, GeoSeries(geoms))

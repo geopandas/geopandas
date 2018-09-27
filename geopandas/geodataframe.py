@@ -45,7 +45,22 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
+
+        if not args:
+            if not isinstance(geometry, str) and geometry is not None:
+                # ensure correct length of the empty frame
+                n = len(geometry)
+                kwargs['index'] = kwargs.pop('index', range(n))
+            args = [[]]
+
         super(GeoDataFrame, self).__init__(*args, **kwargs)
+
+        # only set default 'geometry' name if it is present in the data
+        # TODO do we want to raise / return normal DataFrame in this case?
+        if geometry is None:
+            if 'geometry' in self.columns:
+                geometry = 'geometry'
+
         self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
@@ -122,6 +137,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
+            if isinstance(col, Series):
+                if col.name:
+                    geo_column_name = col.name
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
@@ -144,6 +162,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # Avoids caching issues/crs sharing issues
             level = level.copy()
             level.crs = crs
+
+        if isinstance(level, Series):
+            level = GeoSeries(level)
+            level, _ = level.align(pd.DataFrame(frame), join='right')
+        else:
+            level = GeoSeries(level, index=frame.index)
 
         # Check that we are using a listlike of geometries
         if not all(isinstance(item, BaseGeometry) or not item for item in level):
