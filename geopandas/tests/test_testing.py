@@ -38,7 +38,7 @@ def test_geodataframe():
     df3 = df2.copy()
     df3.loc[0, 'col1'] = 10
     with pytest.raises(AssertionError):
-        assert_geodataframe_equal(df1, df2)
+        assert_geodataframe_equal(df1, df3)
 
 
 def test_equal_nans():
