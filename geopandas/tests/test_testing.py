@@ -1,6 +1,7 @@
 import pytest
 
-from shapely.geometry import Polygon
+import numpy as np
+from shapely.geometry import Polygon, Point
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.testing import (
@@ -38,3 +39,9 @@ def test_geodataframe():
     df3.loc[0, 'col1'] = 10
     with pytest.raises(AssertionError):
         assert_geodataframe_equal(df1, df2)
+
+
+def test_equal_nans():
+    s = GeoSeries([Point(0, 0), np.nan])
+    assert_geoseries_equal(s, s.copy())
+    assert_geoseries_equal(s, s.copy(), check_less_precise=True)

@@ -64,7 +64,6 @@ class TestGeomMethods:
         self.g5 = GeoSeries([self.l1, self.l2])
         self.g6 = GeoSeries([self.p0, self.t3])
         self.empty = GeoSeries([])
-        self.empty.crs = {'init': 'epsg:4326', 'no_defs': True}
         self.empty_poly = Polygon()
 
         # Crossed lines
