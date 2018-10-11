@@ -51,7 +51,10 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                          (op, allowed_ops))
 
     if left_df.crs != right_df.crs:
-        warn('CRS of frames being joined does not match!')
+        warn(
+            ('CRS of frames being joined does not match!'
+             '(%s != %s)' % (left_df.crs, right_df.crs))
+        )
 
     index_left = 'index_%s' % lsuffix
     index_right = 'index_%s' % rsuffix
