@@ -23,11 +23,11 @@ matrix:
     - python: 3.6
       env: ENV_FILE="ci/travis/36-pd022.yaml"
 
-    - python: 3.7
+    - python: 3.6
       env: ENV_FILE="ci/travis/37-latest-defaults.yaml"
-    - python: 3.7
+    - python: 3.6
       env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
-    - python: 3.7
+    - python: 3.6
       env: ENV_FILE="ci/travis/37-dev.yaml"
 
 install:
