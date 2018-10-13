@@ -1,8 +1,9 @@
 name: test
 channels:
   - defaults
+  - conda-forge
 dependencies:
-  - python=2.7
+  - python=3.5
   - six
   # required
   - pandas==0.19.2
@@ -12,16 +13,12 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  #- codecov
-  - mock
+  - codecov
   # optional
   - rtree
   - matplotlib==1.5.3
   - descartes
   - pysal
-  #- geopy
+  - geopy
   - SQLalchemy
   - psycopg2
-  - pip:
-    - codecov
-    - geopy

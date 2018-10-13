@@ -1,24 +1,26 @@
 name: test
 channels:
-  - conda-forge
-  # conda-forge needed for combination of old shapely
+  - defaults
 dependencies:
   - python=3.6
   - six
   # required
   - pandas==0.20.2
-  - shapely=1.5
+  - shapely
   - fiona
   - pyproj
   # testing
   - pytest
   - pytest-cov
-  - codecov
+  #- codecov
   # optional
   - rtree
   - matplotlib==1.5.3
   - descartes
   - pysal
-  - geopy
+  #- geopy
   - SQLalchemy
   - psycopg2
+  - pip:
+    - codecov
+    - geopy
