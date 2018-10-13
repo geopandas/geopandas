@@ -2,31 +2,33 @@ language: python
 
 sudo: false
 
-
 matrix:
   include:
     # Only one test for these Python versions
     - python: 3.5
-      env: PANDAS=0.20.2 MATPLOTLIB=1.5.3
+      env: ENV_FILE="ci/travis/35-old.yaml"
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - python: 2.7
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5
+      env: ENV_FILE="ci/travis/27-pd019.yaml"
     - python: 2.7
-      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2 CHANNEL=conda-forge
+      env: ENV_FILE="ci/travis/27-pd020.yaml"
     - python: 2.7
-      env: PANDAS=0.23.2  MATPLOTLIB=2.1.2
+      env: ENV_FILE="ci/travis/27-latest-defaults.yaml"
     - python: 2.7
-      env: PANDAS=master  MATPLOTLIB=2.2.2
+      env: ENV_FILE="ci/travis/27-dev.yaml"
 
     - python: 3.6
-      env: PANDAS=0.19.2  MATPLOTLIB=1.5.3 SHAPELY=1.5 CHANNEL=conda-forge # conda-forge is needed here for this combination
+      env: ENV_FILE="ci/travis/36-pd020.yaml"
     - python: 3.6
-      env: PANDAS=0.20.2  MATPLOTLIB=2.0.2
-    - python: 3.6
-      env: PANDAS=0.23.2  MATPLOTLIB=2.2.2 CHANNEL=conda-forge
-    - python: 3.6
-      env: PANDAS=master  MATPLOTLIB=master
+      env: ENV_FILE="ci/travis/36-pd022.yaml"
+
+    - python: 3.7
+      env: ENV_FILE="ci/travis/37-latest-defaults.yaml"
+    - python: 3.7
+      env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
+    - python: 3.7
+      env: ENV_FILE="ci/travis/37-dev.yaml"
 
 install:
   # Install conda
@@ -35,20 +37,12 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes --set changeps1 no
   - conda update conda
-  - if [ -n "$CHANNEL" ]; then conda config --add channels $CHANNEL; fi
 
   # Install dependencies
-  - conda create -n test-geopandas python=$TRAVIS_PYTHON_VERSION pytest matplotlib six psycopg2 sqlalchemy pytest-cov mock
-  - source activate test-geopandas
-  - if [[ $MATPLOTLIB == 'master' ]]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
-  - if [ -n "$SHAPELY" ]; then conda install shapely=$SHAPELY; else conda install shapely; fi
-  - conda install pysal pyproj fiona descartes rtree
-
-  - if [[ $PANDAS != 'master' ]]; then conda install pandas==$PANDAS; fi
-  - if [[ $PANDAS == 'master' ]]; then conda install pandas cython; pip install git+https://github.com/pydata/pandas.git; fi
-
-  # codecov is not available from defaults
-  - conda install -c conda-forge codecov
+  - conda create --file="${ENV_FILE}"
+  - source activate test
+  - pip install -e .
+  - conda list
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
