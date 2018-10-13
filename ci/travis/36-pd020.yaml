@@ -1,6 +1,6 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
   - python=3.6
   - six
@@ -12,15 +12,12 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  #- codecov
+  - codecov
   # optional
   - rtree
   - matplotlib==1.5.3
   - descartes
   - pysal
-  #- geopy
+  - geopy
   - SQLalchemy
   - psycopg2
-  - pip:
-    - codecov
-    - geopy
