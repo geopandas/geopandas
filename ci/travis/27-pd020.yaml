@@ -5,6 +5,7 @@ dependencies:
   - python=2.7
   - six
   - numpy # need to list to get this from conda-forge
+  - gdal
   # required
   - pandas==0.20.2
   - shapely
