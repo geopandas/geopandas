@@ -39,7 +39,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create --file="${ENV_FILE}"
+  - conda env create --file="${ENV_FILE}"
   - source activate test
   - pip install -e .
   - conda list
