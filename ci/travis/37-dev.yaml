@@ -25,5 +25,6 @@ dependencies:
   - pip:
     - git+https://github.com/matplotlib/matplotlib.git
     - git+https://github.com/pydata/pandas.git
+    - git+https://github.com/Toblerity/Fiona.git
     - codecov
     - geopy
