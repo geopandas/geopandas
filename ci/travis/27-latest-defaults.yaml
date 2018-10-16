@@ -1,0 +1,27 @@
+name: test
+channels:
+  - defaults
+dependencies:
+  - python=2.7
+  - six
+  # required
+  - pandas
+  - shapely
+  - fiona
+  - pyproj
+  # testing
+  - pytest
+  - pytest-cov
+  #- codecov
+  - mock
+  # optional
+  - rtree
+  - matplotlib
+  - descartes
+  - pysal
+  #- geopy
+  - SQLalchemy
+  - psycopg2
+  - pip:
+    - codecov
+    - geopy
