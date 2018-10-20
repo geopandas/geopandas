@@ -33,12 +33,12 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
     import rtree
 
     if not isinstance(left_df, GeoDataFrame):
-        raise ValueError("`left_df` should be GeoDataFrame, got %s" %
-                         (type(left_df)))
+        raise ValueError("'left_df' should be GeoDataFrame, got {}".format(
+                         type(left_df)))
 
     if not isinstance(right_df, GeoDataFrame):
-        raise ValueError("`right_df` should be GeoDataFrame, got %s" %
-                         (type(right_df)))
+        raise ValueError("'right_df' should be GeoDataFrame, got {}".format(
+                         type(right_df)))
 
     allowed_hows = ['left', 'right', 'inner']
     if how not in allowed_hows:
