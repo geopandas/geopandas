@@ -136,21 +136,17 @@ class TestSpatialJoin:
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
-    def test_sjoin_invalid_right(self, dfs):
+    def test_sjoin_invalid_args(self, dfs):
         index, df1, df2, expected = dfs
-        with pytest.raises(ValueError) as excinfo:
-            res = sjoin(df1, df2.geometry)
 
-        assert '`right_df` should be GeoDataFrame' in str(excinfo.value)
-
-    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
-                             indirect=True)
-    def test_sjoin_invalid_left(self, dfs):
-        index, df1, df2, expected = dfs
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError,
+                           match="'left_df' should be GeoDataFrame"):
             res = sjoin(df1.geometry, df2)
 
-        assert '`left_df` should be GeoDataFrame' in str(excinfo.value)
+        with pytest.raises(ValueError,
+                           match="'right_df' should be GeoDataFrame"):
+            res = sjoin(df1, df2.geometry)
+
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
