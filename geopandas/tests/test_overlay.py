@@ -80,6 +80,7 @@ def test_overlay(dfs_index, how, use_sindex):
             expected_intersection,
             expected_difference
         ], ignore_index=True, **CONCAT_KWARGS)
+        expected['col1'] = expected['col1'].astype(float)
     else:
         expected = _read(how)
 

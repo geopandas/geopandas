@@ -238,11 +238,7 @@ class GeoSeries(GeoPandasBase, Series):
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
-        if isinstance(other, GeoSeries):
-            return GeoSeries(left), GeoSeries(right)
-        else: # It is probably a Series, let's keep it that way
-            return GeoSeries(left), right
-
+        return left, right
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
