@@ -315,13 +315,11 @@ class GeoPandasBase(object):
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        # TODO: pass precision argument
         return _binary_op('almost_equals', self, other, decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        # TODO: pass tolerance argument.
         return _binary_op('equals_exact', self, other, tolerance=tolerance)
 
     def crosses(self, other):
