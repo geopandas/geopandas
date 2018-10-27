@@ -575,12 +575,19 @@ class GeoPandasBase(object):
 
     def relate(self, other):
         """
-        Returns the DE-9IM intersection matrix for the two geometries
+        Returns the DE-9IM intersection matrices for the geometries
 
         Parameters
         ----------
         other : BaseGeometry or GeoSeries
-            The other geometry to computed the DE-9IM intersection matrix from.
+            The other geometry to computed
+            the DE-9IM intersection matrices from.
+
+        Returns
+        ----------
+        spatial_relations: Series of strings
+            The DE-9IM intersection matrices which describe
+            the spatial relations of the other geometry.
         """
         return _binary_op('relate', self, other)
 
