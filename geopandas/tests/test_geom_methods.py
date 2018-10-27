@@ -297,6 +297,21 @@ class TestGeomMethods:
         expected = [False, False, False, False, False, True]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
+    def test_relate(self):
+        expected = Series(['212101212',
+                           '212101212',
+                           '212FF1FF2',
+                           '2FFF1FFF2',
+                           'FF2F112F2',
+                           'FF0FFF212'],
+                          index=self.g0.index)
+        assert_array_dtype_equal(expected, self.g0.relate(self.inner_sq))
+
+        expected = Series(['FF0FFF212',
+                           None],
+                          index=self.g6.index)
+        assert_array_dtype_equal(expected, self.g6.relate(self.na_none))
+
     def test_distance(self):
         expected = Series(np.array([np.sqrt((5 - 1)**2 + (5 - 1)**2), np.nan]),
                           self.na_none.index)
