@@ -1,10 +1,15 @@
 import os
+from distutils.version import LooseVersion
 
 import fiona
 import numpy as np
 import six
 
 from geopandas import GeoDataFrame, GeoSeries
+
+
+_FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion('1.8')
+
 
 # Adapted from pandas.io.common
 if six.PY3:
@@ -123,10 +128,10 @@ def infer_schema(df):
         out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
         if out_type == 'long':
             out_type = 'int'
-        if out_type == 'bool':
+        if not _FIONA18 and out_type == 'bool':
             raise ValueError('column "{}" is boolean type, '.format(column) +
-                             'which is unsupported in file writing. '
-                             'Consider casting the column to int type.')
+                             'which is unsupported in file writing with fiona '
+                             '< 1.8. Consider casting the column to int type.')
         return out_type
 
     properties = OrderedDict([
@@ -138,7 +143,7 @@ def infer_schema(df):
         raise ValueError("Cannot write empty DataFrame to file.")
 
     geom_type = _common_geom_type(df)
-    
+
     if not geom_type:
         raise ValueError("Geometry column cannot contain mutiple "
                          "geometry types when writing to file.")

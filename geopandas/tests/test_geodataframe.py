@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import shutil
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -368,13 +369,18 @@ class TestDataFrame:
 
     def test_to_file_bool(self):
         """Test error raise when writing with a boolean column (GH #437)."""
-
-        # still want a temp dir in case this test passes
         tempfilename = os.path.join(self.tempdir, 'boros.shp')
-        df_with_bool = self.df.copy()
-        df_with_bool['bool_column'] = True
-        with pytest.raises(ValueError):
-            df_with_bool.to_file(tempfilename)
+        df = GeoDataFrame({
+            'a': [1, 2, 3], 'b': [True, False, True],
+            'geometry': [Point(0, 0), Point(1, 1), Point(2, 2)]})
+
+        if LooseVersion(fiona.__version__) < LooseVersion('1.8'):
+            with pytest.raises(ValueError):
+                df.to_file(tempfilename)
+        else:
+            df.to_file(tempfilename)
+            result = read_file(tempfilename)
+            assert_geodataframe_equal(result, df)
 
     def test_to_file_with_point_z(self):
         """Test that 3D geometries are retained in writes (GH #612)."""
