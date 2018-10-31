@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from collections import OrderedDict
 
+import sys
 import fiona
 import pytest
 from shapely.geometry import box
@@ -9,8 +10,8 @@ from shapely.geometry import box
 import geopandas
 from geopandas import read_postgis, read_file
 from geopandas.io.file import fiona_env
-from geopandas.tests.util import connect, create_postgis, validate_boro_df
-
+from geopandas.tests.util import connect, create_sqlite, create_postgis, validate_boro_df
+import sqlite3
 
 @pytest.fixture
 def nybb_df():
@@ -109,6 +110,21 @@ class TestIO:
 
         validate_boro_df(df)
         assert(df.crs == orig_crs)
+
+    def test_read_postgis_null_geom(self):
+        """Tests that geometry with NULL is accepted."""
+        try:
+            con = sqlite3.connect(':memory:')
+        except Exception:
+            raise pytest.skip()
+        else:
+            self.df.geometry.iat[0] = None
+            create_sqlite(self.df, con)
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, con)
+            validate_boro_df(df)
+        finally:
+            con.close()
 
     def test_read_file(self):
         df = self.df.rename(columns=lambda x: x.lower())

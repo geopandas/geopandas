@@ -1,10 +1,10 @@
 import os.path
-import sqlite3
+import sys
 
-import shapely.wkb
 from geopandas import GeoDataFrame
 from geopandas.testing import (
     geom_equals, geom_almost_equals, assert_geoseries_equal)  # flake8: noqa
+from pandas import Series
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
@@ -37,7 +37,7 @@ def validate_boro_df(df, case_sensitive=False):
     else:
         for col in columns:
             assert col.lower() in (dfcol.lower() for dfcol in df.columns)
-    assert all(df.geometry.type == 'MultiPolygon')
+    assert Series(df.geometry.type).dropna().eq('MultiPolygon').all()
 
 
 def connect(dbname):
@@ -49,29 +49,32 @@ def connect(dbname):
     return con
 
 
-def create_sqlite(df, filename, geom_col="geom"):
+def create_sqlite(df, con, geom_col="geom"):
     """
-    Create a sqlite database with the nybb table. This was the result of
-    using ogr2ogr to create a sqlite database from a shapefile, and then
-    the .dump command within sqlite to produce the commands to reproduce the
-    database, so may not representative of standard sqlite databases.
+    Create the nybb table in sqlite. This was the result of using ogr2ogr
+    to create a sqlite database from a shapefile, and then the .dump command
+    within sqlite to produce the commands to reproduce the database, so may
+    not representative of standard sqlite databases.
     """
 
-    con = sqlite3.connect(filename)
-    cur = con.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS 'nybb' "
-                "( ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "'{}' BLOB, 'borocode' INTEGER, ".format(geom_col) +
-                "'boroname' VARCHAR(32), 'shape_leng' FLOAT, "
-                "'shape_area' FLOAT);")
-    sql_row = "INSERT INTO nybb VALUES({},X'{}',{},'{}',{},{});"
-    for i, row in df.iterrows():
-        cur.execute(sql_row.format(i, shapely.wkb.dumps(row['geometry'],
-                                                        hex=True),
-                                   row['BoroCode'], row['BoroName'],
-                                   row['Shape_Leng'], row['Shape_Area']))
-    con.commit()
-    con.close()
+    is_legacy = sys.version_info.major < 3
+    with con:
+        con.execute("CREATE TABLE IF NOT EXISTS 'nybb' "
+                    "( ogc_fid INTEGER PRIMARY KEY, "
+                    "'{}' BLOB, 'borocode' INTEGER, ".format(geom_col) +
+                    "'boroname' VARCHAR(32), 'shape_leng' FLOAT, "
+                    "'shape_area' FLOAT);")
+        sql_row = "INSERT INTO nybb VALUES(?,?,?,?,?,?);"
+        con.executemany(sql_row,
+                        ((None,
+                          (buffer(row.geometry.wkb) if is_legacy
+                           else row.geometry.wkb) if row.geometry
+                          else None,
+                          row.BoroCode,
+                          row.BoroName,
+                          row.Shape_Leng,
+                          row.Shape_Area
+                         ) for row in df.itertuples(index=False)))
 
 
 def create_postgis(df, srid=None, geom_col="geom"):
