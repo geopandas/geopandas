@@ -5,9 +5,9 @@ import numpy as np
 import six
 
 try:
-    from fiona import Env
+    from fiona import Env as fiona_env
 except ImportError:
-    from fiona import drivers as Env
+    from fiona import drivers as fiona_env
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -110,7 +110,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
-    with Env():
+    with fiona_env():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
