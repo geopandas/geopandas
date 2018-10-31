@@ -380,6 +380,7 @@ class TestDataFrame:
         else:
             df.to_file(tempfilename)
             result = read_file(tempfilename)
+            assert result.crs == df.crs
             assert_geodataframe_equal(result, df)
 
     def test_to_file_with_point_z(self):
