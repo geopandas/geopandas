@@ -6,7 +6,7 @@ from pandas import Series, DataFrame, MultiIndex
 from pandas.core.indexing import _NDFrameIndexer
 
 from shapely.geometry.base import BaseGeometry
-from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
+from shapely.geometry import box
 from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
@@ -39,8 +39,9 @@ def is_geometry_type(data):
             return False
 
 
-def binary_geo(op, left, right):
-    """ Binary operation on GeoSeries objects that returns a GeoSeries """
+def _binary_geo(op, left, right):
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries
+    """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
     if isinstance(right, GeoPandasBase):
         left = left.geometry
@@ -69,8 +70,12 @@ def binary_geo(op, left, right):
         raise TypeError(type(left), type(right))
 
 
-def binary_predicate(op, this, other, *args, **kwargs):
-    """ Binary operation on GeoSeries objects that returns a boolean Series """
+def _binary_op(op, this, other, *args, **kwargs):
+    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
+    """Binary operation on GeoSeries objects that returns a Series"""
+    null_value = False if op not in ['distance', 'project'] else np.nan
+    dtype = 'bool' if op not in ['distance', 'project'] else float
+
     if isinstance(other, GeoPandasBase):
 
         this = this.geometry
@@ -78,46 +83,24 @@ def binary_predicate(op, this, other, *args, **kwargs):
 
         data = np.array(
             [getattr(this_elem, op)(other_elem, *args, **kwargs)
-             if not this_elem.is_empty | other_elem.is_empty else False
+             if not this_elem.is_empty | other_elem.is_empty else null_value
              for this_elem, other_elem in zip(this, other)],
-            dtype='bool')
-        
+            dtype=dtype)
+
         return Series(data, index=this.index)
 
     elif isinstance(other, BaseGeometry):
         data = np.array(
-            [getattr(s, op)(other, *args, **kwargs) if s else False
+            [getattr(s, op)(other, *args, **kwargs) if s else null_value
              for s in this.geometry],
-            dtype='bool')
+            dtype=dtype)
         return Series(data, index=this.index)
     else:
         raise TypeError(type(this), type(other))
 
 
-def binary_float(op, this, other, *args, **kwargs):
-    """ Binary operation on GeoSeries objects that returns a float Series """
-    if isinstance(other, GeoPandasBase):
-        this = this.geometry
-        this, other = this.align(other.geometry)
-
-        data = np.array(
-            [getattr(this_elem, op)(other_elem, *args, **kwargs)
-             if not this_elem.is_empty | other_elem.is_empty else np.nan
-             for this_elem, other_elem in zip(this, other)],
-            dtype=float)
-
-        return Series(data, index=this.index)
-    elif isinstance(other, BaseGeometry):
-        data = np.array(
-            [getattr(s, op)(other, *args, **kwargs) if s else np.nan
-             for s in this.geometry],
-            dtype=float)
-        return Series(data, index=this.index)
-    else:
-        raise TypeError(type(this), type(other))
-
-
-def unary_geo(op, this):
+def _unary_geo(op, this):
+    # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
     data = np.array([getattr(geom, op) for geom in this.geometry],
@@ -125,7 +108,8 @@ def unary_geo(op, this):
     return GeoSeries(GeometryArray(data), index=this.index, crs=this.crs)
 
 
-def _series_unary_op(this, op, null_value=False):
+def _unary_op(op, this, null_value=False):
+    # type: (str, GeoSeries, Any) -> Series
     """Unary operation that returns a Series"""
     return Series([getattr(geom, op, null_value) for geom in this.geometry],
                   index=this.index, dtype=np.dtype(type(null_value)))
@@ -141,8 +125,8 @@ class GeoPandasBase(object):
         else:
             from geopandas.sindex import SpatialIndex
             stream = ((i, item.bounds, idx) for i, (idx, item) in
-                   enumerate(self.geometry.iteritems()) if
-                   pd.notnull(item) and not item.is_empty)
+                      enumerate(self.geometry.iteritems())
+                      if pd.notnull(item) and not item.is_empty)
             try:
                 self._sindex = SpatialIndex(stream)
             # What we really want here is an empty generator error, or
@@ -165,13 +149,13 @@ class GeoPandasBase(object):
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
-        return _series_unary_op(self, 'area', null_value=np.nan)
+        return _unary_op('area', self, null_value=np.nan)
 
     @property
     def geom_type(self):
         """Returns a ``Series`` of strings specifying the `Geometry Type` of each
         object."""
-        return _series_unary_op(self, 'geom_type', null_value=None)
+        return _unary_op('geom_type', self, null_value=None)
 
     @property
     def type(self):
@@ -181,19 +165,19 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Returns a ``Series`` containing the length of each geometry."""
-        return _series_unary_op(self, 'length', null_value=np.nan)
+        return _unary_op('length', self, null_value=np.nan)
 
     @property
     def is_valid(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that are valid."""
-        return _series_unary_op(self, 'is_valid', null_value=False)
+        return _unary_op('is_valid', self, null_value=False)
 
     @property
     def is_empty(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         empty geometries."""
-        return _series_unary_op(self, 'is_empty', null_value=False)
+        return _unary_op('is_empty', self, null_value=False)
 
     @property
     def is_simple(self):
@@ -202,13 +186,13 @@ class GeoPandasBase(object):
 
         This is meaningful only for `LineStrings` and `LinearRings`.
         """
-        return _series_unary_op(self, 'is_simple', null_value=False)
+        return _unary_op('is_simple', self, null_value=False)
 
     @property
     def is_ring(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed."""
-        # operates on the exterior, so can't use _series_unary_op()
+        # operates on the exterior, so can't use _unary_op()
         return Series([geom.exterior.is_ring for geom in self.geometry],
                       index=self.index)
 
@@ -216,8 +200,7 @@ class GeoPandasBase(object):
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component."""
-        # operates on the exterior, so can't use _series_unary_op()
-        return _series_unary_op(self, 'has_z', null_value=False)
+        return _unary_op('has_z', self, null_value=False)
 
     #
     # Unary operations that return a GeoSeries
@@ -227,13 +210,13 @@ class GeoPandasBase(object):
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
         each geometries's set-theoretic `boundary`."""
-        return unary_geo('boundary', self)
+        return _unary_geo('boundary', self)
 
     @property
     def centroid(self):
         """Returns a ``GeoSeries`` of points representing the centroid of each
         geometry."""
-        return unary_geo('centroid', self)
+        return _unary_geo('centroid', self)
 
     @property
     def convex_hull(self):
@@ -244,7 +227,7 @@ class GeoPandasBase(object):
         containing all the points in each geometry, unless the number of points
         in the geometric object is less than three. For two points, the convex
         hull collapses to a `LineString`; for 1, a `Point`."""
-        return unary_geo('convex_hull', self)
+        return _unary_geo('convex_hull', self)
 
     @property
     def envelope(self):
@@ -254,7 +237,7 @@ class GeoPandasBase(object):
         The envelope of a geometry is the bounding rectangle. That is, the
         point or smallest rectangular polygon (with sides parallel to the
         coordinate axes) that contains the geometry."""
-        return unary_geo('envelope', self)
+        return _unary_geo('envelope', self)
 
     @property
     def exterior(self):
@@ -264,7 +247,7 @@ class GeoPandasBase(object):
         Applies to GeoSeries containing only Polygons.
         """
         # TODO: return empty geometry for non-polygons
-        return unary_geo('exterior', self)
+        return _unary_geo('exterior', self)
 
     @property
     def interiors(self):
@@ -274,7 +257,7 @@ class GeoPandasBase(object):
         Applies to GeoSeries containing only Polygons.
         """
         # TODO: return empty list or None for non-polygons
-        return _series_unary_op(self, 'interiors', null_value=False)
+        return _unary_op('interiors', self, null_value=False)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
@@ -320,7 +303,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             contained.
         """
-        return binary_predicate('contains', self, other)
+        return _binary_op('contains', self, other)
 
     def geom_equals(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -336,7 +319,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test for
             equality.
         """
-        return binary_predicate('equals', self, other)
+        return _binary_op('equals', self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
@@ -352,15 +335,12 @@ class GeoPandasBase(object):
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        # TODO: pass precision argument
-        return binary_predicate('almost_equals', self, other, decimal=decimal)
+        return _binary_op('almost_equals', self, other, decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        # TODO: pass tolerance argument.
-        return binary_predicate('equals_exact', self, other,
-                                tolerance=tolerance)
+        return _binary_op('equals_exact', self, other, tolerance=tolerance)
 
     def crosses(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -376,7 +356,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             crossed.
         """
-        return binary_predicate('crosses', self, other)
+        return _binary_op('crosses', self, other)
 
     def disjoint(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -391,7 +371,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             disjoint.
         """
-        return binary_predicate('disjoint', self, other)
+        return _binary_op('disjoint', self, other)
 
     def intersects(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -406,11 +386,11 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             intersected.
         """
-        return binary_predicate('intersects', self, other)
+        return _binary_op('intersects', self, other)
 
     def overlaps(self, other):
         """Return True for all geometries that overlap *other*, else False"""
-        return binary_predicate('overlaps', self, other)
+        return _binary_op('overlaps', self, other)
 
     def touches(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -426,7 +406,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             touched.
         """
-        return binary_predicate('touches', self, other)
+        return _binary_op('touches', self, other)
 
     def within(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -447,7 +427,7 @@ class GeoPandasBase(object):
             geometry is within.
 
         """
-        return binary_predicate('within', self, other)
+        return _binary_op('within', self, other)
 
     def distance(self, other):
         """Returns a ``Series`` containing the distance to `other`.
@@ -458,7 +438,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
-        return binary_float('distance', self, other)
+        return _binary_op('distance', self, other)
 
     #
     # Binary operations that return a GeoSeries
@@ -474,7 +454,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             difference to.
         """
-        return binary_geo('difference', self, other)
+        return _binary_geo('difference', self, other)
 
     def symmetric_difference(self, other):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
@@ -489,7 +469,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             symmetric difference to.
         """
-        return binary_geo('symmetric_difference', self, other)
+        return _binary_geo('symmetric_difference', self, other)
 
     def union(self, other):
         """Returns a ``GeoSeries`` of the union of points in each geometry with
@@ -501,7 +481,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the union
             with.
         """
-        return binary_geo('union', self, other,)
+        return _binary_geo('union', self, other,)
 
     def intersection(self, other):
         """Returns a ``GeoSeries`` of the intersection of points in each
@@ -513,7 +493,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             intersection with.
         """
-        return binary_geo('intersection', self, other)
+        return _binary_geo('intersection', self, other)
 
     #
     # Other operations
@@ -575,9 +555,9 @@ class GeoPandasBase(object):
                     raise ValueError("Index values of distance sequence does "
                                      "not match index values of the GeoSeries")
             return gpd.GeoSeries(
-                    [geom.buffer(dist, resolution, **kwargs)
-                    for geom, dist in zip(self.geometry, distance)],
-                    index=self.index, crs=self.crs)
+                [geom.buffer(dist, resolution, **kwargs)
+                 for geom, dist in zip(self.geometry, distance)],
+                index=self.index, crs=self.crs)
 
         return gpd.GeoSeries([geom.buffer(distance, resolution, **kwargs)
                               for geom in self.geometry],
@@ -599,9 +579,9 @@ class GeoPandasBase(object):
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
         """
-        return gpd.GeoSeries([geom.simplify(*args, **kwargs)
-                              for geom in self.geometry],
-                             index=self.index, crs=self.crs)
+        return gpd.GeoSeries(
+            [geom.simplify(*args, **kwargs) for geom in self.geometry],
+            index=self.index, crs=self.crs)
 
     def relate(self, other):
         raise NotImplementedError
@@ -621,7 +601,7 @@ class GeoPandasBase(object):
         The project method is the inverse of interpolate.
         """
 
-        return binary_float('project', self, other, normalized=normalized)
+        return _binary_op('project', self, other, normalized=normalized)
 
     def interpolate(self, distance, normalized=False):
         """
@@ -630,9 +610,9 @@ class GeoPandasBase(object):
         Parameters
         ----------
         distance : float or Series of floats
-            Distance(s) along the geometries at which a point should be returned.
-            If np.array or pd.Series are used then it must have same length
-            as the GeoSeries.
+            Distance(s) along the geometries at which a point should be
+            returned. If np.array or pd.Series are used then it must have
+            same length as the GeoSeries.
         normalized : boolean
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
@@ -646,8 +626,8 @@ class GeoPandasBase(object):
                     raise ValueError("Index values of distance sequence does "
                                      "not match index values of the GeoSeries")
             return gpd.GeoSeries(
-                    [s.interpolate(dist, normalized=normalized)
-                    for (s, dist) in zip(self.geometry, distance)],
+                [s.interpolate(dist, normalized=normalized)
+                 for (s, dist) in zip(self.geometry, distance)],
                 index=self.index, crs=self.crs)
 
         return gpd.GeoSeries([s.interpolate(distance, normalized=normalized)

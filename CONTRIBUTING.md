@@ -38,7 +38,7 @@ Style
 
 - GeoPandas supports python 2 (2.6+) and python 3 (3.2+) with a single
   code base.  Use modern python idioms when possible that are
-  compatibile with both major versions, and use the
+  compatible with both major versions, and use the
   [six](https://pythonhosted.org/six) library where helpful to smooth
   over the differences.  Use `from __future__ import` statements where
   appropriate.  Test code locally in both python 2 and python 3 when

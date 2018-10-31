@@ -1,0 +1,29 @@
+name: test
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - six
+  - cython
+  # required
+  - pandas
+  - shapely
+  - conda-forge/label/dev::fiona
+  - pyproj
+  # testing
+  - pytest
+  - pytest-cov
+  #- codecov
+  # optional
+  - rtree
+  - matplotlib
+  - descartes
+  - pysal
+  #- geopy
+  - SQLalchemy
+  - psycopg2
+  - pip:
+    - git+https://github.com/matplotlib/matplotlib.git
+    - git+https://github.com/pydata/pandas.git
+    - codecov
+    - geopy

@@ -12,7 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
+from geopandas.base import GeoPandasBase, _unary_op, _CoordinateIndexer
 
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
@@ -84,7 +84,7 @@ class GeoSeries(GeoPandasBase, Series):
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
         if (self.geom_type == "Point").all():
-            return _series_unary_op(self, 'x', null_value=np.nan)
+            return _unary_op('x', self, null_value=np.nan)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -93,7 +93,7 @@ class GeoSeries(GeoPandasBase, Series):
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
         if (self.geom_type == "Point").all():
-            return _series_unary_op(self, 'y', null_value=np.nan)
+            return _unary_op('y', self, null_value=np.nan)
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
