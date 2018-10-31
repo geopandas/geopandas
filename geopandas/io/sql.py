@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import shapely.wkb
 
@@ -47,17 +48,30 @@ def read_postgis(sql, con, geom_col='geom', crs=None, hex_encoded=True,
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
 
-    def load_geom(x):
-        if isinstance(x, bytes):
-            return shapely.wkb.loads(x, hex=hex_encoded)
-        else:
-            return shapely.wkb.loads(str(x), hex=hex_encoded)
-    geoms = df[geom_col].apply(load_geom)
-    df[geom_col] = geoms
+    geoms = df[geom_col].dropna()
 
-    if crs is None:
-        if len(geoms) > 0:
-            srid = shapely.geos.lgeos.GEOSGetSRID(geoms[0]._geom)
+    if not geoms.empty:
+        load_geom_bytes = shapely.wkb.loads
+
+        def load_geom_buffer(x):
+            return shapely.wkb.loads(str(x))
+
+        def load_geom_str(x):
+            return shapely.wkb.loads(str(x), hex=hex_encoded)
+
+        if sys.version_info.major < 3:
+            if isinstance(geoms.iat[0], buffer):
+                load_geom = load_geom_buffer
+            else:
+                load_geom = load_geom_str
+        elif isinstance(geoms.iat[0], bytes):
+            load_geom = load_geom_bytes
+        else:
+            load_geom = load_geom_str
+
+        df[geom_col] = geoms = geoms.apply(load_geom)
+        if crs is None:
+            srid = shapely.geos.lgeos.GEOSGetSRID(geoms.iat[0]._geom)
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
                 crs = {"init": "epsg:{}".format(srid)}
