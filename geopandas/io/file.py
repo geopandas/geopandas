@@ -79,7 +79,7 @@ def read_file(filename, bbox=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=True,
+def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=False,
             **kwargs):
     """
     Write this GeoDataFrame to an OGR data source
@@ -99,7 +99,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=True,
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
         will determine the schema based on each column's dtype
-    promote : bool, default True
+    promote : bool, default False 
         If True, geometry types will always be converted to multi-geometry
         forms for writing to formats that only support a single geometry type.
         If False, geometry types will not be converted, and writes may fail 
@@ -161,7 +161,7 @@ def infer_schema(df):
     return schema
 
 
-def _common_geom_type(df, promote=True):
+def _common_geom_type(df, promote=False):
     # Need to check geom_types before we write to file...
     # Some (most?) providers expect a single geometry type:
     # Point, LineString, or Polygon
