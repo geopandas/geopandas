@@ -109,7 +109,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=False,
     to multi-layer data, store data within archives (zip files), etc.
     """
     if schema is None:
-        schema = infer_schema(df)
+        schema = infer_schema(df, promote=promote)
     if promote and schema['geometry'].startswith('Multi'):
         original_geometry = df.geometry.copy()
         df[df.geometry.name] = df.geometry.apply(_maybe_promote_geometry)
@@ -122,7 +122,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=False,
         df[original_geometry.name] = original_geometry
 
 
-def infer_schema(df):
+def infer_schema(df, promote=False):
     try:
         from collections import OrderedDict
     except ImportError:
@@ -148,7 +148,7 @@ def infer_schema(df):
     if df.empty:
         raise ValueError("Cannot write empty DataFrame to file.")
 
-    geom_type = _common_geom_type(df)
+    geom_type = _common_geom_type(df, promote=promote)
     
     if not geom_type:
         raise ValueError("Geometry column cannot contain mutiple "
