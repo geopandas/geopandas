@@ -3,6 +3,7 @@ import os
 import fiona
 import numpy as np
 import six
+from shapely import geometry
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -78,7 +79,7 @@ def read_file(filename, bbox=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None,
+def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=True,
             **kwargs):
     """
     Write this GeoDataFrame to an OGR data source
@@ -98,12 +99,19 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
         will determine the schema based on each column's dtype
+    promote : bool, default True
+        If True, geometry types will always be converted to multi-geometry
+        forms for writing to formats that only support a single geometry type.
+        If False, geometry types will not be converted, and writes may fail 
+        for formats that only support a single geometry type. 
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     """
     if schema is None:
         schema = infer_schema(df)
+    if promote and schema['geometry'].startswith('Multi'):
+        df[df.geometry.name] = df.geometry.apply(_maybe_promote_geometry)
     filename = os.path.abspath(os.path.expanduser(filename))
     with fiona.drivers():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
@@ -148,7 +156,7 @@ def infer_schema(df):
     return schema
 
 
-def _common_geom_type(df):
+def _common_geom_type(df, promote=True):
     # Need to check geom_types before we write to file...
     # Some (most?) providers expect a single geometry type:
     # Point, LineString, or Polygon
@@ -161,7 +169,21 @@ def _common_geom_type(df):
     if not geom_type:
         return None
 
+    multi_type = ''.join(('Multi',geom_type))
+    if promote and (multi_type in geom_types):
+        geom_type = multi_type
+
     if df.geometry.has_z.any():
         geom_type = "3D " + geom_type
 
     return geom_type
+
+_promotion_dispatch = {geometry.Point: geometry.MultiPoint, 
+                       geometry.Polygon: geometry.MultiPolygon,
+                       geometry.LineString: geometry.MultiLineString}
+
+def _maybe_promote_geometry(geom):
+    """ Either promote the geometry to a Multi-geometry, or return input"""
+    promoter = _promotion_dispatch.get(geom.type, lambda x: x[0])
+    return promoter([geom])
+    
