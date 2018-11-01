@@ -111,12 +111,17 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, promote=True,
     if schema is None:
         schema = infer_schema(df)
     if promote and schema['geometry'].startswith('Multi'):
-        df[df.geometry.name] = df.geometry.apply(_maybe_promote_geometry)
+        df['_temporary_geometry'] = df.geometry.apply(_maybe_promote_geometry)
+        original_geometry = df.geometry.name
+        df = df.set_geometry('_temporary_geometry')
     filename = os.path.abspath(os.path.expanduser(filename))
     with fiona.drivers():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
+    if promote and schema['geometry'].startswith('Multi'):
+        df.drop('_temporary_geometry', inplace=True, axis=1)
+        df.set_geometry(original_geometry)
 
 
 def infer_schema(df):
@@ -178,9 +183,9 @@ def _common_geom_type(df, promote=True):
 
     return geom_type
 
-_promotion_dispatch = {geometry.Point: geometry.MultiPoint, 
-                       geometry.Polygon: geometry.MultiPolygon,
-                       geometry.LineString: geometry.MultiLineString}
+_promotion_dispatch = {"Point": geometry.MultiPoint, 
+                       "Polygon": geometry.MultiPolygon,
+                       "LineString": geometry.MultiLineString}
 
 def _maybe_promote_geometry(geom):
     """ Either promote the geometry to a Multi-geometry, or return input"""
