@@ -231,13 +231,17 @@ class GeoPandasBase(object):
 
     @property
     def interiors(self):
-        """Returns a ``GeoSeries`` of InteriorRingSequences representing the
+        """Returns a ``Series`` of InteriorRingSequences representing the
         inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
+
+        Returns
+        ----------
+        inner_rings: Series of InteriorRingSequences
+            Inner rings of each polygon in the GeoSeries.
         """
-        # TODO: return empty list or None for non-polygons
-        return _unary_op('interiors', self, null_value=False)
+        return _unary_op('interiors', self, null_value=None)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are

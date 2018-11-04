@@ -395,9 +395,14 @@ class TestGeomMethods:
 
     def test_interiors(self):
         square_series = GeoSeries(self.nested_squares)
-        exp_interiors = GeoSeries([LinearRing(self.inner_sq.boundary)])
-        for expected, computed in zip(exp_interiors, square_series.interiors):
-            assert computed[0].equals(expected)
+        square_series = self.g0
+
+        expected = []
+        assert list(square_series.interiors[0]) == expected
+        expected = LinearRing(self.inner_sq.boundary)
+        assert square_series.interiors[4][0].equals(expected)
+        expected = None
+        assert square_series.interiors[5] is expected
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
