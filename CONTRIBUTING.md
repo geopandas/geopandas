@@ -36,7 +36,7 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
-- GeoPandas supports Python 2 (2.7+) and Python 3 (3.2+) with a single
+- GeoPandas supports Python 2 (2.7+) and Python 3 (3.5+) with a single
   code base. Use modern Python idioms when possible that are
   compatible with both major versions, and use the
   [six](https://pythonhosted.org/six) library where helpful to smooth
