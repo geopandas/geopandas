@@ -240,7 +240,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None,
                      hex_encoded=True, index_col=None, coerce_float=True,
-                     params=None):
+                     parse_dates=None, params=None):
         """Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column.
 
@@ -260,6 +260,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float : boolean, default True
             Attempt to convert values of non-string, non-numeric objects (like
             decimal.Decimal) to floating point, useful for SQL result sets
+        parse_dates : list or dict, default: None
+            - List of column names to parse as dates.
+            - Dict of ``{column_name: format string}`` where format string is
+            strftime compatible in case of parsing string times, or is one of
+            (D, s, ns, ms, us) in case of parsing integer timestamps.
+            - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+            to the keyword arguments of :func:`pandas.to_datetime`
+            Especially useful with databases without native Datetime support,
+            such as SQLite.
         params : list, tuple or dict, optional, default: None
             List of parameters to pass to execute method.
 
@@ -271,7 +280,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         df = geopandas.io.sql.read_postgis(
                 sql, con, geom_col=geom_col, crs=crs, hex_encoded=hex_encoded,
-                index_col=index_col, coerce_float=coerce_float, params=params)
+                index_col=index_col, coerce_float=coerce_float,
+                parse_dates=parse_dates, params=params)
         return df
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
