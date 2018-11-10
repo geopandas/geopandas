@@ -231,17 +231,35 @@ class GeoPandasBase(object):
 
     @property
     def interiors(self):
-        """Returns a ``Series`` of InteriorRingSequences representing the
+        """Returns a ``Series`` of List representing the
         inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
 
         Returns
         ----------
-        inner_rings: Series of InteriorRingSequences
+        inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
         """
-        return _unary_op('interiors', self, null_value=None)
+
+        has_non_poly = False
+        inner_rings = []
+        for geom in self.geometry:
+            interior_ring_seq = getattr(geom, 'interiors', None)
+            # polygon case
+            if interior_ring_seq is not None:
+                inner_rings.append(list(interior_ring_seq))
+            # non-polygon case
+            else:
+                has_non_poly = True
+                inner_rings.append(None)
+        if has_non_poly:
+            warn("Containing non-polygons which cannot have interior rings.")
+
+        # _unary_op couldn't be used in order to warning to non-polygon and
+        # conversion to list.
+        return Series(inner_rings,
+                      index=self.index, dtype=object)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
