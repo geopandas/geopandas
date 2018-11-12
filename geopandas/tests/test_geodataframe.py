@@ -418,6 +418,7 @@ class TestDataFrame:
         tempfilename = os.path.join(self.tempdir, 'test.shp')
         s = GeoDataFrame({'geometry': [Point(0, 0),
                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
+        # Exception type is different for different `fiona` versions
         with pytest.raises((ValueError, RuntimeError)):
             s.to_file(tempfilename)
 
