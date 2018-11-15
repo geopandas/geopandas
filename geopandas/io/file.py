@@ -3,10 +3,10 @@ from distutils.version import LooseVersion
 
 import fiona
 import numpy as np
+import pandas as pd
 import six
 
 from geopandas import GeoDataFrame, GeoSeries
-
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion('1.8')
 
@@ -125,6 +125,8 @@ def infer_schema(df):
     def convert_type(column, in_type):
         if in_type == object:
             return 'str'
+        if pd.api.types.is_datetime64_dtype(in_type):
+            return 'datetime'
         out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
         if out_type == 'long':
             out_type = 'int'

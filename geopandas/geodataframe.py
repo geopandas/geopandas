@@ -351,7 +351,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError('Unknown na method {0}'.format(na))
         f = na_methods[na]
 
-        for name, row in self.iterrows():
+        df = self.copy()
+
+        for col in df.select_dtypes(np.datetime64).columns:
+            df[col] = pd.Series(df[col].dt.to_pydatetime(), index=df.index, dtype=object)
+        for name, row in df.iterrows():
             properties = f(row)
             del properties[self._geometry_column_name]
 
