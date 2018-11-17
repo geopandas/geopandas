@@ -8,6 +8,7 @@ from shapely.geometry import box
 
 import geopandas
 from geopandas import read_postgis, read_file
+from geopandas.io.file import fiona_env
 from geopandas.tests.util import connect, create_postgis, validate_boro_df
 
 
@@ -172,7 +173,7 @@ class TestIO:
 
         fname = str(tmpdir.join("test_empty.shp"))
 
-        with fiona.drivers():
+        with fiona_env():
             with fiona.open(fname, 'w', **meta) as _:
                 pass
 
