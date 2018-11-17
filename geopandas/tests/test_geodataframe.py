@@ -607,6 +607,20 @@ class TestDataFrame:
         assert self.df.__geo_interface__['type'] == 'FeatureCollection'
         assert len(self.df.__geo_interface__['features']) == self.df.shape[0]
 
+    def test_geodataframe_iterfeatures(self):
+        df = self.df.iloc[:1].copy()
+        df.ix[0, 'BoroName'] = np.nan
+        # when containing missing values
+        # null: ouput the missing entries as JSON null
+        result = list(df.iterfeatures(na='null'))[0]['properties']
+        assert result['BoroName'] is None
+        # drop: remove the property from the feature.
+        result = list(df.iterfeatures(na='drop'))[0]['properties']
+        assert 'BoroName' not in result.keys()
+        # keep: output the missing entries as NaN
+        result = list(df.iterfeatures(na='keep'))[0]['properties']
+        assert np.isnan(result['BoroName'])
+
     def test_geodataframe_geojson_no_bbox(self):
         geo = self.df._to_geo(na="null", show_bbox=False)
         assert 'bbox' not in geo.keys()
