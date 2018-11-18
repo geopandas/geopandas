@@ -341,7 +341,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # convert to object to get python scalars.
             properties = self[properties_cols].astype(object).values
             if na == 'null':
-                properties[self[properties_cols].isna().values] = None
+                properties[pd.isnull(self[properties_cols]).values] = None
 
             for i, row in enumerate(properties):
                 geom = geometries[i]
