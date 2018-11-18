@@ -10,8 +10,7 @@ from shapely.geometry import box
 import geopandas
 from geopandas import read_postgis, read_file
 from geopandas.io.file import fiona_env
-from geopandas.tests.util import connect, create_sqlite, create_postgis, validate_boro_df
-import sqlite3
+from geopandas.tests.util import connect, connect_spatialite, create_spatialite, create_postgis, validate_boro_df
 
 @pytest.fixture
 def nybb_df():
@@ -114,17 +113,35 @@ class TestIO:
     def test_read_postgis_null_geom(self):
         """Tests that geometry with NULL is accepted."""
         try:
-            con = sqlite3.connect(':memory:')
+            con = connect_spatialite()
         except Exception:
             raise pytest.skip()
         else:
+            geom_col = self.df.geometry.name
             self.df.geometry.iat[0] = None
-            create_sqlite(self.df, con)
-            sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, con)
+            create_spatialite(con, self.df)
+            sql = 'SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            df = read_postgis(sql, con, geom_col=geom_col)
             validate_boro_df(df)
         finally:
-            con.close()
+            if 'con' in locals():
+                con.close()
+
+    def test_read_postgis_binary(self):
+        """Tests that geometry read as binary is accepted."""
+        try:
+            con = connect_spatialite()
+        except Exception:
+            raise pytest.skip()
+        else:
+            geom_col = self.df.geometry.name
+            create_spatialite(con, self.df)
+            sql = 'SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            df = read_postgis(sql, con, geom_col=geom_col)
+            validate_boro_df(df)
+        finally:
+            if 'con' in locals():
+                con.close()
 
     def test_read_file(self):
         df = self.df.rename(columns=lambda x: x.lower())
