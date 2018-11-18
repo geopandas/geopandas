@@ -23,6 +23,7 @@ dependencies:
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
     - git+https://github.com/pydata/pandas.git
     - codecov
