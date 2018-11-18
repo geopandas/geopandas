@@ -609,7 +609,7 @@ class TestDataFrame:
 
     def test_geodataframe_iterfeatures(self):
         df = self.df.iloc[:1].copy()
-        df.ix[0, 'BoroName'] = np.nan
+        df.loc[0, 'BoroName'] = np.nan
         # when containing missing values
         # null: ouput the missing entries as JSON null
         result = list(df.iterfeatures(na='null'))[0]['properties']
@@ -620,6 +620,32 @@ class TestDataFrame:
         # keep: output the missing entries as NaN
         result = list(df.iterfeatures(na='keep'))[0]['properties']
         assert np.isnan(result['BoroName'])
+
+        # test for checking that the (non-null) features are python scalars and
+        # not numpy scalars
+        assert type(df.loc[0, 'Shape_Leng']) is np.float64
+        # null
+        result = list(df.iterfeatures(na='null'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # drop
+        result = list(df.iterfeatures(na='drop'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # keep
+        result = list(df.iterfeatures(na='keep'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+
+        # when only having numerical columns
+        df_only_numerical_cols = df[['Shape_Leng', 'Shape_Area', 'geometry']]
+        assert type(df_only_numerical_cols.loc[0, 'Shape_Leng']) is np.float64
+        # null
+        result = list(df_only_numerical_cols.iterfeatures(na='null'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # drop
+        result = list(df_only_numerical_cols.iterfeatures(na='drop'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # keep
+        result = list(df_only_numerical_cols.iterfeatures(na='keep'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
 
     def test_geodataframe_geojson_no_bbox(self):
         geo = self.df._to_geo(na="null", show_bbox=False)
