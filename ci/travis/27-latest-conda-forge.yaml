@@ -1,8 +1,8 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=3.7
+  - python=2.7
   - six
   # required
   - pandas
@@ -13,6 +13,7 @@ dependencies:
   - pytest
   - pytest-cov
   #- codecov
+  - mock
   # optional
   - rtree
   - matplotlib

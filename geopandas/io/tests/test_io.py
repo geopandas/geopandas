@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from collections import OrderedDict
 
+import sys
 import fiona
 import pytest
 from shapely.geometry import box
@@ -9,8 +10,7 @@ from shapely.geometry import box
 import geopandas
 from geopandas import read_postgis, read_file
 from geopandas.io.file import fiona_env
-from geopandas.tests.util import connect, create_postgis, validate_boro_df
-
+from geopandas.tests.util import connect, connect_spatialite, create_spatialite, create_postgis, validate_boro_df
 
 @pytest.fixture
 def nybb_df():
@@ -109,6 +109,39 @@ class TestIO:
 
         validate_boro_df(df)
         assert(df.crs == orig_crs)
+
+    def test_read_postgis_null_geom(self):
+        """Tests that geometry with NULL is accepted."""
+        try:
+            con = connect_spatialite()
+        except Exception:
+            raise pytest.skip()
+        else:
+            geom_col = self.df.geometry.name
+            self.df.geometry.iat[0] = None
+            create_spatialite(con, self.df)
+            sql = 'SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            df = read_postgis(sql, con, geom_col=geom_col)
+            validate_boro_df(df)
+        finally:
+            if 'con' in locals():
+                con.close()
+
+    def test_read_postgis_binary(self):
+        """Tests that geometry read as binary is accepted."""
+        try:
+            con = connect_spatialite()
+        except Exception:
+            raise pytest.skip()
+        else:
+            geom_col = self.df.geometry.name
+            create_spatialite(con, self.df)
+            sql = 'SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            df = read_postgis(sql, con, geom_col=geom_col)
+            validate_boro_df(df)
+        finally:
+            if 'con' in locals():
+                con.close()
 
     def test_read_file(self):
         df = self.df.rename(columns=lambda x: x.lower())
