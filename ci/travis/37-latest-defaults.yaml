@@ -12,6 +12,7 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
+  - hamcrest
   #- codecov
   # optional
   - rtree
