@@ -1,8 +1,9 @@
 from collections import OrderedDict
 from unittest import TestCase
 
-from hamcrest import has_entries
+from hamcrest import has_entries, calling
 from hamcrest.core import assert_that
+from hamcrest.core.core import raises
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString, MultiLineString
 
 from geopandas import GeoDataFrame
@@ -126,3 +127,19 @@ class TestInferSchema(TestCase):
         )
 
         assert_that(infer_schema(df), has_entries({'geometry': 'MultiPolygon', 'properties': OrderedDict()}))
+
+    def test_infer_schema_when_dataframe_has_multiple_shape_types(self):
+        df = GeoDataFrame(
+            {},
+            crs={'init': 'epsg:4326', 'no_defs': True},
+            geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
+                      self.city_hall_entrance,
+                      MultiLineString(self.city_hall_walls),
+                      self.city_hall_walls[0],
+                      MultiPoint([self.city_hall_entrance, self.city_hall_balcony]),
+                      self.city_hall_balcony]
+        )
+
+        # FIXME : should probably be :
+        # assert_that(infer_schema(df), has_entries({'geometry': ['MultiPolygon', 'Polygon', 'MultiLineString', 'LineString', 'MultiPoint', 'Point'], 'properties': OrderedDict()}))
+        assert_that(calling(infer_schema).with_args(df), raises(ValueError, 'Geometry column cannot contain mutiple geometry types when writing to file.'))
