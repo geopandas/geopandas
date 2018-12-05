@@ -44,6 +44,8 @@ class TestInferSchema(TestCase):
     city_hall_balcony = Point(-73.554138, 45.509080)
     city_hall_council_chamber = Point(-73.554246, 45.508931)
 
+    point_3D = Point(-73.553785, 45.508722, 300)
+
     def test_infer_schema_when_dataframe_has_only_points(self):
         df = GeoDataFrame(
             {},
@@ -60,7 +62,8 @@ class TestInferSchema(TestCase):
             geometry=[MultiPoint([self.city_hall_entrance, self.city_hall_balcony]), self.city_hall_balcony]
         )
 
-        # FIXME : should probably be {'geometry': ['MultiPoint', 'Point'], 'properties': OrderedDict()}
+        # FIXME : should probably be
+        # assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiPoint', 'Point'), 'properties': OrderedDict()}))
         assert_that(infer_schema(df), has_entries({'geometry': 'Point', 'properties': OrderedDict()}))
 
     def test_infer_schema_when_dataframe_has_only_multipoints(self):
@@ -88,7 +91,8 @@ class TestInferSchema(TestCase):
             geometry=[MultiLineString(self.city_hall_walls), self.city_hall_walls[0]]
         )
 
-        # FIXME : should probably be {'geometry': ['MultiLineString', 'LineString'], 'properties': OrderedDict()}
+        # FIXME : should probably be
+        # assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiLineString', 'LineString'), 'properties': OrderedDict()}))
         assert_that(infer_schema(df), has_entries({'geometry': 'LineString', 'properties': OrderedDict()}))
 
     def test_infer_schema_when_dataframe_has_only_multilinestrings(self):
@@ -116,7 +120,8 @@ class TestInferSchema(TestCase):
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)), self.city_hall_boundaries]
         )
 
-        # FIXME : should probably be {'geometry': ['MultiPolygon', 'Polygon'], 'properties': OrderedDict()}
+        # FIXME : should probably be:
+        # assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiPolygon', 'Polygon'), 'properties': OrderedDict()}))
         assert_that(infer_schema(df), has_entries({'geometry': 'Polygon', 'properties': OrderedDict()}))
 
     def test_infer_schema_when_dataframe_has_only_multipolygons(self):
@@ -133,7 +138,7 @@ class TestInferSchema(TestCase):
             {},
             crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
-                      self.city_hall_entrance,
+                      self.city_hall_boundaries,
                       MultiLineString(self.city_hall_walls),
                       self.city_hall_walls[0],
                       MultiPoint([self.city_hall_entrance, self.city_hall_balcony]),
@@ -141,5 +146,22 @@ class TestInferSchema(TestCase):
         )
 
         # FIXME : should probably be :
-        # assert_that(infer_schema(df), has_entries({'geometry': ['MultiPolygon', 'Polygon', 'MultiLineString', 'LineString', 'MultiPoint', 'Point'], 'properties': OrderedDict()}))
+        # assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiPolygon', 'Polygon', 'MultiLineString', 'LineString', 'MultiPoint', 'Point'), 'properties': OrderedDict()}))
+        assert_that(calling(infer_schema).with_args(df), raises(ValueError, 'Geometry column cannot contain mutiple geometry types when writing to file.'))
+
+    def test_infer_schema_when_dataframe_has_a_3D_shape_type(self):
+        df = GeoDataFrame(
+            {},
+            crs={'init': 'epsg:4326', 'no_defs': True},
+            geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
+                      self.city_hall_boundaries,
+                      MultiLineString(self.city_hall_walls),
+                      self.city_hall_walls[0],
+                      MultiPoint([self.city_hall_entrance, self.city_hall_balcony]),
+                      self.city_hall_balcony,
+                      self.point_3D]
+        )
+
+        # FIXME : should probably be :
+        # assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('3D MultiPolygon', '3D Polygon', '3D MultiLineString', '3D LineString', '3D MultiPoint', '3D Point'), 'properties': OrderedDict()}))
         assert_that(calling(infer_schema).with_args(df), raises(ValueError, 'Geometry column cannot contain mutiple geometry types when writing to file.'))
