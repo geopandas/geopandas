@@ -137,6 +137,12 @@ point_3D = Point(-73.553785, 45.508722, 300)
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
         geometry=[None, point_3D]
+    ),
+    # Null geometries only
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[None, None]
     )
 
 ])

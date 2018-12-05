@@ -196,7 +196,7 @@ class TestInferSchema(TestCase):
 
         assert_that(infer_schema(df), has_entries({'geometry': '3D Polygon', 'properties': OrderedDict()}))
 
-    def test_infer_schema_when_one_geometry_is_null(self):
+    def test_infer_schema_when_geometries_are_null_and_2D_point(self):
         df = GeoDataFrame(
             {},
             crs={'init': 'epsg:4326', 'no_defs': True},
@@ -210,6 +210,15 @@ class TestInferSchema(TestCase):
             {},
             crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[None, self.point_3D]
+        )
+
+        assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
+
+    def test_infer_schema_when_geometries_are_all_null(self):
+        df = GeoDataFrame(
+            {},
+            crs={'init': 'epsg:4326', 'no_defs': True},
+            geometry=[None, None]
         )
 
         assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
