@@ -11,6 +11,9 @@ from geopandas.io.file import infer_schema
 
 
 class TestInferSchema(TestCase):
+
+    # Credit: Polygons coming from Montreal city Open Data portal
+    # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
     city_hall_boundaries = Polygon((
         (-73.5541107525234, 45.5091983609661),
         (-73.5546126200639, 45.5086813829106),
