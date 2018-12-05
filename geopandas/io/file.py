@@ -160,8 +160,12 @@ def infer_schema(df):
 def _geometry_types(df):
     geom_types = df.geometry.geom_type.unique()
 
+    if None in geom_types:
+        # Default geometry type supported by Fiona
+        return 'Unknown'
+
     if df.geometry.has_z.any():
-        geom_types = [type if type is None else "3D " + type for type in geom_types]
+        geom_types = ["3D " + type for type in geom_types]
 
     if len(geom_types) == 1:
         geom_types = geom_types[0]

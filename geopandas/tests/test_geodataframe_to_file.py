@@ -45,6 +45,8 @@ city_hall_entrance = Point(-73.553785, 45.508722)
 city_hall_balcony = Point(-73.554138, 45.509080)
 city_hall_council_chamber = Point(-73.554246, 45.508931)
 
+point_3D = Point(-73.553785, 45.508722, 300)
+
 
 @pytest.fixture(params=[
     # Points
@@ -111,7 +113,32 @@ city_hall_council_chamber = Point(-73.554246, 45.508931)
                   city_hall_walls[0],
                   MultiPoint([city_hall_entrance, city_hall_balcony]),
                   city_hall_balcony]
+    ),
+    # all 2D shape types and 3D Point
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)),
+                  city_hall_entrance,
+                  MultiLineString(city_hall_walls),
+                  city_hall_walls[0],
+                  MultiPoint([city_hall_entrance, city_hall_balcony]),
+                  city_hall_balcony,
+                  point_3D]
+    ),
+    # Null geometry and Point
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[None, city_hall_entrance]
+    ),
+    # Null geometry and 3D Point
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[None, point_3D]
     )
+
 ])
 def geodataframe(request):
     return request.param

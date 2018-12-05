@@ -203,7 +203,7 @@ class TestInferSchema(TestCase):
             geometry=[None, self.city_hall_entrance]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder(None, 'Point'), 'properties': OrderedDict()}))
+        assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
 
     def test_infer_schema_when_geometries_are_null_and_3D_point(self):
         df = GeoDataFrame(
@@ -212,4 +212,4 @@ class TestInferSchema(TestCase):
             geometry=[None, self.point_3D]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder(None, '3D Point'), 'properties': OrderedDict()}))
+        assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
