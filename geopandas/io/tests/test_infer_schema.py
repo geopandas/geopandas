@@ -203,7 +203,8 @@ class TestInferSchema(TestCase):
             geometry=[None, self.city_hall_entrance]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
+        # None geometry type in then omitted
+        assert_that(infer_schema(df), has_entries({'geometry': 'Point', 'properties': OrderedDict()}))
 
     def test_infer_schema_when_geometries_are_null_and_3D_point(self):
         df = GeoDataFrame(
@@ -212,7 +213,8 @@ class TestInferSchema(TestCase):
             geometry=[None, self.point_3D]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
+        # None geometry type in then omitted
+        assert_that(infer_schema(df), has_entries({'geometry': '3D Point', 'properties': OrderedDict()}))
 
     def test_infer_schema_when_geometries_are_all_null(self):
         df = GeoDataFrame(
@@ -221,4 +223,5 @@ class TestInferSchema(TestCase):
             geometry=[None, None]
         )
 
+        # None geometry type in then replaced by 'Unknown' (default geometry type supported by Fiona)
         assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))

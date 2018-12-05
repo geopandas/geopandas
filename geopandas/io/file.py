@@ -160,8 +160,11 @@ def infer_schema(df):
 def _geometry_types(df):
     geom_types = df.geometry.geom_type.unique()
 
-    if None in geom_types:
-        # Default geometry type supported by Fiona
+    # Remove None geometry type fro backward compatibility
+    geom_types = [type for type in geom_types if type is not None]
+
+    if len(geom_types) == 0:
+        # Default geometry type supported by Fiona (Since https://github.com/Toblerity/Fiona/issues/446 resolution)
         return 'Unknown'
 
     if df.geometry.has_z.any():
