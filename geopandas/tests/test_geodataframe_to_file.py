@@ -150,7 +150,7 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(params=['GeoJSON'])
+@pytest.fixture(params=['GeoJSON', 'GPKG'])
 def ogr_driver(request):
     return request.param
 
