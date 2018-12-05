@@ -165,3 +165,12 @@ class TestInferSchema(TestCase):
         # FIXME : should probably be :
         # assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('3D MultiPolygon', '3D Polygon', '3D MultiLineString', '3D LineString', '3D MultiPoint', '3D Point'), 'properties': OrderedDict()}))
         assert_that(calling(infer_schema).with_args(df), raises(ValueError, 'Geometry column cannot contain mutiple geometry types when writing to file.'))
+
+    def test_infer_schema_when_dataframe_has_a_3D_Point(self):
+        df = GeoDataFrame(
+            {},
+            crs={'init': 'epsg:4326', 'no_defs': True},
+            geometry=[self.city_hall_balcony, self.point_3D]
+        )
+
+        assert_that(infer_schema(df), has_entries({'geometry': '3D Point', 'properties': OrderedDict()}))
