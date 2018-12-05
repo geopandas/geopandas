@@ -54,12 +54,11 @@ city_hall_council_chamber = Point(-73.554246, 45.508931)
         geometry=[city_hall_entrance, city_hall_balcony]
     ),
     # Points and MultiPoints
-    # FIXME : Fails with GeometryTypeValidationError
-    # GeoDataFrame(
-    #     {},
-    #     crs={'init': 'epsg:4326', 'no_defs': True},
-    #     geometry=[MultiPoint([city_hall_entrance, city_hall_balcony]), city_hall_balcony]
-    # ),
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[MultiPoint([city_hall_entrance, city_hall_balcony]), city_hall_balcony]
+    ),
     # MultiPoints
     GeoDataFrame(
         {},
@@ -73,12 +72,11 @@ city_hall_council_chamber = Point(-73.554246, 45.508931)
         geometry=city_hall_walls
     ),
     # LineStrings and MultiLineStrings
-    # FIXME : Fails with GeometryTypeValidationError
-    # GeoDataFrame(
-    #     {},
-    #     crs={'init': 'epsg:4326', 'no_defs': True},
-    #     geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
-    # ),
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
+    ),
     # MultiLineStrings
     GeoDataFrame(
         {},
@@ -92,12 +90,11 @@ city_hall_council_chamber = Point(-73.554246, 45.508931)
         geometry=[city_hall_boundaries, vauquelin_place]
     ),
     # MultiPolygon and Polygon
-    # FIXME : Fails with GeometryTypeValidationError
-    # GeoDataFrame(
-    #     {},
-    #     crs={'init': 'epsg:4326', 'no_defs': True},
-    #     geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)), city_hall_boundaries]
-    # ),
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)), city_hall_boundaries]
+    ),
     # MultiPolygon
     GeoDataFrame(
         {},
@@ -105,17 +102,16 @@ city_hall_council_chamber = Point(-73.554246, 45.508931)
         geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
     ),
     # all shape types
-    # FIXME : Fails with GeometryTypeValidationError
-    # GeoDataFrame(
-    #     {},
-    #     crs={'init': 'epsg:4326', 'no_defs': True},
-    #     geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)),
-    #               city_hall_entrance,
-    #               MultiLineString(city_hall_walls),
-    #               city_hall_walls[0],
-    #               MultiPoint([city_hall_entrance, city_hall_balcony]),
-    #               city_hall_balcony]
-    # )
+    GeoDataFrame(
+        {},
+        crs={'init': 'epsg:4326', 'no_defs': True},
+        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)),
+                  city_hall_entrance,
+                  MultiLineString(city_hall_walls),
+                  city_hall_walls[0],
+                  MultiPoint([city_hall_entrance, city_hall_balcony]),
+                  city_hall_balcony]
+    )
 ])
 def geodataframe(request):
     return request.param

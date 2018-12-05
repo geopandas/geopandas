@@ -149,27 +149,21 @@ def infer_schema(df):
     if df.empty:
         raise ValueError("Cannot write empty DataFrame to file.")
 
-    geom_type = _common_geom_type(df)
+    # Since https://github.com/Toblerity/Fiona/issues/446 resolution, Fiona allows a list of geometry types
+    geom_types = _geometry_types(df)
 
-    schema = {'geometry': geom_type, 'properties': properties}
+    schema = {'geometry': geom_types, 'properties': properties}
 
     return schema
 
 
-def _common_geom_type(df):
-    # Need to check geom_types before we write to file...
-    # Some (most?) providers expect a single geometry type:
-    # Point, LineString, or Polygon
+def _geometry_types(df):
     geom_types = df.geometry.geom_type.unique()
 
-    from os.path import commonprefix
-    # use reversed geom types and commonprefix to find the common suffix,
-    # then reverse the result to get back to a geom type
-    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
-    if not geom_type:
-        return 'Unknown'
-
     if df.geometry.has_z.any():
-        geom_type = "3D " + geom_type
+        geom_types = ["3D " + type for type in geom_types]
 
-    return geom_type
+    if len(geom_types) == 1:
+        geom_types = geom_types[0]
+
+    return geom_types
