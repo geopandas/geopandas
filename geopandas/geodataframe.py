@@ -89,7 +89,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        keys : column label or array
+        col : column label or array
         drop : boolean, default True
             Delete column to be used as the new geometry
         inplace : boolean, default False
