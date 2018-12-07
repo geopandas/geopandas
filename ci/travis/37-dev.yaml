@@ -19,7 +19,7 @@ dependencies:
   - matplotlib
   - descartes
   - pysal
-  - mapclassify
+
   #- geopy
   - SQLalchemy
   - psycopg2
@@ -29,3 +29,4 @@ dependencies:
     - git+https://github.com/pydata/pandas.git
     - codecov
     - geopy
+    - mapclassify
