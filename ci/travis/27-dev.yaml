@@ -24,8 +24,8 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - mapclassify
   - pip:
     - git+https://github.com/pydata/pandas.git
     - codecov
     - geopy
-    - mapclassify
