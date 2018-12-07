@@ -18,6 +18,7 @@ dependencies:
   - matplotlib==2.0.2
   - descartes
   - pysal
+  - mapclassify
   #- geopy
   - SQLalchemy
   - psycopg2
