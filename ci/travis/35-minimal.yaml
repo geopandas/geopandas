@@ -18,7 +18,7 @@ dependencies:
   - rtree
   - matplotlib==1.5.3
   - descartes
-  - pysal
+  - mapclassify
   - geopy
   - SQLalchemy
   - psycopg2

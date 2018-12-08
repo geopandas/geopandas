@@ -20,8 +20,8 @@ dependencies:
   - rtree
   - matplotlib==2.0.2
   - descartes
-  - pysal
   - geopy
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - mapclassify==1.0.1
