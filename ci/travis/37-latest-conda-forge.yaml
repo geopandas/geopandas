@@ -18,9 +18,8 @@ dependencies:
   - matplotlib
   - descartes
   - pysal
+  - mapclassify
   - geopy
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - pip:
-    - mapclassify

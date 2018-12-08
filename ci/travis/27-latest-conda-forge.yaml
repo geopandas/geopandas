@@ -19,6 +19,7 @@ dependencies:
   - matplotlib
   - descartes
   - pysal
+  - mapclassify==1.0.1
   #- geopy
   - SQLalchemy
   - psycopg2
@@ -26,4 +27,3 @@ dependencies:
   - pip:
     - codecov
     - geopy
-    - mapclassify==1.0.1

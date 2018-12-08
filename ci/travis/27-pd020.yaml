@@ -25,5 +25,4 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - pip:
-    - mapclassify==1.0.1
+  - mapclassify==1.0.1
