@@ -20,7 +20,7 @@ dependencies:
   - rtree
   - matplotlib==2.0.2
   - descartes
-  - pysal
+  - pysal=1
   - geopy
   - SQLalchemy
   - psycopg2

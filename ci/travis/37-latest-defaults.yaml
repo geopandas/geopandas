@@ -17,10 +17,10 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
   - pip:
     - codecov
     - geopy
+    - mapclassify
