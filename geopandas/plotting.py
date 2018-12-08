@@ -445,7 +445,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         values = np.array([valuemap[k] for k in values])
 
     if scheme is not None:
-        binning = __mapclassify_choro(values, scheme, k=k)
+        binning = _mapclassify_choro(values, scheme, k=k)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [values.min()] + binning.bins.tolist()
@@ -513,7 +513,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     return ax
 
 
-def __mapclassify_choro(values, scheme, k=5):
+def _mapclassify_choro(values, scheme, k=5):
     """
     Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
@@ -536,26 +536,28 @@ def __mapclassify_choro(values, scheme, k=5):
 
     """
     try:
+        from mapclassify import (
+            Quantiles, Equal_Interval, Fisher_Jenks,
+            Fisher_Jenks_Sampled)
+    except ImportError:
         try:
-            from mapclassify import (
-                Quantiles, Equal_Interval, Fisher_Jenks,
-                Fisher_Jenks_Sampled)
-        except ImportError:
             from mapclassify.api import (
                 Quantiles, Equal_Interval, Fisher_Jenks,
                 Fisher_Jenks_Sampled)
-        schemes = {}
-        schemes['equal_interval'] = Equal_Interval
-        schemes['quantiles'] = Quantiles
-        schemes['fisher_jenks'] = Fisher_Jenks
-        schemes['fisher_jenks_sampled'] = Fisher_Jenks_Sampled
+        except ImportError:
+            raise ImportError(
+                "The 'mapclassify' package is required to use the 'scheme' "
+                "keyword")
 
-        scheme = scheme.lower()
-        if scheme not in schemes:
-            raise ValueError("Invalid scheme. Scheme must be in the"
-                             " set: %r" % schemes.keys())
-        binning = schemes[scheme](values, k)
-        return binning
-    except ImportError:
-        raise ImportError("mapclassify is required to use the 'scheme'"
-                          "keyword")
+    schemes = {}
+    schemes['equal_interval'] = Equal_Interval
+    schemes['quantiles'] = Quantiles
+    schemes['fisher_jenks'] = Fisher_Jenks
+    schemes['fisher_jenks_sampled'] = Fisher_Jenks_Sampled
+
+    scheme = scheme.lower()
+    if scheme not in schemes:
+        raise ValueError("Invalid scheme. Scheme must be in the"
+                         " set: %r" % schemes.keys())
+    binning = schemes[scheme](values, k)
+    return binning

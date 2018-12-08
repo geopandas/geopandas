@@ -391,6 +391,7 @@ class TestMapclassifyPlotting:
 
     @classmethod
     def setup_class(cls):
+        pytest.importorskip('mapclassify')
         pth = get_path('naturalearth_lowres')
         cls.df = read_file(pth)
         cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
