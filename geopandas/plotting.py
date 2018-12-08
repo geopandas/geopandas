@@ -536,9 +536,14 @@ def __mapclassify_choro(values, scheme, k=5):
 
     """
     try:
-        from mapclassify import (
-            Quantiles, Equal_Interval, Fisher_Jenks,
-            Fisher_Jenks_Sampled)
+        try:
+            from mapclassify import (
+                Quantiles, Equal_Interval, Fisher_Jenks,
+                Fisher_Jenks_Sampled)
+        except ImportError:
+            from mapclassify.api import (
+                Quantiles, Equal_Interval, Fisher_Jenks,
+                Fisher_Jenks_Sampled)
         schemes = {}
         schemes['equal_interval'] = Equal_Interval
         schemes['quantiles'] = Quantiles
@@ -552,22 +557,5 @@ def __mapclassify_choro(values, scheme, k=5):
         binning = schemes[scheme](values, k)
         return binning
     except ImportError:
-        try:
-            from mapclassify.api import (
-                Quantiles, Equal_Interval, Fisher_Jenks,
-                Fisher_Jenks_Sampled)
-            schemes = {}
-            schemes['equal_interval'] = Equal_Interval
-            schemes['quantiles'] = Quantiles
-            schemes['fisher_jenks'] = Fisher_Jenks
-            schemes['fisher_jenks_sampled'] = Fisher_Jenks_Sampled
-
-            scheme = scheme.lower()
-            if scheme not in schemes:
-                raise ValueError("Invalid scheme. Scheme must be in the"
-                                 " set: %r" % schemes.keys())
-            binning = schemes[scheme](values, k)
-            return binning
-        except ImportError:
-            raise ImportError("mapclassify is required to use the 'scheme'"
-                              "keyword")
+        raise ImportError("mapclassify is required to use the 'scheme'"
+                          "keyword")
