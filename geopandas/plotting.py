@@ -551,7 +551,7 @@ def __mapclassify_choro(values, scheme, k=5):
                              " set: %r" % schemes.keys())
         binning = schemes[scheme](values, k)
         return binning
-    except:
+    except ImportWarning:
         try:
             from mapclassify.api import (
                 Quantiles, Equal_Interval, Fisher_Jenks,
