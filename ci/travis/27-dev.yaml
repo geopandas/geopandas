@@ -19,7 +19,6 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
