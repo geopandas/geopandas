@@ -347,10 +347,14 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    def test_to_file(self):
+    @pytest.mark.parametrize("driver,ext", [
+        ('ESRI Shapefile', 'shp'),
+        ('GeoJSON', 'geojson')
+    ])
+    def test_to_file(self, driver, ext):
         """ Test to_file and from_file """
-        tempfilename = os.path.join(self.tempdir, 'boros.shp')
-        self.df.to_file(tempfilename)
+        tempfilename = os.path.join(self.tempdir, 'boros.' + ext)
+        self.df.to_file(tempfilename, driver=driver)
         # Read layer back in
         df = GeoDataFrame.from_file(tempfilename)
         assert 'geometry' in df
@@ -358,8 +362,8 @@ class TestDataFrame:
         assert np.alltrue(df['BoroName'].values == self.boros)
 
         # Write layer with null geometry out to file
-        tempfilename = os.path.join(self.tempdir, 'null_geom.shp')
-        self.df3.to_file(tempfilename)
+        tempfilename = os.path.join(self.tempdir, 'null_geom.' + ext)
+        self.df3.to_file(tempfilename, driver=driver)
         # Read layer back in
         df3 = GeoDataFrame.from_file(tempfilename)
         assert 'geometry' in df3
@@ -414,8 +418,16 @@ class TestDataFrame:
         tempfilename = os.path.join(self.tempdir, 'test.shp')
         s = GeoDataFrame({'geometry': [Point(0, 0),
                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
-        with pytest.raises(ValueError):
+        # Exception type is different for different `fiona` versions
+        with pytest.raises((ValueError, RuntimeError)):
             s.to_file(tempfilename)
+
+    def test_mixed_types_to_geojson(self):
+        """ Test that mixed geometry types can be saved as GeoJSON (GH #827) """
+        tempfilename = os.path.join(self.tempdir, 'test.geojson')
+        s = GeoDataFrame({'geometry': [Point(0, 0),
+                                       Polygon([(0, 0), (1, 0), (1, 1)])]})
+        s.to_file(tempfilename, driver='GeoJSON')
 
     def test_empty_to_file(self):
         input_empty_df = GeoDataFrame()
