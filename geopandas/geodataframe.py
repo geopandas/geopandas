@@ -327,45 +327,50 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson. default False
-
         """
-        def fill_none(row):
-            """
-            Takes in a Series, converts to a dictionary with null values
-            set to None
-
-            """
-            na_keys = row.index[row.isnull()]
-            d = row.to_dict()
-            for k in na_keys:
-                d[k] = None
-            return d
-
-        # na_methods must take in a Series and return dict
-        na_methods = {'null': fill_none,
-                      'drop': lambda row: row.dropna().to_dict(),
-                      'keep': lambda row: row.to_dict()}
-
-        if na not in na_methods:
+        if na not in ['null', 'drop', 'keep']:
             raise ValueError('Unknown na method {0}'.format(na))
-        f = na_methods[na]
 
-        for name, row in df.iterrows():
-            properties = f(row)
-            del properties[self._geometry_column_name]
+        ids = np.array(self.index, copy=False)
+        geometries = np.array(self[self._geometry_column_name], copy=False)
 
-            feature = {
-                'id': str(name),
-                'type': 'Feature',
-                'properties': properties,
-                'geometry': mapping(row[self._geometry_column_name])
-                            if row[self._geometry_column_name] else None
-            }
+        properties_cols = self.columns.difference([self._geometry_column_name])
 
-            if show_bbox:
-                feature['bbox'] = row.geometry.bounds
+        if len(properties_cols) > 0:
+            # convert to object to get python scalars.
+            properties = self[properties_cols].astype(object).values
+            if na == 'null':
+                properties[pd.isnull(self[properties_cols]).values] = None
 
-            yield feature
+            for i, row in enumerate(properties):
+                geom = geometries[i]
+
+                if na == 'drop':
+                    properties_items = dict((k, v) for k, v
+                                            in zip(properties_cols, row)
+                                            if not pd.isnull(v))
+                else:
+                    properties_items = dict((k, v) for k, v
+                                            in zip(properties_cols, row))
+
+                feature = {'id': str(ids[i]),
+                           'type': 'Feature',
+                           'properties': properties_items,
+                           'geometry': mapping(geom) if geom else None}
+
+                if show_bbox:
+                    feature['bbox'] = geom.bounds if geom else None
+                yield feature
+
+        else:
+            for fid, geom in zip(ids, geometries):
+                feature = {'id': str(fid),
+                           'type': 'Feature',
+                           'properties': {},
+                           'geometry': mapping(geom) if geom else None}
+                if show_bbox:
+                        feature['bbox'] = geom.bounds if geom else None
+                yield feature
 
     def _to_geo(self, **kwargs):
         """
