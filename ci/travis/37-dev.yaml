@@ -18,12 +18,13 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
     - git+https://github.com/matplotlib/matplotlib.git
     - git+https://github.com/pydata/pandas.git
     - codecov
     - geopy
+    - mapclassify

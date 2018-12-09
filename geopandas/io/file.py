@@ -6,6 +6,11 @@ import numpy as np
 import pandas as pd
 import six
 
+try:
+    from fiona import Env as fiona_env
+except ImportError:
+    from fiona import drivers as fiona_env
+
 from geopandas import GeoDataFrame, GeoSeries
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion('1.8')
@@ -110,7 +115,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
-    with fiona.drivers():
+    with fiona_env():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
@@ -146,10 +151,6 @@ def infer_schema(df):
 
     geom_type = _common_geom_type(df)
 
-    if not geom_type:
-        raise ValueError("Geometry column cannot contain mutiple "
-                         "geometry types when writing to file.")
-
     schema = {'geometry': geom_type, 'properties': properties}
 
     return schema
@@ -166,7 +167,7 @@ def _common_geom_type(df):
     # then reverse the result to get back to a geom type
     geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
     if not geom_type:
-        return None
+        return 'Unknown'
 
     if df.geometry.has_z.any():
         geom_type = "3D " + geom_type

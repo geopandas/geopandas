@@ -12,6 +12,7 @@ from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
+from geopandas.datasets import get_path
 
 import pytest
 
@@ -386,39 +387,36 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [10]
 
 
-class TestPySALPlotting:
+class TestMapclassifyPlotting:
 
     @classmethod
     def setup_class(cls):
-        try:
-            import pysal as ps
-        except ImportError:
-            raise pytest.skip("PySAL is not installed")
-
-        pth = ps.examples.get_path("columbus.shp")
+        pytest.importorskip('mapclassify')
+        pth = get_path('naturalearth_lowres')
         cls.df = read_file(pth)
         cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
-            # warning coming from pysal / scipy.stats
-            ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
+            # warning coming from scipy.stats
+            ax = self.df.plot(column='pop_est', scheme='QUANTILES', k=3,
                               cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'0.18 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
+        expected = [u'-99.00 - 4579438.67', u'4579438.67 - 16639804.33',
+                    u'16639804.33 - 1338612970.00']
         assert labels == expected
 
     def test_negative_legend(self):
         ax = self.df.plot(column='NEGATIVES', scheme='FISHER_JENKS', k=3,
                           cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'-10.00 - -3.33', u'-3.33 - 3.33', u'3.33 - 10.00']
+        expected = [u'-10.00 - -3.41', u'-3.41 - 3.30', u'3.30 - 10.00']
         assert labels == expected
 
     def test_invalid_scheme(self):
         with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
-            self.df.plot(column='CRIME', scheme=scheme, k=3,
+            self.df.plot(column='gdp_md_est', scheme=scheme, k=3,
                          cmap='OrRd', legend=True)
 
 

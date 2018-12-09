@@ -18,10 +18,11 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
     - codecov
     - geopy
+    - mapclassify==1.0.1
