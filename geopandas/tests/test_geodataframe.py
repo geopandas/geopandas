@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import shutil
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,9 @@ from pandas.util.testing import (
 from geopandas.tests.util import (
     connect, create_postgis, PACKAGE_DIR, validate_boro_df)
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+
+
+import pytest
 
 
 class TestDataFrame:
@@ -370,15 +374,31 @@ class TestDataFrame:
         assert len(df3) == 2
         assert np.alltrue(df3['Name'].values == self.line_paths)
 
-    def test_to_file_bool(self):
+    @pytest.mark.parametrize("driver,ext", [
+        ('ESRI Shapefile', 'shp'),
+        ('GeoJSON', 'geojson')
+    ])
+    def test_to_file_bool(self, driver, ext):
         """Test error raise when writing with a boolean column (GH #437)."""
+        tempfilename = os.path.join(self.tempdir, 'temp.{0}'.format(ext))
+        df = GeoDataFrame({
+            'a': [1, 2, 3], 'b': [True, False, True],
+            'geometry': [Point(0, 0), Point(1, 1), Point(2, 2)]})
 
-        # still want a temp dir in case this test passes
-        tempfilename = os.path.join(self.tempdir, 'boros.shp')
-        df_with_bool = self.df.copy()
-        df_with_bool['bool_column'] = True
-        with pytest.raises(ValueError):
-            df_with_bool.to_file(tempfilename)
+        if LooseVersion(fiona.__version__) < LooseVersion('1.8'):
+            with pytest.raises(ValueError):
+                df.to_file(tempfilename, driver=driver)
+        else:
+            df.to_file(tempfilename, driver=driver)
+            result = read_file(tempfilename)
+            if driver == 'GeoJSON':
+                # geojson by default assumes epsg:4326
+                result.crs = None
+            if driver == 'ESRI Shapefile':
+                # Shapefile does not support boolean, so is read back as int
+                df['b'] = df['b'].astype('int64')
+            # PY2: column names 'mixed' instead of 'unicode'
+            assert_geodataframe_equal(result, df, check_column_type=False)
 
     def test_to_file_with_point_z(self):
         """Test that 3D geometries are retained in writes (GH #612)."""
