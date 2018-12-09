@@ -1,6 +1,31 @@
 Changes
 =======
 
+Version 0.5.0 (December ??, 2018)
+---------------------------------
+
+Improvements:
+
+* Significant performance improvement (around 10x) for `GeoDataFrame.iterfeatures`,
+  which also improves `GeoDataFrame.to_file` (#864).
+* Compatibility with and enhancements based on Fiona 1.8:
+    * Fix deprecation warning (#854).
+    * Support for writing bool dtypes (#855).
+    * Support for writing dataframes with multiple geometries, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867)
+* The `buffer` and `interpolate` methods now accept an array-like to specify a variable distance for each geometry (#781). 
+* Addition of a `relate` method, corresponding to the shapely method that returns the DE-9IM matrix (#853).
+* Switched to `mapclassify` instead of `PySAL` as dependency for choropleth mapping with the `scheme` keyword (#872).
+* Performance improvement in plotting by only flattening the geometries if there are actually 'Multi' geometries (#785).
+
+Bug fixes:
+
+- Fix for new `overlay` implementation in case the intersection is empty (#800).
+- Remove the edge in the legend marker (#807).
+- Fix the `align` method to preserve the CRS (#829).
+- Fix `geopandas.testing.assert_geodataframe_equal` to correctly compare left and right dataframes (#810).
+- Better error message in `sjoin` if the input is not a GeoDataFrame (#842).
+
+
 Version 0.4.0 (July 15, 2018)
 -----------------------------
 
@@ -22,7 +47,7 @@ Improvements:
 * Set equal aspect on active axis on multi-axis figures (#718)
 * Pass array of values to column argument in `plot` (#770)
 
-Bug fixes :
+Bug fixes:
 
 * Ensure that colorbars are plotted on the correct axis (#523)
 * Handle plotting empty GeoDataFrame (#571)
