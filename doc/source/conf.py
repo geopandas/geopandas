@@ -34,6 +34,9 @@ extensions = ['IPython.sphinxext.ipython_console_highlighting',
               'numpydoc',
 ]
 
+# continue doc build and only print warnings/errors in examples
+ipython_warning_is_error = False
+
 # Fix issue with warnings from numpydoc (see discussion in PR #534)
 numpydoc_show_class_members = False
 
@@ -53,7 +56,7 @@ sphinx_gallery_conf = {
     'gallery_dirs': ['gallery'],
     'doc_module': ('geopandas',),
     'reference_url': {'matplotlib': 'http://matplotlib.org',
-                      'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+                      'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
     'backreferences_dir': 'reference'

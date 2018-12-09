@@ -1,0 +1,27 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=2.7
+  - six
+  - numpy # need to list to get this from conda-forge
+  - gdal
+  # required
+  - pandas==0.20.2
+  - shapely
+  - fiona
+  - pyproj
+  # testing
+  - pytest
+  - pytest-cov
+  - codecov
+  - mock
+  # optional
+  - rtree
+  - matplotlib==2.0.2
+  - descartes
+  - geopy
+  - SQLalchemy
+  - psycopg2
+  - libspatialite
+  - mapclassify==1.0.1

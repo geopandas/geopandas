@@ -103,7 +103,7 @@ class TestSeries:
         assert a1['B'].equals(a2['B'])
         assert a1['C'].is_empty
 
-    def test_warning_if_not_aligned(self):
+    def test_align_warning_if_not_aligned(self):
         # Test that warning is issued when operating on non-aligned series
         with pytest.warns(UserWarning):
             self.a1.contains(self.a2)  # _series_op
@@ -111,7 +111,7 @@ class TestSeries:
         with pytest.warns(UserWarning):
             self.a1.union(self.a2)     # _geo_op
 
-    def test_no_warning_if_aligned(self):
+    def test_align_no_warning_if_aligned(self):
         # Test that warning is not issued when operating on aligned series
         a1, a2 = self.a1.align(self.a2)
 
@@ -123,6 +123,29 @@ class TestSeries:
 
         user_warnings = [w for w in warnings if w.category is UserWarning]
         assert not user_warnings, user_warnings[0].message
+
+    def test_align_crs(self):
+        a1 = self.a1
+        a1.crs = {'init': 'epsg:4326', 'no_defs': True}
+        a2 = self.a2
+        a2.crs = {'init': 'epsg:31370', 'no_defs': True}
+
+        res1, res2 = a1.align(a2)
+        assert res1.crs == {'init': 'epsg:4326', 'no_defs': True}
+        assert res2.crs == {'init': 'epsg:31370', 'no_defs': True}
+
+        a2.crs = None
+        res1, res2 = a1.align(a2)
+        assert res1.crs == {'init': 'epsg:4326', 'no_defs': True}
+        assert res2.crs is None
+
+    def test_align_mixed(self):
+        a1 = self.a1
+        s2 = pd.Series([1, 2], index=['B', 'C'])
+        res1, res2 = a1.align(s2)
+
+        exp2 = pd.Series([BaseGeometry(), 1, 2], dtype=object, index=['A', 'B', 'C'])
+        assert_series_equal(res2, exp2)
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter

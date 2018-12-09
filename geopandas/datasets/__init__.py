@@ -29,5 +29,6 @@ def get_path(dataset):
             os.path.join(_module_path, _available_zip[dataset]))
         return 'zip://' + fpath
     else:
-        msg = "The dataset '{data}' is not available".format(data=dataset)
+        msg = "The dataset '{data}' is not available. ".format(data=dataset)
+        msg += "Available datasets are {}".format(", ".join(available))
         raise ValueError(msg)
