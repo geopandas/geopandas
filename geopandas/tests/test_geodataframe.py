@@ -397,7 +397,8 @@ class TestDataFrame:
             if driver == 'ESRI Shapefile':
                 # Shapefile does not support boolean, so is read back as int
                 df['b'] = df['b'].astype('int64')
-            assert_geodataframe_equal(result, df)
+            # PY2: column names 'mixed' instead of 'unicode'
+            assert_geodataframe_equal(result, df, check_column_type=False)
 
     def test_to_file_with_point_z(self):
         """Test that 3D geometries are retained in writes (GH #612)."""
