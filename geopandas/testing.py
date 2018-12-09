@@ -159,8 +159,7 @@ def assert_geodataframe_equal(left, right,
 
         if check_crs:
             # no crs can be either None or {}
-            if ((left.crs is None or len(left.crs) == 0)
-                    and (right.crs is None or len(right.crs) == 0)):
+            if not left.crs and not right.crs:
                 pass
             else:
                 assert left.crs == right.crs
