@@ -97,21 +97,20 @@ class TestSeries:
         exp = pd.Series([False, True, False], index=['A', 'B', 'C'])
         assert_series_equal(a, exp)
 
-    def test_align(self):
-        a1, a2 = self.a1.align(self.a2)
-        assert a2['A'].is_empty
-        assert a1['B'].equals(a2['B'])
-        assert a1['C'].is_empty
-
-    def test_align_warning_if_not_aligned(self):
+    def test_warning_if_not_aligned(self):
+        # GH-816
         # Test that warning is issued when operating on non-aligned series
-        with pytest.warns(UserWarning):
-            self.a1.contains(self.a2)  # _series_op
 
-        with pytest.warns(UserWarning):
-            self.a1.union(self.a2)     # _geo_op
+        # _series_op
+        with pytest.warns(UserWarning, match="The index .+ different"):
+            self.a1.contains(self.a2)
 
-    def test_align_no_warning_if_aligned(self):
+        # _geo_op
+        with pytest.warns(UserWarning, match="The index .+ different"):
+            self.a1.union(self.a2)
+
+    def test_no_warning_if_aligned(self):
+        # GH-816
         # Test that warning is not issued when operating on aligned series
         a1, a2 = self.a1.align(self.a2)
 
@@ -123,6 +122,12 @@ class TestSeries:
 
         user_warnings = [w for w in warnings if w.category is UserWarning]
         assert not user_warnings, user_warnings[0].message
+
+    def test_align(self):
+        a1, a2 = self.a1.align(self.a2)
+        assert a2['A'].is_empty
+        assert a1['B'].equals(a2['B'])
+        assert a1['C'].is_empty
 
     def test_align_crs(self):
         a1 = self.a1
