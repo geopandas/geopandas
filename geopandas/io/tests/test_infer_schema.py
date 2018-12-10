@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from hamcrest import has_entries, contains_inanyorder
-from hamcrest.core import assert_that
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
     LineString, MultiLineString
 
@@ -65,7 +63,7 @@ class TestInferSchema():
             geometry=[self.city_hall_entrance, self.city_hall_balcony]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'Point', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_points_and_multipoints(self):
         df = GeoDataFrame(
@@ -74,7 +72,7 @@ class TestInferSchema():
             geometry=[MultiPoint([self.city_hall_entrance, self.city_hall_balcony]), self.city_hall_balcony]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiPoint', 'Point'), 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': ['MultiPoint', 'Point'], 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_multipoints(self):
         df = GeoDataFrame(
@@ -83,7 +81,7 @@ class TestInferSchema():
             geometry=[MultiPoint([self.city_hall_entrance, self.city_hall_balcony, self.city_hall_council_chamber])]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'MultiPoint', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'MultiPoint', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_linestrings(self):
         df = GeoDataFrame(
@@ -92,7 +90,7 @@ class TestInferSchema():
             geometry=self.city_hall_walls
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'LineString', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'LineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_linestrings_and_multilinestrings(self):
         df = GeoDataFrame(
@@ -101,7 +99,7 @@ class TestInferSchema():
             geometry=[MultiLineString(self.city_hall_walls), self.city_hall_walls[0]]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiLineString', 'LineString'), 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': ['MultiLineString', 'LineString'], 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_multilinestrings(self):
         df = GeoDataFrame(
@@ -110,7 +108,7 @@ class TestInferSchema():
             geometry=[MultiLineString(self.city_hall_walls)]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'MultiLineString', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'MultiLineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_polygons(self):
         df = GeoDataFrame(
@@ -119,7 +117,7 @@ class TestInferSchema():
             geometry=[self.city_hall_boundaries, self.vauquelin_place]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'Polygon', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'Polygon', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_polygons_and_multipolygons(self):
         df = GeoDataFrame(
@@ -128,7 +126,7 @@ class TestInferSchema():
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)), self.city_hall_boundaries]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiPolygon', 'Polygon'), 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': ['MultiPolygon', 'Polygon'], 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_multipolygons(self):
         df = GeoDataFrame(
@@ -137,7 +135,7 @@ class TestInferSchema():
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place))]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': 'MultiPolygon', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'MultiPolygon', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_multiple_shape_types(self):
         df = GeoDataFrame(
@@ -151,8 +149,8 @@ class TestInferSchema():
                       self.city_hall_balcony]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('MultiPolygon', 'Polygon', 'MultiLineString', 'LineString', 'MultiPoint', 'Point'),
-                                                   'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': ['MultiPolygon', 'Polygon', 'MultiLineString', 'LineString', 'MultiPoint', 'Point'],
+                                    'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_shape_type(self):
         df = GeoDataFrame(
@@ -167,7 +165,8 @@ class TestInferSchema():
                       self.point_3D]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': contains_inanyorder('3D MultiPolygon', '3D Polygon', '3D MultiLineString', '3D LineString', '3D MultiPoint', '3D Point'), 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': ['3D MultiPolygon', '3D Polygon', '3D MultiLineString', '3D LineString', '3D MultiPoint', '3D Point'],
+                                    'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_Point(self):
         df = GeoDataFrame(
@@ -176,7 +175,7 @@ class TestInferSchema():
             geometry=[self.city_hall_balcony, self.point_3D]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': '3D Point', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': '3D Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_linestring(self):
         df = GeoDataFrame(
@@ -185,7 +184,7 @@ class TestInferSchema():
             geometry=[self.city_hall_walls[0], self.linestring_3D]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': '3D LineString', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': '3D LineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_Polygon(self):
         df = GeoDataFrame(
@@ -194,7 +193,7 @@ class TestInferSchema():
             geometry=[self.city_hall_boundaries, self.polygon_3D]
         )
 
-        assert_that(infer_schema(df), has_entries({'geometry': '3D Polygon', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': '3D Polygon', 'properties': OrderedDict()}
 
     def test_infer_schema_when_geometries_are_null_and_2D_point(self):
         df = GeoDataFrame(
@@ -203,8 +202,8 @@ class TestInferSchema():
             geometry=[None, self.city_hall_entrance]
         )
 
-        # None geometry type in then omitted
-        assert_that(infer_schema(df), has_entries({'geometry': 'Point', 'properties': OrderedDict()}))
+        # None geometry type is then omitted
+        assert infer_schema(df) == {'geometry': 'Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_geometries_are_null_and_3D_point(self):
         df = GeoDataFrame(
@@ -213,8 +212,8 @@ class TestInferSchema():
             geometry=[None, self.point_3D]
         )
 
-        # None geometry type in then omitted
-        assert_that(infer_schema(df), has_entries({'geometry': '3D Point', 'properties': OrderedDict()}))
+        # None geometry type is then omitted
+        assert infer_schema(df) == {'geometry': '3D Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_geometries_are_all_null(self):
         df = GeoDataFrame(
@@ -224,4 +223,4 @@ class TestInferSchema():
         )
 
         # None geometry type in then replaced by 'Unknown' (default geometry type supported by Fiona)
-        assert_that(infer_schema(df), has_entries({'geometry': 'Unknown', 'properties': OrderedDict()}))
+        assert infer_schema(df) == {'geometry': 'Unknown', 'properties': OrderedDict()}
