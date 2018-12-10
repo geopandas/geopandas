@@ -317,7 +317,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, **style_kwds):
+                   legend_kwds=None, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -372,6 +372,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
         Keyword arguments to pass to ax.legend()
+    classification_kwds : dict (default None)
+        Keyword arguments to pass to mapclassify
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -445,7 +447,14 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         values = np.array([valuemap[k] for k in values])
 
     if scheme is not None:
-        binning = _mapclassify_choro(values, scheme, k=k)
+        if classification_kwds is None:
+            classification_kwds = {}
+        if scheme not in ['box_plot', 'headtail_breaks', 'percentiles',
+                          'std_mean', 'user_defined']:
+            if 'k' not in classification_kwds:
+                classification_kwds['k'] = k
+
+        binning = _mapclassify_choro(values, scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [values.min()] + binning.bins.tolist()
@@ -513,7 +522,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     return ax
 
 
-def _mapclassify_choro(values, scheme, k=5):
+def _mapclassify_choro(values, scheme, **classification_kwds):
     """
     Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
@@ -523,10 +532,16 @@ def _mapclassify_choro(values, scheme, k=5):
         Series to be plotted
     scheme : str
         One of mapclassify classification schemes
-        Options are 'Quantiles', 'Equal_Interval', 'Fisher_Jenks',
-        'Fisher_Jenks_Sampled'
-    k : int
-        number of classes (2 <= k <=9)
+        Options are Box_Plot, Equal_Interval, Fisher_Jenks,
+        Fisher_Jenks_Sampled, HeadTail_Breaks, Jenks_Caspall,
+        Jenks_Caspall_Forced, Jenks_Caspall_Sampled, Max_P_Classifier,
+        Maximum_Breaks, Natural_Breaks, Quantiles, Percentiles, Std_Mean,
+        User_Defined
+
+    **classification_kwds : dict
+        Keyword arguments for classification scheme
+        For details see mapclassify documentation:
+        https://mapclassify.readthedocs.io/en/latest/api.html
 
     Returns
     -------
@@ -537,27 +552,45 @@ def _mapclassify_choro(values, scheme, k=5):
     """
     try:
         from mapclassify import (
-            Quantiles, Equal_Interval, Fisher_Jenks,
-            Fisher_Jenks_Sampled)
+            Box_Plot, Equal_Interval, Fisher_Jenks, Fisher_Jenks_Sampled,
+            HeadTail_Breaks, Jenks_Caspall, Jenks_Caspall_Forced,
+            Jenks_Caspall_Sampled, Max_P_Classifier, Maximum_Breaks,
+            Natural_Breaks, Quantiles, Percentiles, Std_Mean, User_Defined)
     except ImportError:
         try:
             from mapclassify.api import (
-                Quantiles, Equal_Interval, Fisher_Jenks,
-                Fisher_Jenks_Sampled)
+                Box_Plot, Equal_Interval, Fisher_Jenks, Fisher_Jenks_Sampled,
+                HeadTail_Breaks, Jenks_Caspall, Jenks_Caspall_Forced,
+                Jenks_Caspall_Sampled, Max_P_Classifier, Maximum_Breaks,
+                Natural_Breaks, Quantiles, Percentiles, Std_Mean, User_Defined)
         except ImportError:
             raise ImportError(
                 "The 'mapclassify' package is required to use the 'scheme' "
                 "keyword")
 
     schemes = {}
+    schemes['box_plot'] = Box_Plot
     schemes['equal_interval'] = Equal_Interval
-    schemes['quantiles'] = Quantiles
     schemes['fisher_jenks'] = Fisher_Jenks
     schemes['fisher_jenks_sampled'] = Fisher_Jenks_Sampled
+    schemes['headtail_breaks'] = HeadTail_Breaks
+    schemes['jenks_caspall'] = Jenks_Caspall
+    schemes['jenks_caspall_forced'] = Jenks_Caspall_Forced
+    schemes['jenks_caspall_sampled'] = Jenks_Caspall_Sampled
+    schemes['max_p_classifier'] = Max_P_Classifier
+    schemes['maximum_breaks'] = Maximum_Breaks
+    schemes['natural_breaks'] = Natural_Breaks
+    schemes['quantiles'] = Quantiles
+    schemes['percentiles'] = Percentiles
+    schemes['std_mean'] = Std_Mean
+    schemes['user_defined'] = User_Defined
 
     scheme = scheme.lower()
     if scheme not in schemes:
         raise ValueError("Invalid scheme. Scheme must be in the"
                          " set: %r" % schemes.keys())
-    binning = schemes[scheme](values, k)
+    try:
+        binning = schemes[scheme](values, **classification_kwds)
+    except TypeError:
+        raise TypeError("Invalid keyword argument for %r " % scheme)
     return binning
