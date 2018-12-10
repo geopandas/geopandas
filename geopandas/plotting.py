@@ -351,8 +351,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     scheme : str (default None)
         Name of a choropleth classification scheme (requires mapclassify).
         A mapclassify.Map_Classifier object will be used
-        under the hood. Supported schemes: 'Quantiles',
-        'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled'
+        under the hood. All schemes are supported, arguments can be passed in
+        classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
