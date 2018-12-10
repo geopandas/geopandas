@@ -139,21 +139,36 @@ class TestInferSchema():
                       self.point_3D]
         )
 
-        assert infer_schema(df) == {'geometry': ['3D MultiPolygon', '3D Polygon', '3D MultiLineString', '3D LineString', '3D MultiPoint', '3D Point'],
+        assert infer_schema(df) == {'geometry': ['3D Point', 'MultiPolygon', 'Polygon', 'MultiLineString', 'LineString', 'MultiPoint', 'Point'],
                                     'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_Point(self):
         df = GeoDataFrame(geometry=[self.city_hall_balcony, self.point_3D])
+
+        assert infer_schema(df) == {'geometry': ['3D Point', 'Point'], 'properties': OrderedDict()}
+
+    def test_infer_schema_when_dataframe_has_only_3D_Points(self):
+        df = GeoDataFrame(geometry=[self.point_3D, self.point_3D])
 
         assert infer_schema(df) == {'geometry': '3D Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_linestring(self):
         df = GeoDataFrame(geometry=[self.city_hall_walls[0], self.linestring_3D])
 
+        assert infer_schema(df) == {'geometry': ['3D LineString', 'LineString'], 'properties': OrderedDict()}
+
+    def test_infer_schema_when_dataframe_has_only_3D_linestrings(self):
+        df = GeoDataFrame(geometry=[self.linestring_3D, self.linestring_3D])
+
         assert infer_schema(df) == {'geometry': '3D LineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_Polygon(self):
         df = GeoDataFrame(geometry=[self.city_hall_boundaries, self.polygon_3D])
+
+        assert infer_schema(df) == {'geometry': ['3D Polygon', 'Polygon'], 'properties': OrderedDict()}
+
+    def test_infer_schema_when_dataframe_has_only_3D_Polygons(self):
+        df = GeoDataFrame(geometry=[self.polygon_3D, self.polygon_3D])
 
         assert infer_schema(df) == {'geometry': '3D Polygon', 'properties': OrderedDict()}
 

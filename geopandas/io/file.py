@@ -159,18 +159,20 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    geom_types = df.geometry.geom_type.unique()
+    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+    # Remove None geometries
+    geom_types_3D = ["3D " + type for type in geom_types_3D if type is not None]
 
-    # Remove None geometry type fro backward compatibility
-    geom_types = [type for type in geom_types if type is not None]
+    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+    # Remove None geometries
+    geom_types_2D = [type for type in geom_types_2D if type is not None]
+
+    geom_types = geom_types_3D + geom_types_2D
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
         # (Since https://github.com/Toblerity/Fiona/issues/446 resolution)
         return 'Unknown'
-
-    if df.geometry.has_z.any():
-        geom_types = ["3D " + type for type in geom_types]
 
     if len(geom_types) == 1:
         geom_types = geom_types[0]
