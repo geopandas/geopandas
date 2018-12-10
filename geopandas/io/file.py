@@ -149,7 +149,8 @@ def infer_schema(df):
     if df.empty:
         raise ValueError("Cannot write empty DataFrame to file.")
 
-    # Since https://github.com/Toblerity/Fiona/issues/446 resolution, Fiona allows a list of geometry types
+    # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
+    # Fiona allows a list of geometry types
     geom_types = _geometry_types(df)
 
     schema = {'geometry': geom_types, 'properties': properties}
@@ -164,7 +165,8 @@ def _geometry_types(df):
     geom_types = [type for type in geom_types if type is not None]
 
     if len(geom_types) == 0:
-        # Default geometry type supported by Fiona (Since https://github.com/Toblerity/Fiona/issues/446 resolution)
+        # Default geometry type supported by Fiona
+        # (Since https://github.com/Toblerity/Fiona/issues/446 resolution)
         return 'Unknown'
 
     if df.geometry.has_z.any():
