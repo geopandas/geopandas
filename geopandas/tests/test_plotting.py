@@ -413,6 +413,14 @@ class TestMapclassifyPlotting:
         expected = [u'-10.00 - -3.41', u'-3.41 - 3.30', u'3.30 - 10.00']
         assert labels == expected
 
+    def test_classification_kwds(self):
+        ax = self.df.plot(column='pop_est', scheme='percentiles', k=3,
+                          classification_kwds={'pct': [50, 100]}, cmap='OrRd',
+                          legend=True)
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = ['-99.00 - 9035536.00', '9035536.00 - 1338612970.00']
+        assert labels == expected
+
     def test_invalid_scheme(self):
         with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
