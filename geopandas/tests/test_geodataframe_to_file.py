@@ -4,7 +4,8 @@ import tempfile
 
 import pytest
 from pandas.util.testing import assert_frame_equal
-from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString, MultiLineString
+from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
+    LineString, MultiLineString
 
 import geopandas
 from geopandas import GeoDataFrame
@@ -59,13 +60,24 @@ point_3D = Point(-73.553785, 45.508722, 300)
     GeoDataFrame(
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
-        geometry=[MultiPoint([city_hall_entrance, city_hall_balcony]), city_hall_balcony]
+        geometry=[
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony
+        ]
     ),
     # MultiPoints
     GeoDataFrame(
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
-        geometry=[MultiPoint([city_hall_balcony, city_hall_council_chamber]), MultiPoint([city_hall_entrance, city_hall_balcony, city_hall_council_chamber])]
+        geometry=[
+            MultiPoint([
+                city_hall_balcony,
+                city_hall_council_chamber]),
+            MultiPoint([
+                city_hall_entrance,
+                city_hall_balcony,
+                city_hall_council_chamber]
+            )]
     ),
     # LineStrings
     GeoDataFrame(
@@ -83,7 +95,10 @@ point_3D = Point(-73.553785, 45.508722, 300)
     GeoDataFrame(
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
-        geometry=[MultiLineString(city_hall_walls), MultiLineString(city_hall_walls[1:])]
+        geometry=[
+            MultiLineString(city_hall_walls),
+            MultiLineString(city_hall_walls[1:])
+        ]
     ),
     # Polygons
     GeoDataFrame(
@@ -95,7 +110,10 @@ point_3D = Point(-73.553785, 45.508722, 300)
     GeoDataFrame(
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
-        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)), city_hall_boundaries]
+        geometry=[
+            MultiPolygon((city_hall_boundaries, vauquelin_place)),
+            city_hall_boundaries
+        ]
     ),
     # MultiPolygon
     GeoDataFrame(
@@ -107,24 +125,28 @@ point_3D = Point(-73.553785, 45.508722, 300)
     GeoDataFrame(
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
-        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)),
-                  city_hall_entrance,
-                  MultiLineString(city_hall_walls),
-                  city_hall_walls[0],
-                  MultiPoint([city_hall_entrance, city_hall_balcony]),
-                  city_hall_balcony]
+        geometry=[
+            MultiPolygon((city_hall_boundaries, vauquelin_place)),
+            city_hall_entrance,
+            MultiLineString(city_hall_walls),
+            city_hall_walls[0],
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony
+        ]
     ),
     # all 2D shape types and 3D Point
     GeoDataFrame(
         {},
         crs={'init': 'epsg:4326', 'no_defs': True},
-        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place)),
-                  city_hall_entrance,
-                  MultiLineString(city_hall_walls),
-                  city_hall_walls[0],
-                  MultiPoint([city_hall_entrance, city_hall_balcony]),
-                  city_hall_balcony,
-                  point_3D]
+        geometry=[
+            MultiPolygon((city_hall_boundaries, vauquelin_place)),
+            city_hall_entrance,
+            MultiLineString(city_hall_walls),
+            city_hall_walls[0],
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony,
+            point_3D
+        ]
     ),
     # Null geometry and Point
     GeoDataFrame(
