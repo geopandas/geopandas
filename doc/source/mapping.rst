@@ -63,7 +63,7 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
-The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). The ``scheme`` option can be set to 'equal_interval', 'quantiles' or 'fisher_jenks'. See the `PySAL documentation <http://pysal.readthedocs.io/en/latest/library/esda/mapclassify.html>`_ for further details about these map classification schemes.
+The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``mapclassify`` installed, which can be accomplished via ``conda install -c conda-forge mapclassify``). The ``scheme`` option can be set to 'box_plot', 'equal_interval', 'fisher_jenks', 'fisher_jenks_sampled', 'headtail_breaks', 'jenks_caspall', 'jenks_caspall_forced', 'jenks_caspall_sampled', 'max_p_classifier', 'maximum_breaks', 'natural_breaks', 'quantiles', 'percentiles', 'std_mean' or 'User_Defined'. Arguments can be passed in classification_kwds dict. See the `mapclassify documentation <https://mapclassify.readthedocs.io>`_ for further details about these map classification schemes.
 
 .. ipython:: python
 
