@@ -159,15 +159,7 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-    # Remove None geometries
-    geom_types_3D = ["3D " + type for type in geom_types_3D if type is not None]
-
-    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-    # Remove None geometries
-    geom_types_2D = [type for type in geom_types_2D if type is not None]
-
-    geom_types = geom_types_3D + geom_types_2D
+    geom_types = _3D_geom_types(df) + _2D_geom_types(df)
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -178,3 +170,13 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
+
+
+def _2D_geom_types(df):
+    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+    return [type for type in geom_types_2D if type is not None]
+
+
+def _3D_geom_types(df):
+    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+    return ["3D " + type for type in geom_types_3D if type is not None]
