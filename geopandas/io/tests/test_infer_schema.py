@@ -58,8 +58,6 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_only_points(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[self.city_hall_entrance, self.city_hall_balcony]
         )
 
@@ -67,8 +65,6 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_points_and_multipoints(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPoint([self.city_hall_entrance, self.city_hall_balcony]), self.city_hall_balcony]
         )
 
@@ -76,44 +72,30 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_only_multipoints(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPoint([self.city_hall_entrance, self.city_hall_balcony, self.city_hall_council_chamber])]
         )
 
         assert infer_schema(df) == {'geometry': 'MultiPoint', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_linestrings(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=self.city_hall_walls
-        )
+        df = GeoDataFrame(geometry=self.city_hall_walls)
 
         assert infer_schema(df) == {'geometry': 'LineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_linestrings_and_multilinestrings(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiLineString(self.city_hall_walls), self.city_hall_walls[0]]
         )
 
         assert infer_schema(df) == {'geometry': ['MultiLineString', 'LineString'], 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_multilinestrings(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[MultiLineString(self.city_hall_walls)]
-        )
+        df = GeoDataFrame(geometry=[MultiLineString(self.city_hall_walls)])
 
         assert infer_schema(df) == {'geometry': 'MultiLineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_only_polygons(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[self.city_hall_boundaries, self.vauquelin_place]
         )
 
@@ -121,8 +103,6 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_polygons_and_multipolygons(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)), self.city_hall_boundaries]
         )
 
@@ -130,8 +110,6 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_only_multipolygons(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place))]
         )
 
@@ -139,8 +117,6 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_multiple_shape_types(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
                       self.city_hall_boundaries,
                       MultiLineString(self.city_hall_walls),
@@ -154,8 +130,6 @@ class TestInferSchema():
 
     def test_infer_schema_when_dataframe_has_a_3D_shape_type(self):
         df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
             geometry=[MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
                       self.city_hall_boundaries,
                       MultiLineString(self.city_hall_walls),
@@ -169,58 +143,34 @@ class TestInferSchema():
                                     'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_Point(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[self.city_hall_balcony, self.point_3D]
-        )
+        df = GeoDataFrame(geometry=[self.city_hall_balcony, self.point_3D])
 
         assert infer_schema(df) == {'geometry': '3D Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_linestring(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[self.city_hall_walls[0], self.linestring_3D]
-        )
+        df = GeoDataFrame(geometry=[self.city_hall_walls[0], self.linestring_3D])
 
         assert infer_schema(df) == {'geometry': '3D LineString', 'properties': OrderedDict()}
 
     def test_infer_schema_when_dataframe_has_a_3D_Polygon(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[self.city_hall_boundaries, self.polygon_3D]
-        )
+        df = GeoDataFrame(geometry=[self.city_hall_boundaries, self.polygon_3D])
 
         assert infer_schema(df) == {'geometry': '3D Polygon', 'properties': OrderedDict()}
 
     def test_infer_schema_when_geometries_are_null_and_2D_point(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[None, self.city_hall_entrance]
-        )
+        df = GeoDataFrame(geometry=[None, self.city_hall_entrance])
 
         # None geometry type is then omitted
         assert infer_schema(df) == {'geometry': 'Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_geometries_are_null_and_3D_point(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[None, self.point_3D]
-        )
+        df = GeoDataFrame(geometry=[None, self.point_3D])
 
         # None geometry type is then omitted
         assert infer_schema(df) == {'geometry': '3D Point', 'properties': OrderedDict()}
 
     def test_infer_schema_when_geometries_are_all_null(self):
-        df = GeoDataFrame(
-            {},
-            crs={'init': 'epsg:4326', 'no_defs': True},
-            geometry=[None, None]
-        )
+        df = GeoDataFrame(geometry=[None, None])
 
         # None geometry type in then replaced by 'Unknown' (default geometry type supported by Fiona)
         assert infer_schema(df) == {'geometry': 'Unknown', 'properties': OrderedDict()}
