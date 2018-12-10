@@ -1,15 +1,15 @@
 from collections import OrderedDict
-from unittest import TestCase
 
 from hamcrest import has_entries, contains_inanyorder
 from hamcrest.core import assert_that
-from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, LineString, MultiLineString
+from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
+    LineString, MultiLineString
 
 from geopandas import GeoDataFrame
 from geopandas.io.file import infer_schema
 
 
-class TestInferSchema(TestCase):
+class TestInferSchema():
 
     # Credit: Polygons below come from Montreal city Open Data portal
     # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
