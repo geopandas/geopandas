@@ -180,15 +180,7 @@ def find_unique_geometries(df):
         # before Fiona 1.8, 3D and 2D shapes cannot coexist in inferred schema
         # it would succeed with GeoJSON driver
         # but it would fail with ESRI Shapefile driver
-        unique_geom_types = df.geometry.geom_type.unique()
-        if df.geometry.has_z.any():
-            # declare all geometries as 3D geometries
-            unique_geom_types = ["3D " + type for type in unique_geom_types if
-                                 type is not None]
-        else:
-            # all geometries are 2D geometries
-            unique_geom_types = [type for type in unique_geom_types if
-                                 type is not None]
+        unique_geom_types = _3D_or_2D_unmixed_geom_types(df)
 
     return unique_geom_types
 
@@ -201,3 +193,17 @@ def _2D_geom_types(df):
 def _3D_geom_types(df):
     geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
     return ["3D " + type for type in geom_types_3D if type is not None]
+
+
+def _3D_or_2D_unmixed_geom_types(df):
+    unique_geom_types = df.geometry.geom_type.unique()
+    if df.geometry.has_z.any():
+        # declare all geometries as 3D geometries
+        unique_geom_types = ["3D " + type for type in unique_geom_types if
+                             type is not None]
+    else:
+        # all geometries are 2D geometries
+        unique_geom_types = [type for type in unique_geom_types if
+                             type is not None]
+
+    return unique_geom_types
