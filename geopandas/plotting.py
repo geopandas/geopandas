@@ -453,8 +453,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                       for i in range(len(binedges)-1)]
         values = np.array(binning.yb)
 
-    mn = values.min() if vmin is None else vmin
-    mx = values.max() if vmax is None else vmax
+    mn = values[~np.isnan(values)].min() if vmin is None else vmin
+    mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     geom_types = df.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
