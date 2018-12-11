@@ -159,7 +159,7 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    geom_types = _3D_geom_types(df) + _2D_geom_types(df)
+    geom_types = find_unique_geometries(df)
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -170,6 +170,27 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
+
+
+def find_unique_geometries(df):
+    if _FIONA18:
+        # before Fiona 1.8, 3D and 2D shapes can coexist in inferred schema
+        unique_geom_types = _3D_geom_types(df) + _2D_geom_types(df)
+    else:
+        # before Fiona 1.8, 3D and 2D shapes cannot coexist in inferred schema
+        # it would succeed with GeoJSON driver
+        # but it would fail with ESRI Shapefile driver
+        unique_geom_types = df.geometry.geom_type.unique()
+        if df.geometry.has_z.any():
+            # declare all geometries as 3D geometries
+            unique_geom_types = ["3D " + type for type in unique_geom_types if
+                                 type is not None]
+        else:
+            # all geometries are 2D geometries
+            unique_geom_types = [type for type in unique_geom_types if
+                                 type is not None]
+
+    return unique_geom_types
 
 
 def _2D_geom_types(df):
