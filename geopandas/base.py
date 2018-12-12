@@ -53,8 +53,18 @@ def _binary_geo(op, left, right):
 def _binary_op(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool]
     """Binary operation on GeoSeries objects that returns a Series"""
-    null_value = False if op not in ['distance', 'project'] else np.nan
-    dtype = 'bool' if op not in ['distance', 'project'] else float
+    if op in ['distance', 'project']:
+        null_value = np.nan
+    elif op == 'relate':
+        null_value = None
+    else:
+        null_value = False
+    if op in ['distance', 'project']:
+        dtype = float
+    elif op == 'relate':
+        dtype = object
+    else:
+        dtype = bool
 
     if isinstance(other, GeoPandasBase):
 
@@ -564,7 +574,22 @@ class GeoPandasBase(object):
             index=self.index, crs=self.crs)
 
     def relate(self, other):
-        raise NotImplementedError
+        """
+        Returns the DE-9IM intersection matrices for the geometries
+
+        Parameters
+        ----------
+        other : BaseGeometry or GeoSeries
+            The other geometry to computed
+            the DE-9IM intersection matrices from.
+
+        Returns
+        ----------
+        spatial_relations: Series of strings
+            The DE-9IM intersection matrices which describe
+            the spatial relations of the other geometry.
+        """
+        return _binary_op('relate', self, other)
 
     def project(self, other, normalized=False):
         """

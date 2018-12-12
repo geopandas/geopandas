@@ -4,24 +4,25 @@ channels:
 dependencies:
   - python=2.7
   - six
-  - numpy # need to list to get this from conda-forge
-  - gdal
   # required
-  - pandas==0.20.2
+  - pandas
   - shapely
   - fiona
   - pyproj
   # testing
   - pytest
   - pytest-cov
-  - codecov
+  #- codecov
   - mock
   # optional
   - rtree
-  - matplotlib==2.0.2
+  - matplotlib
   - descartes
-  - geopy
+  - mapclassify==1.0.1
+  #- geopy
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - mapclassify==1.0.1
+  - pip:
+    - codecov
+    - geopy

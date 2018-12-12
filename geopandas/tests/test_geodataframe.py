@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import shutil
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,9 @@ from pandas.util.testing import (
 from geopandas.tests.util import (
     connect, create_postgis, PACKAGE_DIR, validate_boro_df)
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+
+
+import pytest
 
 
 class TestDataFrame:
@@ -347,10 +351,14 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    def test_to_file(self):
+    @pytest.mark.parametrize("driver,ext", [
+        ('ESRI Shapefile', 'shp'),
+        ('GeoJSON', 'geojson')
+    ])
+    def test_to_file(self, driver, ext):
         """ Test to_file and from_file """
-        tempfilename = os.path.join(self.tempdir, 'boros.shp')
-        self.df.to_file(tempfilename)
+        tempfilename = os.path.join(self.tempdir, 'boros.' + ext)
+        self.df.to_file(tempfilename, driver=driver)
         # Read layer back in
         df = GeoDataFrame.from_file(tempfilename)
         assert 'geometry' in df
@@ -358,23 +366,39 @@ class TestDataFrame:
         assert np.alltrue(df['BoroName'].values == self.boros)
 
         # Write layer with null geometry out to file
-        tempfilename = os.path.join(self.tempdir, 'null_geom.shp')
-        self.df3.to_file(tempfilename)
+        tempfilename = os.path.join(self.tempdir, 'null_geom.' + ext)
+        self.df3.to_file(tempfilename, driver=driver)
         # Read layer back in
         df3 = GeoDataFrame.from_file(tempfilename)
         assert 'geometry' in df3
         assert len(df3) == 2
         assert np.alltrue(df3['Name'].values == self.line_paths)
 
-    def test_to_file_bool(self):
+    @pytest.mark.parametrize("driver,ext", [
+        ('ESRI Shapefile', 'shp'),
+        ('GeoJSON', 'geojson')
+    ])
+    def test_to_file_bool(self, driver, ext):
         """Test error raise when writing with a boolean column (GH #437)."""
+        tempfilename = os.path.join(self.tempdir, 'temp.{0}'.format(ext))
+        df = GeoDataFrame({
+            'a': [1, 2, 3], 'b': [True, False, True],
+            'geometry': [Point(0, 0), Point(1, 1), Point(2, 2)]})
 
-        # still want a temp dir in case this test passes
-        tempfilename = os.path.join(self.tempdir, 'boros.shp')
-        df_with_bool = self.df.copy()
-        df_with_bool['bool_column'] = True
-        with pytest.raises(ValueError):
-            df_with_bool.to_file(tempfilename)
+        if LooseVersion(fiona.__version__) < LooseVersion('1.8'):
+            with pytest.raises(ValueError):
+                df.to_file(tempfilename, driver=driver)
+        else:
+            df.to_file(tempfilename, driver=driver)
+            result = read_file(tempfilename)
+            if driver == 'GeoJSON':
+                # geojson by default assumes epsg:4326
+                result.crs = None
+            if driver == 'ESRI Shapefile':
+                # Shapefile does not support boolean, so is read back as int
+                df['b'] = df['b'].astype('int64')
+            # PY2: column names 'mixed' instead of 'unicode'
+            assert_geodataframe_equal(result, df, check_column_type=False)
 
     def test_to_file_with_point_z(self):
         """Test that 3D geometries are retained in writes (GH #612)."""
@@ -414,8 +438,16 @@ class TestDataFrame:
         tempfilename = os.path.join(self.tempdir, 'test.shp')
         s = GeoDataFrame({'geometry': [Point(0, 0),
                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
-        with pytest.raises(ValueError):
+        # Exception type is different for different `fiona` versions
+        with pytest.raises((ValueError, RuntimeError)):
             s.to_file(tempfilename)
+
+    def test_mixed_types_to_geojson(self):
+        """ Test that mixed geometry types can be saved as GeoJSON (GH #827) """
+        tempfilename = os.path.join(self.tempdir, 'test.geojson')
+        s = GeoDataFrame({'geometry': [Point(0, 0),
+                                       Polygon([(0, 0), (1, 0), (1, 1)])]})
+        s.to_file(tempfilename, driver='GeoJSON')
 
     def test_empty_to_file(self):
         input_empty_df = GeoDataFrame()
@@ -606,6 +638,46 @@ class TestDataFrame:
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__['type'] == 'FeatureCollection'
         assert len(self.df.__geo_interface__['features']) == self.df.shape[0]
+
+    def test_geodataframe_iterfeatures(self):
+        df = self.df.iloc[:1].copy()
+        df.loc[0, 'BoroName'] = np.nan
+        # when containing missing values
+        # null: ouput the missing entries as JSON null
+        result = list(df.iterfeatures(na='null'))[0]['properties']
+        assert result['BoroName'] is None
+        # drop: remove the property from the feature.
+        result = list(df.iterfeatures(na='drop'))[0]['properties']
+        assert 'BoroName' not in result.keys()
+        # keep: output the missing entries as NaN
+        result = list(df.iterfeatures(na='keep'))[0]['properties']
+        assert np.isnan(result['BoroName'])
+
+        # test for checking that the (non-null) features are python scalars and
+        # not numpy scalars
+        assert type(df.loc[0, 'Shape_Leng']) is np.float64
+        # null
+        result = list(df.iterfeatures(na='null'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # drop
+        result = list(df.iterfeatures(na='drop'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # keep
+        result = list(df.iterfeatures(na='keep'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+
+        # when only having numerical columns
+        df_only_numerical_cols = df[['Shape_Leng', 'Shape_Area', 'geometry']]
+        assert type(df_only_numerical_cols.loc[0, 'Shape_Leng']) is np.float64
+        # null
+        result = list(df_only_numerical_cols.iterfeatures(na='null'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # drop
+        result = list(df_only_numerical_cols.iterfeatures(na='drop'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
+        # keep
+        result = list(df_only_numerical_cols.iterfeatures(na='keep'))[0]
+        assert type(result['properties']['Shape_Leng']) is float
 
     def test_geodataframe_geojson_no_bbox(self):
         geo = self.df._to_geo(na="null", show_bbox=False)

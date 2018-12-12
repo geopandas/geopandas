@@ -1,10 +1,11 @@
 import os.path
+import sys
 import sqlite3
 
-import shapely.wkb
 from geopandas import GeoDataFrame
 from geopandas.testing import (
     geom_equals, geom_almost_equals, assert_geoseries_equal)  # flake8: noqa
+from pandas import Series
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
@@ -37,7 +38,7 @@ def validate_boro_df(df, case_sensitive=False):
     else:
         for col in columns:
             assert col.lower() in (dfcol.lower() for dfcol in df.columns)
-    assert all(df.geometry.type == 'MultiPolygon')
+    assert Series(df.geometry.type).dropna().eq('MultiPolygon').all()
 
 
 def connect(dbname):
@@ -48,30 +49,70 @@ def connect(dbname):
 
     return con
 
+def get_srid(df):
+    """Return srid from `df.crs`."""
+    crs = df.crs
+    return (int(crs['init'][5:]) if 'init' in crs
+                                 and crs['init'].startswith('epsg:')
+            else 0)
 
-def create_sqlite(df, filename, geom_col="geom"):
+def connect_spatialite():
     """
-    Create a sqlite database with the nybb table. This was the result of
-    using ogr2ogr to create a sqlite database from a shapefile, and then
-    the .dump command within sqlite to produce the commands to reproduce the
-    database, so may not representative of standard sqlite databases.
+    Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
+
+    `The sqlite3 module must be built with loadable extension support <https://docs.python.org/3/library/sqlite3.html#f1>`_ and `SpatiaLite <https://www.gaia-gis.it/fossil/libspatialite/index>`_ must be available on the system as a SQLite module.
+    Packages available on Anaconda meet requirements.
+
+    Exceptions
+    ----------
+    ``AttributeError`` on missing support for loadable SQLite extensions
+    ``sqlite3.OperationalError`` on missing SpatiaLite
+    """
+    try:
+        with sqlite3.connect(':memory:') as con:
+            con.enable_load_extension(True)
+            con.load_extension('mod_spatialite')
+            con.execute('SELECT InitSpatialMetaData(TRUE)')
+    except Exception:
+        con.close()
+        raise
+    return con
+
+def create_spatialite(con, df):
+    """
+    Return a SpatiaLite connection containing the nybb table.
+
+    Parameters
+    ----------
+    `con`: ``sqlite3.Connection``
+    `df`: ``GeoDataFrame``
     """
 
-    con = sqlite3.connect(filename)
-    cur = con.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS 'nybb' "
-                "( ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "'{}' BLOB, 'borocode' INTEGER, ".format(geom_col) +
-                "'boroname' VARCHAR(32), 'shape_leng' FLOAT, "
-                "'shape_area' FLOAT);")
-    sql_row = "INSERT INTO nybb VALUES({},X'{}',{},'{}',{},{});"
-    for i, row in df.iterrows():
-        cur.execute(sql_row.format(i, shapely.wkb.dumps(row['geometry'],
-                                                        hex=True),
-                                   row['BoroCode'], row['BoroName'],
-                                   row['Shape_Leng'], row['Shape_Area']))
-    con.commit()
-    con.close()
+    with con:
+        geom_col = df.geometry.name
+        srid = get_srid(df)
+        con.execute('CREATE TABLE IF NOT EXISTS nybb '
+                    '( ogc_fid INTEGER PRIMARY KEY'
+                    ', borocode INTEGER'
+                    ', boroname TEXT'
+                    ', shape_leng REAL'
+                    ', shape_area REAL'
+                    ')')
+        con.execute('SELECT AddGeometryColumn(?, ?, ?, ?)',
+                    ('nybb', geom_col, srid, df.geom_type.dropna().iat[0].upper()))
+        con.execute('SELECT CreateSpatialIndex(?, ?)', ('nybb', geom_col))
+        sql_row = "INSERT INTO nybb VALUES(?, ?, ?, ?, ?, GeomFromText(?, ?))"
+        con.executemany(sql_row,
+                        ((None,
+                          row.BoroCode,
+                          row.BoroName,
+                          row.Shape_Leng,
+                          row.Shape_Area,
+                          row.geometry.wkt if row.geometry
+                          else None,
+                          srid
+                         ) for row in df.itertuples(index=False)))
+    return con
 
 
 def create_postgis(df, srid=None, geom_col="geom"):
