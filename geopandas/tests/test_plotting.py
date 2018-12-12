@@ -297,8 +297,8 @@ class TestPolygonPlotting:
         # vmin vmax set correctly for array with NaN
         ax = self.df3.plot(column='values')
         actual_colors = ax.collections[0].get_facecolors()
-        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal,
-                                 actual_colors[0], actual_colors[1])
+        np.testing.assert_equal(np.any(np.not_equal(actual_colors[0],
+                                actual_colors[1])), True)
 
 
     def test_style_kwargs(self):
