@@ -261,6 +261,10 @@ class TestPolygonPlotting:
         self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
                                  'values': [0, 1]})
 
+        t3 = Polygon([(2, 0), (3, 0), (3, 1)])
+        df_nan = GeoDataFrame({'geometry': t3, 'values': [np.nan]})
+        self.df3 = self.df.append(df_nan)
+
     def test_single_color(self):
 
         ax = self.polys.plot(color='green')
@@ -289,6 +293,13 @@ class TestPolygonPlotting:
         ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
         actual_colors = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+
+        # vmin vmax set correctly for array with NaN
+        ax = self.df3.plot(column='values')
+        actual_colors = ax.collections[0].get_facecolors()
+        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal,
+                                 actual_colors[0], actual_colors[1])
+
 
     def test_style_kwargs(self):
 
