@@ -3,16 +3,15 @@ import shutil
 import tempfile
 
 import pytest
-from pandas.util.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
     LineString, MultiLineString
 
 import geopandas
 from geopandas import GeoDataFrame
+from geopandas.testing import assert_geodataframe_equal
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
-
 city_hall_boundaries = Polygon((
     (-73.5541107525234, 45.5091983609661),
     (-73.5546126200639, 45.5086813829106),
@@ -53,13 +52,13 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # Points
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[city_hall_entrance, city_hall_balcony]
     ),
     # Points and MultiPoints
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[
             MultiPoint([city_hall_entrance, city_hall_balcony]),
             city_hall_balcony
@@ -68,7 +67,7 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # MultiPoints
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[
             MultiPoint([
                 city_hall_balcony,
@@ -82,19 +81,19 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # LineStrings
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=city_hall_walls
     ),
     # LineStrings and MultiLineStrings
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
     ),
     # MultiLineStrings
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[
             MultiLineString(city_hall_walls),
             MultiLineString(city_hall_walls[1:])
@@ -103,13 +102,13 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # Polygons
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[city_hall_boundaries, vauquelin_place]
     ),
     # MultiPolygon and Polygon
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[
             MultiPolygon((city_hall_boundaries, vauquelin_place)),
             city_hall_boundaries
@@ -118,13 +117,13 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # MultiPolygon
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
     ),
     # all shape types
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[
             MultiPolygon((city_hall_boundaries, vauquelin_place)),
             city_hall_entrance,
@@ -137,7 +136,7 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # all 2D shape types and 3D Point
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[
             MultiPolygon((city_hall_boundaries, vauquelin_place)),
             city_hall_entrance,
@@ -151,19 +150,19 @@ point_3D = Point(-73.553785, 45.508722, 300)
     # Null geometry and Point
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[None, city_hall_entrance]
     ),
     # Null geometry and 3D Point
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[None, point_3D]
     ),
     # Null geometries only
     GeoDataFrame(
         {},
-        crs={'init': 'epsg:4326', 'no_defs': True},
+        crs={'init': 'epsg:4326'},
         geometry=[None, None]
     )
 
@@ -191,4 +190,4 @@ class TestGeoDataFrameToFile():
 
         reloaded = geopandas.read_file(self.output_file)
 
-        assert_frame_equal(geodataframe, reloaded)
+        assert_geodataframe_equal(geodataframe, reloaded)
