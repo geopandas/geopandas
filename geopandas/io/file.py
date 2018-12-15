@@ -201,13 +201,18 @@ def _3D_geom_types(df):
 
 def _3D_or_2D_unmixed_geom_types(df):
     unique_geom_types = df.geometry.geom_type.unique()
+    unique_geom_types = [type for type in unique_geom_types if type is not None]
+    unique_geom_types = merge_shape_and_multi_shape_types(unique_geom_types)
     if df.geometry.has_z.any():
         # declare all geometries as 3D geometries
-        unique_geom_types = ["3D " + type for type in unique_geom_types if
-                             type is not None]
-    else:
-        # all geometries are 2D geometries
-        unique_geom_types = [type for type in unique_geom_types if
-                             type is not None]
+        unique_geom_types = ["3D " + type for type in unique_geom_types]
+    # by default, all geometries are 2D geometries
 
     return unique_geom_types
+
+
+def merge_shape_and_multi_shape_types(unique_geom_types):
+    return [type for type in unique_geom_types if
+            not type.startswith('Multi')
+            or type[5:] not in unique_geom_types
+            ]

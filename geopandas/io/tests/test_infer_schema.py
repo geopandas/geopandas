@@ -74,10 +74,16 @@ class TestInferSchema():
             ]
         )
 
-        assert infer_schema(df) == {
-            'geometry': ['MultiPoint', 'Point'],
-            'properties': OrderedDict()
-        }
+        if _FIONA18:
+            assert infer_schema(df) == {
+                'geometry': ['MultiPoint', 'Point'],
+                'properties': OrderedDict()
+            }
+        else:
+            assert infer_schema(df) == {
+                'geometry': 'Point',
+                'properties': OrderedDict()
+            }
 
     def test_infer_schema_when_dataframe_has_only_multipoints(self):
         df = GeoDataFrame(
@@ -109,10 +115,16 @@ class TestInferSchema():
             ]
         )
 
-        assert infer_schema(df) == {
-            'geometry': ['MultiLineString', 'LineString'],
-            'properties': OrderedDict()
-        }
+        if _FIONA18:
+            assert infer_schema(df) == {
+                'geometry': ['MultiLineString', 'LineString'],
+                'properties': OrderedDict()
+            }
+        else:
+            assert infer_schema(df) == {
+                'geometry': 'LineString',
+                'properties': OrderedDict()
+            }
 
     def test_infer_schema_when_dataframe_has_only_multilinestrings(self):
         df = GeoDataFrame(geometry=[MultiLineString(self.city_hall_walls)])
@@ -140,10 +152,16 @@ class TestInferSchema():
             ]
         )
 
-        assert infer_schema(df) == {
-            'geometry': ['MultiPolygon', 'Polygon'],
-            'properties': OrderedDict()
-        }
+        if _FIONA18:
+            assert infer_schema(df) == {
+                'geometry': ['MultiPolygon', 'Polygon'],
+                'properties': OrderedDict()
+            }
+        else:
+            assert infer_schema(df) == {
+                'geometry': 'Polygon',
+                'properties': OrderedDict()
+            }
 
     def test_infer_schema_when_dataframe_has_only_multipolygons(self):
         df = GeoDataFrame(
@@ -169,14 +187,24 @@ class TestInferSchema():
             ]
         )
 
-        assert infer_schema(df) == {
-            'geometry': [
-                'MultiPolygon', 'Polygon',
-                'MultiLineString', 'LineString',
-                'MultiPoint', 'Point'
-            ],
-            'properties': OrderedDict()
-        }
+        if _FIONA18:
+            assert infer_schema(df) == {
+                'geometry': [
+                    'MultiPolygon', 'Polygon',
+                    'MultiLineString', 'LineString',
+                    'MultiPoint', 'Point'
+                ],
+                'properties': OrderedDict()
+            }
+        else:
+            assert infer_schema(df) == {
+                'geometry': [
+                    'Polygon',
+                    'LineString',
+                    'Point'
+                ],
+                'properties': OrderedDict()
+            }
 
     def test_infer_schema_when_dataframe_has_a_3D_shape_type(self):
         df = GeoDataFrame(
@@ -204,9 +232,9 @@ class TestInferSchema():
         else:
             assert infer_schema(df) == {
                 'geometry': [
-                    '3D MultiPolygon', '3D Polygon',
-                    '3D MultiLineString', '3D LineString',
-                    '3D MultiPoint', '3D Point'
+                    '3D Polygon',
+                    '3D LineString',
+                    '3D Point'
                 ],
                 'properties': OrderedDict()
             }
