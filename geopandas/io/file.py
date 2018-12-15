@@ -174,12 +174,16 @@ def _geometry_types(df):
 
 def find_unique_geometries(df):
     if _FIONA18:
-        # before Fiona 1.8, 3D and 2D shapes can coexist in inferred schema
+        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
+        # can have mixed geometries:
+        # - 3D and 2D shapes can coexist in inferred schema
+        # - Shape and MultiShape types can (and must) coexist in inferred schema
         unique_geom_types = _3D_geom_types(df) + _2D_geom_types(df)
     else:
-        # before Fiona 1.8, 3D and 2D shapes cannot coexist in inferred schema
-        # it would succeed with GeoJSON driver
-        # but it would fail with ESRI Shapefile driver
+        # Before Fiona 1.8, schema submitted to write a gdf should have
+        # one single geometry type whenever possible:
+        # - 3D and 2D shapes cannot coexist in inferred schema
+        # - Shape and MultiShape can not coexist in inferred schema
         unique_geom_types = _3D_or_2D_unmixed_geom_types(df)
 
     return unique_geom_types
