@@ -56,15 +56,6 @@ point_3D = Point(-73.553785, 45.508722, 300)
         crs={'init': 'epsg:4326'},
         geometry=[city_hall_entrance, city_hall_balcony]
     ),
-    # Points and MultiPoints
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiPoint([city_hall_entrance, city_hall_balcony]),
-            city_hall_balcony
-        ]
-    ),
     # MultiPoints
     GeoDataFrame(
         {'a': [1, 2]},
@@ -121,6 +112,42 @@ point_3D = Point(-73.553785, 45.508722, 300)
         crs={'init': 'epsg:4326'},
         geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
     ),
+    # Null geometry and Point
+    GeoDataFrame(
+        {'a': [1, 2]},
+        crs={'init': 'epsg:4326'},
+        geometry=[None, city_hall_entrance]
+    ),
+    # Null geometry and 3D Point
+    GeoDataFrame(
+        {'a': [1, 2]},
+        crs={'init': 'epsg:4326'},
+        geometry=[None, point_3D]
+    ),
+    # Null geometries only
+    GeoDataFrame(
+        {'a': [1, 2]},
+        crs={'init': 'epsg:4326'},
+        geometry=[None, None]
+    )
+
+])
+def geodataframe(request):
+    return request.param
+
+@pytest.fixture(params=[
+    # Points and MultiPoints
+    # It may be a bug in Fiona or in 'ESRI Shapefile' driver:
+    # a gdf with Polygons and MultiPolygons can be written to shapefiles
+    # while a gdf with Points and MultiPoints cannot...
+    GeoDataFrame(
+        {'a': [1, 2]},
+        crs={'init': 'epsg:4326'},
+        geometry=[
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony
+        ]
+    ),
     # all shape types
     GeoDataFrame(
         {'a': [1, 2, 3, 4, 5, 6]},
@@ -147,30 +174,10 @@ point_3D = Point(-73.553785, 45.508722, 300)
             city_hall_balcony,
             point_3D
         ]
-    ),
-    # Null geometry and Point
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[None, city_hall_entrance]
-    ),
-    # Null geometry and 3D Point
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[None, point_3D]
-    ),
-    # Null geometries only
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[None, None]
     )
-
 ])
-def geodataframe(request):
+def mixed_geom_gdf(request):
     return request.param
-
 
 @pytest.fixture(params=['GeoJSON', 'ESRI Shapefile'])
 def ogr_driver(request):
@@ -198,3 +205,21 @@ class TestGeoDataFrameToFile():
 
         assert_geodataframe_equal(geodataframe, reloaded,
                                   check_column_type=check_column_type)
+
+    def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
+        if ogr_driver == 'ESRI Shapefile':
+            with pytest.raises(RuntimeError, message='Failed to write record'):
+                mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
+
+        else:
+            mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
+
+            reloaded = geopandas.read_file(self.output_file)
+
+            check_column_type = 'equiv'
+            if sys.version_info[0] < 3:
+                # do not check column types in python 2 (or it fails!!!)
+                check_column_type = False
+
+            assert_geodataframe_equal(mixed_geom_gdf, reloaded,
+                                      check_column_type=check_column_type)
