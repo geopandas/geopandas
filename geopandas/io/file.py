@@ -159,7 +159,7 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    geom_types = find_unique_geometries(df)
+    geom_types = find_geometry_types(df)
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -172,21 +172,21 @@ def _geometry_types(df):
     return geom_types
 
 
-def find_unique_geometries(df):
+def find_geometry_types(df):
     if _FIONA18:
         # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
         # can have mixed geometries:
         # - 3D and 2D shapes can coexist in inferred schema
         # - Shape and MultiShape types can (and must) coexist in inferred schema
-        unique_geom_types = _3D_geom_types(df) + _2D_geom_types(df)
+        geom_types = _3D_geom_types(df) + _2D_geom_types(df)
     else:
         # Before Fiona 1.8, schema submitted to write a gdf should have
         # one single geometry type whenever possible:
         # - 3D and 2D shapes cannot coexist in inferred schema
         # - Shape and MultiShape can not coexist in inferred schema
-        unique_geom_types = _3D_or_2D_unmixed_geom_types(df)
+        geom_types = _3D_or_2D_unmixed_geom_types(df)
 
-    return unique_geom_types
+    return geom_types
 
 
 def _2D_geom_types(df):
