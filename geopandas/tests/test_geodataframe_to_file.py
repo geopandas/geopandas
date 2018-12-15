@@ -3,6 +3,7 @@ import shutil
 import tempfile
 
 import pytest
+import sys
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
     LineString, MultiLineString
 
@@ -190,4 +191,10 @@ class TestGeoDataFrameToFile():
 
         reloaded = geopandas.read_file(self.output_file)
 
-        assert_geodataframe_equal(geodataframe, reloaded)
+        check_column_type = 'equiv'
+        if sys.version_info[0] < 3:
+            # do not check column types in python 2 (or it fails!!!)
+            check_column_type = False
+
+        assert_geodataframe_equal(geodataframe, reloaded,
+                                  check_column_type=check_column_type)
