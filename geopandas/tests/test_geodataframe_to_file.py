@@ -194,7 +194,18 @@ class TestGeoDataFrameToFile():
         shutil.rmtree(self.output_dir)
 
     def test_geodataframe_to_file(self, geodataframe, ogr_driver):
-        geodataframe.to_file(self.output_file, driver=ogr_driver)
+        self.do_test_geodataframe_to_file(geodataframe, ogr_driver)
+
+    def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
+        if ogr_driver == 'ESRI Shapefile':
+            with pytest.raises(RuntimeError, message='Failed to write record'):
+                mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
+
+        else:
+            self.do_test_geodataframe_to_file(mixed_geom_gdf, ogr_driver)
+
+    def do_test_geodataframe_to_file(self, gdf, ogr_driver):
+        gdf.to_file(self.output_file, driver=ogr_driver)
 
         reloaded = geopandas.read_file(self.output_file)
 
@@ -203,23 +214,5 @@ class TestGeoDataFrameToFile():
             # do not check column types in python 2 (or it fails!!!)
             check_column_type = False
 
-        assert_geodataframe_equal(geodataframe, reloaded,
+        assert_geodataframe_equal(gdf, reloaded,
                                   check_column_type=check_column_type)
-
-    def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
-        if ogr_driver == 'ESRI Shapefile':
-            with pytest.raises(RuntimeError, message='Failed to write record'):
-                mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
-
-        else:
-            mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
-
-            reloaded = geopandas.read_file(self.output_file)
-
-            check_column_type = 'equiv'
-            if sys.version_info[0] < 3:
-                # do not check column types in python 2 (or it fails!!!)
-                check_column_type = False
-
-            assert_geodataframe_equal(mixed_geom_gdf, reloaded,
-                                      check_column_type=check_column_type)
