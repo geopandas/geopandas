@@ -198,7 +198,7 @@ class TestGeoDataFrameToFile():
 
     def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
         if ogr_driver == 'ESRI Shapefile':
-            with pytest.raises(RuntimeError, message='Failed to write record'):
+            with pytest.raises(Exception):
                 mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
 
         else:
