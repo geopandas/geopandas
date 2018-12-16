@@ -205,7 +205,7 @@ def _merge_geom_types_as_much_as_possible(df):
     """
     unique_geom_types = df.geometry.geom_type.unique()
     unique_geom_types = [type for type in unique_geom_types if type is not None]
-    unique_geom_types = merge_shape_and_multi_shape_types(unique_geom_types)
+    unique_geom_types = _merge_shape_and_multi_shape_types(unique_geom_types)
     if df.geometry.has_z.any():
         # declare all geometries as 3D geometries
         unique_geom_types = ["3D " + type for type in unique_geom_types]
@@ -214,7 +214,7 @@ def _merge_geom_types_as_much_as_possible(df):
     return unique_geom_types
 
 
-def merge_shape_and_multi_shape_types(unique_geom_types):
+def _merge_shape_and_multi_shape_types(unique_geom_types):
     return [type for type in unique_geom_types if
             not type.startswith('Multi')
             or type[5:] not in unique_geom_types
