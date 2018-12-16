@@ -1,9 +1,9 @@
 import os
 import shutil
+import sys
 import tempfile
 
 import pytest
-import sys
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
     LineString, MultiLineString
 
