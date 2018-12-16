@@ -137,9 +137,9 @@ def geodataframe(request):
 
 @pytest.fixture(params=[
     # Points and MultiPoints
-    # It may be a bug in Fiona or in 'ESRI Shapefile' driver:
-    # a gdf with Polygons and MultiPolygons can be written to shapefiles
-    # while a gdf with Points and MultiPoints cannot...
+    # 'ESRI Shapefile' driver supports writing LineString/MultiLinestring and
+    # Polygon/MultiPolygon but does not mention Point/MultiPoint
+    # see https://www.gdal.org/drv_shapefile.html
     GeoDataFrame(
         {'a': [1, 2]},
         crs={'init': 'epsg:4326'},
