@@ -200,7 +200,6 @@ class TestGeoDataFrameToFile():
         if ogr_driver == 'ESRI Shapefile':
             with pytest.raises(Exception):
                 mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
-
         else:
             self.do_test_geodataframe_to_file(mixed_geom_gdf, ogr_driver)
 
