@@ -217,41 +217,58 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
+# all shape types mixed together
+gdf = GeoDataFrame(
+    {'a': [1, 2, 3, 4, 5, 6]},
+    crs={'init': 'epsg:4326'},
+    geometry=[
+        MultiPolygon((city_hall_boundaries, vauquelin_place)),
+        city_hall_entrance,
+        MultiLineString(city_hall_walls),
+        city_hall_walls[0],
+        MultiPoint([city_hall_entrance, city_hall_balcony]),
+        city_hall_balcony
+    ]
+)
+_geodataframes_to_write.append(gdf)
+# Not supported by 'ESRI Shapefile' driver
+_expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
+    AttributeError,
+    "'list' object has no attribute 'lstrip'"
+)
+_expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
+    RuntimeError,
+    "Failed to write record"
+)
+
+# all 2D shape types and 3D Point mixed together
+gdf = GeoDataFrame(
+    {'a': [1, 2, 3, 4, 5, 6, 7]},
+    crs={'init': 'epsg:4326'},
+    geometry=[
+        MultiPolygon((city_hall_boundaries, vauquelin_place)),
+        city_hall_entrance,
+        MultiLineString(city_hall_walls),
+        city_hall_walls[0],
+        MultiPoint([city_hall_entrance, city_hall_balcony]),
+        city_hall_balcony,
+        point_3D
+    ]
+)
+_geodataframes_to_write.append(gdf)
+# Not supported by 'ESRI Shapefile' driver
+_expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
+    AttributeError,
+    "'list' object has no attribute 'lstrip'"
+)
+_expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
+    RuntimeError,
+    "Failed to write record"
+)
+
 
 @pytest.fixture(params=_geodataframes_to_write)
 def geodataframe(request):
-    return request.param
-
-@pytest.fixture(params=[
-    # all shape types
-    GeoDataFrame(
-        {'a': [1, 2, 3, 4, 5, 6]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiPolygon((city_hall_boundaries, vauquelin_place)),
-            city_hall_entrance,
-            MultiLineString(city_hall_walls),
-            city_hall_walls[0],
-            MultiPoint([city_hall_entrance, city_hall_balcony]),
-            city_hall_balcony
-        ]
-    ),
-    # all 2D shape types and 3D Point
-    GeoDataFrame(
-        {'a': [1, 2, 3, 4, 5, 6, 7]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiPolygon((city_hall_boundaries, vauquelin_place)),
-            city_hall_entrance,
-            MultiLineString(city_hall_walls),
-            city_hall_walls[0],
-            MultiPoint([city_hall_entrance, city_hall_balcony]),
-            city_hall_balcony,
-            point_3D
-        ]
-    )
-])
-def mixed_geom_gdf(request):
     return request.param
 
 
@@ -276,13 +293,6 @@ class TestGeoDataFrameToFile():
                 geodataframe.to_file(self.output_file, driver=ogr_driver)
         else:
             self.assert_to_file_succeeds(geodataframe, ogr_driver)
-
-    def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
-        if ogr_driver == 'ESRI Shapefile':
-            with pytest.raises(Exception):
-                mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
-        else:
-            self.assert_to_file_succeeds(mixed_geom_gdf, ogr_driver)
 
     def assert_to_file_succeeds(self, gdf, ogr_driver):
         gdf.to_file(self.output_file, driver=ogr_driver)
