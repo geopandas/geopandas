@@ -570,10 +570,11 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
                          " set: %r" % schemes.keys())
     if classification_kwds['k'] is not None:
         try:
-            from inspect import signature
-            sig = signature(schemes[scheme]).parameters
-            sig['k']
-        except KeyError:
+            from inspect import getfullargspec as getspec
+        except ImportError:
+            from inspect import getargspec as getspec
+        spec = getspec(schemes[scheme])
+        if 'k' not in spec.args:
             del classification_kwds['k']
     try:
         binning = schemes[scheme](values, **classification_kwds)
