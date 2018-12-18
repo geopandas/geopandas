@@ -135,7 +135,7 @@ _geodataframes_to_write.append(gdf)
 _expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
     ValueError,
     "Record's geometry type does not match collection schema's geometry "
-    "type: 'MultiPoint' != 'Point' "
+    "type: 'MultiPoint' != 'Point'"
 )
 _expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
     RuntimeError,
