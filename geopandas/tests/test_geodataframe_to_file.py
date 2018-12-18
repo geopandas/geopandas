@@ -275,16 +275,16 @@ class TestGeoDataFrameToFile():
             with pytest.raises(expected_error[0], match=expected_error[1]):
                 geodataframe.to_file(self.output_file, driver=ogr_driver)
         else:
-            self.do_test_geodataframe_to_file(geodataframe, ogr_driver)
+            self.assert_to_file_succeeds(geodataframe, ogr_driver)
 
     def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
         if ogr_driver == 'ESRI Shapefile':
             with pytest.raises(Exception):
                 mixed_geom_gdf.to_file(self.output_file, driver=ogr_driver)
         else:
-            self.do_test_geodataframe_to_file(mixed_geom_gdf, ogr_driver)
+            self.assert_to_file_succeeds(mixed_geom_gdf, ogr_driver)
 
-    def do_test_geodataframe_to_file(self, gdf, ogr_driver):
+    def assert_to_file_succeeds(self, gdf, ogr_driver):
         gdf.to_file(self.output_file, driver=ogr_driver)
 
         reloaded = geopandas.read_file(self.output_file)
