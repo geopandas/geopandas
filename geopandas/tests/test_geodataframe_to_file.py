@@ -272,7 +272,7 @@ class TestGeoDataFrameToFile():
     def test_geodataframe_to_file(self, geodataframe, ogr_driver):
         expected_error = _expected_error_on(geodataframe, ogr_driver, _FIONA18)
         if expected_error:
-            with pytest.raises(expected_error[0]):
+            with pytest.raises(expected_error[0], match=expected_error[1]):
                 geodataframe.to_file(self.output_file, driver=ogr_driver)
         else:
             self.do_test_geodataframe_to_file(geodataframe, ogr_driver)
