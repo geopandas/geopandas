@@ -573,7 +573,7 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
             from inspect import getfullargspec as getspec
         except ImportError:
             from inspect import getargspec as getspec
-        spec = getspec(schemes[scheme])
+        spec = getspec(schemes[scheme].__init__)
         if 'k' not in spec.args:
             del classification_kwds['k']
     try:
