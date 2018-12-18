@@ -92,7 +92,8 @@ def _expected_error_on(gdf, ogr_driver, is_fiona_above_1_8):
 _geodataframes_to_write = []
 _expected_exceptions = {}
 
-# Points
+# ------------------
+# gdf with Points
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -100,7 +101,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# MultiPoints
+# ------------------
+# gdf with MultiPoints
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -116,7 +118,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# Points and MultiPoints
+# ------------------
+# gdf with Points and MultiPoints
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -139,7 +142,8 @@ _expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
     "Failed to write record"
 )
 
-# LineStrings
+# ------------------
+# gdf with LineStrings
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -147,15 +151,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# LineStrings and MultiLineStrings
-gdf = GeoDataFrame(
-    {'a': [1, 2]},
-    crs={'init': 'epsg:4326'},
-    geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
-)
-_geodataframes_to_write.append(gdf)
-
-# MultiLineStrings
+# ------------------
+# gdf with MultiLineStrings
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -166,7 +163,17 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# Polygons
+# ------------------
+# gdf with LineStrings and MultiLineStrings
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
+)
+_geodataframes_to_write.append(gdf)
+
+# ------------------
+# gdf with Polygons
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -174,7 +181,17 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# MultiPolygon and Polygon
+# ------------------
+# gdf with MultiPolygon
+gdf = GeoDataFrame(
+    {'a': [1]},
+    crs={'init': 'epsg:4326'},
+    geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
+)
+_geodataframes_to_write.append(gdf)
+
+# ------------------
+# gdf with Polygon and MultiPolygon
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -185,15 +202,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# MultiPolygon
-gdf = GeoDataFrame(
-    {'a': [1]},
-    crs={'init': 'epsg:4326'},
-    geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
-)
-_geodataframes_to_write.append(gdf)
-
-# Null geometry and Point
+# ------------------
+# gdf with null geometry and Point
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -201,7 +211,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# Null geometry and 3D Point
+# ------------------
+# gdf with null geometry and 3D Point
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -209,7 +220,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# Null geometries only
+# ------------------
+# gdf with null geometries only
 gdf = GeoDataFrame(
     {'a': [1, 2]},
     crs={'init': 'epsg:4326'},
@@ -217,7 +229,8 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 
-# all shape types mixed together
+# ------------------
+# gdf with all shape types mixed together
 gdf = GeoDataFrame(
     {'a': [1, 2, 3, 4, 5, 6]},
     crs={'init': 'epsg:4326'},
@@ -241,7 +254,8 @@ _expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
     "Failed to write record"
 )
 
-# all 2D shape types and 3D Point mixed together
+# ------------------
+# gdf with all 2D shape types and 3D Point mixed together
 gdf = GeoDataFrame(
     {'a': [1, 2, 3, 4, 5, 6, 7]},
     crs={'init': 'epsg:4326'},
