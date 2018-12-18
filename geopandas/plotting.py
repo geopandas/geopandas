@@ -350,7 +350,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.Classifiers object will be used
+        A mapclassify.Map_Classifier object will be used
         under the hood. Supported are all schemes provided by mapclassify (e.g.
         'Box_Plot', 'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled',
         'HeadTail_Breaks', 'Jenks_Caspall', 'Jenks_Caspall_Forced',
