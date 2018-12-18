@@ -350,13 +350,13 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.Map_Classifier object will be used
-        under the hood. Supported schemes: 'Box_Plot', 'Equal_Interval',
-        'Fisher_Jenks', 'Fisher_Jenks_Sampled', 'HeadTail_Breaks',
-        'Jenks_Caspall', 'Jenks_Caspall_Forced', 'Jenks_Caspall_Sampled',
-        'Max_P_Classifier', 'Maximum_Breaks', 'Natural_Breaks', 'Quantiles',
-        'Percentiles', 'Std_Mean', 'User_Defined'. Arguments can be passed in
-        classification_kwds.
+        A mapclassify.Classifiers object will be used
+        under the hood. Supported are all schemes provided by mapclassify (e.g.
+        'Box_Plot', 'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled',
+        'HeadTail_Breaks', 'Jenks_Caspall', 'Jenks_Caspall_Forced',
+        'Jenks_Caspall_Sampled', 'Max_P_Classifier', 'Maximum_Breaks',
+        'Natural_Breaks', 'Quantiles', 'Percentiles', 'Std_Mean',
+        'User_Defined'). Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -453,9 +453,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     if scheme is not None:
         if classification_kwds is None:
             classification_kwds = {}
-        if scheme not in ['box_plot', 'headtail_breaks', 'percentiles',
-                          'std_mean', 'user_defined']:
-            if 'k' not in classification_kwds:
+        if 'k' not in classification_kwds:
                 classification_kwds['k'] = k
 
         binning = _mapclassify_choro(values, scheme, **classification_kwds)
@@ -555,44 +553,28 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
 
     """
     try:
-        from mapclassify import (
-            Box_Plot, Equal_Interval, Fisher_Jenks, Fisher_Jenks_Sampled,
-            HeadTail_Breaks, Jenks_Caspall, Jenks_Caspall_Forced,
-            Jenks_Caspall_Sampled, Max_P_Classifier, Maximum_Breaks,
-            Natural_Breaks, Quantiles, Percentiles, Std_Mean, User_Defined)
+        import mapclassify.classifiers
     except ImportError:
-        try:
-            from mapclassify.api import (
-                Box_Plot, Equal_Interval, Fisher_Jenks, Fisher_Jenks_Sampled,
-                HeadTail_Breaks, Jenks_Caspall, Jenks_Caspall_Forced,
-                Jenks_Caspall_Sampled, Max_P_Classifier, Maximum_Breaks,
-                Natural_Breaks, Quantiles, Percentiles, Std_Mean, User_Defined)
-        except ImportError:
-            raise ImportError(
-                "The 'mapclassify' package is required to use the 'scheme' "
-                "keyword")
+        raise ImportError(
+            "The 'mapclassify' package is required to use the 'scheme' "
+            "keyword")
 
     schemes = {}
-    schemes['box_plot'] = Box_Plot
-    schemes['equal_interval'] = Equal_Interval
-    schemes['fisher_jenks'] = Fisher_Jenks
-    schemes['fisher_jenks_sampled'] = Fisher_Jenks_Sampled
-    schemes['headtail_breaks'] = HeadTail_Breaks
-    schemes['jenks_caspall'] = Jenks_Caspall
-    schemes['jenks_caspall_forced'] = Jenks_Caspall_Forced
-    schemes['jenks_caspall_sampled'] = Jenks_Caspall_Sampled
-    schemes['max_p_classifier'] = Max_P_Classifier
-    schemes['maximum_breaks'] = Maximum_Breaks
-    schemes['natural_breaks'] = Natural_Breaks
-    schemes['quantiles'] = Quantiles
-    schemes['percentiles'] = Percentiles
-    schemes['std_mean'] = Std_Mean
-    schemes['user_defined'] = User_Defined
+    for classifier in mapclassify.classifiers.CLASSIFIERS:
+        schemes[classifier.lower()] = getattr(mapclassify.classifiers,
+                                              classifier)
 
     scheme = scheme.lower()
     if scheme not in schemes:
         raise ValueError("Invalid scheme. Scheme must be in the"
                          " set: %r" % schemes.keys())
+    if classification_kwds['k'] is not None:
+        try:
+            from inspect import signature
+            sig = signature(schemes[scheme]).parameters
+            sig['k']
+        except KeyError:
+            del classification_kwds['k']
     try:
         binning = schemes[scheme](values, **classification_kwds)
     except TypeError:
