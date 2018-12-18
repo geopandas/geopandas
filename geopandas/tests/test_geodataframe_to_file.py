@@ -292,9 +292,9 @@ class TestGeoDataFrameToFile():
             with pytest.raises(expected_error[0], match=expected_error[1]):
                 geodataframe.to_file(self.output_file, driver=ogr_driver)
         else:
-            self.assert_to_file_succeeds(geodataframe, ogr_driver)
+            self._assert_to_file_succeeds(geodataframe, ogr_driver)
 
-    def assert_to_file_succeeds(self, gdf, ogr_driver):
+    def _assert_to_file_succeeds(self, gdf, ogr_driver):
         gdf.to_file(self.output_file, driver=ogr_driver)
 
         reloaded = geopandas.read_file(self.output_file)
