@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import tempfile
+from enum import Enum
 
 import pytest
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
@@ -9,6 +10,7 @@ from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
 
 import geopandas
 from geopandas import GeoDataFrame
+from geopandas.io.file import _FIONA18
 from geopandas.testing import assert_geodataframe_equal
 
 # Credit: Polygons below come from Montreal city Open Data portal
@@ -50,8 +52,45 @@ point_3D = Point(-73.553785, 45.508722, 300)
 
 
 # *****************************************
+# TEST TOOLING
+
+class _Fiona(Enum):
+    below_1_8 = 'fiona_below_1_8'
+    above_1_8 = 'fiona_above_1_8'
+
+
+class _ExpectedExceptionBuilder:
+    def __init__(self, composite_key):
+        self.composite_key = composite_key
+
+    def to_raise(self, error_type, error_match):
+        print("**** {}, of type : {}".format(error_type, type(error_type)))
+        _expected_exceptions[self.composite_key] = [error_type,
+                                                    error_match]
+
+
+def _expect_writing(gdf, ogr_driver, fiona_version):
+    return _ExpectedExceptionBuilder(
+        _composite_key(gdf, ogr_driver, fiona_version)
+    )
+
+
+def _composite_key(gdf, ogr_driver, fiona_version):
+    return frozenset([id(gdf), ogr_driver, fiona_version.value])
+
+
+def _expected_error_on(gdf, ogr_driver, is_fiona_above_1_8):
+    if is_fiona_above_1_8:
+        composite_key = _composite_key(gdf, ogr_driver, _Fiona.above_1_8)
+    else:
+        composite_key = _composite_key(gdf, ogr_driver, _Fiona.below_1_8)
+    return _expected_exceptions.get(composite_key, None)
+
+
+# *****************************************
 # TEST CASES
 _geodataframes_to_write = []
+_expected_exceptions = {}
 
 # Points
 gdf = GeoDataFrame(
@@ -76,6 +115,29 @@ gdf = GeoDataFrame(
         )]
 )
 _geodataframes_to_write.append(gdf)
+
+# Points and MultiPoints
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[
+        MultiPoint([city_hall_entrance, city_hall_balcony]),
+        city_hall_balcony
+    ]
+)
+_geodataframes_to_write.append(gdf)
+# 'ESRI Shapefile' driver supports writing LineString/MultiLinestring and
+# Polygon/MultiPolygon but does not mention Point/MultiPoint
+# see https://www.gdal.org/drv_shapefile.html
+_expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
+    ValueError,
+    "Record's geometry type does not match collection schema's geometry "
+    "type: 'MultiPoint' != 'Point' "
+)
+_expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
+    RuntimeError,
+    "Failed to write record"
+)
 
 # LineStrings
 gdf = GeoDataFrame(
@@ -161,18 +223,6 @@ def geodataframe(request):
     return request.param
 
 @pytest.fixture(params=[
-    # Points and MultiPoints
-    # 'ESRI Shapefile' driver supports writing LineString/MultiLinestring and
-    # Polygon/MultiPolygon but does not mention Point/MultiPoint
-    # see https://www.gdal.org/drv_shapefile.html
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiPoint([city_hall_entrance, city_hall_balcony]),
-            city_hall_balcony
-        ]
-    ),
     # all shape types
     GeoDataFrame(
         {'a': [1, 2, 3, 4, 5, 6]},
@@ -220,7 +270,12 @@ class TestGeoDataFrameToFile():
         shutil.rmtree(self.output_dir)
 
     def test_geodataframe_to_file(self, geodataframe, ogr_driver):
-        self.do_test_geodataframe_to_file(geodataframe, ogr_driver)
+        expected_error = _expected_error_on(geodataframe, ogr_driver, _FIONA18)
+        if expected_error:
+            with pytest.raises(expected_error[0]):
+                geodataframe.to_file(self.output_file, driver=ogr_driver)
+        else:
+            self.do_test_geodataframe_to_file(geodataframe, ogr_driver)
 
     def test_write_gdf_with_mixed_geometries(self, mixed_geom_gdf, ogr_driver):
         if ogr_driver == 'ESRI Shapefile':
