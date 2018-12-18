@@ -49,89 +49,114 @@ city_hall_council_chamber = Point(-73.554246, 45.508931)
 point_3D = Point(-73.553785, 45.508722, 300)
 
 
-@pytest.fixture(params=[
-    # Points
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[city_hall_entrance, city_hall_balcony]
-    ),
-    # MultiPoints
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiPoint([
-                city_hall_balcony,
-                city_hall_council_chamber]),
-            MultiPoint([
-                city_hall_entrance,
-                city_hall_balcony,
-                city_hall_council_chamber]
-            )]
-    ),
-    # LineStrings
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=city_hall_walls
-    ),
-    # LineStrings and MultiLineStrings
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
-    ),
-    # MultiLineStrings
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiLineString(city_hall_walls),
-            MultiLineString(city_hall_walls)
-        ]
-    ),
-    # Polygons
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[city_hall_boundaries, vauquelin_place]
-    ),
-    # MultiPolygon and Polygon
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[
-            MultiPolygon((city_hall_boundaries, vauquelin_place)),
-            city_hall_boundaries
-        ]
-    ),
-    # MultiPolygon
-    GeoDataFrame(
-        {'a': [1]},
-        crs={'init': 'epsg:4326'},
-        geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
-    ),
-    # Null geometry and Point
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[None, city_hall_entrance]
-    ),
-    # Null geometry and 3D Point
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[None, point_3D]
-    ),
-    # Null geometries only
-    GeoDataFrame(
-        {'a': [1, 2]},
-        crs={'init': 'epsg:4326'},
-        geometry=[None, None]
-    )
+# *****************************************
+# TEST CASES
+_geodataframes_to_write = []
 
-])
+# Points
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[city_hall_entrance, city_hall_balcony]
+)
+_geodataframes_to_write.append(gdf)
+
+# MultiPoints
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[
+        MultiPoint([
+            city_hall_balcony,
+            city_hall_council_chamber]),
+        MultiPoint([
+            city_hall_entrance,
+            city_hall_balcony,
+            city_hall_council_chamber]
+        )]
+)
+_geodataframes_to_write.append(gdf)
+
+# LineStrings
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=city_hall_walls
+)
+_geodataframes_to_write.append(gdf)
+
+# LineStrings and MultiLineStrings
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
+)
+_geodataframes_to_write.append(gdf)
+
+# MultiLineStrings
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[
+        MultiLineString(city_hall_walls),
+        MultiLineString(city_hall_walls)
+    ]
+)
+_geodataframes_to_write.append(gdf)
+
+# Polygons
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[city_hall_boundaries, vauquelin_place]
+)
+_geodataframes_to_write.append(gdf)
+
+# MultiPolygon and Polygon
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[
+        MultiPolygon((city_hall_boundaries, vauquelin_place)),
+        city_hall_boundaries
+    ]
+)
+_geodataframes_to_write.append(gdf)
+
+# MultiPolygon
+gdf = GeoDataFrame(
+    {'a': [1]},
+    crs={'init': 'epsg:4326'},
+    geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))]
+)
+_geodataframes_to_write.append(gdf)
+
+# Null geometry and Point
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[None, city_hall_entrance]
+)
+_geodataframes_to_write.append(gdf)
+
+# Null geometry and 3D Point
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[None, point_3D]
+)
+_geodataframes_to_write.append(gdf)
+
+# Null geometries only
+gdf = GeoDataFrame(
+    {'a': [1, 2]},
+    crs={'init': 'epsg:4326'},
+    geometry=[None, None]
+)
+_geodataframes_to_write.append(gdf)
+
+
+@pytest.fixture(params=_geodataframes_to_write)
 def geodataframe(request):
     return request.param
 
@@ -178,6 +203,7 @@ def geodataframe(request):
 ])
 def mixed_geom_gdf(request):
     return request.param
+
 
 @pytest.fixture(params=['GeoJSON', 'ESRI Shapefile'])
 def ogr_driver(request):
