@@ -202,7 +202,7 @@ To run *geopandas* in an development environment, you must first install
 *geopandas*'s dependencies. We suggest doing so using the following commands
 (executed after your development environment has been activated)::
 
-    conda install -c conda-forge fiona shapely pyproj rtree
+    conda install -c conda-forge fiona shapely rtree
     conda install pandas
 
 

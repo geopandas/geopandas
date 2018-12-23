@@ -10,7 +10,6 @@ dependencies:
   - pandas==0.20.2
   - shapely
   - fiona
-  - pyproj
   # testing
   - pytest
   - pytest-cov

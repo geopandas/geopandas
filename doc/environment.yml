@@ -6,7 +6,6 @@ dependencies:
 - pandas
 - shapely
 - fiona
-- pyproj
 - rtree
 - six
 - geopy

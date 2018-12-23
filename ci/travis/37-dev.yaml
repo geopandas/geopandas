@@ -9,7 +9,6 @@ dependencies:
   - pandas
   - shapely
   - conda-forge/label/dev::fiona
-  - pyproj
   # testing
   - pytest
   - pytest-cov

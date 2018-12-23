@@ -1,4 +1,3 @@
-import pyproj
 import re
 import os
 import fiona.crs
@@ -50,5 +49,13 @@ def epsg_from_crs(crs):
 
 
 def get_epsg_file_contents():
-    with open(os.path.join(pyproj.pyproj_datadir, 'epsg')) as f:
-        return f.read()
+    if 'PROJ_DIR' in os.environ:
+        epsg_file = os.path.join(os.environ['PROJ_DIR'], 'epsg')
+        if os.path.isfile(epsg_file):
+            with open(epsg_file) as f:
+                return f.read()
+    else:
+        # fall back to shipped epsg file
+        with open(os.path.join(os.path.dirname(__file__),
+                               'data', 'epsg')) as f:
+            return f.read()

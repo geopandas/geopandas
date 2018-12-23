@@ -35,7 +35,6 @@ For the installation of GeoPandas, the following packages are required:
 - ``pandas``
 - ``shapely``
 - ``fiona``
-- ``pyproj``
 
 Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional

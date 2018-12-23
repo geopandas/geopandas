@@ -8,7 +8,6 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - pyproj
   # testing
   - pytest
   - pytest-cov

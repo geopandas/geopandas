@@ -36,7 +36,6 @@ Installation via `conda` should also install all dependencies, but a complete li
 - `shapely`_
 - `fiona`_
 - `six`_
-- `pyproj`_
 
 Further, optional dependencies are:
 
@@ -52,7 +51,7 @@ For plotting, these additional packages may be used:
 
 These can be installed independently via the following set of commands::
 
-    conda install -c conda-forge fiona shapely pyproj rtree
+    conda install -c conda-forge fiona shapely rtree
     conda install pandas
 
 
@@ -79,8 +78,6 @@ These can be installed independently via the following set of commands::
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 
 .. _pysal: http://pysal.org
-
-.. _pyproj: https://github.com/jswhit/pyproj
 
 .. _rtree: https://github.com/Toblerity/rtree
 
