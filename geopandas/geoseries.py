@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 from pandas import Series
-import fiona
 from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
