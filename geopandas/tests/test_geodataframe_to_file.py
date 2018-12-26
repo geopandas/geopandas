@@ -64,7 +64,6 @@ class _ExpectedErrorBuilder:
         self.composite_key = composite_key
 
     def to_raise(self, error_type, error_match):
-        print("**** {}, of type : {}".format(error_type, type(error_type)))
         _expected_exceptions[self.composite_key] = [error_type,
                                                     error_match]
 
