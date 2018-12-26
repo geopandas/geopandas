@@ -59,7 +59,7 @@ class _Fiona(Enum):
     above_1_8 = 'fiona_above_1_8'
 
 
-class _ExpectedExceptionBuilder:
+class _ExpectedErrorBuilder:
     def __init__(self, composite_key):
         self.composite_key = composite_key
 
@@ -70,7 +70,7 @@ class _ExpectedExceptionBuilder:
 
 
 def _expect_writing(gdf, ogr_driver, fiona_version):
-    return _ExpectedExceptionBuilder(
+    return _ExpectedErrorBuilder(
         _composite_key(gdf, ogr_driver, fiona_version)
     )
 
