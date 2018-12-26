@@ -137,11 +137,12 @@ _geodataframes_to_write.append(gdf)
 # 'ESRI Shapefile' driver supports writing LineString/MultiLinestring and
 # Polygon/MultiPolygon but does not mention Point/MultiPoint
 # see https://www.gdal.org/drv_shapefile.html
-_expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
-    ValueError,
-    "Record's geometry type does not match collection schema's geometry "
-    "type: 'MultiPoint' != 'Point'"
-)
+for driver in ('ESRI Shapefile', 'GPKG'):
+    _expect_writing(gdf, driver, _Fiona.below_1_8).to_raise(
+        ValueError,
+        "Record's geometry type does not match collection schema's geometry "
+        "type: 'MultiPoint' != 'Point'"
+    )
 _expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
     RuntimeError,
     "Failed to write record"
@@ -176,6 +177,11 @@ gdf = GeoDataFrame(
     geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]]
 )
 _geodataframes_to_write.append(gdf)
+_expect_writing(gdf, 'GPKG', _Fiona.below_1_8).to_raise(
+    ValueError,
+    "Record's geometry type does not match collection schema's geometry "
+    "type: 'MultiLineString' != 'LineString'"
+)
 
 # ------------------
 # gdf with Polygons
@@ -206,6 +212,11 @@ gdf = GeoDataFrame(
     ]
 )
 _geodataframes_to_write.append(gdf)
+_expect_writing(gdf, 'GPKG', _Fiona.below_1_8).to_raise(
+    ValueError,
+    "Record's geometry type does not match collection schema's geometry "
+    "type: 'MultiPolygon' != 'Polygon'"
+)
 
 # ------------------
 # gdf with null geometry and Point
@@ -250,10 +261,11 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 # Not supported by 'ESRI Shapefile' driver
-_expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
-    AttributeError,
-    "'list' object has no attribute 'lstrip'"
-)
+for driver in ('ESRI Shapefile', 'GPKG'):
+    _expect_writing(gdf, driver, _Fiona.below_1_8).to_raise(
+        AttributeError,
+        "'list' object has no attribute 'lstrip'"
+    )
 _expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
     RuntimeError,
     "Failed to write record"
@@ -276,10 +288,11 @@ gdf = GeoDataFrame(
 )
 _geodataframes_to_write.append(gdf)
 # Not supported by 'ESRI Shapefile' driver
-_expect_writing(gdf, 'ESRI Shapefile', _Fiona.below_1_8).to_raise(
-    AttributeError,
-    "'list' object has no attribute 'lstrip'"
-)
+for driver in ('ESRI Shapefile', 'GPKG'):
+    _expect_writing(gdf, driver, _Fiona.below_1_8).to_raise(
+        AttributeError,
+        "'list' object has no attribute 'lstrip'"
+    )
 _expect_writing(gdf, 'ESRI Shapefile', _Fiona.above_1_8).to_raise(
     RuntimeError,
     "Failed to write record"
@@ -291,7 +304,7 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(params=['GeoJSON', 'ESRI Shapefile'])
+@pytest.fixture(params=['GeoJSON', 'ESRI Shapefile', 'GPKG'])
 def ogr_driver(request):
     return request.param
 
