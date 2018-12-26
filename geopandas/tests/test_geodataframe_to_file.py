@@ -59,13 +59,19 @@ class _Fiona(Enum):
     above_1_8 = 'fiona_above_1_8'
 
 
+class _ExpectedError:
+    def __init__(self, error_type, error_message_match):
+        self.type = error_type
+        self.match = error_message_match
+
+
 class _ExpectedErrorBuilder:
     def __init__(self, composite_key):
         self.composite_key = composite_key
 
     def to_raise(self, error_type, error_match):
-        _expected_exceptions[self.composite_key] = [error_type,
-                                                    error_match]
+        _expected_exceptions[self.composite_key] = _ExpectedError(error_type,
+                                                                  error_match)
 
 
 def _expect_writing(gdf, ogr_driver, fiona_version):
@@ -302,7 +308,7 @@ class TestGeoDataFrameToFile():
     def test_geodataframe_to_file(self, geodataframe, ogr_driver):
         expected_error = _expected_error_on(geodataframe, ogr_driver, _FIONA18)
         if expected_error:
-            with pytest.raises(expected_error[0], match=expected_error[1]):
+            with pytest.raises(expected_error.type, match=expected_error.match):
                 geodataframe.to_file(self.output_file, driver=ogr_driver)
         else:
             self._assert_to_file_succeeds(geodataframe, ogr_driver)
