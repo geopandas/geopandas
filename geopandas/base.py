@@ -254,7 +254,8 @@ class GeoPandasBase(object):
                 has_non_poly = True
                 inner_rings.append(None)
         if has_non_poly:
-            warn("Containing non-polygons which cannot have interior rings.")
+            warn("Only Polygon objects have interior rings. For other "
+                 "geometry types, None is returned.")
 
         # _unary_op couldn't be used in order to warning to non-polygon and
         # conversion to list.
