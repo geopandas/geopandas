@@ -59,7 +59,8 @@ sphinx_gallery_conf = {
                       'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
-    'backreferences_dir': 'reference'
+    'backreferences_dir': 'reference',
+    'expected_failing_examples': ['../../examples/plotting_with_geoplot.py']
 }
 
 # The suffix of source filenames.
