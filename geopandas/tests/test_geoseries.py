@@ -102,6 +102,29 @@ class TestSeries:
         assert a1['B'].equals(a2['B'])
         assert a1['C'].is_empty
 
+    def test_align_crs(self):
+        a1 = self.a1
+        a1.crs = {'init': 'epsg:4326', 'no_defs': True}
+        a2 = self.a2
+        a2.crs = {'init': 'epsg:31370', 'no_defs': True}
+
+        res1, res2 = a1.align(a2)
+        assert res1.crs == {'init': 'epsg:4326', 'no_defs': True}
+        assert res2.crs == {'init': 'epsg:31370', 'no_defs': True}
+
+        a2.crs = None
+        res1, res2 = a1.align(a2)
+        assert res1.crs == {'init': 'epsg:4326', 'no_defs': True}
+        assert res2.crs is None
+
+    def test_align_mixed(self):
+        a1 = self.a1
+        s2 = pd.Series([1, 2], index=['B', 'C'])
+        res1, res2 = a1.align(s2)
+
+        exp2 = pd.Series([BaseGeometry(), 1, 2], dtype=object, index=['A', 'B', 'C'])
+        assert_series_equal(res2, exp2)
+
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
         assert np.all(self.g1.geom_almost_equals(self.g1))

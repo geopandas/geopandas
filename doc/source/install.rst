@@ -4,13 +4,15 @@ Installation
 Installing GeoPandas
 ---------------------
 
-To install the released version, you can use pip::
-
-    pip install geopandas
-
-or you can install the conda package from the conda-forge channel::
+To install the released version, we recommend to use `conda`_ (from the conda-forge
+channel)::
 
     conda install -c conda-forge geopandas
+
+Alternatively, you can also install GeoPandas with pip, but then you need
+to make sure that all dependencies are installed correctly:
+
+    pip install geopandas
 
 You may install the latest development version by cloning the
 `GitHub` repository and using the setup script::
@@ -85,3 +87,5 @@ These can be installed independently via the following set of commands::
 .. _libspatialindex: https://github.com/libspatialindex/libspatialindex
 
 .. _Travis CI: https://travis-ci.org/geopandas/geopandas
+
+.. _conda: https://conda-forge.org/

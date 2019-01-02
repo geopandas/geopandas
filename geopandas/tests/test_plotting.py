@@ -9,9 +9,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from shapely.affinity import rotate
-from shapely.geometry import MultiPolygon, Polygon, LineString, Point
+from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
+from geopandas.datasets import get_path
 
 import pytest
 
@@ -34,8 +35,14 @@ class TestPointPlotting:
     def setup_method(self):
         self.N = 10
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
+
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
+
+        multipoint1 = MultiPoint(self.points)
+        multipoint2 = rotate(multipoint1, 90)
+        self.df2 = GeoDataFrame({'geometry': [multipoint1, multipoint2],
+                                 'values': [0, 1]})
 
     def test_figsize(self):
 
@@ -167,6 +174,20 @@ class TestPointPlotting:
             ax = df.plot()
         assert len(ax.collections) == 0
 
+    def test_multipoints(self):
+
+        # MultiPoints
+        ax = self.df2.plot()
+        _check_colors(4, ax.collections[0].get_facecolors(),
+                      [MPL_DFT_COLOR] * 4)
+
+
+        ax = self.df2.plot(column='values')
+        cmap = plt.get_cmap()
+        expected_colors = [cmap(0)]* self.N + [cmap(1)] * self.N
+        _check_colors(2, ax.collections[0].get_facecolors(),
+                      expected_colors)
+
 class TestPointZPlotting:
 
     def setup_method(self):
@@ -240,6 +261,10 @@ class TestPolygonPlotting:
         self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
                                  'values': [0, 1]})
 
+        t3 = Polygon([(2, 0), (3, 0), (3, 1)])
+        df_nan = GeoDataFrame({'geometry': t3, 'values': [np.nan]})
+        self.df3 = self.df.append(df_nan)
+
     def test_single_color(self):
 
         ax = self.polys.plot(color='green')
@@ -268,6 +293,12 @@ class TestPolygonPlotting:
         ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
         actual_colors = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+
+        # vmin vmax set correctly for array with NaN (GitHub issue 877)
+        ax = self.df3.plot(column='values')
+        actual_colors = ax.collections[0].get_facecolors()
+        assert np.any(np.not_equal(actual_colors[0], actual_colors[1]))
+
 
     def test_style_kwargs(self):
 
@@ -366,37 +397,44 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [10]
 
 
-class TestPySALPlotting:
+class TestMapclassifyPlotting:
 
     @classmethod
     def setup_class(cls):
-        try:
-            import pysal as ps
-        except ImportError:
-            raise pytest.skip("PySAL is not installed")
-
-        pth = ps.examples.get_path("columbus.shp")
+        pytest.importorskip('mapclassify')
+        pth = get_path('naturalearth_lowres')
         cls.df = read_file(pth)
         cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
 
     def test_legend(self):
-        ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
-                          cmap='OrRd', legend=True)
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            # warning coming from scipy.stats
+            ax = self.df.plot(column='pop_est', scheme='QUANTILES', k=3,
+                              cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'0.18 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
+        expected = [u'-99.00 - 4579438.67', u'4579438.67 - 16639804.33',
+                    u'16639804.33 - 1338612970.00']
         assert labels == expected
 
     def test_negative_legend(self):
         ax = self.df.plot(column='NEGATIVES', scheme='FISHER_JENKS', k=3,
                           cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'-10.00 - -3.33', u'-3.33 - 3.33', u'3.33 - 10.00']
+        expected = [u'-10.00 - -3.41', u'-3.41 - 3.30', u'3.30 - 10.00']
+        assert labels == expected
+
+    def test_classification_kwds(self):
+        ax = self.df.plot(column='pop_est', scheme='percentiles', k=3,
+                          classification_kwds={'pct': [50, 100]}, cmap='OrRd',
+                          legend=True)
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = ['-99.00 - 9035536.00', '9035536.00 - 1338612970.00']
         assert labels == expected
 
     def test_invalid_scheme(self):
         with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
-            self.df.plot(column='CRIME', scheme=scheme, k=3,
+            self.df.plot(column='gdp_md_est', scheme=scheme, k=3,
                          cmap='OrRd', legend=True)
 
 
@@ -610,6 +648,42 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ['g'] * self.N)
         ax.cla()
+
+
+def test_column_values():
+    """
+    Check that the dataframe plot method returns same values with an
+    input string (column in df), pd.Series, or np.array
+    """
+    # Build test data
+    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    t2 = Polygon([(1, 0), (2, 0), (2, 1)])
+    polys = GeoSeries([t1, t2], index=list('AB'))
+    df = GeoDataFrame({'geometry': polys, 'values': [0, 1]})
+
+    # Test with continous values
+    ax = df.plot(column='values')
+    colors = ax.collections[0].get_facecolors()
+    ax = df.plot(column=df['values'])
+    colors_series = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_series)
+    ax = df.plot(column=df['values'].values)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with categorical values
+    ax = df.plot(column='values', categorical=True)
+    colors = ax.collections[0].get_facecolors()
+    ax = df.plot(column=df['values'], categorical=True)
+    colors_series = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_series)
+    ax = df.plot(column=df['values'].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Check raised error: is df rows number equal to column legth?
+    with pytest.raises(ValueError, match="different number of rows"):
+        ax = df.plot(column=np.array([1, 2, 3]))
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):

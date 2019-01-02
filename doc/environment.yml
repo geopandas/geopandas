@@ -1,6 +1,5 @@
 name: geopandas_docs
 channels:
-- defaults
 - conda-forge
 dependencies:
 - python=3.6
@@ -21,5 +20,7 @@ dependencies:
 - pillow
 - mock
 - cartopy
+- contextily
+- geoplot
 - sphinx-gallery
 - jinja2

@@ -1,19 +1,35 @@
 Changes
 =======
 
-Next
-----
+Version 0.4.0 (July 15, 2018)
+-----------------------------
 
 Improvements:
 
+* Improved `overlay` function (better performance, several incorrect behaviours fixed) (#429)
 * Pass keywords to control legend behavior (`legend_kwds`) to `plot` (#434)
 * Add basic support for reading remote datasets in `read_file` (#531)
 * Pass kwargs for `buffer` operation on GeoSeries (#535)
 * Expose all geopy services as options in geocoding (#550)
+* Faster write speeds to GeoPackage (#605)
+* Permit `read_file` filtering with a bounding box from a GeoDataFrame (#613)
+* Set CRS on GeoDataFrame returned by `read_postgis` (#627)
+* Permit setting markersize for Point GeoSeries plots with column values (#633)
+* Started an example gallery (#463, #690, #717)
+* Support for plotting MultiPoints (#683)
+* Testing functionalty (e.g. `assert_geodataframe_equal`) is now publicly exposed (#707)
+* Add `explode` method to GeoDataFrame (similar to the GeoSeries method) (#671)
+* Set equal aspect on active axis on multi-axis figures (#718)
+* Pass array of values to column argument in `plot` (#770)
 
 Bug fixes :
 
 * Ensure that colorbars are plotted on the correct axis (#523)
+* Handle plotting empty GeoDataFrame (#571)
+* Save z-dimension when writing files (#652)
+* Handle reading empty shapefiles (#653)
+* Correct dtype for empty result of spatial operations (#685)
+* Fix empty `sjoin` handling for pandas>=0.23 (#762)
 
 
 Version 0.3.0 (August 29, 2017)
