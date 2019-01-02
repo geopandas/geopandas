@@ -1,7 +1,7 @@
 Changes
 =======
 
-Version 0.5.0 (December ??, 2018)
+Version 0.5.0 (January ??, 2019)
 ---------------------------------
 
 Improvements:
@@ -24,6 +24,8 @@ Bug fixes:
 - Fix the `align` method to preserve the CRS (#829).
 - Fix `geopandas.testing.assert_geodataframe_equal` to correctly compare left and right dataframes (#810).
 - Better error message in `sjoin` if the input is not a GeoDataFrame (#842).
+- Fixed the shape of Antarctica in the included demo dataset 'naturalearth_lowres'
+  (by updating to the latest version) (#804).
 
 
 Version 0.4.0 (July 15, 2018)
