@@ -15,6 +15,7 @@ dependencies:
   - mock
   # optional
   - rtree
+  - pyproj
   - matplotlib
   - descartes
   #- geopy

@@ -15,6 +15,7 @@ dependencies:
   - codecov
   # optional
   - rtree
+  - pyproj
   - matplotlib==1.5.3
   - descartes
   - mapclassify

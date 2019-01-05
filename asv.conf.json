@@ -59,6 +59,7 @@
         "fiona": [],
         "six": [],
         "rtree": [],
+		"pyplot": [],
         "matplotlib": [],
         "descartes": []
     },

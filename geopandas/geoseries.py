@@ -296,9 +296,16 @@ class GeoSeries(GeoPandasBase, Series):
                 crs = from_epsg(epsg)
             except TypeError:
                 raise TypeError('Must set either crs or epsg for output.')
-        from fiona.transform import transform as fn_transform
-        project = partial(fn_transform, self.crs, crs)
-        result = self.apply(lambda geom: transform(project, geom))
+        try:
+            import pyproj
+            proj_in = pyproj.Proj(self.crs, preserve_units=True)
+            proj_out = pyproj.Proj(crs, preserve_units=True)
+            project = partial(pyproj.transform, proj_in, proj_out)
+            result = self.apply(lambda geom: transform(project, geom))
+        except (ImportError, RuntimeError):
+            from fiona.transform import transform as fn_transform
+            project = partial(fn_transform, self.crs, crs)
+            result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
         result._invalidate_sindex()

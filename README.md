@@ -38,7 +38,11 @@ For the installation of GeoPandas, the following packages are required:
 
 Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+dependency, required for spatial joins. ``rtree`` requires the C library
+[``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
+If using brew, you can install using ``brew install Spatialindex``.
+Another optional dependency [``pyproj``](https://github.com/jswhit/pyproj) if
+installed, enhances the speed of coordinate transformation.
 
 
 **Install**

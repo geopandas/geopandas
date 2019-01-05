@@ -42,6 +42,7 @@ Further, optional dependencies are:
 - `geopy`_ 0.99 (optional; for geocoding)
 - `psycopg2`_ (optional; for PostGIS connection)
 - `rtree`_ (optional; spatial index to improve performance)
+- `pyproj`  (optional; improve performance in co-ordinate transformation)
 
 For plotting, these additional packages may be used:
 
@@ -78,6 +79,8 @@ These can be installed independently via the following set of commands::
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 
 .. _pysal: http://pysal.org
+
+.. _pyproj: https://github.com/jswhit/pyproj
 
 .. _rtree: https://github.com/Toblerity/rtree
 

@@ -17,6 +17,7 @@ dependencies:
   - mock
   # optional
   - rtree
+  - pyproj
   - matplotlib==2.0.2
   - descartes
   - geopy

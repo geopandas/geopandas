@@ -14,6 +14,7 @@ dependencies:
   #- codecov
   # optional
   - rtree
+  - pyproj
   - matplotlib==2.0.2
   - descartes
   #- geopy
