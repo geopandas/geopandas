@@ -241,7 +241,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_postgis(cls, sql, con, geom_col='geom', crs=None,
                      index_col=None, coerce_float=True,
                      parse_dates=None, params=None):
-        """Alternate constructor to create a ``GeoDataFrame`` from a sql query
+        """
+        Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column in WKB representation.
 
         Parameters
@@ -257,21 +258,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float : boolean, default True
             Attempt to convert values of non-string, non-numeric objects (like
             decimal.Decimal) to floating point, useful for SQL result sets
-        parse_dates : list or dict, default: None
+        parse_dates : list or dict, default None
             - List of column names to parse as dates.
             - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-            - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
-            to the keyword arguments of :func:`pandas.to_datetime`
-            Especially useful with databases without native Datetime support,
-            such as SQLite.
-        params : list, tuple or dict, optional, default: None
+              strftime compatible in case of parsing string times, or is one of
+              (D, s, ns, ms, us) in case of parsing integer timestamps.
+            - Dict of ``{column_name: arg dict}``, where the arg dict
+              corresponds to the keyword arguments of
+              :func:`pandas.to_datetime`. Especially useful with databases
+              without native Datetime support, such as SQLite.
+        params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
 
         Examples
         --------
-        PostGIS
         >>> sql = "SELECT geom, highway FROM roads"
         SpatiaLite
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
