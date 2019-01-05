@@ -42,7 +42,7 @@ Further, optional dependencies are:
 - `geopy`_ 0.99 (optional; for geocoding)
 - `psycopg2`_ (optional; for PostGIS connection)
 - `rtree`_ (optional; spatial index to improve performance)
-- `pyproj`  (optional; improve performance in co-ordinate transformation)
+- `pyproj`  (optional; improves performance in co-ordinate transformation)
 
 For plotting, these additional packages may be used:
 

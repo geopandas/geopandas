@@ -42,7 +42,7 @@ dependency, required for spatial joins. ``rtree`` requires the C library
 [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
 If using brew, you can install using ``brew install Spatialindex``.
 Another optional dependency [``pyproj``](https://github.com/jswhit/pyproj) if
-installed, enhances the speed of coordinate transformation.
+installed, improves the performance of coordinate transformation.
 
 
 **Install**
