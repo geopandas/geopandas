@@ -412,8 +412,8 @@ class TestMapclassifyPlotting:
             ax = self.df.plot(column='pop_est', scheme='QUANTILES', k=3,
                               cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'-99.00 - 4579438.67', u'4579438.67 - 16639804.33',
-                    u'16639804.33 - 1338612970.00']
+        expected = [u'140.00 - 5217064.00', u'5217064.00 - 19532732.33',
+                    u'19532732.33 - 1379302771.00']
         assert labels == expected
 
     def test_negative_legend(self):
@@ -428,7 +428,7 @@ class TestMapclassifyPlotting:
                           classification_kwds={'pct': [50, 100]}, cmap='OrRd',
                           legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ['-99.00 - 9035536.00', '9035536.00 - 1338612970.00']
+        expected = ['140.00 - 9961396.00', '9961396.00 - 1379302771.00']
         assert labels == expected
 
     def test_invalid_scheme(self):
