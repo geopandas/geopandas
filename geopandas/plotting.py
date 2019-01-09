@@ -314,7 +314,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     return ax
 
 
-def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
+def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
                    legend_kwds=None, classification_kwds=None, **style_kwds):
@@ -342,6 +342,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
+    cax : matplotlib.pyplot Artist (default None)
+        axes on which to draw the legend in case of color map.
     categorical : bool (default False)
         If False, cmap will reflect numerical values of the
         column being plotted.  For non-numerical columns, this
@@ -487,6 +489,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
+    if cax is not None:
+        cbar_kwargs = {"cax": cax}
+    else:
+        cbar_kwargs = {"ax": ax}
+
     # plot all Points in the same collection
     points = df.geometry[point_idx]
     if not points.empty:
@@ -518,7 +525,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             ax.legend(patches, categories, **legend_kwds)
         else:
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, ax=ax)
+            ax.get_figure().colorbar(n_cmap, **cbar_kwargs)
 
     plt.draw()
     return ax
