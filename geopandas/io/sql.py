@@ -99,7 +99,7 @@ def write_postgis(df, name, con, **kwargs):
     con : sqlalchemy.engine.Engine or DB connection object
         Active connection to the database.
     kwargs :
-        passed to pandas.to_sq. See documentation for available parameters
+        passed to pandas.to_sql. See documentation for available parameters
 
     Raises
     ------
@@ -118,13 +118,13 @@ def write_postgis(df, name, con, **kwargs):
     .. [3] https://geoalchemy-2.readthedocs.io/en/latest/
 
     Notes
-    ------
+    -----
     Geometry is converted to `WKTElements` object using `geoalchemy2` library.
     The original frame is copied to not mutate it.
-    Only one column with shapely objets is supported.
+    Only one column with shapely objects is supported.
 
-    Examples:
-    ---------
+    Examples
+    --------
     Create a connection object to PostGIS (5432 is the default port)
     >>> from sqlalchemy import create_engine
     >>> engine = create_engine('postgis://user:password@domain_name/5432', echo=False)
