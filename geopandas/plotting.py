@@ -26,7 +26,7 @@ def _flatten_multi_geoms(geoms, colors=None):
         colors = [None] * len(geoms)
 
     components, component_colors = [], []
-    
+
     if not geoms.geom_type.str.startswith('Multi').any():
         return geoms, colors
 
@@ -317,7 +317,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, **style_kwds):
+                   legend_kwds=None, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -349,10 +349,14 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     legend : bool (default False)
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
-        Name of a choropleth classification scheme (requires PySAL).
-        A pysal.esda.mapclassify.Map_Classifier object will be used
-        under the hood. Supported schemes: 'Equal_interval', 'Quantiles',
-        'Fisher_Jenks'
+        Name of a choropleth classification scheme (requires mapclassify).
+        A mapclassify.Map_Classifier object will be used
+        under the hood. Supported are all schemes provided by mapclassify (e.g.
+        'Box_Plot', 'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled',
+        'HeadTail_Breaks', 'Jenks_Caspall', 'Jenks_Caspall_Forced',
+        'Jenks_Caspall_Sampled', 'Max_P_Classifier', 'Maximum_Breaks',
+        'Natural_Breaks', 'Quantiles', 'Percentiles', 'Std_Mean',
+        'User_Defined'). Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -372,6 +376,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
         Keyword arguments to pass to ax.legend()
+    classification_kwds : dict (default None)
+        Keyword arguments to pass to mapclassify
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -445,7 +451,12 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         values = np.array([valuemap[k] for k in values])
 
     if scheme is not None:
-        binning = __pysal_choro(values, scheme, k=k)
+        if classification_kwds is None:
+            classification_kwds = {}
+        if 'k' not in classification_kwds:
+                classification_kwds['k'] = k
+
+        binning = _mapclassify_choro(values, scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [values.min()] + binning.bins.tolist()
@@ -453,8 +464,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                       for i in range(len(binedges)-1)]
         values = np.array(binning.yb)
 
-    mn = values.min() if vmin is None else vmin
-    mx = values.max() if vmax is None else vmax
+    mn = values[~np.isnan(values)].min() if vmin is None else vmin
+    mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     geom_types = df.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
@@ -513,19 +524,26 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     return ax
 
 
-def __pysal_choro(values, scheme, k=5):
+def _mapclassify_choro(values, scheme, **classification_kwds):
     """
-    Wrapper for choropleth schemes from PySAL for use with plot_dataframe
+    Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
     Parameters
     ----------
     values
         Series to be plotted
     scheme : str
-        One of pysal.esda.mapclassify classification schemes
-        Options are 'Equal_interval', 'Quantiles', 'Fisher_Jenks'
-    k : int
-        number of classes (2 <= k <=9)
+        One of mapclassify classification schemes
+        Options are Box_Plot, Equal_Interval, Fisher_Jenks,
+        Fisher_Jenks_Sampled, HeadTail_Breaks, Jenks_Caspall,
+        Jenks_Caspall_Forced, Jenks_Caspall_Sampled, Max_P_Classifier,
+        Maximum_Breaks, Natural_Breaks, Quantiles, Percentiles, Std_Mean,
+        User_Defined
+
+    **classification_kwds : dict
+        Keyword arguments for classification scheme
+        For details see mapclassify documentation:
+        https://mapclassify.readthedocs.io/en/latest/api.html
 
     Returns
     -------
@@ -535,17 +553,31 @@ def __pysal_choro(values, scheme, k=5):
 
     """
     try:
-        from pysal.esda.mapclassify import (
-            Quantiles, Equal_Interval, Fisher_Jenks)
-        schemes = {}
-        schemes['equal_interval'] = Equal_Interval
-        schemes['quantiles'] = Quantiles
-        schemes['fisher_jenks'] = Fisher_Jenks
-        scheme = scheme.lower()
-        if scheme not in schemes:
-            raise ValueError("Invalid scheme. Scheme must be in the"
-                             " set: %r" % schemes.keys())
-        binning = schemes[scheme](values, k)
-        return binning
+        import mapclassify.classifiers
     except ImportError:
-        raise ImportError("PySAL is required to use the 'scheme' keyword")
+        raise ImportError(
+            "The 'mapclassify' package is required to use the 'scheme' "
+            "keyword")
+
+    schemes = {}
+    for classifier in mapclassify.classifiers.CLASSIFIERS:
+        schemes[classifier.lower()] = getattr(mapclassify.classifiers,
+                                              classifier)
+
+    scheme = scheme.lower()
+    if scheme not in schemes:
+        raise ValueError("Invalid scheme. Scheme must be in the"
+                         " set: %r" % schemes.keys())
+    if classification_kwds['k'] is not None:
+        try:
+            from inspect import getfullargspec as getspec
+        except ImportError:
+            from inspect import getargspec as getspec
+        spec = getspec(schemes[scheme].__init__)
+        if 'k' not in spec.args:
+            del classification_kwds['k']
+    try:
+        binning = schemes[scheme](values, **classification_kwds)
+    except TypeError:
+        raise TypeError("Invalid keyword argument for %r " % scheme)
+    return binning

@@ -1,10 +1,21 @@
 import os
+from distutils.version import LooseVersion
 
 import fiona
 import numpy as np
+
 import six
 
+try:
+    from fiona import Env as fiona_env
+except ImportError:
+    from fiona import drivers as fiona_env
+
 from geopandas import GeoDataFrame, GeoSeries
+
+
+_FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion('1.8')
+
 
 # Adapted from pandas.io.common
 if six.PY3:
@@ -105,7 +116,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     if schema is None:
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
-    with fiona.drivers():
+    with fiona_env():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
@@ -123,10 +134,10 @@ def infer_schema(df):
         out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
         if out_type == 'long':
             out_type = 'int'
-        if out_type == 'bool':
+        if not _FIONA18 and out_type == 'bool':
             raise ValueError('column "{}" is boolean type, '.format(column) +
-                             'which is unsupported in file writing. '
-                             'Consider casting the column to int type.')
+                             'which is unsupported in file writing with fiona '
+                             '< 1.8. Consider casting the column to int type.')
         return out_type
 
     properties = OrderedDict([
@@ -138,10 +149,6 @@ def infer_schema(df):
         raise ValueError("Cannot write empty DataFrame to file.")
 
     geom_type = _common_geom_type(df)
-    
-    if not geom_type:
-        raise ValueError("Geometry column cannot contain mutiple "
-                         "geometry types when writing to file.")
 
     schema = {'geometry': geom_type, 'properties': properties}
 
@@ -159,7 +166,7 @@ def _common_geom_type(df):
     # then reverse the result to get back to a geom type
     geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
     if not geom_type:
-        return None
+        return 'Unknown'
 
     if df.geometry.has_z.any():
         geom_type = "3D " + geom_type
