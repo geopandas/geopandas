@@ -213,3 +213,53 @@ class TestIO:
         empty = read_file(fname)
         assert isinstance(empty, geopandas.GeoDataFrame)
         assert all(empty.columns == ['A', 'Z', 'geometry'])
+
+
+
+    def test_to_postgis(self):
+
+        con = connect_sqlalchemy()
+
+        try:
+            db_name = "nybb_write"
+            self.df.to_postgis(db_name, con, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), con,
+                                geom_col="geometry")
+        finally:
+            con.close()
+        validate_boro_df(back)
+
+    def test_to_postgis_set_srid(self):
+
+        con = connect_sqlalchemy()
+
+        crs = {"init": "epsg:4326"}
+        df_reproj = self.df.to_crs(crs)
+
+        try:
+            db_name = "nybb4326_write"
+            df_reproj.to_postgis(db_name, con, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), con,
+                                geom_col="geometry")
+        finally:
+            con.close()
+
+        validate_boro_df(back)
+        assert back.crs == crs
+
+    def test_to_postgis_no_srid(self):
+
+        con = connect_sqlalchemy()
+
+        df_noproj = self.df.copy()
+        df_noproj.crs = None
+
+        try:
+            db_name = "nybb_nocrs_write"
+            df_noproj.to_postgis(db_name, con, if_exists="replace")
+            back = read_postgis("SELECT * FROM {};".format(db_name), con,
+                                geom_col="geometry")
+        finally:
+            con.close()
+        validate_boro_df(back)
+        assert back.crs is None

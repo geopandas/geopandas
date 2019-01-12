@@ -1,6 +1,7 @@
 import os.path
 import sys
 import sqlite3
+import pytest
 
 from geopandas import GeoDataFrame
 from geopandas.testing import (
@@ -55,6 +56,24 @@ def get_srid(df):
     return (int(crs['init'][5:]) if 'init' in crs
                                  and crs['init'].startswith('epsg:')
             else 0)
+
+
+def connect_sqlalchemy():
+    """Try to create a sqlalchemy connection, raise skip in case of failure."""
+
+    try:
+        import sqlalchemy
+    except ImportError:
+        raise pytest.skip()
+
+    engine = sqlalchemy.create_engine("postgres://localhost/test_geopandas")
+    try:
+        con = engine.connect()
+    except sqlalchemy.exc.OperationalError:
+        raise pytest.skip()
+
+    return con
+
 
 def connect_spatialite():
     """
