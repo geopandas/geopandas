@@ -3,7 +3,7 @@ import pandas as pd
 import shapely.wkb
 
 from geopandas import GeoDataFrame
-from geopandas.tools.util import crs_to_srid
+from geopandas.tools.crs import crs_to_srid
 
 
 def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,

@@ -1,4 +1,3 @@
-from fiona.crs import from_string
 import pandas as pd
 from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
 from shapely.geometry.base import BaseGeometry
@@ -46,23 +45,3 @@ def collect(x, multi=False):
     return _multi_type_map[t](x)
 
 
-def crs_to_srid(crs):
-    """
-    Returns the SRID from a CRS dict or string, returns -1 if not available.
-
-    Parameters
-    ----------
-    crs : dict or str formatted as : {'init': 'epsg:4326'} or '+init=epsg:4326'.
-
-    Returns
-    -------
-    srid : int, -1  if unsuccessful for compatibility with PostGIS
-    """
-    srid = -1
-
-    if isinstance(crs, str):
-        crs = from_string(crs)
-    if isinstance(crs, dict):
-        srid = int(crs.get('init').split(':')[-1])
-
-    return srid

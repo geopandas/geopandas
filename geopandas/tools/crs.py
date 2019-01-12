@@ -2,6 +2,7 @@ import pyproj
 import re
 import os
 import fiona.crs
+from fiona.crs import from_string
 
 
 def explicit_crs_from_epsg(crs=None, epsg=None):
@@ -52,3 +53,25 @@ def epsg_from_crs(crs):
 def get_epsg_file_contents():
     with open(os.path.join(pyproj.pyproj_datadir, 'epsg')) as f:
         return f.read()
+
+
+def crs_to_srid(crs):
+    """
+    Returns the SRID from a CRS dict or string, returns -1 if not available.
+
+    Parameters
+    ----------
+    crs : dict or str formatted as : {'init': 'epsg:4326'} or '+init=epsg:4326'.
+
+    Returns
+    -------
+    srid : int, -1  if unsuccessful for compatibility with PostGIS
+    """
+    srid = -1
+
+    if isinstance(crs, str):
+        crs = from_string(crs)
+    if isinstance(crs, dict):
+        srid = int(crs.get('init').split(':')[-1])
+
+    return srid
