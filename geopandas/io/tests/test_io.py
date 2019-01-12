@@ -218,8 +218,9 @@ class TestIO:
 
     def test_to_postgis(self):
 
-        con = connect_sqlalchemy()
-
+        con = connect('test_geopandas')
+        if con is None or not create_postgis(self.df):
+            raise pytest.skip()
         try:
             db_name = "nybb_write"
             self.df.to_postgis(db_name, con, if_exists="replace")
@@ -231,7 +232,9 @@ class TestIO:
 
     def test_to_postgis_set_srid(self):
 
-        con = connect_sqlalchemy()
+        con = connect('test_geopandas')
+        if con is None or not create_postgis(self.df):
+            raise pytest.skip()
 
         crs = {"init": "epsg:4326"}
         df_reproj = self.df.to_crs(crs)
@@ -249,7 +252,9 @@ class TestIO:
 
     def test_to_postgis_no_srid(self):
 
-        con = connect_sqlalchemy()
+        con = connect('test_geopandas')
+        if con is None or not create_postgis(self.df):
+            raise pytest.skip()
 
         df_noproj = self.df.copy()
         df_noproj.crs = None
