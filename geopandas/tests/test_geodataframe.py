@@ -12,7 +12,8 @@ from shapely.geometry import Point, Polygon
 import fiona
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, GeoSeries, points_from_xy
+from geopandas import GeoDataFrame, read_file, GeoSeries
+from geopandas.geodataframe import points_from_xy
 
 import pytest
 from pandas.util.testing import (
