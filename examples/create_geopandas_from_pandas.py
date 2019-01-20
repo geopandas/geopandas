@@ -33,8 +33,8 @@ df = pd.DataFrame(
 # ``GeoDataFrame``.
 
 gdf = geopandas.GeoDataFrame(df,
-                             geometry=geopandas.points_from_xy(df['Longitude'],
-                                                               df['Latitude']))
+                             geometry=geopandas.points_from_xy(df.Longitude,
+                                                               df.Latitude))
 
 
 ###############################################################################
