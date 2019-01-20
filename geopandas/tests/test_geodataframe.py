@@ -12,7 +12,7 @@ from shapely.geometry import Point, Polygon
 import fiona
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, GeoSeries
+from geopandas import GeoDataFrame, read_file, GeoSeries, points_from_xy
 
 import pytest
 from pandas.util.testing import (
@@ -699,6 +699,29 @@ class TestDataFrame:
         unpickled = pd.read_pickle(filename)
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
+
+    def test_points_from_xy(self):
+        # using GeoDataFrame column
+        df = GeoDataFrame([{'x': x, 'y': x, 'z': x} for x in range(10)])
+        gs = [Point(x, x) for x in range(10)]
+        gsz = [Point(x, x, x) for x in range(10)]
+        geometry1 = points_from_xy(df['x'], df['y'])
+        geometry2 = points_from_xy(df['x'], df['y'], df['z'])
+        assert geometry1 == gs
+        assert geometry2 == gsz
+
+        # using GeoSeries or numpy arrays or lists
+        for s in [GeoSeries(range(10)), np.arange(10), list(range(10))]:
+            geometry1 = points_from_xy(s, s)
+            geometry2 = points_from_xy(s, s, s)
+            assert geometry1 == gs
+            assert geometry2 == gsz
+
+        # Using incomplete arguments should throw error
+        with pytest.raises(TypeError):
+            points_from_xy(x=s)
+            points_from_xy(y=s)
+            points_from_xy(z=s)
 
 
 def check_geodataframe(df, geometry_column='geometry'):
