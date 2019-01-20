@@ -11,7 +11,6 @@ two columns.
 """
 import pandas as pd
 import geopandas
-from shapely.geometry import Point
 import matplotlib.pyplot as plt
 
 ###############################################################################
@@ -28,21 +27,15 @@ df = pd.DataFrame(
      'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
 
 ###############################################################################
-# A ``GeoDataFrame`` needs a ``shapely`` object, so we create a new column
-# **Coordinates** as a tuple of **Longitude** and **Latitude** :
+# A ``GeoDataFrame`` needs a ``shapely`` object. We use geopandas
+# ``points_from_xy()`` to transform **Longitude** and **Latitude** into a list
+# of ``shapely.Point`` objects and set it as a ``geometry`` while creating the
+# ``GeoDataFrame``.
 
-df['Coordinates'] = list(zip(df.Longitude, df.Latitude))
+gdf = geopandas.GeoDataFrame(df,
+                             geometry=geopandas.points_from_xy(df['Longitude'],
+                                                               df['Latitude']))
 
-###############################################################################
-# Then, we transform tuples to ``Point`` :
-
-df['Coordinates'] = df['Coordinates'].apply(Point)
-
-###############################################################################
-# Now, we can create the ``GeoDataFrame`` by setting ``geometry`` with the
-# coordinates created previously.
-
-gdf = geopandas.GeoDataFrame(df, geometry='Coordinates')
 
 ###############################################################################
 # ``gdf`` looks like this :
