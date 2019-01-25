@@ -241,7 +241,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
-        ``alpha``.
+        ``alpha``. Use 'facecolor='none' to get an unfilled polygon.
 
     Returns
     -------
@@ -382,7 +382,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
-        ``alpha``.
+        ``alpha``. Use 'facecolor='none' to get an unfilled polygon.
 
     Returns
     -------
