@@ -316,7 +316,7 @@ class TestGeoDataFrameToFile():
         self.output_file = os.path.join(self.output_dir, "output_file")
 
     def teardown_method(self):
-        shutil.rmtree(self.output_dir)
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
     def test_geodataframe_to_file(self, geodataframe, ogr_driver):
         expected_error = _expected_error_on(geodataframe, ogr_driver, _FIONA18)
