@@ -20,13 +20,6 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
 
 @pytest.fixture
-def tempdir():
-    tempdir = tempfile.mkdtemp()
-    yield tempdir
-    shutil.rmtree(tempdir)
-
-
-@pytest.fixture
 def df_nybb():
     nybb_path = geopandas.datasets.get_path('nybb')
     df = read_file(nybb_path)
@@ -55,9 +48,9 @@ class TestDataFrame:
         ('ESRI Shapefile', 'shp'),
         ('GeoJSON', 'geojson')
     ])
-    def test_to_file(self, tempdir, df_nybb, df_null, driver, ext):
+    def test_to_file(self, tmpdir, df_nybb, df_null, driver, ext):
         """ Test to_file and from_file """
-        tempfilename = os.path.join(tempdir, 'boros.' + ext)
+        tempfilename = os.path.join(str(tmpdir), 'boros.' + ext)
         df_nybb.to_file(tempfilename, driver=driver)
         # Read layer back in
         df = GeoDataFrame.from_file(tempfilename)
@@ -66,7 +59,7 @@ class TestDataFrame:
         assert np.alltrue(df['BoroName'].values == df_nybb['BoroName'])
 
         # Write layer with null geometry out to file
-        tempfilename = os.path.join(tempdir, 'null_geom.' + ext)
+        tempfilename = os.path.join(str(tmpdir), 'null_geom.' + ext)
         df_null.to_file(tempfilename, driver=driver)
         # Read layer back in
         df = GeoDataFrame.from_file(tempfilename)
@@ -78,9 +71,9 @@ class TestDataFrame:
         ('ESRI Shapefile', 'shp'),
         ('GeoJSON', 'geojson')
     ])
-    def test_to_file_bool(self, tempdir, driver, ext):
+    def test_to_file_bool(self, tmpdir, driver, ext):
         """Test error raise when writing with a boolean column (GH #437)."""
-        tempfilename = os.path.join(tempdir, 'temp.{0}'.format(ext))
+        tempfilename = os.path.join(str(tmpdir), 'temp.{0}'.format(ext))
         df = GeoDataFrame({
             'a': [1, 2, 3], 'b': [True, False, True],
             'geometry': [Point(0, 0), Point(1, 1), Point(2, 2)]})
@@ -100,10 +93,10 @@ class TestDataFrame:
             # PY2: column names 'mixed' instead of 'unicode'
             assert_geodataframe_equal(result, df, check_column_type=False)
 
-    def test_to_file_with_point_z(self, tempdir):
+    def test_to_file_with_point_z(self, tmpdir):
         """Test that 3D geometries are retained in writes (GH #612)."""
 
-        tempfilename = os.path.join(tempdir, 'test_3Dpoint.shp')
+        tempfilename = os.path.join(str(tmpdir), 'test_3Dpoint.shp')
         point3d = Point(0, 0, 500)
         point2d = Point(1, 1)
         df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d], crs={})
@@ -111,10 +104,10 @@ class TestDataFrame:
         df_read = GeoDataFrame.from_file(tempfilename)
         assert_geoseries_equal(df.geometry, df_read.geometry)
 
-    def test_to_file_with_poly_z(self, tempdir):
+    def test_to_file_with_poly_z(self, tmpdir):
         """Test that 3D geometries are retained in writes (GH #612)."""
 
-        tempfilename = os.path.join(tempdir, 'test_3Dpoly.shp')
+        tempfilename = os.path.join(str(tmpdir), 'test_3Dpoly.shp')
         poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
         poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
         df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d], crs={})
@@ -122,9 +115,9 @@ class TestDataFrame:
         df_read = GeoDataFrame.from_file(tempfilename)
         assert_geoseries_equal(df.geometry, df_read.geometry)
 
-    def test_to_file_types(self, tempdir, df_points):
+    def test_to_file_types(self, tmpdir, df_points):
         """ Test various integer type columns (GH#93) """
-        tempfilename = os.path.join(tempdir, 'int.shp')
+        tempfilename = os.path.join(str(tmpdir), 'int.shp')
         int_types = [np.int, np.int8, np.int16, np.int32, np.int64, np.intp,
                      np.uint8, np.uint16, np.uint32, np.uint64, np.long]
         geometry = df_points.geometry
@@ -133,36 +126,36 @@ class TestDataFrame:
         df = GeoDataFrame(data, geometry=geometry)
         df.to_file(tempfilename)
 
-    def test_mixed_types_to_file(self, tempdir):
+    def test_mixed_types_to_file(self, tmpdir):
         """ Test that mixed geometry types raise error when writing to file """
-        tempfilename = os.path.join(tempdir, 'test.shp')
+        tempfilename = os.path.join(str(tmpdir), 'test.shp')
         s = GeoDataFrame({'geometry': [Point(0, 0),
                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
         # Exception type is different for different `fiona` versions
         with pytest.raises((ValueError, RuntimeError)):
             s.to_file(tempfilename)
 
-    def test_mixed_types_to_geojson(self, tempdir):
+    def test_mixed_types_to_geojson(self, tmpdir):
         """ Test that mixed geometry types can be saved as GeoJSON (GH #827) """
-        tempfilename = os.path.join(tempdir, 'test.geojson')
+        tempfilename = os.path.join(str(tmpdir), 'test.geojson')
         s = GeoDataFrame({'geometry': [Point(0, 0),
                                        Polygon([(0, 0), (1, 0), (1, 1)])]})
         s.to_file(tempfilename, driver='GeoJSON')
 
-    def test_empty_to_file(self, tempdir):
+    def test_empty_to_file(self, tmpdir):
         input_empty_df = GeoDataFrame()
-        tempfilename = os.path.join(tempdir, 'test.shp')
+        tempfilename = os.path.join(str(tmpdir), 'test.shp')
         with pytest.raises(
             ValueError, match="Cannot write empty DataFrame to file."):
             input_empty_df.to_file(tempfilename)
 
-    def test_to_file_schema(self, tempdir, df_nybb):
+    def test_to_file_schema(self, tmpdir, df_nybb):
         """
         Ensure that the file is written according to the schema
         if it is specified
 
         """
-        tempfilename = os.path.join(tempdir, 'test.shp')
+        tempfilename = os.path.join(str(tmpdir), 'test.shp')
         properties = OrderedDict([
             ('Shape_Leng', 'float:19.11'),
             ('BoroName', 'str:40'),
