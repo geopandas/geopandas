@@ -157,24 +157,6 @@ def test_to_file_types(tmpdir, df_points):
     df.to_file(tempfilename)
 
 
-def test_to_file_mixed_types(tmpdir):
-    """ Test that mixed geometry types raise error when writing to file """
-    tempfilename = os.path.join(str(tmpdir), 'test.shp')
-    s = GeoDataFrame({'geometry': [Point(0, 0),
-                                   Polygon([(0, 0), (1, 0), (1, 1)])]})
-    # Exception type is different for different `fiona` versions
-    with pytest.raises((ValueError, RuntimeError)):
-        s.to_file(tempfilename)
-
-
-def test_to_file_geojson_mixed_types(tmpdir):
-    """ Test that mixed geometry types can be saved as GeoJSON (GH #827) """
-    tempfilename = os.path.join(str(tmpdir), 'test.geojson')
-    s = GeoDataFrame({'geometry': [Point(0, 0),
-                                   Polygon([(0, 0), (1, 0), (1, 1)])]})
-    s.to_file(tempfilename, driver='GeoJSON')
-
-
 def test_to_file_empty(tmpdir):
     input_empty_df = GeoDataFrame()
     tempfilename = os.path.join(str(tmpdir), 'test.shp')
