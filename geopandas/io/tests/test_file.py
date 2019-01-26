@@ -1,18 +1,17 @@
 from __future__ import absolute_import
 
+import os
 from collections import OrderedDict
 from distutils.version import LooseVersion
-import os
 
-import numpy as np
-from shapely.geometry import Point, Polygon, box
 import fiona
+import numpy as np
+import pytest
+from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas.io.file import fiona_env
-
-import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
@@ -108,6 +107,19 @@ def test_to_file_with_point_z(tmpdir):
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
 
+def test_to_file_geojson_with_point_z(tmpdir):
+    """Test that 3D geometries are retained in writes (GH #612)."""
+
+    tempfilename = os.path.join(str(tmpdir), 'test_3Dpoint.geojson')
+    point3d = Point(0, 0, 500)
+    point2d = Point(1, 1)
+    df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d],
+                      crs={'init': 'epsg:4326'})
+    df.to_file(tempfilename, driver='GeoJSON')
+    df_read = GeoDataFrame.from_file(tempfilename)
+    assert_geoseries_equal(df.geometry, df_read.geometry)
+
+
 def test_to_file_with_poly_z(tmpdir):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
@@ -116,6 +128,19 @@ def test_to_file_with_poly_z(tmpdir):
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
     df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d], crs={})
     df.to_file(tempfilename)
+    df_read = GeoDataFrame.from_file(tempfilename)
+    assert_geoseries_equal(df.geometry, df_read.geometry)
+
+
+def test_to_file_geojson_with_poly_z(tmpdir):
+    """Test that 3D geometries are retained in writes (GH #612)."""
+
+    tempfilename = os.path.join(tmpdir, 'test_3Dpoly.geojson')
+    poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
+    poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
+    df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d],
+                      crs={'init': 'epsg:4326'})
+    df.to_file(tempfilename, driver='GeoJSON')
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
