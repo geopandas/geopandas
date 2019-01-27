@@ -41,9 +41,10 @@ def validate_boro_df(df, case_sensitive=False):
     assert Series(df.geometry.type).dropna().eq('MultiPolygon').all()
 
 
-def connect(dbname):
+def connect(dbname, port=None):
+    port = port or os.environ.get("PGPORT")
     try:
-        con = psycopg2.connect(dbname=dbname)
+        con = psycopg2.connect(dbname=dbname, port=port)
     except (NameError, OperationalError):
         return None
 
