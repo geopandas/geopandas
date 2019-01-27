@@ -135,7 +135,7 @@ def test_to_file_with_poly_z(tmpdir):
 def test_to_file_geojson_with_poly_z(tmpdir):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(tmpdir, 'test_3Dpoly.geojson')
+    tempfilename = os.path.join(str(tmpdir), 'test_3Dpoly.geojson')
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
     df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d],
