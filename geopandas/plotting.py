@@ -408,6 +408,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
     import matplotlib.pyplot as plt
 
     if ax is None:
+        if cax is not None:
+            raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
     ax.set_aspect('equal')
 
