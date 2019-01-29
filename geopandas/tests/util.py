@@ -41,14 +41,19 @@ def validate_boro_df(df, case_sensitive=False):
     assert Series(df.geometry.type).dropna().eq('MultiPolygon').all()
 
 
-def connect(dbname, port=None):
+def connect(dbname, user=None, password=None, host=None, port=None):
+    user = user or os.environ.get("PGUSER")
+    password = password or os.environ.get("PGPASSWORD")
+    host = host or os.environ.get("PGHOST")
     port = port or os.environ.get("PGPORT")
     try:
-        con = psycopg2.connect(dbname=dbname, port=port)
+        con = psycopg2.connect(dbname=dbname, user=user, password=password,
+                               host=host, port=port)
     except (NameError, OperationalError):
         return None
 
     return con
+
 
 def get_srid(df):
     """Return srid from `df.crs`."""
@@ -56,6 +61,7 @@ def get_srid(df):
     return (int(crs['init'][5:]) if 'init' in crs
                                  and crs['init'].startswith('epsg:')
             else 0)
+
 
 def connect_spatialite():
     """
