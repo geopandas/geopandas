@@ -474,7 +474,7 @@ class TestMapclassifyPlotting:
             )
         plot_height = ax2.get_figure().get_axes()[0].get_position().height
         legend_height = ax2.get_figure().get_axes()[1].get_position().height
-        assert plot_height - legend_height < 1e-6
+        assert abs(plot_height - legend_height) < 1e-6
 
 
 class TestPlotCollections:
