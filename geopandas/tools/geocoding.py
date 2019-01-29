@@ -24,7 +24,7 @@ def _throttle_time(provider):
         return 0
 
 
-def geocode(strings, provider='googlev3', **kwargs):
+def geocode(strings, provider='geocodefarm', **kwargs):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -32,10 +32,10 @@ def geocode(strings, provider='googlev3', **kwargs):
     ----------
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
-        Specifies geocoding service to use, default is 'googlev3'.
+        Specifies geocoding service to use, default is 'geocodefarm'.
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GoogleV3) may be used.
+        (e.g., geopy.geocoders.GeocodeFarm) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -63,7 +63,7 @@ def geocode(strings, provider='googlev3', **kwargs):
     return _query(strings, True, provider, **kwargs)
 
 
-def reverse_geocode(points, provider='googlev3', **kwargs):
+def reverse_geocode(points, provider='geocodefarm', **kwargs):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -76,10 +76,10 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
         x coordinate is longitude
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
-        Specifies geocoding service to use, default is 'googlev3'.
+        Specifies geocoding service to use, default is 'geocodefarm'.
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GoogleV3) may be used.
+        (e.g., geopy.geocoders.GeocodeFarm) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders

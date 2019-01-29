@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import sys
 import numpy as np
 import pandas as pd
 from fiona.crs import from_epsg
@@ -91,6 +90,7 @@ def test_prepare_result():
     assert coords[0] == pytest.approx(test[1])
     assert coords[1] == pytest.approx(test[0])
 
+
 def test_prepare_result_none():
     p0 = Point(12.3, -45.6)  # Treat these as lat/lon
     d = {'a': ('address0', p0.coords[0]),
@@ -106,20 +106,23 @@ def test_prepare_result_none():
     assert len(row['geometry'].coords) == 0
     assert np.isnan(row['address'])
 
+
 def test_bad_provider_forward():
     from geopy.exc import GeocoderNotFound
     with pytest.raises(GeocoderNotFound):
         geocode(['cambridge, ma'], 'badprovider')
+
 
 def test_bad_provider_reverse():
     from geopy.exc import GeocoderNotFound
     with pytest.raises(GeocoderNotFound):
         reverse_geocode(['cambridge, ma'], 'badprovider')
 
+
 def test_forward(locations, points):
-    from geopy.geocoders import GoogleV3
-    for provider in ['googlev3', GoogleV3]:
-        with mock.patch('geopy.geocoders.googlev3.GoogleV3.geocode',
+    from geopy.geocoders import GeocodeFarm
+    for provider in ['geocodefarm', GeocodeFarm]:
+        with mock.patch('geopy.geocoders.geocodefarm.GeocodeFarm.geocode',
                         ForwardMock()) as m:
             g = geocode(locations, provider=provider, timeout=2)
             assert len(locations) == m.call_count
@@ -133,10 +136,11 @@ def test_forward(locations, points):
         assert_series_equal(g['address'],
                             pd.Series(locations, name='address'))
 
+
 def test_reverse(locations, points):
-    from geopy.geocoders import GoogleV3
-    for provider in ['googlev3', GoogleV3]:
-        with mock.patch('geopy.geocoders.googlev3.GoogleV3.reverse',
+    from geopy.geocoders import GeocodeFarm
+    for provider in ['geocodefarm', GeocodeFarm]:
+        with mock.patch('geopy.geocoders.geocodefarm.GeocodeFarm.reverse',
                         ReverseMock()) as m:
             g = reverse_geocode(points, provider=provider, timeout=2)
             assert len(points) == m.call_count
