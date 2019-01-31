@@ -55,7 +55,7 @@ Choropleth Maps
 Creating a legend
 ~~~~~~~~~~~~~~~~~
 
-When plotting a map, you may be interested in having a proper legend. As this behavior is managed by ``matplotlib``, you can simply create the map straightforwardly with the ``legend`` argument:
+When plotting a map, one can enable a legend using the ``legend`` argument:
 
 .. ipython:: python
 
@@ -65,7 +65,7 @@ When plotting a map, you may be interested in having a proper legend. As this be
     @savefig world_pop_est.png
     world.plot(column='pop_est', ax=ax, legend=True)
 
-However there may be some misalignment artifacts with the legend plotting. A workaround in order to vertically align your legend is provided by ``mpl_toolkits``, and the creation of an additional axe. ``geopandas`` is able to handle such axe with the ``cax`` param:
+However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the ``plot`` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
 
 .. ipython:: python
 
