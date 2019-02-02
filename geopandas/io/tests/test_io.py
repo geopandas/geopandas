@@ -1,3 +1,11 @@
+"""
+Tests here include reading/writing to files of various formats as well as
+to different types of spatial databases. The spatial database tests may
+not work without additional system configuration. postGIS tests require
+a test database to have been setup; see geopandas.tests.util for more
+information.
+"""
+
 from __future__ import absolute_import
 
 from collections import OrderedDict

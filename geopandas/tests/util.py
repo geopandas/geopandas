@@ -42,6 +42,11 @@ def validate_boro_df(df, case_sensitive=False):
 
 
 def connect(dbname, user=None, password=None, host=None, port=None):
+    """
+    Initiaties a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+
     user = user or os.environ.get("PGUSER")
     password = password or os.environ.get("PGPASSWORD")
     host = host or os.environ.get("PGHOST")
