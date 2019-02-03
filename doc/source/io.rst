@@ -18,7 +18,9 @@ Any arguments passed to ``read_file()`` after the file name will be passed direc
 
     import fiona; help(fiona.open)
 
-Among other things, one can explicitly set the driver (shapefile, GeoJSON) with the ``driver`` keyword, or pick a single layer from a multi-layered file with the ``layer`` keyword.
+Among other things, one can explicitly set the driver (shapefile, GeoJSON) with the ``driver`` keyword, or pick a single layer from a multi-layered file with the ``layer`` keyword::
+
+    countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
 
 Where supported in ``fiona``, *geopandas* can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
@@ -33,3 +35,16 @@ Writing Spatial Data
 ---------------------
 
 GeoDataFrames can be exported to many different standard formats using the ``GeoDataFrame.to_file()`` method. For a full list of supported formats, type ``import fiona; fiona.supported_drivers``.
+
+**Writing to Shapefile**::
+
+    countries_gdf.to_file("countries.shp")
+
+**Writing to GeoJSON**::
+
+    countries_gdf.to_file("countries.geojson", driver='GeoJSON')
+
+**Writing to GeoPackage**::
+
+    countries_gdf.to_file("package.gpkg", layer='countries', driver="GPKG")
+    cities_gdf.to_file("package.gpkg", layer='cities', driver="GPKG")

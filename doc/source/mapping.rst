@@ -52,6 +52,32 @@ Choropleth Maps
     world.plot(column='gdp_per_cap');
 
 
+Creating a legend
+~~~~~~~~~~~~~~~~~
+
+When plotting a map, one can enable a legend using the ``legend`` argument:
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 1)
+    @savefig world_pop_est.png
+    world.plot(column='pop_est', ax=ax, legend=True)
+
+However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the ``plot`` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    fig, ax = plt.subplots(1, 1)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    @savefig world_pop_est_fixed_legend_height.png
+    world.plot(column='pop_est', ax=ax, legend=True, cax=cax)
+
+
 Choosing colors
 ~~~~~~~~~~~~~~~~
 
