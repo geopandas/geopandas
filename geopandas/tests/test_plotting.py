@@ -437,6 +437,45 @@ class TestMapclassifyPlotting:
             self.df.plot(column='gdp_md_est', scheme=scheme, k=3,
                          cmap='OrRd', legend=True)
 
+    def test_cax_legend_passing(self):
+        """Pass a 'cax' argument to 'df.plot(.)', that is valid only if 'ax' is
+        passed as well (if not, a new figure is created ad hoc, and 'cax' is
+        ignored)
+        """
+        ax = plt.axes()
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        with pytest.raises(ValueError):
+            ax = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True, cax=cax
+            )
+
+    def test_cax_legend_height(self):
+        """Pass a cax argument to 'df.plot(.)', the legend location must be
+        aligned with those of main plot
+        """
+        # base case
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            ax = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True
+            )
+        plot_height = ax.get_figure().get_axes()[0].get_position().height
+        legend_height = ax.get_figure().get_axes()[1].get_position().height
+        assert abs(plot_height - legend_height) >= 1e-6
+        # fix heights with cax argument
+        ax2 = plt.axes()
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        with warnings.catch_warnings(record=True) as _:
+            ax2 = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True, cax=cax, ax=ax2
+            )
+        plot_height = ax2.get_figure().get_axes()[0].get_position().height
+        legend_height = ax2.get_figure().get_axes()[1].get_position().height
+        assert abs(plot_height - legend_height) < 1e-6
+
 
 class TestPlotCollections:
 

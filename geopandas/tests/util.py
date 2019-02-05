@@ -41,13 +41,24 @@ def validate_boro_df(df, case_sensitive=False):
     assert Series(df.geometry.type).dropna().eq('MultiPolygon').all()
 
 
-def connect(dbname):
+def connect(dbname, user=None, password=None, host=None, port=None):
+    """
+    Initiaties a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+
+    user = user or os.environ.get("PGUSER")
+    password = password or os.environ.get("PGPASSWORD")
+    host = host or os.environ.get("PGHOST")
+    port = port or os.environ.get("PGPORT")
     try:
-        con = psycopg2.connect(dbname=dbname)
+        con = psycopg2.connect(dbname=dbname, user=user, password=password,
+                               host=host, port=port)
     except (NameError, OperationalError):
         return None
 
     return con
+
 
 def get_srid(df):
     """Return srid from `df.crs`."""
