@@ -1,5 +1,6 @@
 from geopandas.geoseries import GeoSeries
 from geopandas.geodataframe import GeoDataFrame
+from geopandas.geodataframe import points_from_xy
 
 from geopandas.io.file import read_file
 from geopandas.io.sql import read_postgis
