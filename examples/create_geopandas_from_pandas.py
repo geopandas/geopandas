@@ -30,11 +30,11 @@ df = pd.DataFrame(
 # A ``GeoDataFrame`` needs a ``shapely`` object. We use geopandas
 # ``points_from_xy()`` to transform **Longitude** and **Latitude** into a list
 # of ``shapely.Point`` objects and set it as a ``geometry`` while creating the
-# ``GeoDataFrame``.
+# ``GeoDataFrame``. (note that ``points_from_xy()`` is an enhanced wrapper for
+# ``[Point(x, y) for x, y in zip(df.Longitude, df.Latitude)]``)
 
-gdf = geopandas.GeoDataFrame(df,
-                             geometry=geopandas.points_from_xy(df.Longitude,
-                                                               df.Latitude))
+gdf = geopandas.GeoDataFrame(
+    df, geometry=geopandas.points_from_xy(df.Longitude, df.Latitude))
 
 
 ###############################################################################
