@@ -638,7 +638,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
 def points_from_xy(x, y, z=None):
     """
-    Generate list of shapely.Point geometries from x, y(, z) cordinates.
+    Generate list of shapely Point geometries from x, y(, z) coordinates.
 
     Parameters
     ----------
@@ -648,9 +648,8 @@ def points_from_xy(x, y, z=None):
     --------
     >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
     >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
-    >>> gdf = geopandas.GeoDataFrame(df,
-                                     geometry=geopandas.points_from_xy(df['x'],
-                                                                       df['y']))
+    >>> gdf = geopandas.GeoDataFrame(
+            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
 
     Returns
     -------
