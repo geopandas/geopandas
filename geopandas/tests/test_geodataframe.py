@@ -718,6 +718,13 @@ class TestDataFrame:
             assert geometry1 == gs
             assert geometry2 == gsz
 
+        # using different lenghts should throw error
+        arr_10 = np.arange(10)
+        arr_20 = np.arange(20)
+        with pytest.raises(ValueError):
+            points_from_xy(x=arr_10, y=arr_20)
+            points_from_xy(x=arr_10, y=arr_10, z=arr_20)
+
         # Using incomplete arguments should throw error
         with pytest.raises(TypeError):
             points_from_xy(x=s)
