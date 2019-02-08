@@ -74,7 +74,15 @@ def read_file(filename, bbox=None, **kwargs):
         reader = fiona.open
 
     with reader(path_or_bytes, **kwargs) as features:
-        crs = features.crs
+        
+        # In a future Fiona release the crs attribute of features will
+        # no longer be a dict. The following code will be both forward
+        # and backward compatible.
+        if hasattr(features.crs, 'to_dict'):
+            crs = features.crs.to_dict()
+        else:
+            crs = features.crs
+            
         if bbox is not None:
             if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
                 bbox = tuple(bbox.to_crs(crs).total_bounds)
