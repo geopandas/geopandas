@@ -1,11 +1,8 @@
-from distutils.version import LooseVersion
-
 import numpy as np
 
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, points_from_xy
-from geopandas.geoseries import _PYPROJ_VERSION
 
 from geopandas.testing import assert_geodataframe_equal
 import pytest
@@ -28,7 +25,7 @@ def df_epsg26918():
     return _create_df(
         x=range(-1683723, -1683723 + 10, 1),
         y=range(6689139, 6689139 + 10, 1),
-        crs={"init": "epsg:26918", "no_defs": True},
+        crs="epsg:26918",
     )
 
 
@@ -101,10 +98,6 @@ def test_transform2(epsg4326, epsg26918):
     assert_geodataframe_equal(df, utm, check_less_precise=True, check_crs=False)
 
 
-@pytest.mark.skipif(
-    _PYPROJ_VERSION < LooseVersion("2.2.0"),
-    reason="EPSG strings without +init= won't work on previous versions of pyproj.",
-)
 def test_crs_axis_order__always_xy():
     df = GeoDataFrame(geometry=[Point(-1683723, 6689139)], crs="epsg:26918")
     lonlat = df.to_crs("epsg:4326")

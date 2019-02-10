@@ -154,7 +154,7 @@ class TestSeries:
         assert np.all(self.landmarks.geom_almost_equals(lonlat))
         with pytest.raises(ValueError):
             self.g1.to_crs(epsg=4326)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
@@ -201,7 +201,7 @@ class TestSeries:
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
-        copy.crs = "+init=epsg:4326"
+        copy.crs = "epsg:4326"
         reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
@@ -324,3 +324,9 @@ class TestConstructor:
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
         assert s.index is g.index
+
+
+def test_geoseries_crs():
+    gs = GeoSeries()
+    gs.crs = "IGNF:ETRS89UTM28"
+    assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")

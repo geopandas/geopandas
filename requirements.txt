@@ -1,4 +1,4 @@
 Cython>=0.16
 shapely>=1.2.18
 fiona>=1.0.1
-pyproj>=1.9.3
+pyproj>=2.2.0

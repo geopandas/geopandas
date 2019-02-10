@@ -6,7 +6,7 @@ dependencies:
 - pandas=0.25.0
 - shapely=1.6.4
 - fiona=1.8.6
-- pyproj=1.9.6
+- pyproj=2.4.0
 - rtree=0.8.3
 - geopy=1.20.0
 - matplotlib=3.1.1

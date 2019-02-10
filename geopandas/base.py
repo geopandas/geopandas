@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series
 
+from pyproj import CRS
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
@@ -43,10 +44,8 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     if isinstance(other, GeoPandasBase):
         this, other = this.align(other.geometry)
 
-        # TODO reenable for all operations once we use pyproj > 2
-        # if this.crs != other.crs:
-        #     warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-        #                                                       other.crs))
+        if this.crs != other.crs:
+            warn("GeoSeries crs mismatch: {0} and {1}".format(this.crs, other.crs))
         a_this = GeometryArray(this.values)
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
@@ -134,6 +133,31 @@ class GeoPandasBase(object):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
         return _delegate_property("area", self)
+
+    @property
+    def crs(self):
+        """
+        :getter: Returns a ``pyproj.CRS`` or None.
+        :setter: Sets the value of the crs.
+            The value can be anything accepted
+            by ``pyproj.CRS.from_user_input()``:
+
+            - CRS WKT string
+            - An authority string [i.e. "epsg:4326"]
+            - An EPSG integer code [i.e. 4326]
+            - A ``pyproj.CRS``
+            - An object with a to_wkt method.
+            - PROJ string
+            - Dictionary of PROJ parameters
+            - PROJ keyword arguments for parameters
+            - JSON string with PROJ parameters
+        """
+        return self._crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs"""
+        self._crs = None if not value else CRS.from_user_input(value)
 
     @property
     def geom_type(self):
