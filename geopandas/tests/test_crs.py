@@ -1,6 +1,8 @@
 import numpy as np
 
+
 from geopandas import GeoDataFrame, points_from_xy
+from geopandas.io.file import _PYPROJ22
 from geopandas.testing import assert_geodataframe_equal
 
 import pytest
@@ -20,9 +22,10 @@ def df_epsg26918():
     # EPSG:26918
     # Center coordinates
     # -1683723.64 6689139.23
+    crs = "epsg:26918" if _PYPROJ22 else {'init': 'epsg:26918', 'no_defs': True}
     return _create_df(x=range(-1683723, -1683723 + 10, 1),
                       y=range(6689139, 6689139 + 10, 1),
-                      crs={'init': 'epsg:26918', 'no_defs': True})
+                      crs=crs)
 
 
 def test_to_crs_transform():

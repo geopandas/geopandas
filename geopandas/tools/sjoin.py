@@ -50,7 +50,11 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         raise ValueError("`op` was \"%s\" but is expected to be in %s" %
                          (op, allowed_ops))
 
-    if left_df.crs != right_df.crs:
+    if (
+        (not left_df.crs and right_df.crs) or
+        (left_df.crs and not right_df.crs) or 
+        left_df.crs != right_df.crs
+    ):
         warn(
             ('CRS of frames being joined does not match!'
              '(%s != %s)' % (left_df.crs, right_df.crs))

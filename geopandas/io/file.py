@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 
 import fiona
 import numpy as np
-
+import pyproj
 import six
 
 try:
@@ -15,7 +15,7 @@ from geopandas import GeoDataFrame, GeoSeries
 
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion('1.8')
-
+_PYPROJ22 = LooseVersion(pyproj.__version__) >= LooseVersion('2.2.0')
 
 # Adapted from pandas.io.common
 if six.PY3:
@@ -79,8 +79,10 @@ def read_file(filename, bbox=None, **kwargs):
             # In a future Fiona release the crs attribute of features will
             # no longer be a dict. The following code will be both forward
             # and backward compatible.
-            if hasattr(features.crs, 'to_dict'):
+            if hasattr(features.crs, 'to_dict') and not _PYPROJ22:
                 crs = features.crs.to_dict()
+            elif _PYPROJ22:
+                crs = features.crs_wkt
             else:
                 crs = features.crs
 
@@ -126,7 +128,8 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
         schema = infer_schema(df)
     filename = os.path.abspath(os.path.expanduser(filename))
     with fiona_env():
-        with fiona.open(filename, 'w', driver=driver, crs=df.crs,
+        crs = df.crs.srs if hasattr(df.crs, "srs") else df.crs
+        with fiona.open(filename, 'w', driver=driver, crs=crs,
                         schema=schema, **kwargs) as colxn:
             colxn.writerecords(df.iterfeatures())
 

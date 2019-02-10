@@ -1,8 +1,13 @@
-import pyproj
-import re
 import os
+import re
+import warnings
+from distutils.version import LooseVersion
+
+import pyproj
 import fiona.crs
 
+
+_PYPROJ22 = LooseVersion(pyproj.__version__) >= LooseVersion('2.2.0')
 
 def explicit_crs_from_epsg(crs=None, epsg=None):
     """
@@ -15,6 +20,12 @@ def explicit_crs_from_epsg(crs=None, epsg=None):
     epsg : string or int, default None
        The EPSG code to lookup
     """
+    if _PYPROJ22:
+        warnings.warn(
+            "explicit_crs_from_epsg is deprecated. "
+            "You can set the epsg on the GeoDataFrame (gdf) using gdf.crs=epsg",
+            DeprecationWarning,
+        )
     if epsg is None and crs is not None:
         epsg = epsg_from_crs(crs)
     if epsg is None:
@@ -39,6 +50,13 @@ def epsg_from_crs(crs):
         A crs dict or Proj string
 
     """
+    if _PYPROJ22:
+        warnings.warn(
+            "epsg_from_crs is deprecated. "
+            "You can get the epsg code from GeoDataFrame (gdf) "
+            "using gdf.crs.to_epsg()",
+            DeprecationWarning,
+        )
     if crs is None:
         raise ValueError('No crs provided.')
     if isinstance(crs, str):

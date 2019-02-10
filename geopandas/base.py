@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+from distutils.version import LooseVersion
 from warnings import warn
 
 import numpy as np
 import pandas as pd
+import pyproj
 from pandas import Series, DataFrame, MultiIndex
 from pandas.core.indexing import _NDFrameIndexer
 
@@ -22,6 +25,8 @@ except ImportError:
     class RTreeError(Exception):
         pass
     HAS_SINDEX = False
+
+_PYPROJ22 = LooseVersion(pyproj.__version__) >= LooseVersion('2.2.0')
 
 
 def is_geometry_type(data):
@@ -128,6 +133,37 @@ class GeoPandasBase(object):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
         return _delegate_property('area', self)
+
+    @property
+    def crs(self):
+        """Returns a ``pyproj.CRS`` if pyproj version >= 2.2.0. Otherwise, a PROJ dict."""
+        return self._crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs.
+
+        If pyproj >= 2.2.0, the value can be anything accepted
+        by ``pyproj.CRS.from_user_input``.
+            - PROJ string
+            - Dictionary of PROJ parameters
+            - PROJ keyword arguments for parameters
+            - JSON string with PROJ parameters
+            - CRS WKT string
+            - An authority string [i.e. ‘epsg:4326’]
+            - An EPSG integer code [i.e. 4326]
+            - An object with a to_wkt method.
+            - A CRS
+
+        Otherwise, the value can only be a dictionary of PROJ parameters.
+        """
+        if _PYPROJ22:
+            if not value:
+                self._crs = None
+            else:
+                self._crs = pyproj.CRS.from_user_input(value)
+        else:
+            self._crs = value
 
     @property
     def geom_type(self):
