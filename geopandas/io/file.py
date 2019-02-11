@@ -73,18 +73,19 @@ def read_file(filename, bbox=None, **kwargs):
         path_or_bytes = filename
         reader = fiona.open
 
-    with reader(path_or_bytes, **kwargs) as features:
-        crs = features.crs
-        if bbox is not None:
-            if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
-                bbox = tuple(bbox.to_crs(crs).total_bounds)
-            assert len(bbox) == 4
-            f_filt = features.filter(bbox=bbox)
-        else:
-            f_filt = features
+    with fiona_env():
+        with reader(path_or_bytes, **kwargs) as features:
+            crs = features.crs
+            if bbox is not None:
+                if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
+                    bbox = tuple(bbox.to_crs(crs).total_bounds)
+                assert len(bbox) == 4
+                f_filt = features.filter(bbox=bbox)
+            else:
+                f_filt = features
 
-        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-        gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 
