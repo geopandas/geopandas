@@ -10,7 +10,7 @@ channel)::
     conda install -c conda-forge geopandas
 
 Alternatively, you can also install GeoPandas with pip, but then you need
-to make sure that all dependencies are installed correctly:
+to make sure that all dependencies are installed correctly::
 
     pip install geopandas
 
