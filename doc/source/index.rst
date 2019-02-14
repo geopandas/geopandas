@@ -8,8 +8,8 @@ operations are performed by `shapely`_.  Geopandas further depends on
 `fiona`_ for file access and `descartes`_ and `matplotlib`_ for plotting.
 
 .. _pandas: http://pandas.pydata.org
-.. _shapely: http://toblerity.github.io/shapely
-.. _fiona: http://toblerity.github.io/fiona
+.. _shapely: https://shapely.readthedocs.io/
+.. _fiona: http://toblerity.org/shapely
 .. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 
