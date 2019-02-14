@@ -64,9 +64,9 @@ These can be installed independently via the following set of commands::
 
 .. _pandas: http://pandas.pydata.org
 
-.. _shapely: http://toblerity.github.io/shapely
+.. _shapely: https://shapely.readthedocs.io
 
-.. _fiona: http://toblerity.github.io/fiona
+.. _fiona: https://fiona.readthedocs.io
 
 .. _Descartes: https://pypi.python.org/pypi/descartes
 
