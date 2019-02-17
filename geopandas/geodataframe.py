@@ -473,7 +473,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         DataFrame
         """
-        result = self.drop(columns=self._geometry_column_name)
+        result = self.drop(self._geometry_column_name, axis=1)
         if preserve_xy and (self.geom_type == "Point").all():
             result['x'] = self.geometry.x
             result['y'] = self.geometry.y
