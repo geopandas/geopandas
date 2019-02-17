@@ -462,6 +462,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return df
 
+    def to_pandas(self, preserve_xy=False):
+        """Returns a Pandas Dataframe without a geometry column, optionally attempting to preserve point geometries as separate columns.
+        Parameters
+        ----------
+        preserve_xy : boolean, default False
+            Save point geometries as new x, y columns
+
+        Returns
+        -------
+        DataFrame
+        """
+        result = self.drop(columns=self._geometry_column_name)
+        if preserve_xy and (self.geom_type == "Point").all():
+            result['x'] = self.geometry.x
+            result['y'] = self.geometry.y
+
+        return DataFrame(result)
+
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a

@@ -344,6 +344,14 @@ class TestDataFrame:
                 assert np.isnan(props['Shape_Leng'])
                 assert 'Shape_Area' in props
 
+    def test_to_pandas(self):
+        df = self.df.to_pandas()
+        assert type(df) is pd.DataFrame
+        df2 = self.df2.to_pandas(preserve_xy=True)
+        assert type(df2) is pd.DataFrame
+        assert len(df2['x']) > 0
+        assert len(df2['x']) == len(df2['y'])
+
     def test_copy(self):
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
