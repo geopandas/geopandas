@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 import tempfile
-from distutils.version import LooseVersion
 
 import fiona
 import numpy as np
@@ -12,7 +11,7 @@ import pandas as pd
 import pytest
 from pandas.util.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal)
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, GeoSeries
@@ -20,9 +19,6 @@ from geopandas.geodataframe import points_from_xy
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import (
     connect, create_postgis, PACKAGE_DIR, validate_boro_df)
-
-
-import pytest
 
 
 class TestDataFrame:
