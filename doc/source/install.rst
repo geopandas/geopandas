@@ -35,7 +35,7 @@ To install the latest version of GeoPandas, you can then do::
     to either install everything from the default channel, or everything from
     the conda-forge channel. Ending up with a mixture of packages from both
     channels for the dependencies of GeoPandas can lead to import problems.
-    See the `conda-forge gotcha on musing multiple channels
+    See the `conda-forge gotcha on using multiple channels
     <https://conda-forge.org/docs/conda-forge_gotchas.html#using-multiple-channels>`__
     for more details.
 
