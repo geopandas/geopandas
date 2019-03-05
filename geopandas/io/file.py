@@ -132,7 +132,7 @@ def infer_schema(df):
     def convert_type(column, in_type):
         if in_type == object:
             return 'str'
-        out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
+        out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == 'long':
             out_type = 'int'
         if not _FIONA18 and out_type == 'bool':
