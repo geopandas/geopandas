@@ -7,6 +7,8 @@ source stack of libraries (`GEOS`_, `GDAL`_, `PROJ`_). See the
 libraries can sometimes be a challenge to install. Therefore, we advise you
 to closely follow the recommendations below to avoid installation problems.
 
+.. _install-conda:
+
 Installing with Anaconda / conda
 --------------------------------
 
@@ -38,6 +40,8 @@ To install the latest version of GeoPandas, you can then do::
     See the `conda-forge gotcha on using multiple channels
     <https://conda-forge.org/docs/conda-forge_gotchas.html#using-multiple-channels>`__
     for more details.
+
+.. _install-pip:
 
 Installing with pip
 -------------------
@@ -75,10 +79,13 @@ directly from the GitHub repository with::
 
 For installing GeoPandas from source, the same :ref:`note <install-deps>` on
 the need to have all dependencies correctly installed applies. But, those
-dependcies can also be installed independently with conda before installing
+dependencies can also be installed independently with conda before installing
 GeoPandas from source::
 
     conda install pandas fiona shapely pyproj rtree
+
+See the :ref:`section on conda <install-conda>` above for more details on
+getting running with Anaconda.
 
 .. _dependencies:
 
