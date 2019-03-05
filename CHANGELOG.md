@@ -1,6 +1,18 @@
 Changes
 =======
 
+Version 0.4.1 (March 5, 2019)
+-----------------------------
+
+Small bug-fix release for compatibility with the latest Fiona and PySAL
+releases:
+
+* Compatibility with Fiona 1.8: fix deprecation warning (#854).
+* Compatibility with PySAL 2.0: switched to `mapclassify` instead of `PySAL` as
+  dependency for choropleth mapping with the `scheme` keyword (#872).
+* Fix for new `overlay` implementation in case the intersection is empty (#800).
+
+
 Version 0.4.0 (July 15, 2018)
 -----------------------------
 
