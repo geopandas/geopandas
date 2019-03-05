@@ -26,19 +26,31 @@ To install the latest version of GeoPandas, you can then do::
 
     conda install geopandas
 
+
+Using the conda-forge channel
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`conda-forge`_ is a community effort that provides conda packages for a wide
+range of software. It provides the *conda-forge* package channel for conda from
+which packages can be installed, in addition to the "*defaults*" channel
+provided by Anaconda.
+Depending on what other packages you are working with, the *defaults* channel
+or *conda-forge* channel may be better for your needs (e.g. some packages are
+available on *conda-forge* and not on *defaults*).
+
+GeoPandas and all its dependencies are available on the *conda-forge*
+channel, and can be installed as::
+
+    conda install --channel conda-forge geopandas
+
 .. note::
 
-    GeoPandas and all its dependencies are also available from the
-    community-led `conda-forge`_ package channel::
-
-        conda install -c conda-forge geopandas
-
-    You are very welcome to use those packages. However, we strongly recommend
-    to either install everything from the default channel, or everything from
-    the conda-forge channel. Ending up with a mixture of packages from both
-    channels for the dependencies of GeoPandas can lead to import problems.
-    See the `conda-forge gotcha on using multiple channels
-    <https://conda-forge.org/docs/conda-forge_gotchas.html#using-multiple-channels>`__
+    We strongly recommend to either install everything from the *defaults*
+    channel, or everything from the *conda-forge* channel. Ending up with a
+    mixture of packages from both channels for the dependencies of GeoPandas
+    can lead to import problems.
+    See the `conda-forge section on using multiple channels
+    <http://conda-forge.org/docs/user/tipsandtricks.html#using-multiple-channels>`__
     for more details.
 
 .. _install-pip:
@@ -46,7 +58,8 @@ To install the latest version of GeoPandas, you can then do::
 Installing with pip
 -------------------
 
-GeoPandas can also be installed with pip::
+GeoPandas can also be installed with pip, if all dependencies can be installed
+as well::
 
     pip install geopandas
 
@@ -54,13 +67,14 @@ GeoPandas can also be installed with pip::
 
 .. warning::
 
-    However, in this case you need to make sure that all dependencies are
+    When using pip to install GeoPandas, you need to make sure that all dependencies are
     installed correctly. `shapely`_ and `fiona`_ provide binary wheels with the
     dependencies included for Mac and Linux, but not for Windows.
     `pyproj`_ and `rtree`_ don't provide those.
     So depending on your platform, you might need to compile and install their
     C dependencies manually. We refer to the individual packages for more
     details on installing those.
+    Using conda (see above) avoids the need to compile the dependencies yourself.
 
 Installing from source
 ----------------------
