@@ -16,7 +16,9 @@ To install GeoPandas and all its dependencies, we recommend to use the `conda`_
 package manager. This can be obtained by installing the
 `Anaconda Distribution`_ (a free Python distribution for data science), or
 through `miniconda`_ (minimal distribution only containing Python and the
-`conda`_ package manager).
+`conda`_ package manager). See also the `installation docs
+<https://conda.io/docs/user-guide/install/download.html>`__ for more information
+on how to install Anaconda or miniconda locally.
 
 The advantage of using the `conda`_ package manager is that it provides
 pre-built binaries for all the required and optional dependencies of GeoPandas
@@ -52,6 +54,26 @@ channel, and can be installed as::
     See the `conda-forge section on using multiple channels
     <http://conda-forge.org/docs/user/tipsandtricks.html#using-multiple-channels>`__
     for more details.
+
+
+Creating a new environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating a new environment is not strictly necessary, but given that installing
+other geospatial packages from different channels may cause dependency conflicts
+(as mentioned in the note above), it can be good practice to install the geospatial
+stack in a clean environment starting fresh. 
+
+The following commands create a new environment with the name ``geo_env``,
+configures it to install packages always from conda-forge, and installs
+GeoPandas in it::
+
+    conda create -n geo_env
+    conda activate geo_env
+    conda config --env --add channels conda-forge
+    conda config --env --set channel_priority strict
+    conda install python=3 geopandas
+
 
 .. _install-pip:
 
@@ -161,7 +183,7 @@ For plotting, these additional packages may be used:
 
 .. _Travis CI: https://travis-ci.org/geopandas/geopandas
 
-.. _conda: https://conda-forge.org/
+.. _conda: https://conda.io/en/latest/
 
 .. _Anaconda distribution: https://www.anaconda.com/distribution/
 

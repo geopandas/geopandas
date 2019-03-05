@@ -28,9 +28,7 @@ Documentation is available at [geopandas.org](http://geopandas.org)
 Install
 --------
 
-**Requirements**
-
-For the installation of GeoPandas, the following packages are required:
+GeoPandas depends on the following packages:
 
 - ``pandas``
 - ``shapely``
@@ -39,40 +37,10 @@ For the installation of GeoPandas, the following packages are required:
 
 Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
 
+Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for all details.
 
-**Install**
-
-GeoPandas depends on several low-level libraries for geospatial analysis. Depending on the system and package
-manager that you use, this may cause dependency conflicts if you are not careful.
-
-*Using `conda`*
-
-We suggest that you use the [anaconda distribution](https://conda.io/docs/user-guide/install/download.html)
-to install GeoPandas (``miniconda`` is fine as well).
-
-Use ``conda`` and the ``conda-forge`` channel to install GeoPandas on a clean environment:
-
-```bash
-conda create -n geopandas
-source activate geopandas  # 'activate geopandas' on Windows
-conda install -c conda-forge geopandas
-```
-
-**NOTE:** Creating a new environment is not strictly necessary, but installing other geospatial packages
-from a *different* channel than ``conda-forge`` may cause dependency conflicts, so we recommend starting
-fresh if possible. See the [conda-forge gotcha page](https://conda-forge.org/docs/conda-forge_gotchas.html)
-for more information.
-
-*Using `pip`*
-
-GeoPandas is also pip-installable. If you choose to use `pip`, make sure that you have the proper non-python
-libraries installed and linked properly.
-
-```bash
-pip install geopandas
-```
 
 Examples
 --------
