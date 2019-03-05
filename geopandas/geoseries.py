@@ -192,7 +192,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
-        return np.logical_or(non_geo_null, val)
+        return Series(np.logical_or(non_geo_null, val))
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
