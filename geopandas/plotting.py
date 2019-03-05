@@ -543,7 +543,8 @@ def _mapclassify_choro(values, scheme, k=5):
         except ImportError:
             try:
                 from pysal.esda.mapclassify import (
-                    Quantiles, Equal_Interval, Fisher_Jenks)
+                    Quantiles, Equal_Interval, Fisher_Jenks,
+                    Fisher_Jenks_Sampled)
             except ImportError:
                 raise ImportError(
                     "The 'mapclassify' package is required to use the "
