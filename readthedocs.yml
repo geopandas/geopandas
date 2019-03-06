@@ -1,6 +1,5 @@
 version: 2
-formats:
-    - none
+formats: []
 conda:
     environment: doc/environment.yml
 python:
