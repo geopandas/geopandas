@@ -585,7 +585,7 @@ class TestDataFrame:
             assert geometry1 == gs
             assert geometry2 == gsz
 
-        # using different lenghts should throw error
+        # using different lengths should throw error
         arr_10 = np.arange(10)
         arr_20 = np.arange(20)
         with pytest.raises(ValueError):
