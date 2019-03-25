@@ -9,16 +9,16 @@ matrix:
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - env: ENV_FILE="ci/travis/27-pd020.yaml"
+    - env: ENV_FILE="ci/travis/27-pd023.yaml"
     - env: ENV_FILE="ci/travis/27-latest-defaults.yaml"
     - env: ENV_FILE="ci/travis/27-latest-conda-forge.yaml"
-    - env: ENV_FILE="ci/travis/27-dev.yaml"
 
     - env: ENV_FILE="ci/travis/36-pd020.yaml"
     - env: ENV_FILE="ci/travis/36-pd022.yaml"
 
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml"
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
-    - env: ENV_FILE="ci/travis/37-dev.yaml"
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
 
 install:
   # Install conda
@@ -31,6 +31,8 @@ install:
   # Install dependencies
   - conda env create --file="${ENV_FILE}"
   - source activate test
+  - if [ "$DEV" ]; then pip install git+https://github.com/pydata/pandas.git; fi
+  - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - pip install -e .
   - conda list
 
