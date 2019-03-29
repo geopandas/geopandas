@@ -10,7 +10,7 @@ GeoPandas is a project to add support for geographic data to
 [pandas](http://pandas.pydata.org) objects.  It currently implements
 `GeoSeries` and `GeoDataFrame` types which are subclasses of
 `pandas.Series` and `pandas.DataFrame` respectively.  GeoPandas
-objects can act on [shapely](http://toblerity.github.io/shapely)
+objects can act on [shapely](http://shapely.readthedocs.io/en/latest/)
 geometry objects and perform geometric operations.
 
 GeoPandas geometry operations are cartesian.  The coordinate reference
@@ -81,7 +81,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
     >>> nybb_path = geopandas.datasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)
