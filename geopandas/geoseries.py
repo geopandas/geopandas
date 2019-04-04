@@ -1,10 +1,16 @@
+from distutils.version import LooseVersion
 from functools import partial
 import json
 
 import numpy as np
 from pandas import Series
 import pyproj
-from pyproj import Transformer
+
+_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.0.0')
+
+if _PYPROJ2:
+    from pyproj import Transformer
+
 from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
@@ -300,8 +306,11 @@ class GeoSeries(GeoPandasBase, Series):
                 raise TypeError('Must set either crs or epsg for output.')
         proj_in = pyproj.Proj(self.crs, preserve_units=True)
         proj_out = pyproj.Proj(crs, preserve_units=True)
-        transformer = Transformer.from_proj(proj_in, proj_out)
-        project = transformer.transform
+        if _PYPROJ2:
+            transformer = Transformer.from_proj(proj_in, proj_out)
+            project = transformer.transform
+        else:
+            project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
