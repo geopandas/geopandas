@@ -6,7 +6,7 @@ import numpy as np
 from pandas import Series
 import pyproj
 
-_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.0.0')
+_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
 
 if _PYPROJ2:
     from pyproj import Transformer
