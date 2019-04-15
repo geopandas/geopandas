@@ -1,6 +1,7 @@
 import numpy as np
 
 from geopandas import GeoDataFrame, points_from_xy
+from geopandas.testing import assert_geodataframe_equal
 
 
 def _create_df(x, y=None, crs=None):
@@ -19,15 +20,13 @@ class TestToCRS:
         df = _create_df(range(10), crs={'init': 'epsg:26918', 'no_defs': True})
         lonlat = df.to_crs(epsg=4326)
         utm = lonlat.to_crs(epsg=26918)
-        assert all(df['geometry'].geom_almost_equals(utm['geometry'],
-                                                     decimal=))
+        assert_geodataframe_equal(df, utm, check_less_precise=True)
 
     def test_transform_inplace(self):
         df = _create_df(range(10), crs={'init': 'epsg:26918', 'no_defs': True})
         lonlat = df.to_crs(epsg=4326)
         df.to_crs(epsg=4326, inplace=True)
-        assert all(df['geometry'].geom_almost_equals(lonlat['geometry'],
-                                                     decimal=2))
+        assert_geodataframe_equal(df, lonlat, check_less_precise=True)
 
     def test_to_crs_geo_column_name(self):
         # Test to_crs() with different geometry column name (GH#339)
@@ -38,4 +37,4 @@ class TestToCRS:
         utm = lonlat.to_crs(epsg=26918)
         assert lonlat.geometry.name == 'geom'
         assert utm.geometry.name == 'geom'
-        assert all(df.geometry.geom_almost_equals(utm.geometry, decimal=2))
+        assert_geodataframe_equal(df, utm, check_less_precise=True)
