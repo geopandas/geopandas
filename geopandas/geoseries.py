@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 from functools import partial
 import json
 
@@ -10,6 +11,9 @@ from shapely.ops import transform
 
 from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase, _unary_op, _CoordinateIndexer
+
+
+_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
 
 
 def _is_empty(x):
@@ -299,7 +303,11 @@ class GeoSeries(GeoPandasBase, Series):
                 raise TypeError('Must set either crs or epsg for output.')
         proj_in = pyproj.Proj(self.crs, preserve_units=True)
         proj_out = pyproj.Proj(crs, preserve_units=True)
-        project = partial(pyproj.transform, proj_in, proj_out)
+        if _PYPROJ2:
+            transformer = pyproj.Transformer.from_proj(proj_in, proj_out)
+            project = transformer.transform
+        else:
+            project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
