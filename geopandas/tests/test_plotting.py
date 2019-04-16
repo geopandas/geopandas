@@ -5,9 +5,7 @@ import itertools
 import warnings
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
@@ -15,6 +13,10 @@ from geopandas import GeoSeries, GeoDataFrame, read_file
 from geopandas.datasets import get_path
 
 import pytest
+
+matplotlib = pytest.importorskip('matplotlib')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 @pytest.fixture(autouse=True)
