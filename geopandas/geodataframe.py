@@ -159,7 +159,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
-        `fiona`. See http://toblerity.org/fiona/manual.html for details.
+        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
 
         Parameters
         ----------
@@ -167,7 +167,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://toblerity.org/fiona/README.html#usage for usage details.
+            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
         kwargs : key-word arguments
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),

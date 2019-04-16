@@ -556,7 +556,7 @@ class GeoPandasBase(object):
         distance : float, np.array, pd.Series
             The radius of the buffer. If np.array or pd.Series are used
             then it must have same length as the GeoSeries.
-        resolution: float
+        resolution: int
             Optional, the resolution of the buffer around each vertex.
         """
         if isinstance(distance, (np.ndarray, pd.Series)):

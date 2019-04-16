@@ -85,7 +85,7 @@ The ```op`` argument specifies how ``geopandas`` decides whether or not to join 
 * `within`: The attributes will be joined if the object’s boundary and interior intersect *only* with the interior of the other object (not its boundary or exterior).
 * `contains`: The attributes will be joined if the object’s interior contains the boundary and interior of the other object and their boundaries do not touch at all.
 
-You can read more about each join type in the `Shapely documentation <http://toblerity.org/shapely/manual.html#binary-predicates>`__.
+You can read more about each join type in the `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__.
 
 **how**
 

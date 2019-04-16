@@ -365,34 +365,6 @@ class TestDataFrame:
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
 
-    def test_transform(self):
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        lonlat = df2.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert all(df2['geometry'].geom_almost_equals(utm['geometry'],
-                                                      decimal=2))
-
-    def test_transform_inplace(self):
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        lonlat = df2.to_crs(epsg=4326)
-        df2.to_crs(epsg=4326, inplace=True)
-        assert all(df2['geometry'].geom_almost_equals(lonlat['geometry'],
-                                                      decimal=2))
-
-    def test_to_crs_geo_column_name(self):
-        # Test to_crs() with different geometry column name (GH#339)
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        df2 = df2.rename(columns={'geometry': 'geom'})
-        df2.set_geometry('geom', inplace=True)
-        lonlat = df2.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert lonlat.geometry.name == 'geom'
-        assert utm.geometry.name == 'geom'
-        assert all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2))
-
     def test_from_features(self):
         nybb_filename = geopandas.datasets.get_path('nybb')
         with fiona.open(nybb_filename) as f:
@@ -585,7 +557,7 @@ class TestDataFrame:
             assert geometry1 == gs
             assert geometry2 == gsz
 
-        # using different lenghts should throw error
+        # using different lengths should throw error
         arr_10 = np.arange(10)
         arr_20 = np.arange(20)
         with pytest.raises(ValueError):

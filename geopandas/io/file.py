@@ -73,26 +73,27 @@ def read_file(filename, bbox=None, **kwargs):
         path_or_bytes = filename
         reader = fiona.open
 
-    with reader(path_or_bytes, **kwargs) as features:
-        
-        # In a future Fiona release the crs attribute of features will
-        # no longer be a dict. The following code will be both forward
-        # and backward compatible.
-        if hasattr(features.crs, 'to_dict'):
-            crs = features.crs.to_dict()
-        else:
-            crs = features.crs
-            
-        if bbox is not None:
-            if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
-                bbox = tuple(bbox.to_crs(crs).total_bounds)
-            assert len(bbox) == 4
-            f_filt = features.filter(bbox=bbox)
-        else:
-            f_filt = features
+    with fiona_env():
+        with reader(path_or_bytes, **kwargs) as features:
 
-        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-        gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            # In a future Fiona release the crs attribute of features will
+            # no longer be a dict. The following code will be both forward
+            # and backward compatible.
+            if hasattr(features.crs, 'to_dict'):
+                crs = features.crs.to_dict()
+            else:
+                crs = features.crs
+
+            if bbox is not None:
+                if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
+                    bbox = tuple(bbox.to_crs(crs).total_bounds)
+                assert len(bbox) == 4
+                f_filt = features.filter(bbox=bbox)
+            else:
+                f_filt = features
+
+            columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 
@@ -139,7 +140,7 @@ def infer_schema(df):
     def convert_type(column, in_type):
         if in_type == object:
             return 'str'
-        out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
+        out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == 'long':
             out_type = 'int'
         if not _FIONA18 and out_type == 'bool':
