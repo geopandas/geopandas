@@ -159,7 +159,28 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    geom_types = find_geometry_types(df)
+    """
+    Determine the geometry types in the GeoDataFrame for the schema.
+    """
+    if _FIONA18:
+        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
+        # can have mixed geometries:
+        # - 3D and 2D shapes can coexist in inferred schema
+        # - Shape and MultiShape types can (and must) coexist in inferred
+        #   schema
+        geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+        geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+        geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D
+                         if gtype is not None]
+        geom_types = geom_types_3D + geom_types_2D
+
+    else:
+        # Before Fiona 1.8, schema submitted to write a gdf should have
+        # one single geometry type whenever possible:
+        # - 3D and 2D shapes cannot coexist in inferred schema
+        # - Shape and MultiShape can not coexist in inferred schema
+        geom_types = _geometry_types_back_compat(df)
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -172,50 +193,22 @@ def _geometry_types(df):
     return geom_types
 
 
-def find_geometry_types(df):
-    if _FIONA18:
-        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
-        # can have mixed geometries:
-        # - 3D and 2D shapes can coexist in inferred schema
-        # - Shape and MultiShape types can (and must) coexist in inferred schema
-        geom_types = _3D_geom_types(df) + _2D_geom_types(df)
-    else:
-        # Before Fiona 1.8, schema submitted to write a gdf should have
-        # one single geometry type whenever possible:
-        # - 3D and 2D shapes cannot coexist in inferred schema
-        # - Shape and MultiShape can not coexist in inferred schema
-        geom_types = _merge_geom_types_as_much_as_possible(df)
-
-    return geom_types
-
-
-def _2D_geom_types(df):
-    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-    return [type for type in geom_types_2D if type is not None]
-
-
-def _3D_geom_types(df):
-    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-    return ["3D " + type for type in geom_types_3D if type is not None]
-
-
-def _merge_geom_types_as_much_as_possible(df):
+def _geometry_types_back_compat(df):
     """
     for backward compatibility with Fiona<1.8 only
     """
     unique_geom_types = df.geometry.geom_type.unique()
-    unique_geom_types = [type for type in unique_geom_types if type is not None]
-    unique_geom_types = _merge_shape_and_multi_shape_types(unique_geom_types)
+    unique_geom_types = [
+        gtype for gtype in unique_geom_types if gtype is not None]
+
+    # merge single and Multi types (eg Polygon and MultiPolygon)
+    unique_geom_types = [
+        gtype for gtype in unique_geom_types
+        if not gtype.startswith('Multi') or gtype[5:] not in unique_geom_types]
+
     if df.geometry.has_z.any():
         # declare all geometries as 3D geometries
         unique_geom_types = ["3D " + type for type in unique_geom_types]
     # by default, all geometries are 2D geometries
 
     return unique_geom_types
-
-
-def _merge_shape_and_multi_shape_types(unique_geom_types):
-    return [type for type in unique_geom_types if
-            not type.startswith('Multi')
-            or type[5:] not in unique_geom_types
-            ]
