@@ -237,6 +237,20 @@ class TestGeomMethods:
         self._test_binary_topological('difference', expected,
                                       self.g1, self.t2)
 
+    def test_geo_op_empty_result(self):
+        l1 = LineString([(0, 0), (1, 1)])
+        l2 = LineString([(2, 2), (3, 3)])
+        expected = GeoSeries([GeometryCollection()])
+        # binary geo resulting in empty geometry
+        result = GeoSeries([l1]).intersection(l2)
+        assert_geoseries_equal(result, expected)
+        # binary geo empty result with right GeoSeries
+        result = GeoSeries([l1]).intersection(GeoSeries([l2]))
+        assert_geoseries_equal(result, expected)
+        # unary geo resulting in emtpy geometry
+        result = GeoSeries([GeometryCollection()]).convex_hull
+        assert_geoseries_equal(result, expected)
+
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
         l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
