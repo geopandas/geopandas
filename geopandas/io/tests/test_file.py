@@ -5,8 +5,9 @@ from distutils.version import LooseVersion
 import os
 
 import numpy as np
-from shapely.geometry import Point, Polygon, box
+
 import fiona
+from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
@@ -96,26 +97,32 @@ def test_to_file_bool(tmpdir, driver, ext):
         assert_geodataframe_equal(result, df, check_column_type=False)
 
 
-def test_to_file_with_point_z(tmpdir):
+@pytest.mark.parametrize(
+    'ext, driver', [('shp', 'ESRI Shapefile'), ('geojson', 'GeoJSON')])
+def test_to_file_with_point_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(str(tmpdir), 'test_3Dpoint.shp')
+    tempfilename = os.path.join(str(tmpdir), 'test_3Dpoint.' + ext)
     point3d = Point(0, 0, 500)
     point2d = Point(1, 1)
-    df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d], crs={})
-    df.to_file(tempfilename)
+    df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d],
+                      crs={'init': 'epsg:4326'})
+    df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
 
-def test_to_file_with_poly_z(tmpdir):
+@pytest.mark.parametrize(
+    'ext, driver', [('shp', 'ESRI Shapefile'), ('geojson', 'GeoJSON')])
+def test_to_file_with_poly_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(str(tmpdir), 'test_3Dpoly.shp')
+    tempfilename = os.path.join(str(tmpdir), 'test_3Dpoly.' + ext)
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
-    df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d], crs={})
-    df.to_file(tempfilename)
+    df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d],
+                      crs={'init': 'epsg:4326'})
+    df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
@@ -130,24 +137,6 @@ def test_to_file_types(tmpdir, df_points):
                 for i, dtype in enumerate(int_types))
     df = GeoDataFrame(data, geometry=geometry)
     df.to_file(tempfilename)
-
-
-def test_to_file_mixed_types(tmpdir):
-    """ Test that mixed geometry types raise error when writing to file """
-    tempfilename = os.path.join(str(tmpdir), 'test.shp')
-    s = GeoDataFrame({'geometry': [Point(0, 0),
-                                   Polygon([(0, 0), (1, 0), (1, 1)])]})
-    # Exception type is different for different `fiona` versions
-    with pytest.raises((ValueError, RuntimeError)):
-        s.to_file(tempfilename)
-
-
-def test_to_file_geojson_mixed_types(tmpdir):
-    """ Test that mixed geometry types can be saved as GeoJSON (GH #827) """
-    tempfilename = os.path.join(str(tmpdir), 'test.geojson')
-    s = GeoDataFrame({'geometry': [Point(0, 0),
-                                   Polygon([(0, 0), (1, 0), (1, 1)])]})
-    s.to_file(tempfilename, driver='GeoJSON')
 
 
 def test_to_file_empty(tmpdir):
