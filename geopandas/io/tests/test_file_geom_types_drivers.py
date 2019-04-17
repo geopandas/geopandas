@@ -4,14 +4,16 @@ import sys
 import tempfile
 from enum import Enum
 
-import pytest
 from shapely.geometry import Point, Polygon, MultiPolygon, MultiPoint, \
     LineString, MultiLineString
 
 import geopandas
 from geopandas import GeoDataFrame
 from geopandas.io.file import _FIONA18
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal
+
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
@@ -304,7 +306,12 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(params=['GeoJSON', 'ESRI Shapefile', 'GPKG'])
+@pytest.fixture(params=[
+    'GeoJSON', 'ESRI Shapefile',
+    pytest.param('GPKG', marks=pytest.mark.skipif(
+        (sys.version_info < (3, 0)) and sys.platform.startswith('win'),
+        reason="GPKG tests failing on AppVeyor for Python 2.7"))
+    ])
 def ogr_driver(request):
     return request.param
 
