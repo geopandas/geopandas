@@ -5,7 +5,7 @@
 
 
 matrix:
-  fast_finish: false     # immediately finish build once one of the jobs fails.
+  fast_finish: true     # immediately finish build once one of the jobs fails.
 
 environment:
   matrix:
