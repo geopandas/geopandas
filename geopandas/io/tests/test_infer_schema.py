@@ -55,9 +55,9 @@ polygon_3D = Polygon((
 ))
 
 
-def test_infer_schema_only_points(self):
+def test_infer_schema_only_points():
     df = GeoDataFrame(
-        geometry=[self.city_hall_entrance, self.city_hall_balcony]
+        geometry=[city_hall_entrance, city_hall_balcony]
     )
 
     assert infer_schema(df) == {
@@ -66,11 +66,11 @@ def test_infer_schema_only_points(self):
     }
 
 
-def test_infer_schema_points_and_multipoints(self):
+def test_infer_schema_points_and_multipoints():
     df = GeoDataFrame(
         geometry=[
-            MultiPoint([self.city_hall_entrance, self.city_hall_balcony]),
-            self.city_hall_balcony
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony
         ]
     )
 
@@ -86,12 +86,12 @@ def test_infer_schema_points_and_multipoints(self):
         }
 
 
-def test_infer_schema_only_multipoints(self):
+def test_infer_schema_only_multipoints():
     df = GeoDataFrame(
         geometry=[MultiPoint([
-            self.city_hall_entrance,
-            self.city_hall_balcony,
-            self.city_hall_council_chamber
+            city_hall_entrance,
+            city_hall_balcony,
+            city_hall_council_chamber
         ])]
     )
 
@@ -101,8 +101,8 @@ def test_infer_schema_only_multipoints(self):
     }
 
 
-def test_infer_schema_only_linestrings(self):
-    df = GeoDataFrame(geometry=self.city_hall_walls)
+def test_infer_schema_only_linestrings():
+    df = GeoDataFrame(geometry=city_hall_walls)
 
     assert infer_schema(df) == {
         'geometry': 'LineString',
@@ -110,11 +110,11 @@ def test_infer_schema_only_linestrings(self):
     }
 
 
-def test_infer_schema_linestrings_and_multilinestrings(self):
+def test_infer_schema_linestrings_and_multilinestrings():
     df = GeoDataFrame(
         geometry=[
-            MultiLineString(self.city_hall_walls),
-            self.city_hall_walls[0]
+            MultiLineString(city_hall_walls),
+            city_hall_walls[0]
         ]
     )
 
@@ -130,8 +130,8 @@ def test_infer_schema_linestrings_and_multilinestrings(self):
         }
 
 
-def test_infer_schema_only_multilinestrings(self):
-    df = GeoDataFrame(geometry=[MultiLineString(self.city_hall_walls)])
+def test_infer_schema_only_multilinestrings():
+    df = GeoDataFrame(geometry=[MultiLineString(city_hall_walls)])
 
     assert infer_schema(df) == {
         'geometry': 'MultiLineString',
@@ -139,9 +139,9 @@ def test_infer_schema_only_multilinestrings(self):
     }
 
 
-def test_infer_schema_only_polygons(self):
+def test_infer_schema_only_polygons():
     df = GeoDataFrame(
-        geometry=[self.city_hall_boundaries, self.vauquelin_place]
+        geometry=[city_hall_boundaries, vauquelin_place]
     )
 
     assert infer_schema(df) == {
@@ -150,11 +150,11 @@ def test_infer_schema_only_polygons(self):
     }
 
 
-def test_infer_schema_polygons_and_multipolygons(self):
+def test_infer_schema_polygons_and_multipolygons():
     df = GeoDataFrame(
         geometry=[
-            MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
-            self.city_hall_boundaries
+            MultiPolygon((city_hall_boundaries, vauquelin_place)),
+            city_hall_boundaries
         ]
     )
 
@@ -170,10 +170,10 @@ def test_infer_schema_polygons_and_multipolygons(self):
         }
 
 
-def test_infer_schema_only_multipolygons(self):
+def test_infer_schema_only_multipolygons():
     df = GeoDataFrame(
         geometry=[
-            MultiPolygon((self.city_hall_boundaries, self.vauquelin_place))
+            MultiPolygon((city_hall_boundaries, vauquelin_place))
         ]
     )
 
@@ -183,15 +183,15 @@ def test_infer_schema_only_multipolygons(self):
     }
 
 
-def test_infer_schema_multiple_shape_types(self):
+def test_infer_schema_multiple_shape_types():
     df = GeoDataFrame(
         geometry=[
-            MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
-            self.city_hall_boundaries,
-            MultiLineString(self.city_hall_walls),
-            self.city_hall_walls[0],
-            MultiPoint([self.city_hall_entrance, self.city_hall_balcony]),
-            self.city_hall_balcony
+            MultiPolygon((city_hall_boundaries, vauquelin_place)),
+            city_hall_boundaries,
+            MultiLineString(city_hall_walls),
+            city_hall_walls[0],
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony
         ]
     )
 
@@ -215,16 +215,16 @@ def test_infer_schema_multiple_shape_types(self):
         }
 
 
-def test_infer_schema_mixed_3D_shape_type(self):
+def test_infer_schema_mixed_3D_shape_type():
     df = GeoDataFrame(
         geometry=[
-            MultiPolygon((self.city_hall_boundaries, self.vauquelin_place)),
-            self.city_hall_boundaries,
-            MultiLineString(self.city_hall_walls),
-            self.city_hall_walls[0],
-            MultiPoint([self.city_hall_entrance, self.city_hall_balcony]),
-            self.city_hall_balcony,
-            self.point_3D
+            MultiPolygon((city_hall_boundaries, vauquelin_place)),
+            city_hall_boundaries,
+            MultiLineString(city_hall_walls),
+            city_hall_walls[0],
+            MultiPoint([city_hall_entrance, city_hall_balcony]),
+            city_hall_balcony,
+            point_3D
         ]
     )
 
@@ -245,8 +245,8 @@ def test_infer_schema_mixed_3D_shape_type(self):
         }
 
 
-def test_infer_schema_mixed_3D_Point(self):
-    df = GeoDataFrame(geometry=[self.city_hall_balcony, self.point_3D])
+def test_infer_schema_mixed_3D_Point():
+    df = GeoDataFrame(geometry=[city_hall_balcony, point_3D])
 
     if _FIONA18:
         assert infer_schema(df) == {
@@ -260,8 +260,8 @@ def test_infer_schema_mixed_3D_Point(self):
         }
 
 
-def test_infer_schema_only_3D_Points(self):
-    df = GeoDataFrame(geometry=[self.point_3D, self.point_3D])
+def test_infer_schema_only_3D_Points():
+    df = GeoDataFrame(geometry=[point_3D, point_3D])
 
     assert infer_schema(df) == {
         'geometry': '3D Point',
@@ -269,9 +269,9 @@ def test_infer_schema_only_3D_Points(self):
     }
 
 
-def test_infer_schema_mixed_3D_linestring(self):
+def test_infer_schema_mixed_3D_linestring():
     df = GeoDataFrame(
-        geometry=[self.city_hall_walls[0], self.linestring_3D]
+        geometry=[city_hall_walls[0], linestring_3D]
     )
 
     if _FIONA18:
@@ -286,8 +286,8 @@ def test_infer_schema_mixed_3D_linestring(self):
         }
 
 
-def test_infer_schema_only_3D_linestrings(self):
-    df = GeoDataFrame(geometry=[self.linestring_3D, self.linestring_3D])
+def test_infer_schema_only_3D_linestrings():
+    df = GeoDataFrame(geometry=[linestring_3D, linestring_3D])
 
     assert infer_schema(df) == {
         'geometry': '3D LineString',
@@ -295,8 +295,8 @@ def test_infer_schema_only_3D_linestrings(self):
     }
 
 
-def test_infer_schema_mixed_3D_Polygon(self):
-    df = GeoDataFrame(geometry=[self.city_hall_boundaries, self.polygon_3D])
+def test_infer_schema_mixed_3D_Polygon():
+    df = GeoDataFrame(geometry=[city_hall_boundaries, polygon_3D])
 
     if _FIONA18:
         assert infer_schema(df) == {
@@ -310,8 +310,8 @@ def test_infer_schema_mixed_3D_Polygon(self):
         }
 
 
-def test_infer_schema_only_3D_Polygons(self):
-    df = GeoDataFrame(geometry=[self.polygon_3D, self.polygon_3D])
+def test_infer_schema_only_3D_Polygons():
+    df = GeoDataFrame(geometry=[polygon_3D, polygon_3D])
 
     assert infer_schema(df) == {
         'geometry': '3D Polygon',
@@ -319,8 +319,8 @@ def test_infer_schema_only_3D_Polygons(self):
     }
 
 
-def test_infer_schema_null_geometry_and_2D_point(self):
-    df = GeoDataFrame(geometry=[None, self.city_hall_entrance])
+def test_infer_schema_null_geometry_and_2D_point():
+    df = GeoDataFrame(geometry=[None, city_hall_entrance])
 
     # None geometry type is then omitted
     assert infer_schema(df) == {
@@ -329,8 +329,8 @@ def test_infer_schema_null_geometry_and_2D_point(self):
     }
 
 
-def test_infer_schema_null_geometry_and_3D_point(self):
-    df = GeoDataFrame(geometry=[None, self.point_3D])
+def test_infer_schema_null_geometry_and_3D_point():
+    df = GeoDataFrame(geometry=[None, point_3D])
 
     # None geometry type is then omitted
     assert infer_schema(df) == {
@@ -339,7 +339,7 @@ def test_infer_schema_null_geometry_and_3D_point(self):
     }
 
 
-def test_infer_schema_null_geometry_all(self):
+def test_infer_schema_null_geometry_all():
     df = GeoDataFrame(geometry=[None, None])
 
     # None geometry type in then replaced by 'Unknown'

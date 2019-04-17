@@ -105,7 +105,8 @@ def test_to_file_with_point_z(tmpdir, ext, driver):
     tempfilename = os.path.join(str(tmpdir), 'test_3Dpoint.' + ext)
     point3d = Point(0, 0, 500)
     point2d = Point(1, 1)
-    df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d], crs={})
+    df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d],
+                      crs={'init': 'epsg:4326'})
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
@@ -119,7 +120,8 @@ def test_to_file_with_poly_z(tmpdir, ext, driver):
     tempfilename = os.path.join(str(tmpdir), 'test_3Dpoly.' + ext)
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
-    df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d], crs={})
+    df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d],
+                      crs={'init': 'epsg:4326'})
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
@@ -143,7 +145,7 @@ def test_to_file_mixed_types(tmpdir):
     s = GeoDataFrame({'geometry': [Point(0, 0),
                                    Polygon([(0, 0), (1, 0), (1, 1)])]})
     # Exception type is different for different `fiona` versions
-    with pytest.raises((ValueError, RuntimeError)):
+    with pytest.raises((ValueError, RuntimeError, AttributeError)):
         s.to_file(tempfilename)
 
 
