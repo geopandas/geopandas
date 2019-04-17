@@ -316,32 +316,22 @@ def ogr_driver(request):
     return request.param
 
 
-class TestGeoDataFrameToFile():
+def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver):
+    output_file = os.path.join(str(tmpdir), 'output_file')
 
-    def setup_method(self):
-        self.output_dir = tempfile.mkdtemp()
-        self.output_file = os.path.join(self.output_dir, "output_file")
+    expected_error = _expected_error_on(geodataframe, ogr_driver, _FIONA18)
+    if expected_error:
+        with pytest.raises(expected_error.type, match=expected_error.match):
+            geodataframe.to_file(output_file, driver=ogr_driver)
+    else:
+        geodataframe.to_file(output_file, driver=ogr_driver)
 
-    def teardown_method(self):
-        shutil.rmtree(self.output_dir, ignore_errors=True)
-
-    def test_geodataframe_to_file(self, geodataframe, ogr_driver):
-        expected_error = _expected_error_on(geodataframe, ogr_driver, _FIONA18)
-        if expected_error:
-            with pytest.raises(expected_error.type, match=expected_error.match):
-                geodataframe.to_file(self.output_file, driver=ogr_driver)
-        else:
-            self._assert_to_file_succeeds(geodataframe, ogr_driver)
-
-    def _assert_to_file_succeeds(self, gdf, ogr_driver):
-        gdf.to_file(self.output_file, driver=ogr_driver)
-
-        reloaded = geopandas.read_file(self.output_file)
+        reloaded = geopandas.read_file(output_file)
 
         check_column_type = 'equiv'
         if sys.version_info[0] < 3:
-            # do not check column types in python 2 (or it fails!!!)
+            # do not check column types in python 2 (mixed string/unicode)
             check_column_type = False
 
-        assert_geodataframe_equal(gdf, reloaded,
+        assert_geodataframe_equal(geodataframe, reloaded,
                                   check_column_type=check_column_type)
