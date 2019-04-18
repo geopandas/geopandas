@@ -4,6 +4,7 @@ from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
 import os
+import sys
 
 import numpy as np
 
@@ -98,6 +99,9 @@ def test_to_file_bool(tmpdir, driver, ext):
         assert_geodataframe_equal(result, df, check_column_type=False)
 
 
+@pytest.mark.skipif(
+        (sys.version_info < (3, 0)) and sys.platform.startswith('win'),
+        reason="GPKG tests failing on AppVeyor for Python 2.7")
 def test_to_file_datetime(tmpdir):
     """Test writing a data file with the datetime column type"""
     tempfilename = os.path.join(str(tmpdir), 'test_datetime.gpkg')
