@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from collections import OrderedDict
+import datetime
 from distutils.version import LooseVersion
 import os
 
@@ -101,7 +102,7 @@ def test_to_file_datetime(tmpdir):
     """Test writing a data file with the datetime column type"""
     tempfilename = os.path.join(str(tmpdir), 'test_datetime.shp')
     point = Point(0, 0)
-    now = datetime.now()
+    now = datetime.datetime.now()
     df = GeoDataFrame(
         {'a': [1, 2], 'b': [now, now]},
         geometry=[point, point],
