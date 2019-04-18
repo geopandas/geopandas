@@ -100,16 +100,14 @@ def test_to_file_bool(tmpdir, driver, ext):
 
 def test_to_file_datetime(tmpdir):
     """Test writing a data file with the datetime column type"""
-    tempfilename = os.path.join(str(tmpdir), 'test_datetime.shp')
+    tempfilename = os.path.join(str(tmpdir), 'test_datetime.gpkg')
     point = Point(0, 0)
     now = datetime.datetime.now()
     df = GeoDataFrame(
         {'a': [1, 2], 'b': [now, now]},
-        geometry=[point, point],
-        crs={}
-    )
-    df.to_file(tempfilename)
-    df_read = GeoDataFrame.from_file(tempfilename)
+        geometry=[point, point], crs={})
+    df.to_file(tempfilename, driver='GPKG')
+    df_read = read_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
 
