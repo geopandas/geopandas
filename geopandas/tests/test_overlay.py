@@ -295,11 +295,27 @@ def test_preserve_crs(dfs, how):
     result = overlay(df1, df2, how=how)
     assert result.crs == crs
 
+
 def test_empty_intersection(dfs):
     df1, df2 = dfs
-    polys3 = GeoSeries([Polygon([(-1,-1), (-3,-1), (-3,-3), (-1,-3)]),
-                        Polygon([(-3,-3), (-5,-3), (-5,-5), (-3,-5)])])
-    df3 = GeoDataFrame({'geometry': polys3, 'col3':[1,2]})
+    polys3 = GeoSeries([Polygon([(-1, -1), (-3, -1), (-3, -3), (-1, -3)]),
+                        Polygon([(-3, -3), (-5, -3), (-5, -5), (-3, -5)])])
+    df3 = GeoDataFrame({'geometry': polys3, 'col3': [1, 2]})
     expected = GeoDataFrame([], columns=['col1', 'col3', 'geometry'])
     result = overlay(df1, df3)
     assert_geodataframe_equal(result, expected, check_like=True)
+
+
+def test_correct_index(dfs):
+    # GH883 - case where the index was not properly reset
+    df1, df2 = dfs
+    polys3 = GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                        Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+                        Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
+    df3 = GeoDataFrame({'geometry': polys3, 'col3': [1, 2, 3]})
+    i1 = Polygon([(1, 1), (1, 3), (3, 3), (3, 1), (1, 1)])
+    i2 = Polygon([(3, 3), (3, 5), (5, 5), (5, 3), (3, 3)])
+    expected = GeoDataFrame([[1, 1, i1], [3, 2, i2]],
+                            columns=['col3', 'col2', 'geometry'])
+    result = overlay(df3, df2)
+    assert_geodataframe_equal(result, expected)

@@ -158,7 +158,11 @@ def assert_geodataframe_equal(left, right,
         assert isinstance(left, type(right))
 
         if check_crs:
-            assert left.crs == right.crs
+            # no crs can be either None or {}
+            if not left.crs and not right.crs:
+                pass
+            else:
+                assert left.crs == right.crs
     else:
         if not isinstance(left, GeoDataFrame):
             left = GeoDataFrame(left)

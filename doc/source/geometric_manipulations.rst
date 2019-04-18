@@ -3,7 +3,7 @@
 Geometric Manipulations
 ========================
 
-*geopandas* makes available all the tools for geometric manipulations in the `*shapely* library <http://toblerity.org/shapely/manual.html>`_.
+*geopandas* makes available all the tools for geometric manipulations in the `*shapely* library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
 Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
 
@@ -216,7 +216,7 @@ borough that are in the holes:
 
 .. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
-.. _fiona: http://toblerity.github.io/fiona
+.. _fiona: http://fiona.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy
 .. _geo_interface: https://gist.github.com/sgillies/2217756
 .. _borough boundaries of New York City: https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm

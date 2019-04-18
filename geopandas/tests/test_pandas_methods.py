@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from distutils.version import LooseVersion
+import os
 
 from six import PY3
 
@@ -106,7 +107,7 @@ def test_astype(s):
 def test_to_csv(df):
 
     exp = ('geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\n'
-           'POINT (2 2),2,1\n')
+           'POINT (2 2),2,1\n').replace('\n', os.linesep)
     assert df.to_csv(index=False) == exp
 
 
@@ -178,9 +179,10 @@ def test_dropna():
 
 @pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
 def test_isna(NA):
-    s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)])
-    exp = pd.Series([False, True, False])
+    s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name='tt')
+    exp = pd.Series([False, True, False], index=[2, 4, 5], name='tt')
     res = s2.isnull()
+    assert type(res) == pd.Series
     assert_series_equal(res, exp)
     res = s2.isna()
     assert_series_equal(res, exp)

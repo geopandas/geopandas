@@ -237,6 +237,20 @@ class TestGeomMethods:
         self._test_binary_topological('difference', expected,
                                       self.g1, self.t2)
 
+    def test_geo_op_empty_result(self):
+        l1 = LineString([(0, 0), (1, 1)])
+        l2 = LineString([(2, 2), (3, 3)])
+        expected = GeoSeries([GeometryCollection()])
+        # binary geo resulting in empty geometry
+        result = GeoSeries([l1]).intersection(l2)
+        assert_geoseries_equal(result, expected)
+        # binary geo empty result with right GeoSeries
+        result = GeoSeries([l1]).intersection(GeoSeries([l2]))
+        assert_geoseries_equal(result, expected)
+        # unary geo resulting in emtpy geometry
+        result = GeoSeries([GeometryCollection()]).convex_hull
+        assert_geoseries_equal(result, expected)
+
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
         l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
@@ -296,6 +310,21 @@ class TestGeomMethods:
     def test_disjoint(self):
         expected = [False, False, False, False, False, True]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
+
+    def test_relate(self):
+        expected = Series(['212101212',
+                           '212101212',
+                           '212FF1FF2',
+                           '2FFF1FFF2',
+                           'FF2F112F2',
+                           'FF0FFF212'],
+                          index=self.g0.index)
+        assert_array_dtype_equal(expected, self.g0.relate(self.inner_sq))
+
+        expected = Series(['FF0FFF212',
+                           None],
+                          index=self.g6.index)
+        assert_array_dtype_equal(expected, self.g6.relate(self.na_none))
 
     def test_distance(self):
         expected = Series(np.array([np.sqrt((5 - 1)**2 + (5 - 1)**2), np.nan]),
@@ -394,10 +423,14 @@ class TestGeomMethods:
             assert computed.equals(expected)
 
     def test_interiors(self):
-        square_series = GeoSeries(self.nested_squares)
-        exp_interiors = GeoSeries([LinearRing(self.inner_sq.boundary)])
-        for expected, computed in zip(exp_interiors, square_series.interiors):
-            assert computed[0].equals(expected)
+        original = GeoSeries([self.t1, self.nested_squares])
+
+        # This is a polygon with no interior.
+        expected = []
+        assert original.interiors[0] == expected
+        # This is a polygon with an interior.
+        expected = LinearRing(self.inner_sq.boundary)
+        assert original.interiors[1][0].equals(expected)
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
