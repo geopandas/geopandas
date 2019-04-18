@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 
 from collections import OrderedDict
+import datetime
 from distutils.version import LooseVersion
 import os
+import sys
 
 import numpy as np
 
@@ -95,6 +97,22 @@ def test_to_file_bool(tmpdir, driver, ext):
             df['b'] = df['b'].astype('int64')
         # PY2: column names 'mixed' instead of 'unicode'
         assert_geodataframe_equal(result, df, check_column_type=False)
+
+
+@pytest.mark.skipif(
+        (sys.version_info < (3, 0)) and sys.platform.startswith('win'),
+        reason="GPKG tests failing on AppVeyor for Python 2.7")
+def test_to_file_datetime(tmpdir):
+    """Test writing a data file with the datetime column type"""
+    tempfilename = os.path.join(str(tmpdir), 'test_datetime.gpkg')
+    point = Point(0, 0)
+    now = datetime.datetime.now()
+    df = GeoDataFrame(
+        {'a': [1, 2], 'b': [now, now]},
+        geometry=[point, point], crs={})
+    df.to_file(tempfilename, driver='GPKG')
+    df_read = read_file(tempfilename)
+    assert_geoseries_equal(df.geometry, df_read.geometry)
 
 
 @pytest.mark.parametrize(
