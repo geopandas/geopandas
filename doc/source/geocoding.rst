@@ -23,7 +23,7 @@ with the detailed borough boundary file included within ``geopandas``.
     boros = geopandas.read_file(geopandas.datasets.get_path("nybb"))
     boros.BoroName
     boro_locations = geopandas.tools.geocode(boros.BoroName,
-                                             provider="nominatim")
+                                             provider="geocodefarm")
     boro_locations
 
     import matplotlib.pyplot as plt

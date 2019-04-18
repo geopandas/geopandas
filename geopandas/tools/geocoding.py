@@ -13,18 +13,18 @@ import geopandas
 def _throttle_time(provider):
     """ Amount of time to wait between requests to a geocoding API.
 
-    Currently implemented for Nominatim, as their terms of service
+    Currently implemented for GeocodeFarm, as their terms of service
     require a maximum of 1 request per second.
-    https://wiki.openstreetmap.org/wiki/Nominatim_usage_policy
+    https://wiki.openstreetmap.org/wiki/GeocodeFarm_usage_policy
     """
     import geopy.geocoders
-    if provider == geopy.geocoders.Nominatim:
+    if provider == geopy.geocoders.GeocodeFarm:
         return 1
     else:
         return 0
 
 
-def geocode(strings, provider='nominatim', **kwargs):
+def geocode(strings, provider='geocodefarm', **kwargs):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -32,10 +32,10 @@ def geocode(strings, provider='nominatim', **kwargs):
     ----------
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
-        Specifies geocoding service to use, default is 'nominatim'.
+        Specifies geocoding service to use, default is 'geocodefarm'.
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.Nominatim) may be used.
+        (e.g., geopy.geocoders.GeocodeFarm) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -63,7 +63,7 @@ def geocode(strings, provider='nominatim', **kwargs):
     return _query(strings, True, provider, **kwargs)
 
 
-def reverse_geocode(points, provider='nominatim', **kwargs):
+def reverse_geocode(points, provider='geocodefarm', **kwargs):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -76,10 +76,10 @@ def reverse_geocode(points, provider='nominatim', **kwargs):
         x coordinate is longitude
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
-        Specifies geocoding service to use, default is 'nominatim'.
+        Specifies geocoding service to use, default is 'geocodefarm'.
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.Nominatim) may be used.
+        (e.g., geopy.geocoders.GeocodeFarm) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
