@@ -7,7 +7,7 @@ dependencies:
   # required
   - pandas=0.22
   - shapely
-  - fiona
+  - fiona=1.7
   - pyproj
   # testing
   - pytest

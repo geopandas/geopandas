@@ -43,8 +43,9 @@ def _binary_geo(op, left, right):
         return GeoSeries(data, index=left.index, crs=left.crs)
 
     elif isinstance(right, BaseGeometry):
-        data = np.array([getattr(s, op)(right) for s in left.geometry],
-                        dtype=object)
+        # ensure 1D output, see note above
+        data = np.empty(len(left), dtype=object)
+        data[:] = [getattr(s, op)(right) for s in left.geometry]
         return GeoSeries(data, index=left.index, crs=left.crs)
     else:
         raise TypeError(type(left), type(right))
@@ -93,8 +94,9 @@ def _unary_geo(op, this):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
-    data = np.array([getattr(geom, op) for geom in this.geometry],
-                    dtype=object)
+    # ensure 1D output, see note above
+    data = np.empty(len(this), dtype=object)
+    data[:] = [getattr(geom, op) for geom in this.geometry]
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -556,7 +558,7 @@ class GeoPandasBase(object):
         distance : float, np.array, pd.Series
             The radius of the buffer. If np.array or pd.Series are used
             then it must have same length as the GeoSeries.
-        resolution: float
+        resolution: int
             Optional, the resolution of the buffer around each vertex.
         """
         if isinstance(distance, (np.ndarray, pd.Series)):

@@ -73,18 +73,27 @@ def read_file(filename, bbox=None, **kwargs):
         path_or_bytes = filename
         reader = fiona.open
 
-    with reader(path_or_bytes, **kwargs) as features:
-        crs = features.crs
-        if bbox is not None:
-            if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
-                bbox = tuple(bbox.to_crs(crs).total_bounds)
-            assert len(bbox) == 4
-            f_filt = features.filter(bbox=bbox)
-        else:
-            f_filt = features
+    with fiona_env():
+        with reader(path_or_bytes, **kwargs) as features:
 
-        columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-        gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            # In a future Fiona release the crs attribute of features will
+            # no longer be a dict. The following code will be both forward
+            # and backward compatible.
+            if hasattr(features.crs, 'to_dict'):
+                crs = features.crs.to_dict()
+            else:
+                crs = features.crs
+
+            if bbox is not None:
+                if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
+                    bbox = tuple(bbox.to_crs(crs).total_bounds)
+                assert len(bbox) == 4
+                f_filt = features.filter(bbox=bbox)
+            else:
+                f_filt = features
+
+            columns = list(features.meta["schema"]["properties"]) + ["geometry"]
+            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 
@@ -131,7 +140,7 @@ def infer_schema(df):
     def convert_type(column, in_type):
         if in_type == object:
             return 'str'
-        out_type = type(np.asscalar(np.zeros(1, in_type))).__name__
+        out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == 'long':
             out_type = 'int'
         if not _FIONA18 and out_type == 'bool':
@@ -148,27 +157,66 @@ def infer_schema(df):
     if df.empty:
         raise ValueError("Cannot write empty DataFrame to file.")
 
-    geom_type = _common_geom_type(df)
+    # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
+    # Fiona allows a list of geometry types
+    geom_types = _geometry_types(df)
 
-    schema = {'geometry': geom_type, 'properties': properties}
+    schema = {'geometry': geom_types, 'properties': properties}
 
     return schema
 
 
-def _common_geom_type(df):
-    # Need to check geom_types before we write to file...
-    # Some (most?) providers expect a single geometry type:
-    # Point, LineString, or Polygon
-    geom_types = df.geometry.geom_type.unique()
+def _geometry_types(df):
+    """
+    Determine the geometry types in the GeoDataFrame for the schema.
+    """
+    if _FIONA18:
+        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
+        # can have mixed geometries:
+        # - 3D and 2D shapes can coexist in inferred schema
+        # - Shape and MultiShape types can (and must) coexist in inferred
+        #   schema
+        geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+        geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+        geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D
+                         if gtype is not None]
+        geom_types = geom_types_3D + geom_types_2D
 
-    from os.path import commonprefix
-    # use reversed geom types and commonprefix to find the common suffix,
-    # then reverse the result to get back to a geom type
-    geom_type = commonprefix([g[::-1] for g in geom_types if g])[::-1]
-    if not geom_type:
+    else:
+        # Before Fiona 1.8, schema submitted to write a gdf should have
+        # one single geometry type whenever possible:
+        # - 3D and 2D shapes cannot coexist in inferred schema
+        # - Shape and MultiShape can not coexist in inferred schema
+        geom_types = _geometry_types_back_compat(df)
+
+    if len(geom_types) == 0:
+        # Default geometry type supported by Fiona
+        # (Since https://github.com/Toblerity/Fiona/issues/446 resolution)
         return 'Unknown'
 
-    if df.geometry.has_z.any():
-        geom_type = "3D " + geom_type
+    if len(geom_types) == 1:
+        geom_types = geom_types[0]
 
-    return geom_type
+    return geom_types
+
+
+def _geometry_types_back_compat(df):
+    """
+    for backward compatibility with Fiona<1.8 only
+    """
+    unique_geom_types = df.geometry.geom_type.unique()
+    unique_geom_types = [
+        gtype for gtype in unique_geom_types if gtype is not None]
+
+    # merge single and Multi types (eg Polygon and MultiPolygon)
+    unique_geom_types = [
+        gtype for gtype in unique_geom_types
+        if not gtype.startswith('Multi') or gtype[5:] not in unique_geom_types]
+
+    if df.geometry.has_z.any():
+        # declare all geometries as 3D geometries
+        unique_geom_types = ["3D " + type for type in unique_geom_types]
+    # by default, all geometries are 2D geometries
+
+    return unique_geom_types

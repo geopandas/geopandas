@@ -74,7 +74,7 @@ geoplot.polyplot(boroughs, ax=ax)
 # using Voronoi tessellation.
 
 ax = geoplot.voronoi(
-    injurious_collisions.sample(1000),
+    injurious_collisions.sample(1000, random_state=42),
     hue='NUMBER OF PERSONS INJURED', cmap='Reds', scheme='fisher_jenks',
     clip=boroughs.geometry,
     linewidth=0)
