@@ -3,11 +3,12 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
-
+   import matplotlib.pyplot as plt
+   plt.close('all')
 
 
 Mapping Tools
@@ -20,8 +21,8 @@ Loading some example data:
 
 .. ipython:: python
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-    cities = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
 We can now plot those GeoDataFrames:
 
@@ -51,6 +52,32 @@ Choropleth Maps
     world.plot(column='gdp_per_cap');
 
 
+Creating a legend
+~~~~~~~~~~~~~~~~~
+
+When plotting a map, one can enable a legend using the ``legend`` argument:
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 1)
+    @savefig world_pop_est.png
+    world.plot(column='pop_est', ax=ax, legend=True)
+
+However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the ``plot`` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    fig, ax = plt.subplots(1, 1)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    @savefig world_pop_est_fixed_legend_height.png
+    world.plot(column='pop_est', ax=ax, legend=True, cax=cax)
+
+
 Choosing colors
 ~~~~~~~~~~~~~~~~
 
@@ -62,7 +89,8 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
-The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``pysal`` installed, which can be accomplished via ``conda install pysal``). The ``scheme`` option can be set to 'equal_interval', 'quantiles' or 'percentiles'. See the `PySAL documentation <http://pysal.readthedocs.io/en/latest/library/esda/mapclassify.html>`_ for further details about these map classification schemes.
+The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``mapclassify`` installed, which can be accomplished via ``conda install -c conda-forge mapclassify``). The ``scheme`` option can be set to any scheme provided by mapclassify (e.g. 'box_plot', 'equal_interval',
+'fisher_jenks', 'fisher_jenks_sampled', 'headtail_breaks', 'jenks_caspall', 'jenks_caspall_forced', 'jenks_caspall_sampled', 'max_p_classifier', 'maximum_breaks', 'natural_breaks', 'quantiles', 'percentiles', 'std_mean' or 'user_defined'). Arguments can be passed in classification_kwds dict. See the `mapclassify documentation <https://mapclassify.readthedocs.io>`_ for further details about these map classification schemes.
 
 .. ipython:: python
 
@@ -128,3 +156,10 @@ Links to jupyter Notebooks for different mapping tasks:
     :suppress:
 
     matplotlib.rcParams['figure.figsize'] = orig
+
+
+.. ipython:: python
+    :suppress:
+
+    import matplotlib.pyplot as plt
+    plt.close('all')

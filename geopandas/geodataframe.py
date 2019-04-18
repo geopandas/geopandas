@@ -1,8 +1,9 @@
 import json
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, shape, Point
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
@@ -21,8 +22,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     with geometry. In addition to the standard DataFrame constructor arguments,
     GeoDataFrame also accepts the following keyword arguments:
 
-    Keyword Arguments
-    -----------------
+    Parameters
+    ----------
     crs : str (optional)
         Coordinate system
     geometry : str or array (optional)
@@ -88,7 +89,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        keys : column label or array
+        col : column label or array
         drop : boolean, default True
             Delete column to be used as the new geometry
         inplace : boolean, default False
@@ -144,7 +145,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) or not item for item in level):
+        if not all(isinstance(item, BaseGeometry) or pd.isnull(item) for item in level):
             raise TypeError("Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
@@ -158,7 +159,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
-        `fiona`. See http://toblerity.org/fiona/manual.html for details.
+        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
 
         Parameters
         ----------
@@ -166,7 +167,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://toblerity.org/fiona/README.html#usage for usage details.
+            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
         kwargs : key-word arguments
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
@@ -237,10 +238,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     @classmethod
-    def from_postgis(cls, sql, con, geom_col='geom', crs=None, index_col=None,
-                     coerce_float=True, params=None):
-        """Alternate constructor to create a ``GeoDataFrame`` from a sql query
-        containing a geometry column.
+    def from_postgis(cls, sql, con, geom_col='geom', crs=None,
+                     index_col=None, coerce_float=True,
+                     parse_dates=None, params=None):
+        """
+        Alternate constructor to create a ``GeoDataFrame`` from a sql query
+        containing a geometry column in WKB representation.
 
         Parameters
         ----------
@@ -255,20 +258,36 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float : boolean, default True
             Attempt to convert values of non-string, non-numeric objects (like
             decimal.Decimal) to floating point, useful for SQL result sets
-        params : list, tuple or dict, optional, default: None
+        parse_dates : list or dict, default None
+            - List of column names to parse as dates.
+            - Dict of ``{column_name: format string}`` where format string is
+              strftime compatible in case of parsing string times, or is one of
+              (D, s, ns, ms, us) in case of parsing integer timestamps.
+            - Dict of ``{column_name: arg dict}``, where the arg dict
+              corresponds to the keyword arguments of
+              :func:`pandas.to_datetime`. Especially useful with databases
+              without native Datetime support, such as SQLite.
+        params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
 
         Examples
         --------
-
-        >>> sql = "SELECT geom, highway FROM roads;"
+        >>> sql = "SELECT geom, highway FROM roads"
+        SpatiaLite
+        >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
-        return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col,
-                     coerce_float, params)
+
+        df = geopandas.io.sql.read_postgis(
+                sql, con, geom_col=geom_col, crs=crs,
+                index_col=index_col, coerce_float=coerce_float,
+                parse_dates=parse_dates, params=params)
+
+        return df
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
-        """Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
+        """
+        Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
         Parameters
         ----------
@@ -320,45 +339,50 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson. default False
-
         """
-        def fill_none(row):
-            """
-            Takes in a Series, converts to a dictionary with null values
-            set to None
-
-            """
-            na_keys = row.index[row.isnull()]
-            d = row.to_dict()
-            for k in na_keys:
-                d[k] = None
-            return d
-
-        # na_methods must take in a Series and return dict
-        na_methods = {'null': fill_none,
-                      'drop': lambda row: row.dropna().to_dict(),
-                      'keep': lambda row: row.to_dict()}
-
-        if na not in na_methods:
+        if na not in ['null', 'drop', 'keep']:
             raise ValueError('Unknown na method {0}'.format(na))
-        f = na_methods[na]
 
-        for name, row in self.iterrows():
-            properties = f(row)
-            del properties[self._geometry_column_name]
+        ids = np.array(self.index, copy=False)
+        geometries = np.array(self[self._geometry_column_name], copy=False)
 
-            feature = {
-                'id': str(name),
-                'type': 'Feature',
-                'properties': properties,
-                'geometry': mapping(row[self._geometry_column_name])
-                            if row[self._geometry_column_name] else None
-            }
+        properties_cols = self.columns.difference([self._geometry_column_name])
 
-            if show_bbox:
-                feature['bbox'] = row.geometry.bounds
+        if len(properties_cols) > 0:
+            # convert to object to get python scalars.
+            properties = self[properties_cols].astype(object).values
+            if na == 'null':
+                properties[pd.isnull(self[properties_cols]).values] = None
 
-            yield feature
+            for i, row in enumerate(properties):
+                geom = geometries[i]
+
+                if na == 'drop':
+                    properties_items = dict((k, v) for k, v
+                                            in zip(properties_cols, row)
+                                            if not pd.isnull(v))
+                else:
+                    properties_items = dict((k, v) for k, v
+                                            in zip(properties_cols, row))
+
+                feature = {'id': str(ids[i]),
+                           'type': 'Feature',
+                           'properties': properties_items,
+                           'geometry': mapping(geom) if geom else None}
+
+                if show_bbox:
+                    feature['bbox'] = geom.bounds if geom else None
+                yield feature
+
+        else:
+            for fid, geom in zip(ids, geometries):
+                feature = {'id': str(fid),
+                           'type': 'Feature',
+                           'properties': {},
+                           'geometry': mapping(geom) if geom else None}
+                if show_bbox:
+                        feature['bbox'] = geom.bounds if geom else None
+                yield feature
 
     def _to_geo(self, **kwargs):
         """
@@ -574,6 +598,73 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             aggregated = aggregated.reset_index()
 
         return aggregated
+
+    # overrides GeoPandasBase method
+    def explode(self):
+        """
+        Explode muti-part geometries into multiple single geometries.
+
+        Each row containing a multi-part geometry will be split into
+        multiple rows with single geometries, thereby increasing the vertical
+        size of the GeoDataFrame.
+
+        The index of the input geodataframe is no longer unique and is
+        replaced with a multi-index (original index with additional level
+        indicating the multiple geometries: a new zero-based index for each
+        single part geometry per multi-part geometry).
+
+        Returns
+        -------
+        GeoDataFrame
+            Exploded geodataframe with each single geometry
+            as a separate entry in the geodataframe.
+
+        """
+        df_copy = self.copy()
+
+        exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
+        exploded_index = exploded_geom.columns[0]
+
+        df = pd.concat(
+            [df_copy.drop(df_copy._geometry_column_name, axis=1),
+             exploded_geom], axis=1)
+        # reset to MultiIndex, otherwise df index is only first level of
+        # exploded GeoSeries index.
+        df.set_index(exploded_index, append=True, inplace=True)
+        df.index.names = list(self.index.names) + [None]
+        geo_df = df.set_geometry(self._geometry_column_name)
+        return geo_df
+
+
+def points_from_xy(x, y, z=None):
+    """
+    Generate list of shapely Point geometries from x, y(, z) coordinates.
+
+    Parameters
+    ----------
+    x, y, z : array
+
+    Examples
+    --------
+    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
+    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
+    >>> gdf = geopandas.GeoDataFrame(
+            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+
+    Returns
+    -------
+    list : list
+    """
+    if not len(x) == len(y):
+        raise ValueError("x and y arrays must be equal length.")
+    if z is not None:
+        if not len(z) == len(x):
+            raise ValueError("z array must be same length as x and y.")
+        geom = [Point(i, j, k) for i, j, k in zip(x, y, z)]
+    else:
+        geom = [Point(i, j) for i, j in zip(x, y)]
+    return geom
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:

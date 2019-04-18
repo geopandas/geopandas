@@ -10,7 +10,7 @@ GeoPandas is a project to add support for geographic data to
 [pandas](http://pandas.pydata.org) objects.  It currently implements
 `GeoSeries` and `GeoDataFrame` types which are subclasses of
 `pandas.Series` and `pandas.DataFrame` respectively.  GeoPandas
-objects can act on [shapely](http://toblerity.github.io/shapely)
+objects can act on [shapely](http://shapely.readthedocs.io/en/latest/)
 geometry objects and perform geometric operations.
 
 GeoPandas geometry operations are cartesian.  The coordinate reference
@@ -28,9 +28,8 @@ Documentation is available at [geopandas.org](http://geopandas.org)
 Install
 --------
 
-**Requirements**
-
-For the installation of GeoPandas, the following packages are required:
+See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html)
+for all details. GeoPandas depends on the following packages:
 
 - ``pandas``
 - ``shapely``
@@ -39,40 +38,10 @@ For the installation of GeoPandas, the following packages are required:
 
 Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
 
+Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for more details.
 
-**Install**
-
-GeoPandas depends on several low-level libraries for geospatial analysis. Depending on the system and package
-manager that you use, this may cause dependency conflicts if you are not careful.
-
-*Using `conda`*
-
-We suggest that you use the [anaconda distribution](https://conda.io/docs/user-guide/install/download.html)
-to install GeoPandas (``miniconda`` is fine as well).
-
-Use ``conda`` and the ``conda-forge`` channel to install GeoPandas on a clean environment:
-
-```bash
-conda create -n geopandas
-source activate geopandas  # 'activate geopandas' on Windows
-conda install -c conda-forge geopandas
-```
-
-**NOTE:** Creating a new environment is not strictly necessary, but installing other geospatial packages
-from a *different* channel than ``conda-forge`` may cause dependency conflicts, so we recommend starting
-fresh if possible. See the [conda-forge gotcha page](https://conda-forge.org/docs/conda-forge_gotchas.html)
-for more information.
-
-*Using `pip`*
-
-GeoPandas is also pip-installable. If you choose to use `pip`, make sure that you have the proper non-python
-libraries installed and linked properly.
-
-```bash
-pip install geopandas
-```
 
 Examples
 --------
@@ -80,7 +49,7 @@ Examples
     >>> p1 = Polygon([(0, 0), (1, 0), (1, 1)])
     >>> p2 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     >>> p3 = Polygon([(2, 0), (3, 0), (3, 1), (2, 1)])
-    >>> g = GeoSeries([p1, p2, p3])
+    >>> g = geopandas.GeoSeries([p1, p2, p3])
     >>> g
     0    POLYGON ((0.0000000000000000 0.000000000000000...
     1    POLYGON ((0.0000000000000000 0.000000000000000...
@@ -112,10 +81,10 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
     >>> nybb_path = geopandas.datasets.get_path('nybb')
-    >>> boros = GeoDataFrame.from_file(nybb_path)
+    >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort()
     >>> boros

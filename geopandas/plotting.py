@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 import warnings
 
 import numpy as np
-
+import pandas as pd
 
 def _flatten_multi_geoms(geoms, colors=None):
     """
@@ -26,6 +26,9 @@ def _flatten_multi_geoms(geoms, colors=None):
         colors = [None] * len(geoms)
 
     components, component_colors = [], []
+
+    if not geoms.geom_type.str.startswith('Multi').any():
+        return geoms, colors
 
     # precondition, so zip can't short-circuit
     assert len(geoms) == len(colors)
@@ -77,7 +80,12 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
 
     collection : matplotlib.collections.Collection that was plotted
     """
-    from descartes.patch import PolygonPatch
+
+    try:
+        from descartes.patch import PolygonPatch
+    except ImportError:
+        raise ImportError("The descartes package is required"
+                          " for plotting polygons in geopandas.")
     from matplotlib.collections import PatchCollection
 
     geoms, values = _flatten_multi_geoms(geoms, values)
@@ -251,7 +259,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     import matplotlib.pyplot as plt
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    ax.set_aspect('equal')
 
     if s.empty:
         warnings.warn("The GeoSeries you are attempting to plot is "
@@ -306,10 +314,10 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     return ax
 
 
-def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
+def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, **style_kwds):
+                   legend_kwds=None, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -323,14 +331,19 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         The GeoDataFrame to be plotted.  Currently Polygon,
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
-    column : str (default None)
-        The name of the column to be plotted. Ignored if `color` is also set.
+    column : str, np.array, pd.Series (default None)
+        The name of the dataframe column, np.array, or pd.Series to be plotted.
+        If np.array or pd.Series are used then it must have same length as
+        dataframe. Values are used to color the plot. Ignored if `color` is
+        also set.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
+    cax : matplotlib.pyplot Artist (default None)
+        axes on which to draw the legend in case of color map.
     categorical : bool (default False)
         If False, cmap will reflect numerical values of the
         column being plotted.  For non-numerical columns, this
@@ -338,10 +351,14 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     legend : bool (default False)
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
-        Name of a choropleth classification scheme (requires PySAL).
-        A pysal.esda.mapclassify.Map_Classifier object will be used
-        under the hood. Supported schemes: 'Equal_interval', 'Quantiles',
-        'Fisher_Jenks'
+        Name of a choropleth classification scheme (requires mapclassify).
+        A mapclassify.Map_Classifier object will be used
+        under the hood. Supported are all schemes provided by mapclassify (e.g.
+        'Box_Plot', 'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled',
+        'HeadTail_Breaks', 'Jenks_Caspall', 'Jenks_Caspall_Forced',
+        'Jenks_Caspall_Sampled', 'Max_P_Classifier', 'Maximum_Breaks',
+        'Natural_Breaks', 'Quantiles', 'Percentiles', 'Std_Mean',
+        'User_Defined'). Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -361,6 +378,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
         Keyword arguments to pass to ax.legend()
+    classification_kwds : dict (default None)
+        Keyword arguments to pass to mapclassify
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -380,7 +399,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         warnings.warn("'axes' is deprecated, please use 'ax' instead "
                       "(for consistency with pandas)", FutureWarning)
         ax = style_kwds.pop('axes')
-    if column and color:
+    if column is not None and color is not None:
         warnings.warn("Only specify one of 'column' or 'color'. Using "
                       "'color'.", UserWarning)
         column = None
@@ -389,8 +408,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     import matplotlib.pyplot as plt
 
     if ax is None:
+        if cax is not None:
+            raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
-        ax.set_aspect('equal')
+    ax.set_aspect('equal')
 
     if df.empty:
         warnings.warn("The GeoDataFrame you are attempting to plot is "
@@ -405,7 +426,17 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                            figsize=figsize, markersize=markersize,
                            **style_kwds)
 
-    if df[column].dtype is np.dtype('O'):
+    # To accept pd.Series and np.arrays as column
+    if isinstance(column, (np.ndarray, pd.Series)):
+        if column.shape[0] != df.shape[0]:
+            raise ValueError("The dataframe and given column have different "
+                             "number of rows.")
+        else:
+            values = np.asarray(column)
+    else:
+        values = np.asarray(df[column])
+
+    if values.dtype is np.dtype('O'):
         categorical = True
 
     # Define `values` as a Series
@@ -418,14 +449,18 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                 cmap = 'Vega10'
             else:
                 cmap = 'Set1'
-        categories = list(set(df[column].values))
+        categories = list(set(values))
         categories.sort()
-        valuemap = dict([(k, v) for (v, k) in enumerate(categories)])
-        values = np.array([valuemap[k] for k in df[column]])
-    else:
-        values = df[column]
+        valuemap = dict((k, v) for (v, k) in enumerate(categories))
+        values = np.array([valuemap[k] for k in values])
+
     if scheme is not None:
-        binning = __pysal_choro(values, scheme, k=k)
+        if classification_kwds is None:
+            classification_kwds = {}
+        if 'k' not in classification_kwds:
+                classification_kwds['k'] = k
+
+        binning = _mapclassify_choro(values, scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [values.min()] + binning.bins.tolist()
@@ -433,8 +468,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                       for i in range(len(binedges)-1)]
         values = np.array(binning.yb)
 
-    mn = values.min() if vmin is None else vmin
-    mx = values.max() if vmax is None else vmax
+    mn = values[~np.isnan(values)].min() if vmin is None else vmin
+    mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     geom_types = df.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
@@ -455,6 +490,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     if not lines.empty:
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
+
+    if cax is not None:
+        cbar_kwargs = {"cax": cax}
+    else:
+        cbar_kwargs = {"ax": ax}
 
     # plot all Points in the same collection
     points = df.geometry[point_idx]
@@ -478,7 +518,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                 patches.append(
                     Line2D([0], [0], linestyle="none", marker="o",
                            alpha=style_kwds.get('alpha', 1), markersize=10,
-                           markerfacecolor=n_cmap.to_rgba(value)))
+                           markerfacecolor=n_cmap.to_rgba(value),
+                           markeredgewidth=0))
             if legend_kwds is None:
                 legend_kwds = {}
             legend_kwds.setdefault('numpoints', 1)
@@ -486,25 +527,32 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
             ax.legend(patches, categories, **legend_kwds)
         else:
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, ax=ax)
+            ax.get_figure().colorbar(n_cmap, **cbar_kwargs)
 
     plt.draw()
     return ax
 
 
-def __pysal_choro(values, scheme, k=5):
+def _mapclassify_choro(values, scheme, **classification_kwds):
     """
-    Wrapper for choropleth schemes from PySAL for use with plot_dataframe
+    Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
     Parameters
     ----------
     values
         Series to be plotted
     scheme : str
-        One of pysal.esda.mapclassify classification schemes
-        Options are 'Equal_interval', 'Quantiles', 'Fisher_Jenks'
-    k : int
-        number of classes (2 <= k <=9)
+        One of mapclassify classification schemes
+        Options are Box_Plot, Equal_Interval, Fisher_Jenks,
+        Fisher_Jenks_Sampled, HeadTail_Breaks, Jenks_Caspall,
+        Jenks_Caspall_Forced, Jenks_Caspall_Sampled, Max_P_Classifier,
+        Maximum_Breaks, Natural_Breaks, Quantiles, Percentiles, Std_Mean,
+        User_Defined
+
+    **classification_kwds : dict
+        Keyword arguments for classification scheme
+        For details see mapclassify documentation:
+        https://mapclassify.readthedocs.io/en/latest/api.html
 
     Returns
     -------
@@ -514,17 +562,31 @@ def __pysal_choro(values, scheme, k=5):
 
     """
     try:
-        from pysal.esda.mapclassify import (
-            Quantiles, Equal_Interval, Fisher_Jenks)
-        schemes = {}
-        schemes['equal_interval'] = Equal_Interval
-        schemes['quantiles'] = Quantiles
-        schemes['fisher_jenks'] = Fisher_Jenks
-        scheme = scheme.lower()
-        if scheme not in schemes:
-            raise ValueError("Invalid scheme. Scheme must be in the"
-                             " set: %r" % schemes.keys())
-        binning = schemes[scheme](values, k)
-        return binning
+        import mapclassify.classifiers
     except ImportError:
-        raise ImportError("PySAL is required to use the 'scheme' keyword")
+        raise ImportError(
+            "The 'mapclassify' package is required to use the 'scheme' "
+            "keyword")
+
+    schemes = {}
+    for classifier in mapclassify.classifiers.CLASSIFIERS:
+        schemes[classifier.lower()] = getattr(mapclassify.classifiers,
+                                              classifier)
+
+    scheme = scheme.lower()
+    if scheme not in schemes:
+        raise ValueError("Invalid scheme. Scheme must be in the"
+                         " set: %r" % schemes.keys())
+    if classification_kwds['k'] is not None:
+        try:
+            from inspect import getfullargspec as getspec
+        except ImportError:
+            from inspect import getargspec as getspec
+        spec = getspec(schemes[scheme].__init__)
+        if 'k' not in spec.args:
+            del classification_kwds['k']
+    try:
+        binning = schemes[scheme](values, **classification_kwds)
+    except TypeError:
+        raise TypeError("Invalid keyword argument for %r " % scheme)
+    return binning

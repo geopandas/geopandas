@@ -23,7 +23,7 @@ operations in python that would otherwise require a spatial database
 such as PostGIS.
 
 .. _pandas: http://pandas.pydata.org
-.. _shapely: http://toblerity.github.io/shapely
+.. _shapely: http://shapely.readthedocs.io/en/latest/
 """
 
 if os.environ.get('READTHEDOCS', False) == 'True':
@@ -40,6 +40,8 @@ for item in os.listdir("geopandas/datasets"):
             data_files.append(os.path.join("datasets", item, '*'))
         elif item.endswith('.zip'):
             data_files.append(os.path.join("datasets", item))
+
+data_files.append('tests/data/*')
 
 
 setup(name='geopandas',

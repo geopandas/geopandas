@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
 
 
 Merging Data
@@ -19,8 +19,8 @@ In the following examples, we use these datasets:
 
 .. ipython:: python
 
-   world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-   cities = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+   cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
    # For attribute join
    country_shapes = world[['geometry', 'iso_a3']]
@@ -68,10 +68,31 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 
    # Execute spatial join
 
-   cities_with_country = gpd.sjoin(cities, countries, how="inner", op='intersects')
+   cities_with_country = geopandas.sjoin(cities, countries, how="inner", op='intersects')
    cities_with_country.head()
 
 
-The ``op`` options determines the type of join operation to apply. ``op`` can be set to "intersects", "within" or "contains" (these are all equivalent when joining points to polygons, but differ when joining polygons to other polygons or lines).
+Sjoin Arguments
+~~~~~~~~~~~~~~~~
+
+``sjoin.()`` has two core arguments: ``how`` and ``op``.
+
+**op**
+
+The ```op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
+
+* `intersects`: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.
+* `within`: The attributes will be joined if the object’s boundary and interior intersect *only* with the interior of the other object (not its boundary or exterior).
+* `contains`: The attributes will be joined if the object’s interior contains the boundary and interior of the other object and their boundaries do not touch at all.
+
+You can read more about each join type in the `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__.
+
+**how**
+
+The `how` argument specifies the type of join that will occur and which geometry is retained in the resultant geodataframe. It accepts the following options:
+
+* ``left``: use the index from the first (or `left_df`) geodataframe that you provide to ``sjoin``; retain only the `left_df` geometry column
+* ``right``: use index from second (or `right_df`); retain only the `right_df` geometry column
+* ``inner``: use intersection of index values from both geodataframes; retain only the `left_df` geometry column
 
 Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the ``buffer`` method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.

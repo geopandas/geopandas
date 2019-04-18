@@ -9,10 +9,9 @@ format, or in
 two columns.
 
 """
-import matplotlib.pyplot as plt
 import pandas as pd
-import geopandas as gpd
-from shapely.geometry import Point
+import geopandas
+import matplotlib.pyplot as plt
 
 ###############################################################################
 # From longitudes and latitudes
@@ -28,21 +27,15 @@ df = pd.DataFrame(
      'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
 
 ###############################################################################
-# A ``GeoDataFrame`` needs a ``shapely`` object, so we create a new column
-# **Coordinates** as a tuple of **Longitude** and **Latitude** :
+# A ``GeoDataFrame`` needs a ``shapely`` object. We use geopandas
+# ``points_from_xy()`` to transform **Longitude** and **Latitude** into a list
+# of ``shapely.Point`` objects and set it as a ``geometry`` while creating the
+# ``GeoDataFrame``. (note that ``points_from_xy()`` is an enhanced wrapper for
+# ``[Point(x, y) for x, y in zip(df.Longitude, df.Latitude)]``)
 
-df['Coordinates']  = list(zip(df.Longitude, df.Latitude))
+gdf = geopandas.GeoDataFrame(
+    df, geometry=geopandas.points_from_xy(df.Longitude, df.Latitude))
 
-###############################################################################
-# Then, we transform tuples to ``Point`` :
-
-df['Coordinates'] = df['Coordinates'].apply(Point)
-
-###############################################################################
-# Now, we can create the ``GeoDataFrame`` by setting ``geometry`` with the
-# coordinates created previously.
-
-gdf = gpd.GeoDataFrame(df, geometry='Coordinates')
 
 ###############################################################################
 # ``gdf`` looks like this :
@@ -52,7 +45,7 @@ print(gdf.head())
 ###############################################################################
 # Finally, we plot the coordinates over a country-level map.
 
-world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 
 # We restrict to South America.
 ax = world[world.continent == 'South America'].plot(
@@ -84,6 +77,6 @@ df['Coordinates'] = df['Coordinates'].apply(wkt.loads)
 ###############################################################################
 #  The ``GeoDataFrame`` is constructed as follows :
 
-gdf = gpd.GeoDataFrame(df, geometry='Coordinates')
+gdf = geopandas.GeoDataFrame(df, geometry='Coordinates')
 
 print(gdf.head())

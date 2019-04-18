@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
 
 
 Geocoding
@@ -20,9 +20,10 @@ with the detailed borough boundary file included within ``geopandas``.
 
 .. ipython:: python
 
-    boros = gpd.read_file(gpd.datasets.get_path("nybb"))
+    boros = geopandas.read_file(geopandas.datasets.get_path("nybb"))
     boros.BoroName
-    boro_locations = gpd.tools.geocode(boros.BoroName, provider="google")
+    boro_locations = geopandas.tools.geocode(boros.BoroName,
+                                             provider="nominatim")
     boro_locations
 
     import matplotlib.pyplot as plt

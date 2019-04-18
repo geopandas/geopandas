@@ -15,7 +15,7 @@ from pandas.util.testing import assert_frame_equal
 
 
 pandas_0_18_problem = 'fails under pandas < 0.19 due to pandas issue 15692,'\
-                        'not problem with sjoin.'
+    'not problem with sjoin.'
 
 
 @pytest.fixture()
@@ -117,6 +117,37 @@ class TestSpatialJoin:
 
         assert_frame_equal(res, exp)
 
+    def test_empty_join(self):
+        # Check empty joins
+        polygons = geopandas.GeoDataFrame({'col2': [1, 2],
+                                           'geometry': [Polygon([(0, 0), (1, 0),
+                                                                 (1, 1), (0, 1)]),
+                                                        Polygon([(1, 0), (2, 0),
+                                                                 (2, 1), (1, 1)])
+                                                        ]})
+        not_in = geopandas.GeoDataFrame({'col1': [1],
+                                         'geometry': [Point(-0.5, 0.5)]})
+        empty = sjoin(not_in, polygons, how='left', op='intersects')
+        assert empty.index_right.isnull().all()
+        empty = sjoin(not_in, polygons, how='right', op='intersects')
+        assert empty.index_left.isnull().all()
+        empty = sjoin(not_in, polygons, how='inner', op='intersects')
+        assert empty.empty
+
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
+                             indirect=True)
+    def test_sjoin_invalid_args(self, dfs):
+        index, df1, df2, expected = dfs
+
+        with pytest.raises(ValueError,
+                           match="'left_df' should be GeoDataFrame"):
+            res = sjoin(df1.geometry, df2)
+
+        with pytest.raises(ValueError,
+                           match="'right_df' should be GeoDataFrame"):
+            res = sjoin(df1, df2.geometry)
+
+
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
     @pytest.mark.parametrize('op', ['intersects', 'contains', 'within'])
@@ -150,8 +181,8 @@ class TestSpatialJoinNYBB:
         self.pointdf = GeoDataFrame(
             [{'geometry': Point(x, y),
               'pointattr1': x + y, 'pointattr2': x - y}
-             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                             range(b[1], b[3], int((b[3]-b[1])/N)))],
+             for x, y in zip(range(b[0], b[2], int((b[2] - b[0]) / N)),
+                             range(b[1], b[3], int((b[3] - b[1]) / N)))],
             crs=self.crs)
 
     def test_geometry_name(self):
@@ -210,7 +241,7 @@ class TestSpatialJoinNYBB:
 
     @pytest.mark.parametrize('how', ['left', 'right', 'inner'])
     def test_sjoin_named_index(self, how):
-        #original index names should be unchanged
+        # original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = 'pointid'
         df = sjoin(pointdf2, self.polydf, how=how)

@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from shapely import prepared
 
+from geopandas import GeoDataFrame
+
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
           lsuffix='left', rsuffix='right'):
@@ -21,7 +23,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
           left_df geometry column
     op : string, default 'intersection'
         Binary predicate, one of {'intersects', 'contains', 'within'}.
-        See http://toblerity.org/shapely/manual.html#binary-predicates.
+        See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
@@ -29,6 +31,14 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
 
     """
     import rtree
+
+    if not isinstance(left_df, GeoDataFrame):
+        raise ValueError("'left_df' should be GeoDataFrame, got {}".format(
+                         type(left_df)))
+
+    if not isinstance(right_df, GeoDataFrame):
+        raise ValueError("'right_df' should be GeoDataFrame, got {}".format(
+                         type(right_df)))
 
     allowed_hows = ['left', 'right', 'inner']
     if how not in allowed_hows:
@@ -41,7 +51,10 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
                          (op, allowed_ops))
 
     if left_df.crs != right_df.crs:
-        warn('CRS of frames being joined does not match!')
+        warn(
+            ('CRS of frames being joined does not match!'
+             '(%s != %s)' % (left_df.crs, right_df.crs))
+        )
 
     index_left = 'index_%s' % lsuffix
     index_right = 'index_%s' % rsuffix
@@ -95,26 +108,26 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         check_predicates = np.vectorize(predicate_d[op])
 
         result = (
-                  pd.DataFrame(
-                      np.column_stack(
-                          [l_idx,
-                           r_idx,
-                           check_predicates(
-                               left_df.geometry
-                               .apply(lambda x: prepared.prep(x))[l_idx],
-                               right_df[right_df.geometry.name][r_idx])
-                           ]))
-                   )
+            pd.DataFrame(
+                np.column_stack(
+                    [l_idx,
+                     r_idx,
+                     check_predicates(
+                         left_df.geometry
+                         .apply(lambda x: prepared.prep(x))[l_idx],
+                         right_df[right_df.geometry.name][r_idx])
+                     ]))
+        )
 
         result.columns = ['_key_left', '_key_right', 'match_bool']
         result = (
-                  pd.DataFrame(result[result['match_bool']==1])
-                  .drop('match_bool', axis=1)
-                  )
+            pd.DataFrame(result[result['match_bool'] == 1])
+            .drop('match_bool', axis=1)
+        )
 
     else:
         # when output from the join has no overlapping geometries
-        result = pd.DataFrame(columns=['_key_left', '_key_right'])
+        result = pd.DataFrame(columns=['_key_left', '_key_right'], dtype=float)
 
     if op == "within":
         # within implemented as the inverse of contains; swap names
@@ -122,39 +135,38 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         result = result.rename(columns={'_key_left': '_key_right',
                                         '_key_right': '_key_left'})
 
-
     if how == 'inner':
         result = result.set_index('_key_left')
         joined = (
-                  left_df
-                  .merge(result, left_index=True, right_index=True)
-                  .merge(right_df.drop(right_df.geometry.name, axis=1),
-                      left_on='_key_right', right_index=True,
-                      suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
-                 )
+            left_df
+            .merge(result, left_index=True, right_index=True)
+            .merge(right_df.drop(right_df.geometry.name, axis=1),
+                   left_on='_key_right', right_index=True,
+                   suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+        )
         joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
         joined.index.name = None
     elif how == 'left':
         result = result.set_index('_key_left')
         joined = (
-                  left_df
-                  .merge(result, left_index=True, right_index=True, how='left')
-                  .merge(right_df.drop(right_df.geometry.name, axis=1),
-                      how='left', left_on='_key_right', right_index=True,
-                      suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
-                 )
+            left_df
+            .merge(result, left_index=True, right_index=True, how='left')
+            .merge(right_df.drop(right_df.geometry.name, axis=1),
+                   how='left', left_on='_key_right', right_index=True,
+                   suffixes=('_%s' % lsuffix, '_%s' % rsuffix))
+        )
         joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
         joined.index.name = None
     else:  # how == 'right':
         joined = (
-                  left_df
-                  .drop(left_df.geometry.name, axis=1)
-                  .merge(result.merge(right_df,
-                      left_on='_key_right', right_index=True,
-                      how='right'), left_index=True,
-                      right_on='_key_left', how='right')
-                  .set_index(index_right)
-                 )
+            left_df
+            .drop(left_df.geometry.name, axis=1)
+            .merge(result.merge(right_df,
+                                left_on='_key_right', right_index=True,
+                                how='right'), left_index=True,
+                   right_on='_key_left', how='right')
+            .set_index(index_right)
+        )
         joined = joined.drop(['_key_left', '_key_right'], axis=1)
 
     return joined

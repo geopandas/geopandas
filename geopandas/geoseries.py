@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 from functools import partial
 import json
 
@@ -9,7 +10,10 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _series_unary_op, _CoordinateIndexer
+from geopandas.base import GeoPandasBase, _unary_op, _CoordinateIndexer
+
+
+_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
 
 
 def _is_empty(x):
@@ -55,7 +59,7 @@ class GeoSeries(GeoPandasBase, Series):
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
         if (self.geom_type == "Point").all():
-            return _series_unary_op(self, 'x', null_value=np.nan)
+            return _unary_op('x', self, null_value=np.nan)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -64,7 +68,7 @@ class GeoSeries(GeoPandasBase, Series):
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
         if (self.geom_type == "Point").all():
-            return _series_unary_op(self, 'y', null_value=np.nan)
+            return _unary_op('y', self, null_value=np.nan)
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -74,7 +78,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alternate constructor to create a ``GeoSeries`` from a file.
 
         Can load a ``GeoSeries`` from a file from any format recognized by
-        `fiona`. See http://toblerity.org/fiona/manual.html for details.
+        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
 
         Parameters
         ----------
@@ -82,7 +86,7 @@ class GeoSeries(GeoPandasBase, Series):
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://toblerity.org/fiona/README.html#usage for usage details.
+            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
         kwargs : key-word arguments
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
@@ -192,7 +196,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         non_geo_null = super(GeoSeries, self).isnull()
         val = self.apply(_is_empty)
-        return np.logical_or(non_geo_null, val)
+        return Series(np.logical_or(non_geo_null, val))
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -238,11 +242,7 @@ class GeoSeries(GeoPandasBase, Series):
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
-        if isinstance(other, GeoSeries):
-            return GeoSeries(left), GeoSeries(right)
-        else: # It is probably a Series, let's keep it that way
-            return GeoSeries(left), right
-
+        return left, right
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -303,7 +303,11 @@ class GeoSeries(GeoPandasBase, Series):
                 raise TypeError('Must set either crs or epsg for output.')
         proj_in = pyproj.Proj(self.crs, preserve_units=True)
         proj_out = pyproj.Proj(crs, preserve_units=True)
-        project = partial(pyproj.transform, proj_in, proj_out)
+        if _PYPROJ2:
+            transformer = pyproj.Transformer.from_proj(proj_in, proj_out)
+            project = transformer.transform
+        else:
+            project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
