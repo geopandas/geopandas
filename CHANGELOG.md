@@ -8,7 +8,7 @@ Improvements:
 
 * Significant performance improvement (around 10x) for `GeoDataFrame.iterfeatures`,
   which also improves `GeoDataFrame.to_file` (#864).
-* Enhancements based on Fiona 1.8:
+* File IO enhancements based on Fiona 1.8:
     * Support for writing bool dtype (#855) and datetime dtype, if the file format supports it (#728).
     * Support for writing dataframes with multiple geometry types, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867, #870).
 * Compatibility with pyproj >= 2 (#962).
