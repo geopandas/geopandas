@@ -56,6 +56,7 @@ def use_sindex(request):
     return request.param
 
 
+@pytest.mark.filterwarnings("ignore:'use_sindex':DeprecationWarning")
 def test_overlay(dfs_index, how, use_sindex):
     """
     Basic overlay test with small dummy example dataframes (from docs).
