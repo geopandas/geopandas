@@ -11,15 +11,17 @@ import geopandas
 
 
 def _throttle_time(provider):
-    """ Amount of time to wait between requests to a geocoding API.
-
-    Currently implemented for GeocodeFarm, as their terms of service
-    require a maximum of 1 request per second.
-    https://wiki.openstreetmap.org/wiki/GeocodeFarm_usage_policy
+    """
+    Amount of time to wait between requests to a geocoding API, for providers
+    that specify rate limits in their terms of service.
     """
     import geopy.geocoders
-    if provider == geopy.geocoders.GeocodeFarm:
+    # https://wiki.openstreetmap.org/wiki/GeocodeFarm_usage_policy
+    if provider == geopy.geocoders.Nominatim:
         return 1
+    # https://geocode.farm/geocoding/free-api-documentation/
+    elif provider == geopy.geocoders.GeocodeFarm:
+        return 0.25
     else:
         return 0
 
