@@ -41,4 +41,7 @@ services, such as ``'google'``, ``'bing'``, ``'yahoo'``, and
 For many providers, parameters such as API keys need to be passed as
 ``**kwargs`` in the ``geocode`` call.
 
-Please consult the Terms of Service for the chosen provider.
+Please consult the Terms of Service for the chosen provider. The example above
+uses ``'geocodefarm'``, for which free users are limited to 250 calls per day
+and 4 requests per second
+(`geocodefarm ToS <https://geocode.farm/geocoding/free-api-documentation/>`_).
