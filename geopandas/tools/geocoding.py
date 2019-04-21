@@ -16,12 +16,9 @@ def _throttle_time(provider):
     that specify rate limits in their terms of service.
     """
     import geopy.geocoders
-    # https://wiki.openstreetmap.org/wiki/GeocodeFarm_usage_policy
+    # https://operations.osmfoundation.org/policies/nominatim/
     if provider == geopy.geocoders.Nominatim:
         return 1
-    # https://geocode.farm/geocoding/free-api-documentation/
-    elif provider == geopy.geocoders.GeocodeFarm:
-        return 0.25
     else:
         return 0
 
@@ -35,6 +32,8 @@ def geocode(strings, provider='geocodefarm', **kwargs):
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
         Specifies geocoding service to use, default is 'geocodefarm'.
+        (see the geocodefarm terms of service at:
+            https://geocode.farm/geocoding/free-api-documentation/ )
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
         (e.g., geopy.geocoders.GeocodeFarm) may be used.
@@ -79,6 +78,8 @@ def reverse_geocode(points, provider='geocodefarm', **kwargs):
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
         Specifies geocoding service to use, default is 'geocodefarm'.
+        (see the geocodefarm terms of service at:
+            https://geocode.farm/geocoding/free-api-documentation/ )
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
         (e.g., geopy.geocoders.GeocodeFarm) may be used.
