@@ -1,7 +1,7 @@
 Changes
 =======
 
-Version 0.5.0 (April ??, 2019)
+Version 0.5.0 (April 25, 2019)
 ---------------------------------
 
 Improvements:
@@ -19,6 +19,7 @@ Improvements:
     * Performance improvement in plotting by only flattening the geometries if there are actually 'Multi' geometries (#785).
     * Choropleths: access to all `mapclassify` classification schemes and addition of the `classification_kwds` keyword in the `plot` method to specify options for the scheme (#876).
     * Ability to specify a matplotlib axes object on which to plot the color bar with the `cax` keyword, in order to have more control over the color bar placement (#894).
+* Changed the default provider in ``geopandas.tools.geocode`` from Google (now requires an API key) to Geocode.Farm (#907, #975).
 
 Bug fixes:
 
