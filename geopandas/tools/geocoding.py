@@ -32,8 +32,9 @@ def geocode(strings, provider=None, **kwargs):
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
         Specifies geocoding service to use. If none is provided,
-        will use 'geocodefarm'. (see the geocodefarm terms of service at:
-        https://geocode.farm/geocoding/free-api-documentation/ )
+        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
+        terms of service at:
+        https://geocode.farm/geocoding/free-api-documentation/ ).
 
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
@@ -86,8 +87,9 @@ def reverse_geocode(points, provider=None, **kwargs):
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
         Specifies geocoding service to use. If none is provided,
-        will use 'geocodefarm'. (see the geocodefarm terms of service at:
-        https://geocode.farm/geocoding/free-api-documentation/ )
+        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
+        terms of service at:
+        https://geocode.farm/geocoding/free-api-documentation/ ).
 
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance

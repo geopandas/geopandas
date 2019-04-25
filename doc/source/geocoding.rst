@@ -11,8 +11,7 @@ Geocoding
 
 ``geopandas`` supports geocoding (i.e., converting place names to
 location on Earth) through `geopy`_, an optional dependency of ``geopandas``.
-The following example shows how to use the `Google geocoding API
-<https://developers.google.com/maps/documentation/geocoding/start>`_ to get the
+The following example shows how to get the
 locations of boroughs in New York City, and plots those locations along
 with the detailed borough boundary file included within ``geopandas``.
 
@@ -22,8 +21,7 @@ with the detailed borough boundary file included within ``geopandas``.
 
     boros = geopandas.read_file(geopandas.datasets.get_path("nybb"))
     boros.BoroName
-    boro_locations = geopandas.tools.geocode(boros.BoroName,
-                                             provider="geocodefarm")
+    boro_locations = geopandas.tools.geocode(boros.BoroName)
     boro_locations
 
     import matplotlib.pyplot as plt
@@ -34,6 +32,11 @@ with the detailed borough boundary file included within ``geopandas``.
     boro_locations.plot(ax=ax, color="red");
 
 
+By default, the ``geocode`` function uses the
+`GeoCode.Farm geocoding API <https://geocode.farm/>`__ with a rate limitation
+applied. But a different geocoding service can be specified with the
+``provider`` keyword.
+
 The argument to ``provider`` can either be a string referencing geocoding
 services, such as ``'google'``, ``'bing'``, ``'yahoo'``, and
 ``'openmapquest'``, or an instance of a ``Geocoder`` from ``geopy``. See
@@ -41,7 +44,16 @@ services, such as ``'google'``, ``'bing'``, ``'yahoo'``, and
 For many providers, parameters such as API keys need to be passed as
 ``**kwargs`` in the ``geocode`` call.
 
-Please consult the Terms of Service for the chosen provider. The example above
-uses ``'geocodefarm'``, for which free users are limited to 250 calls per day
-and 4 requests per second
-(`geocodefarm ToS <https://geocode.farm/geocoding/free-api-documentation/>`_).
+For example, to use the OpenStreetMap Nominatim geocoder, you need to specify
+a user agent:
+
+.. code-block:: python
+
+    geopandas.tools.geocode(boros.BoroName, provider='nominatim', user_agent="my-application")
+
+.. attention::
+
+    Please consult the Terms of Service for the chosen provider. The example
+    above uses ``'geocodefarm'`` (the default), for which free users are
+    limited to 250 calls per day and 4 requests per second
+    (`geocodefarm ToS <https://geocode.farm/geocoding/free-api-documentation/>`_).
