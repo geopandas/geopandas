@@ -6,6 +6,7 @@ dependencies:
   - python=3.5
   - six
   # required
+  - numpy=1.12
   - pandas==0.19.2
   - shapely=1.5
   - fiona=1.7
@@ -16,10 +17,12 @@ dependencies:
   - codecov
   # optional
   - rtree
-  - matplotlib==1.5.3
+  - matplotlib
   - descartes
   - mapclassify
   - geopy
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - pip:
+    - matplotlib==1.5.3
