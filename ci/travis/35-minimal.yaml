@@ -16,7 +16,7 @@ dependencies:
   - codecov
   # optional
   - rtree
-  - matplotlib-base=1.5
+  - matplotlib=1.5
   - descartes
   - mapclassify
   - geopy
