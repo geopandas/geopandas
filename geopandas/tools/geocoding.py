@@ -10,7 +10,7 @@ from six import iteritems, string_types
 import geopandas
 
 
-def _throttle_time(provider):
+def _get_throttle_time(provider):
     """
     Amount of time to wait between requests to a geocoding API, for providers
     that specify rate limits in their terms of service.
@@ -23,7 +23,7 @@ def _throttle_time(provider):
         return 0
 
 
-def geocode(strings, provider='geocodefarm', **kwargs):
+def geocode(strings, provider=None, **kwargs):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -31,9 +31,10 @@ def geocode(strings, provider='geocodefarm', **kwargs):
     ----------
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
-        Specifies geocoding service to use, default is 'geocodefarm'.
-        (see the geocodefarm terms of service at:
-            https://geocode.farm/geocoding/free-api-documentation/ )
+        Specifies geocoding service to use. If none is provided,
+        will use 'geocodefarm'. (see the geocodefarm terms of service at:
+        https://geocode.farm/geocoding/free-api-documentation/ )
+
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
         (e.g., geopy.geocoders.GeocodeFarm) may be used.
@@ -59,12 +60,19 @@ def geocode(strings, provider='geocodefarm', **kwargs):
                              geometry
     0  POINT (-71.0597732 42.3584308)
     1  POINT (-77.0365305 38.8977332)
-
     """
-    return _query(strings, True, provider, **kwargs)
+
+    if provider is None:
+        # https://geocode.farm/geocoding/free-api-documentation/
+        provider = 'geocodefarm'
+        throttle_time = 0.25
+    else:
+        throttle_time = _get_throttle_time(provider)
+
+    return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(points, provider='geocodefarm', **kwargs):
+def reverse_geocode(points, provider=None, **kwargs):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -77,9 +85,10 @@ def reverse_geocode(points, provider='geocodefarm', **kwargs):
         x coordinate is longitude
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
-        Specifies geocoding service to use, default is 'geocodefarm'.
-        (see the geocodefarm terms of service at:
-            https://geocode.farm/geocoding/free-api-documentation/ )
+        Specifies geocoding service to use. If none is provided,
+        will use 'geocodefarm'. (see the geocodefarm terms of service at:
+        https://geocode.farm/geocoding/free-api-documentation/ )
+
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
         (e.g., geopy.geocoders.GeocodeFarm) may be used.
@@ -106,12 +115,19 @@ def reverse_geocode(points, provider='geocodefarm', **kwargs):
                              geometry
     0  POINT (-71.0594869 42.3584697)
     1  POINT (-77.0365305 38.8977332)
-
     """
-    return _query(points, False, provider, **kwargs)
+
+    if provider is None:
+        # https://geocode.farm/geocoding/free-api-documentation/
+        provider = 'geocodefarm'
+        throttle_time = 0.25
+    else:
+        throttle_time = _get_throttle_time(provider)
+
+    return _query(points, False, provider, throttle_time, **kwargs)
 
 
-def _query(data, forward, provider, **kwargs):
+def _query(data, forward, provider, throttle_time, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
     from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
@@ -132,7 +148,7 @@ def _query(data, forward, provider, **kwargs):
                 results[i] = coder.reverse((s.y, s.x), exactly_one=True)
         except (GeocoderQueryError, ValueError):
             results[i] = (None, None)
-        time.sleep(_throttle_time(provider))
+        time.sleep(throttle_time)
 
     df = _prepare_geocode_result(results)
     return df
