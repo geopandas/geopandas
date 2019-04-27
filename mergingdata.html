@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Merging Data &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Merging Data &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,46 +17,38 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Geocoding" href="geocoding.html"/>
-        <link rel="prev" title="Aggregation with dissolve" href="aggregation_with_dissolve.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Geocoding" href="geocoding.html" />
+    <link rel="prev" title="Aggregation with dissolve" href="aggregation_with_dissolve.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -70,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -111,7 +103,10 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Merging Data</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#attribute-joins">Attribute Joins</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#spatial-joins">Spatial Joins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spatial-joins">Spatial Joins</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sjoin-arguments">Sjoin Arguments</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
@@ -134,7 +129,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -142,9 +137,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -189,10 +185,10 @@
   <div class="section" id="merging-data">
 <h1>Merging Data<a class="headerlink" href="#merging-data" title="Permalink to this headline">¶</a></h1>
 <p>There are two ways to combine datasets in <em>geopandas</em> – attribute joins and spatial joins.</p>
-<p>In an attribute join, a <code class="docutils literal"><span class="pre">GeoSeries</span></code> or <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> is combined with a regular <em>pandas</em> <code class="docutils literal"><span class="pre">Series</span></code> or <code class="docutils literal"><span class="pre">DataFrame</span></code> based on a common variable. This is analogous to normal merging or joining in <em>pandas</em>.</p>
-<p>In a Spatial Join, observations from to <code class="docutils literal"><span class="pre">GeoSeries</span></code> or <code class="docutils literal"><span class="pre">GeoDataFrames</span></code> are combined based on their spatial relationship to one another.</p>
+<p>In an attribute join, a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> or <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is combined with a regular <em>pandas</em> <code class="docutils literal notranslate"><span class="pre">Series</span></code> or <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> based on a common variable. This is analogous to normal merging or joining in <em>pandas</em>.</p>
+<p>In a Spatial Join, observations from to <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> or <code class="docutils literal notranslate"><span class="pre">GeoDataFrames</span></code> are combined based on their spatial relationship to one another.</p>
 <p>In the following examples, we use these datasets:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [2]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
 
@@ -209,60 +205,58 @@
 </div>
 <div class="section" id="attribute-joins">
 <h2>Attribute Joins<a class="headerlink" href="#attribute-joins" title="Permalink to this headline">¶</a></h2>
-<p>Attribute joins are accomplished using the <code class="docutils literal"><span class="pre">merge</span></code> method. In general, it is recommended to use the <code class="docutils literal"><span class="pre">merge</span></code> method called from the spatial dataset. With that said, the stand-alone <code class="docutils literal"><span class="pre">merge</span></code> function will work if the GeoDataFrame is in the <code class="docutils literal"><span class="pre">left</span></code> argument; if a DataFrame is in the <code class="docutils literal"><span class="pre">left</span></code> argument and a GeoDataFrame is in the <code class="docutils literal"><span class="pre">right</span></code> position, the result will no longer be a GeoDataFrame.</p>
-<p>For example, consider the following merge that adds full names to a <code class="docutils literal"><span class="pre">GeoDataFrame</span></code> that initially has only ISO codes for each country by merging it with a <em>pandas</em> <code class="docutils literal"><span class="pre">DataFrame</span></code>.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># `country_shapes` is GeoDataFrame with country shapes and iso codes</span>
+<p>Attribute joins are accomplished using the <code class="docutils literal notranslate"><span class="pre">merge</span></code> method. In general, it is recommended to use the <code class="docutils literal notranslate"><span class="pre">merge</span></code> method called from the spatial dataset. With that said, the stand-alone <code class="docutils literal notranslate"><span class="pre">merge</span></code> function will work if the GeoDataFrame is in the <code class="docutils literal notranslate"><span class="pre">left</span></code> argument; if a DataFrame is in the <code class="docutils literal notranslate"><span class="pre">left</span></code> argument and a GeoDataFrame is in the <code class="docutils literal notranslate"><span class="pre">right</span></code> position, the result will no longer be a GeoDataFrame.</p>
+<p>For example, consider the following merge that adds full names to a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> that initially has only ISO codes for each country by merging it with a <em>pandas</em> <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># `country_shapes` is GeoDataFrame with country shapes and iso codes</span>
 <span class="gp">In [7]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[7]: </span><span class="go"></span>
 <span class="go">                                            geometry iso_a3</span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...    AFG</span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...    AGO</span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...    ALB</span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...    ARE</span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...    ARG</span>
+<span class="go">0  (POLYGON ((180 -16.06713266364245, 180 -16.555...    FJI</span>
+<span class="go">1  POLYGON ((33.90371119710453 -0.950000000000000...    TZA</span>
+<span class="go">2  POLYGON ((-8.665589565454809 27.65642588959236...    ESH</span>
+<span class="go">3  (POLYGON ((-122.84 49.00000000000011, -122.974...    CAN</span>
+<span class="go">4  (POLYGON ((-122.84 49.00000000000011, -120 49....    USA</span>
 
 <span class="go"># `country_names` is DataFrame with country names and iso codes</span>
 <span class="gp">In [8]: </span><span class="n">country_names</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="go">                                                                                                                                                                                                                                                                                                                                                                                 Out[8]: </span>
-<span class="go">                   name iso_a3</span>
-<span class="go">0           Afghanistan    AFG</span>
-<span class="go">1                Angola    AGO</span>
-<span class="go">2               Albania    ALB</span>
-<span class="go">3  United Arab Emirates    ARE</span>
-<span class="go">4             Argentina    ARG</span>
+<span class="go">                       name iso_a3</span>
+<span class="go">0                      Fiji    FJI</span>
+<span class="go">1                  Tanzania    TZA</span>
+<span class="go">2                 W. Sahara    ESH</span>
+<span class="go">3                    Canada    CAN</span>
+<span class="go">4  United States of America    USA</span>
 
 <span class="go"># Merge with `merge` method on shared variable (iso codes):</span>
 <span class="gp">In [9]: </span><span class="n">country_shapes</span> <span class="o">=</span> <span class="n">country_shapes</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">country_names</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;iso_a3&#39;</span><span class="p">)</span>
 
 <span class="gp">In [10]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[10]: </span><span class="go"></span>
-<span class="go">                                            geometry          ...                           name</span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...          ...                    Afghanistan</span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...          ...                         Angola</span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...          ...                        Albania</span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...          ...           United Arab Emirates</span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...          ...                      Argentina</span>
-
-<span class="go">[5 rows x 3 columns]</span>
+<span class="go">                                            geometry iso_a3                      name</span>
+<span class="go">0  (POLYGON ((180 -16.06713266364245, 180 -16.555...    FJI                      Fiji</span>
+<span class="go">1  POLYGON ((33.90371119710453 -0.950000000000000...    TZA                  Tanzania</span>
+<span class="go">2  POLYGON ((-8.665589565454809 27.65642588959236...    ESH                 W. Sahara</span>
+<span class="go">3  (POLYGON ((-122.84 49.00000000000011, -122.974...    CAN                    Canada</span>
+<span class="go">4  (POLYGON ((-122.84 49.00000000000011, -120 49....    USA  United States of America</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="spatial-joins">
 <h2>Spatial Joins<a class="headerlink" href="#spatial-joins" title="Permalink to this headline">¶</a></h2>
 <p>In a Spatial Join, two geometry objects are merged based on their spatial relationship to one another.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># One GeoDataFrame of countries, one of Cities.</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># One GeoDataFrame of countries, one of Cities.</span>
 <span class="go"># Want to merge so we can get each city&#39;s country.</span>
 <span class="gp">In [11]: </span><span class="n">countries</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[11]: </span><span class="go"></span>
-<span class="go">                                            geometry               country</span>
-<span class="go">0  POLYGON ((61.21081709172574 35.65007233330923,...           Afghanistan</span>
-<span class="go">1  (POLYGON ((16.32652835456705 -5.87747039146621...                Angola</span>
-<span class="go">2  POLYGON ((20.59024743010491 41.85540416113361,...               Albania</span>
-<span class="go">3  POLYGON ((51.57951867046327 24.24549713795111,...  United Arab Emirates</span>
-<span class="go">4  (POLYGON ((-65.50000000000003 -55.199999999999...             Argentina</span>
+<span class="go">                                            geometry                   country</span>
+<span class="go">0  (POLYGON ((180 -16.06713266364245, 180 -16.555...                      Fiji</span>
+<span class="go">1  POLYGON ((33.90371119710453 -0.950000000000000...                  Tanzania</span>
+<span class="go">2  POLYGON ((-8.665589565454809 27.65642588959236...                 W. Sahara</span>
+<span class="go">3  (POLYGON ((-122.84 49.00000000000011, -122.974...                    Canada</span>
+<span class="go">4  (POLYGON ((-122.84 49.00000000000011, -120 49....  United States of America</span>
 
 <span class="gp">In [12]: </span><span class="n">cities</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="go">                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Out[12]: </span>
+<span class="go">                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Out[12]: </span>
 <span class="go">           name                                     geometry</span>
 <span class="go">0  Vatican City  POINT (12.45338654497177 41.90328217996012)</span>
 <span class="go">1    San Marino    POINT (12.44177015780014 43.936095834768)</span>
@@ -275,26 +269,40 @@
 
 <span class="gp">In [14]: </span><span class="n">cities_with_country</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[14]: </span><span class="go"></span>
-<span class="go">             name   ...     country</span>
-<span class="go">0    Vatican City   ...       Italy</span>
-<span class="go">1      San Marino   ...       Italy</span>
-<span class="go">192          Rome   ...       Italy</span>
-<span class="go">2           Vaduz   ...     Austria</span>
-<span class="go">184        Vienna   ...     Austria</span>
-
-<span class="go">[5 rows x 4 columns]</span>
+<span class="go">             name                                     geometry  index_right  country</span>
+<span class="go">0    Vatican City  POINT (12.45338654497177 41.90328217996012)          141    Italy</span>
+<span class="go">1      San Marino    POINT (12.44177015780014 43.936095834768)          141    Italy</span>
+<span class="go">192          Rome    POINT (12.481312562874 41.89790148509894)          141    Italy</span>
+<span class="go">2           Vaduz  POINT (9.516669472907267 47.13372377429357)          114  Austria</span>
+<span class="go">184        Vienna  POINT (16.36469309674374 48.20196113681686)          114  Austria</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">op</span></code> options determines the type of join operation to apply. <code class="docutils literal"><span class="pre">op</span></code> can be set to “intersects”, “within” or “contains” (these are all equivalent when joining points to polygons, but differ when joining polygons to other polygons or lines).</p>
-<p>Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the <code class="docutils literal"><span class="pre">buffer</span></code> method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.</p>
+<div class="section" id="sjoin-arguments">
+<h3>Sjoin Arguments<a class="headerlink" href="#sjoin-arguments" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">sjoin.()</span></code> has two core arguments: <code class="docutils literal notranslate"><span class="pre">how</span></code> and <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+<p><strong>op</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">`op</span></code> argument specifies how <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> decides whether or not to join the attributes of one object to another. There are three different join options as follows:</p>
+<ul class="simple">
+<li><cite>intersects</cite>: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.</li>
+<li><cite>within</cite>: The attributes will be joined if the object’s boundary and interior intersect <em>only</em> with the interior of the other object (not its boundary or exterior).</li>
+<li><cite>contains</cite>: The attributes will be joined if the object’s interior contains the boundary and interior of the other object and their boundaries do not touch at all.</li>
+</ul>
+<p>You can read more about each join type in the <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates">Shapely documentation</a>.</p>
+<p><strong>how</strong></p>
+<p>The <cite>how</cite> argument specifies the type of join that will occur and which geometry is retained in the resultant geodataframe. It accepts the following options:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">left</span></code>: use the index from the first (or <cite>left_df</cite>) geodataframe that you provide to <code class="docutils literal notranslate"><span class="pre">sjoin</span></code>; retain only the <cite>left_df</cite> geometry column</li>
+<li><code class="docutils literal notranslate"><span class="pre">right</span></code>: use index from second (or <cite>right_df</cite>); retain only the <cite>right_df</cite> geometry column</li>
+<li><code class="docutils literal notranslate"><span class="pre">inner</span></code>: use intersection of index values from both geodataframes; retain only the <cite>left_df</cite> geometry column</li>
+</ul>
+<p>Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the <code class="docutils literal notranslate"><span class="pre">buffer</span></code> method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.</p>
+</div>
 </div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -303,7 +311,7 @@
         <a href="geocoding.html" class="btn btn-neutral float-right" title="Geocoding" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="aggregation_with_dissolve.html" class="btn btn-neutral" title="Aggregation with dissolve" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="aggregation_with_dissolve.html" class="btn btn-neutral float-left" title="Aggregation with dissolve" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -312,11 +320,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -329,36 +337,15 @@
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

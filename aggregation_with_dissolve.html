@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Aggregation with dissolve &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Aggregation with dissolve &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,46 +17,38 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Merging Data" href="mergingdata.html"/>
-        <link rel="prev" title="Set-Operations with Overlay" href="set_operations.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Merging Data" href="mergingdata.html" />
+    <link rel="prev" title="Set-Operations with Overlay" href="set_operations.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -70,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -109,9 +101,10 @@
 <li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Aggregation with dissolve</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#dissolve-example"><code class="docutils literal"><span class="pre">dissolve</span></code> Example</a><ul class="simple">
+<li class="toctree-l2"><a class="reference internal" href="#dissolve-example"><code class="docutils literal notranslate"><span class="pre">dissolve</span></code> Example</a><ul class="simple">
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#dissolve-arguments">Dissolve Arguments</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
@@ -135,7 +128,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -143,9 +136,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -189,14 +183,14 @@
             
   <div class="section" id="aggregation-with-dissolve">
 <h1>Aggregation with dissolve<a class="headerlink" href="#aggregation-with-dissolve" title="Permalink to this headline">¶</a></h1>
-<p>It is often the case that we find ourselves working with spatial data that is more granular than we need. For example, we might have data on sub-national units, but we’re actually interested in studying patterns at the level of countries.</p>
-<p>In a non-spatial setting, we aggregate our data using the <code class="docutils literal"><span class="pre">groupby</span></code> function. But when working with spatial data, we need a special tool that can also aggregate geometric features. In the <em>geopandas</em> library, that functionality is provided by the <code class="docutils literal"><span class="pre">dissolve</span></code> function.</p>
-<p><code class="docutils literal"><span class="pre">dissolve</span></code> can be thought of as doing three things: (a) it dissolves all the geometries within a given group together into a single geometric feature (using the <code class="docutils literal"><span class="pre">unary_union</span></code> method), and (b) it aggregates all the rows of data in a group using <code class="docutils literal"><span class="pre">groupby.aggregate()</span></code>, and (c) it combines those two results.</p>
+<p>Spatial data are often more granular than we need. For example, we might have data on sub-national units, but we’re actually interested in studying patterns at the level of countries.</p>
+<p>In a non-spatial setting, when all we need are summary statistics of the data, we aggregate our data using the <code class="docutils literal notranslate"><span class="pre">groupby</span></code> function. But for spatial data, we sometimes also need to aggregate geometric features. In the <em>geopandas</em> library, we can aggregate geometric features using the <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> function.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dissolve</span></code> can be thought of as doing three things: (a) it dissolves all the geometries within a given group together into a single geometric feature (using the <code class="docutils literal notranslate"><span class="pre">unary_union</span></code> method), and (b) it aggregates all the rows of data in a group using <code class="docutils literal notranslate"><span class="pre">groupby.aggregate()</span></code>, and (c) it combines those two results.</p>
 <div class="section" id="dissolve-example">
-<h2><code class="docutils literal"><span class="pre">dissolve</span></code> Example<a class="headerlink" href="#dissolve-example" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">dissolve</span></code> Example<a class="headerlink" href="#dissolve-example" title="Permalink to this headline">¶</a></h2>
 <p>Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in <em>geopandas</em>. We can easily convert this to a continent-level dataset.</p>
-<p>First, let’s look at the most simple case where we just want continent shapes and names. By default, <code class="docutils literal"><span class="pre">dissolve</span></code> will pass <code class="docutils literal"><span class="pre">'first'</span></code> to <code class="docutils literal"><span class="pre">groupby.aggregate</span></code>.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<p>First, let’s look at the most simple case where we just want continent shapes and names. By default, <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> will pass <code class="docutils literal notranslate"><span class="pre">'first'</span></code> to <code class="docutils literal notranslate"><span class="pre">groupby.aggregate</span></code>.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [2]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span>
 
@@ -209,15 +203,15 @@
 <span class="go">                                                        geometry</span>
 <span class="go">continent                                                       </span>
 <span class="go">Africa         (POLYGON ((49.54351891459575 -12.4698328589405...</span>
-<span class="go">Antarctica     (POLYGON ((-159.2081835601977 -79.497059421708...</span>
-<span class="go">Asia           (POLYGON ((120.7156087586305 -10.2395813940878...</span>
-<span class="go">Europe         (POLYGON ((-52.55642473001839 2.50470530843705...</span>
+<span class="go">Antarctica     (POLYGON ((-163.7128956777287 -78.595667413241...</span>
+<span class="go">Asia           (POLYGON ((120.2950142762069 -10.2586499976035...</span>
+<span class="go">Europe         (POLYGON ((-51.65779741067889 4.15623240805302...</span>
 <span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...</span>
 </pre></div>
 </div>
 <img alt="_images/continents1.png" src="_images/continents1.png" />
-<p>If we are interested in aggregate populations, however, we can pass different functions to the <code class="docutils literal"><span class="pre">dissolve</span></code> method to aggregate populations:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<p>If we are interested in aggregate populations, however, we can pass different functions to the <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> method to aggregate populations using the <code class="docutils literal notranslate"><span class="pre">aggfunc</span> <span class="pre">=</span></code> argument:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [7]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="s1">&#39;pop_est&#39;</span><span class="p">]]</span>
 
@@ -227,26 +221,38 @@
 
 <span class="gp">In [10]: </span><span class="n">continents</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[10]: </span><span class="go"></span>
-<span class="go">                                                        geometry       pop_est</span>
-<span class="go">continent                                                                     </span>
-<span class="go">Africa         (POLYGON ((49.54351891459575 -12.4698328589405...  9.932819e+08</span>
-<span class="go">Antarctica     (POLYGON ((-159.2081835601977 -79.497059421708...  3.802000e+03</span>
-<span class="go">Asia           (POLYGON ((120.7156087586305 -10.2395813940878...  4.085853e+09</span>
-<span class="go">Europe         (POLYGON ((-52.55642473001839 2.50470530843705...  7.281312e+08</span>
-<span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...  5.393510e+08</span>
+<span class="go">                                                        geometry     pop_est</span>
+<span class="go">continent                                                                   </span>
+<span class="go">Africa         (POLYGON ((49.54351891459575 -12.4698328589405...  1219176238</span>
+<span class="go">Antarctica     (POLYGON ((-163.7128956777287 -78.595667413241...        4050</span>
+<span class="go">Asia           (POLYGON ((120.2950142762069 -10.2586499976035...  4389144868</span>
+<span class="go">Europe         (POLYGON ((-51.65779741067889 4.15623240805302...   746398461</span>
+<span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...   573042112</span>
 </pre></div>
 </div>
 <img alt="_images/continents2.png" src="_images/continents2.png" />
 <div class="toctree-wrapper compound">
 </div>
 </div>
+<div class="section" id="dissolve-arguments">
+<h2>Dissolve Arguments<a class="headerlink" href="#dissolve-arguments" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">aggfunc</span> <span class="pre">=</span></code> argument defaults to ‘first’ which means that the first row of attributes values found in the dissolve routine will be assigned to the resultant dissolved geodataframe.
+However it also accepts other summary statistic options as allowed by <code class="docutils literal notranslate"><span class="pre">pandas.groupby()</span></code> including:</p>
+<ul class="simple">
+<li>‘first’</li>
+<li>‘last’</li>
+<li>‘min’</li>
+<li>‘max’</li>
+<li>‘sum’</li>
+<li>‘mean’</li>
+<li>‘median’</li>
+</ul>
+</div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -255,7 +261,7 @@
         <a href="mergingdata.html" class="btn btn-neutral float-right" title="Merging Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="set_operations.html" class="btn btn-neutral" title="Set-Operations with Overlay" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="set_operations.html" class="btn btn-neutral float-left" title="Set-Operations with Overlay" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -264,11 +270,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -281,36 +287,15 @@
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

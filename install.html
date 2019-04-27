@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Installation &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,46 +17,38 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Examples Gallery" href="gallery/index.html"/>
-        <link rel="prev" title="GeoPandas 0.4.0" href="index.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples Gallery" href="gallery/index.html" />
+    <link rel="prev" title="GeoPandas 0.5.0" href="index.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -70,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -97,7 +89,13 @@
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#installing-geopandas">Installing GeoPandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-with-anaconda-conda">Installing with Anaconda / conda</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-conda-forge-channel">Using the conda-forge channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-new-environment">Creating a new environment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-with-pip">Installing with pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-from-source">Installing from source</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
 </ul>
 </li>
@@ -134,7 +132,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -142,9 +140,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -188,66 +187,141 @@
             
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="installing-geopandas">
-<h2>Installing GeoPandas<a class="headerlink" href="#installing-geopandas" title="Permalink to this headline">¶</a></h2>
-<p>To install the released version, we recommend to use <a class="reference external" href="https://conda-forge.org/">conda</a> (from the conda-forge
-channel):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">geopandas</span>
+<p>GeoPandas depends for its spatial functionality on a large geospatial, open
+source stack of libraries (<a class="reference external" href="https://geos.osgeo.org">GEOS</a>, <a class="reference external" href="https://www.gdal.org/">GDAL</a>, <a class="reference external" href="https://proj4.org/">PROJ</a>). See the
+<a class="reference internal" href="#dependencies"><span class="std std-ref">Dependencies</span></a> section below for more details. Those base C
+libraries can sometimes be a challenge to install. Therefore, we advise you
+to closely follow the recommendations below to avoid installation problems.</p>
+<div class="section" id="installing-with-anaconda-conda">
+<span id="install-conda"></span><h2>Installing with Anaconda / conda<a class="headerlink" href="#installing-with-anaconda-conda" title="Permalink to this headline">¶</a></h2>
+<p>To install GeoPandas and all its dependencies, we recommend to use the <a class="reference external" href="https://conda.io/en/latest/">conda</a>
+package manager. This can be obtained by installing the
+<a class="reference external" href="https://www.anaconda.com/distribution/">Anaconda Distribution</a> (a free Python distribution for data science), or
+through <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a> (minimal distribution only containing Python and the
+<a class="reference external" href="https://conda.io/en/latest/">conda</a> package manager). See also the <a class="reference external" href="https://conda.io/docs/user-guide/install/download.html">installation docs</a> for more information
+on how to install Anaconda or miniconda locally.</p>
+<p>The advantage of using the <a class="reference external" href="https://conda.io/en/latest/">conda</a> package manager is that it provides
+pre-built binaries for all the required and optional dependencies of GeoPandas
+for all platforms (Windows, Mac, Linux).</p>
+<p>To install the latest version of GeoPandas, you can then do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">geopandas</span>
 </pre></div>
 </div>
-<p>Alternatively, you can also install GeoPandas with pip, but then you need
-to make sure that all dependencies are installed correctly:</p>
-<blockquote>
-<div>pip install geopandas</div></blockquote>
+<div class="section" id="using-the-conda-forge-channel">
+<h3>Using the conda-forge channel<a class="headerlink" href="#using-the-conda-forge-channel" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://conda-forge.org/">conda-forge</a> is a community effort that provides conda packages for a wide
+range of software. It provides the <em>conda-forge</em> package channel for conda from
+which packages can be installed, in addition to the “<em>defaults</em>” channel
+provided by Anaconda.
+Depending on what other packages you are working with, the <em>defaults</em> channel
+or <em>conda-forge</em> channel may be better for your needs (e.g. some packages are
+available on <em>conda-forge</em> and not on <em>defaults</em>).</p>
+<p>GeoPandas and all its dependencies are available on the <em>conda-forge</em>
+channel, and can be installed as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">--</span><span class="n">channel</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">geopandas</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We strongly recommend to either install everything from the <em>defaults</em>
+channel, or everything from the <em>conda-forge</em> channel. Ending up with a
+mixture of packages from both channels for the dependencies of GeoPandas
+can lead to import problems.
+See the <a class="reference external" href="http://conda-forge.org/docs/user/tipsandtricks.html#using-multiple-channels">conda-forge section on using multiple channels</a>
+for more details.</p>
+</div>
+</div>
+<div class="section" id="creating-a-new-environment">
+<h3>Creating a new environment<a class="headerlink" href="#creating-a-new-environment" title="Permalink to this headline">¶</a></h3>
+<p>Creating a new environment is not strictly necessary, but given that installing
+other geospatial packages from different channels may cause dependency conflicts
+(as mentioned in the note above), it can be good practice to install the geospatial
+stack in a clean environment starting fresh.</p>
+<p>The following commands create a new environment with the name <code class="docutils literal notranslate"><span class="pre">geo_env</span></code>,
+configures it to install packages always from conda-forge, and installs
+GeoPandas in it:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">geo_env</span>
+<span class="n">conda</span> <span class="n">activate</span> <span class="n">geo_env</span>
+<span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">env</span> <span class="o">--</span><span class="n">add</span> <span class="n">channels</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span>
+<span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">env</span> <span class="o">--</span><span class="nb">set</span> <span class="n">channel_priority</span> <span class="n">strict</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="n">python</span><span class="o">=</span><span class="mi">3</span> <span class="n">geopandas</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="installing-with-pip">
+<span id="install-pip"></span><h2>Installing with pip<a class="headerlink" href="#installing-with-pip" title="Permalink to this headline">¶</a></h2>
+<p>GeoPandas can also be installed with pip, if all dependencies can be installed
+as well:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">geopandas</span>
+</pre></div>
+</div>
+<div class="admonition warning" id="install-deps">
+<p class="first admonition-title">Warning</p>
+<p class="last">When using pip to install GeoPandas, you need to make sure that all dependencies are
+installed correctly. <a class="reference external" href="https://shapely.readthedocs.io">shapely</a> and <a class="reference external" href="https://fiona.readthedocs.io">fiona</a> provide binary wheels with the
+dependencies included for Mac and Linux, but not for Windows.
+<a class="reference external" href="https://github.com/jswhit/pyproj">pyproj</a> and <a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> don’t provide those.
+So depending on your platform, you might need to compile and install their
+C dependencies manually. We refer to the individual packages for more
+details on installing those.
+Using conda (see above) avoids the need to compile the dependencies yourself.</p>
+</div>
+</div>
+<div class="section" id="installing-from-source">
+<h2>Installing from source<a class="headerlink" href="#installing-from-source" title="Permalink to this headline">¶</a></h2>
 <p>You may install the latest development version by cloning the
-<cite>GitHub</cite> repository and using the setup script:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">geopandas</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span>
+<cite>GitHub</cite> repository and using pip to install from the local directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">geopandas</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span>
 <span class="n">cd</span> <span class="n">geopandas</span>
 <span class="n">pip</span> <span class="n">install</span> <span class="o">.</span>
 </pre></div>
 </div>
 <p>It is also possible to install the latest development version
 directly from the GitHub repository with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">git</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">geopandas</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">git</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">geopandas</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
+<p>For installing GeoPandas from source, the same <a class="reference internal" href="#install-deps"><span class="std std-ref">note</span></a> on
+the need to have all dependencies correctly installed applies. But, those
+dependencies can also be installed independently with conda before installing
+GeoPandas from source:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">pandas</span> <span class="n">fiona</span> <span class="n">shapely</span> <span class="n">pyproj</span> <span class="n">rtree</span>
+</pre></div>
+</div>
+<p>See the <a class="reference internal" href="#install-conda"><span class="std std-ref">section on conda</span></a> above for more details on
+getting running with Anaconda.</p>
 </div>
 <div class="section" id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p>Installation via <cite>conda</cite> should also install all dependencies, but a complete list is as follows:</p>
+<span id="id1"></span><h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Required dependencies:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://www.numpy.org">numpy</a></li>
-<li><a class="reference external" href="http://pandas.pydata.org">pandas</a> (version 0.15.2 or later)</li>
-<li><a class="reference external" href="http://toblerity.github.io/shapely">shapely</a></li>
-<li><a class="reference external" href="http://toblerity.github.io/fiona">fiona</a></li>
+<li><a class="reference external" href="http://pandas.pydata.org">pandas</a> (version 0.19.1 or later)</li>
+<li><a class="reference external" href="https://shapely.readthedocs.io">shapely</a> (interface to <a class="reference external" href="https://geos.osgeo.org">GEOS</a>)</li>
+<li><a class="reference external" href="https://fiona.readthedocs.io">fiona</a> (interface to <a class="reference external" href="https://www.gdal.org/">GDAL</a>)</li>
+<li><a class="reference external" href="https://github.com/jswhit/pyproj">pyproj</a> (interface to <a class="reference external" href="https://proj4.org/">PROJ</a>)</li>
 <li><a class="reference external" href="https://pythonhosted.org/six">six</a></li>
-<li><a class="reference external" href="https://github.com/jswhit/pyproj">pyproj</a></li>
 </ul>
 <p>Further, optional dependencies are:</p>
 <ul class="simple">
-<li><a class="reference external" href="https://github.com/geopy/geopy">geopy</a> 0.99 (optional; for geocoding)</li>
+<li><a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> (optional; spatial index to improve performance and required for
+overlay operations; interface to <a class="reference external" href="https://github.com/libspatialindex/libspatialindex">libspatialindex</a>)</li>
 <li><a class="reference external" href="https://pypi.python.org/pypi/psycopg2">psycopg2</a> (optional; for PostGIS connection)</li>
-<li><a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> (optional; spatial index to improve performance)</li>
+<li><a class="reference external" href="https://github.com/geopy/geopy">geopy</a> (optional; for geocoding)</li>
 </ul>
 <p>For plotting, these additional packages may be used:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://matplotlib.org">matplotlib</a></li>
 <li><a class="reference external" href="https://pypi.python.org/pypi/descartes">descartes</a></li>
-<li><a class="reference external" href="http://pysal.org">pysal</a></li>
+<li><a class="reference external" href="https://mapclassify.readthedocs.io/en/latest/">mapclassify</a></li>
 </ul>
-<p>These can be installed independently via the following set of commands:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">fiona</span> <span class="n">shapely</span> <span class="n">pyproj</span> <span class="n">rtree</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="n">pandas</span>
-</pre></div>
-</div>
 </div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -256,7 +330,7 @@ directly from the GitHub repository with:</p>
         <a href="gallery/index.html" class="btn btn-neutral float-right" title="Examples Gallery" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="GeoPandas 0.4.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="GeoPandas 0.5.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -265,11 +339,11 @@ directly from the GitHub repository with:</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -282,36 +356,15 @@ directly from the GitHub repository with:</p>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

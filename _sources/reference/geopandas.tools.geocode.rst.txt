@@ -1,5 +1,5 @@
-geopandas\.tools\.geocode
-=========================
+geopandas.tools.geocode
+=======================
 
 
 .. currentmodule:: geopandas.tools

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reading and Writing Files &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Reading and Writing Files &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,46 +17,38 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Indexing and Selecting Data" href="indexing.html"/>
-        <link rel="prev" title="Data Structures" href="data_structures.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Indexing and Selecting Data" href="indexing.html" />
+    <link rel="prev" title="Data Structures" href="data_structures.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -70,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -134,7 +126,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -142,9 +134,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -191,34 +184,48 @@
 <div class="section" id="reading-spatial-data">
 <h2>Reading Spatial Data<a class="headerlink" href="#reading-spatial-data" title="Permalink to this headline">¶</a></h2>
 <p><em>geopandas</em> can read almost any vector-based spatial data format including ESRI shapefile, GeoJSON files and more using the command:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>which returns a GeoDataFrame object. (This is possible because <em>geopandas</em> makes use of the great <a class="reference external" href="http://toblerity.org/fiona/manual.html">fiona</a> library, which in turn makes use of a massive open-source program called <a class="reference external" href="http://www.gdal.org/">GDAL/OGR</a> designed to facilitate spatial data transformations).</p>
-<p>Any arguments passed to <code class="docutils literal"><span class="pre">read_file()</span></code> after the file name will be passed directly to <code class="docutils literal"><span class="pre">fiona.open</span></code>, which does the actual data importation. In general, <code class="docutils literal"><span class="pre">read_file</span></code> is pretty smart and should do what you want without extra arguments, but for more help, type:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">fiona</span><span class="p">;</span> <span class="n">help</span><span class="p">(</span><span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">)</span>
+<p>which returns a GeoDataFrame object. (This is possible because <em>geopandas</em> makes use of the great <a class="reference external" href="http://fiona.readthedocs.io/en/latest/manual.html">fiona</a> library, which in turn makes use of a massive open-source program called <a class="reference external" href="http://www.gdal.org/">GDAL/OGR</a> designed to facilitate spatial data transformations).</p>
+<p>Any arguments passed to <code class="docutils literal notranslate"><span class="pre">read_file()</span></code> after the file name will be passed directly to <code class="docutils literal notranslate"><span class="pre">fiona.open</span></code>, which does the actual data importation. In general, <code class="docutils literal notranslate"><span class="pre">read_file</span></code> is pretty smart and should do what you want without extra arguments, but for more help, type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">fiona</span><span class="p">;</span> <span class="n">help</span><span class="p">(</span><span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Among other things, one can explicitly set the driver (shapefile, GeoJSON) with the <code class="docutils literal"><span class="pre">driver</span></code> keyword, or pick a single layer from a multi-layered file with the <code class="docutils literal"><span class="pre">layer</span></code> keyword.</p>
-<p>Where supported in <code class="docutils literal"><span class="pre">fiona</span></code>, <em>geopandas</em> can also load resources directly from
+<p>Among other things, one can explicitly set the driver (shapefile, GeoJSON) with the <code class="docutils literal notranslate"><span class="pre">driver</span></code> keyword, or pick a single layer from a multi-layered file with the <code class="docutils literal notranslate"><span class="pre">layer</span></code> keyword:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;countries&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Where supported in <code class="docutils literal notranslate"><span class="pre">fiona</span></code>, <em>geopandas</em> can also load resources directly from
 a web URL, for example for GeoJSON files from <a class="reference external" href="http://geojson.xyz/">geojson.xyz</a>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson&quot;</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><em>geopandas</em> can also get data from a PostGIS database using the <code class="docutils literal"><span class="pre">read_postgis()</span></code> command.</p>
+<p><em>geopandas</em> can also get data from a PostGIS database using the <code class="docutils literal notranslate"><span class="pre">read_postgis()</span></code> command.</p>
 </div>
 <div class="section" id="writing-spatial-data">
 <h2>Writing Spatial Data<a class="headerlink" href="#writing-spatial-data" title="Permalink to this headline">¶</a></h2>
-<p>GeoDataFrames can be exported to many different standard formats using the <code class="docutils literal"><span class="pre">GeoDataFrame.to_file()</span></code> method. For a full list of supported formats, type <code class="docutils literal"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">fiona.supported_drivers</span></code>.</p>
+<p>GeoDataFrames can be exported to many different standard formats using the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame.to_file()</span></code> method. For a full list of supported formats, type <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">fiona.supported_drivers</span></code>.</p>
+<p><strong>Writing to Shapefile</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;countries.shp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Writing to GeoJSON</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;countries.geojson&quot;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GeoJSON&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Writing to GeoPackage</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;countries&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+<span class="n">cities_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;cities&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -227,7 +234,7 @@ a web URL, for example for GeoJSON files from <a class="reference external" href
         <a href="indexing.html" class="btn btn-neutral float-right" title="Indexing and Selecting Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="data_structures.html" class="btn btn-neutral" title="Data Structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="data_structures.html" class="btn btn-neutral float-left" title="Data Structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -236,11 +243,11 @@ a web URL, for example for GeoJSON files from <a class="reference external" href
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -253,36 +260,15 @@ a web URL, for example for GeoJSON files from <a class="reference external" href
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

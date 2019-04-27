@@ -1,5 +1,5 @@
-geopandas\.GeoDataFrame
-=======================
+geopandas.GeoDataFrame
+======================
 
 
 .. currentmodule:: geopandas

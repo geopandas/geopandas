@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Contributing to GeoPandas &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Contributing to GeoPandas &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,45 +17,37 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="prev" title="geopandas.datasets.get_path" href="reference/geopandas.datasets.get_path.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="geopandas.datasets.get_path" href="reference/geopandas.datasets.get_path.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -69,7 +61,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -151,7 +143,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -159,9 +151,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -234,7 +227,7 @@ return values should be ducumented explicitly.</li>
 code base.  Use modern python idioms when possible that are
 compatibile with both major versions, and use the
 <a class="reference external" href="https://pythonhosted.org/six">six</a> library where helpful to smooth
-over the differences.  Use <code class="docutils literal"><span class="pre">from</span> <span class="pre">__future__</span> <span class="pre">import</span></code> statements where
+over the differences.  Use <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">__future__</span> <span class="pre">import</span></code> statements where
 appropriate.  Test code locally in both python 2 and python 3 when
 possible (all supported versions will be automatically tested on
 Travis CI).</li>
@@ -252,7 +245,7 @@ imports when necessary in tests.</li>
 <li>Fork the <em>geopandas</em> git repository</li>
 <li>Create a development environment</li>
 <li>Install <em>geopandas</em> dependencies</li>
-<li>Make a <code class="docutils literal"><span class="pre">development</span></code> build of <em>geopandas</em></li>
+<li>Make a <code class="docutils literal notranslate"><span class="pre">development</span></code> build of <em>geopandas</em></li>
 <li>Make changes to code and add tests</li>
 <li>Update the documentation</li>
 <li>Submit a Pull Request</li>
@@ -285,9 +278,9 @@ you can work seamlessly between your local repository and GitHub.</p>
 <div class="section" id="forking">
 <span id="contributing-forking"></span><h3>Forking<a class="headerlink" href="#forking" title="Permalink to this headline">¶</a></h3>
 <p>You will need your own fork to work on the code. Go to the <a class="reference external" href="https://github.com/geopandas/geopandas">geopandas project
-page</a> and hit the <code class="docutils literal"><span class="pre">Fork</span></code> button. You will
+page</a> and hit the <code class="docutils literal notranslate"><span class="pre">Fork</span></code> button. You will
 want to clone your fork to your machine:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">your</span><span class="o">-</span><span class="n">user</span><span class="o">-</span><span class="n">name</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span> <span class="n">geopandas</span><span class="o">-</span><span class="n">yourname</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">your</span><span class="o">-</span><span class="n">user</span><span class="o">-</span><span class="n">name</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span> <span class="n">geopandas</span><span class="o">-</span><span class="n">yourname</span>
 <span class="n">cd</span> <span class="n">geopandas</span><span class="o">-</span><span class="n">yourname</span>
 <span class="n">git</span> <span class="n">remote</span> <span class="n">add</span> <span class="n">upstream</span> <span class="n">git</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">geopandas</span><span class="o">/</span><span class="n">geopandas</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
@@ -303,12 +296,12 @@ GitHub repository.  Instructions for doing so are <a class="reference external" 
 <h3>Creating a branch<a class="headerlink" href="#creating-a-branch" title="Permalink to this headline">¶</a></h3>
 <p>You want your master branch to reflect only production-ready code, so create a
 feature branch for making your changes. For example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">branch</span> <span class="n">shiny</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">feature</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">branch</span> <span class="n">shiny</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">feature</span>
 <span class="n">git</span> <span class="n">checkout</span> <span class="n">shiny</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">feature</span>
 </pre></div>
 </div>
 <p>The above can be simplified to:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">shiny</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">feature</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">shiny</span><span class="o">-</span><span class="n">new</span><span class="o">-</span><span class="n">feature</span>
 </pre></div>
 </div>
 <p>This changes your working directory to the shiny-new-feature branch.  Keep any
@@ -316,13 +309,13 @@ changes in this branch specific to one bug or feature so it is clear
 what the branch brings to <em>geopandas</em>. You can have many shiny-new-features
 and switch in between them using the git checkout command.</p>
 <p>To update this branch, you need to retrieve the changes from the master branch:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">fetch</span> <span class="n">upstream</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">fetch</span> <span class="n">upstream</span>
 <span class="n">git</span> <span class="n">rebase</span> <span class="n">upstream</span><span class="o">/</span><span class="n">master</span>
 </pre></div>
 </div>
 <p>This will replay your commits on top of the latest geopandas git master.  If this
 leads to merge conflicts, you must resolve these before submitting your pull
-request.  If you have uncommitted changes, you will need to <code class="docutils literal"><span class="pre">stash</span></code> them prior
+request.  If you have uncommitted changes, you will need to <code class="docutils literal notranslate"><span class="pre">stash</span></code> them prior
 to updating.  This will effectively store your changes and they can be reapplied
 after updating.</p>
 </div>
@@ -337,34 +330,34 @@ version (which you may break while playing with code) in another.</p>
 <li>Install either <a class="reference external" href="http://docs.continuum.io/anaconda/">Anaconda</a> or
 <a class="reference external" href="http://conda.pydata.org/miniconda.html">miniconda</a></li>
 <li>Make sure that you have <a class="reference internal" href="#contributing-forking"><span class="std std-ref">cloned the repository</span></a></li>
-<li><code class="docutils literal"><span class="pre">cd</span></code> to the <em>geopandas*</em> source directory</li>
+<li><code class="docutils literal notranslate"><span class="pre">cd</span></code> to the <em>geopandas*</em> source directory</li>
 </ul>
-<p>Tell conda to create a new environment, named <code class="docutils literal"><span class="pre">geopandas_dev</span></code>, or any other name you would like
+<p>Tell conda to create a new environment, named <code class="docutils literal notranslate"><span class="pre">geopandas_dev</span></code>, or any other name you would like
 for this environment, by running:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">geopandas_dev</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">geopandas_dev</span>
 </pre></div>
 </div>
 <p>For a python 3 environment:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">geopandas_dev</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.4</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">geopandas_dev</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.4</span>
 </pre></div>
 </div>
 <p>This will create the new environment, and not touch any of your existing environments,
 nor any existing python installation.</p>
-<p>To work in this environment, Windows users should <code class="docutils literal"><span class="pre">activate</span></code> it as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">activate</span> <span class="n">geopandas_dev</span>
+<p>To work in this environment, Windows users should <code class="docutils literal notranslate"><span class="pre">activate</span></code> it as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">activate</span> <span class="n">geopandas_dev</span>
 </pre></div>
 </div>
 <p>Mac OSX and Linux users should use:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">source</span> <span class="n">activate</span> <span class="n">geopandas_dev</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">source</span> <span class="n">activate</span> <span class="n">geopandas_dev</span>
 </pre></div>
 </div>
 <p>You will then see a confirmation message to indicate you are in the new development environment.</p>
 <p>To view your environments:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">info</span> <span class="o">-</span><span class="n">e</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">info</span> <span class="o">-</span><span class="n">e</span>
 </pre></div>
 </div>
 <p>To return to you home root environment:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">deactivate</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">deactivate</span>
 </pre></div>
 </div>
 <p>See the full conda docs <a class="reference external" href="http://conda.pydata.org/docs">here</a>.</p>
@@ -375,7 +368,7 @@ nor any existing python installation.</p>
 <p>To run <em>geopandas</em> in an development environment, you must first install
 <em>geopandas</em>’s dependencies. We suggest doing so using the following commands
 (executed after your development environment has been activated):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">fiona</span> <span class="n">shapely</span> <span class="n">pyproj</span> <span class="n">rtree</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">fiona</span> <span class="n">shapely</span> <span class="n">pyproj</span> <span class="n">rtree</span>
 <span class="n">conda</span> <span class="n">install</span> <span class="n">pandas</span>
 </pre></div>
 </div>
@@ -385,7 +378,7 @@ nor any existing python installation.</p>
 <h2>4) Making a development build<a class="headerlink" href="#making-a-development-build" title="Permalink to this headline">¶</a></h2>
 <p>Once dependencies are in place, make an in-place build by navigating to the git
 clone of the <em>geopandas</em> repository and running:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span>
 </pre></div>
 </div>
 </div>
@@ -405,19 +398,19 @@ it is worth getting in the habit of writing tests ahead of time so this is never
 extensions in <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/routines.testing.html">numpy.testing</a>.</p>
 <div class="section" id="writing-tests">
 <h3>Writing tests<a class="headerlink" href="#writing-tests" title="Permalink to this headline">¶</a></h3>
-<p>All tests should go into the <code class="docutils literal"><span class="pre">tests</span></code> directory. This folder contains many
+<p>All tests should go into the <code class="docutils literal notranslate"><span class="pre">tests</span></code> directory. This folder contains many
 current examples of tests, and we suggest looking to these for inspiration.</p>
-<p>The <code class="docutils literal"><span class="pre">.util</span></code> module has some special <code class="docutils literal"><span class="pre">assert</span></code> functions that
+<p>The <code class="docutils literal notranslate"><span class="pre">.util</span></code> module has some special <code class="docutils literal notranslate"><span class="pre">assert</span></code> functions that
 make it easier to make statements about whether GeoSeries or GeoDataFrame
 objects are equivalent. The easiest way to verify that your code is correct is to
 explicitly construct the result you expect, then compare the actual result to
-the expected correct result, using eg the function <code class="docutils literal"><span class="pre">assert_geoseries_equal</span></code>.</p>
+the expected correct result, using eg the function <code class="docutils literal notranslate"><span class="pre">assert_geoseries_equal</span></code>.</p>
 </div>
 <div class="section" id="running-the-test-suite">
 <h3>Running the test suite<a class="headerlink" href="#running-the-test-suite" title="Permalink to this headline">¶</a></h3>
 <p>The tests can then be run directly inside your Git clone (without having to
 install <em>geopandas</em>) by typing:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pytest</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytest</span>
 </pre></div>
 </div>
 </div>
@@ -429,7 +422,7 @@ make by modifying the appropriate file in the <cite>source</cite> folder within 
 <em>geopandas</em> docs us reStructuredText syntax, <a class="reference external" href="http://www.sphinx-doc.org/en/stable/rest.html#rst-primer">which is explained here</a>
 and the docstrings follow the <a class="reference external" href="https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt">Numpy Docstring standard</a>.</p>
 <p>Once you have made your changes, you can build the docs by navigating to the <cite>doc</cite> folder and typing:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">html</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">html</span>
 </pre></div>
 </div>
 <p>The resulting html pages will be located in <cite>doc/build/html</cite>.</p>
@@ -444,16 +437,14 @@ submit a pull request to have them integrated into the <em>geopandas</em> code b
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="reference/geopandas.datasets.get_path.html" class="btn btn-neutral" title="geopandas.datasets.get_path" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="reference/geopandas.datasets.get_path.html" class="btn btn-neutral float-left" title="geopandas.datasets.get_path" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -462,11 +453,11 @@ submit a pull request to have them integrated into the <em>geopandas</em> code b
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -479,36 +470,15 @@ submit a pull request to have them integrated into the <em>geopandas</em> code b
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

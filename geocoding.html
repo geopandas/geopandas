@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geocoding &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Geocoding &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,46 +17,38 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Reference" href="reference.html"/>
-        <link rel="prev" title="Merging Data" href="mergingdata.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="prev" title="Merging Data" href="mergingdata.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -70,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -130,7 +122,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -138,9 +130,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -184,12 +177,12 @@
             
   <div class="section" id="geocoding">
 <h1>Geocoding<a class="headerlink" href="#geocoding" title="Permalink to this headline">¶</a></h1>
-<p><code class="docutils literal"><span class="pre">geopandas</span></code> supports geocoding (i.e., converting place names to
-location on Earth) through <a class="reference external" href="http://geopy.readthedocs.io/">geopy</a>, an optional dependency of <code class="docutils literal"><span class="pre">geopandas</span></code>.
-The following example shows how to use the <a class="reference external" href="https://developers.google.com/maps/documentation/geocoding/start">Google geocoding API</a> to get the
+<p><code class="docutils literal notranslate"><span class="pre">geopandas</span></code> supports geocoding (i.e., converting place names to
+location on Earth) through <a class="reference external" href="http://geopy.readthedocs.io/">geopy</a>, an optional dependency of <code class="docutils literal notranslate"><span class="pre">geopandas</span></code>.
+The following example shows how to get the
 locations of boroughs in New York City, and plots those locations along
-with the detailed borough boundary file included within <code class="docutils literal"><span class="pre">geopandas</span></code>.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">boros</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;nybb&quot;</span><span class="p">))</span>
+with the detailed borough boundary file included within <code class="docutils literal notranslate"><span class="pre">geopandas</span></code>.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">boros</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;nybb&quot;</span><span class="p">))</span>
 
 <span class="gp">In [2]: </span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span>
 <span class="gh">Out[2]: </span><span class="go"></span>
@@ -200,16 +193,16 @@ with the detailed borough boundary file included within <code class="docutils li
 <span class="go">4            Bronx</span>
 <span class="go">Name: BoroName, dtype: object</span>
 
-<span class="gp">In [3]: </span><span class="n">boro_locations</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span><span class="p">,</span> <span class="n">provider</span><span class="o">=</span><span class="s2">&quot;google&quot;</span><span class="p">)</span>
+<span class="gp">In [3]: </span><span class="n">boro_locations</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span><span class="p">)</span>
 
 <span class="gp">In [4]: </span><span class="n">boro_locations</span>
 <span class="gh">Out[4]: </span><span class="go"></span>
-<span class="go">                                geometry                       address</span>
-<span class="go">0         POINT (-74.1502007 40.5795317)        Staten Island, NY, USA</span>
-<span class="go">1         POINT (-73.7948516 40.7282239)               Queens, NY, USA</span>
-<span class="go">2  POINT (-73.94415789999999 40.6781784)             Brooklyn, NY, USA</span>
-<span class="go">3         POINT (-73.9712488 40.7830603)  Manhattan, New York, NY, USA</span>
-<span class="go">4         POINT (-73.8648268 40.8447819)                Bronx, NY, USA</span>
+<span class="go">                                      geometry                       address</span>
+<span class="go">0   POINT (-74.1502012148768 40.5795366485504)        Staten Island, NY, USA</span>
+<span class="go">1   POINT (-73.7948512090548 40.7282266729122)               Queens, NY, USA</span>
+<span class="go">2  POINT (-73.94415121150099 40.6781766647127)             Brooklyn, NY, USA</span>
+<span class="go">3   POINT (-73.9712412119449 40.7830666818965)  Manhattan, New York, NY, USA</span>
+<span class="go">4    POINT (-73.8648212102013 40.844786692009)                Bronx, NY, USA</span>
 
 <span class="gp">In [5]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
@@ -221,20 +214,33 @@ with the detailed borough boundary file included within <code class="docutils li
 </pre></div>
 </div>
 <img alt="_images/boro_centers_over_bounds.png" src="_images/boro_centers_over_bounds.png" />
-<p>The argument to <code class="docutils literal"><span class="pre">provider</span></code> can either be a string referencing geocoding
-services, such as <code class="docutils literal"><span class="pre">'google'</span></code>, <code class="docutils literal"><span class="pre">'bing'</span></code>, <code class="docutils literal"><span class="pre">'yahoo'</span></code>, and
-<code class="docutils literal"><span class="pre">'openmapquest'</span></code>, or an instance of a <code class="docutils literal"><span class="pre">Geocoder</span></code> from <code class="docutils literal"><span class="pre">geopy</span></code>. See
-<code class="docutils literal"><span class="pre">geopy.geocoders.SERVICE_TO_GEOCODER</span></code> for the full list.
+<p>By default, the <code class="docutils literal notranslate"><span class="pre">geocode</span></code> function uses the
+<a class="reference external" href="https://geocode.farm/">GeoCode.Farm geocoding API</a> with a rate limitation
+applied. But a different geocoding service can be specified with the
+<code class="docutils literal notranslate"><span class="pre">provider</span></code> keyword.</p>
+<p>The argument to <code class="docutils literal notranslate"><span class="pre">provider</span></code> can either be a string referencing geocoding
+services, such as <code class="docutils literal notranslate"><span class="pre">'google'</span></code>, <code class="docutils literal notranslate"><span class="pre">'bing'</span></code>, <code class="docutils literal notranslate"><span class="pre">'yahoo'</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">'openmapquest'</span></code>, or an instance of a <code class="docutils literal notranslate"><span class="pre">Geocoder</span></code> from <code class="docutils literal notranslate"><span class="pre">geopy</span></code>. See
+<code class="docutils literal notranslate"><span class="pre">geopy.geocoders.SERVICE_TO_GEOCODER</span></code> for the full list.
 For many providers, parameters such as API keys need to be passed as
-<code class="docutils literal"><span class="pre">**kwargs</span></code> in the <code class="docutils literal"><span class="pre">geocode</span></code> call.</p>
-<p>Please consult the Terms of Service for the chosen provider.</p>
+<code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> in the <code class="docutils literal notranslate"><span class="pre">geocode</span></code> call.</p>
+<p>For example, to use the OpenStreetMap Nominatim geocoder, you need to specify
+a user agent:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">geopandas</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span><span class="p">,</span> <span class="n">provider</span><span class="o">=</span><span class="s1">&#39;nominatim&#39;</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s2">&quot;my-application&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p class="last">Please consult the Terms of Service for the chosen provider. The example
+above uses <code class="docutils literal notranslate"><span class="pre">'geocodefarm'</span></code> (the default), for which free users are
+limited to 250 calls per day and 4 requests per second
+(<a class="reference external" href="https://geocode.farm/geocoding/free-api-documentation/">geocodefarm ToS</a>).</p>
+</div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -243,7 +249,7 @@ For many providers, parameters such as API keys need to be passed as
         <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="mergingdata.html" class="btn btn-neutral" title="Merging Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="mergingdata.html" class="btn btn-neutral float-left" title="Merging Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -252,11 +258,11 @@ For many providers, parameters such as API keys need to be passed as
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -269,36 +275,15 @@ For many providers, parameters such as API keys need to be passed as
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>
