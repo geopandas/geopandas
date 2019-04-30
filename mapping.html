@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mapping Tools &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Mapping Tools &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,46 +17,38 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="index.html"/>
-        <link rel="next" title="Managing Projections" href="projections.html"/>
-        <link rel="prev" title="Indexing and Selecting Data" href="indexing.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Managing Projections" href="projections.html" />
+    <link rel="prev" title="Indexing and Selecting Data" href="indexing.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -70,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -106,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Making Maps</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#choropleth-maps">Choropleth Maps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-legend">Creating a legend</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#choosing-colors">Choosing colors</a></li>
 </ul>
 </li>
@@ -138,7 +131,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">GeoPandas</a>
@@ -146,9 +139,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -192,36 +186,34 @@
             
   <div class="section" id="mapping-tools">
 <h1>Mapping Tools<a class="headerlink" href="#mapping-tools" title="Permalink to this headline">¶</a></h1>
-<p><em>geopandas</em> provides a high-level interface to the <code class="docutils literal"><span class="pre">matplotlib</span></code> library for making maps. Mapping shapes is as easy as using the <code class="docutils literal"><span class="pre">plot()</span></code> method on a <code class="docutils literal"><span class="pre">GeoSeries</span></code> or <code class="docutils literal"><span class="pre">GeoDataFrame</span></code>.</p>
+<p><em>geopandas</em> provides a high-level interface to the <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> library for making maps. Mapping shapes is as easy as using the <code class="docutils literal notranslate"><span class="pre">plot()</span></code> method on a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> or <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>.</p>
 <p>Loading some example data:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="gp">In [2]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>We can now plot those GeoDataFrames:</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># Examine country GeoDataFrame</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Examine country GeoDataFrame</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[3]: </span><span class="go"></span>
-<span class="go">      pop_est                        ...                                                                   geometry</span>
-<span class="go">0  28400000.0                        ...                          POLYGON ((61.21081709172574 35.65007233330923,...</span>
-<span class="go">1  12799293.0                        ...                          (POLYGON ((16.32652835456705 -5.87747039146621...</span>
-<span class="go">2   3639453.0                        ...                          POLYGON ((20.59024743010491 41.85540416113361,...</span>
-<span class="go">3   4798491.0                        ...                          POLYGON ((51.57951867046327 24.24549713795111,...</span>
-<span class="go">4  40913584.0                        ...                          (POLYGON ((-65.50000000000003 -55.199999999999...</span>
-
-<span class="go">[5 rows x 6 columns]</span>
+<span class="go">     pop_est      continent                      name iso_a3  gdp_md_est                                           geometry</span>
+<span class="go">0     920938        Oceania                      Fiji    FJI      8374.0  (POLYGON ((180 -16.06713266364245, 180 -16.555...</span>
+<span class="go">1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON ((33.90371119710453 -0.950000000000000...</span>
+<span class="go">2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON ((-8.665589565454809 27.65642588959236...</span>
+<span class="go">3   35623680  North America                    Canada    CAN   1674000.0  (POLYGON ((-122.84 49.00000000000011, -122.974...</span>
+<span class="go">4  326625791  North America  United States of America    USA  18560000.0  (POLYGON ((-122.84 49.00000000000011, -120 49....</span>
 
 <span class="go"># Basic plot, random colors</span>
 <span class="gp">In [4]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
 </pre></div>
 </div>
 <img alt="_images/world_randomcolors.png" src="_images/world_randomcolors.png" />
-<p>Note that in general, any options one can pass to <a class="reference external" href="http://matplotlib.org/api/pyplot_api.html">pyplot</a> in <code class="docutils literal"><span class="pre">matplotlib</span></code> (or <a class="reference external" href="http://matplotlib.org/api/lines_api.html">style options that work for lines</a>) can be passed to the <code class="docutils literal"><span class="pre">plot()</span></code> method.</p>
+<p>Note that in general, any options one can pass to <a class="reference external" href="http://matplotlib.org/api/pyplot_api.html">pyplot</a> in <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> (or <a class="reference external" href="http://matplotlib.org/api/lines_api.html">style options that work for lines</a>) can be passed to the <code class="docutils literal notranslate"><span class="pre">plot()</span></code> method.</p>
 <div class="section" id="choropleth-maps">
 <h2>Choropleth Maps<a class="headerlink" href="#choropleth-maps" title="Permalink to this headline">¶</a></h2>
-<p><em>geopandas</em> makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the <code class="docutils literal"><span class="pre">column</span></code> argument set to the column whose values you want used to assign colors.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># Plot by GDP per capta</span>
+<p><em>geopandas</em> makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the <code class="docutils literal notranslate"><span class="pre">column</span></code> argument set to the column whose values you want used to assign colors.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Plot by GDP per capta</span>
 <span class="gp">In [5]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[(</span><span class="n">world</span><span class="o">.</span><span class="n">pop_est</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">world</span><span class="o">.</span><span class="n">name</span><span class="o">!=</span><span class="s2">&quot;Antarctica&quot;</span><span class="p">)]</span>
 
 <span class="gp">In [6]: </span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">gdp_md_est</span> <span class="o">/</span> <span class="n">world</span><span class="o">.</span><span class="n">pop_est</span>
@@ -230,15 +222,45 @@
 </pre></div>
 </div>
 <img alt="_images/world_gdp_per_cap.png" src="_images/world_gdp_per_cap.png" />
+<div class="section" id="creating-a-legend">
+<h3>Creating a legend<a class="headerlink" href="#creating-a-legend" title="Permalink to this headline">¶</a></h3>
+<p>When plotting a map, one can enable a legend using the <code class="docutils literal notranslate"><span class="pre">legend</span></code> argument:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Plot population estimates with an accurate legend</span>
+<span class="gp">In [8]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="gp">In [9]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">In [10]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;pop_est&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gh">Out[10]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x11cdbf2b0&gt;</span>
+</pre></div>
+</div>
+<img alt="_images/world_pop_est.png" src="_images/world_pop_est.png" />
+<p>However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with <code class="docutils literal notranslate"><span class="pre">ax</span></code>) and the legend axes (with <code class="docutils literal notranslate"><span class="pre">cax</span></code>) and then pass those in to the <code class="docutils literal notranslate"><span class="pre">plot</span></code> call. The following example uses <code class="docutils literal notranslate"><span class="pre">mpl_toolkits</span></code> to vertically align the plot axes and the legend axes:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Plot population estimates with an accurate legend</span>
+<span class="gp">In [11]: </span><span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1</span> <span class="kn">import</span> <span class="n">make_axes_locatable</span>
+
+<span class="gp">In [12]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">In [13]: </span><span class="n">divider</span> <span class="o">=</span> <span class="n">make_axes_locatable</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="gp">In [14]: </span><span class="n">cax</span> <span class="o">=</span> <span class="n">divider</span><span class="o">.</span><span class="n">append_axes</span><span class="p">(</span><span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;5%&quot;</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="gp">In [15]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;pop_est&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax</span><span class="p">)</span>
+<span class="gh">Out[15]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x120da7d30&gt;</span>
+</pre></div>
+</div>
+<img alt="_images/world_pop_est_fixed_legend_height.png" src="_images/world_pop_est_fixed_legend_height.png" />
+</div>
 <div class="section" id="choosing-colors">
 <h3>Choosing colors<a class="headerlink" href="#choosing-colors" title="Permalink to this headline">¶</a></h3>
-<p>One can also modify the colors used by <code class="docutils literal"><span class="pre">plot</span></code> with the <code class="docutils literal"><span class="pre">cmap</span></code> option (for a full list of colormaps, see the <a class="reference external" href="http://matplotlib.org/users/colormaps.html">matplotlib website</a>):</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [8]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;OrRd&#39;</span><span class="p">);</span>
+<p>One can also modify the colors used by <code class="docutils literal notranslate"><span class="pre">plot</span></code> with the <code class="docutils literal notranslate"><span class="pre">cmap</span></code> option (for a full list of colormaps, see the <a class="reference external" href="http://matplotlib.org/users/colormaps.html">matplotlib website</a>):</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [16]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;OrRd&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <img alt="_images/world_gdp_per_cap_red.png" src="_images/world_gdp_per_cap_red.png" />
-<p>The way color maps are scaled can also be manipulated with the <code class="docutils literal"><span class="pre">scheme</span></code> option (if you have <code class="docutils literal"><span class="pre">pysal</span></code> installed, which can be accomplished via <code class="docutils literal"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">pysal</span></code>). The <code class="docutils literal"><span class="pre">scheme</span></code> option can be set to ‘equal_interval’, ‘quantiles’ or ‘percentiles’. See the <a class="reference external" href="http://pysal.readthedocs.io/en/latest/library/esda/mapclassify.html">PySAL documentation</a> for further details about these map classification schemes.</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [9]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;OrRd&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;quantiles&#39;</span><span class="p">);</span>
+<p>The way color maps are scaled can also be manipulated with the <code class="docutils literal notranslate"><span class="pre">scheme</span></code> option (if you have <code class="docutils literal notranslate"><span class="pre">mapclassify</span></code> installed, which can be accomplished via <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">mapclassify</span></code>). The <code class="docutils literal notranslate"><span class="pre">scheme</span></code> option can be set to any scheme provided by mapclassify (e.g. ‘box_plot’, ‘equal_interval’,
+‘fisher_jenks’, ‘fisher_jenks_sampled’, ‘headtail_breaks’, ‘jenks_caspall’, ‘jenks_caspall_forced’, ‘jenks_caspall_sampled’, ‘max_p_classifier’, ‘maximum_breaks’, ‘natural_breaks’, ‘quantiles’, ‘percentiles’, ‘std_mean’ or ‘user_defined’). Arguments can be passed in classification_kwds dict. See the <a class="reference external" href="https://mapclassify.readthedocs.io">mapclassify documentation</a> for further details about these map classification schemes.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [17]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;gdp_per_cap&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;OrRd&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;quantiles&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <img alt="_images/world_gdp_per_cap_quantiles.png" src="_images/world_gdp_per_cap_quantiles.png" />
@@ -248,12 +270,12 @@
 <h2>Maps with Layers<a class="headerlink" href="#maps-with-layers" title="Permalink to this headline">¶</a></h2>
 <p>There are two strategies for making a map with multiple layers – one more succinct, and one that is a little more flexible.</p>
 <p>Before combining maps, however, remember to always ensure they share a common CRS (so they will align).</p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="go"># Look at capitals</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Look at capitals</span>
 <span class="go"># Note use of standard `pyplot` line style options</span>
-<span class="gp">In [10]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">marker</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">);</span>
+<span class="gp">In [18]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">marker</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">);</span>
 
 <span class="go"># Check crs</span>
-<span class="gp">In [11]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">cities</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">world</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+<span class="gp">In [19]: </span><span class="n">cities</span> <span class="o">=</span> <span class="n">cities</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">world</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
 
 <span class="go"># Now we can overlay over country outlines</span>
 <span class="go"># And yes, there are lots of island capitals</span>
@@ -262,29 +284,29 @@
 </div>
 <img alt="_images/capitals.png" src="_images/capitals.png" />
 <p><strong>Method 1</strong></p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [12]: </span><span class="n">base</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [20]: </span><span class="n">base</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
 
-<span class="gp">In [13]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">);</span>
+<span class="gp">In [21]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">);</span>
 </pre></div>
 </div>
 <img alt="_images/capitals_over_countries_1.png" src="_images/capitals_over_countries_1.png" />
 <p><strong>Method 2: Using matplotlib objects</strong></p>
-<div class="highlight-ipython"><div class="highlight"><pre><span></span><span class="gp">In [14]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [22]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
-<span class="gp">In [15]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="gp">In [23]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
 <span class="go"># set aspect to equal. This is done automatically</span>
 <span class="go"># when using *geopandas* plot on it&#39;s own, but not when</span>
 <span class="go"># working with pyplot directly.</span>
-<span class="gp">In [16]: </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+<span class="gp">In [24]: </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
 
-<span class="gp">In [17]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
-<span class="gh">Out[17]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fb7ac190048&gt;</span>
+<span class="gp">In [25]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="gh">Out[25]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x121a44080&gt;</span>
 
-<span class="gp">In [18]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">                                                                   Out[18]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x7fb7ac190048&gt;</span>
+<span class="gp">In [26]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">                                                                Out[26]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x121a44080&gt;</span>
 
-<span class="gp">In [19]: </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">();</span>
+<span class="gp">In [27]: </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">();</span>
 </pre></div>
 </div>
 <img alt="_images/capitals_over_countries_2.png" src="_images/capitals_over_countries_2.png" />
@@ -298,9 +320,7 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -309,7 +329,7 @@
         <a href="projections.html" class="btn btn-neutral float-right" title="Managing Projections" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="indexing.html" class="btn btn-neutral" title="Indexing and Selecting Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="indexing.html" class="btn btn-neutral float-left" title="Indexing and Selecting Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -318,11 +338,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -335,36 +355,15 @@
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.sjoin &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>geopandas.sjoin &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,47 +17,38 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="../index.html"/>
-        <link rel="up" title="Reference" href="../reference.html"/>
-        <link rel="next" title="geopandas.tools.geocode" href="geopandas.tools.geocode.html"/>
-        <link rel="prev" title="geopandas.read_file" href="geopandas.read_file.html"/> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="geopandas.tools.geocode" href="geopandas.tools.geocode.html" />
+    <link rel="prev" title="geopandas.read_file" href="geopandas.read_file.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -71,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -145,7 +136,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">GeoPandas</a>
@@ -153,9 +144,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -209,30 +201,29 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>left_df, right_df</strong> : GeoDataFrames</p>
-<p><strong>how</strong> : string, default ‘inner’</p>
-<blockquote>
-<div><p>The type of join:</p>
-<ul class="simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>left_df, right_df</strong> <span class="classifier-delimiter">:</span> <span class="classifier">GeoDataFrames</span></dt>
+<dd></dd>
+<dt><strong>how</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘inner’</span></dt>
+<dd><p class="first">The type of join:</p>
+<ul class="last simple">
 <li>‘left’: use keys from left_df; retain only left_df geometry column</li>
 <li>‘right’: use keys from right_df; retain only right_df geometry column</li>
 <li>‘inner’: use intersection of keys from both dfs; retain only
 left_df geometry column</li>
 </ul>
-</div></blockquote>
-<p><strong>op</strong> : string, default ‘intersection’</p>
-<blockquote>
-<div><p>Binary predicate, one of {‘intersects’, ‘contains’, ‘within’}.
-See <a class="reference external" href="http://toblerity.org/shapely/manual.html#binary-predicates">http://toblerity.org/shapely/manual.html#binary-predicates</a>.</p>
-</div></blockquote>
-<p><strong>lsuffix</strong> : string, default ‘left’</p>
-<blockquote>
-<div><p>Suffix to apply to overlapping column names (left GeoDataFrame).</p>
-</div></blockquote>
-<p><strong>rsuffix</strong> : string, default ‘right’</p>
-<blockquote class="last">
-<div><p>Suffix to apply to overlapping column names (right GeoDataFrame).</p>
-</div></blockquote>
+</dd>
+<dt><strong>op</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘intersection’</span></dt>
+<dd><p class="first last">Binary predicate, one of {‘intersects’, ‘contains’, ‘within’}.
+See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates">http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates</a>.</p>
+</dd>
+<dt><strong>lsuffix</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘left’</span></dt>
+<dd><p class="first last">Suffix to apply to overlapping column names (left GeoDataFrame).</p>
+</dd>
+<dt><strong>rsuffix</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘right’</span></dt>
+<dd><p class="first last">Suffix to apply to overlapping column names (right GeoDataFrame).</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -243,9 +234,7 @@ See <a class="reference external" href="http://toblerity.org/shapely/manual.html
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -254,7 +243,7 @@ See <a class="reference external" href="http://toblerity.org/shapely/manual.html
         <a href="geopandas.tools.geocode.html" class="btn btn-neutral float-right" title="geopandas.tools.geocode" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="geopandas.read_file.html" class="btn btn-neutral" title="geopandas.read_file" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="geopandas.read_file.html" class="btn btn-neutral float-left" title="geopandas.read_file" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -263,11 +252,11 @@ See <a class="reference external" href="http://toblerity.org/shapely/manual.html
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -280,36 +269,15 @@ See <a class="reference external" href="http://toblerity.org/shapely/manual.html
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

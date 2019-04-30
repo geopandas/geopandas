@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.tools.geocode &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>geopandas.tools.geocode &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,47 +17,38 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="../index.html"/>
-        <link rel="up" title="Reference" href="../reference.html"/>
-        <link rel="next" title="geopandas.datasets.get_path" href="geopandas.datasets.get_path.html"/>
-        <link rel="prev" title="geopandas.sjoin" href="geopandas.sjoin.html"/> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="geopandas.datasets.get_path" href="geopandas.datasets.get_path.html" />
+    <link rel="prev" title="geopandas.sjoin" href="geopandas.sjoin.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -71,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -145,7 +136,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">GeoPandas</a>
@@ -153,9 +144,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -203,39 +195,54 @@
 <h1>geopandas.tools.geocode<a class="headerlink" href="#geopandas-tools-geocode" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="geopandas.tools.geocode">
-<code class="descclassname">geopandas.tools.</code><code class="descname">geocode</code><span class="sig-paren">(</span><em>strings</em>, <em>provider='googlev3'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.tools.geocode" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">geopandas.tools.</code><code class="descname">geocode</code><span class="sig-paren">(</span><em>strings</em>, <em>provider=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.tools.geocode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Geocode a set of strings and get a GeoDataFrame of the resulting points.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>strings</strong> : list or Series of addresses to geocode</p>
-<p><strong>provider</strong> : str or geopy.geocoder</p>
-<blockquote>
-<div><p>Specifies geocoding service to use, default is ‘googlev3’.
-Either the string name used by geopy (as specified in
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>strings</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list or Series of addresses to geocode</span></dt>
+<dd></dd>
+<dt><strong>provider</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str or geopy.geocoder</span></dt>
+<dd><p class="first">Specifies geocoding service to use. If none is provided,
+will use ‘geocodefarm’ with a rate limit applied (see the geocodefarm
+terms of service at:
+<a class="reference external" href="https://geocode.farm/geocoding/free-api-documentation/">https://geocode.farm/geocoding/free-api-documentation/</a> ).</p>
+<p>Either the string name used by geopy (as specified in
 geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-(e.g., geopy.geocoders.GoogleV3) may be used.</p>
-<p>Some providers require additional arguments such as access keys
+(e.g., geopy.geocoders.GeocodeFarm) may be used.</p>
+<p class="last">Some providers require additional arguments such as access keys
 See each geocoder’s specific parameters in geopy.geocoders</p>
-</div></blockquote>
-<p><strong>Ensure proper use of the results by consulting the Terms of Service for</strong></p>
-<p><strong>your provider.</strong></p>
-<p><strong>Geocoding requires geopy. Install it using ‘pip install geopy’. See also</strong></p>
-<p class="last"><strong>https://github.com/geopy/geopy</strong></p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Notes</p>
+<p>Ensure proper use of the results by consulting the Terms of Service for
+your provider.</p>
+<p>Geocoding requires geopy. Install it using ‘pip install geopy’. See also
+<a class="reference external" href="https://github.com/geopy/geopy">https://github.com/geopy/geopy</a></p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geocode</span><span class="p">([</span><span class="s1">&#39;boston, ma&#39;</span><span class="p">,</span> <span class="s1">&#39;1600 pennsylvania ave. washington, dc&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span>
+<span class="go">                                             address  \</span>
+<span class="go">0                                    Boston, MA, USA</span>
+<span class="go">1  1600 Pennsylvania Avenue Northwest, President&#39;...</span>
+<span class="go">                         geometry</span>
+<span class="go">0  POINT (-71.0597732 42.3584308)</span>
+<span class="go">1  POINT (-77.0365305 38.8977332)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <div class="clear"></div></div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -244,7 +251,7 @@ See each geocoder’s specific parameters in geopy.geocoders</p>
         <a href="geopandas.datasets.get_path.html" class="btn btn-neutral float-right" title="geopandas.datasets.get_path" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="geopandas.sjoin.html" class="btn btn-neutral" title="geopandas.sjoin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="geopandas.sjoin.html" class="btn btn-neutral float-left" title="geopandas.sjoin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -253,11 +260,11 @@ See each geocoder’s specific parameters in geopy.geocoders</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -270,36 +277,15 @@ See each geocoder’s specific parameters in geopy.geocoders</p>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

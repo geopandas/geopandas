@@ -1,5 +1,5 @@
-geopandas\.sjoin
-================
+geopandas.sjoin
+===============
 
 
 .. currentmodule:: geopandas

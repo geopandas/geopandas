@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Plotting with CartoPy and GeoPandas &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>Plotting with CartoPy and GeoPandas &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,47 +17,38 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="../index.html"/>
-        <link rel="up" title="Examples Gallery" href="index.html"/>
-        <link rel="next" title="Data Structures" href="../data_structures.html"/>
-        <link rel="prev" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html"/> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Structures" href="../data_structures.html" />
+    <link rel="prev" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -71,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -141,7 +132,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">GeoPandas</a>
@@ -149,9 +140,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -195,7 +187,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="plotting-with-cartopy-and-geopandas">
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-gallery-cartopy-convert-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="plotting-with-cartopy-and-geopandas">
 <span id="sphx-glr-gallery-cartopy-convert-py"></span><h1>Plotting with CartoPy and GeoPandas<a class="headerlink" href="#plotting-with-cartopy-and-geopandas" title="Permalink to this headline">¶</a></h1>
 <p>Converting between GeoPandas and CartoPy for visualizing data.</p>
 <p><a class="reference external" href="http://scitools.org.uk/cartopy/">CartoPy</a> is a Python library
@@ -205,7 +201,7 @@ Coordinate Reference Systems (CRS) as well as constructing plots.
 This example steps through a round-trip transfer of data
 between GeoPandas and CartoPy.</p>
 <p>First we’ll load in the data using GeoPandas.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_number = 7</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_number = 7</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">geopandas</span>
 <span class="kn">from</span> <span class="nn">cartopy</span> <span class="kn">import</span> <span class="n">crs</span> <span class="k">as</span> <span class="n">ccrs</span>
@@ -217,17 +213,17 @@ between GeoPandas and CartoPy.</p>
 </pre></div>
 </div>
 <p>First we’ll visualize the map using GeoPandas</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_001.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_001.png" />
+<img alt="../_images/sphx_glr_cartopy_convert_001.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_001.png" />
 <div class="section" id="plotting-with-cartopy">
 <h2>Plotting with CartoPy<a class="headerlink" href="#plotting-with-cartopy" title="Permalink to this headline">¶</a></h2>
 <p>Cartopy also handles Shapely objects well, but it uses a different system for
 CRS. To plot this data with CartoPy, we’ll first need to project it into a
 new CRS. We’ll use a CRS defined within CartoPy and use the GeoPandas
-<code class="docutils literal"><span class="pre">to_crs</span></code> method to make the transformation.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Define the CartoPy CRS object.</span>
+<code class="docutils literal notranslate"><span class="pre">to_crs</span></code> method to make the transformation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the CartoPy CRS object.</span>
 <span class="n">crs</span> <span class="o">=</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">AzimuthalEquidistant</span><span class="p">()</span>
 
 <span class="c1"># This can be converted into a `proj4` string/dict compatible with GeoPandas</span>
@@ -238,20 +234,20 @@ new CRS. We’ll use a CRS defined within CartoPy and use the GeoPandas
 <span class="n">df_ae</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_002.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_002.png" />
+<img alt="../_images/sphx_glr_cartopy_convert_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_002.png" />
 <p>Now that our data is in a CRS based off of CartoPy, we can easily
 plot it.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <a href="http://matplotlib.org/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="View documentation for matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs</span><span class="p">})</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs</span><span class="p">})</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">add_geometries</span><span class="p">(</span><span class="n">df_ae</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">],</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_003.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_003.png" />
+<img alt="../_images/sphx_glr_cartopy_convert_003.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_003.png" />
 <p>Note that we could have easily done this with an EPSG code like so:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">crs_epsg</span> <span class="o">=</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">epsg</span><span class="p">(</span><span class="s1">&#39;3857&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">crs_epsg</span> <span class="o">=</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">epsg</span><span class="p">(</span><span class="s1">&#39;3857&#39;</span><span class="p">)</span>
 <span class="n">df_epsg</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="s1">&#39;3857&#39;</span><span class="p">)</span>
 
 <span class="c1"># Generate a figure with two axes, one for CartoPy, one for GeoPandas</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <a href="http://matplotlib.org/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="View documentation for matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs_epsg</span><span class="p">},</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs_epsg</span><span class="p">},</span>
                         <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="c1"># Make the CartoPy plot</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_geometries</span><span class="p">(</span><span class="n">df_epsg</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">],</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs_epsg</span><span class="p">,</span>
@@ -260,60 +256,58 @@ plot it.</p>
 <span class="n">df_epsg</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_004.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_004.png" />
+<img alt="../_images/sphx_glr_cartopy_convert_004.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_004.png" />
 </div>
 <div class="section" id="cartopy-to-geopandas">
 <h2>CartoPy to GeoPandas<a class="headerlink" href="#cartopy-to-geopandas" title="Permalink to this headline">¶</a></h2>
 <p>Next we’ll perform a CRS projection in CartoPy, and then convert it
 back into a GeoPandas object.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">crs_new</span> <span class="o">=</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">AlbersEqualArea</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">crs_new</span> <span class="o">=</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">AlbersEqualArea</span><span class="p">()</span>
 <span class="n">new_geometries</span> <span class="o">=</span> <span class="p">[</span><span class="n">crs_new</span><span class="o">.</span><span class="n">project_geometry</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">src_crs</span><span class="o">=</span><span class="n">crs</span><span class="p">)</span>
                   <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">df_ae</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <a href="http://matplotlib.org/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="View documentation for matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs_new</span><span class="p">})</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs_new</span><span class="p">})</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">add_geometries</span><span class="p">(</span><span class="n">new_geometries</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs_new</span><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_005.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_005.png" />
+<img alt="../_images/sphx_glr_cartopy_convert_005.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_005.png" />
 <p>Now that we’ve created new Shapely objects with the CartoPy CRS,
 we can use this to create a GeoDataFrame.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">df_aea</span> <span class="o">=</span> <a href="../reference.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;gdp_pp&#39;</span><span class="p">],</span> <span class="n">geometry</span><span class="o">=</span><span class="n">new_geometries</span><span class="p">,</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df_aea</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;gdp_pp&#39;</span><span class="p">],</span> <span class="n">geometry</span><span class="o">=</span><span class="n">new_geometries</span><span class="p">,</span>
                                 <span class="n">crs</span><span class="o">=</span><span class="n">crs_new</span><span class="o">.</span><span class="n">proj4_init</span><span class="p">)</span>
 <span class="n">df_aea</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_006.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_006.png" />
+<img alt="../_images/sphx_glr_cartopy_convert_006.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_006.png" />
 <p>We can even combine these into the same figure. Here we’ll plot the
 shapes of the countries with CartoPy. We’ll then calculate the centroid
 of each with GeoPandas and plot it on top.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Generate a CartoPy figure and add the countries to it</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <a href="http://matplotlib.org/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="View documentation for matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs_new</span><span class="p">})</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate a CartoPy figure and add the countries to it</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span> <span class="n">crs_new</span><span class="p">})</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">add_geometries</span><span class="p">(</span><span class="n">new_geometries</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs_new</span><span class="p">)</span>
 
 <span class="c1"># Calculate centroids and plot</span>
 <span class="n">df_aea_centroids</span> <span class="o">=</span> <span class="n">df_aea</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">centroid</span>
 <span class="n">df_aea_centroids</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
 
-<a href="http://matplotlib.org/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="View documentation for matplotlib.pyplot.show"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="../_images/sphx_glr_cartopy_convert_007.png" class="align-center" src="../_images/sphx_glr_cartopy_convert_007.png" />
-<p><strong>Total running time of the script:</strong> ( 0 minutes  4.709 seconds)</p>
-<div class="sphx-glr-footer docutils container">
+<img alt="../_images/sphx_glr_cartopy_convert_007.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_007.png" />
+<p><strong>Total running time of the script:</strong> ( 0 minutes  3.982 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-cartopy-convert-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" href="../_downloads/cartopy_convert.py" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cartopy_convert.py</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/de154309609e33d35459ddc50ef061d1/cartopy_convert.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cartopy_convert.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" href="../_downloads/cartopy_convert.ipynb" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">cartopy_convert.ipynb</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/f633386edf733ca9b6553b0d37d39aff/cartopy_convert.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">cartopy_convert.ipynb</span></code></a></div>
 </div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -322,7 +316,7 @@ of each with GeoPandas and plot it on top.</p>
         <a href="../data_structures.html" class="btn btn-neutral float-right" title="Data Structures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral float-left" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -331,11 +325,11 @@ of each with GeoPandas and plot it on top.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -348,36 +342,15 @@ of each with GeoPandas and plot it on top.</p>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

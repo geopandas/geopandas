@@ -1,5 +1,5 @@
-geopandas\.read\_file
-=====================
+geopandas.read\_file
+====================
 
 
 .. currentmodule:: geopandas

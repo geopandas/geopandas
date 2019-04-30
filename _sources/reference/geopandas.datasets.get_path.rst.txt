@@ -1,5 +1,5 @@
-geopandas\.datasets\.get\_path
-==============================
+geopandas.datasets.get\_path
+============================
 
 
 .. currentmodule:: geopandas.datasets

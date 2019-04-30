@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.GeoDataFrame &mdash; GeoPandas 0.4.0 documentation</title>
+  <title>geopandas.GeoDataFrame &mdash; GeoPandas 0.5.0 documentation</title>
   
 
   
@@ -17,47 +17,38 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  
-    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="GeoPandas 0.4.0 documentation" href="../index.html"/>
-        <link rel="up" title="Reference" href="../reference.html"/>
-        <link rel="next" title="geopandas.GeoSeries" href="geopandas.GeoSeries.html"/>
-        <link rel="prev" title="Reference" href="../reference.html"/> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="geopandas.GeoSeries" href="geopandas.GeoSeries.html" />
+    <link rel="prev" title="Reference" href="../reference.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -71,7 +62,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.5.0
               </div>
             
           
@@ -120,7 +111,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../reference.html#geodataframe">GeoDataFrame</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../reference.html#api-pages">API Pages</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">geopandas.GeoDataFrame</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#examples-using-geopandas-geodataframe">Examples using <code class="docutils literal"><span class="pre">geopandas.GeoDataFrame</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#examples-using-geopandas-geodataframe">Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
@@ -148,7 +139,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">GeoPandas</a>
@@ -156,9 +147,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -210,26 +202,41 @@
 <dd><p>A GeoDataFrame object is a pandas.DataFrame that has a column
 with geometry. In addition to the standard DataFrame constructor arguments,
 GeoDataFrame also accepts the following keyword arguments:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>crs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str (optional)</span></dt>
+<dd><p class="first last">Coordinate system</p>
+</dd>
+<dt><strong>geometry</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str or array (optional)</span></dt>
+<dd><p class="first last">If str, column to use as geometry. If array, will be set as ‘geometry’
+column on GeoDataFrame.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <div class="section" id="examples-using-geopandas-geodataframe">
-<h2>Examples using <code class="docutils literal"><span class="pre">geopandas.GeoDataFrame</span></code><a class="headerlink" href="#examples-using-geopandas-geodataframe" title="Permalink to this headline">¶</a></h2>
-<div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure" id="id1">
-<img alt="../_images/sphx_glr_cartopy_convert_thumb.png" src="../_images/sphx_glr_cartopy_convert_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a ``GeoDataFrame`` when starting from a *regular* ``DataFrame`..."><div class="figure" id="id2">
+<h2>Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code><a class="headerlink" href="#examples-using-geopandas-geodataframe" title="Permalink to this headline">¶</a></h2>
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a ``GeoDataFrame`` when starting from a *regular* ``DataFrame`..."><div class="figure" id="id1">
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" src="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span></p>
+</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure" id="id2">
+<img alt="../_images/sphx_glr_cartopy_convert_thumb.png" src="../_images/sphx_glr_cartopy_convert_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span></p>
 </div>
 </div><div class="clear"></div></div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -238,7 +245,7 @@ GeoDataFrame also accepts the following keyword arguments:</p>
         <a href="geopandas.GeoSeries.html" class="btn btn-neutral float-right" title="geopandas.GeoSeries" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../reference.html" class="btn btn-neutral" title="Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../reference.html" class="btn btn-neutral float-left" title="Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -247,11 +254,11 @@ GeoDataFrame also accepts the following keyword arguments:</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2013–2018, GeoPandas developers.
+        &copy; Copyright 2013–2019, GeoPandas developers
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -264,36 +271,15 @@ GeoDataFrame also accepts the following keyword arguments:</p>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.4.0',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

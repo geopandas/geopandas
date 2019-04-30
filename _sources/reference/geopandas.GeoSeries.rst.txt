@@ -1,5 +1,5 @@
-geopandas\.GeoSeries
-====================
+geopandas.GeoSeries
+===================
 
 
 .. currentmodule:: geopandas
