@@ -63,9 +63,10 @@ def _binary_geo(op, left, right):
         return GeoSeries(GeometryArray(data), index=left.index, crs=left.crs)
 
     elif isinstance(right, BaseGeometry):
-        data = np.array([getattr(s, op)(right) for s in left.geometry],
-                        dtype=object)
-        return GeoSeries(GeometryArray(data), index=left.index, crs=left.crs)
+        # ensure 1D output, see note above
+        data = np.empty(len(left), dtype=object)
+        data[:] = [getattr(s, op)(right) for s in left.geometry]
+        return GeoSeries(data, index=left.index, crs=left.crs)
     else:
         raise TypeError(type(left), type(right))
 
@@ -73,8 +74,18 @@ def _binary_geo(op, left, right):
 def _binary_op(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
-    null_value = False if op not in ['distance', 'project'] else np.nan
-    dtype = 'bool' if op not in ['distance', 'project'] else float
+    if op in ['distance', 'project']:
+        null_value = np.nan
+    elif op == 'relate':
+        null_value = None
+    else:
+        null_value = False
+    if op in ['distance', 'project']:
+        dtype = float
+    elif op == 'relate':
+        dtype = object
+    else:
+        dtype = bool
 
     if isinstance(other, GeoPandasBase):
 
@@ -103,9 +114,10 @@ def _unary_geo(op, this):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
-    data = np.array([getattr(geom, op) for geom in this.geometry],
-                    dtype=object)
-    return GeoSeries(GeometryArray(data), index=this.index, crs=this.crs)
+    # ensure 1D output, see note above
+    data = np.empty(len(this), dtype=object)
+    data[:] = [getattr(geom, op) for geom in this.geometry]
+    return GeoSeries(data, index=this.index, crs=this.crs)
 
 
 def _unary_op(op, this, null_value=False):
@@ -251,13 +263,36 @@ class GeoPandasBase(object):
 
     @property
     def interiors(self):
-        """Returns a ``GeoSeries`` of InteriorRingSequences representing the
+        """Returns a ``Series`` of List representing the
         inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
+
+        Returns
+        ----------
+        inner_rings: Series of List
+            Inner rings of each polygon in the GeoSeries.
         """
-        # TODO: return empty list or None for non-polygons
-        return _unary_op('interiors', self, null_value=False)
+
+        has_non_poly = False
+        inner_rings = []
+        for geom in self.geometry:
+            interior_ring_seq = getattr(geom, 'interiors', None)
+            # polygon case
+            if interior_ring_seq is not None:
+                inner_rings.append(list(interior_ring_seq))
+            # non-polygon case
+            else:
+                has_non_poly = True
+                inner_rings.append(None)
+        if has_non_poly:
+            warn("Only Polygon objects have interior rings. For other "
+                 "geometry types, None is returned.")
+
+        # _unary_op couldn't be used in order to warning to non-polygon and
+        # conversion to list.
+        return Series(inner_rings,
+                      index=self.index, dtype=object)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
@@ -543,7 +578,7 @@ class GeoPandasBase(object):
         distance : float, np.array, pd.Series
             The radius of the buffer. If np.array or pd.Series are used
             then it must have same length as the GeoSeries.
-        resolution: float
+        resolution: int
             Optional, the resolution of the buffer around each vertex.
         """
         if isinstance(distance, (np.ndarray, pd.Series)):
@@ -584,7 +619,22 @@ class GeoPandasBase(object):
             index=self.index, crs=self.crs)
 
     def relate(self, other):
-        raise NotImplementedError
+        """
+        Returns the DE-9IM intersection matrices for the geometries
+
+        Parameters
+        ----------
+        other : BaseGeometry or GeoSeries
+            The other geometry to computed
+            the DE-9IM intersection matrices from.
+
+        Returns
+        ----------
+        spatial_relations: Series of strings
+            The DE-9IM intersection matrices which describe
+            the spatial relations of the other geometry.
+        """
+        return _binary_op('relate', self, other)
 
     def project(self, other, normalized=False):
         """

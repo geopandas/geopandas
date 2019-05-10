@@ -1,10 +1,9 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
   - python=2.7
   - six
-  - cython
   # required
   - pandas
   - shapely
@@ -19,11 +18,11 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
+  - mapclassify==1.0.1
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
-    - git+https://github.com/pydata/pandas.git
     - codecov
     - geopy

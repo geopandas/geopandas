@@ -7,7 +7,7 @@ dependencies:
   # required
   - pandas=0.22
   - shapely
-  - fiona
+  - fiona=1.7
   - pyproj
   # testing
   - pytest
@@ -17,10 +17,11 @@ dependencies:
   - rtree
   - matplotlib==2.0.2
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
     - codecov
     - geopy
+    - mapclassify

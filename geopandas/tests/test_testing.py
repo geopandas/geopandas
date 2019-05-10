@@ -45,3 +45,9 @@ def test_equal_nans():
     s = GeoSeries([Point(0, 0), np.nan])
     assert_geoseries_equal(s, s.copy())
     assert_geoseries_equal(s, s.copy(), check_less_precise=True)
+
+
+def test_no_crs():
+    df1 = GeoDataFrame({'col1': [1, 2], 'geometry': s1}, crs=None)
+    df2 = GeoDataFrame({'col1': [1, 2], 'geometry': s1}, crs={})
+    assert_geodataframe_equal(df1, df2)

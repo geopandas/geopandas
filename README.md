@@ -1,4 +1,4 @@
-GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://codecov.io/gh/geopandas/geopandas/branch/master/graph/badge.svg)](https://codecov.io/gh/geopandas/geopandas) [![Join the chat at https://gitter.im/geopandas/geopandas](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/geopandas/geopandas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/geopandas/geopandas/master)
+GeoPandas [![build status](https://secure.travis-ci.org/geopandas/geopandas.png?branch=master)](https://travis-ci.org/geopandas/geopandas) [![Coverage Status](https://codecov.io/gh/geopandas/geopandas/branch/master/graph/badge.svg)](https://codecov.io/gh/geopandas/geopandas) [![Join the chat at https://gitter.im/geopandas/geopandas](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/geopandas/geopandas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/geopandas/geopandas/master) [![DOI](https://zenodo.org/badge/11002815.svg)](https://zenodo.org/badge/latestdoi/11002815)
 =========
 
 Python tools for geographic data
@@ -10,7 +10,7 @@ GeoPandas is a project to add support for geographic data to
 [pandas](http://pandas.pydata.org) objects.  It currently implements
 `GeoSeries` and `GeoDataFrame` types which are subclasses of
 `pandas.Series` and `pandas.DataFrame` respectively.  GeoPandas
-objects can act on [shapely](http://toblerity.github.io/shapely)
+objects can act on [shapely](http://shapely.readthedocs.io/en/latest/)
 geometry objects and perform geometric operations.
 
 GeoPandas geometry operations are cartesian.  The coordinate reference
@@ -28,9 +28,8 @@ Documentation is available at [geopandas.org](http://geopandas.org)
 Install
 --------
 
-**Requirements**
-
-For the installation of GeoPandas, the following packages are required:
+See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html)
+for all details. GeoPandas depends on the following packages:
 
 - ``pandas``
 - ``shapely``
@@ -39,40 +38,19 @@ For the installation of GeoPandas, the following packages are required:
 
 Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex). If using brew, you can install using ``brew install Spatialindex``.
+dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
+
+Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for more details.
 
 
-**Install**
+Get in touch
+------------
 
-GeoPandas depends on several low-level libraries for geospatial analysis. Depending on the system and package
-manager that you use, this may cause dependency conflicts if you are not careful.
+- Ask usage questions ("How do I?") on [StackOverflow](https://stackoverflow.com/questions/tagged/geopandas) or [GIS StackExchange](https://gis.stackexchange.com/questions/tagged/geopandas).
+- Report bugs, suggest features or view the source code [on GitHub](https://github.com/geopandas/geopandas).
+- For a quick question about a bug report or feature request, or Pull Request, head over to the [gitter channel](https://gitter.im/geopandas/geopandas).
+- For less well defined questions or ideas, or to announce other projects of interest to GeoPandas users, ... use the [mailing list](https://groups.google.com/forum/#!forum/geopandas).
 
-*Using `conda`*
-
-We suggest that you use the [anaconda distribution](https://conda.io/docs/user-guide/install/download.html)
-to install GeoPandas (``miniconda`` is fine as well).
-
-Use ``conda`` and the ``conda-forge`` channel to install GeoPandas on a clean environment:
-
-```bash
-conda create -n geopandas
-source activate geopandas  # 'activate geopandas' on Windows
-conda install -c conda-forge geopandas
-```
-
-**NOTE:** Creating a new environment is not strictly necessary, but installing other geospatial packages
-from a *different* channel than ``conda-forge`` may cause dependency conflicts, so we recommend starting
-fresh if possible. See the [conda-forge gotcha page](https://conda-forge.org/docs/conda-forge_gotchas.html)
-for more information.
-
-*Using `pip`*
-
-GeoPandas is also pip-installable. If you choose to use `pip`, make sure that you have the proper non-python
-libraries installed and linked properly.
-
-```bash
-pip install geopandas
-```
 
 Examples
 --------
@@ -112,7 +90,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://toblerity.github.io/fiona). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
     >>> nybb_path = geopandas.datasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)

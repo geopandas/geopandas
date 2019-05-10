@@ -23,7 +23,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
           left_df geometry column
     op : string, default 'intersection'
         Binary predicate, one of {'intersects', 'contains', 'within'}.
-        See http://toblerity.org/shapely/manual.html#binary-predicates.
+        See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
