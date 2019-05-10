@@ -12,6 +12,8 @@ import shapely.affinity as affinity
 
 import geopandas as gpd
 
+from .array import GeometryArray
+
 
 try:
     from rtree.core import RTreeError
@@ -22,89 +24,60 @@ except ImportError:
     HAS_SINDEX = False
 
 
-def _binary_geo(op, left, right):
+def _delegate_binary_method(op, this, other, *args, **kwargs):
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    this = this.geometry
+    if isinstance(other, GeoPandasBase):
+        this, other = this.align(other.geometry)
+
+        if this.crs != other.crs:
+            warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
+                                                              other.crs))
+        a_this = GeometryArray(this.values)
+        other = GeometryArray(other.values)
+    elif isinstance(other, BaseGeometry):
+        a_this = GeometryArray(this.values)
+    else:
+        raise TypeError(type(this), type(other))
+
+    data = getattr(a_this, op)(other, *args, **kwargs)
+    return data
+
+
+def _binary_geo(op, this, other):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
-    if isinstance(right, GeoPandasBase):
-        left = left.geometry
-        left, right = left.align(right.geometry)
-
-        if left.crs != right.crs:
-            warn('GeoSeries crs mismatch: {0} and {1}'.format(left.crs,
-                                                              right.crs))
-
-        # intersection can return empty GeometryCollections, and if the result
-        # are only those, numpy will coerce it to empty 2D array
-        data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(this_elem, op)(other_elem)
-                   for this_elem, other_elem in zip(left, right)]
-
-        return GeoSeries(data, index=left.index, crs=left.crs)
-
-    elif isinstance(right, BaseGeometry):
-        # ensure 1D output, see note above
-        data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(s, op)(right) for s in left.geometry]
-        return GeoSeries(data, index=left.index, crs=left.crs)
-    else:
-        raise TypeError(type(left), type(right))
+    data = _delegate_binary_method(op, this, other).data
+    return GeoSeries(data, index=this.index, crs=this.crs)
 
 
 def _binary_op(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool]
     """Binary operation on GeoSeries objects that returns a Series"""
-    if op in ['distance', 'project']:
-        null_value = np.nan
-    elif op == 'relate':
-        null_value = None
-    else:
-        null_value = False
-    if op in ['distance', 'project']:
-        dtype = float
-    elif op == 'relate':
-        dtype = object
-    else:
-        dtype = bool
+    data = _delegate_binary_method(op, this, other, *args, **kwargs)
+    return Series(data, index=this.index)
 
-    if isinstance(other, GeoPandasBase):
 
-        this = this.geometry
-        this, other = this.align(other.geometry)
-
-        data = np.array(
-            [getattr(this_elem, op)(other_elem, *args, **kwargs)
-             if not this_elem.is_empty | other_elem.is_empty else null_value
-             for this_elem, other_elem in zip(this, other)],
-            dtype=dtype)
-
-        return Series(data, index=this.index)
-
-    elif isinstance(other, BaseGeometry):
-        data = np.array(
-            [getattr(s, op)(other, *args, **kwargs) if s else null_value
-             for s in this.geometry],
-            dtype=dtype)
-        return Series(data, index=this.index)
-    else:
-        raise TypeError(type(this), type(other))
+def _delegate_unary_method(op, this):
+    # type: (str, GeoSeries) -> GeoSeries/Series
+    a_this = GeometryArray(this.geometry.values)
+    return getattr(a_this, op)()
 
 
 def _unary_geo(op, this):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
-    # ensure 1D output, see note above
-    data = np.empty(len(this), dtype=object)
-    data[:] = [getattr(geom, op) for geom in this.geometry]
+    data = _delegate_unary_method(op, this).data
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
-def _unary_op(op, this, null_value=False):
-    # type: (str, GeoSeries, Any) -> Series
+def _unary_op(op, this):
+    # type: (str, GeoSeries) -> Series
     """Unary operation that returns a Series"""
-    return Series([getattr(geom, op, null_value) for geom in this.geometry],
-                  index=this.index, dtype=np.dtype(type(null_value)))
+    data = _delegate_unary_method(op, this)
+    return Series(data, index=this.index)
 
 
 class GeoPandasBase(object):
@@ -141,13 +114,13 @@ class GeoPandasBase(object):
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
-        return _unary_op('area', self, null_value=np.nan)
+        return _unary_op('area', self)
 
     @property
     def geom_type(self):
         """Returns a ``Series`` of strings specifying the `Geometry Type` of each
         object."""
-        return _unary_op('geom_type', self, null_value=None)
+        return _unary_op('geom_type', self)
 
     @property
     def type(self):
@@ -157,19 +130,19 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Returns a ``Series`` containing the length of each geometry."""
-        return _unary_op('length', self, null_value=np.nan)
+        return _unary_op('length', self)
 
     @property
     def is_valid(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that are valid."""
-        return _unary_op('is_valid', self, null_value=False)
+        return _unary_op('is_valid', self)
 
     @property
     def is_empty(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         empty geometries."""
-        return _unary_op('is_empty', self, null_value=False)
+        return _unary_op('is_empty', self)
 
     @property
     def is_simple(self):
@@ -178,7 +151,7 @@ class GeoPandasBase(object):
 
         This is meaningful only for `LineStrings` and `LinearRings`.
         """
-        return _unary_op('is_simple', self, null_value=False)
+        return _unary_op('is_simple', self)
 
     @property
     def is_ring(self):
@@ -192,7 +165,7 @@ class GeoPandasBase(object):
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component."""
-        return _unary_op('has_z', self, null_value=False)
+        return _unary_op('has_z', self)
 
     #
     # Unary operations that return a GeoSeries
