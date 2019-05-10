@@ -59,17 +59,17 @@ def _binary_op(op, this, other, *args, **kwargs):
     return Series(data, index=this.index)
 
 
-def _delegate_unary_method(op, this):
+def _delegate_unary_method(op, this, *args, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries/Series
     a_this = GeometryArray(this.geometry.values)
-    return getattr(a_this, op)()
+    return getattr(a_this, op)(*args, **kwargs)
 
 
-def _unary_geo(op, this):
+def _unary_geo(op, this, *args, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
-    data = _delegate_unary_method(op, this).data
+    data = _delegate_unary_method(op, this, *args, **kwargs).data
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -534,22 +534,14 @@ class GeoPandasBase(object):
         resolution: int
             Optional, the resolution of the buffer around each vertex.
         """
-        if isinstance(distance, (np.ndarray, pd.Series)):
-            if len(distance) != len(self.index):
-                raise ValueError("Length of distance sequence does not match "
-                                 "length of the GeoSeries")
-            if isinstance(distance, pd.Series):
-                if not self.index.equals(distance.index):
-                    raise ValueError("Index values of distance sequence does "
-                                     "not match index values of the GeoSeries")
-            return gpd.GeoSeries(
-                [geom.buffer(dist, resolution, **kwargs)
-                 for geom, dist in zip(self.geometry, distance)],
-                index=self.index, crs=self.crs)
+        if isinstance(distance, pd.Series):
+            if not self.index.equals(distance.index):
+                raise ValueError("Index values of distance sequence does "
+                                 "not match index values of the GeoSeries")
+            distance = np.asarray(distance)
 
-        return gpd.GeoSeries([geom.buffer(distance, resolution, **kwargs)
-                              for geom in self.geometry],
-                             index=self.index, crs=self.crs)
+        return _unary_geo('buffer', self, distance, resolution=resolution,
+                          **kwargs)
 
     def simplify(self, *args, **kwargs):
         """Returns a ``GeoSeries`` containing a simplified representation of
@@ -620,22 +612,12 @@ class GeoPandasBase(object):
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
-        if isinstance(distance, (np.ndarray, pd.Series)):
-            if len(distance) != len(self.index):
-                raise ValueError("Length of distance sequence does not match "
-                                 "length of the GeoSeries")
-            if isinstance(distance, pd.Series):
-                if not self.index.equals(distance.index):
-                    raise ValueError("Index values of distance sequence does "
-                                     "not match index values of the GeoSeries")
-            return gpd.GeoSeries(
-                [s.interpolate(dist, normalized=normalized)
-                 for (s, dist) in zip(self.geometry, distance)],
-                index=self.index, crs=self.crs)
-
-        return gpd.GeoSeries([s.interpolate(distance, normalized=normalized)
-                              for s in self.geometry],
-                             index=self.index, crs=self.crs)
+        if isinstance(distance, pd.Series):
+            if not self.index.equals(distance.index):
+                raise ValueError("Index values of distance sequence does "
+                                 "not match index values of the GeoSeries")
+            distance = np.asarray(distance)
+        return _unary_geo('interpolate', self, distance, normalized=normalized)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.

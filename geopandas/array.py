@@ -16,8 +16,8 @@ def _binary_geo(op, left, right):
 
     Parameters
     ----------
-    right: GeometryArray or single shapely BaseGeoemtry
     op: string
+    right: GeometryArray or single shapely BaseGeoemtry
     """
     if isinstance(right, BaseGeometry):
         # intersection can return empty GeometryCollections, and if the
@@ -212,12 +212,33 @@ class GeometryArray:
     def intersection(self, other):
         return _binary_geo('intersection', self, other)
 
-    # def buffer(self, distance, resolution=16, cap_style=CAP_STYLE.round,
-    #            join_style=JOIN_STYLE.round, mitre_limit=5.0):
-    #     """ Buffer operation on array of GEOSGeometry objects """
-    #     return GeometryArray(
-    #         vectorized.buffer(self.data, distance, resolution, cap_style,
-    #                           join_style, mitre_limit))
+    def buffer(self, distance, resolution=16, **kwargs):
+        if isinstance(distance, np.ndarray):
+            if len(distance) != len(self):
+                raise ValueError("Length of distance sequence does not match "
+                                 "length of the GeoSeries")
+            data = [
+                geom.buffer(dist, resolution, **kwargs)
+                for geom, dist in zip(self.data, distance)]
+            return GeometryArray(np.array(data, dtype=object))
+
+        data = [geom.buffer(distance, resolution, **kwargs)
+                for geom in self.data]
+        return GeometryArray(np.array(data, dtype=object))
+
+    def interpolate(self, distance, normalized=False):
+        if isinstance(distance, np.ndarray):
+            if len(distance) != len(self):
+                raise ValueError("Length of distance sequence does not match "
+                                 "length of the GeoSeries")
+            data = [
+                geom.interpolate(dist, normalized=normalized)
+                for geom, dist in zip(self.data, distance)]
+            return GeometryArray(np.array(data, dtype=object))
+
+        data = [geom.interpolate(distance, normalized=normalized)
+                for geom in self.data]
+        return GeometryArray(np.array(data, dtype=object))
 
     def geom_type(self):
         return _unary_op('geom_type', self, null_value=None)
