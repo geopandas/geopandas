@@ -1,6 +1,10 @@
+import warnings
+
 import numpy as np
 
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
+
 import shapely.affinity
 
 
@@ -79,7 +83,7 @@ def _binary_op(op, left, right, *args, **kwargs):
             "Type not known: {0} vs {1}".format(type(left), type(right)))
 
 
-def _unary_geo(op, left):
+def _unary_geo(op, left, *args, **kwargs):
     # type: (str, GeometryArray) -> GeometryArray
     """Unary operation that returns new geometries"""
     # ensure 1D output, see note above
@@ -167,7 +171,9 @@ class GeometryArray:
         return _unary_op('is_simple', self, null_value=False)
 
     def is_ring(self):
-        return _unary_op('is_ring', self, null_value=False)
+        # operates on the exterior, so can't use _unary_op()
+        return np.array(
+            [geom.exterior.is_ring for geom in self.data], dtype=bool)
 
     def has_z(self):
         return _unary_op('has_z', self, null_value=False)
@@ -190,17 +196,33 @@ class GeometryArray:
     def exterior(self):
         return _unary_geo('exterior', self)
 
+    def interiors(self):
+        has_non_poly = False
+        inner_rings = []
+        for geom in self.data:
+            interior_ring_seq = getattr(geom, 'interiors', None)
+            # polygon case
+            if interior_ring_seq is not None:
+                inner_rings.append(list(interior_ring_seq))
+            # non-polygon case
+            else:
+                has_non_poly = True
+                inner_rings.append(None)
+        if has_non_poly:
+            warnings.warn(
+                "Only Polygon objects have interior rings. For other "
+                "geometry types, None is returned.")
+
+        return np.array(inner_rings, dtype=object)
+
     def representative_point(self):
-        return _unary_geo(self, 'representative_point')
+        # method and not a property -> can't use _unary_geo
+        data = np.empty(len(self), dtype=object)
+        data[:] = [geom.representative_point() for geom in self.data]
+        return GeometryArray(data)
 
     def distance(self, other):
         return _binary_op('distance', self, other)
-
-    def project(self, other, normalized=False):
-        return _binary_op('project', self, other, normalized=normalized)
-
-    def relate(self, other):
-        return _binary_op('relate', self, other)
 
     def area(self):
         return _unary_op('area', self, null_value=np.nan)
@@ -248,15 +270,23 @@ class GeometryArray:
                 for geom in self.data]
         return GeometryArray(np.array(data, dtype=object))
 
+    def simplify(self, *args, **kwargs):
+        # method and not a property -> can't use _unary_geo
+        data = np.empty(len(self), dtype=object)
+        data[:] = [geom.simplify(*args, **kwargs) for geom in self.data]
+        return GeometryArray(data)
+
+    def project(self, other, normalized=False):
+        return _binary_op('project', self, other, normalized=normalized)
+
+    def relate(self, other):
+        return _binary_op('relate', self, other)
+
     def geom_type(self):
         return _unary_op('geom_type', self, null_value=None)
 
-    # def unary_union(self):
-    #     """ Unary union.
-
-    #     Returns a single shapely geometry
-    #     """
-    #     return vectorized.unary_union(self.data)
+    def unary_union(self):
+        return unary_union(self.data)
 
     # def coords(self):
     #     return vectorized.coords(self.data)

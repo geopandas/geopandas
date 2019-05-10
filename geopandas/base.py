@@ -41,22 +41,22 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
         raise TypeError(type(this), type(other))
 
     data = getattr(a_this, op)(other, *args, **kwargs)
-    return data
+    return data, this.index
 
 
 def _binary_geo(op, this, other):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
-    data = _delegate_binary_method(op, this, other).data
-    return GeoSeries(data, index=this.index, crs=this.crs)
+    geoms, index = _delegate_binary_method(op, this, other)
+    return GeoSeries(geoms.data, index=index, crs=this.crs)
 
 
 def _binary_op(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool]
     """Binary operation on GeoSeries objects that returns a Series"""
-    data = _delegate_binary_method(op, this, other, *args, **kwargs)
-    return Series(data, index=this.index)
+    data, index = _delegate_binary_method(op, this, other, *args, **kwargs)
+    return Series(data, index=index)
 
 
 def _delegate_unary_method(op, this, *args, **kwargs):
@@ -157,9 +157,7 @@ class GeoPandasBase(object):
     def is_ring(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed."""
-        # operates on the exterior, so can't use _unary_op()
-        return Series([geom.exterior.is_ring for geom in self.geometry],
-                      index=self.index)
+        return _unary_op('is_ring', self)
 
     @property
     def has_z(self):
@@ -226,34 +224,13 @@ class GeoPandasBase(object):
         inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
         """
-
-        has_non_poly = False
-        inner_rings = []
-        for geom in self.geometry:
-            interior_ring_seq = getattr(geom, 'interiors', None)
-            # polygon case
-            if interior_ring_seq is not None:
-                inner_rings.append(list(interior_ring_seq))
-            # non-polygon case
-            else:
-                has_non_poly = True
-                inner_rings.append(None)
-        if has_non_poly:
-            warn("Only Polygon objects have interior rings. For other "
-                 "geometry types, None is returned.")
-
-        # _unary_op couldn't be used in order to warning to non-polygon and
-        # conversion to list.
-        return Series(inner_rings,
-                      index=self.index, dtype=object)
+        return _unary_op('interiors', self)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
         """
-        return gpd.GeoSeries([geom.representative_point()
-                              for geom in self.geometry],
-                             index=self.index)
+        return _unary_geo('representative_point', self)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -559,9 +536,7 @@ class GeoPandasBase(object):
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
         """
-        return gpd.GeoSeries(
-            [geom.simplify(*args, **kwargs) for geom in self.geometry],
-            index=self.index, crs=self.crs)
+        return _unary_geo('simplify', self, *args, **kwargs)
 
     def relate(self, other):
         """
@@ -595,7 +570,6 @@ class GeoPandasBase(object):
 
         The project method is the inverse of interpolate.
         """
-
         return _binary_op('project', self, other, normalized=normalized)
 
     def interpolate(self, distance, normalized=False):
