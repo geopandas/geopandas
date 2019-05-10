@@ -1,6 +1,7 @@
 import numpy as np
 
 from shapely.geometry.base import BaseGeometry
+import shapely.affinity
 
 
 def _binary_geo(op, left, right):
@@ -88,10 +89,17 @@ def _unary_geo(op, left):
 
 
 def _unary_op(op, left, null_value=False):
-    # type: (str, GeometryArray, Any) -> Series
+    # type: (str, GeometryArray, Any) -> array
     """Unary operation that returns a Series"""
     data = [getattr(geom, op, null_value) for geom in left.data]
     return np.array(data, dtype=np.dtype(type(null_value)))
+
+
+def _affinity_method(op, left, *args, **kwargs):
+    # type: (str, GeometryArray, ...) -> GeometryArray
+    data = [getattr(shapely.affinity, op)(s, *args, **kwargs)
+            for s in left.data]
+    return GeometryArray(np.array(data, dtype=object))
 
 
 class GeometryArray:
@@ -268,3 +276,18 @@ class GeometryArray:
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
+
+    def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
+        return _affinity_method('translate', self, xoff, yoff, zoff)
+
+    def rotate(self, angle, origin='center', use_radians=False):
+        return _affinity_method('rotate', self, angle, origin=origin,
+                                use_radians=use_radians)
+
+    def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
+        return _affinity_method(
+            'scale', self, xfact, yfact, zfact, origin=origin)
+
+    def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
+        return _affinity_method('skew', self, xs, ys, origin=origin,
+                                use_radians=use_radians)

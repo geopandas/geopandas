@@ -632,9 +632,7 @@ class GeoPandasBase(object):
             xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
         """
-        return gpd.GeoSeries([affinity.translate(s, xoff, yoff, zoff)
-                              for s in self.geometry],
-                             index=self.index, crs=self.crs)
+        return _unary_geo('translate', self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin='center', use_radians=False):
         """Returns a ``GeoSeries`` with rotated geometries.
@@ -655,11 +653,8 @@ class GeoPandasBase(object):
         use_radians : boolean
             Whether to interpret the angle of rotation as degrees or radians
         """
-        return gpd.GeoSeries(
-            [affinity.rotate(s, angle, origin=origin,
-                             use_radians=use_radians)
-             for s in self.geometry],
-            index=self.index, crs=self.crs)
+        return _unary_geo('rotate', self, angle, origin=origin,
+                          use_radians=use_radians)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
         """Returns a ``GeoSeries`` with scaled geometries.
@@ -679,10 +674,7 @@ class GeoPandasBase(object):
             box center (default), 'centroid' for the geometry's 2D centroid, a
             Point object or a coordinate tuple (x, y, z).
         """
-        return gpd.GeoSeries(
-            [affinity.scale(s, xfact, yfact, zfact, origin=origin)
-             for s in self.geometry],
-            index=self.index, crs=self.crs)
+        return _unary_geo('scale', self, xfact, yfact, zfact, origin=origin)
 
     def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
         """Returns a ``GeoSeries`` with skewed geometries.
@@ -705,10 +697,8 @@ class GeoPandasBase(object):
         use_radians : boolean
             Whether to interpret the shear angle(s) as degrees or radians
         """
-        return gpd.GeoSeries(
-            [affinity.skew(s, xs, ys, origin=origin, use_radians=use_radians)
-             for s in self.geometry],
-            index=self.index, crs=self.crs)
+        return _unary_geo('skew', self, xs, ys, origin=origin,
+                          use_radians=use_radians)
 
     def explode(self):
         """
