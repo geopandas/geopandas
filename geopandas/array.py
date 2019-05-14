@@ -128,39 +128,6 @@ class GeometryArray:
     # Geometry related methods
     # -------------------------------------------------------------------------
 
-    def covers(self, other):
-        return _binary_op('covers', self, other)
-
-    def contains(self, other):
-        return _binary_op('contains', self, other)
-
-    def crosses(self, other):
-        return _binary_op('crosses', self, other)
-
-    def disjoint(self, other):
-        return _binary_op('disjoint', self, other)
-
-    def equals(self, other):
-        return _binary_op('equals', self, other)
-
-    def intersects(self, other):
-        return _binary_op('intersects', self, other)
-
-    def overlaps(self, other):
-        return _binary_op('overlaps', self, other)
-
-    def touches(self, other):
-        return _binary_op('touches', self, other)
-
-    def within(self, other):
-        return _binary_op('within', self, other)
-
-    def equals_exact(self, other, tolerance):
-        return _binary_op('equals_exact', self, other, tolerance=tolerance)
-
-    def almost_equals(self, other, decimal):
-        return _binary_op('almost_equals', self, other, decimal=decimal)
-
     def is_valid(self):
         return _unary_op('is_valid', self, null_value=False)
 
@@ -175,11 +142,24 @@ class GeometryArray:
         return np.array(
             [geom.exterior.is_ring for geom in self.data], dtype=bool)
 
+    def is_closed(self):
+        return _unary_op('is_closed', self, null_value=False)
+
     def has_z(self):
         return _unary_op('has_z', self, null_value=False)
 
-    def is_closed(self):
-        return _unary_op('is_closed', self, null_value=False)
+    def geom_type(self):
+        return _unary_op('geom_type', self, null_value=None)
+
+    def area(self):
+        return _unary_op('area', self, null_value=np.nan)
+
+    def length(self):
+        return _unary_op('length', self, null_value=np.nan)
+
+    #
+    # Unary operations that return new geometries
+    #
 
     def boundary(self):
         return _unary_geo('boundary', self)
@@ -221,17 +201,52 @@ class GeometryArray:
         data[:] = [geom.representative_point() for geom in self.data]
         return GeometryArray(data)
 
-    def distance(self, other):
-        return _binary_op('distance', self, other)
+    #
+    # Binary predicates
+    #
 
-    def area(self):
-        return _unary_op('area', self, null_value=np.nan)
+    def covers(self, other):
+        return _binary_op('covers', self, other)
 
-    def length(self):
-        return _unary_op('length', self, null_value=np.nan)
+    def contains(self, other):
+        return _binary_op('contains', self, other)
+
+    def crosses(self, other):
+        return _binary_op('crosses', self, other)
+
+    def disjoint(self, other):
+        return _binary_op('disjoint', self, other)
+
+    def equals(self, other):
+        return _binary_op('equals', self, other)
+
+    def intersects(self, other):
+        return _binary_op('intersects', self, other)
+
+    def overlaps(self, other):
+        return _binary_op('overlaps', self, other)
+
+    def touches(self, other):
+        return _binary_op('touches', self, other)
+
+    def within(self, other):
+        return _binary_op('within', self, other)
+
+    def equals_exact(self, other, tolerance):
+        return _binary_op('equals_exact', self, other, tolerance=tolerance)
+
+    def almost_equals(self, other, decimal):
+        return _binary_op('almost_equals', self, other, decimal=decimal)
+
+    #
+    # Binary operations that return new geometries
+    #
 
     def difference(self, other):
         return _binary_geo('difference', self, other)
+
+    def intersection(self, other):
+        return _binary_geo('intersection', self, other)
 
     def symmetric_difference(self, other):
         return _binary_geo('symmetric_difference', self, other)
@@ -239,8 +254,12 @@ class GeometryArray:
     def union(self, other):
         return _binary_geo('union', self, other)
 
-    def intersection(self, other):
-        return _binary_geo('intersection', self, other)
+    #
+    # Other operations
+    #
+
+    def distance(self, other):
+        return _binary_op('distance', self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if isinstance(distance, np.ndarray):
@@ -282,14 +301,35 @@ class GeometryArray:
     def relate(self, other):
         return _binary_op('relate', self, other)
 
-    def geom_type(self):
-        return _unary_op('geom_type', self, null_value=None)
+    #
+    # Reduction operations that return a Shapely geometry
+    #
 
     def unary_union(self):
         return unary_union(self.data)
 
-    # def coords(self):
-    #     return vectorized.coords(self.data)
+    #
+    # Affinity operations
+    #
+
+    def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
+        return _affinity_method('translate', self, xoff, yoff, zoff)
+
+    def rotate(self, angle, origin='center', use_radians=False):
+        return _affinity_method('rotate', self, angle, origin=origin,
+                                use_radians=use_radians)
+
+    def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
+        return _affinity_method(
+            'scale', self, xfact, yfact, zfact, origin=origin)
+
+    def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
+        return _affinity_method('skew', self, xs, ys, origin=origin,
+                                use_radians=use_radians)
+
+    #
+    # Coordinate related properties
+    #
 
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
@@ -306,18 +346,3 @@ class GeometryArray:
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
-
-    def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
-        return _affinity_method('translate', self, xoff, yoff, zoff)
-
-    def rotate(self, angle, origin='center', use_radians=False):
-        return _affinity_method('rotate', self, angle, origin=origin,
-                                use_radians=use_radians)
-
-    def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
-        return _affinity_method(
-            'scale', self, xfact, yfact, zfact, origin=origin)
-
-    def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
-        return _affinity_method('skew', self, xs, ys, origin=origin,
-                                use_radians=use_radians)
