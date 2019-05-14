@@ -10,7 +10,8 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _unary_op, _CoordinateIndexer
+from geopandas.base import (
+    GeoPandasBase, _delegate_property, _CoordinateIndexer)
 
 
 _PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
@@ -58,12 +59,12 @@ class GeoSeries(GeoPandasBase, Series):
     @property
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
-        return _unary_op('x', self)
+        return _delegate_property('x', self)
 
     @property
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
-        return _unary_op('y', self)
+        return _delegate_property('y', self)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
