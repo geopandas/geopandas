@@ -66,7 +66,21 @@ def _delegate_unary_method(op, this, *args, **kwargs):
     return getattr(a_this, op)(*args, **kwargs)
 
 
-def _unary_geo(op, this, *args, **kwargs):
+def _delegate_unary_property(op, this):
+    # type: (str, GeoSeries) -> GeoSeries/Series
+    a_this = GeometryArray(this.geometry.values)
+    return getattr(a_this, op)
+
+
+def _unary_geo_property(op, this, *args, **kwargs):
+    # type: (str, GeoSeries) -> GeoSeries
+    """Unary operation that returns a GeoSeries"""
+    from .geoseries import GeoSeries
+    data = _delegate_unary_property(op, this).data
+    return GeoSeries(data.data, index=this.index, crs=this.crs)
+
+
+def _unary_geo_method(op, this, *args, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
@@ -77,7 +91,7 @@ def _unary_geo(op, this, *args, **kwargs):
 def _unary_op(op, this):
     # type: (str, GeoSeries) -> Series
     """Unary operation that returns a Series"""
-    data = _delegate_unary_method(op, this)
+    data = _delegate_unary_property(op, this)
     return Series(data, index=this.index)
 
 
@@ -174,13 +188,13 @@ class GeoPandasBase(object):
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
         each geometries's set-theoretic `boundary`."""
-        return _unary_geo('boundary', self)
+        return _unary_geo_property('boundary', self)
 
     @property
     def centroid(self):
         """Returns a ``GeoSeries`` of points representing the centroid of each
         geometry."""
-        return _unary_geo('centroid', self)
+        return _unary_geo_property('centroid', self)
 
     @property
     def convex_hull(self):
@@ -191,7 +205,7 @@ class GeoPandasBase(object):
         containing all the points in each geometry, unless the number of points
         in the geometric object is less than three. For two points, the convex
         hull collapses to a `LineString`; for 1, a `Point`."""
-        return _unary_geo('convex_hull', self)
+        return _unary_geo_property('convex_hull', self)
 
     @property
     def envelope(self):
@@ -201,7 +215,7 @@ class GeoPandasBase(object):
         The envelope of a geometry is the bounding rectangle. That is, the
         point or smallest rectangular polygon (with sides parallel to the
         coordinate axes) that contains the geometry."""
-        return _unary_geo('envelope', self)
+        return _unary_geo_property('envelope', self)
 
     @property
     def exterior(self):
@@ -211,7 +225,7 @@ class GeoPandasBase(object):
         Applies to GeoSeries containing only Polygons.
         """
         # TODO: return empty geometry for non-polygons
-        return _unary_geo('exterior', self)
+        return _unary_geo_property('exterior', self)
 
     @property
     def interiors(self):
@@ -231,7 +245,7 @@ class GeoPandasBase(object):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
         """
-        return _unary_geo('representative_point', self)
+        return _unary_geo_method('representative_point', self)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -514,8 +528,8 @@ class GeoPandasBase(object):
                                  "not match index values of the GeoSeries")
             distance = np.asarray(distance)
 
-        return _unary_geo('buffer', self, distance, resolution=resolution,
-                          **kwargs)
+        return _unary_geo_method('buffer', self, distance,
+                                 resolution=resolution, **kwargs)
 
     def simplify(self, *args, **kwargs):
         """Returns a ``GeoSeries`` containing a simplified representation of
@@ -533,7 +547,7 @@ class GeoPandasBase(object):
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
         """
-        return _unary_geo('simplify', self, *args, **kwargs)
+        return _unary_geo_method('simplify', self, *args, **kwargs)
 
     def relate(self, other):
         """
@@ -588,7 +602,8 @@ class GeoPandasBase(object):
                 raise ValueError("Index values of distance sequence does "
                                  "not match index values of the GeoSeries")
             distance = np.asarray(distance)
-        return _unary_geo('interpolate', self, distance, normalized=normalized)
+        return _unary_geo_method('interpolate', self, distance,
+                                 normalized=normalized)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.
@@ -603,7 +618,7 @@ class GeoPandasBase(object):
             xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
         """
-        return _unary_geo('translate', self, xoff, yoff, zoff)
+        return _unary_geo_method('translate', self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin='center', use_radians=False):
         """Returns a ``GeoSeries`` with rotated geometries.
@@ -624,8 +639,8 @@ class GeoPandasBase(object):
         use_radians : boolean
             Whether to interpret the angle of rotation as degrees or radians
         """
-        return _unary_geo('rotate', self, angle, origin=origin,
-                          use_radians=use_radians)
+        return _unary_geo_method('rotate', self, angle, origin=origin,
+                                 use_radians=use_radians)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
         """Returns a ``GeoSeries`` with scaled geometries.
@@ -645,7 +660,8 @@ class GeoPandasBase(object):
             box center (default), 'centroid' for the geometry's 2D centroid, a
             Point object or a coordinate tuple (x, y, z).
         """
-        return _unary_geo('scale', self, xfact, yfact, zfact, origin=origin)
+        return _unary_geo_method('scale', self, xfact, yfact, zfact,
+                                 origin=origin)
 
     def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
         """Returns a ``GeoSeries`` with skewed geometries.
@@ -668,8 +684,8 @@ class GeoPandasBase(object):
         use_radians : boolean
             Whether to interpret the shear angle(s) as degrees or radians
         """
-        return _unary_geo('skew', self, xs, ys, origin=origin,
-                          use_radians=use_radians)
+        return _unary_geo_method('skew', self, xs, ys, origin=origin,
+                                 use_radians=use_radians)
 
     def explode(self):
         """

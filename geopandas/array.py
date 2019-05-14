@@ -131,32 +131,41 @@ class GeometryArray:
     # Geometry related methods
     # -------------------------------------------------------------------------
 
+    @property
     def is_valid(self):
         return _unary_op('is_valid', self, null_value=False)
 
+    @property
     def is_empty(self):
         return _unary_op('is_empty', self, null_value=False)
 
+    @property
     def is_simple(self):
         return _unary_op('is_simple', self, null_value=False)
 
+    @property
     def is_ring(self):
         # operates on the exterior, so can't use _unary_op()
         return np.array(
             [geom.exterior.is_ring for geom in self.data], dtype=bool)
 
+    @property
     def is_closed(self):
         return _unary_op('is_closed', self, null_value=False)
 
+    @property
     def has_z(self):
         return _unary_op('has_z', self, null_value=False)
 
+    @property
     def geom_type(self):
         return _unary_op('geom_type', self, null_value=None)
 
+    @property
     def area(self):
         return _unary_op('area', self, null_value=np.nan)
 
+    @property
     def length(self):
         return _unary_op('length', self, null_value=np.nan)
 
@@ -164,21 +173,27 @@ class GeometryArray:
     # Unary operations that return new geometries
     #
 
+    @property
     def boundary(self):
         return _unary_geo('boundary', self)
 
+    @property
     def centroid(self):
         return _unary_geo('centroid', self)
 
+    @property
     def convex_hull(self):
         return _unary_geo('convex_hull', self)
 
+    @property
     def envelope(self):
         return _unary_geo('envelope', self)
 
+    @property
     def exterior(self):
         return _unary_geo('exterior', self)
 
+    @property
     def interiors(self):
         has_non_poly = False
         inner_rings = []
@@ -334,17 +349,19 @@ class GeometryArray:
     # Coordinate related properties
     #
 
+    @property
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
-        if (self.geom_type() == "Point").all():
+        if (self.geom_type == "Point").all():
             return _unary_op('x', self, null_value=np.nan)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
 
+    @property
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
-        if (self.geom_type() == "Point").all():
+        if (self.geom_type == "Point").all():
             return _unary_op('y', self, null_value=np.nan)
         else:
             message = "y attribute access only provided for Point geometries"
