@@ -472,7 +472,7 @@ class GeoPandasBase(object):
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
         """
-        bounds = np.array([geom.bounds for geom in self.geometry])
+        bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
@@ -485,11 +485,7 @@ class GeoPandasBase(object):
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
         """
-        b = self.bounds
-        return np.array((b['minx'].min(),
-                         b['miny'].min(),
-                         b['maxx'].max(),
-                         b['maxy'].max()))
+        return GeometryArray(self.geometry.values).total_bounds
 
     @property
     def sindex(self):

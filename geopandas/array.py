@@ -119,6 +119,9 @@ class GeometryArray:
             raise ValueError(
                 "'data' should be array of geometry objects. Use from_shapely,"
                 " from_wkb, from_wkt functions to construct a GeometryArray.")
+        elif not data.ndim == 1:
+            raise ValueError(
+                "'data' should be a 1-dimensional array of geometry objects.")
         self.data = data
 
     def __len__(self):
@@ -346,3 +349,17 @@ class GeometryArray:
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
+
+    @property
+    def bounds(self):
+        # TODO fix for empty / missing geometries
+        bounds = np.array([geom.bounds for geom in self.data])
+        return bounds
+
+    @property
+    def total_bounds(self):
+        b = self.bounds
+        return np.array((b[:, 0].min(),  # minx
+                         b[:, 1].min(),  # miny
+                         b[:, 2].max(),  # maxx
+                         b[:, 3].max()))  # maxy
