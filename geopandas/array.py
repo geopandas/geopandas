@@ -3,9 +3,159 @@ import warnings
 import numpy as np
 
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import unary_union
-
+import shapely.geometry
+import shapely.ops
 import shapely.affinity
+
+
+# -----------------------------------------------------------------------------
+# Constructors / converters to other formats
+# -----------------------------------------------------------------------------
+
+
+def from_shapely(data):
+    """
+    Convert a list or array of shapely objects to a GeometryArray.
+
+    Validates the elements.
+    """
+    n = len(data)
+
+    out = []
+
+    for idx in range(n):
+        geom = data[idx]
+        if isinstance(geom, BaseGeometry):
+            out.append(geom)
+        elif hasattr(geom, '__geo_interface__'):
+            geom = shapely.geometry.asShape(geom)
+            out.append(geom)
+        elif geom is None or (isinstance(geom, float) and np.isnan(geom)):
+            out.append(None)
+
+    out = np.array(out, dtype=object)
+    return GeometryArray(out)
+
+
+def to_shapely(geoms):
+    """
+    Convert GeometryArray to numpy object array of shapely objects.
+    """
+    if not isinstance(geoms, GeometryArray):
+        raise ValueError("'geoms' must be a GeometryArray")
+    return geoms.data
+
+
+def from_wkb(data):
+    """
+    Convert a list or array of WKB objects to a GeometryArray.
+    """
+    import shapely.wkb
+
+    n = len(data)
+
+    out = []
+
+    for idx in range(n):
+        geom = data[idx]
+        if geom is not None and len(geom):
+            geom = shapely.wkb.loads(geom)
+        else:
+            geom = None
+        out.append(geom)
+
+    out = np.array(out, dtype=object)
+    return GeometryArray(out)
+
+
+def to_wkb(geoms):
+    """
+    Convert GeometryArray to a numpy object array of WKB objects.
+    """
+    if not isinstance(geoms, GeometryArray):
+        raise ValueError("'geoms' must be a GeometryArray")
+    out = [geom.wkb if geom is not None else None for geom in geoms]
+    return np.array(out, dtype=object)
+
+
+def from_wkt(data):
+    """
+    Convert a list or array of WKT objects to a GeometryArray.
+    """
+    import shapely.wkt
+
+    n = len(data)
+
+    out = []
+
+    for idx in range(n):
+        geom = data[idx]
+        if geom is not None and len(geom):
+            if isinstance(geom, bytes):
+                geom = geom.decode('utf-8')
+            geom = shapely.wkt.loads(geom)
+        else:
+            geom = None
+        out.append(geom)
+
+    out = np.array(out, dtype=object)
+    return GeometryArray(out)
+
+
+def to_wkt(geoms):
+    """
+    Convert GeometryArray to a numpy object array of WKT objects.
+    """
+    if not isinstance(geoms, GeometryArray):
+        raise ValueError("'geoms' must be a GeometryArray")
+    out = [geom.wkt if geom is not None else None for geom in geoms]
+    return np.array(out, dtype=object)
+
+
+def _points_from_xy(x, y, z=None):
+    """
+    Generate list of shapely Point geometries from x, y(, z) coordinates.
+
+    Parameters
+    ----------
+    x, y, z : array
+
+    Examples
+    --------
+    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
+    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
+    >>> gdf = geopandas.GeoDataFrame(
+            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+
+    Returns
+    -------
+    list : list
+    """
+    if not len(x) == len(y):
+        raise ValueError("x and y arrays must be equal length.")
+    if z is not None:
+        if not len(z) == len(x):
+            raise ValueError("z array must be same length as x and y.")
+        geom = [shapely.geometry.Point(i, j, k) for i, j, k in zip(x, y, z)]
+    else:
+        geom = [shapely.geometry.Point(i, j) for i, j in zip(x, y)]
+    return geom
+
+
+def points_from_xy(x, y, z=None):
+    """Convert arrays of x and y values to a GeometryArray of points."""
+    x = np.asarray(x, dtype='float64')
+    y = np.asarray(y, dtype='float64')
+    if z is not None:
+        z = np.asarray(z, dtype='float64')
+    out = _points_from_xy(x, y, z)
+    out = np.array(out, dtype=object)
+    return GeometryArray(out)
+
+
+# -----------------------------------------------------------------------------
+# Helper methods for the vectorized operations
+# -----------------------------------------------------------------------------
 
 
 def _binary_geo(op, left, right):
@@ -126,6 +276,10 @@ class GeometryArray:
 
     def __len__(self):
         return len(self.data)
+
+    def __getitem__(self, i):
+        assert isinstance(i, int)
+        return self.data[i]
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -324,7 +478,7 @@ class GeometryArray:
     #
 
     def unary_union(self):
-        return unary_union(self.data)
+        return shapely.ops.unary_union(self.data)
 
     #
     # Affinity operations
