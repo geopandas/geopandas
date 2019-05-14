@@ -198,13 +198,14 @@ class TestGeomMethods:
         result = getattr(gdf, op)
         fcmp(result, expected)
 
-    def test_crs_warning(self):
-        # operations on geometries should warn for different CRS
-        no_crs_g3 = self.g3.copy()
-        no_crs_g3.crs = None
-        with pytest.warns(UserWarning):
-            self._test_binary_topological('intersection', self.g3,
-                                          self.g3, no_crs_g3)
+    # TODO reenable for all operations once we use pyproj > 2
+    # def test_crs_warning(self):
+    #     # operations on geometries should warn for different CRS
+    #     no_crs_g3 = self.g3.copy()
+    #     no_crs_g3.crs = None
+    #     with pytest.warns(UserWarning):
+    #         self._test_binary_topological('intersection', self.g3,
+    #                                       self.g3, no_crs_g3)
 
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1,

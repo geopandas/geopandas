@@ -30,9 +30,10 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     if isinstance(other, GeoPandasBase):
         this, other = this.align(other.geometry)
 
-        if this.crs != other.crs:
-            warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-                                                              other.crs))
+        # TODO reenable for all operations once we use pyproj > 2
+        # if this.crs != other.crs:
+        #     warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
+        #                                                       other.crs))
         a_this = GeometryArray(this.values)
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
