@@ -661,36 +661,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geo_df
 
 
-def points_from_xy(x, y, z=None):
-    """
-    Generate list of shapely Point geometries from x, y(, z) coordinates.
-
-    Parameters
-    ----------
-    x, y, z : array
-
-    Examples
-    --------
-    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
-    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
-    >>> gdf = geopandas.GeoDataFrame(
-            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
-
-    Returns
-    -------
-    list : list
-    """
-    if not len(x) == len(y):
-        raise ValueError("x and y arrays must be equal length.")
-    if z is not None:
-        if not len(z) == len(x):
-            raise ValueError("z array must be same length as x and y.")
-        geom = [Point(i, j, k) for i, j, k in zip(x, y, z)]
-    else:
-        geom = [Point(i, j) for i, j in zip(x, y)]
-    return geom
-
-
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
         raise ValueError("Can't do inplace setting when converting from"
