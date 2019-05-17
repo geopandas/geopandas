@@ -12,7 +12,7 @@ import shapely.affinity as affinity
 
 import geopandas as gpd
 
-from .array import GeometryArray, GeometryDtype, _HAS_EXTENSION_ARRAY
+from .array import GeometryArray, GeometryDtype
 
 
 try:
@@ -26,17 +26,11 @@ except ImportError:
 
 def is_geometry_type(data):
 
-    if _HAS_EXTENSION_ARRAY:
-        if isinstance(getattr(data, 'dtype', None), GeometryDtype):
-            # GeometryArray and Series[GeometryArray]
-            return True
-        else:
-            return False
+    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+        # GeometryArray and Series[GeometryArray]
+        return True
     else:
-        if isinstance(data, GeometryArray):
-            return True
-        else:
-            return False
+        return False
 
 
 def _delegate_binary_method(op, this, other, *args, **kwargs):

@@ -9,16 +9,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
 
-try:
-    from pandas.tests.extension import base
-except ImportError:
-    pytestmark = pytest.mark.skip("pandas has no ExtensionArray support")
-
-    class Base(object):
-        def __getattr__(self, key):
-            return object
-
-    base = Base()
+from pandas.tests.extension import base
 
 
 @pytest.fixture
@@ -36,8 +27,18 @@ def make_data():
 
 @pytest.fixture
 def data():
-    """Length-100 array for this type."""
+    """Length-100 array for this type.
+
+    * data[0] and data[1] should both be non missing
+    * data[0] and data[1] should not be equal
+    """
     return make_data()
+
+
+@pytest.fixture
+def data_for_twos():
+    """Length-100 array in which all the elements are two."""
+    raise NotImplementedError
 
 
 @pytest.fixture
@@ -56,17 +57,30 @@ def all_data(request, data, data_missing):
 
 
 @pytest.fixture
-def data_repeated():
-    """Return different versions of data for count times"""
+def data_repeated(data):
+    """
+    Generate many datasets.
+
+    Parameters
+    ----------
+    data : fixture implementing `data`
+
+    Returns
+    -------
+    Callable[[int], Generator]:
+        A callable that takes a `count` argument and
+        returns a generator yielding `count` datasets.
+    """
     def gen(count):
         for _ in range(count):
-            return make_data()
-    yield gen
+            yield data
+    return gen
 
 
 @pytest.fixture
 def data_for_sorting():
     """Length-3 array with a known sort order.
+
     This should be three items [B, C, A] with
     A < B < C
     """
@@ -76,6 +90,7 @@ def data_for_sorting():
 @pytest.fixture
 def data_missing_for_sorting():
     """Length-3 array with a known sort order.
+
     This should be three items [B, NA, A] with
     A < B and NA missing.
     """
@@ -101,7 +116,9 @@ def na_value():
 @pytest.fixture
 def data_for_grouping():
     """Data for factorization, grouping, and unique tests.
+
     Expected to be like [B, B, NA, NA, A, A, B, C]
+
     Where A < B < C and NA is missing
     """
     return from_shapely(
@@ -113,6 +130,67 @@ def data_for_grouping():
          shapely.geometry.Point(0, 0),
          shapely.geometry.Point(1, 1),
          shapely.geometry.Point(2, 2)])
+
+
+@pytest.fixture(params=[True, False])
+def box_in_series(request):
+    """Whether to box the data in a Series"""
+    return request.param
+
+
+@pytest.fixture(params=[
+    lambda x: 1,
+    lambda x: [1] * len(x),
+    lambda x: pd.Series([1] * len(x)),
+    lambda x: x,
+], ids=['scalar', 'list', 'series', 'object'])
+def groupby_apply_op(request):
+    """
+    Functions to test groupby.apply().
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def as_frame(request):
+    """
+    Boolean fixture to support Series and Series.to_frame() comparison testing.
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def as_series(request):
+    """
+    Boolean fixture to support arr and Series(arr) comparison testing.
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def use_numpy(request):
+    """
+    Boolean fixture to support comparison testing of ExtensionDtype array
+    and numpy array.
+    """
+    return request.param
+
+
+@pytest.fixture(params=['ffill', 'bfill'])
+def fillna_method(request):
+    """
+    Parametrized fixture giving method parameters 'ffill' and 'bfill' for
+    Series.fillna(method=<method>) testing.
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def as_array(request):
+    """
+    Boolean fixture to support ExtensionDtype _from_sequence method testing.
+    """
+    return request.param
 
 
 class TestDtype(base.BaseDtypeTests):
@@ -260,6 +338,16 @@ class TestGroupby(base.BaseGroupbyTests):
     ], ids=['scalar', 'list', 'series', 'object'])
     def test_groupby_extension_apply(self, data_for_grouping, op):
         pass
+
+
+
+class TestPrinting(base.BasePrintingTests):
+    pass
+
+
+# class TestParsing(base.BaseParsingTests):
+#     pass
+
 
 
 # TODO add ops tests

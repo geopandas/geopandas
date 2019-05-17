@@ -19,36 +19,35 @@ import shapely.affinity
 
 from six import PY3
 
+from pandas.api.extensions import ExtensionArray, ExtensionDtype
 
-try:
-    from pandas.api.extensions import ExtensionArray, ExtensionDtype
+from pandas.api.extensions import register_extension_dtype
 
-    class GeometryDtype(ExtensionDtype):
-        type = BaseGeometry
-        name = 'geometry'
-        na_value = None
 
-        @classmethod
-        def construct_from_string(cls, string):
-            if string == cls.name:
-                return cls()
-            else:
-                raise TypeError("Cannot construct a '{}' from "
-                                "'{}'".format(cls, string))
-        
-        @classmethod
-        def construct_array_type(cls):
-            return GeometryArray
+@register_extension_dtype
+class GeometryDtype(ExtensionDtype):
+    type = BaseGeometry
+    name = 'geometry'
+    na_value = None
 
-    # TODO expose registry in pandas.api.types
-    from pandas.core.dtypes.dtypes import registry
-    registry.register(GeometryDtype)
+    @classmethod
+    def construct_from_string(cls, string):
+        if string == cls.name:
+            return cls()
+        else:
+            raise TypeError("Cannot construct a '{}' from "
+                            "'{}'".format(cls, string))
 
-    _HAS_EXTENSION_ARRAY = True
-except ImportError:
-    ExtensionArray = object
-    GeometryDtype = lambda: np.dtype('object')
-    _HAS_EXTENSION_ARRAY = False
+    @classmethod
+    def construct_array_type(cls):
+        return GeometryArray
+
+
+# # TODO expose registry in pandas.api.types
+# from pandas.core.dtypes.dtypes import registry
+# registry.register(GeometryDtype)
+
+
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -89,8 +88,9 @@ def from_shapely(data):
         elif geom is None or (isinstance(geom, float) and np.isnan(geom)):
             out.append(None)
 
-    out = np.array(out, dtype=object)
-    return GeometryArray(out)
+    aout = np.empty(n, dtype=object)
+    aout[:] = out
+    return GeometryArray(aout)
 
 
 def to_shapely(geoms):
@@ -312,11 +312,12 @@ def _affinity_method(op, left, *args, **kwargs):
     return GeometryArray(np.array(data, dtype=object))
 
 
-class GeometryArray:
+class GeometryArray(ExtensionArray):
     """
     Class wrapping a numpy array of Shapely objects and
     holding the array-based implementations.
     """
+    _dtype = GeometryDtype()
 
     def __init__(self, data):
         if isinstance(data, self.__class__):
@@ -330,6 +331,10 @@ class GeometryArray:
                 "'data' should be a 1-dimensional array of geometry objects.")
         self.data = data
 
+    @property
+    def dtype(self):
+        return self._dtype
+
     def __len__(self):
         return len(self.data)
 
@@ -342,15 +347,18 @@ class GeometryArray:
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
-        if isinstance(value, list):
-            value = np.array(value, dtype=object)
-        if isinstance(value, np.ndarray) or isinstance(value, GeometryArray):
-            # TODO validate array
-            self.data[key] = value
+        if isinstance(value, (list, np.ndarray)):
+            value = from_shapely(value)
+        if isinstance(value, GeometryArray):
+            if isinstance(key, numbers.Integral):
+                raise ValueError("cannot set a single element with an array")
+            self.data[key] = value.data
         elif isinstance(value, BaseGeometry) or value is None:
             # self.data[idx] = value
-            if isinstance(key, np.ndarray):
-                self.data[key] = np.array([value], dtype=object)
+            if isinstance(key, (list, np.ndarray)):
+                value_array = np.empty(1, dtype=object)
+                value_array[:] = [value]
+                self.data[key] = value_array
             else:
                 self.data[key] = value
         else:
@@ -361,44 +369,22 @@ class GeometryArray:
     def size(self):
         return len(self.data)
 
-    @property
-    def ndim(self):
-        return 1
-
     def copy(self, *args, **kwargs):
         return GeometryArray(self.data.copy())
 
     def take(self, idx, allow_fill=False, fill_value=None):
 
-        if _HAS_EXTENSION_ARRAY:
-            from pandas.api.extensions import take
+        from pandas.api.extensions import take
 
-            if allow_fill:
-                if fill_value is None: # or pd.isna(fill_value):
-                    fill_value = 0
+        if allow_fill:
+            if fill_value is None: # or pd.isna(fill_value):
+                fill_value = 0
 
-            result = take(self.data, idx, allow_fill=allow_fill,
-                          fill_value=fill_value)
-            if fill_value == 0:
-                result[result == 0] = None
-            return GeometryArray(result)
-        else:
-            if allow_fill:
-                # take on empty array
-                if not len(self):
-                    # only valid if result is an all-missing array
-                    if (np.asarray(idx) == -1).all():
-                        return GeometryArray(
-                            np.array([None]*len(idx), dtype=object))
-                    else:
-                        raise IndexError(
-                            "cannot do a non-empty take from an empty array.")
-
-                result = self[idx]
-                result.data[idx == -1] = None
-                return result
-            else:
-                return self[idx]
+        result = take(self.data, idx, allow_fill=allow_fill,
+                      fill_value=fill_value)
+        if fill_value == 0:
+            result[result == 0] = None
+        return GeometryArray(result)
 
     def _fill(self, idx, value):
         """ Fill index locations with value
@@ -718,33 +704,35 @@ class GeometryArray:
                          b[:, 2].max(),  # maxx
                          b[:, 3].max()))  # maxy
 
-
     # -------------------------------------------------------------------------
     # for Series/ndarray like compat
     # -------------------------------------------------------------------------
 
-    @property
-    def shape(self):
-        """ Shape of the ...
+    def astype(self, dtype, copy=True):
+        """
+        Cast to a NumPy array with 'dtype'.
 
-        For internal compatibility with numpy arrays.
+        Parameters
+        ----------
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast.
+        copy : bool, default True
+            Whether to copy the data, even if not necessary. If False,
+            a copy is made only if the old dtype does not match the
+            new dtype.
 
         Returns
         -------
-        shape : tuple
+        array : ndarray
+            NumPy ndarray with 'dtype' for its dtype.
         """
-        return tuple([len(self)])
+        if isinstance(dtype, GeometryDtype):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        return np.array(self, dtype=dtype, copy=copy)
 
-    def to_dense(self):
-        """Return my 'dense' representation
-
-        For internal compatibility with numpy arrays.
-
-        Returns
-        -------
-        dense : array
-        """
-        return self.data
 
     def isna(self):
         """
@@ -771,15 +759,23 @@ class GeometryArray:
     # ExtensionArray specific
     # -------------------------------------------------------------------------
 
+
+
     @classmethod
     def _from_sequence(cls, scalars, dtype=None, copy=False):
-        """Construct a new ExtensionArray from a sequence of scalars.
+        """
+        Construct a new ExtensionArray from a sequence of scalars.
 
         Parameters
         ----------
         scalars : Sequence
             Each element will be an instance of the scalar type for this
             array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : boolean, default False
+            If True, copy the underlying data.
 
         Returns
         -------
@@ -789,7 +785,8 @@ class GeometryArray:
 
     @classmethod
     def _from_factorized(cls, values, original):
-        """Reconstruct an ExtensionArray after factorization.
+        """
+        Reconstruct an ExtensionArray after factorization.
 
         Parameters
         ----------
@@ -838,16 +835,48 @@ class GeometryArray:
             `na_sentinal` and not included in `uniques`. By default,
             ``np.nan`` is used.
         """
-        vals = np.array([getattr(x, 'wkb', None) for x in self], dtype=object)
+        vals = to_wkb(self)
         return vals, None
+
+    def _formatter(self, boxed=False):
+        """Formatting function for scalar values.
+
+        This is used in the default '__repr__'. The returned formatting
+        function receives instances of your scalar type.
+
+        Parameters
+        ----------
+        boxed: bool, default False
+            An indicated for whether or not your array is being printed
+            within a Series, DataFrame, or Index (True), or just by
+            itself (False). This may be useful if you want scalar values
+            to appear differently within a Series versus on its own (e.g.
+            quoted or not).
+
+        Returns
+        -------
+        Callable[[Any], str]
+            A callable that gets instances of the scalar type and
+            returns a string. By default, :func:`repr` is used
+            when ``boxed=False`` and :func:`str` is used when
+            ``boxed=True``.
+        """
+        return str
 
     @classmethod
     def _concat_same_type(cls, to_concat):
         """
-        Concatenate list of single blocks of the same type.
+        Concatenate multiple array
+
+        Parameters
+        ----------
+        to_concat : sequence of this type
+
+        Returns
+        -------
+        ExtensionArray
         """
-        L = list(to_concat)
-        data = np.concatenate([ga.data for ga in L])
+        data = np.concatenate([ga.data for ga in to_concat])
         return GeometryArray(data)
 
     def __array__(self, dtype=None):
