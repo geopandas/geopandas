@@ -28,7 +28,7 @@ from pandas.api.extensions import register_extension_dtype
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = 'geometry'
-    na_value = None
+    na_value = np.nan
 
     @classmethod
     def construct_from_string(cls, string):
@@ -377,7 +377,7 @@ class GeometryArray(ExtensionArray):
         from pandas.api.extensions import take
 
         if allow_fill:
-            if fill_value is None: # or pd.isna(fill_value):
+            if fill_value is None or pd.isna(fill_value):
                 fill_value = 0
 
         result = take(self.data, idx, allow_fill=allow_fill,
