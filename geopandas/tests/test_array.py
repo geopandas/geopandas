@@ -80,6 +80,24 @@ def test_from_shapely():
     assert [v.equals(t) for v, t in zip(T, triangles)]
 
 
+def test_from_shapely_geo_interface():
+
+    class Point:
+
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        @property
+        def __geo_interface__(self):
+            return {'type': 'Point', 'coordinates': (self.x, self.y)}
+
+    result = from_shapely([Point(1.0, 2.0), Point(3.0, 4.0)])
+    expected = from_shapely([
+        shapely.geometry.Point(1.0, 2.0), shapely.geometry.Point(3.0, 4.0)])
+    assert all(v.equals(t) for v, t in zip(result, expected))
+
+
 def test_from_wkb():
     # list
     L_wkb = [p.wkb for p in points]
