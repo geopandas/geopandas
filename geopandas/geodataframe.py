@@ -163,7 +163,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
@@ -175,7 +174,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
         return geopandas.io.file.read_file(filename, **kwargs)
