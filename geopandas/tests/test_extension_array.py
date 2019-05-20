@@ -1,3 +1,18 @@
+"""
+This file contains a minimal set of tests for compliance with the extension
+array interface test suite (by inheriting the pandas test suite), and should
+contain no other tests.
+Other tests (eg related to the spatial functionality or integration
+with GeoSeries/GeoDataFrame) should be added to test_array.py and others.
+
+The tests in this file are inherited from the BaseExtensionTests, and only
+minimal tweaks should be applied to get the tests passing (by overwriting a
+parent method).
+
+A set of fixtures are defined to provide data for the tests (the fixtures
+expected to be available to pytest by the inherited pandas tests).
+
+"""
 import numpy as np
 import pandas as pd
 
@@ -8,12 +23,15 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 import pytest
 
 from pandas.tests.extension import base
-from pandas.conftest import (  # noqa
-    all_boolean_reductions, all_numeric_reductions, all_compare_operators)
 
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
+
+
+# -----------------------------------------------------------------------------
+# Required fixtures
+# -----------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -195,6 +213,48 @@ def as_array(request):
     Boolean fixture to support ExtensionDtype _from_sequence method testing.
     """
     return request.param
+
+
+# Fixtures defined in pandas/conftest.py that are also needed: defining them
+# here instead of importing for compatibility
+
+
+@pytest.fixture(params=['sum', 'max', 'min', 'mean', 'prod', 'std', 'var',
+                        'median', 'kurt', 'skew'])
+def all_numeric_reductions(request):
+    """
+    Fixture for numeric reduction names
+    """
+    return request.param
+
+
+@pytest.fixture(params=['all', 'any'])
+def all_boolean_reductions(request):
+    """
+    Fixture for boolean reduction names
+    """
+    return request.param
+
+
+@pytest.fixture(params=['__eq__', '__ne__', '__le__',
+                        '__lt__', '__ge__', '__gt__'])
+def all_compare_operators(request):
+    """
+    Fixture for dunder names for common compare operations
+
+    * >=
+    * >
+    * ==
+    * !=
+    * <
+    * <=
+    """
+    return request.param
+
+
+# -----------------------------------------------------------------------------
+# Inherited tests
+# -----------------------------------------------------------------------------
 
 
 class TestDtype(base.BaseDtypeTests):
