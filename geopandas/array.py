@@ -48,6 +48,13 @@ class GeometryDtype(ExtensionDtype):
 # registry.register(GeometryDtype)
 
 
+def _isna(value):
+    if value is None:
+        return True
+    elif isinstance(value, float) and np.isnan(value):
+        return True
+    else:
+        return False
 
 
 GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
@@ -349,13 +356,15 @@ class GeometryArray(ExtensionArray):
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
+        if isinstance(value, pd.Series):
+            value = value.values
         if isinstance(value, (list, np.ndarray)):
             value = from_shapely(value)
         if isinstance(value, GeometryArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
-        elif isinstance(value, BaseGeometry) or pd.isna(value):
+        elif isinstance(value, BaseGeometry) or _isna(value):
             # self.data[idx] = value
             if pd.isna(value):
                 # internally only use None as missing value indicator

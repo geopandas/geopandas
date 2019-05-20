@@ -88,6 +88,24 @@ class TestDataFrame:
         # good if this changed in the future
         assert not isinstance(df['location'], GeoSeries)
 
+    def test_getitem_no_geometry(self):
+        res = self.df2[['value1', 'value2']]
+        assert isinstance(res, pd.DataFrame)
+        assert not isinstance(res, GeoDataFrame)
+
+        # with different name
+        df = self.df2.copy()
+        df = df.rename(columns={'geometry': 'geom'}).set_geometry('geom')
+        assert isinstance(df, GeoDataFrame)
+        res = df[['value1', 'value2']]
+        assert isinstance(res, pd.DataFrame)
+        assert not isinstance(res, GeoDataFrame)
+
+        df['geometry'] = np.arange(len(df))
+        res = df[['value1', 'value2', 'geometry']]
+        assert isinstance(res, pd.DataFrame)
+        assert not isinstance(res, GeoDataFrame)
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                check_dtype=True, check_index_type=True)

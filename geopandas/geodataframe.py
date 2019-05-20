@@ -7,7 +7,7 @@ from shapely.geometry import mapping, shape, Point
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas.array import GeometryArray
+from geopandas.array import GeometryArray, from_shapely
 from geopandas.base import GeoPandasBase, _CoordinateIndexer
 from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
@@ -15,6 +15,13 @@ import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
+
+
+def _ensure_geometry(values):
+    if isinstance(values, GeometryArray):
+        return values
+    else:
+        return from_shapely(values)
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -55,13 +62,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
+
+        # TEMP HACK need to do this before calling self['geometry'], because
+        # getitem accesses crs
+        self.crs = crs
+
         # only set default 'geometry' name if it is present in the data
         # TODO do we want to raise / return normal DataFrame in this case?
         if geometry is None:
             if 'geometry' in self.columns:
-                geometry = 'geometry'
+                # TEMP HACK only if we have actual geometry values -> call
+                # set_geometry
+                try:
+                    self['geometry'] = _ensure_geometry(self['geometry'].values)
+                except ValueError:
+                    pass
+                else:
+                    geometry = 'geometry'
 
-        self.crs = crs
+        # self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()

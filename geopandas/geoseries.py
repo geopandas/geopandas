@@ -54,6 +54,10 @@ class GeoSeries(GeoPandasBase, Series):
         name = kwargs.pop('name', None)
 
         if not is_geometry_type(data):
+            # if data is None and dtype is specified (eg from empty overlay
+            # test), specifying dtype raises an error:
+            # https://github.com/pandas-dev/pandas/issues/26469
+            kwargs.pop('dtype', None)
             s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object and not s.empty:

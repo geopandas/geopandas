@@ -283,7 +283,9 @@ def _overlay_symmetric_diff(df1, df2):
     dfsym = dfdiff1.merge(dfdiff2, on=['__idx1', '__idx2'], how='outer',
                           suffixes=['_1', '_2'])
     geometry = dfsym.geometry_1.copy()
-    geometry[dfsym.geometry_1.isnull()] = \
+    geometry.name = 'geometry'
+    # https://github.com/pandas-dev/pandas/issues/26468 use loc for now
+    geometry.loc[dfsym.geometry_1.isnull()] = \
         dfsym.loc[dfsym.geometry_1.isnull(), 'geometry_2']
     dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
