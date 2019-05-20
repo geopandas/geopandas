@@ -353,8 +353,12 @@ class GeometryArray(ExtensionArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
-        elif isinstance(value, BaseGeometry) or value is None:
+        elif isinstance(value, BaseGeometry) or pd.isna(value):
             # self.data[idx] = value
+            if pd.isna(value):
+                # internally only use None as missing value indicator
+                # but accept others
+                value = None
             if isinstance(key, (list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
                 value_array[:] = [value]
