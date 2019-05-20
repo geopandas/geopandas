@@ -146,7 +146,7 @@ Further, optional dependencies are:
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 2.0)
+- `matplotlib`_ (>= 2.0.1)
 - `descartes`_
 - `mapclassify`_
 

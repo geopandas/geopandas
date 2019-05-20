@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division
 
-from distutils.version import LooseVersion
 import itertools
 import warnings
 
@@ -768,9 +767,5 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
         documented in `Collections.set_linestyle`,
         to the form `onoffseq`.
     """
-    if LooseVersion(matplotlib.__version__) >= '2.0':
-        offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
-        return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
-    else:
-        from matplotlib.backend_bases import GraphicsContextBase
-        return GraphicsContextBase.dashd[linestyle]
+    offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
+    return matplotlib.lines._scale_dashes(offset, dashes, linewidth)

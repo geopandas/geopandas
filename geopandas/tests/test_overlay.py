@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import os
-from distutils.version import LooseVersion
 
 import pandas as pd
 from shapely.geometry import Point, Polygon
@@ -15,12 +14,6 @@ import pytest
 
 DATA = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), 'data', 'overlay')
-
-
-if str(pd.__version__) < LooseVersion('0.23'):
-    CONCAT_KWARGS = {}
-else:
-    CONCAT_KWARGS = {'sort': False}
 
 
 @pytest.fixture
@@ -80,7 +73,7 @@ def test_overlay(dfs_index, how, use_sindex):
         expected = pd.concat([
             expected_intersection,
             expected_difference
-        ], ignore_index=True, **CONCAT_KWARGS)
+        ], ignore_index=True, sort=False)
         expected['col1'] = expected['col1'].astype(float)
     else:
         expected = _read(how)
