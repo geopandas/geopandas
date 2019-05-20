@@ -87,6 +87,8 @@ def from_shapely(data):
             out.append(geom)
         elif geom is None or (isinstance(geom, float) and np.isnan(geom)):
             out.append(None)
+        else:
+            raise ValueError("Input is not a valid geometry: {0}".format(geom))
 
     aout = np.empty(n, dtype=object)
     aout[:] = out
