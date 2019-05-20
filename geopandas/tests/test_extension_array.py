@@ -1,5 +1,3 @@
-import operator
-
 import numpy as np
 import pandas as pd
 
@@ -10,6 +8,12 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 import pytest
 
 from pandas.tests.extension import base
+from pandas.conftest import (  # noqa
+    all_boolean_reductions, all_numeric_reductions, all_compare_operators)
+
+
+not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
+no_sorting = pytest.mark.skip(reason="Sorting not supported")
 
 
 @pytest.fixture
@@ -253,30 +257,89 @@ class TestMissing(base.BaseMissingTests):
         pass
 
 
-class TestCasting(base.BaseCastingTests):
+class TestReduce(base.BaseNoReduceTests):
     pass
+
+
+_all_arithmetic_operators = ['__add__', '__radd__',
+                             # '__sub__', '__rsub__',
+                             '__mul__', '__rmul__',
+                             '__floordiv__', '__rfloordiv__',
+                             '__truediv__', '__rtruediv__',
+                             '__pow__', '__rpow__',
+                             '__mod__', '__rmod__']
+
+
+@pytest.fixture(params=_all_arithmetic_operators)
+def all_arithmetic_operators(request):
+    """
+    Fixture for dunder names for common arithmetic operations
+
+    Adapted to excluse __sub__, as this is implemented as "difference".
+    """
+    return request.param
+
+
+class TestArithmeticOps(base.BaseArithmeticOpsTests):
+
+    @pytest.mark.skip(reason="not applicable")
+    def test_divmod_series_array(self, data, data_for_twos):
+        pass
+
+    @pytest.mark.skip(reason="not applicable")
+    def test_add_series_with_extension_array(self, data):
+        pass
+
+
+class TestComparisonOps(base.BaseComparisonOpsTests):
+
+    @not_yet_implemented
+    def test_compare_scalar(self, data, all_compare_operators):  # noqa
+        op_name = all_compare_operators
+        s = pd.Series(data)
+        self._compare_other(s, data, op_name, 0)
+
+    @not_yet_implemented
+    def test_compare_array(self, data, all_compare_operators):  # noqa
+        op_name = all_compare_operators
+        s = pd.Series(data)
+        other = pd.Series([data[0]] * len(data))
+        self._compare_other(s, data, op_name, other)
+
+    @not_yet_implemented
+    def test_direct_arith_with_series_returns_not_implemented(self, data):
+        # EAs should return NotImplemented for ops with Series.
+        # Pandas takes care of unboxing the series and calling the EA's op.
+        other = pd.Series(data)
+        if hasattr(data, '__eq__'):
+            result = data.__eq__(other)
+            assert result is NotImplemented
+        else:
+            raise pytest.skip(
+                "{} does not implement __eq__".format(data.__class__.__name__)
+            )
 
 
 class TestMethods(base.BaseMethodsTests):
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     @pytest.mark.parametrize('dropna', [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     def test_argsort(self, data_for_sorting):
         result = pd.Series(data_for_sorting).argsort()
         expected = pd.Series(np.array([2, 0, 1], dtype=np.int64))
         self.assert_series_equal(result, expected)
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     def test_argsort_missing(self, data_missing_for_sorting):
         result = pd.Series(data_missing_for_sorting).argsort()
         expected = pd.Series(np.array([1, -1, 0], dtype=np.int64))
         self.assert_series_equal(result, expected)
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     @pytest.mark.parametrize('ascending', [True, False])
     def test_sort_values(self, data_for_sorting, ascending):
         ser = pd.Series(data_for_sorting)
@@ -287,7 +350,7 @@ class TestMethods(base.BaseMethodsTests):
 
         self.assert_series_equal(result, expected)
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     @pytest.mark.parametrize('ascending', [True, False])
     def test_sort_values_missing(self, data_missing_for_sorting, ascending):
         ser = pd.Series(data_missing_for_sorting)
@@ -298,7 +361,7 @@ class TestMethods(base.BaseMethodsTests):
             expected = ser.iloc[[0, 2, 1]]
         self.assert_series_equal(result, expected)
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     @pytest.mark.parametrize('ascending', [True, False])
     def test_sort_values_frame(self, data_for_sorting, ascending):
         df = pd.DataFrame({"A": [1, 2, 1],
@@ -309,7 +372,11 @@ class TestMethods(base.BaseMethodsTests):
                                 index=[2, 0, 1])
         self.assert_frame_equal(result, expected)
 
-    @pytest.mark.skip(reason="comparison not supported")
+    @no_sorting
+    def test_searchsorted(self, data_for_sorting, as_series):
+        pass
+
+    @not_yet_implemented
     def test_combine_le(self):
         pass
 
@@ -317,19 +384,29 @@ class TestMethods(base.BaseMethodsTests):
     def test_combine_add(self):
         pass
 
+    @not_yet_implemented
+    def test_fillna_length_mismatch(self, data_missing):
+        msg = "Length of 'value' does not match."
+        with pytest.raises(ValueError, match=msg):
+            data_missing.fillna(data_missing.take([1]))
+
+
+class TestCasting(base.BaseCastingTests):
+    pass
+
 
 class TestGroupby(base.BaseGroupbyTests):
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     @pytest.mark.parametrize('as_index', [True, False])
     def test_groupby_extension_agg(self, as_index, data_for_grouping):
         pass
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     def test_groupby_extension_transform(self, data_for_grouping):
         pass
 
-    @pytest.mark.skip(reason="Sorting not supported")
+    @no_sorting
     @pytest.mark.parametrize('op', [
         lambda x: 1,
         lambda x: [1] * len(x),
@@ -340,37 +417,10 @@ class TestGroupby(base.BaseGroupbyTests):
         pass
 
 
-
 class TestPrinting(base.BasePrintingTests):
     pass
 
 
-# class TestParsing(base.BaseParsingTests):
-#     pass
-
-
-
-# TODO add ops tests
-
-# _all_arithmetic_operators = ['__add__', '__radd__',
-#                              '__sub__', '__rsub__',
-#                              '__mul__', '__rmul__',
-#                              '__floordiv__', '__rfloordiv__',
-#                              '__truediv__', '__rtruediv__',
-#                              '__pow__', '__rpow__',
-#                              '__mod__', '__rmod__']
-# # if not PY3:
-# #     _all_arithmetic_operators.extend(['__div__', '__rdiv__'])
-
-
-# @pytest.fixture(params=_all_arithmetic_operators)
-# def all_arithmetic_operators(request):
-#     """
-#     Fixture for dunder names for common arithmetic operations
-#     """
-#     return request.param
-
-
-# class TestArithmeticOps(base.BaseArithmeticOpsTests):
-
-#     pass
+@not_yet_implemented
+class TestParsing(base.BaseParsingTests):
+    pass
