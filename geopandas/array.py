@@ -888,3 +888,29 @@ class GeometryArray(ExtensionArray):
         values : numpy array
         """
         return self.data
+
+    def _binop(self, other, op):
+        def convert_values(param):
+            if (isinstance(param, ExtensionArray)
+                    or pd.api.types.is_list_like(param)):
+                ovalues = param
+            else:  # Assume its an object
+                ovalues = [param] * len(self)
+            return ovalues
+
+        if isinstance(other, (pd.Series, pd.Index)):
+            # rely on pandas to unbox and dispatch to us
+            return NotImplemented
+
+        lvalues = self
+        rvalues = convert_values(other)
+
+        # If the operator is not defined for the underlying objects,
+        # a TypeError should be raised
+        res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
+
+        res = np.asarray(res)
+        return res
+
+    def __eq__(self, other):
+        return self._binop(other, operator.eq)

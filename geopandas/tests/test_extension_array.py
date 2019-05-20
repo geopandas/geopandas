@@ -306,7 +306,6 @@ class TestComparisonOps(base.BaseComparisonOpsTests):
         other = pd.Series([data[0]] * len(data))
         self._compare_other(s, data, op_name, other)
 
-    @not_yet_implemented
     def test_direct_arith_with_series_returns_not_implemented(self, data):
         # EAs should return NotImplemented for ops with Series.
         # Pandas takes care of unboxing the series and calling the EA's op.
