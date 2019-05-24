@@ -1,4 +1,3 @@
-import collections
 import numbers
 import operator
 import warnings
@@ -14,7 +13,7 @@ import shapely.affinity
 
 from pandas.api.extensions import ExtensionArray, ExtensionDtype
 
-from ._compat import PANDAS_GE_024
+from ._compat import PANDAS_GE_024, Iterable
 
 
 class GeometryDtype(ExtensionDtype):
@@ -329,7 +328,7 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return self.data[idx]
-        elif isinstance(idx, (collections.Iterable, slice)):
+        elif isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx])
         else:
             raise TypeError("Index type not supported", idx)
