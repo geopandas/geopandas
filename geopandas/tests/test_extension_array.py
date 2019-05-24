@@ -19,14 +19,15 @@ import pandas as pd
 import shapely.geometry
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
+from geopandas._compat import PANDAS_GE_024, extension_tests
 
 import pytest
-
-from pandas.tests.extension import base
 
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
+skip_pandas_below_024 = pytest.mark.skipif(
+    not PANDAS_GE_024, reason="Sorting not supported")
 
 
 # -----------------------------------------------------------------------------
@@ -257,13 +258,14 @@ def all_compare_operators(request):
 # -----------------------------------------------------------------------------
 
 
-class TestDtype(base.BaseDtypeTests):
+class TestDtype(extension_tests.BaseDtypeTests):
 
     # additional tests
 
     def test_array_type_with_arg(self, data, dtype):
         assert dtype.construct_array_type() is GeometryArray
 
+    @skip_pandas_below_024
     def test_registry(self, data, dtype):
         s = pd.Series(np.asarray(data), dtype=object)
         result = s.astype('geometry')
@@ -272,27 +274,27 @@ class TestDtype(base.BaseDtypeTests):
         self.assert_series_equal(result, expected)
 
 
-class TestInterface(base.BaseInterfaceTests):
+class TestInterface(extension_tests.BaseInterfaceTests):
     pass
 
 
-class TestConstructors(base.BaseConstructorsTests):
+class TestConstructors(extension_tests.BaseConstructorsTests):
     pass
 
 
-class TestReshaping(base.BaseReshapingTests):
+class TestReshaping(extension_tests.BaseReshapingTests):
     pass
 
 
-class TestGetitem(base.BaseGetitemTests):
+class TestGetitem(extension_tests.BaseGetitemTests):
     pass
 
 
-class TestSetitem(base.BaseSetitemTests):
+class TestSetitem(extension_tests.BaseSetitemTests):
     pass
 
 
-class TestMissing(base.BaseMissingTests):
+class TestMissing(extension_tests.BaseMissingTests):
 
     def test_fillna_series(self, data_missing):
         fill_value = data_missing[1]
@@ -326,7 +328,7 @@ class TestMissing(base.BaseMissingTests):
         pass
 
 
-class TestReduce(base.BaseNoReduceTests):
+class TestReduce(extension_tests.BaseNoReduceTests):
     pass
 
 
@@ -349,7 +351,7 @@ def all_arithmetic_operators(request):
     return request.param
 
 
-class TestArithmeticOps(base.BaseArithmeticOpsTests):
+class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
 
     @pytest.mark.skip(reason="not applicable")
     def test_divmod_series_array(self, data, data_for_twos):
@@ -360,7 +362,7 @@ class TestArithmeticOps(base.BaseArithmeticOpsTests):
         pass
 
 
-class TestComparisonOps(base.BaseComparisonOpsTests):
+class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
     @not_yet_implemented
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
@@ -388,7 +390,7 @@ class TestComparisonOps(base.BaseComparisonOpsTests):
             )
 
 
-class TestMethods(base.BaseMethodsTests):
+class TestMethods(extension_tests.BaseMethodsTests):
 
     @no_sorting
     @pytest.mark.parametrize('dropna', [True, False])
@@ -459,11 +461,11 @@ class TestMethods(base.BaseMethodsTests):
             data_missing.fillna(data_missing.take([1]))
 
 
-class TestCasting(base.BaseCastingTests):
+class TestCasting(extension_tests.BaseCastingTests):
     pass
 
 
-class TestGroupby(base.BaseGroupbyTests):
+class TestGroupby(extension_tests.BaseGroupbyTests):
 
     @no_sorting
     @pytest.mark.parametrize('as_index', [True, False])
@@ -485,10 +487,10 @@ class TestGroupby(base.BaseGroupbyTests):
         pass
 
 
-class TestPrinting(base.BasePrintingTests):
+class TestPrinting(extension_tests.BasePrintingTests):
     pass
 
 
 @not_yet_implemented
-class TestParsing(base.BaseParsingTests):
+class TestParsing(extension_tests.BaseParsingTests):
     pass

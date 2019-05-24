@@ -14,6 +14,8 @@ import shapely.affinity
 
 from pandas.api.extensions import ExtensionArray, ExtensionDtype
 
+from ._compat import PANDAS_GE_024
+
 
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
@@ -33,12 +35,9 @@ class GeometryDtype(ExtensionDtype):
         return GeometryArray
 
 
-try:
+if PANDAS_GE_024:
     from pandas.api.extensions import register_extension_dtype
     register_extension_dtype(GeometryDtype)
-except ImportError:
-    from pandas.core.dtypes.dtypes import registry
-    registry.register(GeometryDtype)
 
 
 def _isna(value):
