@@ -9,7 +9,7 @@ import pandas as pd
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_024 = pd.__version__ >= LooseVersion('0.24.0')
+PANDAS_GE_024 = str(pd.__version__) >= LooseVersion('0.24.0')
 
 from pandas.tests.extension import base as extension_tests  # noqa
 
