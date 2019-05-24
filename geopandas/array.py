@@ -869,6 +869,12 @@ class GeometryArray(ExtensionArray):
         data = np.concatenate([ga.data for ga in to_concat])
         return GeometryArray(data)
 
+    def _reduce(self, name, skipna=True, **kwargs):
+        # including the base class version here (that raises by default)
+        # because this was not yet defined in pandas 0.23
+        raise TypeError("cannot perform {name} with type {dtype}".format(
+            name=name, dtype=self.dtype))
+
     def __array__(self, dtype=None):
         """
         The numpy array interface.

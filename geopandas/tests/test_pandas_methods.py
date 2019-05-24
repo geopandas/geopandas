@@ -11,6 +11,7 @@ from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tests.util import assert_geoseries_equal
+from geopandas._compat import PANDAS_GE_024
 
 import pytest
 from numpy.testing import assert_array_equal
@@ -132,7 +133,8 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         df + 1
 
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, AssertionError)):
+        # TODO(pandas 0.23) remove AssertionError -> raised in 0.23
         s + 1
 
     # boolean comparisons work
@@ -141,6 +143,9 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skipif(
+    not PANDAS_GE_024,
+    reason='where for EA only implemented in 0.24.0 (GH24114)')
 def test_where(s):
     res = s.where(np.array([True, False, True]))
     exp = s.copy()

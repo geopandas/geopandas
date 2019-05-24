@@ -18,6 +18,7 @@ from geopandas.base import (
 
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
+from ._compat import PANDAS_GE_024
 
 
 _PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
@@ -39,6 +40,15 @@ class GeoSeries(GeoPandasBase, Series):
         # instead of GeoSeries instance in case of non-geometry data
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
+                if not PANDAS_GE_024 and (data.blocks[0].ndim == 2):
+                    # bug in pandas 0.23 where in certain indexing operations
+                    # (such as .loc) a 2D ExtensionBlock (still with 1D values
+                    # is created) which results in other failures
+                    from pandas.core.internals import ExtensionBlock
+                    values = data.blocks[0].values
+                    block = ExtensionBlock(values, slice(0, len(values), 1))
+                    data = SingleBlockManager(
+                        [block], data.axes[0], fastpath=True)
                 self = super(GeoSeries, cls).__new__(cls)
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = crs
