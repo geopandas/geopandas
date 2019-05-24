@@ -1,6 +1,5 @@
 import warnings
 from functools import reduce
-from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -8,12 +7,6 @@ from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
 
 from geopandas import GeoDataFrame, GeoSeries
-
-
-if str(pd.__version__) < LooseVersion('0.23'):
-    CONCAT_KWARGS = {}
-else:
-    CONCAT_KWARGS = {'sort': False}
 
 
 def _uniquify(columns):
@@ -297,7 +290,7 @@ def _overlay_union(df1, df2):
     """
     dfinter = _overlay_intersection(df1, df2)
     dfsym = _overlay_symmetric_diff(df1, df2)
-    dfunion = pd.concat([dfinter, dfsym], ignore_index=True, **CONCAT_KWARGS)
+    dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
     # keep geometry column last
     columns = list(dfunion.columns)
     columns.remove('geometry')

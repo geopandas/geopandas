@@ -7,7 +7,7 @@ dependencies:
   - six
   # required
   - numpy=1.12
-  - pandas==0.19.2
+  - pandas==0.23.4
   - shapely=1.5
   - fiona=1.7
   - pyproj
@@ -19,10 +19,9 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
+  - matplotlib=2.0
   - mapclassify
   - geopy
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - pip:
-    - matplotlib==1.5.3
