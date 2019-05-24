@@ -259,8 +259,17 @@ def all_compare_operators(request):
 
 class TestDtype(base.BaseDtypeTests):
 
+    # additional tests
+
     def test_array_type_with_arg(self, data, dtype):
         assert dtype.construct_array_type() is GeometryArray
+
+    def test_registry(self, data, dtype):
+        s = pd.Series(np.asarray(data), dtype=object)
+        result = s.astype('geometry')
+        assert isinstance(result.array, GeometryArray)
+        expected = pd.Series(data)
+        self.assert_series_equal(result, expected)
 
 
 class TestInterface(base.BaseInterfaceTests):

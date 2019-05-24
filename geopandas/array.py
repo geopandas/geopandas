@@ -5,26 +5,16 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas.core import ops
 
 import shapely
 from shapely.geometry.base import BaseGeometry
-from shapely.geometry.base import (
-    GEOMETRY_TYPES as GEOMETRY_NAMES, CAP_STYLE, JOIN_STYLE)
-from shapely.geometry import asShape
 import shapely.geometry
 import shapely.ops
 import shapely.affinity
 
-
-from six import PY3
-
 from pandas.api.extensions import ExtensionArray, ExtensionDtype
 
-from pandas.api.extensions import register_extension_dtype
 
-
-@register_extension_dtype
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = 'geometry'
@@ -43,9 +33,12 @@ class GeometryDtype(ExtensionDtype):
         return GeometryArray
 
 
-# # TODO expose registry in pandas.api.types
-# from pandas.core.dtypes.dtypes import registry
-# registry.register(GeometryDtype)
+try:
+    from pandas.api.extensions import register_extension_dtype
+    register_extension_dtype(GeometryDtype)
+except ImportError:
+    from pandas.core.dtypes.dtypes import registry
+    registry.register(GeometryDtype)
 
 
 def _isna(value):
@@ -55,19 +48,6 @@ def _isna(value):
         return True
     else:
         return False
-
-
-GEOMETRY_TYPES = [getattr(shapely.geometry, name) for name in GEOMETRY_NAMES]
-
-opposite_predicates = {'contains': 'within',
-                       'intersects': 'intersects',
-                       'touches': 'touches',
-                       'covers': 'covered_by',
-                       'crosses': 'crosses',
-                       'overlaps': 'overlaps'}
-
-for k, v in list(opposite_predicates.items()):
-    opposite_predicates[v] = k
 
 
 # -----------------------------------------------------------------------------
@@ -748,7 +728,6 @@ class GeometryArray(ExtensionArray):
                 return self
         return np.array(self, dtype=dtype, copy=copy)
 
-
     def isna(self):
         """
         Boolean NumPy array indicating if each value is missing
@@ -773,8 +752,6 @@ class GeometryArray(ExtensionArray):
     # -------------------------------------------------------------------------
     # ExtensionArray specific
     # -------------------------------------------------------------------------
-
-
 
     @classmethod
     def _from_sequence(cls, scalars, dtype=None, copy=False):
@@ -818,7 +795,7 @@ class GeometryArray(ExtensionArray):
         return from_wkb(values)
 
     def _values_for_argsort(self):
-        # type: () -> ndarray
+        # type: () -> np.ndarray
         """Return values for sorting.
 
         Returns
@@ -835,7 +812,7 @@ class GeometryArray(ExtensionArray):
         raise TypeError("geometries are not orderable")
 
     def _values_for_factorize(self):
-        # type: () -> Tuple[ndarray, Any]
+        # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
 
         Returns
