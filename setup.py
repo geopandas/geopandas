@@ -29,7 +29,7 @@ such as PostGIS.
 if os.environ.get('READTHEDOCS', False) == 'True':
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ['pandas', 'shapely', 'fiona', 'pyproj']
+    INSTALL_REQUIRES = ['pandas >= 0.23.0', 'shapely', 'fiona', 'pyproj']
 
 # get all data dirs in the datasets module
 data_files = []
