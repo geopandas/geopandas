@@ -8,13 +8,12 @@ matrix:
     - env: ENV_FILE="ci/travis/35-minimal.yaml"
 
     # Python 2.7 and 3.6 test all supported Pandas versions
-    - env: ENV_FILE="ci/travis/27-pd020.yaml"
     - env: ENV_FILE="ci/travis/27-pd023.yaml"
     - env: ENV_FILE="ci/travis/27-latest-defaults.yaml"
     - env: ENV_FILE="ci/travis/27-latest-conda-forge.yaml"
 
-    - env: ENV_FILE="ci/travis/36-pd020.yaml"
-    - env: ENV_FILE="ci/travis/36-pd022.yaml"
+    - env: ENV_FILE="ci/travis/36-pd023.yaml"
+    - env: ENV_FILE="ci/travis/36-pd024.yaml"
 
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml"
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"

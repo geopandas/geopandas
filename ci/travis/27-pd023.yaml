@@ -17,7 +17,7 @@ dependencies:
   - mock
   # optional
   - rtree
-  - matplotlib
+  - matplotlib==2.0.2
   - descartes
   #- geopy
   - SQLalchemy

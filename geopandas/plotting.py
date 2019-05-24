@@ -1,5 +1,4 @@
 from __future__ import print_function
-from distutils.version import LooseVersion
 import warnings
 
 import numpy as np
@@ -442,13 +441,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
     # Define `values` as a Series
     if categorical:
         if cmap is None:
-            if LooseVersion(matplotlib.__version__) >= '2.0.1':
-                cmap = 'tab10'
-            elif LooseVersion(matplotlib.__version__) >= '2.0.0':
-                # Erroneous name.
-                cmap = 'Vega10'
-            else:
-                cmap = 'Set1'
+            cmap = 'tab10'
         categories = list(set(values))
         categories.sort()
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
