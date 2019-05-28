@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 from functools import partial
 import json
 
@@ -9,7 +10,11 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _unary_op, _CoordinateIndexer
+from geopandas.base import (
+    GeoPandasBase, _delegate_property, _CoordinateIndexer)
+
+
+_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
 
 
 def _is_empty(x):
@@ -54,20 +59,12 @@ class GeoSeries(GeoPandasBase, Series):
     @property
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
-        if (self.geom_type == "Point").all():
-            return _unary_op('x', self, null_value=np.nan)
-        else:
-            message = "x attribute access only provided for Point geometries"
-            raise ValueError(message)
+        return _delegate_property('x', self)
 
     @property
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
-        if (self.geom_type == "Point").all():
-            return _unary_op('y', self, null_value=np.nan)
-        else:
-            message = "y attribute access only provided for Point geometries"
-            raise ValueError(message)
+        return _delegate_property('y', self)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -78,7 +75,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
@@ -88,15 +84,11 @@ class GeoSeries(GeoPandasBase, Series):
             access multi-layer data, data stored within archives (zip files),
             etc.
         """
-        import fiona
-        geoms = []
-        with fiona.open(filename, **kwargs) as f:
-            crs = f.crs
-            for rec in f:
-                geoms.append(shape(rec['geometry']))
-        g = GeoSeries(geoms)
-        g.crs = crs
-        return g
+
+        from geopandas import GeoDataFrame
+        df = GeoDataFrame.from_file(filename, **kwargs)
+
+        return GeoSeries(df.geometry, crs=df.crs)
 
     @property
     def __geo_interface__(self):
@@ -113,8 +105,8 @@ class GeoSeries(GeoPandasBase, Series):
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         from geopandas import GeoDataFrame
         data = GeoDataFrame({"geometry": self,
-                          "id":self.index.values},
-                          index=self.index)
+                             "id": self.index.values},
+                            index=self.index)
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
 
@@ -299,7 +291,11 @@ class GeoSeries(GeoPandasBase, Series):
                 raise TypeError('Must set either crs or epsg for output.')
         proj_in = pyproj.Proj(self.crs, preserve_units=True)
         proj_out = pyproj.Proj(crs, preserve_units=True)
-        project = partial(pyproj.transform, proj_in, proj_out)
+        if _PYPROJ2:
+            transformer = pyproj.Transformer.from_proj(proj_in, proj_out)
+            project = transformer.transform
+        else:
+            project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
         result.crs = crs
@@ -335,5 +331,6 @@ class GeoSeries(GeoPandasBase, Series):
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
+
 
 GeoSeries._create_indexer('cx', _CoordinateIndexer)

@@ -4,7 +4,6 @@ import json
 import os
 import tempfile
 import shutil
-from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -13,7 +12,6 @@ import fiona
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, GeoSeries
-from geopandas.geodataframe import points_from_xy
 
 import pytest
 from pandas.util.testing import (
@@ -365,34 +363,6 @@ class TestDataFrame:
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
 
-    def test_transform(self):
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        lonlat = df2.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert all(df2['geometry'].geom_almost_equals(utm['geometry'],
-                                                      decimal=2))
-
-    def test_transform_inplace(self):
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        lonlat = df2.to_crs(epsg=4326)
-        df2.to_crs(epsg=4326, inplace=True)
-        assert all(df2['geometry'].geom_almost_equals(lonlat['geometry'],
-                                                      decimal=2))
-
-    def test_to_crs_geo_column_name(self):
-        # Test to_crs() with different geometry column name (GH#339)
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        df2 = df2.rename(columns={'geometry': 'geom'})
-        df2.set_geometry('geom', inplace=True)
-        lonlat = df2.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert lonlat.geometry.name == 'geom'
-        assert utm.geometry.name == 'geom'
-        assert all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2))
-
     def test_from_features(self):
         nybb_filename = geopandas.datasets.get_path('nybb')
         with fiona.open(nybb_filename) as f:
@@ -567,36 +537,6 @@ class TestDataFrame:
         unpickled = pd.read_pickle(filename)
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
-
-    def test_points_from_xy(self):
-        # using GeoDataFrame column
-        df = GeoDataFrame([{'x': x, 'y': x, 'z': x} for x in range(10)])
-        gs = [Point(x, x) for x in range(10)]
-        gsz = [Point(x, x, x) for x in range(10)]
-        geometry1 = points_from_xy(df['x'], df['y'])
-        geometry2 = points_from_xy(df['x'], df['y'], df['z'])
-        assert geometry1 == gs
-        assert geometry2 == gsz
-
-        # using GeoSeries or numpy arrays or lists
-        for s in [GeoSeries(range(10)), np.arange(10), list(range(10))]:
-            geometry1 = points_from_xy(s, s)
-            geometry2 = points_from_xy(s, s, s)
-            assert geometry1 == gs
-            assert geometry2 == gsz
-
-        # using different lengths should throw error
-        arr_10 = np.arange(10)
-        arr_20 = np.arange(20)
-        with pytest.raises(ValueError):
-            points_from_xy(x=arr_10, y=arr_20)
-            points_from_xy(x=arr_10, y=arr_10, z=arr_20)
-
-        # Using incomplete arguments should throw error
-        with pytest.raises(TypeError):
-            points_from_xy(x=s)
-            points_from_xy(y=s)
-            points_from_xy(z=s)
 
 
 def check_geodataframe(df, geometry_column='geometry'):

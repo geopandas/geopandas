@@ -1,13 +1,10 @@
 from __future__ import absolute_import, division
 
-from distutils.version import LooseVersion
 import itertools
 import warnings
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
@@ -15,6 +12,10 @@ from geopandas import GeoSeries, GeoDataFrame, read_file
 from geopandas.datasets import get_path
 
 import pytest
+
+matplotlib = pytest.importorskip('matplotlib')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 @pytest.fixture(autouse=True)
@@ -766,9 +767,5 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
         documented in `Collections.set_linestyle`,
         to the form `onoffseq`.
     """
-    if LooseVersion(matplotlib.__version__) >= '2.0':
-        offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
-        return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
-    else:
-        from matplotlib.backend_bases import GraphicsContextBase
-        return GraphicsContextBase.dashd[linestyle]
+    offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
+    return matplotlib.lines._scale_dashes(offset, dashes, linewidth)

@@ -23,7 +23,6 @@ to multiple geometries to shapely.  GeoPandas enables you to easily do
 operations in python that would otherwise require a spatial database
 such as PostGIS.
 
-
 .. toctree::
   :maxdepth: 1
   :caption: Getting Started
@@ -60,8 +59,25 @@ such as PostGIS.
   Contributing to GeoPandas <contributing>
 
 
+Get in touch
+------------
+
+- Ask usage questions ("How do I?") on `StackOverflow`_ or `GIS StackExchange`_.
+- Report bugs, suggest features or view the source code `on GitHub`_.
+- For a quick question about a bug report or feature request, or Pull Request,
+  head over to the `gitter channel`_.
+- For less well defined questions or ideas, or to announce other projects of
+  interest to GeoPandas users, ... use the `mailing list`_.
+
+.. _StackOverflow: https://stackoverflow.com/questions/tagged/geopandas
+.. _GIS StackExchange: https://gis.stackexchange.com/questions/tagged/geopandas
+.. _on GitHub: https://github.com/geopandas/geopandas
+.. _gitter channel: https://gitter.im/geopandas/geopandas
+.. _mailing list: https://groups.google.com/forum/#!forum/geopandas
+
+
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

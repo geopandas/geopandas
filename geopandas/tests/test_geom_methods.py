@@ -198,13 +198,14 @@ class TestGeomMethods:
         result = getattr(gdf, op)
         fcmp(result, expected)
 
-    def test_crs_warning(self):
-        # operations on geometries should warn for different CRS
-        no_crs_g3 = self.g3.copy()
-        no_crs_g3.crs = None
-        with pytest.warns(UserWarning):
-            self._test_binary_topological('intersection', self.g3,
-                                          self.g3, no_crs_g3)
+    # TODO reenable for all operations once we use pyproj > 2
+    # def test_crs_warning(self):
+    #     # operations on geometries should warn for different CRS
+    #     no_crs_g3 = self.g3.copy()
+    #     no_crs_g3.crs = None
+    #     with pytest.warns(UserWarning):
+    #         self._test_binary_topological('intersection', self.g3,
+    #                                       self.g3, no_crs_g3)
 
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1,
@@ -236,6 +237,20 @@ class TestGeomMethods:
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological('difference', expected,
                                       self.g1, self.t2)
+
+    def test_geo_op_empty_result(self):
+        l1 = LineString([(0, 0), (1, 1)])
+        l2 = LineString([(2, 2), (3, 3)])
+        expected = GeoSeries([GeometryCollection()])
+        # binary geo resulting in empty geometry
+        result = GeoSeries([l1]).intersection(l2)
+        assert_geoseries_equal(result, expected)
+        # binary geo empty result with right GeoSeries
+        result = GeoSeries([l1]).intersection(GeoSeries([l2]))
+        assert_geoseries_equal(result, expected)
+        # unary geo resulting in emtpy geometry
+        result = GeoSeries([GeometryCollection()]).convex_hull
+        assert_geoseries_equal(result, expected)
 
     def test_boundary(self):
         l1 = LineString([(0, 0), (1, 0), (1, 1), (0, 0)])
@@ -581,8 +596,8 @@ class TestGeomMethods:
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({'col': [1, 1, 2], 'geometry': expected_s})
-        expected_index = MultiIndex(levels=[[0, 1], [0, 1]],
-                                    labels=[[0, 0, 1], [0, 1, 0]],
+        expected_index = MultiIndex([[0, 1], [0, 1]],  # levels
+                                    [[0, 0, 1], [0, 1, 0]],  # labels/codes
                                     names=[index_name, None])
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)

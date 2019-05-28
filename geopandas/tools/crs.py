@@ -20,7 +20,7 @@ def explicit_crs_from_epsg(crs=None, epsg=None):
     if epsg is None:
         raise ValueError('No epsg code provided or epsg code could not be identified from the provided crs.')
 
-    _crs = re.search('\n<{}>\s*(.+?)\s*<>'.format(epsg), get_epsg_file_contents())
+    _crs = re.search(r'\n<{}>\s*(.+?)\s*<>'.format(epsg), get_epsg_file_contents())
     if _crs is None:
         raise ValueError('EPSG code "{}" not found.'.format(epsg))
     _crs = fiona.crs.from_string(_crs.group(1))

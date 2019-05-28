@@ -36,6 +36,12 @@ extensions = ['IPython.sphinxext.ipython_console_highlighting',
 
 # continue doc build and only print warnings/errors in examples
 ipython_warning_is_error = False
+ipython_exec_lines = [
+    # ensure that dataframes are not truncated in the IPython code blocks
+    'import pandas as _pd',
+    '_pd.set_option("display.max_columns", 20)',
+    '_pd.set_option("display.width", 100)'
+]
 
 # Fix issue with warnings from numpydoc (see discussion in PR #534)
 numpydoc_show_class_members = False
@@ -73,7 +79,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013–2018, GeoPandas developers'
+copyright = u'2013–2019, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

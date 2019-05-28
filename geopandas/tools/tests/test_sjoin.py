@@ -256,8 +256,6 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.polydf, self.pointdf, how='left')
         assert df.shape == (12, 8)
 
-    @pytest.mark.skipif(str(pd.__version__) < LooseVersion('0.19'),
-                        reason=pandas_0_18_problem)
     @pytest.mark.xfail
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
@@ -266,14 +264,6 @@ class TestSpatialJoinNYBB:
         df_inner = sjoin(self.pointdf.iloc[17:], self.polydf, how='inner')
         df_left = sjoin(self.pointdf.iloc[17:], self.polydf, how='left')
         df_right = sjoin(self.pointdf.iloc[17:], self.polydf, how='right')
-
-        # Recent Pandas development has introduced a new way of handling merges
-        # this change has altered the output when no overlapping geometries
-        if str(pd.__version__) > LooseVersion('0.18.1'):
-            right_idxs = pd.Series(range(0, 5), name='index_right',
-                                   dtype='int64')
-        else:
-            right_idxs = pd.Series(name='index_right', dtype='int64')
 
         expected_inner_df = pd.concat(
             [self.pointdf.iloc[:0],
@@ -287,7 +277,7 @@ class TestSpatialJoinNYBB:
         expected_right_df = pd.concat(
             [self.pointdf.drop('geometry', axis=1).iloc[:0],
              pd.concat([pd.Series(name='index_left', dtype='int64'),
-                        right_idxs],
+                        pd.Series(name='index_right', dtype='int64')],
                        axis=1),
              self.polydf],
             axis=1)

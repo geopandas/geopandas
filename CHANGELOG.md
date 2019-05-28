@@ -1,6 +1,39 @@
 Changes
 =======
 
+Version 0.5.0 (April 25, 2019)
+---------------------------------
+
+Improvements:
+
+* Significant performance improvement (around 10x) for `GeoDataFrame.iterfeatures`,
+  which also improves `GeoDataFrame.to_file` (#864).
+* File IO enhancements based on Fiona 1.8:
+    * Support for writing bool dtype (#855) and datetime dtype, if the file format supports it (#728).
+    * Support for writing dataframes with multiple geometry types, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867, #870).
+* Compatibility with pyproj >= 2 (#962).
+* A new `geopandas.points_from_xy()` helper function to convert x and y coordinates to Point objects (#896).
+* The `buffer` and `interpolate` methods now accept an array-like to specify a variable distance for each geometry (#781). 
+* Addition of a `relate` method, corresponding to the shapely method that returns the DE-9IM matrix (#853).
+* Plotting improvements:
+    * Performance improvement in plotting by only flattening the geometries if there are actually 'Multi' geometries (#785).
+    * Choropleths: access to all `mapclassify` classification schemes and addition of the `classification_kwds` keyword in the `plot` method to specify options for the scheme (#876).
+    * Ability to specify a matplotlib axes object on which to plot the color bar with the `cax` keyword, in order to have more control over the color bar placement (#894).
+* Changed the default provider in ``geopandas.tools.geocode`` from Google (now requires an API key) to Geocode.Farm (#907, #975).
+
+Bug fixes:
+
+- Remove the edge in the legend marker (#807).
+- Fix the `align` method to preserve the CRS (#829).
+- Fix `geopandas.testing.assert_geodataframe_equal` to correctly compare left and right dataframes (#810).
+- Fix in choropleth mapping when the values contain missing values (#877).
+- Better error message in `sjoin` if the input is not a GeoDataFrame (#842).
+- Fix in `read_postgis` to handle nullable (missing) geometries (#856).
+- Correctly passing through the `parse_dates` keyword in `read_postgis` to the underlying pandas method (#860).
+- Fixed the shape of Antarctica in the included demo dataset 'naturalearth_lowres'
+  (by updating to the latest version) (#804).
+
+
 Version 0.4.1 (March 5, 2019)
 -----------------------------
 
@@ -34,7 +67,7 @@ Improvements:
 * Set equal aspect on active axis on multi-axis figures (#718)
 * Pass array of values to column argument in `plot` (#770)
 
-Bug fixes :
+Bug fixes:
 
 * Ensure that colorbars are plotted on the correct axis (#523)
 * Handle plotting empty GeoDataFrame (#571)
