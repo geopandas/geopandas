@@ -635,6 +635,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
+    #overrides the pandas.core.generic.NDFrame method
+    def astype(self, dtype, copy=True, errors='raise', **kwargs):
+        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = geopandas.GeoDataFrame(df)
+
+        return df
 
 def points_from_xy(x, y, z=None):
     """
