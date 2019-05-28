@@ -637,7 +637,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     #overrides the pandas.core.generic.NDFrame method
     def astype(self, dtype, copy=True, errors='raise', **kwargs):
-        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super(DataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
         df = geopandas.GeoDataFrame(df)
 
         return df
