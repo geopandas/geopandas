@@ -538,6 +538,49 @@ class TestDataFrame:
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
 
+    def test_ignore_errors(self):
+        bad_input_raw = '''
+            {
+              "type": "FeatureCollection",
+              "name": "tracks",
+              "crs": {
+                "type": "name",
+                "properties": {
+                  "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+                }
+              },
+              "features": [
+                {
+                  "type": "Feature",
+                  "properties": {
+                    "name": "ACTIVE LOG091609"
+                  },
+                  "geometry": {
+                    "type": "MultiLineString",
+                    "coordinates": [
+                      [
+                        [
+                          -42.0,
+                          42.0
+                        ]
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+        '''
+
+        bad_input = json.loads(bad_input_raw)
+
+        with pytest.raises(ValueError):
+            # This should raise a ValueError.
+            geopandas.GeoDataFrame.from_features(bad_input)
+
+        # This should not.
+        geopandas.GeoDataFrame.from_features(bad_input,
+                                             ignore_errors=True)
+
 
 def check_geodataframe(df, geometry_column='geometry'):
     assert isinstance(df, GeoDataFrame)

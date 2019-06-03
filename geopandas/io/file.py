@@ -39,7 +39,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, **kwargs):
+def read_file(filename, bbox=None, ignore_errors=False, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -51,6 +51,9 @@ def read_file(filename, bbox=None, **kwargs):
     bbox : tuple | GeoDataFrame or GeoSeries, default None
         Filter features by given bounding box, GeoSeries, or GeoDataFrame.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
+    ignore_errors : boolean (optional)
+        Optionally ignore errors converting features into shapes. Instead,
+        ignore the errors and drop the erroneous features.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -93,7 +96,8 @@ def read_file(filename, bbox=None, **kwargs):
                 f_filt = features
 
             columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns,
+                                             ignore_errors=ignore_errors)
 
     return gdf
 

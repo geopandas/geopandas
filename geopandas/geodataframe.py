@@ -179,7 +179,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None, columns=None):
+    def from_features(cls, features, crs=None, columns=None,
+                      ignore_errors=False):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -199,6 +200,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Optionally specify the column names to include in the output frame.
             This does not overwrite the property names of the input, but can
             ensure a consistent output format.
+        ignore_errors : boolean (optional)
+            Optionally ignore errors converting features into shapes. Instead,
+            ignore the errors and drop the erroneous features.
 
         Returns
         -------
@@ -228,9 +232,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 f = f
 
-            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
-            d.update(f['properties'])
-            rows.append(d)
+            try:
+                d = {'geometry': shape(f['geometry'])
+                     if f['geometry'] else None}
+                d.update(f['properties'])
+                rows.append(d)
+            except ValueError as err:
+                if not ignore_errors:
+                    raise
         df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
         return df
