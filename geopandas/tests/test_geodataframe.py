@@ -86,6 +86,24 @@ class TestDataFrame:
         # good if this changed in the future
         assert not isinstance(df['location'], GeoSeries)
 
+    def test_getitem_no_geometry(self):
+        res = self.df2[['value1', 'value2']]
+        assert isinstance(res, pd.DataFrame)
+        assert not isinstance(res, GeoDataFrame)
+
+        # with different name
+        df = self.df2.copy()
+        df = df.rename(columns={'geometry': 'geom'}).set_geometry('geom')
+        assert isinstance(df, GeoDataFrame)
+        res = df[['value1', 'value2']]
+        assert isinstance(res, pd.DataFrame)
+        assert not isinstance(res, GeoDataFrame)
+
+        df['geometry'] = np.arange(len(df))
+        res = df[['value1', 'value2', 'geometry']]
+        assert isinstance(res, pd.DataFrame)
+        assert not isinstance(res, GeoDataFrame)
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                check_dtype=True, check_index_type=True)
@@ -699,3 +717,35 @@ class TestConstructor:
 
         df = GeoDataFrame({'A': [], 'B': []}, geometry=[])
         assert type(df) == GeoDataFrame
+
+    def test_column_ordering(self):
+        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        gs = GeoSeries(geoms)
+        gdf = GeoDataFrame({'a': [1, 2, 3], 'geometry': gs},
+                           columns=['geometry', 'a'],
+                           geometry='geometry')
+
+        check_geodataframe(gdf)
+        gdf.columns == ['geometry', 'a']
+
+    @pytest.mark.xfail
+    def test_preserve_series_name(self):
+        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        gs = GeoSeries(geoms)
+        gdf = GeoDataFrame({'a': [1, 2, 3]}, geometry=gs)
+
+        check_geodataframe(gdf, geometry_column='geometry')
+
+        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        gs = GeoSeries(geoms, name='my_geom')
+        gdf = GeoDataFrame({'a': [1, 2, 3]}, geometry=gs)
+
+        check_geodataframe(gdf, geometry_column='my_geom')
+
+    def test_overwrite_geometry(self):
+        # GH602
+        data = pd.DataFrame({'geometry': [1, 2, 3], 'col1': [4, 5, 6]})
+        geoms = pd.Series([Point(i, i) for i in range(3)])
+        # passed geometry kwarg should overwrite geometry column in data
+        res = GeoDataFrame(data, geometry=geoms)
+        assert_geoseries_equal(res.geometry, GeoSeries(geoms))

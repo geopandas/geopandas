@@ -98,6 +98,8 @@ class TestSeries:
 
     def test_align(self):
         a1, a2 = self.a1.align(self.a2)
+        assert isinstance(a1, GeoSeries)
+        assert isinstance(a2, GeoSeries)
         assert a2['A'].is_empty
         assert a1['B'].equals(a2['B'])
         assert a1['C'].is_empty
