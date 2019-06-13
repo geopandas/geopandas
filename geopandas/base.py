@@ -590,6 +590,21 @@ class GeoPandasBase(object):
         return _delegate_geo_method('interpolate', self, distance,
                                     normalized=normalized)
 
+    def affine_transform(self, matrix):
+        """Return a ``GeoSeries`` with translated geometries.
+
+        See http://shapely.readthedocs.io/en/stable/manual.html#shapely.affinity.affine_transform
+        for details.
+
+        Parameters
+        ----------
+        matrix: List or tuple
+            6 or 12 items for 2D or 3D transformations respectively.
+            For 2D affine transformations, the 6 parameter matrix is [a, b, d, e, xoff, yoff]
+            For 3D affine transformations, the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
+        """
+        return _delegate_geo_method('affine_transform', self, matrix)
+
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.
 
