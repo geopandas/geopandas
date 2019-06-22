@@ -1,6 +1,8 @@
 from distutils.version import LooseVersion
 
 import numpy as np
+import pandas as pd
+
 import six
 
 import fiona
@@ -184,9 +186,9 @@ def _geometry_types(df):
         # - Shape and MultiShape types can (and must) coexist in inferred
         #   schema
         geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+        geom_types_2D = [gtype for gtype in geom_types_2D if not pd.isna(gtype)]
         geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
+        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if not pd.isna(gtype)]
         geom_types = geom_types_3D + geom_types_2D
 
     else:
@@ -212,7 +214,7 @@ def _geometry_types_back_compat(df):
     for backward compatibility with Fiona<1.8 only
     """
     unique_geom_types = df.geometry.geom_type.unique()
-    unique_geom_types = [gtype for gtype in unique_geom_types if gtype is not None]
+    unique_geom_types = [gtype for gtype in unique_geom_types if not pd.isna(gtype)]
 
     # merge single and Multi types (eg Polygon and MultiPolygon)
     unique_geom_types = [
