@@ -176,11 +176,14 @@ class TestDataFrame:
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
 
+        # passing values that replace existing geometry column
         df2 = self.df.set_geometry(geom)
         assert self.df is not df2
         assert_geoseries_equal(df2.geometry, geom)
+        assert_geoseries_equal(df2['geometry'], geom)
         assert_geoseries_equal(self.df.geometry, original_geom)
         assert_geoseries_equal(self.df['geometry'], self.df.geometry)
+
         # unknown column
         with pytest.raises(ValueError):
             self.df.set_geometry('nonexistent-column')
@@ -188,6 +191,9 @@ class TestDataFrame:
         # ndim error
         with pytest.raises(ValueError):
             self.df.set_geometry(self.df)
+
+    def test_set_geometry_crs(self):
+        geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
 
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:26018")
@@ -212,11 +218,15 @@ class TestDataFrame:
 
         # Drop is false by default
         assert 'simplified_geometry' in df2
+        assert 'geometry' in df2
+        assert df2._geometry_column_name == 'simplified_geometry'
         assert_geoseries_equal(df2.geometry, g_simplified)
 
         # If True, drops column and renames to geometry
         df3 = self.df.set_geometry('simplified_geometry', drop=True)
         assert 'simplified_geometry' not in df3
+        assert 'geometry' in df3
+        assert df3._geometry_column_name == 'geometry'
         assert_geoseries_equal(df3.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
@@ -246,6 +256,15 @@ class TestDataFrame:
         for i, r in df.iterrows():
             assert i == r['geometry'].x
             assert i == r['geometry'].y
+
+    def test_set_geometry_series_name(self):
+        # when Series is passed, use the Series name as 'geometry' column name
+        geom = [Point(x, y) for x, y in zip(range(5), range(5))]
+        g = GeoSeries(geom, name='my_geom')
+        df = self.df.set_geometry(g)
+        assert df._geometry_column_name == 'my_geom'
+        assert df.geometry.name == 'my_geom'
+        assert 'geometry' not in df.columns
 
     def test_align(self):
         df = self.df2
@@ -760,7 +779,6 @@ class TestConstructor:
         check_geodataframe(gdf)
         gdf.columns == ['geometry', 'a']
 
-    @pytest.mark.xfail
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)

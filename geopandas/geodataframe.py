@@ -85,13 +85,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
 
-        The original geometry column is replaced with the input.
+        The original geometry column is replaced with the input. The geometry
+        column will have the same name as the selected column.
 
         Parameters
         ----------
-        col : column label or array
-        drop : boolean, default True
-            Delete column to be used as the new geometry
+        col : column label or array-like
+            The existing column or values to set as the new geometry column.
+            If values are passed (array-like, Series), they will replace the
+            existing geometry column.
+        drop : boolean, default False
+            When specifying an existing column for `col`, whether to delete
+            the column to be used as the new geometry. The default of False
+            keeps both old and new geometry column. With ``drop=True``,
+            the new geometry column replaces the old geometry column.
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
         crs : str/result of fion.get_crs (optional)
@@ -108,7 +115,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         geodataframe : GeoDataFrame
         """
-        # Most of the code here is taken from DataFrame.set_index()
         if inplace:
             frame = self
         else:
@@ -119,8 +125,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
+
         if isinstance(col, (Series, list, np.ndarray)):
+            # input is not a column name -> always overwrite the current
+            # 'geometry columns
+            to_remove = geo_column_name
             level = col
+            if isinstance(col, Series):
+                if col.name:
+                    geo_column_name = col.name
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
@@ -136,7 +149,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 geo_column_name = col
 
-        if to_remove:
+        if to_remove and to_remove in self.columns:
             del frame[to_remove]
 
         if isinstance(level, GeoSeries) and level.crs != crs:
