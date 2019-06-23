@@ -229,15 +229,6 @@ class TestDataFrame:
             assert i == r['geometry'].x
             assert i == r['geometry'].y
 
-    def test_set_geometry_series_name(self):
-        geom = [Point(x, y) for x, y in zip(range(5), range(5))]
-        g = GeoSeries(geom, name='my_geom')
-        df = self.df.set_geometry(g)
-        assert df._geometry_column_name == 'my_geom'
-        assert df.geometry.name == 'my_geom'
-        # TODO should this column be there or not?
-        # assert 'geometry' not in df.columns
-
     def test_align(self):
         df = self.df2
 

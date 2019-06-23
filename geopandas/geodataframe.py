@@ -156,9 +156,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
-            if isinstance(col, Series):
-                if col.name:
-                    geo_column_name = col.name
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
@@ -181,12 +178,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # Avoids caching issues/crs sharing issues
             level = level.copy()
             level.crs = crs
-
-        if isinstance(level, Series):
-            level = GeoSeries(level)
-            level, _ = level.align(pd.DataFrame(frame), join='right')
-        else:
-            level = GeoSeries(level, index=frame.index)
 
         # Check that we are using a listlike of geometries
         if not all(isinstance(item, BaseGeometry) or pd.isnull(item) for item in level):
