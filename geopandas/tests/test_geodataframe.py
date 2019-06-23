@@ -104,6 +104,25 @@ class TestDataFrame:
         assert isinstance(res, pd.DataFrame)
         assert not isinstance(res, GeoDataFrame)
 
+    def test_geo_setitem(self):
+        data = {"A": range(5), "B": np.arange(5.),
+                "geometry": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data)
+        s = GeoSeries([Point(x, y + 1) for x, y in zip(range(5), range(5))])
+
+        # setting geometry column
+        for vals in [s, s.values]:
+            df['geometry'] = vals
+            assert_geoseries_equal(df['geometry'], s)
+            assert_geoseries_equal(df.geometry, s)
+
+        # non-aligned values
+        s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
+
+        df['geometry'] = s2
+        assert_geoseries_equal(df['geometry'], s)
+        assert_geoseries_equal(df.geometry, s)
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                check_dtype=True, check_index_type=True)
