@@ -646,6 +646,9 @@ class GeometryArray(ExtensionArray):
     # Affinity operations
     #
 
+    def affine_transform(self, matrix):
+        return _affinity_method('affine_transform', self, matrix)
+
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         return _affinity_method('translate', self, xoff, yoff, zoff)
 

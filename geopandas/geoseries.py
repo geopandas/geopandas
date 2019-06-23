@@ -31,8 +31,44 @@ def _is_empty(x):
         return False
 
 
+def _validate_geometry_data(data):
+    if not all(isinstance(item, BaseGeometry) or pd.isna(item) for item in data):
+        raise TypeError("Input geometry column must contain valid geometry objects.")
+
+
 class GeoSeries(GeoPandasBase, Series):
-    """A Series object designed to store shapely geometry objects."""
+    """
+    A Series object designed to store shapely geometry objects.
+
+    Parameters
+    ----------
+    data : array-like, dict, scalar value
+        The geometries to store in the GeoSeries.
+    index : array-like or Index
+        The index for the GeoSeries.
+    crs : str, dict (optional)
+        Coordinate Reference System of the geometry objects.
+    kwargs
+        Additional arguments passed to the Series constructor,
+         e.g. ``name``.
+
+    Examples
+    --------
+
+    >>> from shapely.geometry import Point
+    >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    >>> s
+    0    POINT (1 1)
+    1    POINT (2 2)
+    2    POINT (3 3)
+    dtype: object
+
+    See Also
+    --------
+    GeoDataFrame
+    pandas.Series
+
+    """
     _metadata = ['name', 'crs']
 
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
@@ -68,10 +104,14 @@ class GeoSeries(GeoPandasBase, Series):
             # test), specifying dtype raises an error:
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop('dtype', None)
+            # Use Series constructor to handle input data
             s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
-            if s.dtype != object and not s.empty:
-                return s
+            if s.dtype != object:
+                if s.empty:
+                    s = s.astype(object)
+                else:
+                    return s
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values)
@@ -87,9 +127,8 @@ class GeoSeries(GeoPandasBase, Series):
         return self
 
     def __init__(self, *args, **kwargs):
-        # need to overwrite Series init to prevent converting the
-        # manually constructed GeometryBlock back to object block
-        # by calling the Series init
+        # need to overwrite Series init to prevent calling it for GeoSeries
+        # (doesn't know crs, all work is already done above)
         pass
 
     def append(self, *args, **kwargs):

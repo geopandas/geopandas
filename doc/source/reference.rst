@@ -79,6 +79,8 @@ The following Shapely methods and attributes are available on
 
 `Affine transformations`
 
+.. automethod:: geopandas.GeoSeries.affine_transform
+
 .. automethod:: geopandas.GeoSeries.rotate
 
 .. automethod:: geopandas.GeoSeries.scale
