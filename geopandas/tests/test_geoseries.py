@@ -13,6 +13,7 @@ from shapely.geometry import (Polygon, Point, LineString,
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries
+from geopandas.array import GeometryArray, GeometryDtype
 
 import pytest
 from geopandas.tests.util import geom_equals
@@ -215,7 +216,8 @@ class TestSeries:
 def check_geoseries(s):
     assert isinstance(s, GeoSeries)
     assert isinstance(s.geometry, GeoSeries)
-    assert s.dtype == object
+    assert isinstance(s.dtype, GeometryDtype)
+    assert isinstance(s.values, GeometryArray)
 
 
 class TestConstructor:
@@ -270,6 +272,7 @@ class TestConstructor:
                 for _ in range(10)]
         s = pd.Series(shapes, index=list('abcdefghij'), name='foo')
         g = GeoSeries(s)
+        check_geoseries(g)
 
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
