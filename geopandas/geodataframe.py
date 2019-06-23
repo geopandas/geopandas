@@ -18,10 +18,14 @@ DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
 
 def _ensure_geometry(values):
-    if isinstance(values, GeometryArray):
+    if isinstance(values, (GeometryArray, GeoSeries)):
         return values
     else:
-        return from_shapely(values)
+        out = from_shapely(values)
+        if isinstance(values, Series):
+            return GeoSeries(values, index=values.index, name=values.name)
+        else:
+            return out
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -180,8 +184,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) or pd.isnull(item) for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
+        level = _ensure_geometry(level)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
