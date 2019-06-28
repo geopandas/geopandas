@@ -418,7 +418,7 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
     def test_negative_legend(self):
-        ax = self.df.plot(column='NEGATIVES', scheme='FISHER_JENKS', k=3,
+        ax = self.df.plot(column='NEGATIVES', scheme='FISHERJENKS', k=3,
                           cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [u'-10.00 - -3.41', u'-3.41 - 3.30', u'3.30 - 10.00']

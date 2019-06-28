@@ -351,13 +351,13 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.Map_Classifier object will be used
+        A mapclassify.MapClassifier object will be used
         under the hood. Supported are all schemes provided by mapclassify (e.g.
-        'Box_Plot', 'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled',
-        'HeadTail_Breaks', 'Jenks_Caspall', 'Jenks_Caspall_Forced',
-        'Jenks_Caspall_Sampled', 'Max_P_Classifier', 'Maximum_Breaks',
-        'Natural_Breaks', 'Quantiles', 'Percentiles', 'Std_Mean',
-        'User_Defined'). Arguments can be passed in classification_kwds.
+        'BoxPlot', 'EqualInterval', 'FisherJenks', 'FisherJenksSampled',
+        'HeadTailBreaks', 'JenksCaspall', 'JenksCaspallForced',
+        'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
+        'NaturalBreaks', 'Quantiles', 'Percentiles', 'StdMean',
+        'UserDefined'). Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -536,11 +536,11 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
         Series to be plotted
     scheme : str
         One of mapclassify classification schemes
-        Options are Box_Plot, Equal_Interval, Fisher_Jenks,
-        Fisher_Jenks_Sampled, HeadTail_Breaks, Jenks_Caspall,
-        Jenks_Caspall_Forced, Jenks_Caspall_Sampled, Max_P_Classifier,
-        Maximum_Breaks, Natural_Breaks, Quantiles, Percentiles, Std_Mean,
-        User_Defined
+        Options are BoxPlot, EqualInterval, FisherJenks,
+        FisherJenksSampled, HeadTailBreaks, JenksCaspall,
+        JenksCaspallForced, JenksCaspallSampled, MaxP,
+        MaximumBreaks, NaturalBreaks, Quantiles, Percentiles, StdMean,
+        UserDefined
 
     **classification_kwds : dict
         Keyword arguments for classification scheme
