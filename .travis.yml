@@ -29,7 +29,7 @@ install:
   - conda info
 
   # Install dependencies
-  - conda env create --file="${ENV_FILE}"
+  - CONDA_RESTORE_FREE_CHANNEL=1 conda env create --file="${ENV_FILE}"
   - source activate test
   - if [ "$DEV" ]; then pip install git+https://github.com/pydata/pandas.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
