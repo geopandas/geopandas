@@ -571,18 +571,25 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
     # mapclassify < 2.1 cleaned up the scheme names (removing underscores)
     # trying both to keep compatibility with older versions and provide
     # compatibility with newer versions of mapclassify
-    scheme_names_with_underscores = [
-        'box_plot', 'equal_interval', 'fisher_jenks', 'fisher_jenks_sampled',
-        'headtail_breaks', 'jenks_caspall', 'jenks_caspall_forced',
-        'jenks_caspall_sampled', 'max_p_classifier', 'maximum_breaks',
-        'natural_breaks', 'std_mean', 'user_defined',
-    ]
-    scheme_names_mapping = {
-        name: name.replace('_', '') for name in scheme_names_with_underscores
+    oldnew = {
+        'Box_Plot': 'BoxPlot',
+        'Equal_Interval': 'EqualInterval',
+        'Fisher_Jenks': 'FisherJenks',
+        'Fisher_Jenks_Sampled': 'FisherJenksSampled',
+        'HeadTail_Breaks': 'HeadTailBreaks',
+        'Jenks_Caspall': 'JenksCaspall',
+        'Jenks_Caspall_Forced': 'JenksCaspallForced',
+        'Jenks_Caspall_Sampled': 'JenksCaspallSampled',
+        'Max_P_Plassifier': 'MaxP',
+        'Maximum_Breaks': 'MaximumBreaks',
+        'Natural_Breaks': 'NaturalBreaks',
+        'Std_Mean': 'StdMean',
+        'User_Defined': 'UserDefined'
     }
-    scheme_names_mapping.update({
-        name.replace('_', ''): name for name in scheme_names_with_underscores
-    })
+    scheme_names_mapping = {
+        **{old.lower(): new.lower() for old, new in oldnew.items()},
+        **{new.lower(): old.lower() for old, new in oldnew.items()}
+    }
 
     try:
         scheme_class = schemes[scheme]
