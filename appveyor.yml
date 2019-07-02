@@ -34,6 +34,6 @@ install:
   - conda env create --file="${ENV_FILE}"
 
 test_script:
-  - conda activate test
+  - CALL conda.bat activate test
   - conda list
   - pytest geopandas -v
