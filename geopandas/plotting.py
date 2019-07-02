@@ -567,19 +567,43 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
                                               classifier)
 
     scheme = scheme.lower()
-    if scheme not in schemes:
-        raise ValueError("Invalid scheme. Scheme must be in the"
-                         " set: %r" % schemes.keys())
+
+    # mapclassify < 2.1 cleaned up the scheme names (removing underscores)
+    # trying both to keep compatibility with older versions and provide
+    # compatibility with newer versions of mapclassify
+    scheme_names_with_underscores = [
+        'box_plot', 'equal_interval', 'fisher_jenks', 'fisher_jenks_sampled',
+        'headtail_breaks', 'jenks_caspall', 'jenks_caspall_forced',
+        'jenks_caspall_sampled', 'max_p_classifier', 'maximum_breaks',
+        'natural_breaks', 'std_mean', 'user_defined',
+    ]
+    scheme_names_mapping = {
+        name: name.replace('_', '') for name in scheme_names_with_underscores
+    }
+    scheme_names_mapping.update({
+        name.replace('_', ''): name for name in scheme_names_with_underscores
+    })
+
+    try:
+        scheme_class = schemes[scheme]
+    except KeyError:
+        scheme = scheme_names_mapping.get(scheme, scheme)
+        try:
+            scheme_class = schemes[scheme]
+        except KeyError:
+            raise ValueError("Invalid scheme. Scheme must be in the"
+                            " set: %r" % schemes.keys())
+
     if classification_kwds['k'] is not None:
         try:
             from inspect import getfullargspec as getspec
         except ImportError:
             from inspect import getargspec as getspec
-        spec = getspec(schemes[scheme].__init__)
+        spec = getspec(scheme_class.__init__)
         if 'k' not in spec.args:
             del classification_kwds['k']
     try:
-        binning = schemes[scheme](values, **classification_kwds)
+        binning = scheme_class(values, **classification_kwds)
     except TypeError:
         raise TypeError("Invalid keyword argument for %r " % scheme)
     return binning
