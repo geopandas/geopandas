@@ -105,6 +105,25 @@ class TestDataFrame:
         assert isinstance(res, pd.DataFrame)
         assert not isinstance(res, GeoDataFrame)
 
+    def test_geo_setitem(self):
+        data = {"A": range(5), "B": np.arange(5.),
+                "geometry": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data)
+        s = GeoSeries([Point(x, y + 1) for x, y in zip(range(5), range(5))])
+
+        # setting geometry column
+        for vals in [s, s.values]:
+            df['geometry'] = vals
+            assert_geoseries_equal(df['geometry'], s)
+            assert_geoseries_equal(df.geometry, s)
+
+        # non-aligned values
+        s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
+
+        df['geometry'] = s2
+        assert_geoseries_equal(df['geometry'], s)
+        assert_geoseries_equal(df.geometry, s)
+
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
                                check_dtype=True, check_index_type=True)
@@ -552,6 +571,11 @@ class TestDataFrame:
             assert 'bbox' in feature.keys()
 
     def test_pickle(self):
+        import pickle
+        df2 = pickle.loads(pickle.dumps(self.df))
+        assert_geodataframe_equal(self.df, df2)
+
+    def test_pickle_method(self):
         filename = os.path.join(self.tempdir, 'df.pkl')
         self.df.to_pickle(filename)
         unpickled = pd.read_pickle(filename)
@@ -740,7 +764,15 @@ class TestConstructor:
         gdf = GeoDataFrame({'a': [1, 2, 3], 'geometry': gs},
                            columns=['geometry', 'a'],
                            geometry='geometry')
+        check_geodataframe(gdf)
+        gdf.columns == ['geometry', 'a']
 
+        # with non-default index
+        gdf = GeoDataFrame(
+            {'a': [1, 2, 3], 'geometry': gs},
+            columns=['geometry', 'a'],
+            index=pd.Index([0, 0, 1]),
+            geometry='geometry')
         check_geodataframe(gdf)
         gdf.columns == ['geometry', 'a']
 
