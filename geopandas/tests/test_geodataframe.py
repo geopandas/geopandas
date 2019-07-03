@@ -743,7 +743,15 @@ class TestConstructor:
         gdf = GeoDataFrame({'a': [1, 2, 3], 'geometry': gs},
                            columns=['geometry', 'a'],
                            geometry='geometry')
+        check_geodataframe(gdf)
+        gdf.columns == ['geometry', 'a']
 
+        # with non-default index
+        gdf = GeoDataFrame(
+            {'a': [1, 2, 3], 'geometry': gs},
+            columns=['geometry', 'a'],
+            index=pd.Index([0, 0, 1]),
+            geometry='geometry')
         check_geodataframe(gdf)
         gdf.columns == ['geometry', 'a']
 
