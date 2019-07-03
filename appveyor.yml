@@ -7,9 +7,11 @@ environment:
   matrix:
     - PYTHON_VERSION: "2.7"
       MINICONDA: C:\Miniconda-x64
+      ENV_FILE: "ci/travis/27-latest-defaults.yaml"
 
     - PYTHON_VERSION: "3.7"
       MINICONDA: C:\Miniconda37-x64
+      ENV_FILE: "ci/travis/37-latest-conda-forge.yaml"
 
 # all our python builds have to happen in tests_script...
 build: false
@@ -28,11 +30,10 @@ install:
   - CALL "%MINICONDA%\\Scripts\\activate.bat"
   - conda config --set always_yes yes --set show_channel_urls true --set changeps1 no
   - conda update conda
-  - conda config --add channels conda-forge
   - conda info -a
-  - "conda create --quiet --name test-environment python=%PYTHON_VERSION% pandas --file requirements.txt --file requirements.test.txt"
+  - conda env create --file="${ENV_FILE}"
 
 test_script:
-  - activate test-environment
+  - activate test
   - conda list
   - pytest geopandas -v
