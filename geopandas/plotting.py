@@ -586,10 +586,11 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
         'Std_Mean': 'StdMean',
         'User_Defined': 'UserDefined'
     }
-    scheme_names_mapping = {
-        **{old.lower(): new.lower() for old, new in oldnew.items()},
-        **{new.lower(): old.lower() for old, new in oldnew.items()}
-    }
+    scheme_names_mapping = {}
+    scheme_names_mapping.update(
+        {old.lower(): new.lower() for old, new in oldnew.items()})
+    scheme_names_mapping.update(
+        {new.lower(): old.lower() for old, new in oldnew.items()})
 
     try:
         scheme_class = schemes[scheme]
