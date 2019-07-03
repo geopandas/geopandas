@@ -425,6 +425,11 @@ class TestMapclassifyPlotting:
         expected = [u'-10.00 - -3.41', u'-3.41 - 3.30', u'3.30 - 10.00']
         assert labels == expected
 
+    @pytest.mark.parametrize('scheme', ['FISHER_JENKS', 'FISHERJENKS'])
+    def test_scheme_name_compat(self, scheme):
+        ax = self.df.plot(column='NEGATIVES', scheme=scheme, k=3, legend=True)
+        assert len(ax.get_legend().get_texts()) == 3
+
     def test_classification_kwds(self):
         ax = self.df.plot(column='pop_est', scheme='percentiles', k=3,
                           classification_kwds={'pct': [50, 100]}, cmap='OrRd',
