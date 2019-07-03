@@ -569,6 +569,11 @@ class TestDataFrame:
             assert 'bbox' in feature.keys()
 
     def test_pickle(self):
+        import pickle
+        df2 = pickle.loads(pickle.dumps(self.df))
+        assert_geodataframe_equal(self.df, df2)
+
+    def test_pickle_method(self):
         filename = os.path.join(self.tempdir, 'df.pkl')
         self.df.to_pickle(filename)
         unpickled = pd.read_pickle(filename)
