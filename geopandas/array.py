@@ -343,8 +343,7 @@ class GeometryArray(ExtensionArray):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
         elif isinstance(value, BaseGeometry) or _isna(value):
-            # self.data[idx] = value
-            if pd.isna(value):
+            if _isna(value):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
@@ -357,91 +356,6 @@ class GeometryArray(ExtensionArray):
         else:
             raise TypeError("Value should be either a BaseGeometry or None, "
                             "got %s" % str(value))
-
-    @property
-    def size(self):
-        return len(self.data)
-
-    def copy(self, *args, **kwargs):
-        return GeometryArray(self.data.copy())
-
-    def take(self, idx, allow_fill=False, fill_value=None):
-
-        from pandas.api.extensions import take
-
-        if allow_fill:
-            if fill_value is None or pd.isna(fill_value):
-                fill_value = 0
-
-        result = take(self.data, idx, allow_fill=allow_fill,
-                      fill_value=fill_value)
-        if fill_value == 0:
-            result[result == 0] = None
-        return GeometryArray(result)
-
-    def _fill(self, idx, value):
-        """ Fill index locations with value
-
-        Value should be a BaseGeometry
-
-        Returns a copy
-        """
-        if not (isinstance(value, BaseGeometry) or value is None):
-            raise TypeError("Value should be either a BaseGeometry or None, "
-                            "got %s" % str(value))
-        # self.data[idx] = value
-        self.data[idx] = np.array([value], dtype=object)
-        return self
-
-    def fillna(self, value=None, method=None, limit=None):
-        """ Fill NA/NaN values using the specified method.
-
-        Parameters
-        ----------
-        value : scalar, array-like
-            If a scalar value is passed it is used to fill all missing values.
-            Alternatively, an array-like 'value' can be given. It's expected
-            that the array-like have the same length as 'self'.
-        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
-            Method to use for filling holes in reindexed Series
-            pad / ffill: propagate last valid observation forward to next valid
-            backfill / bfill: use NEXT valid observation to fill gap
-        limit : int, default None
-            If method is specified, this is the maximum number of consecutive
-            NaN values to forward/backward fill. In other words, if there is
-            a gap with more than this number of consecutive NaNs, it will only
-            be partially filled. If method is not specified, this is the
-            maximum number of entries along the entire axis where NaNs will be
-            filled.
-
-        Returns
-        -------
-        filled : ExtensionArray with NA/NaN filled
-        """
-        if method is not None:
-            raise NotImplementedError(
-                "fillna with a method is not yet supported")
-        elif not isinstance(value, BaseGeometry):
-            raise NotImplementedError(
-                "fillna currently only supports filling with a scalar "
-                "geometry")
-
-        mask = self.isna()
-        new_values = self.copy()
-
-        if mask.any():
-            # fill with value
-            new_values = new_values._fill(mask, value)
-
-        return new_values
-
-    # def __getstate__(self):
-    #     return vectorized.serialize(self.data)
-
-    # def __setstate__(self, state):
-    #     geoms = vectorized.deserialize(*state)
-    #     self.data = geoms
-    #     self.base = None
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -701,8 +615,83 @@ class GeometryArray(ExtensionArray):
                          b[:, 3].max()))  # maxy
 
     # -------------------------------------------------------------------------
-    # for Series/ndarray like compat
+    # general array like compat
     # -------------------------------------------------------------------------
+
+    @property
+    def size(self):
+        return len(self.data)
+
+    def copy(self, *args, **kwargs):
+        # still taking args/kwargs for compat with pandas 0.24
+        return GeometryArray(self.data.copy())
+
+    def take(self, indices, allow_fill=False, fill_value=None):
+        from pandas.api.extensions import take
+
+        if allow_fill:
+            if fill_value is None or pd.isna(fill_value):
+                fill_value = 0
+
+        result = take(self.data, indices, allow_fill=allow_fill,
+                      fill_value=fill_value)
+        if fill_value == 0:
+            result[result == 0] = None
+        return GeometryArray(result)
+
+    def _fill(self, idx, value):
+        """ Fill index locations with value
+
+        Value should be a BaseGeometry
+        """
+        if not (isinstance(value, BaseGeometry) or value is None):
+            raise TypeError("Value should be either a BaseGeometry or None, "
+                            "got %s" % str(value))
+        # self.data[idx] = value
+        self.data[idx] = np.array([value], dtype=object)
+        return self
+
+    def fillna(self, value=None, method=None, limit=None):
+        """ Fill NA/NaN values using the specified method.
+
+        Parameters
+        ----------
+        value : scalar, array-like
+            If a scalar value is passed it is used to fill all missing values.
+            Alternatively, an array-like 'value' can be given. It's expected
+            that the array-like have the same length as 'self'.
+        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
+            Method to use for filling holes in reindexed Series
+            pad / ffill: propagate last valid observation forward to next valid
+            backfill / bfill: use NEXT valid observation to fill gap
+        limit : int, default None
+            If method is specified, this is the maximum number of consecutive
+            NaN values to forward/backward fill. In other words, if there is
+            a gap with more than this number of consecutive NaNs, it will only
+            be partially filled. If method is not specified, this is the
+            maximum number of entries along the entire axis where NaNs will be
+            filled.
+
+        Returns
+        -------
+        filled : ExtensionArray with NA/NaN filled
+        """
+        if method is not None:
+            raise NotImplementedError(
+                "fillna with a method is not yet supported")
+        elif not isinstance(value, BaseGeometry):
+            raise NotImplementedError(
+                "fillna currently only supports filling with a scalar "
+                "geometry")
+
+        mask = self.isna()
+        new_values = self.copy()
+
+        if mask.any():
+            # fill with value
+            new_values = new_values._fill(mask, value)
+
+        return new_values
 
     def astype(self, dtype, copy=True):
         """
@@ -776,6 +765,25 @@ class GeometryArray(ExtensionArray):
         """
         return from_shapely(scalars)
 
+    def _values_for_factorize(self):
+        # type: () -> Tuple[np.ndarray, Any]
+        """Return an array and missing value suitable for factorization.
+
+        Returns
+        -------
+        values : ndarray
+            An array suitable for factoraization. This should maintain order
+            and be a supported dtype (Float64, Int64, UInt64, String, Object).
+            By default, the extension array is cast to object dtype.
+        na_value : object
+            The value in `values` to consider missing. This will be treated
+            as NA in the factorization routines, so it will be coded as
+            `na_sentinal` and not included in `uniques`. By default,
+            ``np.nan`` is used.
+        """
+        vals = to_wkb(self)
+        return vals, None
+
     @classmethod
     def _from_factorized(cls, values, original):
         """
@@ -811,25 +819,6 @@ class GeometryArray(ExtensionArray):
         """
         # Note: this is used in `ExtensionArray.argsort`.
         raise TypeError("geometries are not orderable")
-
-    def _values_for_factorize(self):
-        # type: () -> Tuple[np.ndarray, Any]
-        """Return an array and missing value suitable for factorization.
-
-        Returns
-        -------
-        values : ndarray
-            An array suitable for factoraization. This should maintain order
-            and be a supported dtype (Float64, Int64, UInt64, String, Object).
-            By default, the extension array is cast to object dtype.
-        na_value : object
-            The value in `values` to consider missing. This will be treated
-            as NA in the factorization routines, so it will be coded as
-            `na_sentinal` and not included in `uniques`. By default,
-            ``np.nan`` is used.
-        """
-        vals = to_wkb(self)
-        return vals, None
 
     def _formatter(self, boxed=False):
         """Formatting function for scalar values.
