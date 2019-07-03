@@ -220,7 +220,7 @@ def test_value_counts():
     assert_series_equal(res, exp)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_series():
     # currently, geoseries with identical values are not recognized as
     # duplicates
