@@ -351,13 +351,13 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.Map_Classifier object will be used
+        A mapclassify.MapClassifier object will be used
         under the hood. Supported are all schemes provided by mapclassify (e.g.
-        'Box_Plot', 'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled',
-        'HeadTail_Breaks', 'Jenks_Caspall', 'Jenks_Caspall_Forced',
-        'Jenks_Caspall_Sampled', 'Max_P_Classifier', 'Maximum_Breaks',
-        'Natural_Breaks', 'Quantiles', 'Percentiles', 'Std_Mean',
-        'User_Defined'). Arguments can be passed in classification_kwds.
+        'BoxPlot', 'EqualInterval', 'FisherJenks', 'FisherJenksSampled',
+        'HeadTailBreaks', 'JenksCaspall', 'JenksCaspallForced',
+        'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
+        'NaturalBreaks', 'Quantiles', 'Percentiles', 'StdMean',
+        'UserDefined'). Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -536,11 +536,11 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
         Series to be plotted
     scheme : str
         One of mapclassify classification schemes
-        Options are Box_Plot, Equal_Interval, Fisher_Jenks,
-        Fisher_Jenks_Sampled, HeadTail_Breaks, Jenks_Caspall,
-        Jenks_Caspall_Forced, Jenks_Caspall_Sampled, Max_P_Classifier,
-        Maximum_Breaks, Natural_Breaks, Quantiles, Percentiles, Std_Mean,
-        User_Defined
+        Options are BoxPlot, EqualInterval, FisherJenks,
+        FisherJenksSampled, HeadTailBreaks, JenksCaspall,
+        JenksCaspallForced, JenksCaspallSampled, MaxP,
+        MaximumBreaks, NaturalBreaks, Quantiles, Percentiles, StdMean,
+        UserDefined
 
     **classification_kwds : dict
         Keyword arguments for classification scheme
@@ -567,19 +567,51 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
                                               classifier)
 
     scheme = scheme.lower()
-    if scheme not in schemes:
-        raise ValueError("Invalid scheme. Scheme must be in the"
-                         " set: %r" % schemes.keys())
+
+    # mapclassify < 2.1 cleaned up the scheme names (removing underscores)
+    # trying both to keep compatibility with older versions and provide
+    # compatibility with newer versions of mapclassify
+    oldnew = {
+        'Box_Plot': 'BoxPlot',
+        'Equal_Interval': 'EqualInterval',
+        'Fisher_Jenks': 'FisherJenks',
+        'Fisher_Jenks_Sampled': 'FisherJenksSampled',
+        'HeadTail_Breaks': 'HeadTailBreaks',
+        'Jenks_Caspall': 'JenksCaspall',
+        'Jenks_Caspall_Forced': 'JenksCaspallForced',
+        'Jenks_Caspall_Sampled': 'JenksCaspallSampled',
+        'Max_P_Plassifier': 'MaxP',
+        'Maximum_Breaks': 'MaximumBreaks',
+        'Natural_Breaks': 'NaturalBreaks',
+        'Std_Mean': 'StdMean',
+        'User_Defined': 'UserDefined'
+    }
+    scheme_names_mapping = {}
+    scheme_names_mapping.update(
+        {old.lower(): new.lower() for old, new in oldnew.items()})
+    scheme_names_mapping.update(
+        {new.lower(): old.lower() for old, new in oldnew.items()})
+
+    try:
+        scheme_class = schemes[scheme]
+    except KeyError:
+        scheme = scheme_names_mapping.get(scheme, scheme)
+        try:
+            scheme_class = schemes[scheme]
+        except KeyError:
+            raise ValueError("Invalid scheme. Scheme must be in the"
+                            " set: %r" % schemes.keys())
+
     if classification_kwds['k'] is not None:
         try:
             from inspect import getfullargspec as getspec
         except ImportError:
             from inspect import getargspec as getspec
-        spec = getspec(schemes[scheme].__init__)
+        spec = getspec(scheme_class.__init__)
         if 'k' not in spec.args:
             del classification_kwds['k']
     try:
-        binning = schemes[scheme](values, **classification_kwds)
+        binning = scheme_class(values, **classification_kwds)
     except TypeError:
         raise TypeError("Invalid keyword argument for %r " % scheme)
     return binning
