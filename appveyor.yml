@@ -33,7 +33,6 @@ install:
   - "conda create --quiet --name test-environment python=%PYTHON_VERSION% pandas --file requirements.txt --file requirements.test.txt"
 
 test_script:
-  - CALL "%MINICONDA%\\Scripts\\activate.bat"
-  - conda activate test-environment
+  - activate test-environment
   - conda list
   - pytest geopandas -v
