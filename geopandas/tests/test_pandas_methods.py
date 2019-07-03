@@ -62,6 +62,13 @@ def test_indexing(s, df):
     assert_geoseries_equal(df[mask]['geometry'], exp)
     assert_geoseries_equal(df.loc[mask, 'geometry'], exp)
 
+    # slices
+    s.index = [1, 2, 3]
+    exp = GeoSeries([Point(1, 1), Point(2, 2)], index=[2, 3])
+    assert_series_equal(s[1:], exp)
+    assert_series_equal(s.iloc[1:], exp)
+    assert_series_equal(s.loc[2:], exp)
+
 
 def test_reindex(s, df):
     # GeoSeries reindex
@@ -163,8 +170,7 @@ def test_numerical_operations(s, df):
 
 def test_where(s):
     res = s.where(np.array([True, False, True]))
-    exp = s.copy()
-    exp[1] = np.nan
+    exp = GeoSeries([Point(0, 0), None, Point(2, 2)])
     assert_series_equal(res, exp)
 
 
@@ -229,7 +235,7 @@ def test_value_counts():
     assert_series_equal(res, exp)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_series():
     # currently, geoseries with identical values are not recognized as
     # duplicates
