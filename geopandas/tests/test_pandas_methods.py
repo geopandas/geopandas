@@ -70,6 +70,26 @@ def test_indexing(s, df):
     assert_series_equal(s.loc[2:], exp)
 
 
+def test_reindex(s, df):
+    # GeoSeries reindex
+    res = s.reindex([1, 2, 3])
+    exp = GeoSeries([Point(1, 1), Point(2, 2), None], index=[1, 2, 3])
+    assert_geoseries_equal(res, exp)
+
+    # GeoDataFrame reindex index
+    res = df.reindex(index=[1, 2, 3])
+    assert_geoseries_equal(res.geometry, exp)
+
+    # GeoDataFrame reindex columns
+    res = df.reindex(columns=['value1', 'geometry'])
+    assert isinstance(res, GeoDataFrame)
+    assert isinstance(res.geometry, GeoSeries)
+    assert_frame_equal(res, df[['value1', 'geometry']])
+
+    # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
+    # should it return DataFrame instead ?
+
+
 def test_assignment(s, df):
     exp = GeoSeries([Point(10, 10), Point(1, 1), Point(2, 2)])
 
