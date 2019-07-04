@@ -46,7 +46,7 @@ class TestDataFrame:
 
     def test_df_init(self):
         assert type(self.df2) is GeoDataFrame
-        assert self.df2.crs == self.crs
+        assert self.df2.crs.get("init") == self.crs.get("init")
 
     def test_different_geo_colname(self):
         data = {"A": range(5), "B": range(-5, 0),
@@ -158,7 +158,10 @@ class TestDataFrame:
         # new crs
         gs = GeoSeries(new_geom, crs="epsg:3857")
         df.geometry = gs
-        assert df.crs == "epsg:3857"
+        if isinstance(df.crs, dict):
+            assert df.crs.get("init") == "epsg:3857"
+        else:
+            assert df.crs == "epsg:3857"
 
     def test_geometry_property_errors(self):
         with pytest.raises(AttributeError):
@@ -220,12 +223,21 @@ class TestDataFrame:
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:3857")
         new_df = self.df.set_geometry(gs)
-        assert new_df.crs == "epsg:3857"
+        if isinstance(new_df.crs, dict):
+            assert new_df.crs.get("init") == "epsg:3857"
+        else:
+            assert new_df.crs == "epsg:3857"
 
         # explicit crs overrides self and dataframe
         new_df = self.df.set_geometry(gs, crs="epsg:26909")
-        assert new_df.crs == "epsg:26909"
-        assert new_df.geometry.crs == "epsg:26909"
+        if isinstance(new_df.crs, dict):
+            assert new_df.crs.get("init") == "epsg:26909"
+        else:
+            assert new_df.crs == "epsg:26909"
+        if isinstance(new_df.geometry.crs, dict):
+            assert new_df.geometry.crs.get("init") == "epsg:26909"
+        else:
+            assert new_df.geometry.crs == "epsg:26909"
 
         # Series should use dataframe's
         new_df = self.df.set_geometry(geom.values)
@@ -436,7 +448,7 @@ class TestDataFrame:
 
         df = GeoDataFrame.from_features(features, crs=crs)
         validate_boro_df(df, case_sensitive=True)
-        assert df.crs == crs
+        assert df.crs.get("init") == crs.get("init")
 
     def test_from_features_unaligned_properties(self):
         p1 = Point(1, 1)

@@ -9,6 +9,7 @@ import sys
 import numpy as np
 
 import fiona
+import pyproj
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -197,7 +198,7 @@ def test_to_file_schema(tmpdir, df_nybb):
 
 
 with fiona.open(geopandas.datasets.get_path('nybb')) as f:
-    CRS = f.crs if not _PYPROJ22 else f.crs_wkt
+    CRS = f.crs if not _PYPROJ22 else pyproj.CRS(f.crs_wkt).to_dict()
     NYBB_COLUMNS = list(f.meta["schema"]["properties"].keys())
 
 

@@ -136,8 +136,25 @@ class GeoPandasBase(object):
 
     @property
     def crs(self):
-        """Returns a ``pyproj.CRS`` if pyproj version >= 2.2.0. Otherwise, a PROJ dict."""
-        return self._crs
+        """Returns a PROJ dict."""
+        if self._crs is None:
+            proj_dict = None
+        elif _PYPROJ22:
+            epsg_code = None
+            if "init=epsg" in self._crs.to_string().lower():
+                epsg_code = self._crs.to_epsg(0)
+            else:
+                epsg_code = self._crs.to_epsg(100)
+            if epsg_code is not None:
+                proj_dict = {
+                    "init": "epsg:{}".format(epsg_code),
+                    "no_defs": True,
+                }
+            else:
+                proj_dict = self._crs.to_dict()
+        else:
+            proj_dict = self._crs
+        return proj_dict
 
     @crs.setter
     def crs(self, value):
@@ -146,6 +163,7 @@ class GeoPandasBase(object):
         If pyproj >= 2.2.0, the value can be anything accepted
         by ``pyproj.CRS.from_user_input``.
             - PROJ string
+            - An OGC urn projection string
             - Dictionary of PROJ parameters
             - PROJ keyword arguments for parameters
             - JSON string with PROJ parameters
@@ -153,7 +171,7 @@ class GeoPandasBase(object):
             - An authority string [i.e. ‘epsg:4326’]
             - An EPSG integer code [i.e. 4326]
             - An object with a to_wkt method.
-            - A CRS
+            - A pyproj.CRS or rasterio.crs.CRS
 
         Otherwise, the value can only be a dictionary of PROJ parameters.
         """

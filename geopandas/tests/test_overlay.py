@@ -287,7 +287,7 @@ def test_preserve_crs(dfs, how):
     df1.crs = crs
     df2.crs = crs
     result = overlay(df1, df2, how=how)
-    assert result.crs == crs
+    assert result.crs.get("init") == crs.get("init")
 
 
 def test_empty_intersection(dfs):
