@@ -30,11 +30,11 @@ install:
   - CALL "%MINICONDA%\\Scripts\\activate.bat"
   - conda config --set always_yes yes --set show_channel_urls true --set changeps1 no
   - conda update conda
+  - activate
   - conda info -a
   - conda env create --file="${ENV_FILE}"
 
 test_script:
-  - conda activate base
   - activate test
   - conda list
   - pytest geopandas -v
