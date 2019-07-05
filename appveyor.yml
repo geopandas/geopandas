@@ -30,10 +30,16 @@ install:
   - CALL "%MINICONDA%\\Scripts\\activate.bat"
   - conda config --set always_yes yes --set show_channel_urls true --set changeps1 no
   - conda update conda
+  # this is basically equivalent to what conda init does.  It changes the "conda" to
+  #    be a .bat script that sets appropriate PATH entries before conda hits problems.
+  #  This PATH modification only works with conda 4.6+, but it won't hurt other versions.
+  - set "PATH=%MINICONDA%\condabin:%PATH%"
   - conda info -a
+  - conda config --set restore_free_channel true
   - conda env create --file="${ENV_FILE}"
 
 test_script:
-  - CALL "%MINICONDA%\\Scripts\\activate.bat" test
+  # this uses condabin/conda.bat because of our PATH modification above
+  - conda activate test
   - conda list
   - pytest geopandas -v
