@@ -35,6 +35,5 @@ install:
 
 test_script:
   - CALL "%MINICONDA%\\Scripts\\activate.bat" test
-  - activate test
   - conda list
   - pytest geopandas -v
