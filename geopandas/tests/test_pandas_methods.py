@@ -10,6 +10,7 @@ import shapely
 from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import from_shapely
 from geopandas.tests.util import assert_geoseries_equal
 from geopandas._compat import PANDAS_GE_024
 
@@ -187,10 +188,7 @@ def test_select_dtypes(df):
 # Missing values
 
 
-@pytest.mark.xfail
-def test_fillna():
-    # this currently does not work (it seems to fill in the second coordinate
-    # of the point
+def test_fillna(s):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
@@ -223,11 +221,10 @@ def test_isna(NA):
 # Groupby / algos
 
 
-@pytest.mark.xfail
 def test_unique():
-    # this currently raises a TypeError
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
-    exp = np.array([Point(0, 0), Point(2, 2)])
+    exp = from_shapely([Point(0, 0), Point(2, 2)])
+    # TODO should have specialized GeometryArray assert method
     assert_array_equal(s.unique(), exp)
 
 
@@ -242,17 +239,18 @@ def test_value_counts():
 
 @pytest.mark.xfail(strict=False)
 def test_drop_duplicates_series():
-    # currently, geoseries with identical values are not recognized as
-    # duplicates
+    # duplicated does not yet use EA machinery
+    # (https://github.com/pandas-dev/pandas/issues/27264)
+    # but relies on unstable hashing of unhashable objects in numpy array
+    # giving flaky test (https://github.com/pandas-dev/pandas/issues/27035)
     dups = GeoSeries([Point(0, 0), Point(0, 0)])
     dropped = dups.drop_duplicates()
     assert len(dropped) == 1
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_frame():
-    # currently, dropping duplicates in a geodataframe produces a TypeError
-    # better behavior would be dropping the duplicated points
+    # duplicated does not yet use EA machinery, see above
     gdf_len = 3
     dup_gdf = GeoDataFrame({'geometry': [Point(0, 0) for _ in range(gdf_len)],
                             'value1': range(gdf_len)})
