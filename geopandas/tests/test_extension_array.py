@@ -460,6 +460,14 @@ class TestMethods(extension_tests.BaseMethodsTests):
         with pytest.raises(ValueError, match=msg):
             data_missing.fillna(data_missing.take([1]))
 
+    @no_sorting
+    def test_nargsort(self):
+        pass
+
+    @no_sorting
+    def test_argsort_missing_array(self):
+        pass
+
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass
