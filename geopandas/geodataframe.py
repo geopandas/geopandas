@@ -8,7 +8,7 @@ from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
 from geopandas.array import GeometryArray, from_shapely
-from geopandas.base import GeoPandasBase, _CoordinateIndexer
+from geopandas.base import GeoPandasBase, _CoordinateIndexer, is_geometry_type
 from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
@@ -17,14 +17,23 @@ import geopandas.io
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
 
 
-def _ensure_geometry(values):
-    if isinstance(values, (GeometryArray, GeoSeries)):
-        return values
+def _ensure_geometry(data):
+    """
+    Ensure the data is of geometry dtype or converted to it.
+
+    If input is a (Geo)Series, output is a GeoSeries, otherwise output
+    is GeometryArray.
+    """
+    if is_geometry_type(data):
+        if isinstance(data, Series):
+            return GeoSeries(data)
+        return data
     else:
-        out = from_shapely(values)
-        if isinstance(values, Series):
-            return GeoSeries(values, index=values.index, name=values.name)
+        if isinstance(data, Series):
+            out = from_shapely(np.asarray(data))
+            return GeoSeries(out, index=data.index, name=data.name)
         else:
+            out = from_shapely(data)
             return out
 
 

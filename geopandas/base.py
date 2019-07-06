@@ -25,9 +25,13 @@ except ImportError:
 
 
 def is_geometry_type(data):
+    """
+    Check if the data is of geometry dtype.
 
+    Does not include object array of shapely scalars.
+    """
     if isinstance(getattr(data, 'dtype', None), GeometryDtype):
-        # GeometryArray and Series[GeometryArray]
+        # GeometryArray, GeoSeries and Series[GeometryArray]
         return True
     else:
         return False
