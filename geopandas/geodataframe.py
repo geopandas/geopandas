@@ -57,15 +57,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
 
-        if not args:
-            if not isinstance(geometry, str) and geometry is not None:
-                # ensure correct length of the empty frame
-                n = len(geometry)
-                kwargs['index'] = kwargs.pop('index', range(n))
-            args = [[]]
-
         super(GeoDataFrame, self).__init__(*args, **kwargs)
-
 
         # TEMP HACK need to do this before calling self['geometry'], because
         # getitem accesses crs

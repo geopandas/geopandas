@@ -312,10 +312,6 @@ class GeoSeries(GeoPandasBase, Series):
                                                    level=level, copy=copy,
                                                    fill_value=fill_value,
                                                    **kwargs)
-        # left = GeoSeries(left, crs=self.crs)
-        # if isinstance(other, GeoSeries):
-        #     right = GeoSeries(right, crs=other.crs)
-        # #import pdb; pdb.set_trace()
         return left, right
 
     def __contains__(self, other):
