@@ -65,27 +65,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
-
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
-        # TEMP HACK need to do this before calling self['geometry'], because
+        # need to set this before calling self['geometry'], because
         # getitem accesses crs
         self.crs = crs
 
-        # only set default 'geometry' name if it is present in the data
+        # set_geometry ensures the geometry data have the proper dtype,
+        # but is not called if `geometry=None` ('geometry' column present
+        # in the data), so therefore need to ensure it here manually
+        # but within a try/except because currently non-geometries are
+        # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
-        if geometry is None:
-            if 'geometry' in self.columns:
-                # TEMP HACK only if we have actual geometry values -> call
-                # set_geometry
-                try:
-                    self['geometry'] = _ensure_geometry(self['geometry'].values)
-                except ValueError:
-                    pass
-                else:
-                    geometry = 'geometry'
+        if geometry is None and 'geometry' in self.columns:
+            # only if we have actual geometry values -> call set_geometry
+            try:
+                self['geometry'] = _ensure_geometry(self['geometry'].values)
+            except ValueError:
+                pass
+            else:
+                geometry = 'geometry'
 
-        # self.crs = crs
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
