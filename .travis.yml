@@ -25,8 +25,12 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes --set changeps1 no
-  - conda install conda=4.6
+  - conda update conda
   - conda info
+
+  # free channel needed for older envs (< py37), see
+  # https://github.com/conda/conda/issues/8849
+  - conda config --set restore_free_channel true
 
   # Install dependencies
   - conda env create --file="${ENV_FILE}"
