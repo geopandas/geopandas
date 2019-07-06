@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import os
 
-from six import PY3
+from six import PY3, PY2
 
 import numpy as np
 import pandas as pd
@@ -221,6 +221,7 @@ def test_isna(NA):
 # Groupby / algos
 
 
+@pytest.mark.skipif(PY2, reason='pd.unique buggy with WKB values on py2')
 def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = from_shapely([Point(0, 0), Point(2, 2)])
