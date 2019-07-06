@@ -12,7 +12,7 @@ import shapely.affinity as affinity
 
 import geopandas as gpd
 
-from .array import GeometryArray
+from .array import GeometryArray, GeometryDtype
 
 
 try:
@@ -22,6 +22,19 @@ except ImportError:
     class RTreeError(Exception):
         pass
     HAS_SINDEX = False
+
+
+def is_geometry_type(data):
+    """
+    Check if the data is of geometry dtype.
+
+    Does not include object array of shapely scalars.
+    """
+    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+        # GeometryArray, GeoSeries and Series[GeometryArray]
+        return True
+    else:
+        return False
 
 
 def _delegate_binary_method(op, this, other, *args, **kwargs):
@@ -54,7 +67,7 @@ def _binary_geo(op, this, other):
 
 
 def _binary_op(op, this, other, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool]
+    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
     data, index = _delegate_binary_method(op, this, other, *args, **kwargs)
     return Series(data, index=index)

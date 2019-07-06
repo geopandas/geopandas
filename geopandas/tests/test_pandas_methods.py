@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import os
 
-from six import PY3
+from six import PY3, PY2
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,9 @@ import shapely
 from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import from_shapely
 from geopandas.tests.util import assert_geoseries_equal
+from geopandas._compat import PANDAS_GE_024
 
 import pytest
 from numpy.testing import assert_array_equal
@@ -159,7 +161,8 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         df + 1
 
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, AssertionError)):
+        # TODO(pandas 0.23) remove AssertionError -> raised in 0.23
         s + 1
 
     # boolean comparisons work
@@ -168,6 +171,9 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skipif(
+    not PANDAS_GE_024,
+    reason='where for EA only implemented in 0.24.0 (GH24114)')
 def test_where(s):
     res = s.where(np.array([True, False, True]))
     exp = GeoSeries([Point(0, 0), None, Point(2, 2)])
@@ -182,10 +188,7 @@ def test_select_dtypes(df):
 # Missing values
 
 
-@pytest.mark.xfail
-def test_fillna():
-    # this currently does not work (it seems to fill in the second coordinate
-    # of the point
+def test_fillna(s):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
@@ -218,11 +221,11 @@ def test_isna(NA):
 # Groupby / algos
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(PY2, reason='pd.unique buggy with WKB values on py2')
 def test_unique():
-    # this currently raises a TypeError
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
-    exp = np.array([Point(0, 0), Point(2, 2)])
+    exp = from_shapely([Point(0, 0), Point(2, 2)])
+    # TODO should have specialized GeometryArray assert method
     assert_array_equal(s.unique(), exp)
 
 
@@ -237,17 +240,18 @@ def test_value_counts():
 
 @pytest.mark.xfail(strict=False)
 def test_drop_duplicates_series():
-    # currently, geoseries with identical values are not recognized as
-    # duplicates
+    # duplicated does not yet use EA machinery
+    # (https://github.com/pandas-dev/pandas/issues/27264)
+    # but relies on unstable hashing of unhashable objects in numpy array
+    # giving flaky test (https://github.com/pandas-dev/pandas/issues/27035)
     dups = GeoSeries([Point(0, 0), Point(0, 0)])
     dropped = dups.drop_duplicates()
     assert len(dropped) == 1
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_frame():
-    # currently, dropping duplicates in a geodataframe produces a TypeError
-    # better behavior would be dropping the duplicated points
+    # duplicated does not yet use EA machinery, see above
     gdf_len = 3
     dup_gdf = GeoDataFrame({'geometry': [Point(0, 0) for _ in range(gdf_len)],
                             'value1': range(gdf_len)})

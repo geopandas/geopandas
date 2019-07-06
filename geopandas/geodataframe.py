@@ -7,13 +7,34 @@ from shapely.geometry import mapping, shape, Point
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas.base import GeoPandasBase, _CoordinateIndexer
+from geopandas.array import GeometryArray, from_shapely
+from geopandas.base import GeoPandasBase, _CoordinateIndexer, is_geometry_type
 from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
+
+
+def _ensure_geometry(data):
+    """
+    Ensure the data is of geometry dtype or converted to it.
+
+    If input is a (Geo)Series, output is a GeoSeries, otherwise output
+    is GeometryArray.
+    """
+    if is_geometry_type(data):
+        if isinstance(data, Series):
+            return GeoSeries(data)
+        return data
+    else:
+        if isinstance(data, Series):
+            out = from_shapely(np.asarray(data))
+            return GeoSeries(out, index=data.index, name=data.name)
+        else:
+            out = from_shapely(data)
+            return out
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -45,7 +66,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
+
+        # need to set this before calling self['geometry'], because
+        # getitem accesses crs
         self.crs = crs
+
+        # set_geometry ensures the geometry data have the proper dtype,
+        # but is not called if `geometry=None` ('geometry' column present
+        # in the data), so therefore need to ensure it here manually
+        # but within a try/except because currently non-geometries are
+        # allowed in that case
+        # TODO do we want to raise / return normal DataFrame in this case?
+        if geometry is None and 'geometry' in self.columns:
+            # only if we have actual geometry values -> call set_geometry
+            try:
+                self['geometry'] = _ensure_geometry(self['geometry'].values)
+            except TypeError:
+                pass
+            else:
+                geometry = 'geometry'
+
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
@@ -119,7 +159,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray)):
+        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
@@ -145,8 +185,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) or pd.isnull(item) for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
+        level = _ensure_geometry(level)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs

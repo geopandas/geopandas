@@ -5,6 +5,8 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import Series
+from pandas.core.internals import SingleBlockManager
+
 import pyproj
 from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
@@ -13,6 +15,10 @@ from shapely.ops import transform
 from geopandas.plotting import plot_series
 from geopandas.base import (
     GeoPandasBase, _delegate_property, _CoordinateIndexer)
+
+from .array import GeometryArray, GeometryDtype, from_shapely
+from .base import is_geometry_type
+from ._compat import PANDAS_GE_024
 
 
 _PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
@@ -66,8 +72,24 @@ class GeoSeries(GeoPandasBase, Series):
     _metadata = ['name', 'crs']
 
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
-        # we need to use __new__ because we need to return Series instance
+        # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
+        if isinstance(data, SingleBlockManager):
+            if isinstance(data.blocks[0].dtype, GeometryDtype):
+                if not PANDAS_GE_024 and (data.blocks[0].ndim == 2):
+                    # bug in pandas 0.23 where in certain indexing operations
+                    # (such as .loc) a 2D ExtensionBlock (still with 1D values
+                    # is created) which results in other failures
+                    from pandas.core.internals import ExtensionBlock
+                    values = data.blocks[0].values
+                    block = ExtensionBlock(values, slice(0, len(values), 1))
+                    data = SingleBlockManager(
+                        [block], data.axes[0], fastpath=True)
+                self = super(GeoSeries, cls).__new__(cls)
+                super(GeoSeries, self).__init__(data, index=index, **kwargs)
+                self.crs = crs
+                return self
+            return Series(data, index=index, **kwargs)
 
         if isinstance(data, BaseGeometry):
             # fix problem for scalar geometries passed, ensure the list of
@@ -77,22 +99,26 @@ class GeoSeries(GeoPandasBase, Series):
 
         name = kwargs.pop('name', None)
 
-        # Use Series constructor to handle input data
-        s = Series(data, index=index, name=name, **kwargs)
-        # prevent trying to convert non-geometry objects
-        if s.dtype != object:
-            if s.empty:
-                s = s.astype(object)
-            else:
+        if not is_geometry_type(data):
+            # if data is None and dtype is specified (eg from empty overlay
+            # test), specifying dtype raises an error:
+            # https://github.com/pandas-dev/pandas/issues/26469
+            kwargs.pop('dtype', None)
+            # Use Series constructor to handle input data
+            s = pd.Series(data, index=index, name=name, **kwargs)
+            # prevent trying to convert non-geometry objects
+            if s.dtype != object:
+                if s.empty:
+                    s = s.astype(object)
+                else:
+                    return s
+            # try to convert to GeometryArray, if fails return plain Series
+            try:
+                data = from_shapely(s.values)
+            except TypeError:
                 return s
-        # check if all geometry data, if fails return plain Series
-        try:
-            _validate_geometry_data(s.values)
-        except TypeError:
-            return s
-        data = s.values
-        index = s.index
-        name = s.name
+            index = s.index
+            name = s.name
 
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
