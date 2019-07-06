@@ -270,6 +270,7 @@ class TestConstructor:
                 for _ in range(10)]
         s = pd.Series(shapes, index=list('abcdefghij'), name='foo')
         g = GeoSeries(s)
+        check_geoseries(g)
 
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
