@@ -719,21 +719,32 @@ class TestConstructor:
             df.geometry
 
     def test_only_geometry(self):
+        exp = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)],
+                            'other': range(3)})[['geometry']]
+
         df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
         check_geodataframe(df)
+        assert_geodataframe_equal(df, exp)
 
         df = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)]})
         check_geodataframe(df)
+        assert_geodataframe_equal(df, exp)
 
         df = GeoDataFrame({'other_geom': [Point(x, x) for x in range(3)]},
                           geometry='other_geom')
         check_geodataframe(df, 'other_geom')
+        exp = (exp.rename(columns={'geometry': 'other_geom'})
+                  .set_geometry('other_geom'))
+        assert_geodataframe_equal(df, exp)
 
     def test_no_geometries(self):
         # keeps GeoDataFrame class (no DataFrame)
         data = {"A": range(3), "B": np.arange(3.0)}
         df = GeoDataFrame(data)
         assert type(df) == GeoDataFrame
+
+        gdf = GeoDataFrame({'x': [1]})
+        assert list(gdf.x) == [1]
 
     def test_empty(self):
         df = GeoDataFrame()
