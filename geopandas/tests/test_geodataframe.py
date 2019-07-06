@@ -171,8 +171,7 @@ class TestDataFrame:
             df.geometry = 'apple'
 
         # non-geometry error
-        # TODO(EA): decide on TypeError or ValueError
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(TypeError):
             df = self.df.copy()
             df.geometry = list(range(df.shape[0]))
 

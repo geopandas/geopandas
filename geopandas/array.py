@@ -70,10 +70,11 @@ def from_shapely(data):
         elif hasattr(geom, '__geo_interface__'):
             geom = shapely.geometry.asShape(geom)
             out.append(geom)
-        elif geom is None or (isinstance(geom, float) and np.isnan(geom)):
+        elif _isna(geom):
             out.append(None)
         else:
-            raise ValueError("Input is not a valid geometry: {0}".format(geom))
+            raise TypeError(
+                "Input must be valid geometry objects: {0}".format(geom))
 
     aout = np.empty(n, dtype=object)
     aout[:] = out

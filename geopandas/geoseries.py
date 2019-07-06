@@ -115,7 +115,7 @@ class GeoSeries(GeoPandasBase, Series):
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values)
-            except ValueError:
+            except TypeError:
                 return s
             index = s.index
             name = s.name

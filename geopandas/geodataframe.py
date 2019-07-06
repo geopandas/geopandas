@@ -81,7 +81,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # only if we have actual geometry values -> call set_geometry
             try:
                 self['geometry'] = _ensure_geometry(self['geometry'].values)
-            except ValueError:
+            except TypeError:
                 pass
             else:
                 geometry = 'geometry'
