@@ -17,9 +17,15 @@ First we'll load in the data using GeoPandas.
 import geopandas
 import geoplot
 
-world = geopandas.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-boroughs = geopandas.read_file(gplt.datasets.get_path('nyc_boroughs'))
-collisions = geopandas.read_file(gplt.datasets.get_path('nyc_injurious_collisions'))
+world = geopandas.read_file(
+    geopandas.datasets.get_path('naturalearth_lowres')
+)
+boroughs = geopandas.read_file(
+    geopandas.datasets.get_path('nyc_boroughs')
+)
+collisions = geopandas.read_file(
+    geopandas.datasets.get_path('nyc_injurious_collisions')
+)
 
 ###############################################################################
 # Plotting with Geoplot
@@ -33,9 +39,10 @@ geoplot.polyplot(world, figsize=(8, 4))
 # CartoPy (see the list
 # `here <http://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_).
 
-import geoplot.crs as gcrs
 # use the Orthographic map projection (e.g. a world globe)
-ax = geoplot.polyplot(world, projection=gcrs.Orthographic(), figsize=(8, 4))
+ax = geoplot.polyplot(
+    world, projection=geoplot.crs.Orthographic(), figsize=(8, 4)
+)
 ax.outline_patch.set_visible(True)
 
 ###############################################################################
@@ -66,7 +73,7 @@ geoplot.polyplot(africa, edgecolor='gray', ax=ax)
 ax = geoplot.kdeplot(
     collisions, clip=boroughs.geometry,
     shade=True, cmap='Reds',
-    projection=gcrs.AlbersEqualArea())
+    projection=geoplot.crs.AlbersEqualArea())
 geoplot.polyplot(boroughs, ax=ax, zorder=1)
 
 ###############################################################################
@@ -75,7 +82,7 @@ geoplot.polyplot(boroughs, ax=ax, zorder=1)
 # or not a certain data column is spatially correlated.
 
 ax = geoplot.voronoi(
-    collisions.head(1000), projection=gcrs.AlbersEqualArea(),
+    collisions.head(1000), projection=geoplot.crs.AlbersEqualArea(),
     clip=boroughs.simplify(0.001),
     hue='NUMBER OF PERSONS INJURED', cmap='Reds', k=None,
     legend=True,
