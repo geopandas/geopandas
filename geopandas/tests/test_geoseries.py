@@ -260,6 +260,10 @@ class TestConstructor:
         assert not isinstance(s, GeoSeries)
         assert type(s) == pd.Series
 
+        s = GeoSeries([[1, 2], [3, 4]])
+        assert not isinstance(s, GeoSeries)
+        assert type(s) == pd.Series
+
     def test_empty(self):
         s = GeoSeries([])
         check_geoseries(s)
