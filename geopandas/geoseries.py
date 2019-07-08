@@ -31,11 +31,6 @@ def _is_empty(x):
         return False
 
 
-def _validate_geometry_data(data):
-    if not all(isinstance(item, BaseGeometry) or pd.isna(item) for item in data):
-        raise TypeError("Input geometry column must contain valid geometry objects.")
-
-
 class GeoSeries(GeoPandasBase, Series):
     """
     A Series object designed to store shapely geometry objects.
