@@ -19,7 +19,7 @@ import pandas as pd
 import shapely.geometry
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import PANDAS_GE_024, extension_tests
+from geopandas._compat import PANDAS_GE_024
 
 import pytest
 
@@ -28,6 +28,23 @@ not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
 skip_pandas_below_024 = pytest.mark.skipif(
     not PANDAS_GE_024, reason="Sorting not supported")
+
+
+# -----------------------------------------------------------------------------
+# Compat with extension tests in older pandas versions
+# -----------------------------------------------------------------------------
+
+
+from pandas.tests.extension import base as extension_tests
+
+if not PANDAS_GE_024:
+    # pandas 0.23.4 doesn't have those tests yet, so adding dummy classes
+    # to derive from here
+    extension_tests.BaseNoReduceTests = object
+    extension_tests.BaseArithmeticOpsTests = object
+    extension_tests.BaseComparisonOpsTests = object
+    extension_tests.BasePrintingTests = object
+    extension_tests.BaseParsingTests = object
 
 
 # -----------------------------------------------------------------------------
