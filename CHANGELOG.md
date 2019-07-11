@@ -1,8 +1,13 @@
 Changes
 =======
 
+Version 0.5.1 (July 11, 2019)
+------------------------------
+
+- Compatibility with latest mapclassify version 2.1.0 (#1025).
+
 Version 0.5.0 (April 25, 2019)
----------------------------------
+------------------------------
 
 Improvements:
 
