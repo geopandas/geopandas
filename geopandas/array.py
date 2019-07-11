@@ -10,6 +10,7 @@ from shapely.geometry.base import BaseGeometry
 import shapely.geometry
 import shapely.ops
 import shapely.affinity
+import shapely.wkt
 
 from pandas.api.extensions import ExtensionArray, ExtensionDtype
 
@@ -850,6 +851,13 @@ class GeometryArray(ExtensionArray):
             when ``boxed=False`` and :func:`str` is used when
             ``boxed=True``.
         """
+        if boxed:
+            xmin, ymin, xmax, ymax = self.total_bounds
+            if (xmax - xmin <= 360) and (ymax - ymin <= 180):
+                precision = 5
+            else:
+                precision = 3
+            return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
         return str
 
     @classmethod
