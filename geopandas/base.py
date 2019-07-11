@@ -12,7 +12,7 @@ import shapely.affinity as affinity
 
 import geopandas as gpd
 
-from .array import GeometryArray
+from .array import GeometryArray, GeometryDtype
 
 
 try:
@@ -22,6 +22,19 @@ except ImportError:
     class RTreeError(Exception):
         pass
     HAS_SINDEX = False
+
+
+def is_geometry_type(data):
+    """
+    Check if the data is of geometry dtype.
+
+    Does not include object array of shapely scalars.
+    """
+    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+        # GeometryArray, GeoSeries and Series[GeometryArray]
+        return True
+    else:
+        return False
 
 
 def _delegate_binary_method(op, this, other, *args, **kwargs):
@@ -54,7 +67,7 @@ def _binary_geo(op, this, other):
 
 
 def _binary_op(op, this, other, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool]
+    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
     data, index = _delegate_binary_method(op, this, other, *args, **kwargs)
     return Series(data, index=index)
@@ -589,6 +602,21 @@ class GeoPandasBase(object):
             distance = np.asarray(distance)
         return _delegate_geo_method('interpolate', self, distance,
                                     normalized=normalized)
+
+    def affine_transform(self, matrix):
+        """Return a ``GeoSeries`` with translated geometries.
+
+        See http://shapely.readthedocs.io/en/stable/manual.html#shapely.affinity.affine_transform
+        for details.
+
+        Parameters
+        ----------
+        matrix: List or tuple
+            6 or 12 items for 2D or 3D transformations respectively.
+            For 2D affine transformations, the 6 parameter matrix is [a, b, d, e, xoff, yoff]
+            For 3D affine transformations, the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
+        """
+        return _delegate_geo_method('affine_transform', self, matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.

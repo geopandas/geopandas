@@ -50,6 +50,10 @@ Constructive Methods
 Affine transformations
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. method:: GeoSeries.affine_transform(self, matrix)
+
+  Transform the geometries of the GeoSeries using an affine transformation matrix
+
 .. method:: GeoSeries.rotate(self, angle, origin='center', use_radians=False)
 
   Rotate the coordinates of the GeoSeries.

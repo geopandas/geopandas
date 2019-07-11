@@ -3,7 +3,10 @@ from functools import partial
 import json
 
 import numpy as np
+import pandas as pd
 from pandas import Series
+from pandas.core.internals import SingleBlockManager
+
 import pyproj
 from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
@@ -12,6 +15,10 @@ from shapely.ops import transform
 from geopandas.plotting import plot_series
 from geopandas.base import (
     GeoPandasBase, _delegate_property, _CoordinateIndexer)
+
+from .array import GeometryArray, GeometryDtype, from_shapely
+from .base import is_geometry_type
+from ._compat import PANDAS_GE_024
 
 
 _PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
@@ -25,29 +32,99 @@ def _is_empty(x):
 
 
 class GeoSeries(GeoPandasBase, Series):
-    """A Series object designed to store shapely geometry objects."""
+    """
+    A Series object designed to store shapely geometry objects.
+
+    Parameters
+    ----------
+    data : array-like, dict, scalar value
+        The geometries to store in the GeoSeries.
+    index : array-like or Index
+        The index for the GeoSeries.
+    crs : str, dict (optional)
+        Coordinate Reference System of the geometry objects.
+    kwargs
+        Additional arguments passed to the Series constructor,
+         e.g. ``name``.
+
+    Examples
+    --------
+
+    >>> from shapely.geometry import Point
+    >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    >>> s
+    0    POINT (1 1)
+    1    POINT (2 2)
+    2    POINT (3 3)
+    dtype: object
+
+    See Also
+    --------
+    GeoDataFrame
+    pandas.Series
+
+    """
     _metadata = ['name', 'crs']
 
-    def __new__(cls, *args, **kwargs):
-        kwargs.pop('crs', None)
-        arr = Series.__new__(cls)
-        if type(arr) is GeoSeries:
-            return arr
-        else:
-            return arr.view(GeoSeries)
+    def __new__(cls, data=None, index=None, crs=None, **kwargs):
+        # we need to use __new__ because we want to return Series instance
+        # instead of GeoSeries instance in case of non-geometry data
+        if isinstance(data, SingleBlockManager):
+            if isinstance(data.blocks[0].dtype, GeometryDtype):
+                if not PANDAS_GE_024 and (data.blocks[0].ndim == 2):
+                    # bug in pandas 0.23 where in certain indexing operations
+                    # (such as .loc) a 2D ExtensionBlock (still with 1D values
+                    # is created) which results in other failures
+                    from pandas.core.internals import ExtensionBlock
+                    values = data.blocks[0].values
+                    block = ExtensionBlock(values, slice(0, len(values), 1))
+                    data = SingleBlockManager(
+                        [block], data.axes[0], fastpath=True)
+                self = super(GeoSeries, cls).__new__(cls)
+                super(GeoSeries, self).__init__(data, index=index, **kwargs)
+                self.crs = crs
+                return self
+            return Series(data, index=index, **kwargs)
 
-    def __init__(self, *args, **kwargs):
-        # fix problem for scalar geometries passed, ensure the list of
-        # scalars is of correct length if index is specified
-        if len(args) == 1 and isinstance(args[0], BaseGeometry):
-            n = len(kwargs.get('index', [1]))
-            args = ([args[0]] * n,)
+        if isinstance(data, BaseGeometry):
+            # fix problem for scalar geometries passed, ensure the list of
+            # scalars is of correct length if index is specified
+            n = len(index) if index is not None else 1
+            data = [data] * n
 
-        crs = kwargs.pop('crs', None)
+        name = kwargs.pop('name', None)
 
-        super(GeoSeries, self).__init__(*args, **kwargs)
+        if not is_geometry_type(data):
+            # if data is None and dtype is specified (eg from empty overlay
+            # test), specifying dtype raises an error:
+            # https://github.com/pandas-dev/pandas/issues/26469
+            kwargs.pop('dtype', None)
+            # Use Series constructor to handle input data
+            s = pd.Series(data, index=index, name=name, **kwargs)
+            # prevent trying to convert non-geometry objects
+            if s.dtype != object:
+                if s.empty:
+                    s = s.astype(object)
+                else:
+                    return s
+            # try to convert to GeometryArray, if fails return plain Series
+            try:
+                data = from_shapely(s.values)
+            except TypeError:
+                return s
+            index = s.index
+            name = s.name
+
+        self = super(GeoSeries, cls).__new__(cls)
+        super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
         self.crs = crs
         self._invalidate_sindex()
+        return self
+
+    def __init__(self, *args, **kwargs):
+        # need to overwrite Series init to prevent calling it for GeoSeries
+        # (doesn't know crs, all work is already done above)
+        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method('append', *args, **kwargs)

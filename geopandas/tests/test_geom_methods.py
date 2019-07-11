@@ -470,6 +470,14 @@ class TestGeomMethods:
         self._test_binary_real('project', expected, self.g5, p,
                                normalized=True)
 
+    def test_affine_transform(self):
+        #45 degree reflection matrix
+        matrix = [0, 1, 1, 0, 0, 0]
+        expected = self.g4
+
+        res = self.g3.affine_transform(matrix)
+        assert_geoseries_equal(expected, res)
+
     def test_translate_tuple(self):
         trans = self.sol.x - self.esb.x, self.sol.y - self.esb.y
         assert self.landmarks.translate(*trans)[0].equals(self.sol)

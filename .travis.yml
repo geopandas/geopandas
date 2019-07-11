@@ -28,6 +28,10 @@ install:
   - conda update conda
   - conda info
 
+  # free channel needed for older envs (< py37), see
+  # https://github.com/conda/conda/issues/8849
+  - conda config --set restore_free_channel true
+
   # Install dependencies
   - conda env create --file="${ENV_FILE}"
   - source activate test
