@@ -1,11 +1,57 @@
+import numbers
+import operator
 import warnings
 
 import numpy as np
+import pandas as pd
 
+import shapely
 from shapely.geometry.base import BaseGeometry
 import shapely.geometry
 import shapely.ops
 import shapely.affinity
+
+from pandas.api.extensions import ExtensionArray, ExtensionDtype
+
+from ._compat import PANDAS_GE_024, Iterable
+
+
+class GeometryDtype(ExtensionDtype):
+    type = BaseGeometry
+    name = 'geometry'
+    na_value = np.nan
+
+    @classmethod
+    def construct_from_string(cls, string):
+        if string == cls.name:
+            return cls()
+        else:
+            raise TypeError("Cannot construct a '{}' from "
+                            "'{}'".format(cls, string))
+
+    @classmethod
+    def construct_array_type(cls):
+        return GeometryArray
+
+
+if PANDAS_GE_024:
+    from pandas.api.extensions import register_extension_dtype
+    register_extension_dtype(GeometryDtype)
+
+
+def _isna(value):
+    """
+    Check if scalar value is NA-like (None or np.nan).
+
+    Custom version that only works for scalars (returning True or False),
+    as `pd.isna` also works for array-like input returning a boolean array.
+    """
+    if value is None:
+        return True
+    elif isinstance(value, float) and np.isnan(value):
+        return True
+    else:
+        return False
 
 
 # -----------------------------------------------------------------------------
@@ -30,11 +76,15 @@ def from_shapely(data):
         elif hasattr(geom, '__geo_interface__'):
             geom = shapely.geometry.asShape(geom)
             out.append(geom)
-        elif geom is None or (isinstance(geom, float) and np.isnan(geom)):
+        elif _isna(geom):
             out.append(None)
+        else:
+            raise TypeError(
+                "Input must be valid geometry objects: {0}".format(geom))
 
-    out = np.array(out, dtype=object)
-    return GeometryArray(out)
+    aout = np.empty(n, dtype=object)
+    aout[:] = out
+    return GeometryArray(aout)
 
 
 def to_shapely(geoms):
@@ -256,30 +306,63 @@ def _affinity_method(op, left, *args, **kwargs):
     return GeometryArray(np.array(data, dtype=object))
 
 
-class GeometryArray:
+class GeometryArray(ExtensionArray):
     """
     Class wrapping a numpy array of Shapely objects and
     holding the array-based implementations.
     """
+    _dtype = GeometryDtype()
 
     def __init__(self, data):
         if isinstance(data, self.__class__):
             data = data.data
         elif not isinstance(data, np.ndarray):
-            raise ValueError(
-                "'data' should be array of geometry objects. Use from_shapely,"
-                " from_wkb, from_wkt functions to construct a GeometryArray.")
+            raise TypeError(
+                "'data' should be array of geometry objects. Use from_shapely, "
+                "from_wkb, from_wkt functions to construct a GeometryArray.")
         elif not data.ndim == 1:
             raise ValueError(
                 "'data' should be a 1-dimensional array of geometry objects.")
         self.data = data
 
+    @property
+    def dtype(self):
+        return self._dtype
+
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, i):
-        assert isinstance(i, int)
-        return self.data[i]
+    def __getitem__(self, idx):
+        if isinstance(idx, numbers.Integral):
+            return self.data[idx]
+        elif isinstance(idx, (Iterable, slice)):
+            return GeometryArray(self.data[idx])
+        else:
+            raise TypeError("Index type not supported", idx)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, pd.Series):
+            value = value.values
+        if isinstance(value, (list, np.ndarray)):
+            value = from_shapely(value)
+        if isinstance(value, GeometryArray):
+            if isinstance(key, numbers.Integral):
+                raise ValueError("cannot set a single element with an array")
+            self.data[key] = value.data
+        elif isinstance(value, BaseGeometry) or _isna(value):
+            if _isna(value):
+                # internally only use None as missing value indicator
+                # but accept others
+                value = None
+            if isinstance(key, (list, np.ndarray)):
+                value_array = np.empty(1, dtype=object)
+                value_array[:] = [value]
+                self.data[key] = value_array
+            else:
+                self.data[key] = value
+        else:
+            raise TypeError("Value should be either a BaseGeometry or None, "
+                            "got %s" % str(value))
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -484,6 +567,9 @@ class GeometryArray:
     # Affinity operations
     #
 
+    def affine_transform(self, matrix):
+        return _affinity_method('affine_transform', self, matrix)
+
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         return _affinity_method('translate', self, xoff, yoff, zoff)
 
@@ -534,3 +620,292 @@ class GeometryArray:
                          b[:, 1].min(),  # miny
                          b[:, 2].max(),  # maxx
                          b[:, 3].max()))  # maxy
+
+    # -------------------------------------------------------------------------
+    # general array like compat
+    # -------------------------------------------------------------------------
+
+    @property
+    def size(self):
+        return len(self.data)
+
+    def copy(self, *args, **kwargs):
+        # still taking args/kwargs for compat with pandas 0.24
+        return GeometryArray(self.data.copy())
+
+    def take(self, indices, allow_fill=False, fill_value=None):
+        from pandas.api.extensions import take
+
+        if allow_fill:
+            if fill_value is None or pd.isna(fill_value):
+                fill_value = 0
+
+        result = take(self.data, indices, allow_fill=allow_fill,
+                      fill_value=fill_value)
+        if fill_value == 0:
+            result[result == 0] = None
+        return GeometryArray(result)
+
+    def _fill(self, idx, value):
+        """ Fill index locations with value
+
+        Value should be a BaseGeometry
+        """
+        if not (isinstance(value, BaseGeometry) or value is None):
+            raise TypeError("Value should be either a BaseGeometry or None, "
+                            "got %s" % str(value))
+        # self.data[idx] = value
+        self.data[idx] = np.array([value], dtype=object)
+        return self
+
+    def fillna(self, value=None, method=None, limit=None):
+        """ Fill NA/NaN values using the specified method.
+
+        Parameters
+        ----------
+        value : scalar, array-like
+            If a scalar value is passed it is used to fill all missing values.
+            Alternatively, an array-like 'value' can be given. It's expected
+            that the array-like have the same length as 'self'.
+        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
+            Method to use for filling holes in reindexed Series
+            pad / ffill: propagate last valid observation forward to next valid
+            backfill / bfill: use NEXT valid observation to fill gap
+        limit : int, default None
+            If method is specified, this is the maximum number of consecutive
+            NaN values to forward/backward fill. In other words, if there is
+            a gap with more than this number of consecutive NaNs, it will only
+            be partially filled. If method is not specified, this is the
+            maximum number of entries along the entire axis where NaNs will be
+            filled.
+
+        Returns
+        -------
+        filled : ExtensionArray with NA/NaN filled
+        """
+        if method is not None:
+            raise NotImplementedError(
+                "fillna with a method is not yet supported")
+        elif not isinstance(value, BaseGeometry):
+            raise NotImplementedError(
+                "fillna currently only supports filling with a scalar "
+                "geometry")
+
+        mask = self.isna()
+        new_values = self.copy()
+
+        if mask.any():
+            # fill with value
+            new_values = new_values._fill(mask, value)
+
+        return new_values
+
+    def astype(self, dtype, copy=True):
+        """
+        Cast to a NumPy array with 'dtype'.
+
+        Parameters
+        ----------
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast.
+        copy : bool, default True
+            Whether to copy the data, even if not necessary. If False,
+            a copy is made only if the old dtype does not match the
+            new dtype.
+
+        Returns
+        -------
+        array : ndarray
+            NumPy ndarray with 'dtype' for its dtype.
+        """
+        if isinstance(dtype, GeometryDtype):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        return np.array(self, dtype=dtype, copy=copy)
+
+    def isna(self):
+        """
+        Boolean NumPy array indicating if each value is missing
+        """
+        return np.array([g is None for g in self.data], dtype='bool')
+
+    def unique(self):
+        """Compute the ExtensionArray of unique values.
+
+        Returns
+        -------
+        uniques : ExtensionArray
+        """
+        from pandas import factorize
+        _, uniques = factorize(self)
+        return uniques
+
+    @property
+    def nbytes(self):
+        return self.data.nbytes
+
+    # -------------------------------------------------------------------------
+    # ExtensionArray specific
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def _from_sequence(cls, scalars, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of scalars.
+
+        Parameters
+        ----------
+        scalars : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : boolean, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        return from_shapely(scalars)
+
+    def _values_for_factorize(self):
+        # type: () -> Tuple[np.ndarray, Any]
+        """Return an array and missing value suitable for factorization.
+
+        Returns
+        -------
+        values : ndarray
+            An array suitable for factoraization. This should maintain order
+            and be a supported dtype (Float64, Int64, UInt64, String, Object).
+            By default, the extension array is cast to object dtype.
+        na_value : object
+            The value in `values` to consider missing. This will be treated
+            as NA in the factorization routines, so it will be coded as
+            `na_sentinal` and not included in `uniques`. By default,
+            ``np.nan`` is used.
+        """
+        vals = to_wkb(self)
+        return vals, None
+
+    @classmethod
+    def _from_factorized(cls, values, original):
+        """
+        Reconstruct an ExtensionArray after factorization.
+
+        Parameters
+        ----------
+        values : ndarray
+            An integer ndarray with the factorized values.
+        original : ExtensionArray
+            The original ExtensionArray that factorize was called on.
+
+        See Also
+        --------
+        pandas.factorize
+        ExtensionArray.factorize
+        """
+        return from_wkb(values)
+
+    def _values_for_argsort(self):
+        # type: () -> np.ndarray
+        """Return values for sorting.
+
+        Returns
+        -------
+        ndarray
+            The transformed values should maintain the ordering between values
+            within the array.
+
+        See Also
+        --------
+        ExtensionArray.argsort
+        """
+        # Note: this is used in `ExtensionArray.argsort`.
+        raise TypeError("geometries are not orderable")
+
+    def _formatter(self, boxed=False):
+        """Formatting function for scalar values.
+
+        This is used in the default '__repr__'. The returned formatting
+        function receives instances of your scalar type.
+
+        Parameters
+        ----------
+        boxed: bool, default False
+            An indicated for whether or not your array is being printed
+            within a Series, DataFrame, or Index (True), or just by
+            itself (False). This may be useful if you want scalar values
+            to appear differently within a Series versus on its own (e.g.
+            quoted or not).
+
+        Returns
+        -------
+        Callable[[Any], str]
+            A callable that gets instances of the scalar type and
+            returns a string. By default, :func:`repr` is used
+            when ``boxed=False`` and :func:`str` is used when
+            ``boxed=True``.
+        """
+        return str
+
+    @classmethod
+    def _concat_same_type(cls, to_concat):
+        """
+        Concatenate multiple array
+
+        Parameters
+        ----------
+        to_concat : sequence of this type
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        data = np.concatenate([ga.data for ga in to_concat])
+        return GeometryArray(data)
+
+    def _reduce(self, name, skipna=True, **kwargs):
+        # including the base class version here (that raises by default)
+        # because this was not yet defined in pandas 0.23
+        raise TypeError("cannot perform {name} with type {dtype}".format(
+            name=name, dtype=self.dtype))
+
+    def __array__(self, dtype=None):
+        """
+        The numpy array interface.
+
+        Returns
+        -------
+        values : numpy array
+        """
+        return self.data
+
+    def _binop(self, other, op):
+        def convert_values(param):
+            if (isinstance(param, ExtensionArray)
+                    or pd.api.types.is_list_like(param)):
+                ovalues = param
+            else:  # Assume its an object
+                ovalues = [param] * len(self)
+            return ovalues
+
+        if isinstance(other, (pd.Series, pd.Index)):
+            # rely on pandas to unbox and dispatch to us
+            return NotImplemented
+
+        lvalues = self
+        rvalues = convert_values(other)
+
+        # If the operator is not defined for the underlying objects,
+        # a TypeError should be raised
+        res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
+
+        res = np.asarray(res)
+        return res
+
+    def __eq__(self, other):
+        return self._binop(other, operator.eq)
