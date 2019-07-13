@@ -185,6 +185,14 @@ class TestDataFrame:
             df = self.df.copy()
             df.geometry = df
 
+    def test_rename_geometry(self):
+        #df..rename(columns={'my_geom': 'geometry'}).set_geometry('geometry')
+        #df.rename('geometry')
+        column_name = self.df.geometry.name
+        assert self.df.geometry.name == 'geometry'
+        df2 = self.df.rename_geometry('new_name')
+        assert df2.geometry.name == 'new_name'
+
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry

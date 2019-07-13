@@ -193,6 +193,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
+    def rename_geometry(self, col):
+        """
+        Renames the GeoDataFrame geometry column to
+        the specified name. By default yields a new object.
+
+        The original geometry column is replaced with the input.
+
+        Parameters
+        ----------
+        col : new geometry column label
+
+        Examples
+        --------
+        >>> df1 = df.rename_geometry('geom1')
+
+        Returns
+        -------
+        geodataframe : GeoDataFrame
+        """
+        geometry_col = self.geometry.name
+        return self.rename(columns={geometry_col: col}).set_geometry(col)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
