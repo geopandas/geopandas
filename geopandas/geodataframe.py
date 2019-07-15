@@ -674,8 +674,21 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     #overrides the pandas.core.generic.NDFrame method
     def astype(self, dtype, copy=True, errors='raise', **kwargs):
+        """
+        Temporary overwrite of pandas native astype method. Returns a
+        GeoDataFrame when geometries are valid and a pandas DataFrame when
+        the geometries are invalid.
+
+        Returns
+        -------
+        GeoDataFrame or DataFrame
+        """
         df = super(DataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
-        df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
+
+        try:
+            df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
+        except:
+            df = super(DataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
 
         return df
 
