@@ -261,15 +261,26 @@ install *geopandas*) by typing::
 -----------------------------
 
 *geopandas* documentation resides in the `doc` folder. Changes to the docs are
-make by modifying the appropriate file in the `source` folder within `doc`.
-*geopandas* docs us reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_
+make by modifying the appropriate file in the `source` folder within `doc`. 
+*geopandas* docs use reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_
 and the docstrings follow the `Numpy Docstring standard <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_.
 
-Once you have made your changes, you can build the docs by navigating to the `doc` folder and typing::
+Once you have made your changes, you may try if they render correctly by
+building the docs using sphinx. To do so, you can navigate to the `doc` folder
+and type::
 
     make html
 
-The resulting html pages will be located in `doc/build/html`.
+The resulting html pages will be located in `doc/build/html`. In case of any
+errors, you can try to use `make html` within a new environment based on
+environment.yml specification in the `doc` folder. Using conda::
+
+    conda env create -f environment.yml
+    conda activate geopandas_docs
+    make html
+
+For minor updates, you can skip whole `make html` part as reStructuredText syntax
+is usually quite straightforward.
 
 
 7) Submitting a Pull Request
