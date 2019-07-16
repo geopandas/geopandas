@@ -228,7 +228,7 @@ def _binary_geo(op, left, right):
         # intersection can return empty GeometryCollections, and if the
         # result are only those, numpy will coerce it to empty 2D array
         data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(s, op)(right) for s in left.data]
+        data[:] = [getattr(s, op)(right) if s and right else None for s in left.data]
         return GeometryArray(data)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
@@ -237,7 +237,7 @@ def _binary_geo(op, left, right):
                 "Left: {0}, Right: {1}".format(len(left), len(right)))
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(this_elem, op)(other_elem)
+        data[:] = [getattr(this_elem, op)(other_elem) if this_elem and other_elem else None
                    for this_elem, other_elem in zip(left.data, right.data)]
         return GeometryArray(data)
     else:
@@ -275,7 +275,8 @@ def _binary_op(op, left, right, *args, **kwargs):
             raise ValueError(msg)
         data = [
             getattr(this_elem, op)(other_elem, *args, **kwargs)
-            if not this_elem.is_empty | other_elem.is_empty else null_value
+            if not (this_elem is None or this_elem.is_empty)
+            | (other_elem is None or other_elem.is_empty) else null_value
             for this_elem, other_elem in zip(left.data, right.data)]
         return np.array(data, dtype=dtype)
     else:
@@ -288,7 +289,7 @@ def _unary_geo(op, left, *args, **kwargs):
     """Unary operation that returns new geometries"""
     # ensure 1D output, see note above
     data = np.empty(len(left), dtype=object)
-    data[:] = [getattr(geom, op) for geom in left.data]
+    data[:] = [getattr(geom, op, None) for geom in left.data]
     return GeometryArray(data)
 
 
@@ -302,7 +303,7 @@ def _unary_op(op, left, null_value=False):
 def _affinity_method(op, left, *args, **kwargs):
     # type: (str, GeometryArray, ...) -> GeometryArray
     data = [getattr(shapely.affinity, op)(s, *args, **kwargs)
-            for s in left.data]
+            if s else None for s in left.data]
     return GeometryArray(np.array(data, dtype=object))
 
 
@@ -522,11 +523,11 @@ class GeometryArray(ExtensionArray):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
             data = [
-                geom.buffer(dist, resolution, **kwargs)
+                geom.buffer(dist, resolution, **kwargs) if geom else None
                 for geom, dist in zip(self.data, distance)]
             return GeometryArray(np.array(data, dtype=object))
 
-        data = [geom.buffer(distance, resolution, **kwargs)
+        data = [geom.buffer(distance, resolution, **kwargs) if geom else None
                 for geom in self.data]
         return GeometryArray(np.array(data, dtype=object))
 

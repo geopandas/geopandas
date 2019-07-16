@@ -41,7 +41,7 @@ class TestGeomMethods:
         self.p0 = Point(5, 5)
         self.p3d = Point(5, 5, 5)
         self.g0 = GeoSeries([self.t1, self.t2, self.sq, self.inner_sq,
-                             self.nested_squares, self.p0])
+                             self.nested_squares, self.p0, None])
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
@@ -64,6 +64,7 @@ class TestGeomMethods:
         self.g5 = GeoSeries([self.l1, self.l2])
         self.g6 = GeoSeries([self.p0, self.t3])
         self.empty = GeoSeries([])
+        self.all_none = GeoSeries([None, None])
         self.empty_poly = Polygon()
 
         # Crossed lines
@@ -210,7 +211,7 @@ class TestGeomMethods:
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1,
                                       self.g1, self.g2)
-        self._test_binary_topological('intersection', self.empty_poly,
+        self._test_binary_topological('intersection', self.all_none,
                                       self.g1, self.empty)
 
     def test_union_series(self):
@@ -289,7 +290,7 @@ class TestGeomMethods:
         self._test_unary_topological('unary_union', expected, g)
 
     def test_contains(self):
-        expected = [True, False, True, False, False, False]
+        expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
     def test_length(self):
@@ -302,14 +303,14 @@ class TestGeomMethods:
         self._test_unary_real('length', expected, self.na_none)
 
     def test_crosses(self):
-        expected = [False, False, False, False, False, False]
+        expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))
 
         expected = [False, True]
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
     def test_disjoint(self):
-        expected = [False, False, False, False, False, True]
+        expected = [False, False, False, False, False, True, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
     def test_relate(self):
@@ -318,7 +319,8 @@ class TestGeomMethods:
                            '212FF1FF2',
                            '2FFF1FFF2',
                            'FF2F112F2',
-                           'FF0FFF212'],
+                           'FF0FFF212',
+                           None],
                           index=self.g0.index)
         assert_array_dtype_equal(expected, self.g0.relate(self.inner_sq))
 
@@ -337,7 +339,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
     def test_intersects(self):
-        expected = [True, True, True, True, True, False]
+        expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
 
         expected = [True, False]
@@ -350,25 +352,25 @@ class TestGeomMethods:
         assert_array_dtype_equal(
                 expected, self.empty.intersects(self.empty_poly))
 
-        expected = [False] * 6
+        expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
     def test_overlaps(self):
-        expected = [True, True, False, False, False, False]
+        expected = [True, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.overlaps(self.inner_sq))
 
         expected = [False, False]
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
     def test_touches(self):
-        expected = [False, True, False, False, False, False]
+        expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
 
     def test_within(self):
-        expected = [True, False, False, False, False, False]
+        expected = [True, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.t1))
 
-        expected = [True, True, True, True, True, False]
+        expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
 
     def test_is_valid(self):
@@ -543,8 +545,11 @@ class TestGeomMethods:
         args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
         calculated_series = self.g0.buffer(10, **args)
         for original, calculated in zip(self.g0, calculated_series):
-            expected = original.buffer(10, **args)
-            assert calculated.equals(expected)
+            if original is None:
+                assert calculated is None
+            else:
+                expected = original.buffer(10, **args)
+                assert calculated.equals(expected)
 
     def test_buffer_distance_array(self):
         original = GeoSeries([self.p0, self.p0])

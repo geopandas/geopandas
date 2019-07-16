@@ -77,9 +77,9 @@ class TestSeries:
         a1, a2 = self.a1.align(self.a2)
         assert isinstance(a1, GeoSeries)
         assert isinstance(a2, GeoSeries)
-        assert a2['A'].is_empty
+        assert a2['A'] is None
         assert a1['B'].equals(a2['B'])
-        assert a1['C'].is_empty
+        assert a1['C'] is None
 
     def test_align_crs(self):
         a1 = self.a1
@@ -101,7 +101,7 @@ class TestSeries:
         s2 = pd.Series([1, 2], index=['B', 'C'])
         res1, res2 = a1.align(s2)
 
-        exp2 = pd.Series([BaseGeometry(), 1, 2], dtype=object, index=['A', 'B', 'C'])
+        exp2 = pd.Series([np.nan, 1, 2], index=['A', 'B', 'C'])
         assert_series_equal(res2, exp2)
 
     def test_geom_almost_equals(self):
@@ -206,6 +206,27 @@ class TestSeries:
         reprojected_string = self.g3.to_crs('+proj=utm +zone=30N')
         reprojected_dict = self.g3.to_crs({'proj': 'utm', 'zone': '30N'})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+
+
+def test_missing_values():
+    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+
+    # construction -> missing values get normalized to None
+    assert s[1] is None
+    assert s[2] is None
+    assert s[3].is_empty
+    assert s[4].is_empty
+
+    # isna / is_empty
+    assert s.isna().tolist() == [False, True, True, False, False]
+    assert s.is_empty.tolist() == [False, False, False, True, True]
+
+    # fillna defaults to fill with empty geometry -> no missing values anymore
+    assert not s.fillna().isna().any()
+
+    # dropna drops the missing values
+    assert not s.dropna().isna().any()
+    assert len(s.dropna()) == 3
 
 
 # -----------------------------------------------------------------------------

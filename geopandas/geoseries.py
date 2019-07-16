@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 from functools import partial
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -216,10 +217,6 @@ class GeoSeries(GeoPandasBase, Series):
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method('select', *args, **kwargs)
 
-    @property
-    def _can_hold_na(self):
-        return False
-
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
@@ -259,9 +256,10 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSereies.notna : inverse of isna
         """
-        non_geo_null = super(GeoSeries, self).isnull()
-        val = self.apply(_is_empty)
-        return Series(np.logical_or(non_geo_null, val))
+        if self.is_empty.any():
+            # we could warn here?
+            pass
+        return super(GeoSeries, self).isna()
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -298,16 +296,6 @@ class GeoSeries(GeoPandasBase, Series):
             value = BaseGeometry()
         return super(GeoSeries, self).fillna(value=value, method=method,
                                              inplace=inplace, **kwargs)
-
-    def align(self, other, join='outer', level=None, copy=True,
-              fill_value=None, **kwargs):
-        if fill_value is None:
-            fill_value = BaseGeometry()
-        left, right = super(GeoSeries, self).align(other, join=join,
-                                                   level=level, copy=copy,
-                                                   fill_value=fill_value,
-                                                   **kwargs)
-        return left, right
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
