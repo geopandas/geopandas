@@ -192,6 +192,9 @@ class TestDataFrame:
         assert self.df.geometry.name == 'geometry'
         df2 = self.df.rename_geometry('new_name')
         assert df2.geometry.name == 'new_name'
+        df2 = self.df.rename_geometry('new_name',True)
+        assert df2.geometry.name == 'new_name'
+        assert self.df.geometry.name == 'new_name'
 
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
