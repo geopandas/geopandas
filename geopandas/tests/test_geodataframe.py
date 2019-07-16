@@ -186,14 +186,12 @@ class TestDataFrame:
             df.geometry = df
 
     def test_rename_geometry(self):
-        #df..rename(columns={'my_geom': 'geometry'}).set_geometry('geometry')
-        #df.rename('geometry')
         column_name = self.df.geometry.name
         assert self.df.geometry.name == 'geometry'
         df2 = self.df.rename_geometry('new_name')
         assert df2.geometry.name == 'new_name'
-        df2 = self.df.rename_geometry('new_name',True)
-        assert df2.geometry.name == 'new_name'
+        df2 = self.df.rename_geometry('new_name',inplace =True)
+        assert df2 is None
         assert self.df.geometry.name == 'new_name'
 
     def test_set_geometry(self):

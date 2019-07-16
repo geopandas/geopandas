@@ -211,7 +211,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df1 = df.rename_geometry('geom1')
         >>> df1.geometry.name
         >>> geom1
-        >>> df1 = df.rename_geometry('geom1',True)
+        >>> df.rename_geometry('geom1',True)
         >>> df.geometry.name
         >>> geom1
 
@@ -220,7 +220,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geodataframe : GeoDataFrame
         """
         geometry_col = self.geometry.name
-        return self.rename(columns={geometry_col: col}).set_geometry(col,inplace)
+        if not inplace:
+            return self.rename(columns={geometry_col: col}).set_geometry(col,inplace)
+        self.rename(columns={geometry_col: col}, inplace=inplace)
+        self.set_geometry(col,inplace=inplace)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
