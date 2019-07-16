@@ -212,7 +212,7 @@ of each with GeoPandas and plot it on top.
 
 
 
-**Total running time of the script:** ( 0 minutes  3.982 seconds)
+**Total running time of the script:** ( 0 minutes  2.702 seconds)
 
 
 .. _sphx_glr_download_gallery_cartopy_convert.py:
