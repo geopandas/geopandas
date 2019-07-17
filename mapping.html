@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mapping Tools &mdash; GeoPandas 0.5.0 documentation</title>
+  <title>Mapping Tools &mdash; GeoPandas 0.5.1 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.0
+                0.5.1
               </div>
             
           
@@ -197,12 +197,14 @@
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Examine country GeoDataFrame</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[3]: </span><span class="go"></span>
-<span class="go">     pop_est      continent                      name iso_a3  gdp_md_est                                           geometry</span>
-<span class="go">0     920938        Oceania                      Fiji    FJI      8374.0  (POLYGON ((180 -16.06713266364245, 180 -16.555...</span>
-<span class="go">1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON ((33.90371119710453 -0.950000000000000...</span>
-<span class="go">2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON ((-8.665589565454809 27.65642588959236...</span>
-<span class="go">3   35623680  North America                    Canada    CAN   1674000.0  (POLYGON ((-122.84 49.00000000000011, -122.974...</span>
-<span class="go">4  326625791  North America  United States of America    USA  18560000.0  (POLYGON ((-122.84 49.00000000000011, -120 49....</span>
+<span class="go">     pop_est      continent  ...  gdp_md_est                                           geometry</span>
+<span class="go">0     920938        Oceania  ...      8374.0  (POLYGON ((180 -16.06713266364245, 180 -16.555...</span>
+<span class="go">1   53950935         Africa  ...    150600.0  POLYGON ((33.90371119710453 -0.950000000000000...</span>
+<span class="go">2     603253         Africa  ...       906.5  POLYGON ((-8.665589565454809 27.65642588959236...</span>
+<span class="go">3   35623680  North America  ...   1674000.0  (POLYGON ((-122.84 49.00000000000011, -122.974...</span>
+<span class="go">4  326625791  North America  ...  18560000.0  (POLYGON ((-122.84 49.00000000000011, -120 49....</span>
+
+<span class="go">[5 rows x 6 columns]</span>
 
 <span class="go"># Basic plot, random colors</span>
 <span class="gp">In [4]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
@@ -231,7 +233,7 @@
 <span class="gp">In [9]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
 <span class="gp">In [10]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;pop_est&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gh">Out[10]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x11cdbf2b0&gt;</span>
+<span class="gh">Out[10]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x1244b0390&gt;</span>
 </pre></div>
 </div>
 <img alt="_images/world_pop_est.png" src="_images/world_pop_est.png" />
@@ -246,7 +248,7 @@
 <span class="gp">In [14]: </span><span class="n">cax</span> <span class="o">=</span> <span class="n">divider</span><span class="o">.</span><span class="n">append_axes</span><span class="p">(</span><span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;5%&quot;</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 
 <span class="gp">In [15]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;pop_est&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax</span><span class="p">)</span>
-<span class="gh">Out[15]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x120da7d30&gt;</span>
+<span class="gh">Out[15]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x12455deb8&gt;</span>
 </pre></div>
 </div>
 <img alt="_images/world_pop_est_fixed_legend_height.png" src="_images/world_pop_est_fixed_legend_height.png" />
@@ -301,10 +303,10 @@
 <span class="gp">In [24]: </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
 
 <span class="gp">In [25]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
-<span class="gh">Out[25]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x121a44080&gt;</span>
+<span class="gh">Out[25]: </span><span class="go">&lt;matplotlib.axes._subplots.AxesSubplot at 0x1242aeda0&gt;</span>
 
 <span class="gp">In [26]: </span><span class="n">cities</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">                                                                Out[26]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x121a44080&gt;</span>
+<span class="go">                                                                Out[26]: &lt;matplotlib.axes._subplots.AxesSubplot at 0x1242aeda0&gt;</span>
 
 <span class="gp">In [27]: </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">();</span>
 </pre></div>

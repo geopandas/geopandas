@@ -143,7 +143,7 @@ different style using ``ctx.sources``:
 
 
 
-**Total running time of the script:** ( 0 minutes  3.036 seconds)
+**Total running time of the script:** ( 0 minutes  3.182 seconds)
 
 
 .. _sphx_glr_download_gallery_plotting_basemap_background.py:
