@@ -211,7 +211,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df1 = df.rename_geometry('geom1')
         >>> df1.geometry.name
         >>> geom1
-        >>> df.rename_geometry('geom1',True)
+        >>> df.rename_geometry('geom1', inplace=True)
         >>> df.geometry.name
         'geom1'
 
