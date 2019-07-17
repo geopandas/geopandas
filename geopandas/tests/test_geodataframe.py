@@ -190,7 +190,7 @@ class TestDataFrame:
         assert self.df.geometry.name == 'geometry'
         df2 = self.df.rename_geometry('new_name')
         assert df2.geometry.name == 'new_name'
-        df2 = self.df.rename_geometry('new_name',inplace =True)
+        df2 = self.df.rename_geometry('new_name', inplace=True)
         assert df2 is None
         assert self.df.geometry.name == 'new_name'
 

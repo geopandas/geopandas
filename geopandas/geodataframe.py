@@ -193,7 +193,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
-    def rename_geometry(self, col,inplace=False):
+    def rename_geometry(self, col, inplace=False):
         """
         Renames the GeoDataFrame geometry column to
         the specified name. By default yields a new object.
@@ -210,10 +210,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df1 = df.rename_geometry('geom1')
         >>> df1.geometry.name
-        >>> geom1
-        >>> df.rename_geometry('geom1',True)
+        'geom1'
+        >>> df.rename_geometry('geom1', inplace=True)
         >>> df.geometry.name
-        >>> geom1
+        'geom1'
 
         Returns
         -------
@@ -221,7 +221,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         geometry_col = self.geometry.name
         if not inplace:
-            return self.rename(columns={geometry_col: col}).set_geometry(col,inplace)
+            return self.rename(columns={geometry_col: col}).set_geometry(col, inplace)
         self.rename(columns={geometry_col: col}, inplace=inplace)
         self.set_geometry(col,inplace=inplace)
 
