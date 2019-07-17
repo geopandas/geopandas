@@ -223,7 +223,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return self.rename(columns={geometry_col: col}).set_geometry(col, inplace)
         self.rename(columns={geometry_col: col}, inplace=inplace)
-        self.set_geometry(col,inplace=inplace)
+        self.set_geometry(col, inplace=inplace)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
