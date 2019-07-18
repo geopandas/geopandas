@@ -77,15 +77,18 @@ Examples of Geometric Manipulations
 
 .. sourcecode:: python
 
+    >>> import geopandas
+    >>> from geopandas import GeoSeries
+    >>> from shapely.geometry import Polygon
     >>> p1 = Polygon([(0, 0), (1, 0), (1, 1)])
     >>> p2 = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     >>> p3 = Polygon([(2, 0), (3, 0), (3, 1), (2, 1)])
     >>> g = GeoSeries([p1, p2, p3])
     >>> g
-    0    POLYGON ((0.0000000000000000 0.000000000000000...
-    1    POLYGON ((0.0000000000000000 0.000000000000000...
-    2    POLYGON ((2.0000000000000000 0.000000000000000...
-    dtype: object
+    0         POLYGON ((0 0, 1 0, 1 1, 0 0))
+    1    POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))
+    2    POLYGON ((2 0, 3 0, 3 1, 2 1, 2 0))
+    dtype: geometry
 
 .. image:: _static/test.png
 
@@ -93,7 +96,7 @@ Some geographic operations return normal pandas object.  The ``area`` property o
 
 .. sourcecode:: python
 
-    >>> print g.area
+    >>> print(g.area)
     0    0.5
     1    1.0
     2    1.0
@@ -104,11 +107,10 @@ Other operations return GeoPandas objects:
 .. sourcecode:: python
 
     >>> g.buffer(0.5)
-    Out[15]:
     0    POLYGON ((-0.3535533905932737 0.35355339059327...
-    1    POLYGON ((-0.5000000000000000 0.00000000000000...
-    2    POLYGON ((1.5000000000000000 0.000000000000000...
-    dtype: object
+    1    POLYGON ((-0.5 0, -0.5 1, -0.4975923633360985 ...
+    2    POLYGON ((1.5 0, 1.5 1, 1.502407636663901 1.04...
+    dtype: geometry
 
 .. image:: _static/test_buffer.png
 
@@ -123,37 +125,38 @@ GeoPandas also implements alternate constructors that can read any data format r
 .. sourcecode:: python
 
     >>> nybb_path = geopandas.datasets.get_path('nybb')
-    >>> boros = GeoDataFrame.from_file(nybb_path)
-    >>> boros = boros.set_index('BoroCode')
-    >>> boros = boros.sort_index()
+    >>> boros = geopandas.read_file(nybb_path)
+    >>> boros.set_index('BoroCode', inplace=True)
+    >>> boros.sort_index(inplace=True)
     >>> boros
-                   BoroName    Shape_Area     Shape_Leng  \
-    BoroCode
-    1             Manhattan  6.364422e+08  358532.956418
-    2                 Bronx  1.186804e+09  464517.890553
-    3              Brooklyn  1.959432e+09  726568.946340
-    4                Queens  3.049947e+09  861038.479299
-    5         Staten Island  1.623853e+09  330385.036974
-
-                                                       geometry
-    BoroCode
-    1         (POLYGON ((981219.0557861328125000 188655.3157...
-    2         (POLYGON ((1012821.8057861328125000 229228.264...
-    3         (POLYGON ((1021176.4790039062500000 151374.796...
-    4         (POLYGON ((1029606.0765991210937500 156073.814...
-    5         (POLYGON ((970217.0223999023437500 145643.3322...
+                   BoroName     Shape_Leng    Shape_Area  \
+    BoroCode                                               
+    1             Manhattan  359299.096471  6.364715e+08   
+    2                 Bronx  464392.991824  1.186925e+09   
+    3              Brooklyn  741080.523166  1.937479e+09   
+    4                Queens  896344.047763  3.045213e+09   
+    5         Staten Island  330470.010332  1.623820e+09   
+    
+                                                       geometry  
+    BoroCode                                                     
+    1         MULTIPOLYGON (((981219.0557861328 188655.31579...  
+    2         MULTIPOLYGON (((1012821.805786133 229228.26458...  
+    3         MULTIPOLYGON (((1021176.479003906 151374.79699...  
+    4         MULTIPOLYGON (((1029606.076599121 156073.81420...  
+    5         MULTIPOLYGON (((970217.0223999023 145643.33221...  
 
 .. image:: _static/nyc.png
 
 .. sourcecode:: python
 
     >>> boros['geometry'].convex_hull
-    0    POLYGON ((915517.6877458114176989 120121.88125...
-    1    POLYGON ((1000721.5317993164062500 136681.7761...
-    2    POLYGON ((988872.8212280273437500 146772.03179...
-    3    POLYGON ((977855.4451904296875000 188082.32238...
-    4    POLYGON ((1017949.9776000976562500 225426.8845...
-    dtype: object
+    BoroCode
+    1    POLYGON ((977855.4451904297 188082.3223876953,...
+    2    POLYGON ((1017949.977600098 225426.8845825195,...
+    3    POLYGON ((988872.8212280273 146772.0317993164,...
+    4    POLYGON ((1000721.531799316 136681.776184082, ...
+    5    POLYGON ((915517.6877458114 120121.8812543372,...
+    dtype: geometry
 
 .. image:: _static/nyc_hull.png
 
@@ -162,6 +165,7 @@ To demonstrate a more complex operation, we'll generate a
 
 .. sourcecode:: python
 
+    >>> import numpy as np
     >>> from shapely.geometry import Point
     >>> xmin, xmax, ymin, ymax = 900000, 1080000, 120000, 280000
     >>> xc = (xmax - xmin) * np.random.random(2000) + xmin
@@ -211,11 +215,11 @@ borough that are in the holes:
 
     >>> holes.area / boros.geometry.area
     BoroCode
-    1           0.602015
-    2           0.523457
-    3           0.585901
-    4           0.577020
-    5           0.559507
+    1    0.579939
+    2    0.586833
+    3    0.608174
+    4    0.582172
+    5    0.558075
     dtype: float64
 
 .. _Descartes: https://pypi.python.org/pypi/descartes
