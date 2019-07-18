@@ -687,10 +687,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         try:
             df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
-        except:
-            df = super(DataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
-
-        return df
+            return df
+        except TypeError:
+            return df
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
