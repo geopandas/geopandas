@@ -132,6 +132,8 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 
 .. automethod:: geopandas.GeoDataFrame.plot
 
+.. automethod:: geopandas.GeoDataFrame.rename_geometry
+
 .. autoattribute:: geopandas.GeoDataFrame.__geo_interface__
 
 All pandas ``DataFrame`` methods are also available, although they may
