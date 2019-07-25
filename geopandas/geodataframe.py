@@ -65,6 +65,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
+        m_values = kwargs.pop('measurements', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
@@ -261,17 +262,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
+        mvalues_array = []
+        has_m = False
         for f in features_lst:
             if hasattr(f, "__geo_interface__"):
                 f = f.__geo_interface__
             else:
                 f = f
+            if f['geometry']:
+                if f['geometry']['type'].lower().endswith('m'):
+                    has_m = True
+                    geom, mvalues = unpack_geometry(f['geometry'])
+                    d = {'geometry': shape(geom)}
+                    mvalues_array.append(mvalues)
+                else:
+                    d = {'geometry': shape(f['geometry'])}
 
-            d = {'geometry': shape(f['geometry']) if f['geometry'] else None}
             d.update(f['properties'])
             rows.append(d)
         df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
+        if has_m:
+            df['measurments'] = mvalues_array
+
         return df
 
     @classmethod
@@ -671,6 +684,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df.index.names = list(self.index.names) + [None]
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
+
+def unpack_geometry(geom):
+    m_array, coords = [], []
+    for coord in geom['coordinates']:
+        coords.append(coord[:2])
+        m_array.append(coord[2])
+    geom['coordinates'] = coords
+    geom['type'] = geom['type'].rstrip('M')
+    return geom, m_array
+
+
+
+# def pack_measure(coords, m_array):
+#     assert len(coords) == len(m_array)
+#     m_coords = []
+#     [m_coords.append(xy + (m,)) for xy, m in zip(coords, m_array)]
+#     return m_coords
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
