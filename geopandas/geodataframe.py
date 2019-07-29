@@ -293,28 +293,31 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
-        mvalues_array = []
+        mvalues_col = []
         has_m = False
         for f in features_lst:
             if hasattr(f, "__geo_interface__"):
                 f = f.__geo_interface__
             else:
                 f = f
+
             if f['geometry']:
                 if f['geometry']['type'].lower().endswith('m'):
                     has_m = True
                     geom, mvalues = unpack_geometry(f['geometry'])
                     d = {'geometry': shape(geom)}
-                    mvalues_array.append(mvalues)
+                    mvalues_col.append(mvalues)
                 else:
                     d = {'geometry': shape(f['geometry'])}
+            else:
+                d = {'geometry': None}
 
             d.update(f['properties'])
             rows.append(d)
         df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
         if has_m:
-            df['measurements'] = mvalues_array
+            df['measurements'] = mvalues_col
 
         return df
 
