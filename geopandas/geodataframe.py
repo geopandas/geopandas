@@ -65,7 +65,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
-        m_values = kwargs.pop('measurements', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
@@ -283,7 +282,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
         if has_m:
-            df['measurments'] = mvalues_array
+            df['measurements'] = mvalues_array
 
         return df
 
@@ -693,15 +692,6 @@ def unpack_geometry(geom):
     geom['coordinates'] = coords
     geom['type'] = geom['type'].rstrip('M')
     return geom, m_array
-
-
-
-# def pack_measure(coords, m_array):
-#     assert len(coords) == len(m_array)
-#     m_coords = []
-#     [m_coords.append(xy + (m,)) for xy, m in zip(coords, m_array)]
-#     return m_coords
-
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
