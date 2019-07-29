@@ -745,7 +745,7 @@ class GeoPandasBase(object):
         return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
 
-class _CoordinateIndexer(_NDFrameIndexer):
+class _CoordinateIndexer(object):
     """
     Coordinate based indexer to select by intersection with bounding box.
 
@@ -755,9 +755,13 @@ class _CoordinateIndexer(_NDFrameIndexer):
     return the full series/frame, but ``.cx[:]`` is not implemented.
     """
 
-    def _getitem_tuple(self, tup):
+    def __init__(self, name, obj):
+        self.obj = obj
+        self.name = name
+
+    def __getitem__(self, key):
         obj = self.obj
-        xs, ys = tup
+        xs, ys = key
         # handle numeric values as x and/or y coordinate index
         if type(xs) is not slice:
             xs = slice(xs, xs)
