@@ -124,13 +124,34 @@ def test_assign(df):
     assert_frame_equal(res, exp, )
 
 
-def test_astype(s):
+def test_astype(s, df):
+
+    # check geoseries functionality
 
     with pytest.raises(TypeError):
         s.astype(int)
 
     assert s.astype(str)[0] == 'POINT (0 0)'
 
+    # check whether returned object is a geodataframe
+
+    df.rename_geometry('geom_list', True)
+    df = df.astype({'value1':float})
+
+    assert isinstance(df, GeoDataFrame)
+
+    # check that a different geometry column name is OK
+
+    try:
+        df.geometry
+    except AttributeError:
+        pytest.fail('No geometry column found')
+
+    assert df.geometry.astype(str)[0] == 'POINT (0 0)'
+
+    # check actual astype functionality
+
+    assert df.value1.astype(float).dtype == np.dtype('float64')
 
 def test_to_csv(df):
 
