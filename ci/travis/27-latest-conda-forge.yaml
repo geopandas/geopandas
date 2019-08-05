@@ -23,6 +23,8 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  # TEMP: workaround until conda-forge fixes the issues with gdal
+  - zstd
   - pip:
     - codecov
     - geopy

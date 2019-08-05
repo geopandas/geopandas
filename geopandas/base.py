@@ -717,8 +717,9 @@ class GeoPandasBase(object):
         Example
         -------
         >>> gdf  # gdf is GeoSeries of MultiPoints
-        0                 (POINT (0 0), POINT (1 1))
-        1    (POINT (2 2), POINT (3 3), POINT (4 4))
+        0         MULTIPOINT (0 0, 1 1)
+        1    MULTIPOINT (2 2, 3 3, 4 4)
+        dtype: geometry
 
         >>> gdf.explode()
         0  0    POINT (0 0)
@@ -726,7 +727,7 @@ class GeoPandasBase(object):
         1  0    POINT (2 2)
            1    POINT (3 3)
            2    POINT (4 4)
-        dtype: object
+        dtype: geometry
 
         """
         index = []

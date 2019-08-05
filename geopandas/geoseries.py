@@ -57,7 +57,7 @@ class GeoSeries(GeoPandasBase, Series):
     0    POINT (1 1)
     1    POINT (2 2)
     2    POINT (3 3)
-    dtype: object
+    dtype: geometry
 
     See Also
     --------
