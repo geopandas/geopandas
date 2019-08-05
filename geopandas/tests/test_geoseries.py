@@ -64,15 +64,6 @@ class TestSeries:
         assert self.sq not in self.g3
         assert 5 not in self.g3
 
-    def test_geom_equals(self):
-        assert np.all(self.g1.geom_equals(self.g1))
-        assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
-
-    def test_geom_equals_align(self):
-        a = self.a1.geom_equals(self.a2)
-        exp = pd.Series([False, True, False], index=['A', 'B', 'C'])
-        assert_series_equal(a, exp)
-
     def test_align(self):
         a1, a2 = self.a1.align(self.a2)
         assert isinstance(a1, GeoSeries)
@@ -103,6 +94,15 @@ class TestSeries:
 
         exp2 = pd.Series([np.nan, 1, 2], index=['A', 'B', 'C'])
         assert_series_equal(res2, exp2)
+
+    def test_geom_equals(self):
+        assert np.all(self.g1.geom_equals(self.g1))
+        assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
+
+    def test_geom_equals_align(self):
+        a = self.a1.geom_equals(self.a2)
+        exp = pd.Series([False, True, False], index=['A', 'B', 'C'])
+        assert_series_equal(a, exp)
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
