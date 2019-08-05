@@ -523,11 +523,11 @@ class GeometryArray(ExtensionArray):
                 raise ValueError("Length of distance sequence does not match "
                                  "length of the GeoSeries")
             data = [
-                geom.buffer(dist, resolution, **kwargs) if geom else None
+                geom.buffer(dist, resolution, **kwargs) if geom is not None else None
                 for geom, dist in zip(self.data, distance)]
             return GeometryArray(np.array(data, dtype=object))
 
-        data = [geom.buffer(distance, resolution, **kwargs) if geom else None
+        data = [geom.buffer(distance, resolution, **kwargs) if geom is not None else None
                 for geom in self.data]
         return GeometryArray(np.array(data, dtype=object))
 

@@ -572,6 +572,15 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             original.buffer(distances)
 
+    def test_buffer_empty_none(self):
+        p = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+        s = GeoSeries([p, GeometryCollection(), None])
+        result = s.buffer(0)
+        assert_geoseries_equal(result, s)
+
+        result = s.buffer(np.array([0, 0, 0]))
+        assert_geoseries_equal(result, s)
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))
