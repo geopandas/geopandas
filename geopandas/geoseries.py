@@ -408,6 +408,3 @@ class GeoSeries(GeoPandasBase, Series):
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
         return self.difference(other)
-
-
-GeoSeries._create_indexer('cx', _CoordinateIndexer)

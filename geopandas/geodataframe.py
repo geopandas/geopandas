@@ -719,6 +719,3 @@ else:
     import types
     DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
                                               DataFrame)
-
-
-GeoDataFrame._create_indexer('cx', _CoordinateIndexer)
