@@ -1,3 +1,4 @@
+import functools
 from warnings import warn
 
 import numpy as np
@@ -743,6 +744,17 @@ class GeoPandasBase(object):
             geometries.extend(geoms)
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return gpd.GeoSeries(geometries, index=index).__finalize__(self)
+
+    @classmethod
+    def _create_indexer(cls, name, indexer):
+        """Create an indexer like name in the class.
+
+        Copied implementation from pandas to avoid relying on private
+        pandas methods.
+        """
+        if getattr(cls, name, None) is None:
+            _indexer = functools.partial(indexer, name)
+            setattr(cls, name, property(_indexer, doc=indexer.__doc__))
 
 
 class _CoordinateIndexer(object):
