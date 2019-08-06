@@ -184,13 +184,7 @@ def test_to_wkt():
     ('equals_exact', (0.1,))
 ])
 def test_predicates_vector_scalar(attr, args):
-    triangles = [shapely.geometry.Polygon([(random.random(), random.random())
-                                           for i in range(3)])
-                 for _ in range(100)]
-
-    T = from_shapely(triangles)
-
-    point = shapely.geometry.Point(random.random(), random.random())
+    point = points[0]
     tri = triangles[0]
 
     for other in [point, tri]:
@@ -223,7 +217,6 @@ def test_predicates_vector_vector(attr, args):
                                    for i in range(3)])
          for _ in range(100)]
 
-
     vec_A = from_shapely(A)
     vec_B = from_shapely(B)
 
@@ -242,10 +235,9 @@ def test_predicates_vector_vector(attr, args):
     'convex_hull',
     'envelope',
     'exterior',
-    #'interiors',
+    # 'interiors',
 ])
 def test_unary_geo(attr):
-
     result = getattr(T, attr)
     expected = [getattr(t, attr) for t in triangles]
 
@@ -273,7 +265,7 @@ def test_binary_geo_vector(attr):
     quads = []
     while len(quads) < 10:
         geom = shapely.geometry.Polygon([(random.random(), random.random())
-                                        for i in range(4)])
+                                         for i in range(4)])
         if geom.is_valid:
             quads.append(geom)
 
@@ -315,12 +307,14 @@ def test_binary_geo_scalar(attr):
     'is_empty',
     'is_simple',
     'has_z',
-    #'is_ring',
+    'is_ring',
 ])
 def test_unary_predicates(attr):
     result = getattr(T, attr)
-    expected = [getattr(t, attr) for t in triangles]
-
+    if attr == 'is_ring':
+        expected = [getattr(t.exterior, attr) for t in triangles]
+    else:
+        expected = [getattr(t, attr) for t in triangles]
     assert result.tolist() == expected
 
 
@@ -329,7 +323,6 @@ def test_unary_float(attr):
     result = getattr(T, attr)
     assert isinstance(result, np.ndarray)
     assert result.dtype == np.float
-
     expected = [getattr(tri, attr) for tri in triangles]
 
     assert result.tolist() == expected
@@ -346,7 +339,6 @@ def test_geom_types_null_mixed():
              shapely.geometry.Point(0, 1)]
 
     G = from_shapely(geoms)
-
     cat = G.geom_type
 
     assert list(cat) == ['Polygon', None, 'Point']
@@ -373,11 +365,12 @@ def test_binary_vector_scalar(attr):
 def test_project(normalized):
     lines = [shapely.geometry.LineString([(random.random(), random.random())
                                           for _ in range(2)])
-              for _ in range(20)]
+             for _ in range(20)]
     L = from_shapely(lines)
 
     result = L.project(P, normalized=normalized)
-    expected = [l.project(p, normalized=normalized) for p, l in zip(points, lines)]
+    expected = [l.project(p, normalized=normalized)
+                for p, l in zip(points, lines)]
     assert list(result) == expected
 
 
@@ -397,7 +390,7 @@ def test_buffer(resolution, cap_style, join_style):
 def test_simplify():
     triangles = [shapely.geometry.Polygon([(random.random(), random.random())
                                           for i in range(3)]).buffer(10)
-             for _ in range(10)]
+                 for _ in range(10)]
     T = from_shapely(triangles)
 
     result = T.simplify(1)
