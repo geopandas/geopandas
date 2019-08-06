@@ -1,4 +1,3 @@
-import functools
 from warnings import warn
 
 import numpy as np
