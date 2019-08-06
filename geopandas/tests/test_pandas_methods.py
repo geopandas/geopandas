@@ -289,3 +289,13 @@ def test_groupby_groups(df):
     assert isinstance(res, GeoDataFrame)
     exp = df.loc[[0, 2]]
     assert_frame_equal(res, exp)
+
+
+def test_apply_loc_len1(df):
+    # subset of len 1 with loc -> bug in pandas with inconsistent Block ndim
+    # resulting in bug in apply
+    # https://github.com/geopandas/geopandas/issues/1078
+    subset = df.loc[[0], 'geometry']
+    result = subset.apply(lambda geom: geom.is_empty)
+    expected = subset.is_empty
+    np.testing.assert_allclose(result, expected)
