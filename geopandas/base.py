@@ -745,31 +745,24 @@ class GeoPandasBase(object):
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
-    @classmethod
-    def _create_indexer(cls, name, indexer):
-        """Create an indexer like name in the class.
-
-        Copied implementation from pandas to avoid relying on private
-        pandas methods.
+    @property
+    def cx(self):
         """
-        if getattr(cls, name, None) is None:
-            _indexer = functools.partial(indexer, name)
-            setattr(cls, name, property(_indexer, doc=indexer.__doc__))
+        Coordinate based indexer to select by intersection with bounding box.
+
+        Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of
+        ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
+        must include a comma separating x and y slices. That is, ``.cx[:, :]``
+        will return the full series/frame, but ``.cx[:]`` is not implemented.
+        """
+        return _CoordinateIndexer(self)
 
 
 class _CoordinateIndexer(object):
-    """
-    Coordinate based indexer to select by intersection with bounding box.
+    # see docstring GeoPandasBase.cx property above
 
-    Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of ``xmin``,
-    ``xmax``, ``ymin``, and ``ymax`` can be provided, but input must
-    include a comma separating x and y slices. That is, ``.cx[:, :]`` will
-    return the full series/frame, but ``.cx[:]`` is not implemented.
-    """
-
-    def __init__(self, name, obj):
+    def __init__(self, obj):
         self.obj = obj
-        self.name = name
 
     def __getitem__(self, key):
         obj = self.obj
