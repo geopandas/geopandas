@@ -432,6 +432,21 @@ def test_affinity_methods(attr, arg):
 #     L = T.exterior.coords
 #     assert L == [tuple(t.exterior.coords) for t in triangles]
 
+def test_coords_x_y():
+    result = P.x
+    expected = [p.x for p in points]
+    assert list(result) == expected
+
+    result = P.y
+    expected = [p.y for p in points]
+    assert list(result) == expected
+
+
+def test_bounds():
+    result = T.bounds
+    expected = [t.bounds for t in triangles]
+    np.testing.assert_allclose(result, expected)
+
 
 def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
