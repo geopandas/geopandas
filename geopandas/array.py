@@ -385,7 +385,8 @@ class GeometryArray(ExtensionArray):
     def is_ring(self):
         # operates on the exterior, so can't use _unary_op()
         return np.array(
-            [geom.exterior.is_ring for geom in self.data], dtype=bool)
+            [geom.exterior.is_ring if geom is not None else False 
+             for geom in self.data], dtype=bool)
 
     @property
     def is_closed(self):
@@ -454,7 +455,8 @@ class GeometryArray(ExtensionArray):
     def representative_point(self):
         # method and not a property -> can't use _unary_geo
         data = np.empty(len(self), dtype=object)
-        data[:] = [geom.representative_point() for geom in self.data]
+        data[:] = [geom.representative_point() if geom is not None else None
+                   for geom in self.data]
         return GeometryArray(data)
 
     #
