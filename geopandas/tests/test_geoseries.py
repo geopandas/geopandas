@@ -252,15 +252,18 @@ class TestConstructor:
                 assert x is g
 
     def test_no_geometries_fallback(self):
-        s = GeoSeries([True, False, True])
+        with pytest.warns(FutureWarning):
+            s = GeoSeries([True, False, True])
         assert not isinstance(s, GeoSeries)
         assert type(s) == pd.Series
 
-        s = GeoSeries(['a', 'b', 'c'])
+        with pytest.warns(FutureWarning):
+            s = GeoSeries(['a', 'b', 'c'])
         assert not isinstance(s, GeoSeries)
         assert type(s) == pd.Series
 
-        s = GeoSeries([[1, 2], [3, 4]])
+        with pytest.warns(FutureWarning):
+            s = GeoSeries([[1, 2], [3, 4]])
         assert not isinstance(s, GeoSeries)
         assert type(s) == pd.Series
 
