@@ -491,8 +491,18 @@ def test_coords_x_y():
 
 def test_bounds():
     result = T.bounds
-    expected = [t.bounds if t is not None else [np.nan]*4 for t in triangles]
+    expected = [
+        t.bounds if not (t is None or t.is_empty) else [np.nan]*4
+        for t in triangles]
     np.testing.assert_allclose(result, expected)
+
+    # additional check for one empty / missing
+    for geom in [None, shapely.geometry.Polygon()]:
+        E = from_shapely([geom])
+        result = E.bounds
+        assert result.ndim == 2
+        assert result.dtype == 'float64'
+        np.testing.assert_allclose(result, np.array([[np.nan]*4]))
 
 
 def test_getitem():
