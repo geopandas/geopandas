@@ -412,15 +412,18 @@ def test_binary_vector_scalar(attr, na_value):
 
 @pytest.mark.parametrize('normalized', [True, False])
 def test_project(normalized):
-    lines = [shapely.geometry.LineString([(random.random(), random.random())
+    na_value = np.nan
+    lines = [None] + [shapely.geometry.LineString([(random.random(), random.random())
                                           for _ in range(2)])
-             for _ in range(20)]
+             for _ in range(len(P) - 2)] + [None]
     L = from_shapely(lines)
 
     result = L.project(P, normalized=normalized)
-    expected = [l.project(p, normalized=normalized)
-                for p, l in zip(points, lines)]
-    assert list(result) == expected
+    expected = [
+        l.project(p, normalized=normalized)
+        if l is not None and p is not None else na_value
+        for p, l in zip(points, lines)]
+    np.testing.assert_allclose(result, expected)
 
 
 @pytest.mark.parametrize('cap_style', [CAP_STYLE.round, CAP_STYLE.square])
@@ -533,6 +536,8 @@ def test_dir():
 
 
 def test_chaining():
+    # contains will give False for empty / missing
+    T = from_shapely(triangle_no_missing)
     assert T.contains(T.centroid).all()
 
 
@@ -540,7 +545,9 @@ def test_pickle():
     import pickle
     T2 = pickle.loads(pickle.dumps(T))
     # assert (T.data != T2.data).all()
-    assert T.equals(T2).all()
+    assert T2[-1] is None
+    assert T2[-2].is_empty
+    assert T[:-2].equals(T2[:-2]).all()
 
 
 def test_raise_on_bad_sizes():
@@ -548,5 +555,5 @@ def test_raise_on_bad_sizes():
         T.contains(P)
 
     assert "lengths" in str(info.value).lower()
-    assert '10' in str(info.value)
-    assert '20' in str(info.value)
+    assert '12' in str(info.value)
+    assert '21' in str(info.value)
