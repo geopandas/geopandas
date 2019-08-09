@@ -195,7 +195,8 @@ def test_to_wkt():
     ('overlaps', ()),
     ('touches', ()),
     ('within', ()),
-    ('equals_exact', (0.1,))
+    ('equals_exact', (0.1,)),
+    ('almost_equals', (3,))
 ])
 def test_predicates_vector_scalar(attr, args):
     na_value = False
@@ -227,10 +228,12 @@ def test_predicates_vector_scalar(attr, args):
     ('overlaps', ()),
     ('touches', ()),
     ('within', ()),
-    ('equals_exact', (0.1,))
+    ('equals_exact', (0.1,)),
+    ('almost_equals', (3,))
 ])
 def test_predicates_vector_vector(attr, args):
     na_value = False
+    empty_value = True if attr == 'disjoint' else False
 
     A = [shapely.geometry.Polygon(), None] + [shapely.geometry.Polygon([(random.random(), random.random())
                                    for i in range(3)])
@@ -246,9 +249,14 @@ def test_predicates_vector_vector(attr, args):
     assert isinstance(result, np.ndarray)
     assert result.dtype == bool
 
-    expected = [
-        getattr(a, attr)(b, *args) if a is not None and b is not None else na_value
-        for a, b in zip(A, B)]
+    expected = []
+    for a, b in zip(A, B):
+        if a is None or b is None:
+            expected.append(na_value)
+        elif a.is_empty or b.is_empty:
+            expected.append(empty_value)
+        else:
+            expected.append(getattr(a, attr)(b, *args))
 
     assert result.tolist() == expected
 

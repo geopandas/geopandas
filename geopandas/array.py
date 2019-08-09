@@ -233,13 +233,58 @@ def _binary_geo(op, left, right):
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
             msg = (
-                "Lengths of inputs to not match. "
+                "Lengths of inputs do not match. "
                 "Left: {0}, Right: {1}".format(len(left), len(right)))
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [getattr(this_elem, op)(other_elem) if this_elem and other_elem else None
                    for this_elem, other_elem in zip(left.data, right.data)]
         return GeometryArray(data)
+    else:
+        raise TypeError(
+            "Type not known: {0} vs {1}".format(type(left), type(right)))
+
+
+def _binary_predicate(op, left, right, *args, **kwargs):
+    # type: (str, GeometryArray, GeometryArray/BaseGeometry, args/kwargs)
+    #        -> array[bool]
+    """Binary operation on GeometryArray that returns a boolean ndarray
+
+    Supports:
+
+    -  contains
+    -  disjoint
+    -  intersects
+    -  touches
+    -  crosses
+    -  within
+    -  overlaps
+    -  covers
+    -  covered_by
+    -  equals
+
+    Parameters
+    ----------
+    op: string
+    right: GeometryArray or single shapely BaseGeoemtry
+    """
+    # empty geometries are handled by shapely (all give False except disjoint)
+    if isinstance(right, BaseGeometry):
+        data = [
+            getattr(s, op)(right, *args, **kwargs) if s is not None else False
+            for s in left.data]
+        return np.array(data, dtype=bool)
+    elif isinstance(right, GeometryArray):
+        if len(left) != len(right):
+            msg = (
+                "Lengths of inputs do not match. "
+                "Left: {0}, Right: {1}".format(len(left), len(right)))
+            raise ValueError(msg)
+        data = [
+            getattr(this_elem, op)(other_elem, *args, **kwargs)
+            if not (this_elem is None or other_elem is None) else False
+            for this_elem, other_elem in zip(left.data, right.data)]
+        return np.array(data, dtype=bool)
     else:
         raise TypeError(
             "Type not known: {0} vs {1}".format(type(left), type(right)))
@@ -270,7 +315,7 @@ def _binary_op(op, left, right, *args, **kwargs):
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
             msg = (
-                "Lengths of inputs to not match. "
+                "Lengths of inputs do not match. "
                 "Left: {0}, Right: {1}".format(len(left), len(right)))
             raise ValueError(msg)
         data = [
@@ -474,37 +519,37 @@ class GeometryArray(ExtensionArray):
     #
 
     def covers(self, other):
-        return _binary_op('covers', self, other)
+        return _binary_predicate('covers', self, other)
 
     def contains(self, other):
-        return _binary_op('contains', self, other)
+        return _binary_predicate('contains', self, other)
 
     def crosses(self, other):
-        return _binary_op('crosses', self, other)
+        return _binary_predicate('crosses', self, other)
 
     def disjoint(self, other):
-        return _binary_op('disjoint', self, other)
+        return _binary_predicate('disjoint', self, other)
 
     def equals(self, other):
-        return _binary_op('equals', self, other)
+        return _binary_predicate('equals', self, other)
 
     def intersects(self, other):
-        return _binary_op('intersects', self, other)
+        return _binary_predicate('intersects', self, other)
 
     def overlaps(self, other):
-        return _binary_op('overlaps', self, other)
+        return _binary_predicate('overlaps', self, other)
 
     def touches(self, other):
-        return _binary_op('touches', self, other)
+        return _binary_predicate('touches', self, other)
 
     def within(self, other):
-        return _binary_op('within', self, other)
+        return _binary_predicate('within', self, other)
 
     def equals_exact(self, other, tolerance):
-        return _binary_op('equals_exact', self, other, tolerance=tolerance)
+        return _binary_predicate('equals_exact', self, other, tolerance=tolerance)
 
     def almost_equals(self, other, decimal):
-        return _binary_op('almost_equals', self, other, decimal=decimal)
+        return _binary_predicate('almost_equals', self, other, decimal=decimal)
 
     #
     # Binary operations that return new geometries
