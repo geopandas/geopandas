@@ -469,11 +469,10 @@ def test_unary_union():
     ('skew', ()),
 ])
 def test_affinity_methods(attr, arg):
-    na_value = None
     result = getattr(T, attr)(*arg)
     expected = [
         getattr(shapely.affinity, attr)(t, *arg)
-        if t is not None else na_value for t in triangles]
+        if not (t is None or t.is_empty) else t for t in triangles]
     assert equal_geometries(result, expected)
 
 
