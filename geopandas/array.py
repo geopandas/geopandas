@@ -651,7 +651,7 @@ class GeometryArray(ExtensionArray):
     @property
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
-        if (self.geom_type == "Point").all():
+        if (self.geom_type[~self.isna()] == "Point").all():
             return _unary_op('x', self, null_value=np.nan)
         else:
             message = "x attribute access only provided for Point geometries"
@@ -660,7 +660,7 @@ class GeometryArray(ExtensionArray):
     @property
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
-        if (self.geom_type == "Point").all():
+        if (self.geom_type[~self.isna()] == "Point").all():
             return _unary_op('y', self, null_value=np.nan)
         else:
             message = "y attribute access only provided for Point geometries"
