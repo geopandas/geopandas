@@ -290,26 +290,53 @@ def _binary_predicate(op, left, right, *args, **kwargs):
             "Type not known: {0} vs {1}".format(type(left), type(right)))
 
 
+def _binary_op_float(op, left, right, *args, **kwargs):
+    # type: (str, GeometryArray, GeometryArray/BaseGeometry, args/kwargs)
+    #        -> array
+    """Binary operation on GeometryArray that returns a ndarray"""
+    # used for distance -> check for empty as we want to return np.nan instead 0.0
+    # as shapely does currently (https://github.com/Toblerity/Shapely/issues/498)
+    if isinstance(right, BaseGeometry):
+        data = [
+            getattr(s, op)(right, *args, **kwargs)
+            if not (s is None or s.is_empty or right.is_empty) else np.nan
+            for s in left.data]
+        return np.array(data, dtype=float)
+    elif isinstance(right, GeometryArray):
+        if len(left) != len(right):
+            msg = (
+                "Lengths of inputs do not match. "
+                "Left: {0}, Right: {1}".format(len(left), len(right)))
+            raise ValueError(msg)
+        data = [
+            getattr(this_elem, op)(other_elem, *args, **kwargs)
+            if not (this_elem is None or this_elem.is_empty)
+            | (other_elem is None or other_elem.is_empty) else np.nan
+            for this_elem, other_elem in zip(left.data, right.data)]
+        return np.array(data, dtype=float)
+    else:
+        raise TypeError(
+            "Type not known: {0} vs {1}".format(type(left), type(right)))
+
+
 def _binary_op(op, left, right, *args, **kwargs):
     # type: (str, GeometryArray, GeometryArray/BaseGeometry, args/kwargs)
     #        -> array
     """Binary operation on GeometryArray that returns a ndarray"""
-    if op in ['distance', 'project']:
+    # pass empty to shapely (relate handles this correctly, project only
+    # for linestrings and points)
+    if op == 'project':
         null_value = np.nan
-    elif op == 'relate':
-        null_value = None
-    else:
-        null_value = False
-    if op in ['distance', 'project']:
         dtype = float
     elif op == 'relate':
+        null_value = None
         dtype = object
     else:
-        dtype = bool
+        raise AssertionError("wrong op")
 
     if isinstance(right, BaseGeometry):
         data = [
-            getattr(s, op)(right, *args, **kwargs) if s else null_value
+            getattr(s, op)(right, *args, **kwargs) if s is not None else null_value
             for s in left.data]
         return np.array(data, dtype=dtype)
     elif isinstance(right, GeometryArray):
@@ -320,8 +347,7 @@ def _binary_op(op, left, right, *args, **kwargs):
             raise ValueError(msg)
         data = [
             getattr(this_elem, op)(other_elem, *args, **kwargs)
-            if not (this_elem is None or this_elem.is_empty)
-            | (other_elem is None or other_elem.is_empty) else null_value
+            if not (this_elem is None or other_elem is None) else null_value
             for this_elem, other_elem in zip(left.data, right.data)]
         return np.array(data, dtype=dtype)
     else:
@@ -573,7 +599,7 @@ class GeometryArray(ExtensionArray):
     #
 
     def distance(self, other):
-        return _binary_op('distance', self, other)
+        return _binary_op_float('distance', self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if isinstance(distance, np.ndarray):

@@ -408,33 +408,55 @@ def test_geom_types_null_mixed():
     assert list(cat) == ['Polygon', None, 'Point']
 
 
-@pytest.mark.parametrize('attr, na_value', [
-    ('distance', np.nan),
-    ('relate', None)])
-def test_binary_vector_vector(attr, na_value):
+def test_binary_distance():
+    attr = 'distance'
     na_value = np.nan
+    # also use nan for empty
+
+    # vector - vector
+    result = P[:len(T)].distance(T[::-1])
+    expected = [
+        getattr(p, attr)(t)
+        if not ((t is None or t.is_empty) or (p is None or p.is_empty)) else na_value
+        for t, p in zip(triangles[::-1], points)]
+    np.testing.assert_allclose(result, expected)
+
+    # vector - scalar
+    p = points[0]
+    result = T.distance(p)
+    expected = [
+        getattr(t, attr)(p) if not (t is None or t.is_empty) else na_value
+        for t in triangles]
+    np.testing.assert_allclose(result, expected)
+
+    # other is empty
+    result = T.distance(shapely.geometry.Polygon())
+    expected = [na_value] * len(T)
+    np.testing.assert_allclose(result, expected)
+    # TODO other is None
+
+
+def test_binary_relate():
+    attr = 'relate'
+    na_value = None
+
+    # vector - vector
     result = getattr(P[:len(T)], attr)(T[::-1])
     expected = [
         getattr(p, attr)(t) if t is not None and p is not None else na_value
         for t, p in zip(triangles[::-1], points)]
-
     assert list(result) == expected
 
-
-@pytest.mark.parametrize('attr, na_value', [
-    ('distance', np.nan),
-    ('relate', None)])
-def test_binary_vector_scalar(attr, na_value):
+    # vector - scalar
     p = points[0]
     result = getattr(T, attr)(p)
     expected = [
         getattr(t, attr)(p) if t is not None else na_value for t in triangles]
-
     assert list(result) == expected
 
 
 @pytest.mark.parametrize('normalized', [True, False])
-def test_project(normalized):
+def test_binary_project(normalized):
     na_value = np.nan
     lines = [None] + [shapely.geometry.LineString([(random.random(), random.random())
                                           for _ in range(2)])
