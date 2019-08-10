@@ -357,11 +357,26 @@ def test_binary_geo_scalar(attr):
 ])
 def test_unary_predicates(attr):
     na_value = False
-    result = getattr(T, attr)
-    if attr == 'is_ring':
-        expected = [getattr(t.exterior, attr) if t is not None else na_value for t in triangles]
+    if attr == 'is_simple':
+        # poly.is_simple raises an error for empty polygon
+        with pytest.raises(Exception):
+            T.is_simple
+        vals = triangle_no_missing
+        V = from_shapely(vals)
     else:
-        expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
+        vals = triangles
+        V = T
+
+    result = getattr(V, attr)
+
+    if attr == 'is_ring':
+        expected = [
+            getattr(t.exterior, attr)
+            if t is not None and t.exterior is not None else na_value
+            for t in vals]
+    else:
+        expected = [
+            getattr(t, attr) if t is not None else na_value for t in vals]
     assert result.tolist() == expected
 
 

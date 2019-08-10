@@ -440,7 +440,8 @@ class GeometryArray(ExtensionArray):
     def is_ring(self):
         # operates on the exterior, so can't use _unary_op()
         return np.array(
-            [geom.exterior.is_ring if geom is not None else False
+            [geom.exterior.is_ring
+             if geom is not None and geom.exterior is not None else False
              for geom in self.data], dtype=bool)
 
     @property
