@@ -165,6 +165,18 @@ class TestPointPlotting:
         # last point == top of colorbar
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
+        # # Normalized legend
+        # the colorbar matches the Point colors
+        norm = matplotlib.colors.DivergingNorm(vmin=0, vcenter=8, vmax=10)
+        ax = self.df.plot(column='values', cmap='RdYlGn', legend=True,
+                          norm=norm)
+        point_colors = ax.collections[0].get_facecolors()
+        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        # first point == bottom of colorbar
+        np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
+        # colorbar generated proper long transition
+        assert cbar_colors.shape == (256, 4)
+
     def test_empty_plot(self):
         s = GeoSeries([])
         with pytest.warns(UserWarning):
