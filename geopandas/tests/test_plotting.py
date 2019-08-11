@@ -39,7 +39,7 @@ class TestPointPlotting:
 
         values = np.arange(self.N)
         self.df = GeoDataFrame({'geometry': self.points, 'values': values})
-
+        self.df['exp'] = (values * 10)**3
         multipoint1 = MultiPoint(self.points)
         multipoint2 = rotate(multipoint1, 90)
         self.df2 = GeoDataFrame({'geometry': [multipoint1, multipoint2],
@@ -167,13 +167,16 @@ class TestPointPlotting:
 
         # # Normalized legend
         # the colorbar matches the Point colors
-        norm = matplotlib.colors.DivergingNorm(vmin=0, vcenter=8, vmax=10)
-        ax = self.df.plot(column='values', cmap='RdYlGn', legend=True,
-                          norm=norm)
+        norm = matplotlib.colors.LogNorm(vmin=self.df.exp.min(),
+                                         vmax=self.df.exp.max())
+        ax = self.df[1:].plot(column='exp', cmap='RdYlGn', legend=True,
+                              norm=norm)
         point_colors = ax.collections[0].get_facecolors()
         cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
+        # last point == top of colorbar
+        np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
         # colorbar generated proper long transition
         assert cbar_colors.shape == (256, 4)
 
