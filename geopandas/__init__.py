@@ -6,7 +6,7 @@ from geopandas.io.file import read_file
 from geopandas.io.sql import read_postgis
 from geopandas.tools import sjoin
 from geopandas.tools import overlay
-from geopandas.tools._print_versions import show_versions
+from geopandas.tools._show_versions import show_versions
 
 import geopandas.datasets
 
