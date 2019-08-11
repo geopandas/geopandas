@@ -25,3 +25,4 @@ dependencies:
 - geoplot=0.3.0
 - sphinx-gallery=0.4.0
 - jinja2=2.10
+- doc2dash
