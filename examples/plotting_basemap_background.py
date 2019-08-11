@@ -1,5 +1,5 @@
 """
-Adding a background map to plots 
+Adding a background map to plots
 --------------------------------
 
 This example shows how you can add a background basemap to plots created
@@ -31,38 +31,25 @@ ax = df.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
 df = df.to_crs(epsg=3857)
 
 ###############################################################################
-# Contextily helper function
-# ==========================
-#
-# We define a small helper function that uses
-# `contextily <https://github.com/darribas/contextily>`__ to add a map
-# as background to an existing plot: 
 
 import contextily as ctx
-
-def add_basemap(ax, zoom, url='http://tile.stamen.com/terrain/tileZ/tileX/tileY.png'):
-    xmin, xmax, ymin, ymax = ax.axis()
-    basemap, extent = ctx.bounds2img(xmin, ymin, xmax, ymax, zoom=zoom, url=url)
-    ax.imshow(basemap, extent=extent, interpolation='bilinear')
-    # restore original x/y limits
-    ax.axis((xmin, xmax, ymin, ymax))
 
 ###############################################################################
 # Add background tiles to plot
 # ============================
 #
-# Now we can use the above function to easily add a background map to our
-# plot. The `zoom` keyword is required and let's you specify the detail of the
-# map tiles (be careful to not specify a too high `zoom` level, as this can
-# result in a large download):
+# We can use `add_basemap` function of contextily to easily add a background
+# map to our plot. The `zoom` keyword is optional and let's you specify the
+# detail of the map tiles (be careful to not specify a too high `zoom` level,
+# as this can result in a large download):
 
 ax = df.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-add_basemap(ax, zoom=10)
+ctx.add_basemap(ax, zoom=10)
 
 ###############################################################################
 # By default, contextily uses the Stamen Terrain style. We can specify a
 # different style using ``ctx.sources``:
 
 ax = df.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-add_basemap(ax, zoom=11, url=ctx.sources.ST_TONER_LITE)
+ctx.add_basemap(ax, url=ctx.sources.ST_TONER_LITE)
 ax.set_axis_off()
