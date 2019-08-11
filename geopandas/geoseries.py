@@ -243,23 +243,37 @@ class GeoSeries(GeoPandasBase, Series):
 
     def isna(self):
         """
-        N/A values in a GeoSeries can be represented by empty geometric
-        objects, in addition to standard representations such as None and
-        np.nan.
+        Detect missing values.
+
+        Historically, NA values in a GeoSeries could be represented by
+        empty geometric objects, in addition to standard representations
+        such as None and np.nan. This is being deprecated, and in the future,
+        only actual missing values will return True. To detect empty
+        geometries, use ``GeoSeries.is_empty`` instead.
 
         Returns
         -------
         A boolean pandas Series of the same size as the GeoSeries,
-        True where a value is N/A.
+        True where a value is NA.
 
         See Also
         --------
-        GeoSereies.notna : inverse of isna
+        GeoSeries.notna : inverse of isna
+        GeoSeries.is_empty : detect empty geometries
         """
-        if self.is_empty.any():
-            # we could warn here?
-            pass
-        return super(GeoSeries, self).isna()
+        empty_mask = self.is_empty
+        # parent pandas methos now only looks at missing values
+        result = super(GeoSeries, self).isna()
+
+        if empty_mask.any():
+            warnings.warn(
+                "GeoSeries.isna() currently returns True for both missing (None) and "
+                "empty geometries. In the future, it will only return True for "
+                "missing values. Use GeoSeries.is_empty to detect empty geometries.",
+                FutureWarning, stacklevel=2)
+            result = result | empty_mask
+
+        return result
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -267,18 +281,23 @@ class GeoSeries(GeoPandasBase, Series):
 
     def notna(self):
         """
-        N/A values in a GeoSeries can be represented by empty geometric
-        objects, in addition to standard representations such as None and
-        np.nan.
+        Detect non-missing values.
+
+        Historically, NA values in a GeoSeries could be represented by
+        empty geometric objects, in addition to standard representations
+        such as None and np.nan. This is being deprecated, and in the future,
+        only actual missing values will return False. To detect non-empty
+        geometries, use ``~GeoSeries.is_empty`` instead.
 
         Returns
         -------
         A boolean pandas Series of the same size as the GeoSeries,
-        False where a value is N/A.
+        False where a value is NA.
 
         See Also
         --------
         GeoSeries.isna : inverse of notna
+        GeoSeries.is_empty : detect empty geometries
         """
         return ~self.isna()
 
@@ -288,7 +307,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def fillna(self, value=None, method=None, inplace=False,
                **kwargs):
-        """Fill NA/NaN values with a geometry (empty polygon by default).
+        """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
         """

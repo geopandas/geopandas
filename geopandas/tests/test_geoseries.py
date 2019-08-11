@@ -218,14 +218,20 @@ def test_missing_values():
     assert s[4].is_empty
 
     # isna / is_empty
-    assert s.isna().tolist() == [False, True, True, False, False]
+    with pytest.warns(FutureWarning):
+        # assert s.isna().tolist() == [False, True, True, False, False]
+        assert s.isna().tolist() == [False, True, True, True, True]
     assert s.is_empty.tolist() == [False, False, False, True, True]
 
     # fillna defaults to fill with empty geometry -> no missing values anymore
-    assert not s.fillna().isna().any()
+    # assert not s.fillna().isna().any()
+    # for now using GeometryArray.isna to avoid the empty as missing
+    assert not s.fillna().values.isna().any()
 
     # dropna drops the missing values
-    assert not s.dropna().isna().any()
+    # assert not s.dropna().isna().any()
+    # for now using GeometryArray.isna to avoid the empty as missing
+    assert not s.dropna().values.isna().any()
     assert len(s.dropna()) == 3
 
 
