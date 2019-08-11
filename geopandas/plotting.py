@@ -105,7 +105,8 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
     if values is not None:
         collection.set_array(np.asarray(values))
         collection.set_cmap(cmap)
-        collection.set_clim(vmin, vmax)
+        if 'norm' not in kwargs:
+            collection.set_clim(vmin, vmax)
 
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
@@ -159,7 +160,8 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
     if values is not None:
         collection.set_array(np.asarray(values))
         collection.set_cmap(cmap)
-        collection.set_clim(vmin, vmax)
+        if 'norm' not in kwargs:
+            collection.set_clim(vmin, vmax)
 
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
