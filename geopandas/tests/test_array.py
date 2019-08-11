@@ -272,10 +272,21 @@ def test_predicates_vector_vector(attr, args):
 def test_unary_geo(attr):
     na_value = None
 
-    result = getattr(T, attr)
+    if attr == 'boundary':
+        # boundary raises for empty geometry
+        with pytest.raises(Exception):
+            T.boundary
+
+        values = triangle_no_missing + [None]
+        A = from_shapely(values)
+    else:
+        values = triangles
+        A = T
+
+    result = getattr(A, attr)
     expected = [
         getattr(t, attr) if t is not None else na_value
-        for t in triangles]
+        for t in values]
 
     assert equal_geometries(result, expected)
 
