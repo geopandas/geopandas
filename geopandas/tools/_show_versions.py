@@ -39,8 +39,11 @@ def _get_deps_info():
         "shapely",
         "rtree",
         "pyproj",
-        "Cython",
         "matplotlib",
+        "mapclassify",
+        "pysal",
+        "geopy",
+        "psycopg2",
     ]
 
     def get_version(module):
