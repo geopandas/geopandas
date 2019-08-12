@@ -1,5 +1,6 @@
 from geopandas.tools._show_versions import _get_sys_info
 from geopandas.tools._show_versions import _get_deps_info
+from geopandas.tools._show_versions import _get_C_info
 from geopandas.tools._show_versions import show_versions
 
 
@@ -9,6 +10,17 @@ def test_get_sys_info():
     assert 'python' in sys_info
     assert 'executable' in sys_info
     assert 'machine' in sys_info
+
+
+def test_get_c_info():
+    C_info = _get_C_info()
+
+    assert 'GEOS' in C_info
+    assert 'GEOS lib' in C_info
+    assert 'GDAL' in C_info
+    assert 'GDAL dir' in C_info
+    assert 'PROJ' in C_info
+    assert 'PROJ dir' in C_info
 
 
 def test_get_deps_info():
