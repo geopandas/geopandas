@@ -22,6 +22,53 @@ def _get_sys_info():
     return dict(blob)
 
 
+def _get_C_info():
+    """Information on system PROJ, GDAL, GEOS
+    Returns
+    -------
+    c_info: dict
+        system PROJ information
+    """
+    try:
+        import pyproj
+        from pyproj.exceptions import DataDirError
+        proj = pyproj.proj_version_str
+        try:
+            proj_dir = pyproj.datadir.get_data_dir()
+        except DataDirError:
+            proj_dir = None
+    except Exception:
+        proj = None
+        proj_dir = None
+
+    try:
+        import shapely._buildcfg
+        geos = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
+        geos_dir = shapely._buildcfg.geos_library_path
+    except Exception:
+        geos = None
+        geos_dir = None
+
+    try:
+        import fiona
+        gdal = fiona.env.get_gdal_release_name()
+        gdal_dir = fiona.env.GDALDataFinder().search()
+    except Exception:
+        gdal = None
+        gdal_dir = None
+
+    blob = [
+            ("GEOS", geos),
+            ("GEOS lib", geos_dir),
+            ("GDAL", gdal),
+            ("GDAL dir", gdal_dir),
+            ("PROJ", proj),
+            ("PROJ data dir", proj_dir)
+            ]
+
+    return dict(blob)
+
+
 def _get_deps_info():
     """Overview of the installed version of main dependencies
 
@@ -34,7 +81,6 @@ def _get_deps_info():
         "geopandas",
         "pandas",
         "fiona",
-        "osgeo.gdal",
         "numpy",
         "shapely",
         "rtree",
@@ -43,8 +89,7 @@ def _get_deps_info():
         "mapclassify",
         "pysal",
         "geopy",
-        "psycopg2",
-        "descartes"
+        "psycopg2"
     ]
 
     def get_version(module):
@@ -60,9 +105,7 @@ def _get_deps_info():
                 mod = importlib.import_module(modname)
             ver = get_version(mod)
             deps_info[modname] = ver
-        except ImportError:
-            deps_info[modname] = None
-        except AttributeError:
+        except Exception:
             deps_info[modname] = None
 
     return deps_info
@@ -78,12 +121,17 @@ def show_versions():
     """
     sys_info = _get_sys_info()
     deps_info = _get_deps_info()
+    proj_info = _get_C_info()
 
     maxlen = max(len(x) for x in deps_info)
     tpl = "{{k:<{maxlen}}}: {{stat}}".format(maxlen=maxlen)
     print("\nSYSTEM INFO")
     print("-----------")
     for k, stat in sys_info.items():
+        print(tpl.format(k=k, stat=stat))
+    print("\nGEOS, GDAL, PROJ INFO")
+    print("---------------------")
+    for k, stat in proj_info.items():
         print(tpl.format(k=k, stat=stat))
     print("\nPYTHON DEPENDENCIES")
     print("-------------------")

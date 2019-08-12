@@ -1,5 +1,6 @@
 from geopandas.tools._show_versions import _get_sys_info
 from geopandas.tools._show_versions import _get_deps_info
+from geopandas.tools._show_versions import _get_C_info
 from geopandas.tools._show_versions import show_versions
 
 
@@ -11,13 +12,23 @@ def test_get_sys_info():
     assert 'machine' in sys_info
 
 
+def test_get_c_info():
+    C_info = _get_C_info()
+
+    assert 'GEOS' in C_info
+    assert 'GEOS lib' in C_info
+    assert 'GDAL' in C_info
+    assert 'GDAL dir' in C_info
+    assert 'PROJ' in C_info
+    assert 'PROJ data dir' in C_info
+
+
 def test_get_deps_info():
     deps_info = _get_deps_info()
 
     assert 'geopandas' in deps_info
     assert 'pandas' in deps_info
     assert 'fiona' in deps_info
-    assert 'osgeo.gdal' in deps_info
     assert 'numpy' in deps_info
     assert 'shapely' in deps_info
     assert 'rtree' in deps_info
@@ -34,4 +45,5 @@ def test_show_versions(capsys):
     out, err = capsys.readouterr()
 
     assert 'python' in out
+    assert 'GEOS' in out
     assert 'geopandas' in out
