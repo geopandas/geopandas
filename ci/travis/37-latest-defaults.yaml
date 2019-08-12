@@ -23,6 +23,7 @@ dependencies:
   - libspatialite
   # dependency for mapclassify
   - scipy
+  - scikit-learn
   - pip:
     - codecov
     - geopy
