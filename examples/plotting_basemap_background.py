@@ -39,17 +39,23 @@ import contextily as ctx
 # ============================
 #
 # We can use `add_basemap` function of contextily to easily add a background
-# map to our plot. The `zoom` keyword is optional and let's you specify the
-# detail of the map tiles (be careful to not specify a too high `zoom` level,
-# as this can result in a large download):
+# map to our plot. :
 
 ax = df.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-ctx.add_basemap(ax, zoom=10)
+ctx.add_basemap(ax)
+
+###############################################################################
+# We can control the detail of the map tiles using the optional `zoom` keyword
+# (be careful to not specify a too high `zoom` level,
+# as this can result in a large download).:
+
+ax = df.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
+ctx.add_basemap(ax, zoom=12)
 
 ###############################################################################
 # By default, contextily uses the Stamen Terrain style. We can specify a
-# different style using ``ctx.sources``:
+# different style using ``ctx.providers``:
 
 ax = df.plot(figsize=(10, 10), alpha=0.5, edgecolor='k')
-ctx.add_basemap(ax, url=ctx.sources.ST_TONER_LITE)
+ctx.add_basemap(ax, url=ctx.providers.Stamen.TonerLite)
 ax.set_axis_off()
