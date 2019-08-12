@@ -22,6 +22,8 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  # dependency for mapclassify
+  - scipy
   - pip:
     - codecov
     - geopy
