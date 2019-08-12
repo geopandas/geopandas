@@ -29,28 +29,40 @@ def _get_C_info():
     c_info: dict
         system PROJ information
     """
-    import pyproj
-    from pyproj.exceptions import DataDirError
-    import shapely._buildcfg
-    import fiona
-
     try:
-        proj_dir = pyproj.datadir.get_data_dir()
-    except DataDirError:
+        import pyproj
+        from pyproj.exceptions import DataDirError
+        proj = pyproj.proj_version_str
+        try:
+            proj_dir = pyproj.datadir.get_data_dir()
+        except DataDirError:
+            proj_dir = None
+    except ImportError:
+        proj = None
         proj_dir = None
 
-    geos_dir = shapely._buildcfg.geos_library_path
+    try:
+        import shapely._buildcfg
+        geos = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
+        geos_dir = shapely._buildcfg.geos_library_path
+    except ImportError:
+        geos = None
+        geos_dir = None
 
-    gdal = fiona.env.get_gdal_release_name()
-    gdal_dir = fiona.env.GDALDataFinder().search()
+    try:
+        import fiona
+        gdal = fiona.env.get_gdal_release_name()
+        gdal_dir = fiona.env.GDALDataFinder().search()
+    except ImportError:
+        gdal = None
+        gdal_dir = None
 
-    geos = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
     blob = [
             ("GEOS", geos),
             ("GEOS lib", geos_dir),
             ("GDAL", gdal),
             ("GDAL dir", gdal_dir),
-            ("PROJ", pyproj.proj_version_str),
+            ("PROJ", proj),
             ("PROJ dir", proj_dir)
             ]
 
