@@ -37,7 +37,7 @@ def _get_C_info():
             proj_dir = pyproj.datadir.get_data_dir()
         except DataDirError:
             proj_dir = None
-    except ImportError:
+    except Exception:
         proj = None
         proj_dir = None
 
@@ -45,7 +45,7 @@ def _get_C_info():
         import shapely._buildcfg
         geos = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
         geos_dir = shapely._buildcfg.geos_library_path
-    except ImportError:
+    except Exception:
         geos = None
         geos_dir = None
 
@@ -53,7 +53,7 @@ def _get_C_info():
         import fiona
         gdal = fiona.env.get_gdal_release_name()
         gdal_dir = fiona.env.GDALDataFinder().search()
-    except ImportError:
+    except Exception:
         gdal = None
         gdal_dir = None
 
@@ -63,7 +63,7 @@ def _get_C_info():
             ("GDAL", gdal),
             ("GDAL dir", gdal_dir),
             ("PROJ", proj),
-            ("PROJ dir", proj_dir)
+            ("PROJ data dir", proj_dir)
             ]
 
     return dict(blob)
@@ -89,8 +89,7 @@ def _get_deps_info():
         "mapclassify",
         "pysal",
         "geopy",
-        "psycopg2",
-        "descartes"
+        "psycopg2"
     ]
 
     def get_version(module):
@@ -106,9 +105,7 @@ def _get_deps_info():
                 mod = importlib.import_module(modname)
             ver = get_version(mod)
             deps_info[modname] = ver
-        except ImportError:
-            deps_info[modname] = None
-        except AttributeError:
+        except Exception:
             deps_info[modname] = None
 
     return deps_info
