@@ -44,6 +44,7 @@ def _get_deps_info():
         "pysal",
         "geopy",
         "psycopg2",
+        "descartes"
     ]
 
     def get_version(module):
@@ -60,6 +61,8 @@ def _get_deps_info():
             ver = get_version(mod)
             deps_info[modname] = ver
         except ImportError:
+            deps_info[modname] = None
+        except AttributeError:
             deps_info[modname] = None
 
     return deps_info
