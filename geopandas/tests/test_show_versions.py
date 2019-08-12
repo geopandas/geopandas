@@ -22,8 +22,11 @@ def test_get_deps_info():
     assert 'shapely' in deps_info
     assert 'rtree' in deps_info
     assert 'pyproj' in deps_info
-    assert 'Cython' in deps_info
     assert 'matplotlib' in deps_info
+    assert 'mapclassify' in deps_info
+    assert 'pysal' in deps_info
+    assert 'geopy' in deps_info
+    assert 'psycopg2' in deps_info
 
 
 def test_show_versions(capsys):
