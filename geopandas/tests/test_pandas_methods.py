@@ -194,16 +194,14 @@ def test_fillna(s):
     assert_geoseries_equal(res, s)
 
 
-@pytest.mark.xfail
 def test_dropna():
-    # this currently does not work (doesn't drop)
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.dropna()
     exp = s2.loc[[0, 2]]
     assert_geoseries_equal(res, exp)
 
 
-@pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
+@pytest.mark.parametrize("NA", [None, np.nan])
 def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name='tt')
     exp = pd.Series([False, True, False], index=[2, 4, 5], name='tt')
