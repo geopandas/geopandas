@@ -1,8 +1,39 @@
 Changes
 =======
 
+Version 0.6.0 (August ??, 2019)
+-------------------------------
+
+Important note! This will be the last release to support Python 2.7 (#1031)
+
+API changes:
+
+- A refactor of the internals based on the pandas ExtensionArray interface (#1000). The main user visible changes are:
+  - The `.dtype` of a GeoSeries is now a `'geometry'` dtype (and no longer a numpy `object` dtype).
+  - The `.values` of a GeoSeries now returns a custom `GeometryArray`, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using `np.asarray(..)`.
+- The `GeoSeries` constructor now raises a warning when passed non-geometry data. Currently the constructor falls back to return a pandas `Series`, but in the future this will raise an error (#1085).
+- The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that:
+  - `GeoSeries.isna` now considers only missing values, and if you want to check for empty geometries, you can use `GeoSeries.is_empty` (`GeoDataFrame.isna` already only looked at missing values).
+  - `GeoSeries.dropna` now actually drops missing values (before it didn't drop either missing or empty geometries)
+  - `GeoSeries.fillna` only fills missing values (behaviour unchanged).
+  - `GeoSeries.align` uses missing values instead of empty geometries by default to fill non-matching index entries.
+
+Other improvements:
+
+- Addition of a `GeoSeries.affine_transform` method, equivalent of Shapely's function (#1008)
+- Addition of a `GeoDataFrame.rename_geometry` method to easily rename the active geometry column (#1053).
+- Addition of `geopandas.show_versions()` function, which can be used to give an overview of the installed libraries in bug reports (#899).
+- Updated documentation to work with latest version of geoplot and contextily (#1044, #1088)
+
+Bug fixes:
+
+- Also try to use `pysal` instead of `mapclassify` if available (#1082).
+
+In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
+
+
 Version 0.5.1 (July 11, 2019)
-------------------------------
+-----------------------------
 
 - Compatibility with latest mapclassify version 2.1.0 (#1025).
 
