@@ -60,9 +60,12 @@ def _get_C_info():
     try:
         import fiona
         gdal_version = fiona.env.get_gdal_release_name()
-        gdal_dir = fiona.env.GDALDataFinder().search()
     except Exception:
         gdal_version = None
+    try:
+        import fiona
+        gdal_dir = fiona.env.GDALDataFinder().search()
+    except Exception:
         gdal_dir = None
 
     blob = [
