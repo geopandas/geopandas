@@ -18,7 +18,7 @@ def test_get_c_info():
     assert 'GEOS' in C_info
     assert 'GEOS lib' in C_info
     assert 'GDAL' in C_info
-    assert 'GDAL dir' in C_info
+    assert 'GDAL data dir' in C_info
     assert 'PROJ' in C_info
     assert 'PROJ data dir' in C_info
 
