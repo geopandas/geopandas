@@ -32,6 +32,28 @@ def _is_empty(x):
         return False
 
 
+_SERIES_WARNING_MSG = """\
+    You are passing non-geometry data to the GeoSeries constructor. Currently,
+    it falls back to returning a pandas Series. But in the future, we will start
+    to raise a TypeError instead."""
+
+
+def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwargs):
+    """
+    A flexible constructor for GeoSeries._constructor, which needs to be able
+    to fall back to a Series (if a certain operation does not produce
+    geometries)
+    """
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message=_SERIES_WARNING_MSG,
+                category=FutureWarning, module="geopandas[.*]")
+            return GeoSeries(data=data, index=index, crs=crs, **kwargs)
+    except TypeError:
+        return Series(data=data, index=index, **kwargs)
+
+
 class GeoSeries(GeoPandasBase, Series):
     """
     A Series object designed to store shapely geometry objects.
@@ -88,6 +110,7 @@ class GeoSeries(GeoPandasBase, Series):
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = crs
                 return self
+            warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
             return Series(data, index=index, **kwargs)
 
         if isinstance(data, BaseGeometry):
@@ -110,11 +133,14 @@ class GeoSeries(GeoPandasBase, Series):
                 if s.empty:
                     s = s.astype(object)
                 else:
+                    warnings.warn(
+                        _SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
                     return s
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values)
             except TypeError:
+                warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
                 return s
             index = s.index
             name = s.name
@@ -197,7 +223,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def _constructor(self):
-        return GeoSeries
+        return _geoseries_constructor_with_fallback
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
