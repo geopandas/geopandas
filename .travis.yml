@@ -39,6 +39,7 @@ install:
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - pip install -e .
   - conda list
+  - python -c "import geopandas; geopandas.show_versions();"
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
