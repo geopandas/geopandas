@@ -168,7 +168,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             # input is not a column name -> always overwrite the current
-            # 'geometry columns
+            # geometry column
             to_remove = geo_column_name
             level = col
             if isinstance(col, Series):

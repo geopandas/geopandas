@@ -246,6 +246,7 @@ class TestDataFrame:
 
         # If True, drops column and renames to geometry
         df3 = self.df.set_geometry('simplified_geometry', drop=True)
+        # TODO should this keep its name or not?
         assert 'simplified_geometry' not in df3
         assert 'geometry' in df3
         assert df3._geometry_column_name == 'geometry'
