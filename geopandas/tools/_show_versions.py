@@ -31,38 +31,46 @@ def _get_C_info():
     """
     try:
         import pyproj
+        proj_version = pyproj.proj_version_str
+    except Exception:
+        proj_version = None
+    try:
+        # pyproj > 2.0
         from pyproj.exceptions import DataDirError
-        proj = pyproj.proj_version_str
         try:
             proj_dir = pyproj.datadir.get_data_dir()
         except DataDirError:
             proj_dir = None
     except Exception:
-        proj = None
-        proj_dir = None
+        try:
+            # pyproj 1.9.6
+            import pyproj
+            proj_dir = pyproj.pyproj_datadir
+        except Exception:
+            proj_dir = None
 
     try:
         import shapely._buildcfg
-        geos = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
+        geos_version = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
         geos_dir = shapely._buildcfg.geos_library_path
     except Exception:
-        geos = None
+        geos_version = None
         geos_dir = None
 
     try:
         import fiona
-        gdal = fiona.env.get_gdal_release_name()
+        gdal_version = fiona.env.get_gdal_release_name()
         gdal_dir = fiona.env.GDALDataFinder().search()
     except Exception:
-        gdal = None
+        gdal_version = None
         gdal_dir = None
 
     blob = [
-            ("GEOS", geos),
+            ("GEOS", geos_version),
             ("GEOS lib", geos_dir),
-            ("GDAL", gdal),
-            ("GDAL dir", gdal_dir),
-            ("PROJ", proj),
+            ("GDAL", gdal_version),
+            ("GDAL data dir", gdal_dir),
+            ("PROJ", proj_version),
             ("PROJ data dir", proj_dir)
             ]
 
