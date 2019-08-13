@@ -12,7 +12,7 @@ import shapely.affinity as affinity
 
 import geopandas as gpd
 
-from .array import GeometryArray
+from .array import GeometryArray, GeometryDtype
 
 
 try:
@@ -22,6 +22,19 @@ except ImportError:
     class RTreeError(Exception):
         pass
     HAS_SINDEX = False
+
+
+def is_geometry_type(data):
+    """
+    Check if the data is of geometry dtype.
+
+    Does not include object array of shapely scalars.
+    """
+    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+        # GeometryArray, GeoSeries and Series[GeometryArray]
+        return True
+    else:
+        return False
 
 
 def _delegate_binary_method(op, this, other, *args, **kwargs):
@@ -54,7 +67,7 @@ def _binary_geo(op, this, other):
 
 
 def _binary_op(op, this, other, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool]
+    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
     data, index = _delegate_binary_method(op, this, other, *args, **kwargs)
     return Series(data, index=index)
@@ -704,8 +717,9 @@ class GeoPandasBase(object):
         Example
         -------
         >>> gdf  # gdf is GeoSeries of MultiPoints
-        0                 (POINT (0 0), POINT (1 1))
-        1    (POINT (2 2), POINT (3 3), POINT (4 4))
+        0         MULTIPOINT (0 0, 1 1)
+        1    MULTIPOINT (2 2, 3 3, 4 4)
+        dtype: geometry
 
         >>> gdf.explode()
         0  0    POINT (0 0)
@@ -713,7 +727,7 @@ class GeoPandasBase(object):
         1  0    POINT (2 2)
            1    POINT (3 3)
            2    POINT (4 4)
-        dtype: object
+        dtype: geometry
 
         """
         index = []
@@ -730,20 +744,28 @@ class GeoPandasBase(object):
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
+    @property
+    def cx(self):
+        """
+        Coordinate based indexer to select by intersection with bounding box.
 
-class _CoordinateIndexer(_NDFrameIndexer):
-    """
-    Coordinate based indexer to select by intersection with bounding box.
+        Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of
+        ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
+        must include a comma separating x and y slices. That is, ``.cx[:, :]``
+        will return the full series/frame, but ``.cx[:]`` is not implemented.
+        """
+        return _CoordinateIndexer(self)
 
-    Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of ``xmin``,
-    ``xmax``, ``ymin``, and ``ymax`` can be provided, but input must
-    include a comma separating x and y slices. That is, ``.cx[:, :]`` will
-    return the full series/frame, but ``.cx[:]`` is not implemented.
-    """
 
-    def _getitem_tuple(self, tup):
+class _CoordinateIndexer(object):
+    # see docstring GeoPandasBase.cx property above
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getitem__(self, key):
         obj = self.obj
-        xs, ys = tup
+        xs, ys = key
         # handle numeric values as x and/or y coordinate index
         if type(xs) is not slice:
             xs = slice(xs, xs)

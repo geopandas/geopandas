@@ -12,13 +12,14 @@ import fiona
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, GeoSeries
+from geopandas.array import GeometryArray, GeometryDtype
 
 import pytest
 from pandas.util.testing import (
     assert_frame_equal, assert_index_equal, assert_series_equal)
+from geopandas.testing import assert_geoseries_equal, assert_geodataframe_equal
 from geopandas.tests.util import (
     connect, create_postgis, PACKAGE_DIR, validate_boro_df)
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 
 import pytest
@@ -118,10 +119,22 @@ class TestDataFrame:
 
         # non-aligned values
         s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
-
         df['geometry'] = s2
         assert_geoseries_equal(df['geometry'], s)
         assert_geoseries_equal(df.geometry, s)
+
+        # setting other column with geometry values -> preserve geometry type
+        for vals in [s, s.values]:
+            df['other_geom'] = vals
+            assert isinstance(df['other_geom'].values, GeometryArray)
+
+        # overwriting existing non-geometry column -> preserve geometry type
+        data = {"A": range(5), "B": np.arange(5.), "other_geom": range(5),
+                "geometry": [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data)
+        for vals in [s, s.values]:
+            df['other_geom'] = vals
+            assert isinstance(df['other_geom'].values, GeometryArray)
 
     def test_geometry_property(self):
         assert_geoseries_equal(self.df.geometry, self.df['geometry'],
@@ -171,6 +184,15 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df = self.df.copy()
             df.geometry = df
+
+    def test_rename_geometry(self):
+        column_name = self.df.geometry.name
+        assert self.df.geometry.name == 'geometry'
+        df2 = self.df.rename_geometry('new_name')
+        assert df2.geometry.name == 'new_name'
+        df2 = self.df.rename_geometry('new_name', inplace=True)
+        assert df2 is None
+        assert self.df.geometry.name == 'new_name'
 
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
@@ -605,6 +627,9 @@ def check_geodataframe(df, geometry_column='geometry'):
     assert isinstance(df.geometry, GeoSeries)
     assert isinstance(df[geometry_column], GeoSeries)
     assert df._geometry_column_name == geometry_column
+    assert df.geometry.name == geometry_column
+    assert isinstance(df.geometry.values, GeometryArray)
+    assert isinstance(df.geometry.dtype, GeometryDtype)
 
 
 class TestConstructor:
@@ -738,21 +763,32 @@ class TestConstructor:
             df.geometry
 
     def test_only_geometry(self):
+        exp = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)],
+                            'other': range(3)})[['geometry']]
+
         df = GeoDataFrame(geometry=[Point(x, x) for x in range(3)])
         check_geodataframe(df)
+        assert_geodataframe_equal(df, exp)
 
         df = GeoDataFrame({'geometry': [Point(x, x) for x in range(3)]})
         check_geodataframe(df)
+        assert_geodataframe_equal(df, exp)
 
         df = GeoDataFrame({'other_geom': [Point(x, x) for x in range(3)]},
                           geometry='other_geom')
         check_geodataframe(df, 'other_geom')
+        exp = (exp.rename(columns={'geometry': 'other_geom'})
+                  .set_geometry('other_geom'))
+        assert_geodataframe_equal(df, exp)
 
     def test_no_geometries(self):
         # keeps GeoDataFrame class (no DataFrame)
         data = {"A": range(3), "B": np.arange(3.0)}
         df = GeoDataFrame(data)
         assert type(df) == GeoDataFrame
+
+        gdf = GeoDataFrame({'x': [1]})
+        assert list(gdf.x) == [1]
 
     def test_empty(self):
         df = GeoDataFrame()
