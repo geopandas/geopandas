@@ -250,8 +250,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Historically, NA values in a GeoSeries could be represented by
         empty geometric objects, in addition to standard representations
-        such as None and np.nan. This is being deprecated, and in the future,
-        only actual missing values will return True. To detect empty
+        such as None and np.nan. This behaviour is changed in version 0.6.0,
+        and now only actual missing values return True. To detect empty
         geometries, use ``GeoSeries.is_empty`` instead.
 
         Returns
@@ -264,19 +264,20 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.notna : inverse of isna
         GeoSeries.is_empty : detect empty geometries
         """
-        empty_mask = self.is_empty
-        # parent pandas methos now only looks at missing values
-        result = super(GeoSeries, self).isna()
-
-        if empty_mask.any():
+        if self.is_empty.any():
             warnings.warn(
-                "GeoSeries.isna() currently returns True for both missing (None) and "
-                "empty geometries. In the future, it will only return True for "
-                "missing values. Use GeoSeries.is_empty to detect empty geometries.",
-                FutureWarning, stacklevel=2)
-            result = result | empty_mask
+                "GeoSeries.isna() previously returned True for both missing (None) and "
+                "empty geometries. Now, it only returns True for missing values. "
+                "Since the calling GeoSeries contains empty geometries, the result "
+                "has changed compared to previous versions of GeoPandas.\n"
+                "Given a GeoSeries 's', you can use 's.is_empty | s.isna()' to get "
+                "back the old behaviour.\n\n"
+                "To further ignore this warning, you can do: \n"
+                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)",
+                UserWarning, stacklevel=2)
 
-        return result
+        return super(GeoSeries, self).isna()
+
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -288,8 +289,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Historically, NA values in a GeoSeries could be represented by
         empty geometric objects, in addition to standard representations
-        such as None and np.nan. This is being deprecated, and in the future,
-        only actual missing values will return False. To detect non-empty
+        such as None and np.nan. This behaviour is changed in version 0.6.0,
+        and now only actual missing values return False. To detect empty
         geometries, use ``~GeoSeries.is_empty`` instead.
 
         Returns
@@ -302,7 +303,18 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.isna : inverse of notna
         GeoSeries.is_empty : detect empty geometries
         """
-        return ~self.isna()
+        if self.is_empty.any():
+            warnings.warn(
+                "GeoSeries.notna() previously returned False for both missing (None) and "
+                "empty geometries. Now, it only returns False for missing values. "
+                "Since the calling GeoSeries contains empty geometries, the result "
+                "has changed compared to previous versions of GeoPandas.\n"
+                "Given a GeoSeries 's', you can use '~s.is_empty & s.notna()' to get "
+                "back the old behaviour.\n\n"
+                "To further ignore this warning, you can do: \n"
+                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)",
+                UserWarning, stacklevel=2)
+        return super(GeoSeries, self).notna()
 
     def notnull(self):
         """Alias for `notna` method. See `notna` for more detail."""

@@ -208,6 +208,16 @@ class TestSeries:
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
 
+def test_missing_values_empty_warning():
+    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+    with pytest.warns(UserWarning):
+        s.isna()
+
+    with pytest.warns(UserWarning):
+        s.notna()
+
+
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_missing_values():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
 
@@ -218,20 +228,15 @@ def test_missing_values():
     assert s[4].is_empty
 
     # isna / is_empty
-    with pytest.warns(FutureWarning):
-        # assert s.isna().tolist() == [False, True, True, False, False]
-        assert s.isna().tolist() == [False, True, True, True, True]
+    assert s.isna().tolist() == [False, True, True, False, False]
     assert s.is_empty.tolist() == [False, False, False, True, True]
+    assert s.notna().tolist() == [True, False, False, True, True]
 
     # fillna defaults to fill with empty geometry -> no missing values anymore
-    # assert not s.fillna().isna().any()
-    # for now using GeometryArray.isna to avoid the empty as missing
-    assert not s.fillna().values.isna().any()
+    assert not s.fillna().isna().any()
 
     # dropna drops the missing values
-    # assert not s.dropna().isna().any()
-    # for now using GeometryArray.isna to avoid the empty as missing
-    assert not s.dropna().values.isna().any()
+    assert not s.dropna().isna().any()
     assert len(s.dropna()) == 3
 
 
