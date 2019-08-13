@@ -850,7 +850,9 @@ class GeometryArray(ExtensionArray):
             when ``boxed=False`` and :func:`str` is used when
             ``boxed=True``.
         """
-        return str
+        if boxed:
+            return str
+        return repr
 
     @classmethod
     def _concat_same_type(cls, to_concat):
