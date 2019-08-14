@@ -173,7 +173,7 @@ For plotting, these additional packages may be used:
 
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 
-.. _mapclassify: https://mapclassify.readthedocs.io/en/latest/
+.. _mapclassify: http://pysal.org/mapclassify
 
 .. _pyproj: https://github.com/jswhit/pyproj
 
