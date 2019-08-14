@@ -15,7 +15,7 @@ from pandas.util.testing import assert_frame_equal
 
 
 pandas_0_18_problem = 'fails under pandas < 0.19 due to pandas issue 15692,'\
-                        'not problem with sjoin.'
+    'not problem with sjoin.'
 
 
 @pytest.fixture()
@@ -119,20 +119,34 @@ class TestSpatialJoin:
 
     def test_empty_join(self):
         # Check empty joins
-        polygons = geopandas.GeoDataFrame({'col2': [1, 2], 
-                                           'geometry':  [Polygon([(0, 0), (1, 0), 
-                                                                  (1, 1), (0, 1)]), 
-                                                         Polygon([(1, 0), (2, 0), 
-                                                                  (2, 1), (1, 1)])
+        polygons = geopandas.GeoDataFrame({'col2': [1, 2],
+                                           'geometry': [Polygon([(0, 0), (1, 0),
+                                                                 (1, 1), (0, 1)]),
+                                                        Polygon([(1, 0), (2, 0),
+                                                                 (2, 1), (1, 1)])
                                                         ]})
-        not_in = geopandas.GeoDataFrame({'col1': [1], 
-                             'geometry': [Point(-0.5, 0.5)]})
+        not_in = geopandas.GeoDataFrame({'col1': [1],
+                                         'geometry': [Point(-0.5, 0.5)]})
         empty = sjoin(not_in, polygons, how='left', op='intersects')
         assert empty.index_right.isnull().all()
         empty = sjoin(not_in, polygons, how='right', op='intersects')
         assert empty.index_left.isnull().all()
         empty = sjoin(not_in, polygons, how='inner', op='intersects')
         assert empty.empty
+
+    @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
+                             indirect=True)
+    def test_sjoin_invalid_args(self, dfs):
+        index, df1, df2, expected = dfs
+
+        with pytest.raises(ValueError,
+                           match="'left_df' should be GeoDataFrame"):
+            res = sjoin(df1.geometry, df2)
+
+        with pytest.raises(ValueError,
+                           match="'right_df' should be GeoDataFrame"):
+            res = sjoin(df1, df2.geometry)
+
 
     @pytest.mark.parametrize('dfs', ['default-index', 'string-index'],
                              indirect=True)
@@ -167,8 +181,8 @@ class TestSpatialJoinNYBB:
         self.pointdf = GeoDataFrame(
             [{'geometry': Point(x, y),
               'pointattr1': x + y, 'pointattr2': x - y}
-             for x, y in zip(range(b[0], b[2], int((b[2]-b[0])/N)),
-                             range(b[1], b[3], int((b[3]-b[1])/N)))],
+             for x, y in zip(range(b[0], b[2], int((b[2] - b[0]) / N)),
+                             range(b[1], b[3], int((b[3] - b[1]) / N)))],
             crs=self.crs)
 
     def test_geometry_name(self):
@@ -227,7 +241,7 @@ class TestSpatialJoinNYBB:
 
     @pytest.mark.parametrize('how', ['left', 'right', 'inner'])
     def test_sjoin_named_index(self, how):
-        #original index names should be unchanged
+        # original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = 'pointid'
         df = sjoin(pointdf2, self.polydf, how=how)
@@ -242,8 +256,6 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.polydf, self.pointdf, how='left')
         assert df.shape == (12, 8)
 
-    @pytest.mark.skipif(str(pd.__version__) < LooseVersion('0.19'),
-                        reason=pandas_0_18_problem)
     @pytest.mark.xfail
     def test_no_overlapping_geometry(self):
         # Note: these tests are for correctly returning GeoDataFrame
@@ -252,14 +264,6 @@ class TestSpatialJoinNYBB:
         df_inner = sjoin(self.pointdf.iloc[17:], self.polydf, how='inner')
         df_left = sjoin(self.pointdf.iloc[17:], self.polydf, how='left')
         df_right = sjoin(self.pointdf.iloc[17:], self.polydf, how='right')
-
-        # Recent Pandas development has introduced a new way of handling merges
-        # this change has altered the output when no overlapping geometries
-        if str(pd.__version__) > LooseVersion('0.18.1'):
-            right_idxs = pd.Series(range(0, 5), name='index_right',
-                                   dtype='int64')
-        else:
-            right_idxs = pd.Series(name='index_right', dtype='int64')
 
         expected_inner_df = pd.concat(
             [self.pointdf.iloc[:0],
@@ -273,7 +277,7 @@ class TestSpatialJoinNYBB:
         expected_right_df = pd.concat(
             [self.pointdf.drop('geometry', axis=1).iloc[:0],
              pd.concat([pd.Series(name='index_left', dtype='int64'),
-                        right_idxs],
+                        pd.Series(name='index_right', dtype='int64')],
                        axis=1),
              self.polydf],
             axis=1)

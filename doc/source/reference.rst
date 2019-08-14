@@ -79,6 +79,8 @@ The following Shapely methods and attributes are available on
 
 `Affine transformations`
 
+.. automethod:: geopandas.GeoSeries.affine_transform
+
 .. automethod:: geopandas.GeoSeries.rotate
 
 .. automethod:: geopandas.GeoSeries.scale
@@ -129,6 +131,8 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 .. automethod:: geopandas.GeoDataFrame.to_json
 
 .. automethod:: geopandas.GeoDataFrame.plot
+
+.. automethod:: geopandas.GeoDataFrame.rename_geometry
 
 .. autoattribute:: geopandas.GeoDataFrame.__geo_interface__
 

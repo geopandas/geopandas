@@ -2,12 +2,26 @@
 Testing functionality for geopandas objects.
 """
 
+import pandas as pd
+
 from geopandas import GeoSeries, GeoDataFrame
+from geopandas.array import GeometryDtype, GeometryArray
+
+
+def _isna(this):
+    """isna version that works for both scalars and (Geo)Series"""
+    if hasattr(this, 'isna'):
+        return this.isna()
+    elif hasattr(this, 'isnull'):
+        return this.isnull()
+    else:
+        return pd.isnull(this)
 
 
 def geom_equals(this, that):
     """
-    Test for geometric equality. Empty geometries are considered equal.
+    Test for geometric equality. Empty or missing geometries are considered
+    equal.
 
     Parameters
     ----------
@@ -15,12 +29,14 @@ def geom_equals(this, that):
                  attribute)
     """
 
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
+    return (this.geom_equals(that) | (this.is_empty & that.is_empty)
+            | (_isna(this) & _isna(that))).all()
 
 
 def geom_almost_equals(this, that):
     """
-    Test for 'almost' geometric equality. Empty geometries considered equal.
+    Test for 'almost' geometric equality. Empty or missing geometries
+    considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.
@@ -31,8 +47,9 @@ def geom_almost_equals(this, that):
                  property)
     """
 
-    return (this.geom_almost_equals(that) |
-            (this.is_empty & that.is_empty)).all()
+    return (this.geom_almost_equals(that)
+            | (this.is_empty & that.is_empty)
+            | (_isna(this) & _isna(that))).all()
 
 
 def assert_geoseries_equal(left, right,
@@ -65,6 +82,10 @@ def assert_geoseries_equal(left, right,
         crs matches.
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
+
+    msg = "dtype should be a GeometryDtype, got {0}"
+    assert isinstance(left.dtype, GeometryDtype), msg.format(left.dtype)
+    assert isinstance(right.dtype, GeometryDtype), msg.format(left.dtype)
 
     if check_index_type:
         assert isinstance(left.index, type(right.index))
@@ -142,7 +163,11 @@ def assert_geodataframe_equal(left, right,
         assert isinstance(left, type(right))
 
         if check_crs:
-            assert left.crs == right.crs
+            # no crs can be either None or {}
+            if not left.crs and not right.crs:
+                pass
+            else:
+                assert left.crs == right.crs
     else:
         if not isinstance(left, GeoDataFrame):
             left = GeoDataFrame(left)
@@ -171,6 +196,8 @@ def assert_geodataframe_equal(left, right,
 
     # drop geometries and check remaining columns
     left2 = left.drop([left._geometry_column_name], axis=1)
-    right2 = left.drop([right._geometry_column_name], axis=1)
+    right2 = right.drop([right._geometry_column_name], axis=1)
     assert_frame_equal(left2, right2, check_dtype=check_dtype,
-                       check_index_type=check_index_type, obj='GeoDataFrame')
+                       check_index_type=check_index_type,
+                       check_column_type=check_column_type,
+                       obj='GeoDataFrame')

@@ -4,11 +4,16 @@ import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
 from pandas.core.indexing import _NDFrameIndexer
-from shapely.geometry import box, MultiPoint, MultiLineString, MultiPolygon
+
+from shapely.geometry.base import BaseGeometry
+from shapely.geometry import box
 from shapely.ops import cascaded_union, unary_union
 import shapely.affinity as affinity
 
 import geopandas as gpd
+
+from .array import GeometryArray, GeometryDtype
+
 
 try:
     from rtree.core import RTreeError
@@ -19,52 +24,73 @@ except ImportError:
     HAS_SINDEX = False
 
 
-def _geo_op(this, other, op):
-    """Operation that returns a GeoSeries"""
-    if isinstance(other, GeoPandasBase):
-        this = this.geometry
-        crs = this.crs
-        if crs != other.crs:
-            warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-                                                              other.crs))
-        this, other = this.align(other.geometry)
-        return gpd.GeoSeries([getattr(this_elem, op)(other_elem)
-                             for this_elem, other_elem in zip(this, other)],
-                             index=this.index, crs=crs)
+def is_geometry_type(data):
+    """
+    Check if the data is of geometry dtype.
+
+    Does not include object array of shapely scalars.
+    """
+    if isinstance(getattr(data, 'dtype', None), GeometryDtype):
+        # GeometryArray, GeoSeries and Series[GeometryArray]
+        return True
     else:
-        return gpd.GeoSeries([getattr(s, op)(other)
-                             for s in this.geometry],
-                             index=this.index, crs=this.crs)
+        return False
 
 
-# TODO: think about merging with _geo_op
-def _series_op(this, other, op, **kwargs):
-    """Geometric operation that returns a pandas Series"""
-    null_val = False if op not in ['distance', 'project'] else np.nan
-
+def _delegate_binary_method(op, this, other, *args, **kwargs):
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    this = this.geometry
     if isinstance(other, GeoPandasBase):
-        this = this.geometry
         this, other = this.align(other.geometry)
-        return Series([getattr(this_elem, op)(other_elem, **kwargs)
-                    if not this_elem.is_empty | other_elem.is_empty else null_val
-                    for this_elem, other_elem in zip(this, other)],
-                    index=this.index, dtype=np.dtype(type(null_val)))
+
+        # TODO reenable for all operations once we use pyproj > 2
+        # if this.crs != other.crs:
+        #     warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
+        #                                                       other.crs))
+        a_this = GeometryArray(this.values)
+        other = GeometryArray(other.values)
+    elif isinstance(other, BaseGeometry):
+        a_this = GeometryArray(this.values)
     else:
-        return Series([getattr(s, op)(other, **kwargs) if s else null_val
-                       for s in this.geometry],
-                      index=this.index, dtype=np.dtype(type(null_val)))
+        raise TypeError(type(this), type(other))
+
+    data = getattr(a_this, op)(other, *args, **kwargs)
+    return data, this.index
 
 
-def _geo_unary_op(this, op):
+def _binary_geo(op, this, other):
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries
+    """Binary operation on GeoSeries objects that returns a GeoSeries"""
+    from .geoseries import GeoSeries
+    geoms, index = _delegate_binary_method(op, this, other)
+    return GeoSeries(geoms.data, index=index, crs=this.crs)
+
+
+def _binary_op(op, this, other, *args, **kwargs):
+    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
+    """Binary operation on GeoSeries objects that returns a Series"""
+    data, index = _delegate_binary_method(op, this, other, *args, **kwargs)
+    return Series(data, index=index)
+
+
+def _delegate_property(op, this):
+    # type: (str, GeoSeries) -> GeoSeries/Series
+    a_this = GeometryArray(this.geometry.values)
+    data = getattr(a_this, op)
+    if isinstance(data, GeometryArray):
+        from .geoseries import GeoSeries
+        return GeoSeries(data.data, index=this.index, crs=this.crs)
+    else:
+        return Series(data, index=this.index)
+
+
+def _delegate_geo_method(op, this, *args, **kwargs):
+    # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
-    return gpd.GeoSeries([getattr(geom, op) for geom in this.geometry],
-                     index=this.index, crs=this.crs)
-
-
-def _series_unary_op(this, op, null_value=False):
-    """Unary operation that returns a Series"""
-    return Series([getattr(geom, op, null_value) for geom in this.geometry],
-                     index=this.index, dtype=np.dtype(type(null_value)))
+    from .geoseries import GeoSeries
+    a_this = GeometryArray(this.geometry.values)
+    data = getattr(a_this, op)(*args, **kwargs).data
+    return GeoSeries(data, index=this.index, crs=this.crs)
 
 
 class GeoPandasBase(object):
@@ -77,8 +103,8 @@ class GeoPandasBase(object):
         else:
             from geopandas.sindex import SpatialIndex
             stream = ((i, item.bounds, idx) for i, (idx, item) in
-                   enumerate(self.geometry.iteritems()) if
-                   pd.notnull(item) and not item.is_empty)
+                      enumerate(self.geometry.iteritems())
+                      if pd.notnull(item) and not item.is_empty)
             try:
                 self._sindex = SpatialIndex(stream)
             # What we really want here is an empty generator error, or
@@ -101,13 +127,13 @@ class GeoPandasBase(object):
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
-        return _series_unary_op(self, 'area', null_value=np.nan)
+        return _delegate_property('area', self)
 
     @property
     def geom_type(self):
         """Returns a ``Series`` of strings specifying the `Geometry Type` of each
         object."""
-        return _series_unary_op(self, 'geom_type', null_value=None)
+        return _delegate_property('geom_type', self)
 
     @property
     def type(self):
@@ -117,19 +143,19 @@ class GeoPandasBase(object):
     @property
     def length(self):
         """Returns a ``Series`` containing the length of each geometry."""
-        return _series_unary_op(self, 'length', null_value=np.nan)
+        return _delegate_property('length', self)
 
     @property
     def is_valid(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that are valid."""
-        return _series_unary_op(self, 'is_valid', null_value=False)
+        return _delegate_property('is_valid', self)
 
     @property
     def is_empty(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         empty geometries."""
-        return _series_unary_op(self, 'is_empty', null_value=False)
+        return _delegate_property('is_empty', self)
 
     @property
     def is_simple(self):
@@ -138,22 +164,19 @@ class GeoPandasBase(object):
 
         This is meaningful only for `LineStrings` and `LinearRings`.
         """
-        return _series_unary_op(self, 'is_simple', null_value=False)
+        return _delegate_property('is_simple', self)
 
     @property
     def is_ring(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed."""
-        # operates on the exterior, so can't use _series_unary_op()
-        return Series([geom.exterior.is_ring for geom in self.geometry],
-                      index=self.index)
+        return _delegate_property('is_ring', self)
 
     @property
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component."""
-        # operates on the exterior, so can't use _series_unary_op()
-        return _series_unary_op(self, 'has_z', null_value=False)
+        return _delegate_property('has_z', self)
 
     #
     # Unary operations that return a GeoSeries
@@ -163,13 +186,13 @@ class GeoPandasBase(object):
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
         each geometries's set-theoretic `boundary`."""
-        return _geo_unary_op(self, 'boundary')
+        return _delegate_property('boundary', self)
 
     @property
     def centroid(self):
         """Returns a ``GeoSeries`` of points representing the centroid of each
         geometry."""
-        return _geo_unary_op(self, 'centroid')
+        return _delegate_property('centroid', self)
 
     @property
     def convex_hull(self):
@@ -180,7 +203,7 @@ class GeoPandasBase(object):
         containing all the points in each geometry, unless the number of points
         in the geometric object is less than three. For two points, the convex
         hull collapses to a `LineString`; for 1, a `Point`."""
-        return _geo_unary_op(self, 'convex_hull')
+        return _delegate_property('convex_hull', self)
 
     @property
     def envelope(self):
@@ -190,7 +213,7 @@ class GeoPandasBase(object):
         The envelope of a geometry is the bounding rectangle. That is, the
         point or smallest rectangular polygon (with sides parallel to the
         coordinate axes) that contains the geometry."""
-        return _geo_unary_op(self, 'envelope')
+        return _delegate_property('envelope', self)
 
     @property
     def exterior(self):
@@ -200,25 +223,27 @@ class GeoPandasBase(object):
         Applies to GeoSeries containing only Polygons.
         """
         # TODO: return empty geometry for non-polygons
-        return _geo_unary_op(self, 'exterior')
+        return _delegate_property('exterior', self)
 
     @property
     def interiors(self):
-        """Returns a ``GeoSeries`` of InteriorRingSequences representing the
+        """Returns a ``Series`` of List representing the
         inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
+
+        Returns
+        ----------
+        inner_rings: Series of List
+            Inner rings of each polygon in the GeoSeries.
         """
-        # TODO: return empty list or None for non-polygons
-        return _series_unary_op(self, 'interiors', null_value=False)
+        return _delegate_property('interiors', self)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
         """
-        return gpd.GeoSeries([geom.representative_point()
-                             for geom in self.geometry],
-                         index=self.index)
+        return _delegate_geo_method('representative_point', self)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -256,7 +281,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             contained.
         """
-        return _series_op(self, other, 'contains')
+        return _binary_op('contains', self, other)
 
     def geom_equals(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -272,7 +297,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test for
             equality.
         """
-        return _series_op(self, other, 'equals')
+        return _binary_op('equals', self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
@@ -288,14 +313,12 @@ class GeoPandasBase(object):
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        # TODO: pass precision argument
-        return _series_op(self, other, 'almost_equals', decimal=decimal)
+        return _binary_op('almost_equals', self, other, decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        # TODO: pass tolerance argument.
-        return _series_op(self, other, 'equals_exact', tolerance=tolerance)
+        return _binary_op('equals_exact', self, other, tolerance=tolerance)
 
     def crosses(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -311,7 +334,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             crossed.
         """
-        return _series_op(self, other, 'crosses')
+        return _binary_op('crosses', self, other)
 
     def disjoint(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -326,7 +349,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             disjoint.
         """
-        return _series_op(self, other, 'disjoint')
+        return _binary_op('disjoint', self, other)
 
     def intersects(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -341,11 +364,11 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             intersected.
         """
-        return _series_op(self, other, 'intersects')
+        return _binary_op('intersects', self, other)
 
     def overlaps(self, other):
         """Return True for all geometries that overlap *other*, else False"""
-        return _series_op(self, other, 'overlaps')
+        return _binary_op('overlaps', self, other)
 
     def touches(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -361,7 +384,7 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test if is
             touched.
         """
-        return _series_op(self, other, 'touches')
+        return _binary_op('touches', self, other)
 
     def within(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -382,7 +405,7 @@ class GeoPandasBase(object):
             geometry is within.
 
         """
-        return _series_op(self, other, 'within')
+        return _binary_op('within', self, other)
 
     def distance(self, other):
         """Returns a ``Series`` containing the distance to `other`.
@@ -393,7 +416,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
-        return _series_op(self, other, 'distance')
+        return _binary_op('distance', self, other)
 
     #
     # Binary operations that return a GeoSeries
@@ -409,7 +432,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             difference to.
         """
-        return _geo_op(self, other, 'difference')
+        return _binary_geo('difference', self, other)
 
     def symmetric_difference(self, other):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
@@ -424,7 +447,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             symmetric difference to.
         """
-        return _geo_op(self, other, 'symmetric_difference')
+        return _binary_geo('symmetric_difference', self, other)
 
     def union(self, other):
         """Returns a ``GeoSeries`` of the union of points in each geometry with
@@ -436,7 +459,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the union
             with.
         """
-        return _geo_op(self, other, 'union')
+        return _binary_geo('union', self, other,)
 
     def intersection(self, other):
         """Returns a ``GeoSeries`` of the intersection of points in each
@@ -448,7 +471,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to find the
             intersection with.
         """
-        return _geo_op(self, other, 'intersection')
+        return _binary_geo('intersection', self, other)
 
     #
     # Other operations
@@ -461,7 +484,7 @@ class GeoPandasBase(object):
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
         """
-        bounds = np.array([geom.bounds for geom in self.geometry])
+        bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(bounds,
                          columns=['minx', 'miny', 'maxx', 'maxy'],
                          index=self.index)
@@ -474,11 +497,7 @@ class GeoPandasBase(object):
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
         """
-        b = self.bounds
-        return np.array((b['minx'].min(),
-                         b['miny'].min(),
-                         b['maxx'].max(),
-                         b['maxy'].max()))
+        return GeometryArray(self.geometry.values).total_bounds
 
     @property
     def sindex(self):
@@ -495,14 +514,20 @@ class GeoPandasBase(object):
 
         Parameters
         ----------
-        distance : float
-            The radius of the buffer.
-        resolution: float
+        distance : float, np.array, pd.Series
+            The radius of the buffer. If np.array or pd.Series are used
+            then it must have same length as the GeoSeries.
+        resolution: int
             Optional, the resolution of the buffer around each vertex.
         """
-        return gpd.GeoSeries([geom.buffer(distance, resolution, **kwargs)
-                             for geom in self.geometry],
-                         index=self.index, crs=self.crs)
+        if isinstance(distance, pd.Series):
+            if not self.index.equals(distance.index):
+                raise ValueError("Index values of distance sequence does "
+                                 "not match index values of the GeoSeries")
+            distance = np.asarray(distance)
+
+        return _delegate_geo_method('buffer', self, distance,
+                                    resolution=resolution, **kwargs)
 
     def simplify(self, *args, **kwargs):
         """Returns a ``GeoSeries`` containing a simplified representation of
@@ -520,12 +545,25 @@ class GeoPandasBase(object):
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
         """
-        return gpd.GeoSeries([geom.simplify(*args, **kwargs)
-                             for geom in self.geometry],
-                      index=self.index, crs=self.crs)
+        return _delegate_geo_method('simplify', self, *args, **kwargs)
 
     def relate(self, other):
-        raise NotImplementedError
+        """
+        Returns the DE-9IM intersection matrices for the geometries
+
+        Parameters
+        ----------
+        other : BaseGeometry or GeoSeries
+            The other geometry to computed
+            the DE-9IM intersection matrices from.
+
+        Returns
+        ----------
+        spatial_relations: Series of strings
+            The DE-9IM intersection matrices which describe
+            the spatial relations of the other geometry.
+        """
+        return _binary_op('relate', self, other)
 
     def project(self, other, normalized=False):
         """
@@ -541,8 +579,7 @@ class GeoPandasBase(object):
 
         The project method is the inverse of interpolate.
         """
-
-        return _series_op(self, other, 'project', normalized=normalized)
+        return _binary_op('project', self, other, normalized=normalized)
 
     def interpolate(self, distance, normalized=False):
         """
@@ -551,15 +588,35 @@ class GeoPandasBase(object):
         Parameters
         ----------
         distance : float or Series of floats
-            Distance(s) along the geometries at which a point should be returned
+            Distance(s) along the geometries at which a point should be
+            returned. If np.array or pd.Series are used then it must have
+            same length as the GeoSeries.
         normalized : boolean
             If normalized is True, distance will be interpreted as a fraction
             of the geometric object's length.
         """
+        if isinstance(distance, pd.Series):
+            if not self.index.equals(distance.index):
+                raise ValueError("Index values of distance sequence does "
+                                 "not match index values of the GeoSeries")
+            distance = np.asarray(distance)
+        return _delegate_geo_method('interpolate', self, distance,
+                                    normalized=normalized)
 
-        return gpd.GeoSeries([s.interpolate(distance, normalized)
-                             for s in self.geometry],
-            index=self.index, crs=self.crs)
+    def affine_transform(self, matrix):
+        """Return a ``GeoSeries`` with translated geometries.
+
+        See http://shapely.readthedocs.io/en/stable/manual.html#shapely.affinity.affine_transform
+        for details.
+
+        Parameters
+        ----------
+        matrix: List or tuple
+            6 or 12 items for 2D or 3D transformations respectively.
+            For 2D affine transformations, the 6 parameter matrix is [a, b, d, e, xoff, yoff]
+            For 3D affine transformations, the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
+        """
+        return _delegate_geo_method('affine_transform', self, matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.
@@ -574,9 +631,7 @@ class GeoPandasBase(object):
             xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
         """
-        return gpd.GeoSeries([affinity.translate(s, xoff, yoff, zoff)
-                             for s in self.geometry],
-            index=self.index, crs=self.crs)
+        return _delegate_geo_method('translate', self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin='center', use_radians=False):
         """Returns a ``GeoSeries`` with rotated geometries.
@@ -597,9 +652,8 @@ class GeoPandasBase(object):
         use_radians : boolean
             Whether to interpret the angle of rotation as degrees or radians
         """
-        return gpd.GeoSeries([affinity.rotate(s, angle, origin=origin,
-            use_radians=use_radians) for s in self.geometry],
-            index=self.index, crs=self.crs)
+        return _delegate_geo_method('rotate', self, angle, origin=origin,
+                                    use_radians=use_radians)
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center'):
         """Returns a ``GeoSeries`` with scaled geometries.
@@ -619,9 +673,8 @@ class GeoPandasBase(object):
             box center (default), 'centroid' for the geometry's 2D centroid, a
             Point object or a coordinate tuple (x, y, z).
         """
-        return gpd.GeoSeries([affinity.scale(s, xfact, yfact, zfact,
-            origin=origin) for s in self.geometry], index=self.index,
-            crs=self.crs)
+        return _delegate_geo_method('scale', self, xfact, yfact, zfact,
+                                    origin=origin)
 
     def skew(self, xs=0.0, ys=0.0, origin='center', use_radians=False):
         """Returns a ``GeoSeries`` with skewed geometries.
@@ -644,9 +697,8 @@ class GeoPandasBase(object):
         use_radians : boolean
             Whether to interpret the shear angle(s) as degrees or radians
         """
-        return gpd.GeoSeries([affinity.skew(s, xs, ys, origin=origin,
-            use_radians=use_radians) for s in self.geometry],
-            index=self.index, crs=self.crs)
+        return _delegate_geo_method('skew', self, xs, ys, origin=origin,
+                                    use_radians=use_radians)
 
     def explode(self):
         """
@@ -659,14 +711,15 @@ class GeoPandasBase(object):
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and a zero-based integer index that counts the 
-        number of single geometries within a multi-part geometry. 
+        original index and a zero-based integer index that counts the
+        number of single geometries within a multi-part geometry.
 
         Example
         -------
         >>> gdf  # gdf is GeoSeries of MultiPoints
-        0                 (POINT (0 0), POINT (1 1))
-        1    (POINT (2 2), POINT (3 3), POINT (4 4))
+        0         MULTIPOINT (0 0, 1 1)
+        1    MULTIPOINT (2 2, 3 3, 4 4)
+        dtype: geometry
 
         >>> gdf.explode()
         0  0    POINT (0 0)
@@ -674,7 +727,7 @@ class GeoPandasBase(object):
         1  0    POINT (2 2)
            1    POINT (3 3)
            2    POINT (4 4)
-        dtype: object
+        dtype: geometry
 
         """
         index = []
@@ -691,20 +744,28 @@ class GeoPandasBase(object):
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
+    @property
+    def cx(self):
+        """
+        Coordinate based indexer to select by intersection with bounding box.
 
-class _CoordinateIndexer(_NDFrameIndexer):
-    """
-    Coordinate based indexer to select by intersection with bounding box.
+        Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of
+        ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
+        must include a comma separating x and y slices. That is, ``.cx[:, :]``
+        will return the full series/frame, but ``.cx[:]`` is not implemented.
+        """
+        return _CoordinateIndexer(self)
 
-    Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of ``xmin``,
-    ``xmax``, ``ymin``, and ``ymax`` can be provided, but input must
-    include a comma separating x and y slices. That is, ``.cx[:, :]`` will
-    return the full series/frame, but ``.cx[:]`` is not implemented.
-    """
 
-    def _getitem_tuple(self, tup):
+class _CoordinateIndexer(object):
+    # see docstring GeoPandasBase.cx property above
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getitem__(self, key):
         obj = self.obj
-        xs, ys = tup
+        xs, ys = key
         # handle numeric values as x and/or y coordinate index
         if type(xs) is not slice:
             xs = slice(xs, xs)

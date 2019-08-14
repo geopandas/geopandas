@@ -1,19 +1,21 @@
 from __future__ import absolute_import, division
 
-from distutils.version import LooseVersion
 import itertools
 import warnings
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
 from geopandas import GeoSeries, GeoDataFrame, read_file
+from geopandas.datasets import get_path
 
 import pytest
+
+matplotlib = pytest.importorskip('matplotlib')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 @pytest.fixture(autouse=True)
@@ -260,6 +262,10 @@ class TestPolygonPlotting:
         self.df2 = GeoDataFrame({'geometry': [multipoly1, multipoly2],
                                  'values': [0, 1]})
 
+        t3 = Polygon([(2, 0), (3, 0), (3, 1)])
+        df_nan = GeoDataFrame({'geometry': t3, 'values': [np.nan]})
+        self.df3 = self.df.append(df_nan)
+
     def test_single_color(self):
 
         ax = self.polys.plot(color='green')
@@ -288,6 +294,12 @@ class TestPolygonPlotting:
         ax = self.df.plot(column='values', categorical=True, vmin=0, vmax=0)
         actual_colors = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+
+        # vmin vmax set correctly for array with NaN (GitHub issue 877)
+        ax = self.df3.plot(column='values')
+        actual_colors = ax.collections[0].get_facecolors()
+        assert np.any(np.not_equal(actual_colors[0], actual_colors[1]))
+
 
     def test_style_kwargs(self):
 
@@ -386,38 +398,95 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [10]
 
 
-class TestPySALPlotting:
+class TestMapclassifyPlotting:
 
     @classmethod
     def setup_class(cls):
         try:
-            import pysal as ps
+            import mapclassify
         except ImportError:
-            raise pytest.skip("PySAL is not installed")
-
-        pth = ps.examples.get_path("columbus.shp")
+            try:
+                import pysal
+            except ImportError:
+                pytest.importorskip('mapclassify')
+        pth = get_path('naturalearth_lowres')
         cls.df = read_file(pth)
         cls.df['NEGATIVES'] = np.linspace(-10, 10, len(cls.df.index))
 
     def test_legend(self):
-        ax = self.df.plot(column='CRIME', scheme='QUANTILES', k=3,
-                          cmap='OrRd', legend=True)
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            # warning coming from scipy.stats
+            ax = self.df.plot(column='pop_est', scheme='QUANTILES', k=3,
+                              cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'0.18 - 26.07', u'26.07 - 41.97', u'41.97 - 68.89']
+        expected = [u'140.00 - 5217064.00', u'5217064.00 - 19532732.33',
+                    u'19532732.33 - 1379302771.00']
         assert labels == expected
 
     def test_negative_legend(self):
         ax = self.df.plot(column='NEGATIVES', scheme='FISHER_JENKS', k=3,
                           cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'-10.00 - -3.33', u'-3.33 - 3.33', u'3.33 - 10.00']
+        expected = [u'-10.00 - -3.41', u'-3.41 - 3.30', u'3.30 - 10.00']
+        assert labels == expected
+
+    @pytest.mark.parametrize('scheme', ['FISHER_JENKS', 'FISHERJENKS'])
+    def test_scheme_name_compat(self, scheme):
+        ax = self.df.plot(column='NEGATIVES', scheme=scheme, k=3, legend=True)
+        assert len(ax.get_legend().get_texts()) == 3
+
+    def test_classification_kwds(self):
+        ax = self.df.plot(column='pop_est', scheme='percentiles', k=3,
+                          classification_kwds={'pct': [50, 100]}, cmap='OrRd',
+                          legend=True)
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = ['140.00 - 9961396.00', '9961396.00 - 1379302771.00']
         assert labels == expected
 
     def test_invalid_scheme(self):
         with pytest.raises(ValueError):
             scheme = 'invalid_scheme_*#&)(*#'
-            self.df.plot(column='CRIME', scheme=scheme, k=3,
+            self.df.plot(column='gdp_md_est', scheme=scheme, k=3,
                          cmap='OrRd', legend=True)
+
+    def test_cax_legend_passing(self):
+        """Pass a 'cax' argument to 'df.plot(.)', that is valid only if 'ax' is
+        passed as well (if not, a new figure is created ad hoc, and 'cax' is
+        ignored)
+        """
+        ax = plt.axes()
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        with pytest.raises(ValueError):
+            ax = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True, cax=cax
+            )
+
+    def test_cax_legend_height(self):
+        """Pass a cax argument to 'df.plot(.)', the legend location must be
+        aligned with those of main plot
+        """
+        # base case
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            ax = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True
+            )
+        plot_height = ax.get_figure().get_axes()[0].get_position().height
+        legend_height = ax.get_figure().get_axes()[1].get_position().height
+        assert abs(plot_height - legend_height) >= 1e-6
+        # fix heights with cax argument
+        ax2 = plt.axes()
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        with warnings.catch_warnings(record=True) as _:
+            ax2 = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True, cax=cax, ax=ax2
+            )
+        plot_height = ax2.get_figure().get_axes()[0].get_position().height
+        legend_height = ax2.get_figure().get_axes()[1].get_position().height
+        assert abs(plot_height - legend_height) < 1e-6
 
 
 class TestPlotCollections:
@@ -709,9 +778,5 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
         documented in `Collections.set_linestyle`,
         to the form `onoffseq`.
     """
-    if LooseVersion(matplotlib.__version__) >= '2.0':
-        offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
-        return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
-    else:
-        from matplotlib.backend_bases import GraphicsContextBase
-        return GraphicsContextBase.dashd[linestyle]
+    offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
+    return matplotlib.lines._scale_dashes(offset, dashes, linewidth)

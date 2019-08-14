@@ -1,6 +1,5 @@
 import warnings
 from functools import reduce
-from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -8,12 +7,6 @@ from shapely.ops import unary_union, polygonize
 from shapely.geometry import MultiLineString
 
 from geopandas import GeoDataFrame, GeoSeries
-
-
-if str(pd.__version__) < LooseVersion('0.23'):
-    CONCAT_KWARGS = {}
-else:
-    CONCAT_KWARGS = {'sort': False}
 
 
 def _uniquify(columns):
@@ -241,7 +234,7 @@ def _overlay_intersection(df1, df2):
     else:
         return GeoDataFrame(
             [],
-            columns=list(set(df1.columns).union(df2.columns)),
+            columns=list(set(df1.columns).union(df2.columns)) + ['__idx1', '__idx2'],
             crs=df1.crs)
 
 
@@ -283,7 +276,9 @@ def _overlay_symmetric_diff(df1, df2):
     dfsym = dfdiff1.merge(dfdiff2, on=['__idx1', '__idx2'], how='outer',
                           suffixes=['_1', '_2'])
     geometry = dfsym.geometry_1.copy()
-    geometry[dfsym.geometry_1.isnull()] = \
+    geometry.name = 'geometry'
+    # https://github.com/pandas-dev/pandas/issues/26468 use loc for now
+    geometry.loc[dfsym.geometry_1.isnull()] = \
         dfsym.loc[dfsym.geometry_1.isnull(), 'geometry_2']
     dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
@@ -297,7 +292,7 @@ def _overlay_union(df1, df2):
     """
     dfinter = _overlay_intersection(df1, df2)
     dfsym = _overlay_symmetric_diff(df1, df2)
-    dfunion = pd.concat([dfinter, dfsym], ignore_index=True, **CONCAT_KWARGS)
+    dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
     # keep geometry column last
     columns = list(dfunion.columns)
     columns.remove('geometry')
@@ -372,6 +367,6 @@ def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
     elif how == 'identity':
         dfunion = _overlay_union(df1, df2)
         result = dfunion[dfunion['__idx1'].notnull()].copy()
-        result.reset_index(drop=True, inplace=True)
+    result.reset_index(drop=True, inplace=True)
     result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
     return result
