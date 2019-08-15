@@ -316,8 +316,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, classification_kwds=None, cbar_kwds=None,
-                   **style_kwds):
+                   legend_kwds=None, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -377,11 +376,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to ax.legend()
+        Keyword arguments to pass to matplotlib.pyplot.legend(), respectively
+        matplotlib.pyplot.colorbar()
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
-    cbar_kwds : dict (default None)
-        Keyword arguments to pass to matplotlib.pyplot.colorbar()
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -487,13 +485,6 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
-    if cbar_kwds is None:
-        cbar_kwds = {}
-
-    if cax is not None:
-        cbar_kwds.update({"cax": cax})
-    else:
-        cbar_kwds.update({"ax": ax})
 
     # plot all Points in the same collection
     points = df.geometry[point_idx]
@@ -503,6 +494,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         plot_point_collection(ax, points, values[point_idx], vmin=mn, vmax=mx,
                               markersize=markersize, cmap=cmap,
                               **style_kwds)
+
+
+    if legend_kwds is None:
+        legend_kwds = {}
 
     if legend and not color:
         from matplotlib.lines import Line2D
@@ -519,14 +514,19 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                            alpha=style_kwds.get('alpha', 1), markersize=10,
                            markerfacecolor=n_cmap.to_rgba(value),
                            markeredgewidth=0))
-            if legend_kwds is None:
-                legend_kwds = {}
+
             legend_kwds.setdefault('numpoints', 1)
             legend_kwds.setdefault('loc', 'best')
             ax.legend(patches, categories, **legend_kwds)
         else:
+
+            if cax is not None:
+                legend_kwds.setdefault("cax", cax)
+            else:
+                legend_kwds.setdefault("ax", ax)
+
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, **cbar_kwds)
+            ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
     plt.draw()
     return ax
