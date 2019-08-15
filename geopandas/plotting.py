@@ -377,7 +377,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() in case of legend=True and
-        categorical=True), respectively matplotlib.pyplot.colorbar() in case of legend=True 
+        categorical=True, respectively matplotlib.pyplot.colorbar() in case of legend=True 
         and categorical=False.
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
