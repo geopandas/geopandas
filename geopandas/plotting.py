@@ -495,11 +495,11 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                               markersize=markersize, cmap=cmap,
                               **style_kwds)
 
-
-    if legend_kwds is None:
-        legend_kwds = {}
-
     if legend and not color:
+        
+        if legend_kwds is None:
+            legend_kwds = {}
+
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
         from matplotlib import cm
