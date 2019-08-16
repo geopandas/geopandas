@@ -166,7 +166,7 @@ class TestPointPlotting:
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
     def test_subplots_norm(self):
-
+        # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
         norm = matplotlib.colors.Normalize(vmin=0, vmax=20)
         ax = self.df.plot(column='values', cmap=cmap, norm=norm)
@@ -262,7 +262,7 @@ class TestLineStringPlotting:
             assert ls[1] == exp_ls[1]
 
     def test_subplots_norm(self):
-
+        # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
         norm = matplotlib.colors.Normalize(vmin=0, vmax=20)
         ax = self.df.plot(column='values', cmap=cmap, norm=norm)
@@ -374,7 +374,7 @@ class TestPolygonPlotting:
         _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
 
     def test_subplots_norm(self):
-
+        # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
         norm = matplotlib.colors.Normalize(vmin=0, vmax=10)
         ax = self.df.plot(column='values', cmap=cmap, norm=norm)
