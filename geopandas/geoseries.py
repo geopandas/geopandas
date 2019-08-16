@@ -253,23 +253,6 @@ class GeoSeries(GeoPandasBase, Series):
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
-    def copy(self, order='C'):
-        """
-        Make a copy of this GeoSeries object
-
-        Parameters
-        ----------
-        deep : boolean, default True
-            Make a deep copy, i.e. also copy data
-
-        Returns
-        -------
-        copy : GeoSeries
-        """
-        # FIXME: this will likely be unnecessary in pandas >= 0.13
-        return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name).__finalize__(self)
-
     def isna(self):
         """
         Detect missing values.
