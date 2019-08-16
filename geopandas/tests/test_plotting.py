@@ -338,12 +338,12 @@ class TestPolygonPlotting:
         label_txt = 'colorbar test'
 
         ax = self.df.plot(column='values', categorical=False, legend=True,
-                          legend_kwds={'legend': label_txt})
+                          legend_kwds={'label': label_txt})
         
         assert ax.get_figure().axes[1].get_ylabel() == label_txt
 
         ax = self.df.plot(column='values', categorical=False, legend=True,
-                          legend_kwds={'legend': label_txt, "orientation": "horizontal"})
+                          legend_kwds={'label': label_txt, "orientation": "horizontal"})
     
         assert ax.get_figure().axes[1].get_xlabel() == label_txt
 
