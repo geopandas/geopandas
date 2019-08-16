@@ -207,8 +207,12 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     if markersize is not None:
         kwargs['s'] = markersize
 
-    collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
-                            marker=marker, **kwargs)
+    if 'norm' not in kwargs:
+        collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax,
+                                cmap=cmap, marker=marker, **kwargs)
+    else:
+        collection = ax.scatter(x, y, color=color, cmap=cmap,
+                                marker=marker, **kwargs)
     return collection
 
 
