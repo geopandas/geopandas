@@ -108,7 +108,7 @@ Additionally, the following methods are implemented:
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
 ``Series`` rather than a ``GeoSeries`` result.  The methods
-``align()``, ``isnull()`` and ``fillna()`` have been
+``isna()`` and ``fillna()`` have been
 implemented specifically for ``GeoSeries`` and are expected to work
 correctly.
 
