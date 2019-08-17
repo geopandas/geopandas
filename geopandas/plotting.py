@@ -555,15 +555,18 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
 
     """
     try:
-        import mapclassify.classifiers
+        import mapclassify.classifiers as classifiers
     except ImportError:
-        raise ImportError(
-            "The 'mapclassify' package is required to use the 'scheme' "
-            "keyword")
+        try:
+            import pysal.viz.mapclassify.classifiers as classifiers
+        except ImportError:
+            raise ImportError(
+                "The 'mapclassify' or 'pysal' package is required to use the"
+                " 'scheme' keyword")
 
     schemes = {}
-    for classifier in mapclassify.classifiers.CLASSIFIERS:
-        schemes[classifier.lower()] = getattr(mapclassify.classifiers,
+    for classifier in classifiers.CLASSIFIERS:
+        schemes[classifier.lower()] = getattr(classifiers,
                                               classifier)
 
     scheme = scheme.lower()

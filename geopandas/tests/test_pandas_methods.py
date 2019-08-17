@@ -215,16 +215,14 @@ def test_fillna(s):
     assert_geoseries_equal(res, s)
 
 
-@pytest.mark.xfail
 def test_dropna():
-    # this currently does not work (doesn't drop)
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.dropna()
     exp = s2.loc[[0, 2]]
     assert_geoseries_equal(res, exp)
 
 
-@pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
+@pytest.mark.parametrize("NA", [None, np.nan])
 def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name='tt')
     exp = pd.Series([False, True, False], index=[2, 4, 5], name='tt')
@@ -310,3 +308,13 @@ def test_groupby_groups(df):
     assert isinstance(res, GeoDataFrame)
     exp = df.loc[[0, 2]]
     assert_frame_equal(res, exp)
+
+
+def test_apply_loc_len1(df):
+    # subset of len 1 with loc -> bug in pandas with inconsistent Block ndim
+    # resulting in bug in apply
+    # https://github.com/geopandas/geopandas/issues/1078
+    subset = df.loc[[0], 'geometry']
+    result = subset.apply(lambda geom: geom.is_empty)
+    expected = subset.is_empty
+    np.testing.assert_allclose(result, expected)

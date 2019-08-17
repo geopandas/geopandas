@@ -744,20 +744,28 @@ class GeoPandasBase(object):
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
+    @property
+    def cx(self):
+        """
+        Coordinate based indexer to select by intersection with bounding box.
 
-class _CoordinateIndexer(_NDFrameIndexer):
-    """
-    Coordinate based indexer to select by intersection with bounding box.
+        Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of
+        ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
+        must include a comma separating x and y slices. That is, ``.cx[:, :]``
+        will return the full series/frame, but ``.cx[:]`` is not implemented.
+        """
+        return _CoordinateIndexer(self)
 
-    Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of ``xmin``,
-    ``xmax``, ``ymin``, and ``ymax`` can be provided, but input must
-    include a comma separating x and y slices. That is, ``.cx[:, :]`` will
-    return the full series/frame, but ``.cx[:]`` is not implemented.
-    """
 
-    def _getitem_tuple(self, tup):
+class _CoordinateIndexer(object):
+    # see docstring GeoPandasBase.cx property above
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getitem__(self, key):
         obj = self.obj
-        xs, ys = tup
+        xs, ys = key
         # handle numeric values as x and/or y coordinate index
         if type(xs) is not slice:
             xs = slice(xs, xs)

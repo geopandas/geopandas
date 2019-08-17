@@ -52,12 +52,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         column on GeoDataFrame.
     """
 
-    # XXX: This will no longer be necessary in pandas 0.17
-    _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
-                       'is_copy', '_subtyp', '_index',
-                       '_default_kind', '_default_fill_value', '_metadata',
-                       '__array_struct__', '__array_interface__']
-
     _metadata = ['crs', '_geometry_column_name']
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
@@ -90,13 +84,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
 
-    # Serialize metadata (will no longer be necessary in pandas 0.17+)
-    # See https://github.com/pydata/pandas/pull/10557
-    def __getstate__(self):
-        meta = dict((k, getattr(self, k, None)) for k in self._metadata)
-        return dict(_data=self._data, _typ=self._typ,
-                    _metadata=self._metadata, **meta)
-
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
         if attr == 'geometry':
@@ -111,8 +98,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return self[self._geometry_column_name]
 
     def _set_geometry(self, col):
-        # TODO: Use pandas' core.common.is_list_like() here.
-        if not isinstance(col, (list, np.ndarray, Series)):
+        if not pd.api.types.is_list_like(col):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
         self.set_geometry(col, inplace=True)
@@ -587,25 +573,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 object.__setattr__(self, name, getattr(other, name, None))
         return self
 
-    def copy(self, deep=True):
-        """
-        Make a copy of this GeoDataFrame object
-
-        Parameters
-        ----------
-        deep : boolean, default True
-            Make a deep copy, i.e. also copy data
-
-        Returns
-        -------
-        copy : GeoDataFrame
-        """
-        # FIXME: this will likely be unnecessary in pandas >= 0.13
-        data = self._data
-        if deep:
-            data = data.copy()
-        return GeoDataFrame(data).__finalize__(self)
-
     def plot(self, *args, **kwargs):
         """Generate a plot of the geometries in the ``GeoDataFrame``.
 
@@ -737,6 +704,3 @@ else:
     import types
     DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
                                               DataFrame)
-
-
-GeoDataFrame._create_indexer('cx', _CoordinateIndexer)
