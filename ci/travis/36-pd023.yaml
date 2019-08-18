@@ -5,8 +5,10 @@ dependencies:
   - python=3.6
   - six
   # required
-  - pandas==0.20.2
+  - pandas==0.23.4
+  - nomkl
   - shapely
+  - gdal=2.3
   - fiona
   - pyproj
   # testing
@@ -15,7 +17,7 @@ dependencies:
   - codecov
   # optional
   - rtree
-  - matplotlib==1.5.3
+  - matplotlib=2
   - descartes
   - mapclassify
   - geopy

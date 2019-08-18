@@ -1,13 +1,10 @@
 from __future__ import absolute_import, division
 
-from distutils.version import LooseVersion
 import itertools
 import warnings
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
 from shapely.affinity import rotate
 from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
 
@@ -15,6 +12,10 @@ from geopandas import GeoSeries, GeoDataFrame, read_file
 from geopandas.datasets import get_path
 
 import pytest
+
+matplotlib = pytest.importorskip('matplotlib')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 @pytest.fixture(autouse=True)
@@ -412,8 +413,8 @@ class TestMapclassifyPlotting:
             ax = self.df.plot(column='pop_est', scheme='QUANTILES', k=3,
                               cmap='OrRd', legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'-99.00 - 4579438.67', u'4579438.67 - 16639804.33',
-                    u'16639804.33 - 1338612970.00']
+        expected = [u'140.00 - 5217064.00', u'5217064.00 - 19532732.33',
+                    u'19532732.33 - 1379302771.00']
         assert labels == expected
 
     def test_negative_legend(self):
@@ -428,7 +429,7 @@ class TestMapclassifyPlotting:
                           classification_kwds={'pct': [50, 100]}, cmap='OrRd',
                           legend=True)
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ['-99.00 - 9035536.00', '9035536.00 - 1338612970.00']
+        expected = ['140.00 - 9961396.00', '9961396.00 - 1379302771.00']
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -436,6 +437,45 @@ class TestMapclassifyPlotting:
             scheme = 'invalid_scheme_*#&)(*#'
             self.df.plot(column='gdp_md_est', scheme=scheme, k=3,
                          cmap='OrRd', legend=True)
+
+    def test_cax_legend_passing(self):
+        """Pass a 'cax' argument to 'df.plot(.)', that is valid only if 'ax' is
+        passed as well (if not, a new figure is created ad hoc, and 'cax' is
+        ignored)
+        """
+        ax = plt.axes()
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        with pytest.raises(ValueError):
+            ax = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True, cax=cax
+            )
+
+    def test_cax_legend_height(self):
+        """Pass a cax argument to 'df.plot(.)', the legend location must be
+        aligned with those of main plot
+        """
+        # base case
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            ax = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True
+            )
+        plot_height = ax.get_figure().get_axes()[0].get_position().height
+        legend_height = ax.get_figure().get_axes()[1].get_position().height
+        assert abs(plot_height - legend_height) >= 1e-6
+        # fix heights with cax argument
+        ax2 = plt.axes()
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        with warnings.catch_warnings(record=True) as _:
+            ax2 = self.df.plot(
+                column='pop_est', cmap='OrRd', legend=True, cax=cax, ax=ax2
+            )
+        plot_height = ax2.get_figure().get_axes()[0].get_position().height
+        legend_height = ax2.get_figure().get_axes()[1].get_position().height
+        assert abs(plot_height - legend_height) < 1e-6
 
 
 class TestPlotCollections:
@@ -727,9 +767,5 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
         documented in `Collections.set_linestyle`,
         to the form `onoffseq`.
     """
-    if LooseVersion(matplotlib.__version__) >= '2.0':
-        offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
-        return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
-    else:
-        from matplotlib.backend_bases import GraphicsContextBase
-        return GraphicsContextBase.dashd[linestyle]
+    offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
+    return matplotlib.lines._scale_dashes(offset, dashes, linewidth)

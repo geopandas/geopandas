@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, shape, Point
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
@@ -159,15 +159,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
-        `fiona`. See http://toblerity.org/fiona/manual.html for details.
+        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
 
         Parameters
         ----------
-
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://toblerity.org/fiona/README.html#usage for usage details.
+            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
         kwargs : key-word arguments
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
@@ -175,7 +174,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
         return geopandas.io.file.read_file(filename, **kwargs)
@@ -241,7 +239,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_postgis(cls, sql, con, geom_col='geom', crs=None,
                      index_col=None, coerce_float=True,
                      parse_dates=None, params=None):
-        """Alternate constructor to create a ``GeoDataFrame`` from a sql query
+        """
+        Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column in WKB representation.
 
         Parameters
@@ -257,21 +256,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float : boolean, default True
             Attempt to convert values of non-string, non-numeric objects (like
             decimal.Decimal) to floating point, useful for SQL result sets
-        parse_dates : list or dict, default: None
+        parse_dates : list or dict, default None
             - List of column names to parse as dates.
             - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-            - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
-            to the keyword arguments of :func:`pandas.to_datetime`
-            Especially useful with databases without native Datetime support,
-            such as SQLite.
-        params : list, tuple or dict, optional, default: None
+              strftime compatible in case of parsing string times, or is one of
+              (D, s, ns, ms, us) in case of parsing integer timestamps.
+            - Dict of ``{column_name: arg dict}``, where the arg dict
+              corresponds to the keyword arguments of
+              :func:`pandas.to_datetime`. Especially useful with databases
+              without native Datetime support, such as SQLite.
+        params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
 
         Examples
         --------
-        PostGIS
         >>> sql = "SELECT geom, highway FROM roads"
         SpatiaLite
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"

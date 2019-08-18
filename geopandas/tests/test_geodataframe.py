@@ -4,7 +4,6 @@ import json
 import os
 import tempfile
 import shutil
-from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -31,17 +30,14 @@ class TestDataFrame:
         N = 10
 
         nybb_filename = geopandas.datasets.get_path('nybb')
-
         self.df = read_file(nybb_filename)
         self.tempdir = tempfile.mkdtemp()
-        self.boros = self.df['BoroName']
         self.crs = {'init': 'epsg:4326'}
         self.df2 = GeoDataFrame([
             {'geometry': Point(x, y), 'value1': x + y, 'value2': x * y}
             for x, y in zip(range(N), range(N))], crs=self.crs)
         self.df3 = read_file(
             os.path.join(PACKAGE_DIR, 'examples', 'null_geom.geojson'))
-        self.line_paths = self.df3['Name']
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -351,136 +347,6 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    @pytest.mark.parametrize("driver,ext", [
-        ('ESRI Shapefile', 'shp'),
-        ('GeoJSON', 'geojson')
-    ])
-    def test_to_file(self, driver, ext):
-        """ Test to_file and from_file """
-        tempfilename = os.path.join(self.tempdir, 'boros.' + ext)
-        self.df.to_file(tempfilename, driver=driver)
-        # Read layer back in
-        df = GeoDataFrame.from_file(tempfilename)
-        assert 'geometry' in df
-        assert len(df) == 5
-        assert np.alltrue(df['BoroName'].values == self.boros)
-
-        # Write layer with null geometry out to file
-        tempfilename = os.path.join(self.tempdir, 'null_geom.' + ext)
-        self.df3.to_file(tempfilename, driver=driver)
-        # Read layer back in
-        df3 = GeoDataFrame.from_file(tempfilename)
-        assert 'geometry' in df3
-        assert len(df3) == 2
-        assert np.alltrue(df3['Name'].values == self.line_paths)
-
-    @pytest.mark.parametrize("driver,ext", [
-        ('ESRI Shapefile', 'shp'),
-        ('GeoJSON', 'geojson')
-    ])
-    def test_to_file_bool(self, driver, ext):
-        """Test error raise when writing with a boolean column (GH #437)."""
-        tempfilename = os.path.join(self.tempdir, 'temp.{0}'.format(ext))
-        df = GeoDataFrame({
-            'a': [1, 2, 3], 'b': [True, False, True],
-            'geometry': [Point(0, 0), Point(1, 1), Point(2, 2)]})
-
-        if LooseVersion(fiona.__version__) < LooseVersion('1.8'):
-            with pytest.raises(ValueError):
-                df.to_file(tempfilename, driver=driver)
-        else:
-            df.to_file(tempfilename, driver=driver)
-            result = read_file(tempfilename)
-            if driver == 'GeoJSON':
-                # geojson by default assumes epsg:4326
-                result.crs = None
-            if driver == 'ESRI Shapefile':
-                # Shapefile does not support boolean, so is read back as int
-                df['b'] = df['b'].astype('int64')
-            # PY2: column names 'mixed' instead of 'unicode'
-            assert_geodataframe_equal(result, df, check_column_type=False)
-
-    def test_to_file_with_point_z(self):
-        """Test that 3D geometries are retained in writes (GH #612)."""
-
-        tempfilename = os.path.join(self.tempdir, 'test_3Dpoint.shp')
-        point3d = Point(0, 0, 500)
-        point2d = Point(1, 1)
-        df = GeoDataFrame({'a': [1, 2]}, geometry=[point3d, point2d], crs={})
-        df.to_file(tempfilename)
-        df_read = GeoDataFrame.from_file(tempfilename)
-        assert_geoseries_equal(df.geometry, df_read.geometry)
-
-    def test_to_file_with_poly_z(self):
-        """Test that 3D geometries are retained in writes (GH #612)."""
-
-        tempfilename = os.path.join(self.tempdir, 'test_3Dpoly.shp')
-        poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
-        poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
-        df = GeoDataFrame({'a': [1, 2]}, geometry=[poly3d, poly2d], crs={})
-        df.to_file(tempfilename)
-        df_read = GeoDataFrame.from_file(tempfilename)
-        assert_geoseries_equal(df.geometry, df_read.geometry)
-
-    def test_to_file_types(self):
-        """ Test various integer type columns (GH#93) """
-        tempfilename = os.path.join(self.tempdir, 'int.shp')
-        int_types = [np.int, np.int8, np.int16, np.int32, np.int64, np.intp,
-                     np.uint8, np.uint16, np.uint32, np.uint64, np.long]
-        geometry = self.df2.geometry
-        data = dict((str(i), np.arange(len(geometry), dtype=dtype))
-                    for i, dtype in enumerate(int_types))
-        df = GeoDataFrame(data, geometry=geometry)
-        df.to_file(tempfilename)
-
-    def test_mixed_types_to_file(self):
-        """ Test that mixed geometry types raise error when writing to file """
-        tempfilename = os.path.join(self.tempdir, 'test.shp')
-        s = GeoDataFrame({'geometry': [Point(0, 0),
-                                       Polygon([(0, 0), (1, 0), (1, 1)])]})
-        # Exception type is different for different `fiona` versions
-        with pytest.raises((ValueError, RuntimeError)):
-            s.to_file(tempfilename)
-
-    def test_mixed_types_to_geojson(self):
-        """ Test that mixed geometry types can be saved as GeoJSON (GH #827) """
-        tempfilename = os.path.join(self.tempdir, 'test.geojson')
-        s = GeoDataFrame({'geometry': [Point(0, 0),
-                                       Polygon([(0, 0), (1, 0), (1, 1)])]})
-        s.to_file(tempfilename, driver='GeoJSON')
-
-    def test_empty_to_file(self):
-        input_empty_df = GeoDataFrame()
-        tempfilename = os.path.join(self.tempdir, 'test.shp')
-        with pytest.raises(
-            ValueError, match="Cannot write empty DataFrame to file."):
-            input_empty_df.to_file(tempfilename)
-
-    def test_to_file_schema(self):
-        """
-        Ensure that the file is written according to the schema
-        if it is specified
-
-        """
-        from collections import OrderedDict
-
-        tempfilename = os.path.join(self.tempdir, 'test.shp')
-        properties = OrderedDict([
-            ('Shape_Leng', 'float:19.11'),
-            ('BoroName', 'str:40'),
-            ('BoroCode', 'int:10'),
-            ('Shape_Area', 'float:19.11'),
-        ])
-        schema = {'geometry': 'Polygon', 'properties': properties}
-
-        # Take the first 2 features to speed things up a bit
-        self.df.iloc[:2].to_file(tempfilename, schema=schema)
-
-        with fiona.open(tempfilename) as f:
-            result_schema = f.schema
-
-        assert result_schema == schema
-
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df['BoroName'].str.contains('B')]
@@ -496,34 +362,6 @@ class TestDataFrame:
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, :])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
-
-    def test_transform(self):
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        lonlat = df2.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert all(df2['geometry'].geom_almost_equals(utm['geometry'],
-                                                      decimal=2))
-
-    def test_transform_inplace(self):
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        lonlat = df2.to_crs(epsg=4326)
-        df2.to_crs(epsg=4326, inplace=True)
-        assert all(df2['geometry'].geom_almost_equals(lonlat['geometry'],
-                                                      decimal=2))
-
-    def test_to_crs_geo_column_name(self):
-        # Test to_crs() with different geometry column name (GH#339)
-        df2 = self.df2.copy()
-        df2.crs = {'init': 'epsg:26918', 'no_defs': True}
-        df2 = df2.rename(columns={'geometry': 'geom'})
-        df2.set_geometry('geom', inplace=True)
-        lonlat = df2.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert lonlat.geometry.name == 'geom'
-        assert utm.geometry.name == 'geom'
-        assert all(df2.geometry.geom_almost_equals(utm.geometry, decimal=2))
 
     def test_from_features(self):
         nybb_filename = geopandas.datasets.get_path('nybb')

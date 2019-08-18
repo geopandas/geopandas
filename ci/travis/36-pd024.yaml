@@ -5,9 +5,9 @@ dependencies:
   - python=3.6
   - six
   # required
-  - pandas=0.22
+  - pandas=0.24
   - shapely
-  - fiona
+  - fiona=1.7
   - pyproj
   # testing
   - pytest
