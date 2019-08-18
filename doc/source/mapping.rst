@@ -78,7 +78,7 @@ However, the default appearance of the legend and plot axes may not be desirable
     world.plot(column='pop_est', ax=ax, legend=True, cax=cax)
 
 
-The following example plots the color bar below the map and adds a label.
+And the following example plots the color bar below the map and adds its label using ``legend_kwds``:
 
 .. ipython:: python
 
@@ -89,7 +89,7 @@ The following example plots the color bar below the map and adds a label.
     world.plot(column='pop_est',
                ax=ax,
                legend=True,
-               legend_kwds={'label': Population by Country,
+               legend_kwds={'label': "Population by Country",
                             'orientation': "horizontal"})
 
 
