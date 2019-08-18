@@ -78,6 +78,21 @@ However, the default appearance of the legend and plot axes may not be desirable
     world.plot(column='pop_est', ax=ax, legend=True, cax=cax)
 
 
+The following example plots the color bar below the map and adds a label.
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 1)
+    @savefig world_pop_est_horizontal.png
+    world.plot(column='pop_est',
+               ax=ax,
+               legend=True,
+               legend_kwds={'label': Population by Country,
+                            'orientation': "horizontal"})
+
+
 Choosing colors
 ~~~~~~~~~~~~~~~~
 
