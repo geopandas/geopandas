@@ -215,6 +215,10 @@ def _overlay_intersection(df1, df2):
         right = df2.geometry.take(pairs['__idx2'].values)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
+        geocol = intersections._geometry_column_name
+        intersections[geocol] = intersections[geocol].apply(
+         lambda g: g.buffer(0) if g.type in ['Polygon', 'MultiPolygon']
+         else g)
 
         # only keep actual intersecting geometries
         pairs_intersect = pairs[~intersections.is_empty]
@@ -253,6 +257,8 @@ def _overlay_difference(df1, df2):
                      [geom] + list(df2.geometry.iloc[neighbours]))
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index)
+    differences = differences.apply(
+     lambda g: g.buffer(0) if g.type in ['Polygon', 'MultiPolygon'] else g)
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff
@@ -344,17 +350,14 @@ def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
         raise NotImplementedError("overlay currently only implemented for "
                                   "GeoDataFrames")
 
-    # accepted_types = ['Polygon', 'MultiPolygon']
-    # if (not df1.geom_type.isin(accepted_types).all()
-    #         or not df2.geom_type.isin(accepted_types).all()):
-    #     raise TypeError("overlay only takes GeoDataFrames with (multi)polygon "
-    #                     " geometries.")
-
     # Computations
     df1 = df1.copy()
     df2 = df2.copy()
-    # df1[df1._geometry_column_name] = df1.geometry.buffer(0)
-    # df2[df2._geometry_column_name] = df2.geometry.buffer(0)
+    polys = ['Polygon', 'MultiPolygon']
+    if df1.geom_type.isin(polys).all():
+        df1[df1._geometry_column_name] = df1.geometry.buffer(0)
+    if df2.geom_type.isin(polys).all():
+        df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
     if how == 'difference':
         return _overlay_difference(df1, df2)
