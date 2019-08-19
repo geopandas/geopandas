@@ -214,7 +214,7 @@ def _overlay_intersection(df1, df2):
         left.reset_index(drop=True, inplace=True)
         right = df2.geometry.take(pairs['__idx2'].values)
         right.reset_index(drop=True, inplace=True)
-        intersections = left.intersection(right).buffer(0)
+        intersections = left.intersection(right)
 
         # only keep actual intersecting geometries
         pairs_intersect = pairs[~intersections.is_empty]
@@ -249,7 +249,7 @@ def _overlay_difference(df1, df2):
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
-        new = reduce(lambda x, y: x.difference(y).buffer(0),
+        new = reduce(lambda x, y: x.difference(y),
                      [geom] + list(df2.geometry.iloc[neighbours]))
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index)
@@ -344,17 +344,17 @@ def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
         raise NotImplementedError("overlay currently only implemented for "
                                   "GeoDataFrames")
 
-    accepted_types = ['Polygon', 'MultiPolygon']
-    if (not df1.geom_type.isin(accepted_types).all()
-            or not df2.geom_type.isin(accepted_types).all()):
-        raise TypeError("overlay only takes GeoDataFrames with (multi)polygon "
-                        " geometries.")
+    # accepted_types = ['Polygon', 'MultiPolygon']
+    # if (not df1.geom_type.isin(accepted_types).all()
+    #         or not df2.geom_type.isin(accepted_types).all()):
+    #     raise TypeError("overlay only takes GeoDataFrames with (multi)polygon "
+    #                     " geometries.")
 
     # Computations
     df1 = df1.copy()
     df2 = df2.copy()
-    df1[df1._geometry_column_name] = df1.geometry.buffer(0)
-    df2[df2._geometry_column_name] = df2.geometry.buffer(0)
+    # df1[df1._geometry_column_name] = df1.geometry.buffer(0)
+    # df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
     if how == 'difference':
         return _overlay_difference(df1, df2)
