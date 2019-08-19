@@ -83,6 +83,9 @@ print(gdf.head())
 
 #################################################################################
 # Again, we can plot our ``GeoDataFrame``.
+ax = world[world.continent == 'South America'].plot(
+    color='white', edgecolor='black')
+
 gdf.plot(ax=ax, color='red')
 
 plt.show()
