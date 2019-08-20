@@ -376,7 +376,7 @@ def overlay(df1, df2, how='intersection', make_valid=True, strict=True,
     if strict:
         lines = ['LineString', 'MultiLineString']
         points = ['Point', 'MultiPoint']
-        type = df1.geom_type[0]
+        type = df1.geom_type.iloc[0]
         if type in polys:
             result = result.loc[result.geom_type.isin(polys)]
         elif type in lines:
