@@ -307,7 +307,8 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how='intersection', make_valid=True, strict=False, use_sindex=None):
+def overlay(df1, df2, how='intersection', make_valid=True, strict=True,
+            use_sindex=None):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
