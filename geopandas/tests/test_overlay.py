@@ -256,13 +256,13 @@ def test_bad_how(dfs):
         overlay(df1, df2, how="spandex")
 
 
-def test_raise_nonpoly(dfs):
-    polydf, _ = dfs
-    pointdf = polydf.copy()
-    pointdf['geometry'] = pointdf.geometry.centroid
-
-    with pytest.raises(TypeError):
-        overlay(pointdf, polydf, how="union")
+# def test_raise_nonpoly(dfs):
+#     polydf, _ = dfs
+#     pointdf = polydf.copy()
+#     pointdf['geometry'] = pointdf.geometry.centroid
+#
+#     with pytest.raises(TypeError):
+#         overlay(pointdf, polydf, how="union")
 
 
 def test_duplicate_column_name(dfs):
