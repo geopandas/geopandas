@@ -307,7 +307,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
+def overlay(df1, df2, how='intersection', make_valid=True, strict=False, use_sindex=None):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -371,6 +371,20 @@ def overlay(df1, df2, how='intersection', make_valid=True, use_sindex=None):
     elif how == 'identity':
         dfunion = _overlay_union(df1, df2)
         result = dfunion[dfunion['__idx1'].notnull()].copy()
+
+    if strict:
+        lines = ['LineString', 'MultiLineString']
+        points = ['Point', 'MultiPoint']
+        type = df1.geom_type[0]
+        if type in polys:
+            result = result.loc[result.geom_type.isin(polys)]
+        elif type in lines:
+            result = result.loc[result.geom_type.isin(lines)]
+        elif type in points:
+            result = result.loc[result.geom_type.isin(points)]
+        else:
+            raise TypeError("`strict` does not support {}.".format(type))
+
     result.reset_index(drop=True, inplace=True)
     result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
     return result
