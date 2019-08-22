@@ -101,16 +101,16 @@ Note more complicated spatial relationships can be studied by combining geometri
 Sjoin Performance
 ~~~~~~~~~~~~~~~~~~
 
-When rtree is installed, ``sjoin`` attempts to re-use an existing spatial index on either `left_df` or `right_df`. Performance of multiple sjoins in a row involving a common GeoDataFrame may be improved by pre-generating the spatial index of the common GeoDataFrame prior to performing sjoins using ``df1.sindex()``.
+Existing spatial indexes on either `left_df` or `right_df` will be reused when performing an ``sjoin``. If neither df has a spatial index, a spatial index will be generated for the longer df. If both have a spatial index, the `right_df`'s index will be used preferentially. Performance of multiple sjoins in a row involving a common GeoDataFrame may be improved by pre-generating the spatial index of the common GeoDataFrame prior to performing sjoins using ``df1.sindex``.
 
-.. ipython:: python
+.. code-block:: python
 
     df1 = # a GeoDataFrame with data
     df2 = # a second GeoDataFrame
     df3 = # a third GeoDataFrame
 
     # pre-generate sindex on df1 if it doesn't already exist
-    df1.sindex()
+    df1.sindex
 
     sjoin(df1, df2, ...)
     # sindex for df1 is reused
