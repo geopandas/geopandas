@@ -8,7 +8,7 @@ from geopandas import GeoDataFrame
 
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
-           lsuffix='left', rsuffix='right'):
+          lsuffix='left', rsuffix='right'):
     """Spatial join of two GeoDataFrames.
 
     Parameters
@@ -90,8 +90,8 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         left_df, right_df = right_df, left_df
         tree_idx_right = not tree_idx_right
 
-    r_idx = np.empty([0, 0])
-    l_idx = np.empty([0, 0])
+    r_idx = np.empty((0, 0))
+    l_idx = np.empty((0, 0))
     # get rtree spatial index
     if tree_idx_right:
         idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
