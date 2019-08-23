@@ -962,6 +962,8 @@ class GeometryArray(ExtensionArray):
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
+        if name == 'any' or name == 'all':
+            return getattr(self.data, name)()
         raise TypeError("cannot perform {name} with type {dtype}".format(
             name=name, dtype=self.dtype))
 
