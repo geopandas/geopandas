@@ -346,7 +346,10 @@ class TestMissing(extension_tests.BaseMissingTests):
 
 
 class TestReduce(extension_tests.BaseNoReduceTests):
-    pass
+
+    @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
+    def test_reduce_series_boolean():
+        pass
 
 
 _all_arithmetic_operators = ['__add__', '__radd__',
