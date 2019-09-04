@@ -164,8 +164,6 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
     if color is not None:
         if pd.api.types.is_list_like(color):
             _, colors = _flatten_multi_geoms(geoms, color)
-            if None in colors:
-                colors = None
             kwargs['color'] = colors
         else:
             kwargs['color'] = color
@@ -225,8 +223,6 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     if color is not None:
         if pd.api.types.is_list_like(color):
             _, colors = _flatten_multi_geoms(geoms, color)
-            if None in colors:
-                colors = None
             color = colors
 
     collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
