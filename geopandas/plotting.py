@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+
 def _flatten_multi_geoms(geoms, colors=None):
     """
     Returns Series like geoms and colors, except that any Multi geometries
@@ -87,7 +88,7 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
                           " for plotting polygons in geopandas.")
     from matplotlib.collections import PatchCollection
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
+    geoms_, values = _flatten_multi_geoms(geoms, values)
     if None in values:
         values = None
 
@@ -97,9 +98,19 @@ def plot_polygon_collection(ax, geoms, values=None, color=None,
 
     # color=None overwrites specified facecolor/edgecolor with default color
     if color is not None:
-        kwargs['color'] = color
+        if pd.api.types.is_list_like(color):
+            _, colors = _flatten_multi_geoms(geoms, color)
+            kwargs['color'] = colors
+        else:
+            kwargs['color'] = color
+    else:
+        for att in ['facecolor', 'edgecolor']:
+            if att in kwargs:
+                if pd.api.types.is_list_like(kwargs[att]):
+                    _, colors = _flatten_multi_geoms(geoms, kwargs[att])
+                    kwargs[att] = colors
 
-    collection = PatchCollection([PolygonPatch(poly) for poly in geoms],
+    collection = PatchCollection([PolygonPatch(poly) for poly in geoms_],
                                  **kwargs)
 
     if values is not None:
@@ -141,7 +152,7 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
     """
     from matplotlib.collections import LineCollection
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
+    geoms_, values = _flatten_multi_geoms(geoms, values)
     if None in values:
         values = None
 
@@ -151,9 +162,15 @@ def plot_linestring_collection(ax, geoms, values=None, color=None,
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        kwargs['color'] = color
+        if pd.api.types.is_list_like(color):
+            _, colors = _flatten_multi_geoms(geoms, color)
+            if None in colors:
+                colors = None
+            kwargs['color'] = colors
+        else:
+            kwargs['color'] = color
 
-    segments = [np.array(linestring)[:, :2] for linestring in geoms]
+    segments = [np.array(linestring)[:, :2] for linestring in geoms_]
     collection = LineCollection(segments, **kwargs)
 
     if values is not None:
@@ -193,17 +210,24 @@ def plot_point_collection(ax, geoms, values=None, color=None,
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
+    geoms_, values = _flatten_multi_geoms(geoms, values)
     if None in values:
         values = None
-    x = [p.x for p in geoms]
-    y = [p.y for p in geoms]
+    x = [p.x for p in geoms_]
+    y = [p.y for p in geoms_]
 
     # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:
         kwargs['c'] = values
     if markersize is not None:
         kwargs['s'] = markersize
+
+    if color is not None:
+        if pd.api.types.is_list_like(color):
+            _, colors = _flatten_multi_geoms(geoms, color)
+            if None in colors:
+                colors = None
+            color = colors
 
     collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
                             marker=marker, **kwargs)
@@ -496,7 +520,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                               **style_kwds)
 
     if legend and not color:
-        
+
         if legend_kwds is None:
             legend_kwds = {}
 
