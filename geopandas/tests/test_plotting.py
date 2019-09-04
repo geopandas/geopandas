@@ -186,7 +186,7 @@ class TestPointPlotting:
 
         # MultiPoints
         ax = self.df2.plot()
-        _check_colors(1, ax.collections[0].get_facecolors(),
+        _check_colors(4, ax.collections[0].get_facecolors(),
                       [MPL_DFT_COLOR] * 4)
 
 
