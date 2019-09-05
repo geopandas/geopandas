@@ -376,7 +376,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to ax.legend()
+        Keyword arguments to pass to matplotlib.pyplot.legend() or
+        matplotlib.pyplot.colorbar().
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
 
@@ -484,10 +485,6 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
-    if cax is not None:
-        cbar_kwargs = {"cax": cax}
-    else:
-        cbar_kwargs = {"ax": ax}
 
     # plot all Points in the same collection
     points = df.geometry[point_idx]
@@ -499,6 +496,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                               **style_kwds)
 
     if legend and not color:
+        
+        if legend_kwds is None:
+            legend_kwds = {}
+
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
         from matplotlib import cm
@@ -513,14 +514,19 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                            alpha=style_kwds.get('alpha', 1), markersize=10,
                            markerfacecolor=n_cmap.to_rgba(value),
                            markeredgewidth=0))
-            if legend_kwds is None:
-                legend_kwds = {}
+
             legend_kwds.setdefault('numpoints', 1)
             legend_kwds.setdefault('loc', 'best')
             ax.legend(patches, categories, **legend_kwds)
         else:
+
+            if cax is not None:
+                legend_kwds.setdefault("cax", cax)
+            else:
+                legend_kwds.setdefault("ax", ax)
+
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, **cbar_kwargs)
+            ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
     plt.draw()
     return ax
