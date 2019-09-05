@@ -140,18 +140,15 @@ def test_astype(s, df):
 
     assert isinstance(df, GeoDataFrame)
 
-    # check that a different geometry column name is OK
+    # check whether returned object is a datafrane
 
-    try:
-        df.geometry
-    except AttributeError:
-        pytest.fail('No geometry column found')
+    df = df.astype(str)
 
-    assert df.geometry.astype(str)[0] == 'POINT (0 0)'
+    assert isinstance(df, pd.DataFrame)
 
-    # check actual astype functionality
+    df = df.astype({'geom_list': str})
 
-    assert df.value1.astype(float).dtype == np.dtype('float64')
+    assert isinstance(df, pd.DataFrame)
 
 def test_to_csv(df):
 

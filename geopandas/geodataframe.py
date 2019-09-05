@@ -688,6 +688,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
             return df
         except TypeError:
+            df = pd.DataFrame(df)
             return df
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
