@@ -1,5 +1,4 @@
 from __future__ import print_function
-from distutils.version import LooseVersion
 import warnings
 
 import numpy as np
@@ -314,10 +313,10 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     return ax
 
 
-def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
+def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, **style_kwds):
+                   legend_kwds=None, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -342,6 +341,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
+    cax : matplotlib.pyplot Artist (default None)
+        axes on which to draw the legend in case of color map.
     categorical : bool (default False)
         If False, cmap will reflect numerical values of the
         column being plotted.  For non-numerical columns, this
@@ -350,9 +351,13 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
         Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.Map_Classifier object will be used
-        under the hood. Supported schemes: 'Quantiles',
-        'Equal_Interval', 'Fisher_Jenks', 'Fisher_Jenks_Sampled'
+        A mapclassify.MapClassifier object will be used
+        under the hood. Supported are all schemes provided by mapclassify (e.g.
+        'BoxPlot', 'EqualInterval', 'FisherJenks', 'FisherJenksSampled',
+        'HeadTailBreaks', 'JenksCaspall', 'JenksCaspallForced',
+        'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
+        'NaturalBreaks', 'Quantiles', 'Percentiles', 'StdMean',
+        'UserDefined'). Arguments can be passed in classification_kwds.
     k : int (default 5)
         Number of classes (ignored if scheme is None)
     vmin : None or float (default None)
@@ -371,7 +376,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to ax.legend()
+        Keyword arguments to pass to matplotlib.pyplot.legend() or
+        matplotlib.pyplot.colorbar().
+    classification_kwds : dict (default None)
+        Keyword arguments to pass to mapclassify
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -400,6 +408,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     import matplotlib.pyplot as plt
 
     if ax is None:
+        if cax is not None:
+            raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
     ax.set_aspect('equal')
 
@@ -432,20 +442,19 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
     # Define `values` as a Series
     if categorical:
         if cmap is None:
-            if LooseVersion(matplotlib.__version__) >= '2.0.1':
-                cmap = 'tab10'
-            elif LooseVersion(matplotlib.__version__) >= '2.0.0':
-                # Erroneous name.
-                cmap = 'Vega10'
-            else:
-                cmap = 'Set1'
+            cmap = 'tab10'
         categories = list(set(values))
         categories.sort()
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
         values = np.array([valuemap[k] for k in values])
 
     if scheme is not None:
-        binning = _mapclassify_choro(values, scheme, k=k)
+        if classification_kwds is None:
+            classification_kwds = {}
+        if 'k' not in classification_kwds:
+                classification_kwds['k'] = k
+
+        binning = _mapclassify_choro(values, scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
         binedges = [values.min()] + binning.bins.tolist()
@@ -453,8 +462,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                       for i in range(len(binedges)-1)]
         values = np.array(binning.yb)
 
-    mn = values.min() if vmin is None else vmin
-    mx = values.max() if vmax is None else vmax
+    mn = values[~np.isnan(values)].min() if vmin is None else vmin
+    mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     geom_types = df.geometry.type
     poly_idx = np.asarray((geom_types == 'Polygon')
@@ -476,6 +485,7 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
         plot_linestring_collection(ax, lines, values[line_idx],
                                    vmin=mn, vmax=mx, cmap=cmap, **style_kwds)
 
+
     # plot all Points in the same collection
     points = df.geometry[point_idx]
     if not points.empty:
@@ -486,6 +496,10 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                               **style_kwds)
 
     if legend and not color:
+        
+        if legend_kwds is None:
+            legend_kwds = {}
+
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
         from matplotlib import cm
@@ -500,20 +514,25 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None,
                            alpha=style_kwds.get('alpha', 1), markersize=10,
                            markerfacecolor=n_cmap.to_rgba(value),
                            markeredgewidth=0))
-            if legend_kwds is None:
-                legend_kwds = {}
+
             legend_kwds.setdefault('numpoints', 1)
             legend_kwds.setdefault('loc', 'best')
             ax.legend(patches, categories, **legend_kwds)
         else:
+
+            if cax is not None:
+                legend_kwds.setdefault("cax", cax)
+            else:
+                legend_kwds.setdefault("ax", ax)
+
             n_cmap.set_array([])
-            ax.get_figure().colorbar(n_cmap, ax=ax)
+            ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
     plt.draw()
     return ax
 
 
-def _mapclassify_choro(values, scheme, k=5):
+def _mapclassify_choro(values, scheme, **classification_kwds):
     """
     Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
@@ -523,10 +542,16 @@ def _mapclassify_choro(values, scheme, k=5):
         Series to be plotted
     scheme : str
         One of mapclassify classification schemes
-        Options are 'Quantiles', 'Equal_Interval', 'Fisher_Jenks',
-        'Fisher_Jenks_Sampled'
-    k : int
-        number of classes (2 <= k <=9)
+        Options are BoxPlot, EqualInterval, FisherJenks,
+        FisherJenksSampled, HeadTailBreaks, JenksCaspall,
+        JenksCaspallForced, JenksCaspallSampled, MaxP,
+        MaximumBreaks, NaturalBreaks, Quantiles, Percentiles, StdMean,
+        UserDefined
+
+    **classification_kwds : dict
+        Keyword arguments for classification scheme
+        For details see mapclassify documentation:
+        https://mapclassify.readthedocs.io/en/latest/api.html
 
     Returns
     -------
@@ -536,28 +561,66 @@ def _mapclassify_choro(values, scheme, k=5):
 
     """
     try:
-        from mapclassify import (
-            Quantiles, Equal_Interval, Fisher_Jenks,
-            Fisher_Jenks_Sampled)
+        import mapclassify.classifiers as classifiers
     except ImportError:
         try:
-            from mapclassify.api import (
-                Quantiles, Equal_Interval, Fisher_Jenks,
-                Fisher_Jenks_Sampled)
+            import pysal.viz.mapclassify.classifiers as classifiers
         except ImportError:
             raise ImportError(
-                "The 'mapclassify' package is required to use the 'scheme' "
-                "keyword")
+                "The 'mapclassify' or 'pysal' package is required to use the"
+                " 'scheme' keyword")
 
     schemes = {}
-    schemes['equal_interval'] = Equal_Interval
-    schemes['quantiles'] = Quantiles
-    schemes['fisher_jenks'] = Fisher_Jenks
-    schemes['fisher_jenks_sampled'] = Fisher_Jenks_Sampled
+    for classifier in classifiers.CLASSIFIERS:
+        schemes[classifier.lower()] = getattr(classifiers,
+                                              classifier)
 
     scheme = scheme.lower()
-    if scheme not in schemes:
-        raise ValueError("Invalid scheme. Scheme must be in the"
-                         " set: %r" % schemes.keys())
-    binning = schemes[scheme](values, k)
+
+    # mapclassify < 2.1 cleaned up the scheme names (removing underscores)
+    # trying both to keep compatibility with older versions and provide
+    # compatibility with newer versions of mapclassify
+    oldnew = {
+        'Box_Plot': 'BoxPlot',
+        'Equal_Interval': 'EqualInterval',
+        'Fisher_Jenks': 'FisherJenks',
+        'Fisher_Jenks_Sampled': 'FisherJenksSampled',
+        'HeadTail_Breaks': 'HeadTailBreaks',
+        'Jenks_Caspall': 'JenksCaspall',
+        'Jenks_Caspall_Forced': 'JenksCaspallForced',
+        'Jenks_Caspall_Sampled': 'JenksCaspallSampled',
+        'Max_P_Plassifier': 'MaxP',
+        'Maximum_Breaks': 'MaximumBreaks',
+        'Natural_Breaks': 'NaturalBreaks',
+        'Std_Mean': 'StdMean',
+        'User_Defined': 'UserDefined'
+    }
+    scheme_names_mapping = {}
+    scheme_names_mapping.update(
+        {old.lower(): new.lower() for old, new in oldnew.items()})
+    scheme_names_mapping.update(
+        {new.lower(): old.lower() for old, new in oldnew.items()})
+
+    try:
+        scheme_class = schemes[scheme]
+    except KeyError:
+        scheme = scheme_names_mapping.get(scheme, scheme)
+        try:
+            scheme_class = schemes[scheme]
+        except KeyError:
+            raise ValueError("Invalid scheme. Scheme must be in the"
+                            " set: %r" % schemes.keys())
+
+    if classification_kwds['k'] is not None:
+        try:
+            from inspect import getfullargspec as getspec
+        except ImportError:
+            from inspect import getargspec as getspec
+        spec = getspec(scheme_class.__init__)
+        if 'k' not in spec.args:
+            del classification_kwds['k']
+    try:
+        binning = scheme_class(values, **classification_kwds)
+    except TypeError:
+        raise TypeError("Invalid keyword argument for %r " % scheme)
     return binning

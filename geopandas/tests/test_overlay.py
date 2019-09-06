@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import os
-from distutils.version import LooseVersion
 
 import pandas as pd
 from shapely.geometry import Point, Polygon
@@ -15,12 +14,6 @@ import pytest
 
 DATA = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), 'data', 'overlay')
-
-
-if str(pd.__version__) < LooseVersion('0.23'):
-    CONCAT_KWARGS = {}
-else:
-    CONCAT_KWARGS = {'sort': False}
 
 
 @pytest.fixture
@@ -56,6 +49,7 @@ def use_sindex(request):
     return request.param
 
 
+@pytest.mark.filterwarnings("ignore:'use_sindex':DeprecationWarning")
 def test_overlay(dfs_index, how, use_sindex):
     """
     Basic overlay test with small dummy example dataframes (from docs).
@@ -79,7 +73,7 @@ def test_overlay(dfs_index, how, use_sindex):
         expected = pd.concat([
             expected_intersection,
             expected_difference
-        ], ignore_index=True, **CONCAT_KWARGS)
+        ], ignore_index=True, sort=False)
         expected['col1'] = expected['col1'].astype(float)
     else:
         expected = _read(how)
@@ -295,11 +289,27 @@ def test_preserve_crs(dfs, how):
     result = overlay(df1, df2, how=how)
     assert result.crs == crs
 
+
 def test_empty_intersection(dfs):
     df1, df2 = dfs
-    polys3 = GeoSeries([Polygon([(-1,-1), (-3,-1), (-3,-3), (-1,-3)]),
-                        Polygon([(-3,-3), (-5,-3), (-5,-5), (-3,-5)])])
-    df3 = GeoDataFrame({'geometry': polys3, 'col3':[1,2]})
+    polys3 = GeoSeries([Polygon([(-1, -1), (-3, -1), (-3, -3), (-1, -3)]),
+                        Polygon([(-3, -3), (-5, -3), (-5, -5), (-3, -5)])])
+    df3 = GeoDataFrame({'geometry': polys3, 'col3': [1, 2]})
     expected = GeoDataFrame([], columns=['col1', 'col3', 'geometry'])
     result = overlay(df1, df3)
     assert_geodataframe_equal(result, expected, check_like=True)
+
+
+def test_correct_index(dfs):
+    # GH883 - case where the index was not properly reset
+    df1, df2 = dfs
+    polys3 = GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                        Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+                        Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
+    df3 = GeoDataFrame({'geometry': polys3, 'col3': [1, 2, 3]})
+    i1 = Polygon([(1, 1), (1, 3), (3, 3), (3, 1), (1, 1)])
+    i2 = Polygon([(3, 3), (3, 5), (5, 5), (5, 3), (3, 3)])
+    expected = GeoDataFrame([[1, 1, i1], [3, 2, i2]],
+                            columns=['col3', 'col2', 'geometry'])
+    result = overlay(df3, df2)
+    assert_geodataframe_equal(result, expected)

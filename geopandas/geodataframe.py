@@ -3,17 +3,38 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, shape, Point
 from shapely.geometry.base import BaseGeometry
 from six import string_types, PY3
 
-from geopandas.base import GeoPandasBase, _CoordinateIndexer
+from geopandas.array import GeometryArray, from_shapely
+from geopandas.base import GeoPandasBase, _CoordinateIndexer, is_geometry_type
 from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
 
 
 DEFAULT_GEO_COLUMN_NAME = 'geometry'
+
+
+def _ensure_geometry(data):
+    """
+    Ensure the data is of geometry dtype or converted to it.
+
+    If input is a (Geo)Series, output is a GeoSeries, otherwise output
+    is GeometryArray.
+    """
+    if is_geometry_type(data):
+        if isinstance(data, Series):
+            return GeoSeries(data)
+        return data
+    else:
+        if isinstance(data, Series):
+            out = from_shapely(np.asarray(data))
+            return GeoSeries(out, index=data.index, name=data.name)
+        else:
+            out = from_shapely(data)
+            return out
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -31,12 +52,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         column on GeoDataFrame.
     """
 
-    # XXX: This will no longer be necessary in pandas 0.17
-    _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
-                       'is_copy', '_subtyp', '_index',
-                       '_default_kind', '_default_fill_value', '_metadata',
-                       '__array_struct__', '__array_interface__']
-
     _metadata = ['crs', '_geometry_column_name']
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
@@ -45,17 +60,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop('crs', None)
         geometry = kwargs.pop('geometry', None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
+
+        # need to set this before calling self['geometry'], because
+        # getitem accesses crs
         self.crs = crs
+
+        # set_geometry ensures the geometry data have the proper dtype,
+        # but is not called if `geometry=None` ('geometry' column present
+        # in the data), so therefore need to ensure it here manually
+        # but within a try/except because currently non-geometries are
+        # allowed in that case
+        # TODO do we want to raise / return normal DataFrame in this case?
+        if geometry is None and 'geometry' in self.columns:
+            # only if we have actual geometry values -> call set_geometry
+            try:
+                self['geometry'] = _ensure_geometry(self['geometry'].values)
+            except TypeError:
+                pass
+            else:
+                geometry = 'geometry'
+
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
-
-    # Serialize metadata (will no longer be necessary in pandas 0.17+)
-    # See https://github.com/pydata/pandas/pull/10557
-    def __getstate__(self):
-        meta = dict((k, getattr(self, k, None)) for k in self._metadata)
-        return dict(_data=self._data, _typ=self._typ,
-                    _metadata=self._metadata, **meta)
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -71,8 +98,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return self[self._geometry_column_name]
 
     def _set_geometry(self, col):
-        # TODO: Use pandas' core.common.is_list_like() here.
-        if not isinstance(col, (list, np.ndarray, Series)):
+        if not pd.api.types.is_list_like(col):
             raise ValueError("Must use a list-like to set the geometry"
                              " property")
         self.set_geometry(col, inplace=True)
@@ -119,7 +145,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(col, (Series, list, np.ndarray)):
+        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
@@ -145,8 +171,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, BaseGeometry) or pd.isnull(item) for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
+        level = _ensure_geometry(level)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
@@ -154,20 +179,51 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
+    def rename_geometry(self, col, inplace=False):
+        """
+        Renames the GeoDataFrame geometry column to
+        the specified name. By default yields a new object.
+
+        The original geometry column is replaced with the input.
+
+        Parameters
+        ----------
+        col : new geometry column label
+        inplace : boolean, default False
+            Modify the GeoDataFrame in place (do not create a new object)
+
+        Examples
+        --------
+        >>> df1 = df.rename_geometry('geom1')
+        >>> df1.geometry.name
+        'geom1'
+        >>> df.rename_geometry('geom1', inplace=True)
+        >>> df.geometry.name
+        'geom1'
+
+        Returns
+        -------
+        geodataframe : GeoDataFrame
+        """
+        geometry_col = self.geometry.name
+        if not inplace:
+            return self.rename(columns={geometry_col: col}).set_geometry(col, inplace)
+        self.rename(columns={geometry_col: col}, inplace=inplace)
+        self.set_geometry(col, inplace=inplace)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
-        `fiona`. See http://toblerity.org/fiona/manual.html for details.
+        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
 
         Parameters
         ----------
-
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://toblerity.org/fiona/README.html#usage for usage details.
+            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
         kwargs : key-word arguments
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
@@ -175,7 +231,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
         return geopandas.io.file.read_file(filename, **kwargs)
@@ -239,8 +294,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None,
-                     index_col=None, coerce_float=True, params=None):
-        """Alternate constructor to create a ``GeoDataFrame`` from a sql query
+                     index_col=None, coerce_float=True,
+                     parse_dates=None, params=None):
+        """
+        Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column in WKB representation.
 
         Parameters
@@ -256,12 +313,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float : boolean, default True
             Attempt to convert values of non-string, non-numeric objects (like
             decimal.Decimal) to floating point, useful for SQL result sets
-        params : list, tuple or dict, optional, default: None
+        parse_dates : list or dict, default None
+            - List of column names to parse as dates.
+            - Dict of ``{column_name: format string}`` where format string is
+              strftime compatible in case of parsing string times, or is one of
+              (D, s, ns, ms, us) in case of parsing integer timestamps.
+            - Dict of ``{column_name: arg dict}``, where the arg dict
+              corresponds to the keyword arguments of
+              :func:`pandas.to_datetime`. Especially useful with databases
+              without native Datetime support, such as SQLite.
+        params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
 
         Examples
         --------
-        PostGIS
         >>> sql = "SELECT geom, highway FROM roads"
         SpatiaLite
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
@@ -270,7 +335,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         df = geopandas.io.sql.read_postgis(
                 sql, con, geom_col=geom_col, crs=crs,
-                index_col=index_col, coerce_float=coerce_float, params=params)
+                index_col=index_col, coerce_float=coerce_float,
+                parse_dates=parse_dates, params=params)
+
         return df
 
     def to_json(self, na='null', show_bbox=False, **kwargs):
@@ -506,25 +573,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 object.__setattr__(self, name, getattr(other, name, None))
         return self
 
-    def copy(self, deep=True):
-        """
-        Make a copy of this GeoDataFrame object
-
-        Parameters
-        ----------
-        deep : boolean, default True
-            Make a deep copy, i.e. also copy data
-
-        Returns
-        -------
-        copy : GeoDataFrame
-        """
-        # FIXME: this will likely be unnecessary in pandas >= 0.13
-        data = self._data
-        if deep:
-            data = data.copy()
-        return GeoDataFrame(data).__finalize__(self)
-
     def plot(self, *args, **kwargs):
         """Generate a plot of the geometries in the ``GeoDataFrame``.
 
@@ -638,6 +686,3 @@ else:
     import types
     DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
                                               DataFrame)
-
-
-GeoDataFrame._create_indexer('cx', _CoordinateIndexer)

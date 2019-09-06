@@ -43,13 +43,18 @@ class TestMerging:
         self._check_metadata(res, 'points', self.gdf.crs)
 
     def test_concat_axis0(self):
-
+        # frame
         res = pd.concat([self.gdf, self.gdf])
-
         assert res.shape == (6, 2)
         assert isinstance(res, GeoDataFrame)
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
+
+        # series
+        res = pd.concat([self.gdf.geometry, self.gdf.geometry])
+        assert res.shape == (6, )
+        assert isinstance(res, GeoSeries)
+        assert isinstance(res.geometry, GeoSeries)
 
     def test_concat_axis1(self):
 

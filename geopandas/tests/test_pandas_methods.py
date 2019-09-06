@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-from distutils.version import LooseVersion
+import os
 
-from six import PY3
+from six import PY3, PY2
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,9 @@ import shapely
 from shapely.geometry import Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import from_shapely
 from geopandas.tests.util import assert_geoseries_equal
+from geopandas._compat import PANDAS_GE_024
 
 import pytest
 from numpy.testing import assert_array_equal
@@ -62,6 +64,33 @@ def test_indexing(s, df):
     assert_geoseries_equal(df[mask]['geometry'], exp)
     assert_geoseries_equal(df.loc[mask, 'geometry'], exp)
 
+    # slices
+    s.index = [1, 2, 3]
+    exp = GeoSeries([Point(1, 1), Point(2, 2)], index=[2, 3])
+    assert_series_equal(s[1:], exp)
+    assert_series_equal(s.iloc[1:], exp)
+    assert_series_equal(s.loc[2:], exp)
+
+
+def test_reindex(s, df):
+    # GeoSeries reindex
+    res = s.reindex([1, 2, 3])
+    exp = GeoSeries([Point(1, 1), Point(2, 2), None], index=[1, 2, 3])
+    assert_geoseries_equal(res, exp)
+
+    # GeoDataFrame reindex index
+    res = df.reindex(index=[1, 2, 3])
+    assert_geoseries_equal(res.geometry, exp)
+
+    # GeoDataFrame reindex columns
+    res = df.reindex(columns=['value1', 'geometry'])
+    assert isinstance(res, GeoDataFrame)
+    assert isinstance(res.geometry, GeoSeries)
+    assert_frame_equal(res, df[['value1', 'geometry']])
+
+    # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
+    # should it return DataFrame instead ?
+
 
 def test_assignment(s, df):
     exp = GeoSeries([Point(10, 10), Point(1, 1), Point(2, 2)])
@@ -106,12 +135,10 @@ def test_astype(s):
 def test_to_csv(df):
 
     exp = ('geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\n'
-           'POINT (2 2),2,1\n')
+           'POINT (2 2),2,1\n').replace('\n', os.linesep)
     assert df.to_csv(index=False) == exp
 
 
-@pytest.mark.skipif(str(pd.__version__) < LooseVersion('0.17'),
-                    reason="s.max() does not raise on 0.16")
 def test_numerical_operations(s, df):
 
     # df methods ignore the geometry column
@@ -134,7 +161,8 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         df + 1
 
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, AssertionError)):
+        # TODO(pandas 0.23) remove AssertionError -> raised in 0.23
         s + 1
 
     # boolean comparisons work
@@ -143,10 +171,12 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skipif(
+    not PANDAS_GE_024,
+    reason='where for EA only implemented in 0.24.0 (GH24114)')
 def test_where(s):
     res = s.where(np.array([True, False, True]))
-    exp = s.copy()
-    exp[1] = np.nan
+    exp = GeoSeries([Point(0, 0), None, Point(2, 2)])
     assert_series_equal(res, exp)
 
 
@@ -158,29 +188,25 @@ def test_select_dtypes(df):
 # Missing values
 
 
-@pytest.mark.xfail
-def test_fillna():
-    # this currently does not work (it seems to fill in the second coordinate
-    # of the point
+def test_fillna(s):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
 
 
-@pytest.mark.xfail
 def test_dropna():
-    # this currently does not work (doesn't drop)
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.dropna()
     exp = s2.loc[[0, 2]]
     assert_geoseries_equal(res, exp)
 
 
-@pytest.mark.parametrize("NA", [None, np.nan, Point(), Polygon()])
+@pytest.mark.parametrize("NA", [None, np.nan])
 def test_isna(NA):
-    s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)])
-    exp = pd.Series([False, True, False])
+    s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name='tt')
+    exp = pd.Series([False, True, False], index=[2, 4, 5], name='tt')
     res = s2.isnull()
+    assert type(res) == pd.Series
     assert_series_equal(res, exp)
     res = s2.isna()
     assert_series_equal(res, exp)
@@ -193,11 +219,11 @@ def test_isna(NA):
 # Groupby / algos
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(PY2, reason='pd.unique buggy with WKB values on py2')
 def test_unique():
-    # this currently raises a TypeError
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
-    exp = np.array([Point(0, 0), Point(2, 2)])
+    exp = from_shapely([Point(0, 0), Point(2, 2)])
+    # TODO should have specialized GeometryArray assert method
     assert_array_equal(s.unique(), exp)
 
 
@@ -210,19 +236,20 @@ def test_value_counts():
     assert_series_equal(res, exp)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_series():
-    # currently, geoseries with identical values are not recognized as
-    # duplicates
+    # duplicated does not yet use EA machinery
+    # (https://github.com/pandas-dev/pandas/issues/27264)
+    # but relies on unstable hashing of unhashable objects in numpy array
+    # giving flaky test (https://github.com/pandas-dev/pandas/issues/27035)
     dups = GeoSeries([Point(0, 0), Point(0, 0)])
     dropped = dups.drop_duplicates()
     assert len(dropped) == 1
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_frame():
-    # currently, dropping duplicates in a geodataframe produces a TypeError
-    # better behavior would be dropping the duplicated points
+    # duplicated does not yet use EA machinery, see above
     gdf_len = 3
     dup_gdf = GeoDataFrame({'geometry': [Point(0, 0) for _ in range(gdf_len)],
                             'value1': range(gdf_len)})
@@ -260,3 +287,13 @@ def test_groupby_groups(df):
     assert isinstance(res, GeoDataFrame)
     exp = df.loc[[0, 2]]
     assert_frame_equal(res, exp)
+
+
+def test_apply_loc_len1(df):
+    # subset of len 1 with loc -> bug in pandas with inconsistent Block ndim
+    # resulting in bug in apply
+    # https://github.com/geopandas/geopandas/issues/1078
+    subset = df.loc[[0], 'geometry']
+    result = subset.apply(lambda geom: geom.is_empty)
+    expected = subset.is_empty
+    np.testing.assert_allclose(result, expected)

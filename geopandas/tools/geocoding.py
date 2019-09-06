@@ -10,21 +10,20 @@ from six import iteritems, string_types
 import geopandas
 
 
-def _throttle_time(provider):
-    """ Amount of time to wait between requests to a geocoding API.
-
-    Currently implemented for Nominatim, as their terms of service
-    require a maximum of 1 request per second.
-    https://wiki.openstreetmap.org/wiki/Nominatim_usage_policy
+def _get_throttle_time(provider):
+    """
+    Amount of time to wait between requests to a geocoding API, for providers
+    that specify rate limits in their terms of service.
     """
     import geopy.geocoders
+    # https://operations.osmfoundation.org/policies/nominatim/
     if provider == geopy.geocoders.Nominatim:
         return 1
     else:
         return 0
 
 
-def geocode(strings, provider='googlev3', **kwargs):
+def geocode(strings, provider=None, **kwargs):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -32,10 +31,14 @@ def geocode(strings, provider='googlev3', **kwargs):
     ----------
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
-        Specifies geocoding service to use, default is 'googlev3'.
+        Specifies geocoding service to use. If none is provided,
+        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
+        terms of service at:
+        https://geocode.farm/geocoding/free-api-documentation/ ).
+
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GoogleV3) may be used.
+        (e.g., geopy.geocoders.GeocodeFarm) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -58,12 +61,19 @@ def geocode(strings, provider='googlev3', **kwargs):
                              geometry
     0  POINT (-71.0597732 42.3584308)
     1  POINT (-77.0365305 38.8977332)
-
     """
-    return _query(strings, True, provider, **kwargs)
+
+    if provider is None:
+        # https://geocode.farm/geocoding/free-api-documentation/
+        provider = 'geocodefarm'
+        throttle_time = 0.25
+    else:
+        throttle_time = _get_throttle_time(provider)
+
+    return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(points, provider='googlev3', **kwargs):
+def reverse_geocode(points, provider=None, **kwargs):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -76,10 +86,14 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
         x coordinate is longitude
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
-        Specifies geocoding service to use, default is 'googlev3'.
+        Specifies geocoding service to use. If none is provided,
+        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
+        terms of service at:
+        https://geocode.farm/geocoding/free-api-documentation/ ).
+
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GoogleV3) may be used.
+        (e.g., geopy.geocoders.GeocodeFarm) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -103,12 +117,19 @@ def reverse_geocode(points, provider='googlev3', **kwargs):
                              geometry
     0  POINT (-71.0594869 42.3584697)
     1  POINT (-77.0365305 38.8977332)
-
     """
-    return _query(points, False, provider, **kwargs)
+
+    if provider is None:
+        # https://geocode.farm/geocoding/free-api-documentation/
+        provider = 'geocodefarm'
+        throttle_time = 0.25
+    else:
+        throttle_time = _get_throttle_time(provider)
+
+    return _query(points, False, provider, throttle_time, **kwargs)
 
 
-def _query(data, forward, provider, **kwargs):
+def _query(data, forward, provider, throttle_time, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
     from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
@@ -129,7 +150,7 @@ def _query(data, forward, provider, **kwargs):
                 results[i] = coder.reverse((s.y, s.x), exactly_one=True)
         except (GeocoderQueryError, ValueError):
             results[i] = (None, None)
-        time.sleep(_throttle_time(provider))
+        time.sleep(throttle_time)
 
     df = _prepare_geocode_result(results)
     return df

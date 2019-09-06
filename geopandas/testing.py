@@ -5,6 +5,7 @@ Testing functionality for geopandas objects.
 import pandas as pd
 
 from geopandas import GeoSeries, GeoDataFrame
+from geopandas.array import GeometryDtype, GeometryArray
 
 
 def _isna(this):
@@ -82,6 +83,10 @@ def assert_geoseries_equal(left, right,
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
+    msg = "dtype should be a GeometryDtype, got {0}"
+    assert isinstance(left.dtype, GeometryDtype), msg.format(left.dtype)
+    assert isinstance(right.dtype, GeometryDtype), msg.format(left.dtype)
+
     if check_index_type:
         assert isinstance(left.index, type(right.index))
 
@@ -158,7 +163,11 @@ def assert_geodataframe_equal(left, right,
         assert isinstance(left, type(right))
 
         if check_crs:
-            assert left.crs == right.crs
+            # no crs can be either None or {}
+            if not left.crs and not right.crs:
+                pass
+            else:
+                assert left.crs == right.crs
     else:
         if not isinstance(left, GeoDataFrame):
             left = GeoDataFrame(left)
