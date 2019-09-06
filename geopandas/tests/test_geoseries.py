@@ -69,7 +69,7 @@ class TestSeries:
         assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
     def test_geom_equals_align(self):
-        with pytest.warns(UserWarning, match="The index .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ different"):
             a = self.a1.geom_equals(self.a2)
         exp = pd.Series([False, True, False], index=['A', 'B', 'C'])
         assert_series_equal(a, exp)
@@ -79,11 +79,11 @@ class TestSeries:
         # Test that warning is issued when operating on non-aligned series
 
         # _series_op
-        with pytest.warns(UserWarning, match="The index .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ different"):
             self.a1.contains(self.a2)
 
         # _geo_op
-        with pytest.warns(UserWarning, match="The index .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ different"):
             self.a1.union(self.a2)
 
     def test_no_warning_if_aligned(self):

@@ -211,7 +211,7 @@ class TestGeomMethods:
     def test_intersection(self):
         self._test_binary_topological('intersection', self.t1,
                                       self.g1, self.g2)
-        with pytest.warns(UserWarning, match="The index .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ different"):
             self._test_binary_topological('intersection', self.all_none,
                                           self.g1, self.empty)
 
