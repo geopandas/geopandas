@@ -16,6 +16,7 @@ def _get_throttle_time(provider):
     that specify rate limits in their terms of service.
     """
     import geopy.geocoders
+
     # https://operations.osmfoundation.org/policies/nominatim/
     if provider == geopy.geocoders.Nominatim:
         return 1
@@ -65,7 +66,7 @@ def geocode(strings, provider=None, **kwargs):
 
     if provider is None:
         # https://geocode.farm/geocoding/free-api-documentation/
-        provider = 'geocodefarm'
+        provider = "geocodefarm"
         throttle_time = 0.25
     else:
         throttle_time = _get_throttle_time(provider)
@@ -121,7 +122,7 @@ def reverse_geocode(points, provider=None, **kwargs):
 
     if provider is None:
         # https://geocode.farm/geocoding/free-api-documentation/
-        provider = 'geocodefarm'
+        provider = "geocodefarm"
         throttle_time = 0.25
     else:
         throttle_time = _get_throttle_time(provider)
@@ -180,8 +181,8 @@ def _prepare_geocode_result(results):
         if address is None:
             address = np.nan
 
-        d['geometry'].append(p)
-        d['address'].append(address)
+        d["geometry"].append(p)
+        d["address"].append(address)
         index.append(i)
 
     df = geopandas.GeoDataFrame(d, index=index)

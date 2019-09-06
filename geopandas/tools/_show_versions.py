@@ -11,11 +11,11 @@ def _get_sys_info():
     sys_info : dict
         system and Python version information
     """
-    python = sys.version.replace('\n', ' ')
+    python = sys.version.replace("\n", " ")
 
     blob = [
         ("python", python),
-        ('executable', sys.executable),
+        ("executable", sys.executable),
         ("machine", platform.platform()),
     ]
 
@@ -31,12 +31,14 @@ def _get_C_info():
     """
     try:
         import pyproj
+
         proj_version = pyproj.proj_version_str
     except Exception:
         proj_version = None
     try:
         # pyproj > 2.0
         from pyproj.exceptions import DataDirError
+
         try:
             proj_dir = pyproj.datadir.get_data_dir()
         except DataDirError:
@@ -45,13 +47,15 @@ def _get_C_info():
         try:
             # pyproj 1.9.6
             import pyproj
+
             proj_dir = pyproj.pyproj_datadir
         except Exception:
             proj_dir = None
 
     try:
         import shapely._buildcfg
-        geos_version = '{}.{}.{}'.format(*shapely._buildcfg.geos_version)
+
+        geos_version = "{}.{}.{}".format(*shapely._buildcfg.geos_version)
         geos_dir = shapely._buildcfg.geos_library_path
     except Exception:
         geos_version = None
@@ -59,23 +63,25 @@ def _get_C_info():
 
     try:
         import fiona
+
         gdal_version = fiona.env.get_gdal_release_name()
     except Exception:
         gdal_version = None
     try:
         import fiona
+
         gdal_dir = fiona.env.GDALDataFinder().search()
     except Exception:
         gdal_dir = None
 
     blob = [
-            ("GEOS", geos_version),
-            ("GEOS lib", geos_dir),
-            ("GDAL", gdal_version),
-            ("GDAL data dir", gdal_dir),
-            ("PROJ", proj_version),
-            ("PROJ data dir", proj_dir)
-            ]
+        ("GEOS", geos_version),
+        ("GEOS lib", geos_dir),
+        ("GDAL", gdal_version),
+        ("GDAL data dir", gdal_dir),
+        ("PROJ", proj_version),
+        ("PROJ data dir", proj_dir),
+    ]
 
     return dict(blob)
 
@@ -100,7 +106,7 @@ def _get_deps_info():
         "mapclassify",
         "pysal",
         "geopy",
-        "psycopg2"
+        "psycopg2",
     ]
 
     def get_version(module):

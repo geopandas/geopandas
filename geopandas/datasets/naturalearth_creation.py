@@ -10,8 +10,10 @@ import geopandas as gpd
 # assumes zipfile from naturalearthdata was downloaded to current directory
 world_raw = gpd.read_file("zip://./ne_110m_admin_0_countries.zip")
 # subsets columns of interest for geopandas examples
-world_df = world_raw[['POP_EST', 'CONTINENT', 'NAME', 'ISO_A3',
-                      'GDP_MD_EST', 'geometry']]
+world_df = world_raw[
+    ["POP_EST", "CONTINENT", "NAME", "ISO_A3", "GDP_MD_EST", "geometry"]
+]
 world_df.columns = world_df.columns.str.lower()
-world_df.to_file(driver='ESRI Shapefile',
-                 filename='./naturalearth_lowres/naturalearth_lowres.shp')
+world_df.to_file(
+    driver="ESRI Shapefile", filename="./naturalearth_lowres/naturalearth_lowres.shp"
+)

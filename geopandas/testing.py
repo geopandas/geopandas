@@ -10,9 +10,9 @@ from geopandas.array import GeometryDtype, GeometryArray
 
 def _isna(this):
     """isna version that works for both scalars and (Geo)Series"""
-    if hasattr(this, 'isna'):
+    if hasattr(this, "isna"):
         return this.isna()
-    elif hasattr(this, 'isnull'):
+    elif hasattr(this, "isnull"):
         return this.isnull()
     else:
         return pd.isnull(this)
@@ -29,8 +29,11 @@ def geom_equals(this, that):
                  attribute)
     """
 
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)
-            | (_isna(this) & _isna(that))).all()
+    return (
+        this.geom_equals(that)
+        | (this.is_empty & that.is_empty)
+        | (_isna(this) & _isna(that))
+    ).all()
 
 
 def geom_almost_equals(this, that):
@@ -47,18 +50,23 @@ def geom_almost_equals(this, that):
                  property)
     """
 
-    return (this.geom_almost_equals(that)
-            | (this.is_empty & that.is_empty)
-            | (_isna(this) & _isna(that))).all()
+    return (
+        this.geom_almost_equals(that)
+        | (this.is_empty & that.is_empty)
+        | (_isna(this) & _isna(that))
+    ).all()
 
 
-def assert_geoseries_equal(left, right,
-                           check_dtype=False,
-                           check_index_type=False,
-                           check_series_type=True,
-                           check_less_precise=False,
-                           check_geom_type=False,
-                           check_crs=True):
+def assert_geoseries_equal(
+    left,
+    right,
+    check_dtype=False,
+    check_index_type=False,
+    check_series_type=True,
+    check_less_precise=False,
+    check_geom_type=False,
+    check_crs=True,
+):
     """
     Test util for checking that two GeoSeries are equal.
 
@@ -91,27 +99,27 @@ def assert_geoseries_equal(left, right,
         assert isinstance(left.index, type(right.index))
 
     if check_dtype:
-        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype,
-                                                               right.dtype)
+        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype, right.dtype)
 
     if check_series_type:
         assert isinstance(left, GeoSeries)
         assert isinstance(left, type(right))
 
         if check_crs:
-            assert(left.crs == right.crs)
+            assert left.crs == right.crs
     else:
         if not isinstance(left, GeoSeries):
             left = GeoSeries(left)
         if not isinstance(right, GeoSeries):
             right = GeoSeries(right, index=left.index)
 
-    assert left.index.equals(right.index), "index: %s != %s" % (left.index,
-                                                                right.index)
+    assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
 
     if check_geom_type:
-        assert (left.type == right.type).all(), "type: %s != %s" % (left.type,
-                                                                    right.type)
+        assert (left.type == right.type).all(), "type: %s != %s" % (
+            left.type,
+            right.type,
+        )
 
     if check_less_precise:
         assert geom_almost_equals(left, right)
@@ -119,15 +127,18 @@ def assert_geoseries_equal(left, right,
         assert geom_equals(left, right)
 
 
-def assert_geodataframe_equal(left, right,
-                              check_dtype=True,
-                              check_index_type='equiv',
-                              check_column_type='equiv',
-                              check_frame_type=True,
-                              check_like=False,
-                              check_less_precise=False,
-                              check_geom_type=False,
-                              check_crs=True):
+def assert_geodataframe_equal(
+    left,
+    right,
+    check_dtype=True,
+    check_index_type="equiv",
+    check_column_type="equiv",
+    check_frame_type=True,
+    check_like=False,
+    check_less_precise=False,
+    check_geom_type=False,
+    check_crs=True,
+):
     """
     Check that two GeoDataFrames are equal/
 
@@ -176,28 +187,41 @@ def assert_geodataframe_equal(left, right,
 
     # shape comparison
     assert left.shape == right.shape, (
-        'GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n'
-        'Left columns: {lcols!r}, right columns: {rcols!r}'.format(
-            lshape=left.shape, rshape=right.shape,
-            lcols=left.columns, rcols=right.columns))
+        "GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n"
+        "Left columns: {lcols!r}, right columns: {rcols!r}".format(
+            lshape=left.shape,
+            rshape=right.shape,
+            lcols=left.columns,
+            rcols=right.columns,
+        )
+    )
 
     if check_like:
         left, right = left.reindex_like(right), right
 
     # column comparison
-    assert_index_equal(left.columns, right.columns, exact=check_column_type,
-                       obj='GeoDataFrame.columns')
+    assert_index_equal(
+        left.columns, right.columns, exact=check_column_type, obj="GeoDataFrame.columns"
+    )
 
     # geometry comparison
     assert_geoseries_equal(
-        left.geometry, right.geometry, check_dtype=check_dtype,
+        left.geometry,
+        right.geometry,
+        check_dtype=check_dtype,
         check_less_precise=check_less_precise,
-        check_geom_type=check_geom_type, check_crs=False)
+        check_geom_type=check_geom_type,
+        check_crs=False,
+    )
 
     # drop geometries and check remaining columns
     left2 = left.drop([left._geometry_column_name], axis=1)
     right2 = right.drop([right._geometry_column_name], axis=1)
-    assert_frame_equal(left2, right2, check_dtype=check_dtype,
-                       check_index_type=check_index_type,
-                       check_column_type=check_column_type,
-                       obj='GeoDataFrame')
+    assert_frame_equal(
+        left2,
+        right2,
+        check_dtype=check_dtype,
+        check_index_type=check_index_type,
+        check_column_type=check_column_type,
+        obj="GeoDataFrame",
+    )

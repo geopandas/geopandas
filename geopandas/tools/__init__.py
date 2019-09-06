@@ -6,10 +6,4 @@ from .sjoin import sjoin
 from .util import collect
 from .crs import explicit_crs_from_epsg
 
-__all__ = [
-    'overlay',
-    'sjoin',
-    'geocode',
-    'reverse_geocode',
-    'collect',
-]
+__all__ = ["overlay", "sjoin", "geocode", "reverse_geocode", "collect"]

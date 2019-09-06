@@ -14,15 +14,14 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import (
-    GeoPandasBase, _delegate_property, _CoordinateIndexer)
+from geopandas.base import GeoPandasBase, _delegate_property, _CoordinateIndexer
 
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from ._compat import PANDAS_GE_024
 
 
-_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
+_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion("2.1.0")
 
 
 def _is_empty(x):
@@ -47,8 +46,11 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", message=_SERIES_WARNING_MSG,
-                category=FutureWarning, module="geopandas[.*]")
+                "ignore",
+                message=_SERIES_WARNING_MSG,
+                category=FutureWarning,
+                module="geopandas[.*]",
+            )
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
@@ -87,7 +89,8 @@ class GeoSeries(GeoPandasBase, Series):
     pandas.Series
 
     """
-    _metadata = ['name', 'crs']
+
+    _metadata = ["name", "crs"]
 
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
         # we need to use __new__ because we want to return Series instance
@@ -101,11 +104,10 @@ class GeoSeries(GeoPandasBase, Series):
                     # bug in pandas <= 0.25.0 when len(values) == 1
                     #   (https://github.com/pandas-dev/pandas/issues/27785)
                     from pandas.core.internals import ExtensionBlock
+
                     values = data.blocks[0].values
-                    block = ExtensionBlock(
-                        values, slice(0, len(values), 1), ndim=1)
-                    data = SingleBlockManager(
-                        [block], data.axes[0], fastpath=True)
+                    block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
+                    data = SingleBlockManager([block], data.axes[0], fastpath=True)
                 self = super(GeoSeries, cls).__new__(cls)
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = crs
@@ -119,13 +121,13 @@ class GeoSeries(GeoPandasBase, Series):
             n = len(index) if index is not None else 1
             data = [data] * n
 
-        name = kwargs.pop('name', None)
+        name = kwargs.pop("name", None)
 
         if not is_geometry_type(data):
             # if data is None and dtype is specified (eg from empty overlay
             # test), specifying dtype raises an error:
             # https://github.com/pandas-dev/pandas/issues/26469
-            kwargs.pop('dtype', None)
+            kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
             s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
@@ -133,8 +135,7 @@ class GeoSeries(GeoPandasBase, Series):
                 if s.empty:
                     s = s.astype(object)
                 else:
-                    warnings.warn(
-                        _SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
+                    warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
                     return s
             # try to convert to GeometryArray, if fails return plain Series
             try:
@@ -157,7 +158,7 @@ class GeoSeries(GeoPandasBase, Series):
         pass
 
     def append(self, *args, **kwargs):
-        return self._wrapped_pandas_method('append', *args, **kwargs)
+        return self._wrapped_pandas_method("append", *args, **kwargs)
 
     @property
     def geometry(self):
@@ -166,12 +167,12 @@ class GeoSeries(GeoPandasBase, Series):
     @property
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
-        return _delegate_property('x', self)
+        return _delegate_property("x", self)
 
     @property
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
-        return _delegate_property('y', self)
+        return _delegate_property("y", self)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -193,6 +194,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
 
         from geopandas import GeoDataFrame
+
         df = GeoDataFrame.from_file(filename, **kwargs)
 
         return GeoSeries(df.geometry, crs=df.crs)
@@ -207,13 +209,15 @@ class GeoSeries(GeoPandasBase, Series):
         don't have associated attributes (geometry only).
         """
         from geopandas import GeoDataFrame
-        return GeoDataFrame({'geometry': self}).__geo_interface__
+
+        return GeoDataFrame({"geometry": self}).__geo_interface__
 
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         from geopandas import GeoDataFrame
-        data = GeoDataFrame({"geometry": self,
-                             "id": self.index.values},
-                            index=self.index)
+
+        data = GeoDataFrame(
+            {"geometry": self, "id": self.index.values}, index=self.index
+        )
         data.crs = self.crs
         data.to_file(filename, driver, **kwargs)
 
@@ -235,16 +239,16 @@ class GeoSeries(GeoPandasBase, Series):
         return val
 
     def __getitem__(self, key):
-        return self._wrapped_pandas_method('__getitem__', key)
+        return self._wrapped_pandas_method("__getitem__", key)
 
     def sort_index(self, *args, **kwargs):
-        return self._wrapped_pandas_method('sort_index', *args, **kwargs)
+        return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
     def take(self, *args, **kwargs):
-        return self._wrapped_pandas_method('take', *args, **kwargs)
+        return self._wrapped_pandas_method("take", *args, **kwargs)
 
     def select(self, *args, **kwargs):
-        return self._wrapped_pandas_method('select', *args, **kwargs)
+        return self._wrapped_pandas_method("select", *args, **kwargs)
 
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
@@ -283,10 +287,11 @@ class GeoSeries(GeoPandasBase, Series):
                 "back the old behaviour.\n\n"
                 "To further ignore this warning, you can do: \n"
                 "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)",
-                UserWarning, stacklevel=2)
+                UserWarning,
+                stacklevel=2,
+            )
 
         return super(GeoSeries, self).isna()
-
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -322,23 +327,25 @@ class GeoSeries(GeoPandasBase, Series):
                 "back the old behaviour.\n\n"
                 "To further ignore this warning, you can do: \n"
                 "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)",
-                UserWarning, stacklevel=2)
+                UserWarning,
+                stacklevel=2,
+            )
         return super(GeoSeries, self).notna()
 
     def notnull(self):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False,
-               **kwargs):
+    def fillna(self, value=None, method=None, inplace=False, **kwargs):
         """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
         """
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(value=value, method=method,
-                                             inplace=inplace, **kwargs)
+        return super(GeoSeries, self).fillna(
+            value=value, method=method, inplace=inplace, **kwargs
+        )
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -389,14 +396,17 @@ class GeoSeries(GeoPandasBase, Series):
             EPSG code specifying output projection.
         """
         from fiona.crs import from_epsg
+
         if self.crs is None:
-            raise ValueError('Cannot transform naive geometries.  '
-                             'Please set a crs on the object first.')
+            raise ValueError(
+                "Cannot transform naive geometries.  "
+                "Please set a crs on the object first."
+            )
         if crs is None:
             try:
                 crs = from_epsg(epsg)
             except TypeError:
-                raise TypeError('Must set either crs or epsg for output.')
+                raise TypeError("Must set either crs or epsg for output.")
         proj_in = pyproj.Proj(self.crs, preserve_units=True)
         proj_out = pyproj.Proj(crs, preserve_units=True)
         if _PYPROJ2:
