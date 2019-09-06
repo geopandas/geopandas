@@ -671,7 +671,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
-    #overrides the pandas.core.generic.NDFrame method
+    # overrides the pandas astype method to ensure the correct return type
     def astype(self, dtype, copy=True, errors='raise', **kwargs):
         """
         Temporary overwrite of pandas native astype method. Returns a
@@ -682,7 +682,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         GeoDataFrame or DataFrame
         """
-        df = super(DataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
             df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
@@ -690,6 +690,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         except TypeError:
             df = pd.DataFrame(df)
             return df
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
