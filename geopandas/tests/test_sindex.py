@@ -9,9 +9,8 @@ import pytest
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(not base.HAS_SINDEX, reason='Rtree absent, skipping')
+@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSeriesSindex:
-
     def test_empty_index(self):
         assert GeoSeries().sindex is None
 
@@ -56,18 +55,20 @@ class TestSeriesSindex:
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(not base.HAS_SINDEX, reason='Rtree absent, skipping')
+@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestFrameSindex:
     def setup_method(self):
-        data = {"A": range(5), "B": range(-5, 0),
-                "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
-        self.df = GeoDataFrame(data, geometry='location')
+        data = {
+            "A": range(5),
+            "B": range(-5, 0),
+            "location": [Point(x, y) for x, y in zip(range(5), range(5))],
+        }
+        self.df = GeoDataFrame(data, geometry="location")
 
     def test_sindex(self):
-        self.df.crs = {'init': 'epsg:4326'}
+        self.df.crs = {"init": "epsg:4326"}
         assert self.df.sindex.size == 5
-        hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4),
-                                                objects=True))
+        hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4), objects=True))
         assert len(hits) == 2
         assert hits[0].object == 3
 
@@ -80,45 +81,44 @@ class TestFrameSindex:
         # First build the sindex
         assert self.df.sindex is not None
         self.df.set_geometry(
-            [Point(x, y) for x, y in zip(range(5, 10), range(5, 10))],
-            inplace=True)
+            [Point(x, y) for x, y in zip(range(5, 10), range(5, 10))], inplace=True
+        )
         assert self.df._sindex_generated is False
 
 
 # Skip to accommodate Shapely geometries being unhashable
 @pytest.mark.skip
 class TestJoinSindex:
-
     def setup_method(self):
-        nybb_filename = geopandas.datasets.get_path('nybb')
+        nybb_filename = geopandas.datasets.get_path("nybb")
         self.boros = read_file(nybb_filename)
 
     def test_merge_geo(self):
         # First check that we gets hits from the boros frame.
         tree = self.boros.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [self.boros.loc[hit.object]['BoroName'] for hit in hits]
-        assert res == ['Bronx', 'Queens']
+        res = [self.boros.loc[hit.object]["BoroName"] for hit in hits]
+        assert res == ["Bronx", "Queens"]
 
         # Check that we only get the Bronx from this view.
-        first = self.boros[self.boros['BoroCode'] < 3]
+        first = self.boros[self.boros["BoroCode"] < 3]
         tree = first.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [first.loc[hit.object]['BoroName'] for hit in hits]
-        assert res == ['Bronx']
+        res = [first.loc[hit.object]["BoroName"] for hit in hits]
+        assert res == ["Bronx"]
 
         # Check that we only get Queens from this view.
-        second = self.boros[self.boros['BoroCode'] >= 3]
+        second = self.boros[self.boros["BoroCode"] >= 3]
         tree = second.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [second.loc[hit.object]['BoroName'] for hit in hits],
-        assert res == ['Queens']
+        res = ([second.loc[hit.object]["BoroName"] for hit in hits],)
+        assert res == ["Queens"]
 
         # Get both the Bronx and Queens again.
-        merged = first.merge(second, how='outer')
+        merged = first.merge(second, how="outer")
         assert len(merged) == 5
         assert merged.sindex.size == 5
         tree = merged.sindex
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [merged.loc[hit.object]['BoroName'] for hit in hits]
-        assert res == ['Bronx', 'Queens']
+        res = [merged.loc[hit.object]["BoroName"] for hit in hits]
+        assert res == ["Bronx", "Queens"]
