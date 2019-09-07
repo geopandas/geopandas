@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
-from pandas import Series, DataFrame
+from pandas import DataFrame, Series
+
 from shapely.geometry import Point
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 
 
 class TestSeries:

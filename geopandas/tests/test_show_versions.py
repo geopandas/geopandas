@@ -1,7 +1,9 @@
-from geopandas.tools._show_versions import _get_sys_info
-from geopandas.tools._show_versions import _get_deps_info
-from geopandas.tools._show_versions import _get_C_info
-from geopandas.tools._show_versions import show_versions
+from geopandas.tools._show_versions import (
+    _get_C_info,
+    _get_deps_info,
+    _get_sys_info,
+    show_versions,
+)
 
 
 def test_get_sys_info():

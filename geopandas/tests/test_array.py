@@ -2,27 +2,26 @@ import random
 
 import numpy as np
 import pandas as pd
+import six
 
 import shapely
+import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
-import shapely.affinity
 
 import geopandas
 from geopandas.array import (
     GeometryArray,
-    points_from_xy,
     from_shapely,
     from_wkb,
     from_wkt,
+    points_from_xy,
     to_wkb,
     to_wkt,
 )
 
 import pytest
-import six
-
 
 triangle_no_missing = [
     shapely.geometry.Polygon([(random.random(), random.random()) for i in range(3)])

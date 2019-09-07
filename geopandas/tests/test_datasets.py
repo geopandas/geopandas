@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
-import pytest
-
-from geopandas import read_file, GeoDataFrame
+from geopandas import GeoDataFrame, read_file
 from geopandas.datasets import get_path
+
+import pytest
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,6 @@
+import importlib
 import platform
 import sys
-import importlib
 
 
 def _get_sys_info():

@@ -2,21 +2,21 @@ from __future__ import absolute_import
 
 import os
 
-from six import PY3, PY2
-
 import numpy as np
+from numpy.testing import assert_array_equal
 import pandas as pd
+from six import PY2, PY3
+
 import shapely
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas.array import from_shapely
-from geopandas.tests.util import assert_geoseries_equal
 from geopandas._compat import PANDAS_GE_024
+from geopandas.array import from_shapely
 
-import pytest
-from numpy.testing import assert_array_equal
+from geopandas.tests.util import assert_geoseries_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
+import pytest
 
 
 @pytest.fixture

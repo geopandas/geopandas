@@ -7,17 +7,17 @@ see geopandas.tests.util for more information.
 
 from __future__ import absolute_import
 
-import pytest
-
 import geopandas
-from geopandas import read_postgis, read_file
+from geopandas import read_file, read_postgis
+
 from geopandas.tests.util import (
     connect,
     connect_spatialite,
-    create_spatialite,
     create_postgis,
+    create_spatialite,
     validate_boro_df,
 )
+import pytest
 
 
 @pytest.fixture

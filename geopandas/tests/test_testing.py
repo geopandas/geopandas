@@ -1,11 +1,11 @@
-import pytest
-
 import numpy as np
-from shapely.geometry import Polygon, Point
 
-from geopandas import GeoSeries, GeoDataFrame
-from geopandas.testing import assert_geoseries_equal, assert_geodataframe_equal
+from shapely.geometry import Point, Polygon
 
+from geopandas import GeoDataFrame, GeoSeries
+
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+import pytest
 
 s1 = GeoSeries(
     [

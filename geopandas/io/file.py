@@ -1,17 +1,17 @@
-import os
 from distutils.version import LooseVersion
+import os
+
+import numpy as np
+import six
 
 import fiona
-import numpy as np
 
-import six
+from geopandas import GeoDataFrame, GeoSeries
 
 try:
     from fiona import Env as fiona_env
 except ImportError:
     from fiona import drivers as fiona_env
-
-from geopandas import GeoDataFrame, GeoSeries
 
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")

@@ -1,23 +1,22 @@
+from enum import Enum
 import os
 import sys
-from enum import Enum
 
 from shapely.geometry import (
-    Point,
-    Polygon,
-    MultiPolygon,
-    MultiPoint,
     LineString,
     MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
 )
 
 import geopandas
 from geopandas import GeoDataFrame
 from geopandas.io.file import _FIONA18
 
-import pytest
 from geopandas.testing import assert_geodataframe_equal
-
+import pytest
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere

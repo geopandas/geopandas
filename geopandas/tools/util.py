@@ -1,5 +1,6 @@
 import pandas as pd
-from shapely.geometry import MultiPoint, MultiLineString, MultiPolygon
+
+from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 
 _multi_type_map = {

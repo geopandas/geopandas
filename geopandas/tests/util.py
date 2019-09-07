@@ -1,13 +1,15 @@
 import os.path
 import sqlite3
 
-from geopandas import GeoDataFrame
-from geopandas.testing import (  # noqa
-    geom_equals,
-    geom_almost_equals,
-    assert_geoseries_equal,
-)
 from pandas import Series
+
+from geopandas import GeoDataFrame
+
+from geopandas.testing import (  # noqa
+    assert_geoseries_equal,
+    geom_almost_equals,
+    geom_equals,
+)
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))

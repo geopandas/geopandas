@@ -3,11 +3,11 @@ from __future__ import absolute_import
 from distutils.version import LooseVersion
 
 import pyproj
-from shapely.geometry import Point, MultiPoint, LineString
+from shapely.geometry import LineString, MultiPoint, Point
 
 from geopandas import GeoSeries
 from geopandas.tools import collect
-from geopandas.tools.crs import explicit_crs_from_epsg, epsg_from_crs
+from geopandas.tools.crs import epsg_from_crs, explicit_crs_from_epsg
 
 import pytest
 

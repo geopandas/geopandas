@@ -15,11 +15,12 @@ expected to be available to pytest by the inherited pandas tests).
 """
 import numpy as np
 import pandas as pd
+from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 
-from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import PANDAS_GE_024
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
 
@@ -27,8 +28,6 @@ import pytest
 # Compat with extension tests in older pandas versions
 # -----------------------------------------------------------------------------
 
-
-from pandas.tests.extension import base as extension_tests
 
 if not PANDAS_GE_024:
     # pandas 0.23.4 doesn't have those tests yet, so adding dummy classes

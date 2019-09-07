@@ -12,12 +12,11 @@ import pyproj
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
-from geopandas.plotting import plot_series
 from geopandas.base import GeoPandasBase, _delegate_property
+from geopandas.plotting import plot_series
 
 from .array import GeometryDtype, from_shapely
 from .base import is_geometry_type
-
 
 _PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion("2.1.0")
 
