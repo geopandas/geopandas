@@ -1,13 +1,12 @@
 import os.path
-import sys
 import sqlite3
 
 from geopandas import GeoDataFrame
-from geopandas.testing import (
+from geopandas.testing import (  # noqa
     geom_equals,
     geom_almost_equals,
     assert_geoseries_equal,
-)  # flake8: noqa
+)
 from pandas import Series
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -25,9 +24,9 @@ except ImportError:
 
 # mock not used here, but the import from here is used in other modules
 try:
-    import unittest.mock as mock
+    import unittest.mock as mock  # noqa
 except ImportError:
-    import mock
+    import mock  # noqa
 
 
 def validate_boro_df(df, case_sensitive=False):
@@ -78,7 +77,10 @@ def connect_spatialite():
     """
     Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
 
-    `The sqlite3 module must be built with loadable extension support <https://docs.python.org/3/library/sqlite3.html#f1>`_ and `SpatiaLite <https://www.gaia-gis.it/fossil/libspatialite/index>`_ must be available on the system as a SQLite module.
+    `The sqlite3 module must be built with loadable extension support
+    <https://docs.python.org/3/library/sqlite3.html#f1>`_ and
+    `SpatiaLite <https://www.gaia-gis.it/fossil/libspatialite/index>`_
+    must be available on the system as a SQLite module.
     Packages available on Anaconda meet requirements.
 
     Exceptions

@@ -372,7 +372,7 @@ def _unary_geo(op, left, *args, **kwargs):
 
 
 def _unary_op(op, left, null_value=False):
-    # type: (str, GeometryArray, Any) -> array
+    # type: (str, GeometryArray, Any) -> np.array
     """Unary operation that returns a Series"""
     data = [getattr(geom, op, null_value) for geom in left.data]
     return np.array(data, dtype=np.dtype(type(null_value)))

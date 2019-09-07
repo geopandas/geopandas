@@ -449,7 +449,6 @@ def plot_dataframe(
         )
         column = None
 
-    import matplotlib
     import matplotlib.pyplot as plt
 
     if ax is None:

@@ -3,12 +3,11 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import mapping, shape, Point
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry import mapping, shape
 from six import string_types, PY3
 
 from geopandas.array import GeometryArray, from_shapely
-from geopandas.base import GeoPandasBase, _CoordinateIndexer, is_geometry_type
+from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
@@ -156,7 +155,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 level = frame[col].values
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
-            except:
+            except Exception:
                 raise
             if drop:
                 to_remove = col

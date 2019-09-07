@@ -140,7 +140,7 @@ class TestSeries:
         Test whether GeoSeries.to_json works and returns an actual json file.
         """
         json_str = self.g3.to_json()
-        json_dict = json.loads(json_str)
+        json.loads(json_str)
         # TODO : verify the output is a valid GeoJSON.
 
     def test_representative_point(self):

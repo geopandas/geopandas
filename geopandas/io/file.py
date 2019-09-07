@@ -35,7 +35,7 @@ def _is_url(url):
     """Check to see if *url* has a valid protocol."""
     try:
         return parse_url(url).scheme in _VALID_URLS
-    except:
+    except Exception:
         return False
 
 

@@ -3,7 +3,7 @@ Script that generates the included dataset 'naturalearth_lowres.shp'.
 
 Raw data: https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-countries/
 Current version used: version 4.1.0
-"""
+"""  # noqa (E501 link is longer than max line length)
 
 import geopandas as gpd
 

@@ -5,7 +5,7 @@ Testing functionality for geopandas objects.
 import pandas as pd
 
 from geopandas import GeoSeries, GeoDataFrame
-from geopandas.array import GeometryDtype, GeometryArray
+from geopandas.array import GeometryDtype
 
 
 def _isna(this):

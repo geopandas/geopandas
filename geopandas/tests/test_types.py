@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import warnings
-
 from pandas import Series, DataFrame
 from shapely.geometry import Point
 
