@@ -26,8 +26,8 @@ def nybb_polydf():
 @pytest.fixture
 def merged_shapes(nybb_polydf):
     # Merged geometry
-    manhattan_bronx = nybb_polydf.loc[3:4,]
-    others = nybb_polydf.loc[0:2,]
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
 
     collapsed = [others.geometry.unary_union, manhattan_bronx.geometry.unary_union]
     merged_shapes = GeoDataFrame(

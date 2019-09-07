@@ -1,20 +1,20 @@
-from geopandas.geoseries import GeoSeries
-from geopandas.geodataframe import GeoDataFrame
-from geopandas.array import _points_from_xy as points_from_xy
+from geopandas.geoseries import GeoSeries  # noqa
+from geopandas.geodataframe import GeoDataFrame  # noqa
+from geopandas.array import _points_from_xy as points_from_xy  # noqa
 
-from geopandas.io.file import read_file
-from geopandas.io.sql import read_postgis
-from geopandas.tools import sjoin
-from geopandas.tools import overlay
-from geopandas.tools._show_versions import show_versions
+from geopandas.io.file import read_file  # noqa
+from geopandas.io.sql import read_postgis  # noqa
+from geopandas.tools import sjoin  # noqa
+from geopandas.tools import overlay  # noqa
+from geopandas.tools._show_versions import show_versions  # noqa
 
-import geopandas.datasets
+import geopandas.datasets  # noqa
 
 # make the interactive namespace easier to use
 # for `from geopandas import *` demos.
-import geopandas as gpd
-import pandas as pd
-import numpy as np
+import geopandas as gpd  # noqa
+import pandas as pd  # noqa
+import numpy as np  # noqa
 
 from ._version import get_versions
 

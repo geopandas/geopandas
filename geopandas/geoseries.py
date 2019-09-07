@@ -9,26 +9,17 @@ from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
 import pyproj
-from shapely.geometry import shape, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from geopandas.plotting import plot_series
-from geopandas.base import GeoPandasBase, _delegate_property, _CoordinateIndexer
+from geopandas.base import GeoPandasBase, _delegate_property
 
-from .array import GeometryArray, GeometryDtype, from_shapely
+from .array import GeometryDtype, from_shapely
 from .base import is_geometry_type
-from ._compat import PANDAS_GE_024
 
 
 _PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion("2.1.0")
-
-
-def _is_empty(x):
-    try:
-        return x.is_empty
-    except:
-        return False
 
 
 _SERIES_WARNING_MSG = """\
@@ -279,14 +270,15 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if self.is_empty.any():
             warnings.warn(
-                "GeoSeries.isna() previously returned True for both missing (None) and "
-                "empty geometries. Now, it only returns True for missing values. "
+                "GeoSeries.isna() previously returned True for both missing (None) "
+                "and empty geometries. Now, it only returns True for missing values. "
                 "Since the calling GeoSeries contains empty geometries, the result "
                 "has changed compared to previous versions of GeoPandas.\n"
                 "Given a GeoSeries 's', you can use 's.is_empty | s.isna()' to get "
                 "back the old behaviour.\n\n"
                 "To further ignore this warning, you can do: \n"
-                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)",
+                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', "
+                "UserWarning)",
                 UserWarning,
                 stacklevel=2,
             )
@@ -319,14 +311,15 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if self.is_empty.any():
             warnings.warn(
-                "GeoSeries.notna() previously returned False for both missing (None) and "
-                "empty geometries. Now, it only returns False for missing values. "
+                "GeoSeries.notna() previously returned False for both missing (None) "
+                "and empty geometries. Now, it only returns False for missing values. "
                 "Since the calling GeoSeries contains empty geometries, the result "
                 "has changed compared to previous versions of GeoPandas.\n"
                 "Given a GeoSeries 's', you can use '~s.is_empty & s.notna()' to get "
                 "back the old behaviour.\n\n"
                 "To further ignore this warning, you can do: \n"
-                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)",
+                "import warnings; warnings.filterwarnings('ignore', "
+                "'GeoSeries.notna', UserWarning)",
                 UserWarning,
                 stacklevel=2,
             )

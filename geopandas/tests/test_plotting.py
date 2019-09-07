@@ -15,7 +15,7 @@ import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa
 
 
 @pytest.fixture(autouse=True)
@@ -428,10 +428,10 @@ class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
         try:
-            import mapclassify
+            import mapclassify  # noqa
         except ImportError:
             try:
-                import pysal
+                import pysal  # noqa
             except ImportError:
                 pytest.importorskip("mapclassify")
         pth = get_path("naturalearth_lowres")

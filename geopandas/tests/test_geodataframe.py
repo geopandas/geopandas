@@ -7,7 +7,7 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 import fiona
 
 import geopandas
@@ -22,9 +22,6 @@ from pandas.util.testing import (
 )
 from geopandas.testing import assert_geoseries_equal, assert_geodataframe_equal
 from geopandas.tests.util import connect, create_postgis, PACKAGE_DIR, validate_boro_df
-
-
-import pytest
 
 
 class TestDataFrame:
@@ -207,7 +204,6 @@ class TestDataFrame:
             df.geometry = df
 
     def test_rename_geometry(self):
-        column_name = self.df.geometry.name
         assert self.df.geometry.name == "geometry"
         df2 = self.df.rename_geometry("new_name")
         assert df2.geometry.name == "new_name"

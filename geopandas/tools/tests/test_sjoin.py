@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from distutils.version import LooseVersion
-
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point, Polygon
@@ -15,7 +13,7 @@ from pandas.util.testing import assert_frame_equal
 
 
 pandas_0_18_problem = (
-    "fails under pandas < 0.19 due to pandas issue 15692," "not problem with sjoin."
+    "fails under pandas < 0.19 due to pandas issue 15692, not problem with sjoin."
 )
 
 
@@ -144,10 +142,10 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         with pytest.raises(ValueError, match="'left_df' should be GeoDataFrame"):
-            res = sjoin(df1.geometry, df2)
+            sjoin(df1.geometry, df2)
 
         with pytest.raises(ValueError, match="'right_df' should be GeoDataFrame"):
-            res = sjoin(df1, df2.geometry)
+            sjoin(df1, df2.geometry)
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
@@ -247,9 +245,9 @@ class TestSpatialJoinNYBB:
         # original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = "pointid"
-        df = sjoin(pointdf2, self.polydf, how=how)
+        sjoin(pointdf2, self.polydf, how=how)
         assert pointdf2.index.name == "pointid"
-        assert self.polydf.index.name == None
+        assert self.polydf.index.name is None
 
     def test_sjoin_values(self):
         # GH190

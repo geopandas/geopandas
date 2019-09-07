@@ -23,14 +23,6 @@ from geopandas._compat import PANDAS_GE_024
 
 import pytest
 
-
-not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
-no_sorting = pytest.mark.skip(reason="Sorting not supported")
-skip_pandas_below_024 = pytest.mark.skipif(
-    not PANDAS_GE_024, reason="Sorting not supported"
-)
-
-
 # -----------------------------------------------------------------------------
 # Compat with extension tests in older pandas versions
 # -----------------------------------------------------------------------------
@@ -46,6 +38,13 @@ if not PANDAS_GE_024:
     extension_tests.BaseComparisonOpsTests = object
     extension_tests.BasePrintingTests = object
     extension_tests.BaseParsingTests = object
+
+
+not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
+no_sorting = pytest.mark.skip(reason="Sorting not supported")
+skip_pandas_below_024 = pytest.mark.skipif(
+    not PANDAS_GE_024, reason="Sorting not supported"
+)
 
 
 # -----------------------------------------------------------------------------

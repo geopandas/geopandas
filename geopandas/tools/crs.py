@@ -19,7 +19,8 @@ def explicit_crs_from_epsg(crs=None, epsg=None):
         epsg = epsg_from_crs(crs)
     if epsg is None:
         raise ValueError(
-            "No epsg code provided or epsg code could not be identified from the provided crs."
+            "No epsg code provided or epsg code could not be identified "
+            "from the provided crs."
         )
 
     _crs = re.search(r"\n<{}>\s*(.+?)\s*<>".format(epsg), get_epsg_file_contents())

@@ -122,8 +122,9 @@ class TestIO:
             geom_col = df_nybb.geometry.name
             df_nybb.geometry.iat[0] = None
             create_spatialite(con, df_nybb)
-            sql = 'SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, AsEWKB("{0}") AS "{0}" FROM nybb'.format(
-                geom_col
+            sql = (
+                "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
+                'AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
             )
             df = read_postgis(sql, con, geom_col=geom_col)
             validate_boro_df(df)
@@ -140,8 +141,9 @@ class TestIO:
         else:
             geom_col = df_nybb.geometry.name
             create_spatialite(con, df_nybb)
-            sql = 'SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(
-                geom_col
+            sql = (
+                "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
+                'ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
             )
             df = read_postgis(sql, con, geom_col=geom_col)
             validate_boro_df(df)

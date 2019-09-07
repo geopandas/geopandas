@@ -3,12 +3,10 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame, MultiIndex
-from pandas.core.indexing import _NDFrameIndexer
 
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import box
 from shapely.ops import cascaded_union, unary_union
-import shapely.affinity as affinity
 
 import geopandas as gpd
 
@@ -628,9 +626,11 @@ class GeoPandasBase(object):
         ----------
         matrix: List or tuple
             6 or 12 items for 2D or 3D transformations respectively.
-            For 2D affine transformations, the 6 parameter matrix is [a, b, d, e, xoff, yoff]
-            For 3D affine transformations, the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
-        """
+            For 2D affine transformations,
+            the 6 parameter matrix is [a, b, d, e, xoff, yoff]
+            For 3D affine transformations,
+            the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
+        """  # noqa (E501 link is longer than max line length)
         return _delegate_geo_method("affine_transform", self, matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
@@ -645,7 +645,7 @@ class GeoPandasBase(object):
             Amount of offset along each dimension.
             xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
-        """
+        """  # noqa (E501 link is longer than max line length)
         return _delegate_geo_method("translate", self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):

@@ -1,7 +1,5 @@
 import os
-import shutil
 import sys
-import tempfile
 from enum import Enum
 
 from shapely.geometry import (

@@ -7,7 +7,7 @@ from six import PY3, PY2
 import numpy as np
 import pandas as pd
 import shapely
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import from_shapely
