@@ -6,9 +6,9 @@ import warnings
 import numpy as np
 
 from shapely.affinity import rotate
-from shapely.geometry import MultiPolygon, Polygon, LineString, Point, MultiPoint
+from shapely.geometry import LineString, MultiPoint, MultiPolygon, Point, Polygon
 
-from geopandas import GeoSeries, GeoDataFrame, read_file
+from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
 
 import pytest

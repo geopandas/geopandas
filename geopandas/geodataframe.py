@@ -3,15 +3,15 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from six import PY3, string_types
+
 from shapely.geometry import mapping, shape
-from six import string_types, PY3
 
 from geopandas.array import GeometryArray, from_shapely
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
-from geopandas.plotting import plot_dataframe
 import geopandas.io
-
+from geopandas.plotting import plot_dataframe
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 

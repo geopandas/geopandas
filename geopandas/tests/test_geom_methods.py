@@ -3,19 +3,19 @@ from __future__ import absolute_import
 import string
 
 import numpy as np
-from pandas import Series, DataFrame, MultiIndex
-from shapely.geometry import Point, LinearRing, LineString, Polygon, MultiPoint
+from numpy.testing import assert_array_equal
+from pandas import DataFrame, MultiIndex, Series
+
+from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
-from geopandas.tests.util import geom_equals, geom_almost_equals, assert_geoseries_equal
-
+from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 import pytest
-from numpy.testing import assert_array_equal
-from pandas.util.testing import assert_series_equal, assert_frame_equal
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):

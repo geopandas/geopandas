@@ -1,6 +1,5 @@
 import os
 
-
 __all__ = ["available", "get_path"]
 
 _module_path = os.path.dirname(__file__)

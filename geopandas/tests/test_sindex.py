@@ -1,9 +1,9 @@
 import sys
 
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Point, Polygon
 
 import geopandas
-from geopandas import GeoSeries, GeoDataFrame, base, read_file
+from geopandas import GeoDataFrame, GeoSeries, base, read_file
 
 import pytest
 

@@ -2,26 +2,27 @@ from __future__ import absolute_import
 
 import json
 import os
-import tempfile
 import shutil
+import tempfile
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
+
 import fiona
+from shapely.geometry import Point
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, GeoSeries
+from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype
 
-import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
 from pandas.util.testing import (
     assert_frame_equal,
     assert_index_equal,
     assert_series_equal,
 )
-from geopandas.testing import assert_geoseries_equal, assert_geodataframe_equal
-from geopandas.tests.util import connect, create_postgis, PACKAGE_DIR, validate_boro_df
+import pytest
 
 
 class TestDataFrame:

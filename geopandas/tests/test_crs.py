@@ -1,8 +1,8 @@
 import numpy as np
 
 from geopandas import GeoDataFrame, points_from_xy
-from geopandas.testing import assert_geodataframe_equal
 
+from geopandas.testing import assert_geodataframe_equal
 import pytest
 
 

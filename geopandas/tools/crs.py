@@ -1,7 +1,8 @@
-import pyproj
-import re
 import os
+import re
+
 import fiona.crs
+import pyproj
 
 
 def explicit_crs_from_epsg(crs=None, epsg=None):

@@ -1,30 +1,31 @@
 from __future__ import absolute_import
 
-import os
 import json
+import os
 import random
 import shutil
 import tempfile
 
 import numpy as np
+from numpy.testing import assert_array_equal
 import pandas as pd
+
 from shapely.geometry import (
-    Polygon,
-    Point,
     LineString,
-    MultiPoint,
     MultiLineString,
+    MultiPoint,
     MultiPolygon,
+    Point,
+    Polygon,
 )
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries
 from geopandas.array import GeometryArray, GeometryDtype
 
-import pytest
 from geopandas.tests.util import geom_equals
-from numpy.testing import assert_array_equal
 from pandas.util.testing import assert_series_equal
+import pytest
 
 
 class TestSeries:

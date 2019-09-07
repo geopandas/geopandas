@@ -1,9 +1,7 @@
 from distutils.version import LooseVersion
 
-import six
-
 import pandas as pd
-
+import six
 
 # -----------------------------------------------------------------------------
 # pandas compat

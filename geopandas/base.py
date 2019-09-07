@@ -2,16 +2,15 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
-from pandas import Series, DataFrame, MultiIndex
+from pandas import DataFrame, MultiIndex, Series
 
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry import box
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union, unary_union
 
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
-
 
 try:
     from rtree.core import RTreeError

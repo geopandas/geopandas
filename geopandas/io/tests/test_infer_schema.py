@@ -1,17 +1,16 @@
 from collections import OrderedDict
 
 from shapely.geometry import (
-    Point,
-    Polygon,
-    MultiPolygon,
-    MultiPoint,
     LineString,
     MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
 )
 
 from geopandas import GeoDataFrame
-from geopandas.io.file import infer_schema, _FIONA18
-
+from geopandas.io.file import _FIONA18, infer_schema
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere

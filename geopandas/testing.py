@@ -4,7 +4,7 @@ Testing functionality for geopandas objects.
 
 import pandas as pd
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import GeometryDtype
 
 

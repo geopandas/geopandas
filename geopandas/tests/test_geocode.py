@@ -2,17 +2,17 @@ from __future__ import absolute_import
 
 import numpy as np
 import pandas as pd
+
 from fiona.crs import from_epsg
 from shapely.geometry import Point
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
-import pytest
+from geopandas.tests.util import assert_geoseries_equal, mock
 from pandas.util.testing import assert_series_equal
-from geopandas.tests.util import mock, assert_geoseries_equal
-
+import pytest
 
 geopy = pytest.importorskip("geopy")
 

@@ -4,14 +4,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.api.extensions import ExtensionArray, ExtensionDtype
 
 import shapely
-from shapely.geometry.base import BaseGeometry
-import shapely.geometry
-import shapely.ops
 import shapely.affinity
-
-from pandas.api.extensions import ExtensionArray, ExtensionDtype
+import shapely.geometry
+from shapely.geometry.base import BaseGeometry
+import shapely.ops
 
 from ._compat import PANDAS_GE_024, Iterable
 

@@ -15,9 +15,9 @@ import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas.io.file import fiona_env
 
-import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+import pytest
 
 
 @pytest.fixture

@@ -1,11 +1,12 @@
 from collections import defaultdict
 import time
 
-from fiona.crs import from_epsg
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
 from six import iteritems, string_types
+
+from fiona.crs import from_epsg
+from shapely.geometry import Point
 
 import geopandas
 

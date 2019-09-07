@@ -3,14 +3,14 @@ from __future__ import absolute_import
 import os
 
 import pandas as pd
+
 from shapely.geometry import Point, Polygon
 
 import geopandas
-from geopandas import GeoDataFrame, GeoSeries, read_file, overlay
+from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
+
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-
 import pytest
-
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
 
