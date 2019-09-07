@@ -25,7 +25,7 @@ class GeometryDtype(ExtensionDtype):
         if string == cls.name:
             return cls()
         else:
-            raise TypeError("Cannot construct a '{}' from " "'{}'".format(cls, string))
+            raise TypeError("Cannot construct a '{}' from '{}'".format(cls, string))
 
     @classmethod
     def construct_array_type(cls):
@@ -230,7 +230,7 @@ def _binary_geo(op, left, right):
         return GeometryArray(data)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
-            msg = "Lengths of inputs do not match. " "Left: {0}, Right: {1}".format(
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
                 len(left), len(right)
             )
             raise ValueError(msg)
@@ -276,7 +276,7 @@ def _binary_predicate(op, left, right, *args, **kwargs):
         return np.array(data, dtype=bool)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
-            msg = "Lengths of inputs do not match. " "Left: {0}, Right: {1}".format(
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
                 len(left), len(right)
             )
             raise ValueError(msg)
@@ -307,7 +307,7 @@ def _binary_op_float(op, left, right, *args, **kwargs):
         return np.array(data, dtype=float)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
-            msg = "Lengths of inputs do not match. " "Left: {0}, Right: {1}".format(
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
                 len(left), len(right)
             )
             raise ValueError(msg)
@@ -346,7 +346,7 @@ def _binary_op(op, left, right, *args, **kwargs):
         return np.array(data, dtype=dtype)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
-            msg = "Lengths of inputs do not match. " "Left: {0}, Right: {1}".format(
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
                 len(left), len(right)
             )
             raise ValueError(msg)
@@ -453,7 +453,7 @@ class GeometryArray(ExtensionArray):
                 self.data[key] = value
         else:
             raise TypeError(
-                "Value should be either a BaseGeometry or None, " "got %s" % str(value)
+                "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
 
     # -------------------------------------------------------------------------
@@ -775,7 +775,7 @@ class GeometryArray(ExtensionArray):
         """
         if not (isinstance(value, BaseGeometry) or value is None):
             raise TypeError(
-                "Value should be either a BaseGeometry or None, " "got %s" % str(value)
+                "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
         # self.data[idx] = value
         self.data[idx] = np.array([value], dtype=object)
@@ -810,7 +810,7 @@ class GeometryArray(ExtensionArray):
             raise NotImplementedError("fillna with a method is not yet supported")
         elif not isinstance(value, BaseGeometry):
             raise NotImplementedError(
-                "fillna currently only supports filling with a scalar " "geometry"
+                "fillna currently only supports filling with a scalar geometry"
             )
 
         mask = self.isna()

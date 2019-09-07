@@ -87,7 +87,7 @@ def plot_polygon_collection(
         from descartes.patch import PolygonPatch
     except ImportError:
         raise ImportError(
-            "The descartes package is required" " for plotting polygons in geopandas."
+            "The descartes package is required for plotting polygons in geopandas."
         )
     from matplotlib.collections import PatchCollection
 
@@ -446,7 +446,7 @@ def plot_dataframe(
         ax = style_kwds.pop("axes")
     if column is not None and color is not None:
         warnings.warn(
-            "Only specify one of 'column' or 'color'. Using " "'color'.", UserWarning
+            "Only specify one of 'column' or 'color'. Using 'color'.", UserWarning
         )
         column = None
 
@@ -484,7 +484,7 @@ def plot_dataframe(
     if isinstance(column, (np.ndarray, pd.Series)):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
-                "The dataframe and given column have different " "number of rows."
+                "The dataframe and given column have different number of rows."
             )
         else:
             values = np.asarray(column)
@@ -682,7 +682,7 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
             scheme_class = schemes[scheme]
         except KeyError:
             raise ValueError(
-                "Invalid scheme. Scheme must be in the" " set: %r" % schemes.keys()
+                "Invalid scheme. Scheme must be in the set: %r" % schemes.keys()
             )
 
     if classification_kwds["k"] is not None:
