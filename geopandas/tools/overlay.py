@@ -362,12 +362,12 @@ def overlay(df1, df2, how="intersection", make_valid=True, use_sindex=None):
     # Error Messages
     if how not in allowed_hows:
         raise ValueError(
-            "`how` was '{0}' but is expected to be " "in %s".format(how, allowed_hows)
+            "`how` was '{0}' but is expected to be in %s".format(how, allowed_hows)
         )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
-            "overlay currently only implemented for " "GeoDataFrames"
+            "overlay currently only implemented for GeoDataFrames"
         )
 
     accepted_types = ["Polygon", "MultiPolygon"]
@@ -376,7 +376,7 @@ def overlay(df1, df2, how="intersection", make_valid=True, use_sindex=None):
         or not df2.geom_type.isin(accepted_types).all()
     ):
         raise TypeError(
-            "overlay only takes GeoDataFrames with (multi)polygon " " geometries."
+            "overlay only takes GeoDataFrames with (multi)polygon  geometries."
         )
 
     # Computations

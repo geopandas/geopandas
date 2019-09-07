@@ -140,7 +140,7 @@ def test_astype(s):
 def test_to_csv(df):
 
     exp = (
-        "geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\n" "POINT (2 2),2,1\n"
+        "geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\nPOINT (2 2),2,1\n"
     ).replace("\n", os.linesep)
     assert df.to_csv(index=False) == exp
 

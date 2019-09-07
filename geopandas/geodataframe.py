@@ -100,7 +100,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def _set_geometry(self, col):
         if not pd.api.types.is_list_like(col):
-            raise ValueError("Must use a list-like to set the geometry" " property")
+            raise ValueError("Must use a list-like to set the geometry property")
         self.set_geometry(col, inplace=True)
 
     geometry = property(
@@ -428,13 +428,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 geom = geometries[i]
 
                 if na == "drop":
-                    properties_items = dict(
-                        (k, v) for k, v in zip(properties_cols, row) if not pd.isnull(v)
-                    )
+                    properties_items = {
+                        k: v for k, v in zip(properties_cols, row) if not pd.isnull(v)
+                    }
                 else:
-                    properties_items = dict(
-                        (k, v) for k, v in zip(properties_cols, row)
-                    )
+                    properties_items = {k: v for k, v in zip(properties_cols, row)}
 
                 feature = {
                     "id": str(ids[i]),
@@ -697,7 +695,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
         raise ValueError(
-            "Can't do inplace setting when converting from" " DataFrame to GeoDataFrame"
+            "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
         )
     gf = GeoDataFrame(self)
     # this will copy so that BlockManager gets copied
