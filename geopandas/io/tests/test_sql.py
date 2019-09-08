@@ -139,3 +139,20 @@ class TestIO:
         finally:
             if 'con' in locals():
                 con.close()
+
+    def test_read_postgis_chunksize(self, df_nybb):
+        chunksize = 10
+        con = connect('test_geopandas')
+        if con is None or not create_postgis(df_nybb):
+            raise pytest.skip()
+
+        try:
+            sql = "SELECT * FROM nybb;"
+            df = pd.concat(read_postgis(sql, con, chunksize=chunksize))
+        finally:
+            con.close()
+
+        validate_boro_df(df)
+        # no crs defined on the created geodatabase, and none specified
+        # by user; should not be set to 0, as from get_srid failure
+        assert df.crs is None
