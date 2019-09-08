@@ -22,7 +22,7 @@ from .base import is_geometry_type
 from ._compat import PANDAS_GE_024
 
 
-_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion('2.1.0')
+_PYPROJ_VERSION = LooseVersion(pyproj.__version__)
 
 
 def _is_empty(x):
@@ -389,20 +389,37 @@ class GeoSeries(GeoPandasBase, Series):
             EPSG code specifying output projection.
         """
         from fiona.crs import from_epsg
+        if crs is None and epsg is None:
+            raise TypeError('Must set either crs or epsg for output.')
+
         if self.crs is None:
             raise ValueError('Cannot transform naive geometries.  '
                              'Please set a crs on the object first.')
-        if crs is None:
-            try:
-                crs = from_epsg(epsg)
-            except TypeError:
-                raise TypeError('Must set either crs or epsg for output.')
-        proj_in = pyproj.Proj(self.crs, preserve_units=True)
-        proj_out = pyproj.Proj(crs, preserve_units=True)
-        if _PYPROJ2:
-            transformer = pyproj.Transformer.from_proj(proj_in, proj_out)
+
+        # skip transformation if the input CRS and output CRS are the exact same
+        if _PYPROJ_VERSION >= LooseVersion("2.1.2") and pyproj.CRS.from_user_input(
+            self.crs
+        ).is_exact_same(pyproj.CRS.from_user_input(crs or epsg)):
+            return self
+
+        try:
+            crs = from_epsg(epsg) if crs is None else crs
+        except TypeError:
+            raise TypeError('Invalid epsg: {}'.format(epsg))
+
+        # use transformer for repeated transformations with always_xy to preserve axis order
+        # https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
+        if _PYPROJ_VERSION >= LooseVersion('2.2.0'):
+            transformer = pyproj.Transformer.from_crs(self.crs, crs, always_xy=True)
+            project = transformer.transform
+        # use transformer for repeated transformations
+        # https://pyproj4.github.io/pyproj/stable/advanced_examples.html#repeated-transformations
+        elif _PYPROJ_VERSION >= LooseVersion('2.1.0'):
+            transformer = pyproj.Transformer.from_crs(self.crs, crs)
             project = transformer.transform
         else:
+            proj_in = pyproj.Proj(self.crs, preserve_units=True)
+            proj_out = pyproj.Proj(crs, preserve_units=True)
             project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
