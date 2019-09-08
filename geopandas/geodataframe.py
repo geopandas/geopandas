@@ -295,7 +295,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_postgis(cls, sql, con, geom_col='geom', crs=None,
                      index_col=None, coerce_float=True,
-                     parse_dates=None, params=None):
+                     parse_dates=None, params=None, chunksize=None):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column in WKB representation.
@@ -324,6 +324,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               without native Datetime support, such as SQLite.
         params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
+        chunksize : int, default None
+            If specified, return an iterator where chunksize is the number of rows to include in each chunk.
 
         Examples
         --------
@@ -336,7 +338,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df = geopandas.io.sql.read_postgis(
                 sql, con, geom_col=geom_col, crs=crs,
                 index_col=index_col, coerce_float=coerce_float,
-                parse_dates=parse_dates, params=params)
+                parse_dates=parse_dates, params=params, chunksize=chunksize)
 
         return df
 

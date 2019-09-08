@@ -492,6 +492,20 @@ class TestDataFrame:
 
         validate_boro_df(df, case_sensitive=False)
 
+    def test_from_postgis_chunksize(self):
+        chunksize = 10
+        con = connect('test_geopandas')
+        if con is None or not create_postgis(self.df):
+            raise pytest.skip()
+
+        try:
+            sql = "SELECT * FROM nybb;"
+            df = pd.concat(GeoDataFrame.from_postgis(sql, con, chunksize=chunksize))
+        finally:
+            con.close()
+
+        validate_boro_df(df, case_sensitive=False)
+
     def test_from_postgis_custom_geom_col(self):
         con = connect('test_geopandas')
         geom_col = "the_geom"
