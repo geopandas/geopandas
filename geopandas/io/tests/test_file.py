@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env
+from geopandas.io.file import fiona_env, _is_vsi
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -274,3 +274,14 @@ def test_read_file_empty_shapefile(tmpdir):
     empty = read_file(fname)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ['A', 'Z', 'geometry'])
+
+# -----------------------------------------------------------------------------
+# utility tests
+# -----------------------------------------------------------------------------
+
+
+def test_vsi_check():
+    assert _is_vsi('https://test/path')
+    assert _is_vsi('zip+s3://test/path')
+    assert not _is_vsi('zip+s33://test/path')
+    assert not _is_vsi('tarr://test/path')
