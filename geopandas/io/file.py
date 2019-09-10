@@ -39,6 +39,14 @@ def _is_url(url):
         return False
 
 
+def _is_vsi(url):
+    """Check if a filepath/url is using a fiona vsi scheme."""
+    try:
+        return fiona.vfs.valid_vsi(parse_url(url).scheme)
+    except:
+        return False
+
+
 def read_file(filename, bbox=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
@@ -121,10 +129,12 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
+    The path may specify a fiona VSI scheme.
     """
     if schema is None:
         schema = infer_schema(df)
-    filename = os.path.abspath(os.path.expanduser(filename))
+    if not _is_vsi(filename):
+        filename = os.path.abspath(os.path.expanduser(filename))
     with fiona_env():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:
