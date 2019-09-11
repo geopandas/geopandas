@@ -43,7 +43,7 @@ def _is_vsi(url):
     """Check if a filepath/url is using a fiona vsi scheme."""
     try:
         return fiona.vfs.valid_vsi(parse_url(url).scheme)
-    except:
+    except AttributeError:
         return False
 
 

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
+import pkg_resources
 import os
 import sys
 
@@ -280,6 +281,12 @@ def test_read_file_empty_shapefile(tmpdir):
 # -----------------------------------------------------------------------------
 
 
+dist = pkg_resources.get_distribution('fiona')
+fiona_version = pkg_resources.parse_version(dist.version)
+@pytest.mark.skipif(
+    fiona_version < pkg_resources.parse_version('1.8.0'),
+    reason="Fiona VSI check not enabled for version < 1.8",
+)
 def test_vsi_check():
     assert _is_vsi('https://test/path')
     assert _is_vsi('zip+s3://test/path')
