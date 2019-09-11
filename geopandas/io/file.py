@@ -1,4 +1,3 @@
-import os
 from distutils.version import LooseVersion
 
 import fiona
@@ -36,14 +35,6 @@ def _is_url(url):
     try:
         return parse_url(url).scheme in _VALID_URLS
     except:
-        return False
-
-
-def _is_vsi(url):
-    """Check if a filepath/url is using a fiona vsi scheme."""
-    try:
-        return fiona.vfs.valid_vsi(parse_url(url).scheme)
-    except AttributeError:
         return False
 
 
@@ -133,8 +124,6 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None,
     """
     if schema is None:
         schema = infer_schema(df)
-    if not _is_vsi(filename):
-        filename = os.path.abspath(os.path.expanduser(filename))
     with fiona_env():
         with fiona.open(filename, 'w', driver=driver, crs=df.crs,
                         schema=schema, **kwargs) as colxn:

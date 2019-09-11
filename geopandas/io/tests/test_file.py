@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
-import pkg_resources
 import os
 import sys
 
@@ -14,7 +13,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env, _is_vsi
+from geopandas.io.file import fiona_env
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -275,20 +274,3 @@ def test_read_file_empty_shapefile(tmpdir):
     empty = read_file(fname)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ['A', 'Z', 'geometry'])
-
-# -----------------------------------------------------------------------------
-# utility tests
-# -----------------------------------------------------------------------------
-
-
-dist = pkg_resources.get_distribution('fiona')
-fiona_version = pkg_resources.parse_version(dist.version)
-@pytest.mark.skipif(
-    fiona_version < pkg_resources.parse_version('1.8.0'),
-    reason="Fiona VSI check not enabled for version < 1.8",
-)
-def test_vsi_check():
-    assert _is_vsi('https://test/path')
-    assert _is_vsi('zip+s3://test/path')
-    assert not _is_vsi('zip+s33://test/path')
-    assert not _is_vsi('tarr://test/path')
