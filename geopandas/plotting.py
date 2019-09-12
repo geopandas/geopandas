@@ -568,10 +568,10 @@ def plot_dataframe(
         from matplotlib.colors import Normalize
         from matplotlib import cm
 
-        if 'norm' not in style_kwds:
+        if "norm" not in style_kwds:
             norm = Normalize(vmin=mn, vmax=mx)
         else:
-            norm = style_kwds['norm']
+            norm = style_kwds["norm"]
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
             patches = []
@@ -604,7 +604,6 @@ def plot_dataframe(
 
     plt.draw()
     return ax
-
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):
