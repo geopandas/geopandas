@@ -399,16 +399,17 @@ class GeoSeries(GeoPandasBase, Series):
                 "Please set a crs on the object first."
             )
 
+        if crs is None:
+            try:
+                crs = from_epsg(epsg)
+            except (TypeError, ValueError):
+                raise ValueError("Invalid epsg: {}".format(epsg))
+
         # skip transformation if the input CRS and output CRS are the exact same
         if _PYPROJ_VERSION >= LooseVersion("2.1.2") and pyproj.CRS.from_user_input(
             self.crs
-        ).is_exact_same(pyproj.CRS.from_user_input(crs or epsg)):
+        ).is_exact_same(pyproj.CRS.from_user_input(crs)):
             return self
-
-        try:
-            crs = from_epsg(epsg) if crs is None else crs
-        except TypeError:
-            raise TypeError("Invalid epsg: {}".format(epsg))
 
         if _PYPROJ_VERSION >= LooseVersion("2.2.0"):
             # if availale, use always_xy=True to preserve GIS axis order
