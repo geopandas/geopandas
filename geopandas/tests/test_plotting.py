@@ -172,15 +172,14 @@ class TestPointPlotting:
         # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
         norm = matplotlib.colors.Normalize(vmin=0, vmax=20)
-        ax = self.df.plot(column='values', cmap=cmap, norm=norm)
+        ax = self.df.plot(column="values", cmap=cmap, norm=norm)
         actual_colors_orig = ax.collections[0].get_facecolors()
         exp_colors = cmap(np.arange(10) / (20))
         np.testing.assert_array_equal(exp_colors, actual_colors_orig)
         fig, ax = plt.subplots()
-        self.df[1:].plot(column='values', ax=ax, norm=norm, cmap=cmap)
+        self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
         actual_colors_sub = ax.collections[0].get_facecolors()
-        np.testing.assert_array_equal(actual_colors_orig[1],
-                                      actual_colors_sub[0])
+        np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
     def test_empty_plot(self):
         s = GeoSeries([])
@@ -264,15 +263,14 @@ class TestLineStringPlotting:
         # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
         norm = matplotlib.colors.Normalize(vmin=0, vmax=20)
-        ax = self.df.plot(column='values', cmap=cmap, norm=norm)
+        ax = self.df.plot(column="values", cmap=cmap, norm=norm)
         actual_colors_orig = ax.collections[0].get_edgecolors()
         exp_colors = cmap(np.arange(10) / (20))
         np.testing.assert_array_equal(exp_colors, actual_colors_orig)
         fig, ax = plt.subplots()
-        self.df[1:].plot(column='values', ax=ax, norm=norm, cmap=cmap)
+        self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
         actual_colors_sub = ax.collections[0].get_edgecolors()
-        np.testing.assert_array_equal(actual_colors_orig[1],
-                                      actual_colors_sub[0])
+        np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
 
 class TestPolygonPlotting:
@@ -404,15 +402,14 @@ class TestPolygonPlotting:
         # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
         norm = matplotlib.colors.Normalize(vmin=0, vmax=10)
-        ax = self.df.plot(column='values', cmap=cmap, norm=norm)
+        ax = self.df.plot(column="values", cmap=cmap, norm=norm)
         actual_colors_orig = ax.collections[0].get_facecolors()
         exp_colors = cmap(np.arange(2) / (10))
         np.testing.assert_array_equal(exp_colors, actual_colors_orig)
         fig, ax = plt.subplots()
-        self.df[1:].plot(column='values', ax=ax, norm=norm, cmap=cmap)
+        self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
         actual_colors_sub = ax.collections[0].get_facecolors()
-        np.testing.assert_array_equal(actual_colors_orig[1],
-                                      actual_colors_sub[0])
+        np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
 
 class TestPolygonZPlotting:
