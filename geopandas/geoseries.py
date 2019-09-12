@@ -18,7 +18,8 @@ from geopandas.plotting import plot_series
 from .array import GeometryDtype, from_shapely
 from .base import is_geometry_type
 
-_PYPROJ2 = LooseVersion(pyproj.__version__) >= LooseVersion("2.1.0")
+
+_PYPROJ_VERSION = LooseVersion(pyproj.__version__)
 
 
 _SERIES_WARNING_MSG = """\
@@ -389,22 +390,38 @@ class GeoSeries(GeoPandasBase, Series):
         """
         from fiona.crs import from_epsg
 
+        if crs is None and epsg is None:
+            raise TypeError("Must set either crs or epsg for output.")
+
         if self.crs is None:
             raise ValueError(
                 "Cannot transform naive geometries.  "
                 "Please set a crs on the object first."
             )
+
         if crs is None:
             try:
                 crs = from_epsg(epsg)
-            except TypeError:
-                raise TypeError("Must set either crs or epsg for output.")
-        proj_in = pyproj.Proj(self.crs, preserve_units=True)
-        proj_out = pyproj.Proj(crs, preserve_units=True)
-        if _PYPROJ2:
-            transformer = pyproj.Transformer.from_proj(proj_in, proj_out)
+            except (TypeError, ValueError):
+                raise ValueError("Invalid epsg: {}".format(epsg))
+
+        # skip transformation if the input CRS and output CRS are the exact same
+        if _PYPROJ_VERSION >= LooseVersion("2.1.2") and pyproj.CRS.from_user_input(
+            self.crs
+        ).is_exact_same(pyproj.CRS.from_user_input(crs)):
+            return self
+
+        if _PYPROJ_VERSION >= LooseVersion("2.2.0"):
+            # if availale, use always_xy=True to preserve GIS axis order
+            transformer = pyproj.Transformer.from_crs(self.crs, crs, always_xy=True)
+            project = transformer.transform
+        elif _PYPROJ_VERSION >= LooseVersion("2.1.0"):
+            # use transformer for repeated transformations
+            transformer = pyproj.Transformer.from_crs(self.crs, crs)
             project = transformer.transform
         else:
+            proj_in = pyproj.Proj(self.crs, preserve_units=True)
+            proj_out = pyproj.Proj(crs, preserve_units=True)
             project = partial(pyproj.transform, proj_in, proj_out)
         result = self.apply(lambda geom: transform(project, geom))
         result.__class__ = GeoSeries
