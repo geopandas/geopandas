@@ -712,6 +712,12 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
         ax.cla()
 
+        # default: color can be passed as a list
+        coll = plot_polygon_collection(ax, self.polygons, color=["g", "b", "r"])
+        _check_colors(self.N, coll.get_facecolor(), ["g", "b", "r"])
+        _check_colors(self.N, coll.get_edgecolor(), ["g", "b", "r"])
+        ax.cla()
+
         # only setting facecolor keeps default for edgecolor
         coll = plot_polygon_collection(ax, self.polygons, facecolor="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
