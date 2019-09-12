@@ -42,7 +42,7 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if not this.index.equals(other.index):
-            warn('The indices of the two GeoSeries are different.')
+            warn("The indices of the two GeoSeries are different.")
             this, other = this.align(other.geometry)
         else:
             other = other.geometry
