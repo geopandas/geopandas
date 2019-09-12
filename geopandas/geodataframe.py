@@ -691,6 +691,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
+    # overrides the pandas astype method to ensure the correct return type
+    def astype(self, dtype, copy=True, errors="raise", **kwargs):
+        """
+        Cast a pandas object to a specified dtype ``dtype``.
+
+        Returns a GeoDataFrame when the geometry column is kept as geometries,
+        otherwise returns a pandas DataFrame.
+
+        See the pandas.DataFrame.astype docstring for more details.
+
+        Returns
+        -------
+        GeoDataFrame or DataFrame
+        """
+        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+
+        try:
+            df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
+            return df
+        except TypeError:
+            df = pd.DataFrame(df)
+            return df
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
