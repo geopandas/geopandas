@@ -137,17 +137,17 @@ def test_astype(s, df):
 
     assert s.astype(str)[0] == "POINT (0 0)"
 
-    df = df.rename_geometry('geom_list')
+    df = df.rename_geometry("geom_list")
 
     # check whether returned object is a geodataframe
-    df = df.astype({'value1':float})
+    df = df.astype({"value1": float})
     assert isinstance(df, GeoDataFrame)
 
     # check whether returned object is a datafrane
     df = df.astype(str)
     assert isinstance(df, pd.DataFrame)
 
-    df = df.astype({'geom_list': str})
+    df = df.astype({"geom_list": str})
     assert isinstance(df, pd.DataFrame)
 
 
