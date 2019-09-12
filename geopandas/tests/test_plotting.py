@@ -624,6 +624,12 @@ class TestPlotCollections:
         # edgecolor depends on matplotlib version
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
+        # handle None
+        coll = plot_point_collection(ax, self.points, [0, None, 3])
+        fig.canvas.draw_idle()
+        _check_colors(self.N, coll.get_facecolors(), [MPL_DFT_COLOR] * self.N)
+        ax.cla()
+
     def test_linestrings(self):
         from geopandas.plotting import plot_linestring_collection
         from matplotlib.collections import LineCollection
@@ -689,6 +695,12 @@ class TestPlotCollections:
         cmap = plt.get_cmap()
         expected_colors = cmap([0])
         _check_colors(self.N, coll.get_color(), expected_colors)
+        ax.cla()
+
+        # handle None
+        coll = plot_linestring_collection(ax, self.lines, [0, None, 3])
+        fig.canvas.draw_idle()
+        _check_colors(self.N, coll.get_color(), [MPL_DFT_COLOR] * self.N)
         ax.cla()
 
     def test_polygons(self):
@@ -768,6 +780,12 @@ class TestPlotCollections:
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
         _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
+        ax.cla()
+
+        # handle None
+        coll = plot_polygon_collection(ax, self.polygons, [0, None, 3])
+        fig.canvas.draw_idle()
+        _check_colors(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N)
         ax.cla()
 
 
