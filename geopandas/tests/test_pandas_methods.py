@@ -8,7 +8,7 @@ import pandas as pd
 from six import PY2, PY3
 
 import shapely
-from shapely.geometry import Point
+from shapely.geometry import Point, GeometryCollection
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_024
@@ -235,6 +235,24 @@ def test_isna(NA):
     assert_series_equal(res, ~exp)
     res = s2.notna()
     assert_series_equal(res, ~exp)
+
+
+# Any / all
+
+
+def test_any_all():
+    empty = GeometryCollection([])
+    s = GeoSeries([empty, Point(1, 1)])
+    assert not s.all()
+    assert s.any()
+
+    s = GeoSeries([Point(1, 1), Point(1, 1)])
+    assert s.all()
+    assert s.any()
+
+    s = GeoSeries([empty, empty])
+    assert not s.all()
+    assert not s.any()
 
 
 # Groupby / algos
