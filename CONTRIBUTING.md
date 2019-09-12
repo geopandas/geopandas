@@ -45,10 +45,29 @@ Style
   possible (all supported versions will be automatically tested on
   Travis CI).
 
-- Follow PEP 8 when possible.
+- GeoPandas follows [the PEP 8
+  standard](http://www.python.org/dev/peps/pep-0008/) and uses
+  [Black](https://black.readthedocs.io/en/stable/) and
+  [Flake8](http://flake8.pycqa.org/en/latest/) to ensure a consistent
+  code format throughout the project.
 
 - Imports should be grouped with standard library imports first,
   3rd-party libraries next, and GeoPandas imports third. Within each
   grouping, imports should be alphabetized. Always use absolute
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
+
+- You can set up [pre-commit hooks](https://pre-commit.com/) to
+  automatically run `black` and `flake8` when you make a git
+  commit. This can be done by installing `pre-commit`:
+
+    $ python -m pip install pre-commit
+
+  From the root of the geopandas repository, you should then install
+  `pre-commit`:
+
+    $ pre-commit install
+
+  Then `black` and `flake8` will be run automatically each time you
+  commit changes. You can skip these checks with `git commit
+  --no-verify`.
