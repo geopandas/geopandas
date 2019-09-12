@@ -102,18 +102,14 @@ def test_transform2(epsg4326, epsg26918):
 
 
 @pytest.mark.skipif(
-    _PYPROJ_VERSION < LooseVersion("2.2.0"), 
-    reason="EPSG strings without +init= won't work on previous versions of pyproj."
+    _PYPROJ_VERSION < LooseVersion("2.2.0"),
+    reason="EPSG strings without +init= won't work on previous versions of pyproj.",
 )
 def test_crs_axis_order__always_xy():
-    df = GeoDataFrame(
-        geometry=[Point(-1683723, 6689139)],
-        crs="epsg:26918",
-    )
+    df = GeoDataFrame(geometry=[Point(-1683723, 6689139)], crs="epsg:26918")
     lonlat = df.to_crs("epsg:4326")
     test_lonlat = GeoDataFrame(
-        geometry=[Point(-110.1399901, 55.1350011)],
-        crs="epsg:4326",
+        geometry=[Point(-110.1399901, 55.1350011)], crs="epsg:4326"
     )
     assert_geodataframe_equal(lonlat, test_lonlat, check_less_precise=True)
 

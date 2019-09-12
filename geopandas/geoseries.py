@@ -389,12 +389,15 @@ class GeoSeries(GeoPandasBase, Series):
             EPSG code specifying output projection.
         """
         from fiona.crs import from_epsg
+
         if crs is None and epsg is None:
-            raise TypeError('Must set either crs or epsg for output.')
+            raise TypeError("Must set either crs or epsg for output.")
 
         if self.crs is None:
-            raise ValueError('Cannot transform naive geometries.  '
-                             'Please set a crs on the object first.')
+            raise ValueError(
+                "Cannot transform naive geometries.  "
+                "Please set a crs on the object first."
+            )
 
         # skip transformation if the input CRS and output CRS are the exact same
         if _PYPROJ_VERSION >= LooseVersion("2.1.2") and pyproj.CRS.from_user_input(
@@ -405,16 +408,14 @@ class GeoSeries(GeoPandasBase, Series):
         try:
             crs = from_epsg(epsg) if crs is None else crs
         except TypeError:
-            raise TypeError('Invalid epsg: {}'.format(epsg))
+            raise TypeError("Invalid epsg: {}".format(epsg))
 
-        # use transformer for repeated transformations with always_xy to preserve axis order
-        # https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
-        if _PYPROJ_VERSION >= LooseVersion('2.2.0'):
+        if _PYPROJ_VERSION >= LooseVersion("2.2.0"):
+            # if availale, use always_xy=True to preserve GIS axis order
             transformer = pyproj.Transformer.from_crs(self.crs, crs, always_xy=True)
             project = transformer.transform
-        # use transformer for repeated transformations
-        # https://pyproj4.github.io/pyproj/stable/advanced_examples.html#repeated-transformations
-        elif _PYPROJ_VERSION >= LooseVersion('2.1.0'):
+        elif _PYPROJ_VERSION >= LooseVersion("2.1.0"):
+            # use transformer for repeated transformations
             transformer = pyproj.Transformer.from_crs(self.crs, crs)
             project = transformer.transform
         else:
