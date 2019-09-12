@@ -694,9 +694,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     # overrides the pandas astype method to ensure the correct return type
     def astype(self, dtype, copy=True, errors="raise", **kwargs):
         """
-        Temporary overwrite of pandas native astype method. Returns a
-        GeoDataFrame when geometries are valid and a pandas DataFrame when
-        the geometries are invalid.
+        Cast a pandas object to a specified dtype ``dtype``.
+
+        Returns a GeoDataFrame when the geometry column is kept as geometries,
+        otherwise returns a pandas DataFrame.
+
+        See the pandas.DataFrame.astype docstring for more details.
 
         Returns
         -------
