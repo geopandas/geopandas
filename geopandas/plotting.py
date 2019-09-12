@@ -103,18 +103,17 @@ def plot_polygon_collection(
     if color is not None:
         if pd.api.types.is_list_like(color):
             _, colors = _flatten_multi_geoms(geoms, color)
-            kwargs['color'] = colors
+            kwargs["color"] = colors
         else:
-            kwargs['color'] = color
+            kwargs["color"] = color
     else:
-        for att in ['facecolor', 'edgecolor']:
+        for att in ["facecolor", "edgecolor"]:
             if att in kwargs:
                 if pd.api.types.is_list_like(kwargs[att]):
                     _, colors = _flatten_multi_geoms(geoms, kwargs[att])
                     kwargs[att] = colors
 
-    collection = PatchCollection([PolygonPatch(poly) for poly in geoms_],
-                                 **kwargs)
+    collection = PatchCollection([PolygonPatch(poly) for poly in geoms_], **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -168,9 +167,9 @@ def plot_linestring_collection(
     if color is not None:
         if pd.api.types.is_list_like(color):
             _, colors = _flatten_multi_geoms(geoms, color)
-            kwargs['color'] = colors
+            kwargs["color"] = colors
         else:
-            kwargs['color'] = color
+            kwargs["color"] = color
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms_]
     collection = LineCollection(segments, **kwargs)
@@ -238,8 +237,9 @@ def plot_point_collection(
             _, colors = _flatten_multi_geoms(geoms, color)
             color = colors
 
-    collection = ax.scatter(x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap,
-                            marker=marker, **kwargs)
+    collection = ax.scatter(
+        x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
+    )
 
     return collection
 
