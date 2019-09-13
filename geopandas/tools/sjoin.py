@@ -32,8 +32,6 @@ def sjoin(
         Suffix to apply to overlapping column names (right GeoDataFrame).
 
     """
-    import rtree
-
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(
             "'left_df' should be GeoDataFrame, got {}".format(type(left_df))
@@ -76,14 +74,16 @@ def sjoin(
             " joined".format(index_left, index_right)
         )
 
-    # Attempt to re-use spatial indexes, otherwise generate the spatial index for the longer dataframe
-    if right_df._sindex_generated or (not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]):
+    # Attempt to re-use spatial indexes, otherwise generate the spatial index
+    # for the longer dataframe
+    if right_df._sindex_generated or (
+        not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]
+    ):
         tree_idx = right_df.sindex
         tree_idx_right = True
     else:
         tree_idx = left_df.sindex
         tree_idx_right = False
-
 
     # the rtree spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
@@ -105,16 +105,19 @@ def sjoin(
     l_idx = np.empty((0, 0))
     # get rtree spatial index
     if tree_idx_right:
-        idxmatch = (left_df.geometry.apply(lambda x: x.bounds)
-                    .apply(lambda x: list(tree_idx.intersection(x))))
+        idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
+            lambda x: list(tree_idx.intersection(x))
+        )
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
         # indexes of overlapping boundaries
         if idxmatch.shape[0] > 0:
             r_idx = np.concatenate(idxmatch.values)
             l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    else: #  tree_idx_df == 'left':
-        idxmatch = (right_df.geometry.apply(lambda x: x.bounds)
-                    .apply(lambda x: list(tree_idx.intersection(x))))
+    else:
+        # tree_idx_df == 'left'
+        idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
+            lambda x: list(tree_idx.intersection(x))
+        )
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
         if idxmatch.shape[0] > 0:
             # indexes of overlapping boundaries
