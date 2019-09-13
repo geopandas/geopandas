@@ -9,13 +9,13 @@ matrix:
 
     # Python 2.7 and 3.6 test all supported Pandas versions
     - env: ENV_FILE="ci/travis/27-pd023.yaml"
-    - env: ENV_FILE="ci/travis/27-latest-defaults.yaml"
+    # - env: ENV_FILE="ci/travis/27-latest-defaults.yaml"
     - env: ENV_FILE="ci/travis/27-latest-conda-forge.yaml"
 
     - env: ENV_FILE="ci/travis/36-pd023.yaml"
     - env: ENV_FILE="ci/travis/36-pd024.yaml"
 
-    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml"
+    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
 
@@ -37,12 +37,15 @@ install:
   - source activate test
   - if [ "$DEV" ]; then pip install git+https://github.com/pydata/pandas.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
+  - if [ "$STYLE" ]; then pip install black flake8; fi
   - pip install -e .
   - conda list
   - python -c "import geopandas; geopandas.show_versions();"
 
 script:
   - py.test geopandas --cov geopandas -v --cov-report term-missing
+  - if [ "$STYLE" ]; then black --check geopandas; fi
+  - if [ "$STYLE" ]; then flake8 geopandas; fi
 
 after_success:
   - codecov

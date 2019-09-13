@@ -1,12 +1,22 @@
 import sys
+
 import pandas as pd
+
 import shapely.wkb
 
 from geopandas import GeoDataFrame
 
 
-def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
-                 coerce_float=True, parse_dates=None, params=None):
+def read_postgis(
+    sql,
+    con,
+    geom_col="geom",
+    crs=None,
+    index_col=None,
+    coerce_float=True,
+    parse_dates=None,
+    params=None,
+):
     """
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
@@ -42,8 +52,14 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
     >>> df = geopandas.read_postgis(sql, con)
     """
 
-    df = pd.read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
-                     parse_dates=parse_dates, params=params)
+    df = pd.read_sql(
+        sql,
+        con,
+        index_col=index_col,
+        coerce_float=coerce_float,
+        parse_dates=parse_dates,
+        params=params,
+    )
 
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
