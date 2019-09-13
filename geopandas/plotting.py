@@ -93,7 +93,7 @@ def plot_polygon_collection(
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = [values[i] for i in multiindex]
+        values = np.take(values, multiindex)
         if None in values:
             values = None
 
@@ -103,14 +103,14 @@ def plot_polygon_collection(
     if color is not None:
         kwargs["color"] = color
         if pd.api.types.is_list_like(color):
-            kwargs["color"] = [color[i] for i in multiindex]
+            kwargs["color"] = np.take(color, multiindex)
         else:
             kwargs["color"] = color
     else:
         for att in ["facecolor", "edgecolor"]:
             if att in kwargs:
                 if pd.api.types.is_list_like(kwargs[att]):
-                    kwargs[att] = [kwargs[att][i] for i in multiindex]
+                    kwargs[att] = np.take(kwargs[att], multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -156,7 +156,7 @@ def plot_linestring_collection(
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = [values[i] for i in multiindex]
+        values = np.take(values, multiindex)
         if None in values:
             values = None
 
@@ -167,7 +167,7 @@ def plot_linestring_collection(
     # color=None gives black instead of default color cycle
     if color is not None:
         if pd.api.types.is_list_like(color):
-            kwargs["color"] = [color[i] for i in multiindex]
+            kwargs["color"] = np.take(color, multiindex)
         else:
             kwargs["color"] = color
 
@@ -222,7 +222,7 @@ def plot_point_collection(
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = [values[i] for i in multiindex]
+        values = np.take(values, multiindex)
         if None in values:
             values = None
 
@@ -237,7 +237,7 @@ def plot_point_collection(
 
     if color is not None:
         if pd.api.types.is_list_like(color):
-            color = [color[i] for i in multiindex]
+            color = np.take(color, multiindex)
 
     collection = ax.scatter(
         x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
@@ -336,8 +336,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         facecolor = style_kwds.pop("facecolor", None)
         if color is not None:
             facecolor = color
-        # if "edgecolor" not in style_kwds:
-        #     style_kwds["edgecolor"] = facecolor
+
         values_ = values[poly_idx] if cmap else None
         plot_polygon_collection(
             ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
