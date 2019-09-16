@@ -173,15 +173,13 @@ For a python 3 environment::
 This will create the new environment, and not touch any of your existing environments,
 nor any existing python installation.
 
-To work in this environment, Windows users should ``activate`` it as follows::
+To work in this environment, you need to ``activate`` it. The instructions below
+should work for both Windows, Mac and Linux::
 
       conda activate geopandas_dev
 
-Mac OSX and Linux users should use::
-
-      conda activate geopandas_dev
-
-You will then see a confirmation message to indicate you are in the new development environment.
+Once your environment is activated, you will see a confirmation message to
+indicate you are in the new development environment.
 
 To view your environments::
 
@@ -189,7 +187,7 @@ To view your environments::
 
 To return to you home root environment::
 
-      deactivate
+      conda deactivate
 
 See the full conda docs `here <http://conda.pydata.org/docs>`__.
 
