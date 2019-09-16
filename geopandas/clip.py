@@ -6,6 +6,7 @@ A module to clip vector data using GeoPandas.
 
 """
 
+
 import pandas as pd
 import geopandas as gpd
 
@@ -140,9 +141,7 @@ def _clip_multi_poly_line(shp, clip_obj):
     polys = clipped[clipped.geometry.type == "Polygon"]
     poly_diss = polys.dissolve(by=[polys.index]).drop(columns="level_1")
 
-    return gpd.GeoDataFrame(
-        pd.concat([poly_diss, line_diss], ignore_index=True)
-    )
+    return gpd.GeoDataFrame(pd.concat([poly_diss, line_diss], ignore_index=True))
 
 
 def clip_shp(shp, clip_obj):
