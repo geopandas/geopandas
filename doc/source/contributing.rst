@@ -32,11 +32,11 @@ In particular, when submitting a pull request:
 
 - Classes, methods, functions, etc. should have docstrings.  The first
   line of a docstring should be a standalone summary.  Parameters and
-  return values should be ducumented explicitly.
+  return values should be documented explicitly.
 
 - GeoPandas supports python 2 (2.6+) and python 3 (3.2+) with a single
   code base.  Use modern python idioms when possible that are
-  compatibile with both major versions, and use the
+  compatible with both major versions, and use the
   `six <https://pythonhosted.org/six>`_ library where helpful to smooth
   over the differences.  Use ``from __future__ import`` statements where
   appropriate.  Test code locally in both python 2 and python 3 when
@@ -46,7 +46,7 @@ In particular, when submitting a pull request:
 - Follow PEP 8 when possible.
 
 - Imports should be grouped with standard library imports first,
-  3rd-party libraries next, and geopandas imports third.  Within each
+  3rd-party libraries next, and GeoPandas imports third.  Within each
   grouping, imports should be alphabetized.  Always use absolute
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
@@ -55,12 +55,12 @@ In particular, when submitting a pull request:
 Seven Steps for Contributing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are seven basic steps to contributing to *geopandas*:
+There are seven basic steps to contributing to *GeoPandas*:
 
-1) Fork the *geopandas* git repository
+1) Fork the *GeoPandas* git repository
 2) Create a development environment
-3) Install *geopandas* dependencies
-4) Make a ``development`` build of *geopandas*
+3) Install *GeoPandas* dependencies
+4) Make a ``development`` build of *GeoPandas*
 5) Make changes to code and add tests
 6) Update the documentation
 7) Submit a Pull Request
@@ -68,10 +68,10 @@ There are seven basic steps to contributing to *geopandas*:
 Each of these 7 steps is detailed below.
 
 
-1) Forking the *geopandas* repository using Git
+1) Forking the *GeoPandas* repository using Git
 ------------------------------------------------
 
-To the new user, working with Git is one of the more daunting aspects of contributing to *geopandas**.
+To the new user, working with Git is one of the more daunting aspects of contributing to *GeoPandas**.
 It can very quickly become overwhelming, but sticking to the guidelines below will help keep the process
 straightforward and mostly trouble free.  As always, if you are having difficulties please
 feel free to ask for help.
@@ -100,7 +100,7 @@ you can work seamlessly between your local repository and GitHub.
 Forking
 ~~~~~~~~
 
-You will need your own fork to work on the code. Go to the `geopandas project
+You will need your own fork to work on the code. Go to the `GeoPandas project
 page <https://github.com/geopandas/geopandas>`_ and hit the ``Fork`` button. You will
 want to clone your fork to your machine::
 
@@ -109,7 +109,7 @@ want to clone your fork to your machine::
     git remote add upstream git://github.com/geopandas/geopandas.git
 
 This creates the directory `geopandas-yourname` and connects your repository to
-the upstream (main project) *geopandas* repository.
+the upstream (main project) *GeoPandas* repository.
 
 The testing suite will run automatically on Travis-CI once your pull request is
 submitted.  However, if you wish to run the test suite on a branch prior to
@@ -132,7 +132,7 @@ The above can be simplified to::
 
 This changes your working directory to the shiny-new-feature branch.  Keep any
 changes in this branch specific to one bug or feature so it is clear
-what the branch brings to *geopandas*. You can have many shiny-new-features
+what the branch brings to *GeoPandas*. You can have many shiny-new-features
 and switch in between them using the git checkout command.
 
 To update this branch, you need to retrieve the changes from the master branch::
@@ -140,7 +140,7 @@ To update this branch, you need to retrieve the changes from the master branch::
     git fetch upstream
     git rebase upstream/master
 
-This will replay your commits on top of the latest geopandas git master.  If this
+This will replay your commits on top of the latest GeoPandas git master.  If this
 leads to merge conflicts, you must resolve these before submitting your pull
 request.  If you have uncommitted changes, you will need to ``stash`` them prior
 to updating.  This will effectively store your changes and they can be reapplied
@@ -150,16 +150,16 @@ after updating.
 
 2) Creating a development environment
 ---------------------------------------
-A development environment is a virtual space where you can keep an independent installation of *geopandas*.
+A development environment is a virtual space where you can keep an independent installation of *GeoPandas*.
 This makes it easy to keep both a stable version of python in one place you use for work, and a development
 version (which you may break while playing with code) in another.
 
-An easy way to create a *geopandas* development environment is as follows:
+An easy way to create a *GeoPandas* development environment is as follows:
 
 - Install either `Anaconda <http://docs.continuum.io/anaconda/>`_ or
   `miniconda <http://conda.pydata.org/miniconda.html>`_
 - Make sure that you have :ref:`cloned the repository <contributing.forking>`
-- ``cd`` to the *geopandas** source directory
+- ``cd`` to the *GeoPandas** source directory
 
 Tell conda to create a new environment, named ``geopandas_dev``, or any other name you would like
 for this environment, by running::
@@ -175,11 +175,11 @@ nor any existing python installation.
 
 To work in this environment, Windows users should ``activate`` it as follows::
 
-      activate geopandas_dev
+      conda activate geopandas_dev
 
 Mac OSX and Linux users should use::
 
-      source activate geopandas_dev
+      conda activate geopandas_dev
 
 You will then see a confirmation message to indicate you are in the new development environment.
 
@@ -261,7 +261,7 @@ install *geopandas*) by typing::
 -----------------------------
 
 *geopandas* documentation resides in the `doc` folder. Changes to the docs are
-make by modifying the appropriate file in the `source` folder within `doc`. 
+make by modifying the appropriate file in the `source` folder within `doc`.
 *geopandas* docs use reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_
 and the docstrings follow the `Numpy Docstring standard <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_.
 
