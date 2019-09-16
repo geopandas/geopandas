@@ -1,9 +1,13 @@
 from __future__ import absolute_import
 
-from shapely.geometry import Point, MultiPoint, LineString
+from distutils.version import LooseVersion
+
+import pyproj
+from shapely.geometry import LineString, MultiPoint, Point
 
 from geopandas import GeoSeries
 from geopandas.tools import collect
+from geopandas.tools.crs import epsg_from_crs, explicit_crs_from_epsg
 
 import pytest
 
@@ -51,3 +55,25 @@ class TestTools:
     def test_collect_mixed_multi(self):
         with pytest.raises(ValueError):
             collect([self.mpc, self.mp1])
+
+    def test_epsg_from_crs(self):
+        assert epsg_from_crs({"init": "epsg:4326"}) == 4326
+        assert epsg_from_crs({"init": "EPSG:4326"}) == 4326
+        assert epsg_from_crs("+init=epsg:4326") == 4326
+
+    @pytest.mark.skipif(
+        LooseVersion(pyproj.__version__) >= LooseVersion("2.0.0"),
+        reason="explicit_crs_from_epsg depends on parsing data files of "
+        "proj.4 < 6 / pyproj < 2 ",
+    )
+    def test_explicit_crs_from_epsg(self):
+        expected = {
+            "no_defs": True,
+            "proj": "longlat",
+            "datum": "WGS84",
+            "init": "epsg:4326",
+        }
+        assert explicit_crs_from_epsg(epsg=4326) == expected
+        assert explicit_crs_from_epsg(epsg="4326") == expected
+        assert explicit_crs_from_epsg(crs={"init": "epsg:4326"}) == expected
+        assert explicit_crs_from_epsg(crs="+init=epsg:4326") == expected

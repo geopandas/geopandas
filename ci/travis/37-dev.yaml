@@ -2,13 +2,13 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.7.3
   - six
   - cython
   # required
   - pandas
   - shapely
-  - conda-forge/label/dev::fiona
+  - fiona
   - pyproj
   # testing
   - pytest
@@ -18,12 +18,11 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
-    - git+https://github.com/matplotlib/matplotlib.git
-    - git+https://github.com/pydata/pandas.git
     - codecov
     - geopy
+    - mapclassify

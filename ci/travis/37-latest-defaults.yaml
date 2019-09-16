@@ -2,7 +2,7 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.7.3
   - six
   # required
   - pandas
@@ -17,10 +17,11 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - pysal
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
     - codecov
     - geopy
+    - mapclassify

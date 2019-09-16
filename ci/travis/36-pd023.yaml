@@ -3,10 +3,13 @@ channels:
   - defaults
 dependencies:
   - python=3.6
+  - pip
   - six
   # required
-  - pandas=0.22
+  - pandas==0.23.4
+  - nomkl
   - shapely
+  - gdal=2.3
   - fiona
   - pyproj
   # testing
@@ -15,12 +18,13 @@ dependencies:
   #- codecov
   # optional
   - rtree
-  - matplotlib==2.0.2
+  - matplotlib=2
   - descartes
-  - pysal
+  - mapclassify
   #- geopy
   - SQLalchemy
   - psycopg2
+  - libspatialite
   - pip:
-    - codecov
     - geopy
+    - codecov
