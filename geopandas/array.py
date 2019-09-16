@@ -420,8 +420,21 @@ class GeometryArray(ExtensionArray):
     def dtype(self):
         return self._dtype
 
+    @property
+    def size(self):
+        return self.data.size
+
+    @property
+    def shape(self):
+        # This may be patched by pandas to implement psuedo-2D compatibility
+        return (self.size,)
+
+    @property
+    def ndim(self):
+        return len(self.shape)
+
     def __len__(self):
-        return len(self.data)
+        return self.shape[0]
 
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
