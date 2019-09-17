@@ -230,7 +230,7 @@ def plot_point_collection(
         kwargs["c"] = values
     if markersize is not None:
         kwargs["s"] = markersize
- 
+
     if color is not None:
         if pd.api.types.is_list_like(color):
             color = np.take(color, multiindex)

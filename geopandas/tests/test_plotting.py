@@ -432,7 +432,7 @@ class TestPolygonPlotting:
         # colors are repeated for all components within a MultiPolygon
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
         _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
-        
+
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
         _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
