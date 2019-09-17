@@ -94,8 +94,6 @@ def plot_polygon_collection(
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
         values = np.take(values, multiindex)
-        if None in values:
-            values = None
 
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -157,8 +155,6 @@ def plot_linestring_collection(
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
         values = np.take(values, multiindex)
-        if None in values:
-            values = None
 
     # LineCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -223,8 +219,6 @@ def plot_point_collection(
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
         values = np.take(values, multiindex)
-        if None in values:
-            values = None
 
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
