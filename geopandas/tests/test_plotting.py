@@ -6,7 +6,15 @@ import warnings
 import numpy as np
 
 from shapely.affinity import rotate
-from shapely.geometry import LineString, MultiPoint, MultiPolygon, Point, Polygon
+from shapely.geometry import (
+    MultiPolygon,
+    Polygon,
+    LineString,
+    Point,
+    MultiPoint,
+    MultiLineString,
+)
+
 
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
@@ -189,6 +197,10 @@ class TestPointPlotting:
         expected_colors = [cmap(0)] * self.N + [cmap(1)] * self.N
         _check_colors(2, ax.collections[0].get_facecolors(), expected_colors)
 
+        ax = self.df2.plot(color=["r", "b"])
+        # colors are repeated for all components within a MultiPolygon
+        _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
+
 
 class TestPointZPlotting:
     def setup_method(self):
@@ -211,6 +223,12 @@ class TestLineStringPlotting:
             index=list("ABCDEFGHIJ"),
         )
         self.df = GeoDataFrame({"geometry": self.lines, "values": values})
+
+        multiline1 = MultiLineString(self.lines.loc["A":"B"].values)
+        multiline2 = MultiLineString(self.lines.loc["C":"D"].values)
+        self.df2 = GeoDataFrame(
+            {"geometry": [multiline1, multiline2], "values": [0, 1]}
+        )
 
     def test_single_color(self):
 
@@ -245,6 +263,23 @@ class TestLineStringPlotting:
         for ls in ax.collections[0].get_linestyles():
             assert ls[0] == exp_ls[0]
             assert ls[1] == exp_ls[1]
+
+    def test_multilinestrings(self):
+
+        # MultiLineStrings
+        ax = self.df2.plot()
+        assert len(ax.collections[0].get_paths()) == 4
+        _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
+
+        ax = self.df2.plot("values")
+        cmap = plt.get_cmap(lut=2)
+        # colors are repeated for all components within a MultiLineString
+        expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
+        _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df2.plot(color=["r", "b"])
+        # colors are repeated for all components within a MultiLineString
+        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
 
 
 class TestPolygonPlotting:
@@ -371,6 +406,10 @@ class TestPolygonPlotting:
         # colors are repeated for all components within a MultiPolygon
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
         _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df2.plot(color=["r", "b"])
+        # colors are repeated for all components within a MultiPolygon
+        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
 
 
 class TestPolygonZPlotting:
@@ -671,6 +710,12 @@ class TestPlotCollections:
         coll = plot_polygon_collection(ax, self.polygons, color="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
+        ax.cla()
+
+        # default: color can be passed as a list
+        coll = plot_polygon_collection(ax, self.polygons, color=["g", "b", "r"])
+        _check_colors(self.N, coll.get_facecolor(), ["g", "b", "r"])
+        _check_colors(self.N, coll.get_edgecolor(), ["g", "b", "r"])
         ax.cla()
 
         # only setting facecolor keeps default for edgecolor
