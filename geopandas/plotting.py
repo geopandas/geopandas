@@ -91,17 +91,24 @@ def plot_polygon_collection(
         )
     from matplotlib.collections import PatchCollection
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
-    if None in values:
-        values = None
+    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    if values is not None:
+        values = np.take(values, multiindex)
 
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
         del kwargs["markersize"]
-
-    # color=None overwrites specified facecolor/edgecolor with default color
     if color is not None:
         kwargs["color"] = color
+        if pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex)
+        else:
+            kwargs["color"] = color
+    else:
+        for att in ["facecolor", "edgecolor"]:
+            if att in kwargs:
+                if pd.api.types.is_list_like(kwargs[att]):
+                    kwargs[att] = np.take(kwargs[att], multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -146,9 +153,9 @@ def plot_linestring_collection(
     """
     from matplotlib.collections import LineCollection
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
-    if None in values:
-        values = None
+    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    if values is not None:
+        values = np.take(values, multiindex)
 
     # LineCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -156,7 +163,10 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        kwargs["color"] = color
+        if pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex)
+        else:
+            kwargs["color"] = color
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -208,9 +218,10 @@ def plot_point_collection(
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
-    if None in values:
-        values = None
+    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    if values is not None:
+        values = np.take(values, multiindex)
+
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
 
@@ -219,6 +230,10 @@ def plot_point_collection(
         kwargs["c"] = values
     if markersize is not None:
         kwargs["s"] = markersize
+ 
+    if color is not None:
+        if pd.api.types.is_list_like(color):
+            color = np.take(color, multiindex)
 
     if "norm" not in kwargs:
         collection = ax.scatter(
@@ -226,6 +241,7 @@ def plot_point_collection(
         )
     else:
         collection = ax.scatter(x, y, color=color, cmap=cmap, marker=marker, **kwargs)
+
     return collection
 
 
@@ -319,6 +335,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         facecolor = style_kwds.pop("facecolor", None)
         if color is not None:
             facecolor = color
+
         values_ = values[poly_idx] if cmap else None
         plot_polygon_collection(
             ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
