@@ -34,7 +34,7 @@ In particular, when submitting a pull request:
   line of a docstring should be a standalone summary.  Parameters and
   return values should be documented explicitly.
 
-- GeoPandas supports python 2 (2.6+) and python 3 (3.2+) with a single
+- GeoPandas supports python 2 (2.7+) and python 3 (3.5+) with a single
   code base.  Use modern python idioms when possible that are
   compatible with both major versions, and use the
   `six <https://pythonhosted.org/six>`_ library where helpful to smooth
@@ -43,7 +43,11 @@ In particular, when submitting a pull request:
   possible (all supported versions will be automatically tested on
   Travis CI).
 
-- Follow PEP 8 when possible.
+- Follow PEP 8 when possible. We use `Black
+  <https://black.readthedocs.io/en/stable/>`_ and `Flake8
+  <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code
+  format throughout the project. For more details see
+  :ref:`below <contributing_style>`.
 
 - Imports should be grouped with standard library imports first,
   3rd-party libraries next, and GeoPandas imports third.  Within each
@@ -164,11 +168,7 @@ An easy way to create a *GeoPandas* development environment is as follows:
 Tell conda to create a new environment, named ``geopandas_dev``, or any other name you would like
 for this environment, by running::
 
-      conda create -n geopandas_dev
-
-For a python 3 environment::
-
-      conda create -n geopandas_dev python=3.4
+      conda create -n geopandas_dev python
 
 This will create the new environment, and not touch any of your existing environments,
 nor any existing python installation.
@@ -200,12 +200,10 @@ To run *GeoPandas* in an development environment, you must first install
 *GeoPandas*'s dependencies. We suggest doing so using the following commands
 (executed after your development environment has been activated)::
 
-    conda install -c conda-forge fiona shapely pyproj rtree
-    conda install pandas
-    conda install -c conda-forge pytest
-
+    conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
 
 This should install all necessary dependencies.
+
 
 4) Making a development build
 -----------------------------
@@ -290,41 +288,37 @@ submit a pull request to have them integrated into the *GeoPandas* code base.
 
 You can find a pull request (or PR) tutorial in the `GitHub's Help Docs <https://help.github.com/articles/using-pull-requests/>`_.
 
+.. _contributing_style:
+
 Style Guide & Linting
 ---------------------
 
-- GeoPandas supports Python 2 (2.7+) and Python 3 (3.5+) with a single
-  code base. Use modern Python idioms when possible that are
-  compatible with both major versions, and use the
-  [six](https://pythonhosted.org/six) library where helpful to smooth
-  over the differences. Use `from __future__ import` statements where
-  appropriate. Test code locally in both Python 2 and Python 3 when
-  possible (all supported versions will be automatically tested on
-  Travis CI).
+GeoPandas follows the `PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ standard
+and uses `Black <https://black.readthedocs.io/en/stable/>`_ and
+`Flake8 <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code
+format throughout the project.
 
-- GeoPandas follows [the PEP 8
-  standard](http://www.python.org/dev/peps/pep-0008/) and uses
-  [Black](https://black.readthedocs.io/en/stable/) and
-  [Flake8](http://flake8.pycqa.org/en/latest/) to ensure a consistent
-  code format throughout the project.
+Continuous Integration (Travis CI) will run those tools and
+report any stylistic errors in your code. Therefore, it is helpful before
+submitting code to run the check yourself::
 
-- Imports should be grouped with standard library imports first,
-  3rd-party libraries next, and GeoPandas imports third. Within each
-  grouping, imports should be alphabetized. Always use absolute
-  imports when possible, and explicit relative imports for local
-  imports when necessary in tests.
+   black geopandas
+   git diff upstream/master -u -- "*.py" | flake8 --diff
 
-- You can set up [pre-commit hooks](https://pre-commit.com/) to
-  automatically run `black` and `flake8` when you make a git
-  commit. This can be done by installing `pre-commit`:
+to auto-format your code. Additionally, many editors have plugins that will
+apply ``black`` as you edit files.
 
-    $ python -m pip install pre-commit
+Optionally (but recommended), you can setup `pre-commit hooks <https://pre-commit.com/>`_
+to automatically run ``black`` and ``flake8`` when you make a git commit. This
+can be done by installing ``pre-commit``::
 
-  From the root of the geopandas repository, you should then install
-  `pre-commit`:
+   $ python -m pip install pre-commit
 
-    $ pre-commit install
+From the root of the geopandas repository, you should then install the
+``pre-commit`` included in *GeoPandas*::
 
-  Then `black` and `flake8` will be run automatically each time you
-  commit changes. You can skip these checks with `git commit
-  --no-verify`.
+   $ pre-commit install
+
+Then ``black`` and ``flake8`` will be run automatically
+each time you commit changes. You can skip these checks with
+``git commit --no-verify``.
