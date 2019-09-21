@@ -13,6 +13,8 @@ A set of fixtures are defined to provide data for the tests (the fixtures
 expected to be available to pytest by the inherited pandas tests).
 
 """
+import operator
+
 import numpy as np
 import pandas as pd
 from pandas.tests.extension import base as extension_tests
@@ -396,7 +398,10 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
 
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
     def _compare_other(self, s, data, op_name, other):
-        super(TestComparisonOps, self).check_opname(s, op_name, other, exc=None)
+        op = getattr(operator, op_name.strip("_"))
+        result = op(s, other)
+        expected = s.combine(other, op)
+        self.assert_series_equal(result, expected)
 
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
@@ -408,18 +413,6 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         s = pd.Series(data)
         other = pd.Series([data[0]] * len(data))
         self._compare_other(s, data, op_name, other)
-
-    def test_direct_arith_with_series_returns_not_implemented(self, data):
-        # EAs should return NotImplemented for ops with Series.
-        # Pandas takes care of unboxing the series and calling the EA's op.
-        other = pd.Series(data)
-        if hasattr(data, "__eq__"):
-            result = data.__eq__(other)
-            assert result is NotImplemented
-        else:
-            raise pytest.skip(
-                "{} does not implement __eq__".format(data.__class__.__name__)
-            )
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
