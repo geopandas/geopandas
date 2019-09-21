@@ -112,8 +112,9 @@ def from_wkb(data):
             geom = None
         out.append(geom)
 
-    out = np.array(out, dtype=object)
-    return GeometryArray(out)
+    aout = np.empty(n, dtype=object)
+    aout[:] = out
+    return GeometryArray(aout)
 
 
 def to_wkb(geoms):
@@ -146,8 +147,9 @@ def from_wkt(data):
             geom = None
         out.append(geom)
 
-    out = np.array(out, dtype=object)
-    return GeometryArray(out)
+    aout = np.empty(n, dtype=object)
+    aout[:] = out
+    return GeometryArray(aout)
 
 
 def to_wkt(geoms):
@@ -197,8 +199,9 @@ def points_from_xy(x, y, z=None):
     if z is not None:
         z = np.asarray(z, dtype="float64")
     out = _points_from_xy(x, y, z)
-    out = np.array(out, dtype=object)
-    return GeometryArray(out)
+    aout = np.empty(len(x), dtype=object)
+    aout[:] = out
+    return GeometryArray(aout)
 
 
 # -----------------------------------------------------------------------------
@@ -384,14 +387,16 @@ def _affinity_method(op, left, *args, **kwargs):
     # affine_transform itself works (as well as translate), but rotate, scale
     # and skew fail (they try to unpack the bounds).
     # Here: consistently returning empty geom for input empty geom
-    data = []
+    out = []
     for geom in left.data:
         if geom is None or geom.is_empty:
             res = geom
         else:
             res = getattr(shapely.affinity, op)(geom, *args, **kwargs)
-        data.append(res)
-    return GeometryArray(np.array(data, dtype=object))
+        out.append(res)
+    data = np.empty(len(left), dtype=object)
+    data[:] = out
+    return GeometryArray(data)
 
 
 class GeometryArray(ExtensionArray):
@@ -547,8 +552,9 @@ class GeometryArray(ExtensionArray):
                 "Only Polygon objects have interior rings. For other "
                 "geometry types, None is returned."
             )
-
-        return np.array(inner_rings, dtype=object)
+        data = np.empty(len(self), dtype=object)
+        data[:] = inner_rings
+        return data
 
     def representative_point(self):
         # method and not a property -> can't use _unary_geo
@@ -620,39 +626,44 @@ class GeometryArray(ExtensionArray):
         return _binary_op_float("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
+        data = data = np.empty(len(self), dtype=object)
         if isinstance(distance, np.ndarray):
             if len(distance) != len(self):
                 raise ValueError(
                     "Length of distance sequence does not match "
                     "length of the GeoSeries"
                 )
-            data = [
+
+            data[:] = [
                 geom.buffer(dist, resolution, **kwargs) if geom is not None else None
                 for geom, dist in zip(self.data, distance)
             ]
-            return GeometryArray(np.array(data, dtype=object))
+            return GeometryArray(data)
 
-        data = [
+        data[:] = [
             geom.buffer(distance, resolution, **kwargs) if geom is not None else None
             for geom in self.data
         ]
-        return GeometryArray(np.array(data, dtype=object))
+        return GeometryArray(data)
 
     def interpolate(self, distance, normalized=False):
+        data = data = np.empty(len(self), dtype=object)
         if isinstance(distance, np.ndarray):
             if len(distance) != len(self):
                 raise ValueError(
                     "Length of distance sequence does not match "
                     "length of the GeoSeries"
                 )
-            data = [
+            data[:] = [
                 geom.interpolate(dist, normalized=normalized)
                 for geom, dist in zip(self.data, distance)
             ]
-            return GeometryArray(np.array(data, dtype=object))
+            return GeometryArray(data)
 
-        data = [geom.interpolate(distance, normalized=normalized) for geom in self.data]
-        return GeometryArray(np.array(data, dtype=object))
+        data[:] = [
+            geom.interpolate(distance, normalized=normalized) for geom in self.data
+        ]
+        return GeometryArray(data)
 
     def simplify(self, *args, **kwargs):
         # method and not a property -> can't use _unary_geo

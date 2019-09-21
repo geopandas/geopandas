@@ -133,6 +133,13 @@ def test_from_wkb():
     assert res[-1] is None
     assert res[-2] is None
 
+    # single MultiPolygon
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    res = from_wkb([multi_poly.wkb])
+    assert res[0] == multi_poly
+
 
 def test_to_wkb():
     P = from_shapely(points_no_missing)
@@ -178,6 +185,13 @@ def test_from_wkt(string_type):
     res = from_wkt(L_wkt)
     assert res[-1] is None
     assert res[-2] is None
+
+    # single MultiPolygon
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    res = from_wkt([f(multi_poly.wkt)])
+    assert res[0] == multi_poly
 
 
 def test_to_wkt():
@@ -653,3 +667,16 @@ def test_raise_on_bad_sizes():
     assert "lengths" in str(info.value).lower()
     assert "12" in str(info.value)
     assert "21" in str(info.value)
+
+
+def test_buffer_single_multipolygon():
+    # https://github.com/geopandas/geopandas/issues/1130
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    arr = from_shapely([multi_poly])
+    result = arr.buffer(1)
+    expected = [multi_poly.buffer(1)]
+    equal_geometries(result, expected)
+    result = arr.buffer(np.array([1]))
+    equal_geometries(result, expected)
