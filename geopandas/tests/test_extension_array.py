@@ -403,11 +403,13 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         expected = s.combine(other, op)
         self.assert_series_equal(result, expected)
 
+    @skip_pandas_below_024
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
         self._compare_other(s, data, op_name, data[0])
 
+    @skip_pandas_below_024
     def test_compare_array(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
