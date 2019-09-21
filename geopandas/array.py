@@ -1029,6 +1029,9 @@ class GeometryArray(ExtensionArray):
         lvalues = self
         rvalues = convert_values(other)
 
+        if len(lvalues) != len(rvalues):
+            raise ValueError("Lengths must match to compare")
+
         # If the operator is not defined for the underlying objects,
         # a TypeError should be raised
         res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
@@ -1038,3 +1041,6 @@ class GeometryArray(ExtensionArray):
 
     def __eq__(self, other):
         return self._binop(other, operator.eq)
+
+    def __ne__(self, other):
+        return self._binop(other, operator.ne)
