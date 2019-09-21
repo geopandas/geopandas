@@ -625,6 +625,20 @@ def test_getitem():
     assert P5.equals(points[1])
 
 
+def test_equality_ops():
+    with pytest.raises(ValueError):
+        P[:5] == P[:7]
+
+    a1 = from_shapely([points[1], points[2], points[3]])
+    a2 = from_shapely([points[1], points[0], points[3]])
+
+    res = a1 == a2
+    assert res.tolist() == [True, False, True]
+
+    res = a1 != a2
+    assert res.tolist() == [False, True, False]
+
+
 def test_dir():
     assert "contains" in dir(P)
     assert "data" in dir(P)
