@@ -590,10 +590,9 @@ def plot_dataframe(
         from matplotlib.colors import Normalize
         from matplotlib import cm
 
-        if "norm" not in style_kwds:
+        norm = style_kwds.get("norm", None)
+        if not norm:
             norm = Normalize(vmin=mn, vmax=mx)
-        else:
-            norm = style_kwds["norm"]
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
             patches = []
