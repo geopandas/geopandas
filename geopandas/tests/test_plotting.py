@@ -180,7 +180,9 @@ class TestPointPlotting:
 
         # # Normalized legend
         # the colorbar matches the Point colors
-        norm = matplotlib.colors.LogNorm(vmin=self.df.exp.min(), vmax=self.df.exp.max())
+        norm = matplotlib.colors.LogNorm(
+            vmin=self.df[1:].exp.min(), vmax=self.df[1:].exp.max()
+        )
         ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
         point_colors = ax.collections[0].get_facecolors()
         cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
