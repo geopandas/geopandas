@@ -261,7 +261,9 @@ def all_boolean_reductions(request):
     return request.param
 
 
-@pytest.fixture(params=["__eq__", "__ne__", "__le__", "__lt__", "__ge__", "__gt__"])
+# only == and != are support for GeometryArray
+# @pytest.fixture(params=["__eq__", "__ne__", "__le__", "__lt__", "__ge__", "__gt__"])
+@pytest.fixture(params=["__eq__", "__ne__"])
 def all_compare_operators(request):
     """
     Fixture for dunder names for common compare operations
@@ -393,13 +395,14 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
 
 
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
-    @not_yet_implemented
+    def _compare_other(self, s, data, op_name, other):
+        super(TestComparisonOps, self).check_opname(s, op_name, other, exc=None)
+
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
-        self._compare_other(s, data, op_name, 0)
+        self._compare_other(s, data, op_name, data[0])
 
-    @not_yet_implemented
     def test_compare_array(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
