@@ -1,5 +1,4 @@
 from distutils.version import LooseVersion
-import os
 
 import numpy as np
 import six
@@ -120,10 +119,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
+    The path may specify a fiona VSI scheme.
     """
     if schema is None:
         schema = infer_schema(df)
-    filename = os.path.abspath(os.path.expanduser(filename))
     with fiona_env():
         with fiona.open(
             filename, "w", driver=driver, crs=df.crs, schema=schema, **kwargs
