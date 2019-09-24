@@ -13,29 +13,23 @@ A set of fixtures are defined to provide data for the tests (the fixtures
 expected to be available to pytest by the inherited pandas tests).
 
 """
+import operator
+
 import numpy as np
 import pandas as pd
+from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 
-from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import PANDAS_GE_024
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
-
-
-not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
-no_sorting = pytest.mark.skip(reason="Sorting not supported")
-skip_pandas_below_024 = pytest.mark.skipif(
-    not PANDAS_GE_024, reason="Sorting not supported")
-
 
 # -----------------------------------------------------------------------------
 # Compat with extension tests in older pandas versions
 # -----------------------------------------------------------------------------
 
-
-from pandas.tests.extension import base as extension_tests
 
 if not PANDAS_GE_024:
     # pandas 0.23.4 doesn't have those tests yet, so adding dummy classes
@@ -45,6 +39,13 @@ if not PANDAS_GE_024:
     extension_tests.BaseComparisonOpsTests = object
     extension_tests.BasePrintingTests = object
     extension_tests.BaseParsingTests = object
+
+
+not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
+no_sorting = pytest.mark.skip(reason="Sorting not supported")
+skip_pandas_below_024 = pytest.mark.skipif(
+    not PANDAS_GE_024, reason="Sorting not supported"
+)
 
 
 # -----------------------------------------------------------------------------
@@ -59,8 +60,7 @@ def dtype():
 
 
 def make_data():
-    a = np.array([shapely.geometry.Point(i, i) for i in range(100)],
-                 dtype=object)
+    a = np.array([shapely.geometry.Point(i, i) for i in range(100)], dtype=object)
     ga = from_shapely(a)
     return ga
 
@@ -87,12 +87,12 @@ def data_missing():
     return from_shapely([None, shapely.geometry.Point(1, 1)])
 
 
-@pytest.fixture(params=['data', 'data_missing'])
+@pytest.fixture(params=["data", "data_missing"])
 def all_data(request, data, data_missing):
     """Parametrized fixture giving 'data' and 'data_missing'"""
-    if request.param == 'data':
+    if request.param == "data":
         return data
-    elif request.param == 'data_missing':
+    elif request.param == "data_missing":
         return data_missing
 
 
@@ -111,9 +111,11 @@ def data_repeated(data):
         A callable that takes a `count` argument and
         returns a generator yielding `count` datasets.
     """
+
     def gen(count):
         for _ in range(count):
             yield data
+
     return gen
 
 
@@ -162,14 +164,17 @@ def data_for_grouping():
     Where A < B < C and NA is missing
     """
     return from_shapely(
-        [shapely.geometry.Point(1, 1),
-         shapely.geometry.Point(1, 1),
-         None,
-         None,
-         shapely.geometry.Point(0, 0),
-         shapely.geometry.Point(0, 0),
-         shapely.geometry.Point(1, 1),
-         shapely.geometry.Point(2, 2)])
+        [
+            shapely.geometry.Point(1, 1),
+            shapely.geometry.Point(1, 1),
+            None,
+            None,
+            shapely.geometry.Point(0, 0),
+            shapely.geometry.Point(0, 0),
+            shapely.geometry.Point(1, 1),
+            shapely.geometry.Point(2, 2),
+        ]
+    )
 
 
 @pytest.fixture(params=[True, False])
@@ -178,12 +183,15 @@ def box_in_series(request):
     return request.param
 
 
-@pytest.fixture(params=[
-    lambda x: 1,
-    lambda x: [1] * len(x),
-    lambda x: pd.Series([1] * len(x)),
-    lambda x: x,
-], ids=['scalar', 'list', 'series', 'object'])
+@pytest.fixture(
+    params=[
+        lambda x: 1,
+        lambda x: [1] * len(x),
+        lambda x: pd.Series([1] * len(x)),
+        lambda x: x,
+    ],
+    ids=["scalar", "list", "series", "object"],
+)
 def groupby_apply_op(request):
     """
     Functions to test groupby.apply().
@@ -216,7 +224,7 @@ def use_numpy(request):
     return request.param
 
 
-@pytest.fixture(params=['ffill', 'bfill'])
+@pytest.fixture(params=["ffill", "bfill"])
 def fillna_method(request):
     """
     Parametrized fixture giving method parameters 'ffill' and 'bfill' for
@@ -237,8 +245,9 @@ def as_array(request):
 # here instead of importing for compatibility
 
 
-@pytest.fixture(params=['sum', 'max', 'min', 'mean', 'prod', 'std', 'var',
-                        'median', 'kurt', 'skew'])
+@pytest.fixture(
+    params=["sum", "max", "min", "mean", "prod", "std", "var", "median", "kurt", "skew"]
+)
 def all_numeric_reductions(request):
     """
     Fixture for numeric reduction names
@@ -246,7 +255,7 @@ def all_numeric_reductions(request):
     return request.param
 
 
-@pytest.fixture(params=['all', 'any'])
+@pytest.fixture(params=["all", "any"])
 def all_boolean_reductions(request):
     """
     Fixture for boolean reduction names
@@ -254,8 +263,9 @@ def all_boolean_reductions(request):
     return request.param
 
 
-@pytest.fixture(params=['__eq__', '__ne__', '__le__',
-                        '__lt__', '__ge__', '__gt__'])
+# only == and != are support for GeometryArray
+# @pytest.fixture(params=["__eq__", "__ne__", "__le__", "__lt__", "__ge__", "__gt__"])
+@pytest.fixture(params=["__eq__", "__ne__"])
 def all_compare_operators(request):
     """
     Fixture for dunder names for common compare operations
@@ -285,7 +295,7 @@ class TestDtype(extension_tests.BaseDtypeTests):
     @skip_pandas_below_024
     def test_registry(self, data, dtype):
         s = pd.Series(np.asarray(data), dtype=object)
-        result = s.astype('geometry')
+        result = s.astype("geometry")
         assert isinstance(result.array, GeometryArray)
         expected = pd.Series(data)
         self.assert_series_equal(result, expected)
@@ -312,14 +322,12 @@ class TestSetitem(extension_tests.BaseSetitemTests):
 
 
 class TestMissing(extension_tests.BaseMissingTests):
-
     def test_fillna_series(self, data_missing):
         fill_value = data_missing[1]
         ser = pd.Series(data_missing)
 
         result = ser.fillna(fill_value)
-        expected = pd.Series(data_missing._from_sequence(
-            [fill_value, fill_value]))
+        expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
         self.assert_series_equal(result, expected)
 
         # filling with array-like not yet supported
@@ -346,16 +354,26 @@ class TestMissing(extension_tests.BaseMissingTests):
 
 
 class TestReduce(extension_tests.BaseNoReduceTests):
-    pass
+    @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
+    def test_reduce_series_boolean():
+        pass
 
 
-_all_arithmetic_operators = ['__add__', '__radd__',
-                             # '__sub__', '__rsub__',
-                             '__mul__', '__rmul__',
-                             '__floordiv__', '__rfloordiv__',
-                             '__truediv__', '__rtruediv__',
-                             '__pow__', '__rpow__',
-                             '__mod__', '__rmod__']
+_all_arithmetic_operators = [
+    "__add__",
+    "__radd__",
+    # '__sub__', '__rsub__',
+    "__mul__",
+    "__rmul__",
+    "__floordiv__",
+    "__rfloordiv__",
+    "__truediv__",
+    "__rtruediv__",
+    "__pow__",
+    "__rpow__",
+    "__mod__",
+    "__rmod__",
+]
 
 
 @pytest.fixture(params=_all_arithmetic_operators)
@@ -369,7 +387,6 @@ def all_arithmetic_operators(request):
 
 
 class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
-
     @pytest.mark.skip(reason="not applicable")
     def test_divmod_series_array(self, data, data_for_twos):
         pass
@@ -380,37 +397,29 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
 
 
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
+    def _compare_other(self, s, data, op_name, other):
+        op = getattr(operator, op_name.strip("_"))
+        result = op(s, other)
+        expected = s.combine(other, op)
+        self.assert_series_equal(result, expected)
 
-    @not_yet_implemented
+    @skip_pandas_below_024
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
-        self._compare_other(s, data, op_name, 0)
+        self._compare_other(s, data, op_name, data[0])
 
-    @not_yet_implemented
+    @skip_pandas_below_024
     def test_compare_array(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
         other = pd.Series([data[0]] * len(data))
         self._compare_other(s, data, op_name, other)
 
-    def test_direct_arith_with_series_returns_not_implemented(self, data):
-        # EAs should return NotImplemented for ops with Series.
-        # Pandas takes care of unboxing the series and calling the EA's op.
-        other = pd.Series(data)
-        if hasattr(data, '__eq__'):
-            result = data.__eq__(other)
-            assert result is NotImplemented
-        else:
-            raise pytest.skip(
-                "{} does not implement __eq__".format(data.__class__.__name__)
-            )
-
 
 class TestMethods(extension_tests.BaseMethodsTests):
-
     @no_sorting
-    @pytest.mark.parametrize('dropna', [True, False])
+    @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
@@ -427,7 +436,7 @@ class TestMethods(extension_tests.BaseMethodsTests):
         self.assert_series_equal(result, expected)
 
     @no_sorting
-    @pytest.mark.parametrize('ascending', [True, False])
+    @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values(self, data_for_sorting, ascending):
         ser = pd.Series(data_for_sorting)
         result = ser.sort_values(ascending=ascending)
@@ -438,7 +447,7 @@ class TestMethods(extension_tests.BaseMethodsTests):
         self.assert_series_equal(result, expected)
 
     @no_sorting
-    @pytest.mark.parametrize('ascending', [True, False])
+    @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values_missing(self, data_missing_for_sorting, ascending):
         ser = pd.Series(data_missing_for_sorting)
         result = ser.sort_values(ascending=ascending)
@@ -449,14 +458,13 @@ class TestMethods(extension_tests.BaseMethodsTests):
         self.assert_series_equal(result, expected)
 
     @no_sorting
-    @pytest.mark.parametrize('ascending', [True, False])
+    @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values_frame(self, data_for_sorting, ascending):
-        df = pd.DataFrame({"A": [1, 2, 1],
-                           "B": data_for_sorting})
-        result = df.sort_values(['A', 'B'])
-        expected = pd.DataFrame({"A": [1, 1, 2],
-                                 'B': data_for_sorting.take([2, 0, 1])},
-                                index=[2, 0, 1])
+        df = pd.DataFrame({"A": [1, 2, 1], "B": data_for_sorting})
+        result = df.sort_values(["A", "B"])
+        expected = pd.DataFrame(
+            {"A": [1, 1, 2], "B": data_for_sorting.take([2, 0, 1])}, index=[2, 0, 1]
+        )
         self.assert_frame_equal(result, expected)
 
     @no_sorting
@@ -491,9 +499,8 @@ class TestCasting(extension_tests.BaseCastingTests):
 
 
 class TestGroupby(extension_tests.BaseGroupbyTests):
-
     @no_sorting
-    @pytest.mark.parametrize('as_index', [True, False])
+    @pytest.mark.parametrize("as_index", [True, False])
     def test_groupby_extension_agg(self, as_index, data_for_grouping):
         pass
 
@@ -502,12 +509,16 @@ class TestGroupby(extension_tests.BaseGroupbyTests):
         pass
 
     @no_sorting
-    @pytest.mark.parametrize('op', [
-        lambda x: 1,
-        lambda x: [1] * len(x),
-        lambda x: pd.Series([1] * len(x)),
-        lambda x: x,
-    ], ids=['scalar', 'list', 'series', 'object'])
+    @pytest.mark.parametrize(
+        "op",
+        [
+            lambda x: 1,
+            lambda x: [1] * len(x),
+            lambda x: pd.Series([1] * len(x)),
+            lambda x: x,
+        ],
+        ids=["scalar", "list", "series", "object"],
+    )
     def test_groupby_extension_apply(self, data_for_grouping, op):
         pass
 
