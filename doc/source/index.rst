@@ -44,6 +44,7 @@ such as PostGIS.
   Aggregation with dissolve <aggregation_with_dissolve>
   Merging Data <mergingdata>
   Geocoding <geocoding>
+  missing_empty
 
 .. toctree::
   :maxdepth: 1
