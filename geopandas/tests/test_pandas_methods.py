@@ -41,6 +41,9 @@ def test_repr(s, df):
     assert "POINT" in repr(df)
 
 
+@pytest.mark.skipif(
+    not PANDAS_GE_024, reason="formatting for EA only implemented in 0.24.0"
+)
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
