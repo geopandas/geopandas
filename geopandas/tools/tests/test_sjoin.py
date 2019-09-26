@@ -319,7 +319,8 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="outer")
         assert df.shape == (21, 8)
 
-    def test_sjoin_empty(self):
+    def test_sjoin_empty_geometries(self):
+        # https://github.com/geopandas/geopandas/issues/944
         empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
         df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
         assert df.shape == (24, 8)
