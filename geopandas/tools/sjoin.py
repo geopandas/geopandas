@@ -106,7 +106,7 @@ def sjoin(
     # get rtree spatial index
     if tree_idx_right:
         idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
-            lambda x: list(tree_idx.intersection(x))
+            lambda x: list(tree_idx.intersection(x)) if not x == () else []
         )
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
         # indexes of overlapping boundaries
@@ -116,7 +116,7 @@ def sjoin(
     else:
         # tree_idx_df == 'left'
         idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
-            lambda x: list(tree_idx.intersection(x))
+            lambda x: list(tree_idx.intersection(x)) if not x == () else []
         )
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
         if idxmatch.shape[0] > 0:
