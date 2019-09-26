@@ -319,6 +319,13 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="outer")
         assert df.shape == (21, 8)
 
+    def test_sjoin_empty(self):
+        empty = gpd.GeoDataFrame(geometry=[GeometryCollection()] * 3)
+        df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
+        assert df.shape == (24, 8)
+        df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
+        assert df2.shape == (21, 8)
+
 
 @pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSpatialJoinNaturalEarth:
