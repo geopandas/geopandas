@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import numpy as np
 import pandas as pd
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
@@ -320,7 +320,7 @@ class TestSpatialJoinNYBB:
         assert df.shape == (21, 8)
 
     def test_sjoin_empty(self):
-        empty = gpd.GeoDataFrame(geometry=[GeometryCollection()] * 3)
+        empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
         df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
         assert df.shape == (24, 8)
         df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
