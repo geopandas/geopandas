@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Data Structures &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Data Structures &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -107,6 +107,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#attributes-and-methods">Attributes and Methods</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#display-options">Display options</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
@@ -118,6 +119,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -204,9 +206,9 @@ meant to be thought of as one observation (like the many polygons that
 make up the State of Hawaii or a country like Indonesia).</p>
 <p><em>geopandas</em> has three basic classes of geometric objects (which are actually <em>shapely</em> objects):</p>
 <ul class="simple">
-<li>Points / Multi-Points</li>
-<li>Lines / Multi-Lines</li>
-<li>Polygons / Multi-Polygons</li>
+<li><p>Points / Multi-Points</p></li>
+<li><p>Lines / Multi-Lines</p></li>
+<li><p>Polygons / Multi-Polygons</p></li>
 </ul>
 <p>Note that all entries in  a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> need not be of the same geometric type, although certain export operations will fail if this is not the case.</p>
 <div class="section" id="overview-of-attributes-and-methods">
@@ -228,29 +230,29 @@ in <a class="reference internal" href="geometric_manipulations.html"><span class
 <div class="section" id="attributes">
 <h4>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">area</span></code>: shape area (units of projection – see <a class="reference internal" href="projections.html"><span class="doc">projections</span></a>)</li>
-<li><code class="docutils literal notranslate"><span class="pre">bounds</span></code>: tuple of max and min coordinates on each axis for each shape</li>
-<li><code class="docutils literal notranslate"><span class="pre">total_bounds</span></code>: tuple of max and min coordinates on each axis for entire GeoSeries</li>
-<li><code class="docutils literal notranslate"><span class="pre">geom_type</span></code>: type of geometry.</li>
-<li><code class="docutils literal notranslate"><span class="pre">is_valid</span></code>: tests if coordinates make a shape that is reasonable geometric shape (<a class="reference external" href="http://www.opengeospatial.org/standards/sfa">according to this</a>).</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">area</span></code>: shape area (units of projection – see <a class="reference internal" href="projections.html"><span class="doc">projections</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bounds</span></code>: tuple of max and min coordinates on each axis for each shape</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">total_bounds</span></code>: tuple of max and min coordinates on each axis for entire GeoSeries</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geom_type</span></code>: type of geometry.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_valid</span></code>: tests if coordinates make a shape that is reasonable geometric shape (<a class="reference external" href="http://www.opengeospatial.org/standards/sfa">according to this</a>).</p></li>
 </ul>
 </div>
 <div class="section" id="basic-methods">
 <h4>Basic Methods<a class="headerlink" href="#basic-methods" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">distance(other)</span></code>: returns <code class="docutils literal notranslate"><span class="pre">Series</span></code> with minimum distance from each entry to <code class="docutils literal notranslate"><span class="pre">other</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">centroid</span></code>: returns <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of centroids</li>
-<li><code class="docutils literal notranslate"><span class="pre">representative_point()</span></code>:  returns <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of points that are guaranteed to be within each geometry. It does <strong>NOT</strong> return centroids.</li>
-<li><code class="docutils literal notranslate"><span class="pre">to_crs()</span></code>: change coordinate reference system. See <a class="reference internal" href="projections.html"><span class="doc">projections</span></a></li>
-<li><code class="docutils literal notranslate"><span class="pre">plot()</span></code>: plot <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>. See <a class="reference internal" href="mapping.html"><span class="doc">mapping</span></a>.</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">distance(other)</span></code>: returns <code class="docutils literal notranslate"><span class="pre">Series</span></code> with minimum distance from each entry to <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">centroid</span></code>: returns <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of centroids</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">representative_point()</span></code>:  returns <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of points that are guaranteed to be within each geometry. It does <strong>NOT</strong> return centroids.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">to_crs()</span></code>: change coordinate reference system. See <a class="reference internal" href="projections.html"><span class="doc">projections</span></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plot()</span></code>: plot <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>. See <a class="reference internal" href="mapping.html"><span class="doc">mapping</span></a>.</p></li>
 </ul>
 </div>
 <div class="section" id="relationship-tests">
 <h4>Relationship Tests<a class="headerlink" href="#relationship-tests" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">geom_almost_equals(other)</span></code>: is shape almost the same as <code class="docutils literal notranslate"><span class="pre">other</span></code> (good when floating point precision issues make shapes slightly different)</li>
-<li><code class="docutils literal notranslate"><span class="pre">contains(other)</span></code>: is shape contained within <code class="docutils literal notranslate"><span class="pre">other</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">intersects(other)</span></code>: does shape intersect <code class="docutils literal notranslate"><span class="pre">other</span></code></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">geom_almost_equals(other)</span></code>: is shape almost the same as <code class="docutils literal notranslate"><span class="pre">other</span></code> (good when floating point precision issues make shapes slightly different)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">contains(other)</span></code>: is shape contained within <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">intersects(other)</span></code>: does shape intersect <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
 </ul>
 </div>
 </div>
@@ -266,14 +268,12 @@ in <a class="reference internal" href="geometric_manipulations.html"><span class
 
 <span class="gp">In [2]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[2]: </span><span class="go"></span>
-<span class="go">     pop_est      continent  ...  gdp_md_est                                           geometry</span>
-<span class="go">0     920938        Oceania  ...      8374.0  (POLYGON ((180 -16.06713266364245, 180 -16.555...</span>
-<span class="go">1   53950935         Africa  ...    150600.0  POLYGON ((33.90371119710453 -0.950000000000000...</span>
-<span class="go">2     603253         Africa  ...       906.5  POLYGON ((-8.665589565454809 27.65642588959236...</span>
-<span class="go">3   35623680  North America  ...   1674000.0  (POLYGON ((-122.84 49.00000000000011, -122.974...</span>
-<span class="go">4  326625791  North America  ...  18560000.0  (POLYGON ((-122.84 49.00000000000011, -120 49....</span>
-
-<span class="go">[5 rows x 6 columns]</span>
+<span class="go">     pop_est      continent                      name iso_a3  gdp_md_est                                           geometry</span>
+<span class="go">0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLYGON (((180.00000 -16.06713, 180.00000...</span>
+<span class="go">1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON ((33.90371 -0.95000, 34.07262 -1.05982...</span>
+<span class="go">2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON ((-8.66559 27.65643, -8.66512 27.58948...</span>
+<span class="go">3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLYGON (((-122.84000 49.00000, -122.9742...</span>
+<span class="go">4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLYGON (((-122.84000 49.00000, -120.0000...</span>
 
 <span class="go">#Plot countries</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
@@ -311,6 +311,50 @@ geometry column:</p>
 <h3>Attributes and Methods<a class="headerlink" href="#attributes-and-methods" title="Permalink to this headline">¶</a></h3>
 <p>Any of the attributes calls or methods described for a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> will work on a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> – effectively, they are just applied to the “geometry” <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p>
 <p>However, <code class="docutils literal notranslate"><span class="pre">GeoDataFrames</span></code> also have a few extra methods for input and output which are described on the <a class="reference internal" href="io.html"><span class="doc">Input and Output</span></a> page and for geocoding with are described in <a class="reference internal" href="geocoding.html"><span class="doc">Geocoding</span></a>.</p>
+</div>
+</div>
+<div class="section" id="display-options">
+<h2>Display options<a class="headerlink" href="#display-options" title="Permalink to this headline">¶</a></h2>
+<p>GeoPandas has an <code class="docutils literal notranslate"><span class="pre">options</span></code> attribute with currently a single configuration
+option to control:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [10]: </span><span class="kn">import</span> <span class="nn">geopandas</span>
+
+<span class="gp">In [11]: </span><span class="n">geopandas</span><span class="o">.</span><span class="n">options</span>
+<span class="gh">Out[11]: </span><span class="go"></span>
+<span class="go">Options(</span>
+<span class="go">  display_precision: None [default: None]</span>
+<span class="go">      The precision (maximum number of decimals) of the coordinates in the</span>
+<span class="go">      WKT representation in the Series/DataFrame display. By default (None),</span>
+<span class="go">      it tries to infer and use 3 decimals for projected coordinates and 5</span>
+<span class="go">      decimals for geographic coordinates.)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">geopandas.options.display_precision`</span> <span class="pre">option</span> <span class="pre">can</span> <span class="pre">control</span> <span class="pre">the</span> <span class="pre">number</span> <span class="pre">of</span>
+<span class="pre">decimals</span> <span class="pre">to</span> <span class="pre">show</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">display</span> <span class="pre">of</span> <span class="pre">coordinates</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">geometry</span> <span class="pre">column.</span>
+<span class="pre">In</span> <span class="pre">the</span> <span class="pre">``world</span></code> example of above, the default is to show 5 decimals for
+geographic coordinates:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [12]: </span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;centroid_column&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[12]: </span><span class="go"></span>
+<span class="go">0    POINT (163.85316 -17.31631)</span>
+<span class="go">1      POINT (34.75299 -6.25773)</span>
+<span class="go">2     POINT (-12.13783 24.29117)</span>
+<span class="go">3     POINT (-98.14238 61.46908)</span>
+<span class="go">4    POINT (-112.59944 45.70563)</span>
+<span class="go">Name: centroid_column, dtype: geometry</span>
+</pre></div>
+</div>
+<p>If you want to change this, for example to see more decimals, you can do:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [13]: </span><span class="n">geopandas</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">display_precision</span> <span class="o">=</span> <span class="mi">9</span>
+
+<span class="gp">In [14]: </span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;centroid_column&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[14]: </span><span class="go"></span>
+<span class="go">0    POINT (163.853164645 -17.316309426)</span>
+<span class="go">1      POINT (34.752989855 -6.257732429)</span>
+<span class="go">2     POINT (-12.137831112 24.291172960)</span>
+<span class="go">3     POINT (-98.142381372 61.469076145)</span>
+<span class="go">4    POINT (-112.599435912 45.705628002)</span>
+<span class="go">Name: centroid_column, dtype: geometry</span>
+</pre></div>
 </div>
 </div>
 </div>

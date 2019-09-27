@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geocoding &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Geocoding &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="next" title="Missing and empty geometries" href="missing_empty.html" />
     <link rel="prev" title="Merging Data" href="mergingdata.html" /> 
 </head>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -197,12 +198,12 @@ with the detailed borough boundary file included within <code class="docutils li
 
 <span class="gp">In [4]: </span><span class="n">boro_locations</span>
 <span class="gh">Out[4]: </span><span class="go"></span>
-<span class="go">                                      geometry                       address</span>
-<span class="go">0   POINT (-74.1502012148768 40.5795366485504)        Staten Island, NY, USA</span>
-<span class="go">1   POINT (-73.7948512090548 40.7282266729122)               Queens, NY, USA</span>
-<span class="go">2  POINT (-73.94415121150099 40.6781766647127)             Brooklyn, NY, USA</span>
-<span class="go">3   POINT (-73.9712412119449 40.7830666818965)  Manhattan, New York, NY, USA</span>
-<span class="go">4    POINT (-73.8648212102013 40.844786692009)                Bronx, NY, USA</span>
+<span class="go">                             geometry                       address</span>
+<span class="go">0  POINT (-74.150201215 40.579536649)        Staten Island, NY, USA</span>
+<span class="go">1  POINT (-73.794851209 40.728226673)               Queens, NY, USA</span>
+<span class="go">2  POINT (-73.944151212 40.678176665)             Brooklyn, NY, USA</span>
+<span class="go">3  POINT (-73.971241212 40.783066682)  Manhattan, New York, NY, USA</span>
+<span class="go">4  POINT (-73.864821210 40.844786692)                Bronx, NY, USA</span>
 
 <span class="gp">In [5]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
@@ -230,8 +231,8 @@ a user agent:</p>
 </pre></div>
 </div>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">Please consult the Terms of Service for the chosen provider. The example
+<p class="admonition-title">Attention</p>
+<p>Please consult the Terms of Service for the chosen provider. The example
 above uses <code class="docutils literal notranslate"><span class="pre">'geocodefarm'</span></code> (the default), for which free users are
 limited to 250 calls per day and 4 requests per second
 (<a class="reference external" href="https://geocode.farm/geocoding/free-api-documentation/">geocodefarm ToS</a>).</p>
@@ -246,7 +247,7 @@ limited to 250 calls per day and 4 requests per second
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="missing_empty.html" class="btn btn-neutral float-right" title="Missing and empty geometries" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="mergingdata.html" class="btn btn-neutral float-left" title="Merging Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

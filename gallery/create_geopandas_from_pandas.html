@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Creating a GeoDataFrame from a DataFrame with coordinates &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Creating a GeoDataFrame from a DataFrame with coordinates &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -37,8 +37,8 @@
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" />
-    <link rel="prev" title="Adding a background map to plots" href="plotting_basemap_background.html" /> 
+    <link rel="next" title="Plotting with CartoPy and GeoPandas" href="cartopy_convert.html" />
+    <link rel="prev" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -91,12 +91,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples Gallery</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="plotting_basemap_background.html">Adding a background map to plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Creating a GeoDataFrame from a DataFrame with coordinates</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#from-longitudes-and-latitudes">From longitudes and latitudes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#from-wkt-format">From WKT format</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
 </ul>
 </li>
@@ -113,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -188,8 +189,8 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="creating-a-geodataframe-from-a-dataframe-with-coordinates">
 <span id="sphx-glr-gallery-create-geopandas-from-pandas-py"></span><h1>Creating a GeoDataFrame from a DataFrame with coordinates<a class="headerlink" href="#creating-a-geodataframe-from-a-dataframe-with-coordinates" title="Permalink to this headline">¶</a></h1>
@@ -198,16 +199,16 @@ a <em>regular</em> <code class="docutils literal notranslate"><span class="pre">
 (<a class="reference external" href="https://en.wikipedia.org/wiki/Well-known_text">well-known text</a>)
 format, or in
 two columns.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">geopandas</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 </pre></div>
 </div>
 <div class="section" id="from-longitudes-and-latitudes">
 <h2>From longitudes and latitudes<a class="headerlink" href="#from-longitudes-and-latitudes" title="Permalink to this headline">¶</a></h2>
 <p>First, let’s consider a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> containing cities and their respective
 longitudes and latitudes.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span><span class="s1">&#39;City&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Buenos Aires&#39;</span><span class="p">,</span> <span class="s1">&#39;Brasilia&#39;</span><span class="p">,</span> <span class="s1">&#39;Santiago&#39;</span><span class="p">,</span> <span class="s1">&#39;Bogota&#39;</span><span class="p">,</span> <span class="s1">&#39;Caracas&#39;</span><span class="p">],</span>
      <span class="s1">&#39;Country&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Argentina&#39;</span><span class="p">,</span> <span class="s1">&#39;Brazil&#39;</span><span class="p">,</span> <span class="s1">&#39;Chile&#39;</span><span class="p">,</span> <span class="s1">&#39;Colombia&#39;</span><span class="p">,</span> <span class="s1">&#39;Venezuela&#39;</span><span class="p">],</span>
      <span class="s1">&#39;Latitude&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.58</span><span class="p">,</span> <span class="o">-</span><span class="mf">15.78</span><span class="p">,</span> <span class="o">-</span><span class="mf">33.45</span><span class="p">,</span> <span class="mf">4.60</span><span class="p">,</span> <span class="mf">10.48</span><span class="p">],</span>
@@ -219,16 +220,16 @@ longitudes and latitudes.</p>
 of <code class="docutils literal notranslate"><span class="pre">shapely.Point</span></code> objects and set it as a <code class="docutils literal notranslate"><span class="pre">geometry</span></code> while creating the
 <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>. (note that <code class="docutils literal notranslate"><span class="pre">points_from_xy()</span></code> is an enhanced wrapper for
 <code class="docutils literal notranslate"><span class="pre">[Point(x,</span> <span class="pre">y)</span> <span class="pre">for</span> <span class="pre">x,</span> <span class="pre">y</span> <span class="pre">in</span> <span class="pre">zip(df.Longitude,</span> <span class="pre">df.Latitude)]</span></code>)</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span>
     <span class="n">df</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">geopandas</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">Longitude</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">Latitude</span><span class="p">))</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">gdf</span></code> looks like this :</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>City    Country  Latitude  Longitude               geometry
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>           City    Country  Latitude  Longitude               geometry
 0  Buenos Aires  Argentina    -34.58     -58.66  POINT (-58.66 -34.58)
 1      Brasilia     Brazil    -15.78     -47.91  POINT (-47.91 -15.78)
 2      Santiago      Chile    -33.45     -70.66  POINT (-70.66 -33.45)
@@ -237,60 +238,82 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <p>Finally, we plot the coordinates over a country-level map.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">world</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">world</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
 <span class="c1"># We restrict to South America.</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="o">.</span><span class="n">continent</span> <span class="o">==</span> <span class="s1">&#39;South America&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
     <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
 
-<span class="c1"># We can now plot our GeoDataFrame.</span>
+<span class="c1"># We can now plot our ``GeoDataFrame``.</span>
 <span class="n">gdf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_001.png" class="sphx-glr-single-img" src="../_images/sphx_glr_create_geopandas_from_pandas_001.png" />
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/scipy/geopandas/examples/create_geopandas_from_pandas.py:57: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  plt.show()
+</pre></div>
+</div>
 </div>
 <div class="section" id="from-wkt-format">
 <h2>From WKT format<a class="headerlink" href="#from-wkt-format" title="Permalink to this headline">¶</a></h2>
 <p>Here, we consider a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> having coordinates in WKT format.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="p">{</span><span class="s1">&#39;City&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Buenos Aires&#39;</span><span class="p">,</span> <span class="s1">&#39;Brasilia&#39;</span><span class="p">,</span> <span class="s1">&#39;Santiago&#39;</span><span class="p">,</span> <span class="s1">&#39;Bogota&#39;</span><span class="p">,</span> <span class="s1">&#39;Caracas&#39;</span><span class="p">],</span>
      <span class="s1">&#39;Country&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Argentina&#39;</span><span class="p">,</span> <span class="s1">&#39;Brazil&#39;</span><span class="p">,</span> <span class="s1">&#39;Chile&#39;</span><span class="p">,</span> <span class="s1">&#39;Colombia&#39;</span><span class="p">,</span> <span class="s1">&#39;Venezuela&#39;</span><span class="p">],</span>
-     <span class="s1">&#39;Coordinates&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;POINT(-34.58 -58.66)&#39;</span><span class="p">,</span> <span class="s1">&#39;POINT(-15.78 -47.91)&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;POINT(-33.45 -70.66)&#39;</span><span class="p">,</span> <span class="s1">&#39;POINT(4.60 -74.08)&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;POINT(10.48 -66.86)&#39;</span><span class="p">]})</span>
+     <span class="s1">&#39;Coordinates&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;POINT(-58.66 -34.58)&#39;</span><span class="p">,</span> <span class="s1">&#39;POINT(-47.91 -15.78)&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;POINT(-70.66 -33.45)&#39;</span><span class="p">,</span> <span class="s1">&#39;POINT(-74.08 4.60)&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;POINT(-66.86 10.48)&#39;</span><span class="p">]})</span>
 </pre></div>
 </div>
 <p>We use <code class="docutils literal notranslate"><span class="pre">shapely.wkt</span></code> sub-module to parse wkt format:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapely</span> <span class="kn">import</span> <span class="n">wkt</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapely</span> <span class="k">import</span> <span class="n">wkt</span>
 
 <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is constructed as follows :</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">)</span>
 
-<span class="k">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>City    Country            Coordinates
-0  Buenos Aires  Argentina  POINT (-34.58 -58.66)
-1      Brasilia     Brazil  POINT (-15.78 -47.91)
-2      Santiago      Chile  POINT (-33.45 -70.66)
-3        Bogota   Colombia     POINT (4.6 -74.08)
-4       Caracas  Venezuela   POINT (10.48 -66.86)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>           City    Country            Coordinates
+0  Buenos Aires  Argentina  POINT (-58.66 -34.58)
+1      Brasilia     Brazil  POINT (-47.91 -15.78)
+2      Santiago      Chile  POINT (-70.66 -33.45)
+3        Bogota   Colombia     POINT (-74.08 4.6)
+4       Caracas  Venezuela   POINT (-66.86 10.48)
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 0 minutes  0.215 seconds)</p>
+<p>Again, we can plot our <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="o">.</span><span class="n">continent</span> <span class="o">==</span> <span class="s1">&#39;South America&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+
+<span class="n">gdf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/sphx_glr_create_geopandas_from_pandas_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_create_geopandas_from_pandas_002.png" />
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/scipy/geopandas/examples/create_geopandas_from_pandas.py:91: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  plt.show()
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.461 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-create-geopandas-from-pandas-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/e6c5d8750996e9a64fe826bb1a1d633a/create_geopandas_from_pandas.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">create_geopandas_from_pandas.py</span></code></a></div>
-<div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/6f878b7cac2b39c25bf8acb87df176f2/create_geopandas_from_pandas.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">create_geopandas_from_pandas.ipynb</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/5a028ec8b27cdb6e5147767c92f67a6b/create_geopandas_from_pandas.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">create_geopandas_from_pandas.py</span></code></a></p>
 </div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<div class="sphx-glr-download docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/218b2dbb77e3600731e482aa6a176a9d/create_geopandas_from_pandas.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">create_geopandas_from_pandas.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 </div>
 
@@ -302,10 +325,10 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-right" title="Plotting with Geoplot and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="cartopy_convert.html" class="btn btn-neutral float-right" title="Plotting with CartoPy and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="plotting_basemap_background.html" class="btn btn-neutral float-left" title="Adding a background map to plots" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-left" title="Plotting with Geoplot and GeoPandas" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

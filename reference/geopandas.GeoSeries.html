@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.GeoSeries &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>geopandas.GeoSeries &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul class="current">
@@ -195,8 +196,42 @@
 <h1>geopandas.GeoSeries<a class="headerlink" href="#geopandas-geoseries" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="geopandas.GeoSeries">
-<em class="property">class </em><code class="descclassname">geopandas.</code><code class="descname">GeoSeries</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">GeoSeries</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Series object designed to store shapely geometry objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like, dict, scalar value</span></dt><dd><p>The geometries to store in the GeoSeries.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">array-like or Index</span></dt><dd><p>The index for the GeoSeries.</p>
+</dd>
+<dt><strong>crs</strong><span class="classifier">str, dict (optional)</span></dt><dd><p>Coordinate Reference System of the geometry objects.</p>
+</dd>
+<dt><strong>kwargs</strong></dt><dd><dl class="simple">
+<dt>Additional arguments passed to the Series constructor,</dt><dd><p>e.g. <code class="docutils literal notranslate"><span class="pre">name</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas.Series</span></code></dt><dd></dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="k">import</span> <span class="n">Point</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">0    POINT (1 1)</span>
+<span class="go">1    POINT (2 2)</span>
+<span class="go">2    POINT (3 3)</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <div class="clear"></div></div>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.tools.geocode &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>geopandas.tools.geocode &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul class="current">
@@ -195,31 +196,25 @@
 <h1>geopandas.tools.geocode<a class="headerlink" href="#geopandas-tools-geocode" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="geopandas.tools.geocode">
-<code class="descclassname">geopandas.tools.</code><code class="descname">geocode</code><span class="sig-paren">(</span><em>strings</em>, <em>provider=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.tools.geocode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">geopandas.tools.</code><code class="sig-name descname">geocode</code><span class="sig-paren">(</span><em class="sig-param">strings</em>, <em class="sig-param">provider=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.tools.geocode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Geocode a set of strings and get a GeoDataFrame of the resulting points.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>strings</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list or Series of addresses to geocode</span></dt>
-<dd></dd>
-<dt><strong>provider</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str or geopy.geocoder</span></dt>
-<dd><p class="first">Specifies geocoding service to use. If none is provided,
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>strings</strong><span class="classifier">list or Series of addresses to geocode</span></dt><dd></dd>
+<dt><strong>provider</strong><span class="classifier">str or geopy.geocoder</span></dt><dd><p>Specifies geocoding service to use. If none is provided,
 will use ‘geocodefarm’ with a rate limit applied (see the geocodefarm
 terms of service at:
 <a class="reference external" href="https://geocode.farm/geocoding/free-api-documentation/">https://geocode.farm/geocoding/free-api-documentation/</a> ).</p>
 <p>Either the string name used by geopy (as specified in
 geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
 (e.g., geopy.geocoders.GeocodeFarm) may be used.</p>
-<p class="last">Some providers require additional arguments such as access keys
+<p>Some providers require additional arguments such as access keys
 See each geocoder’s specific parameters in geopy.geocoders</p>
 </dd>
 </dl>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <p class="rubric">Notes</p>
 <p>Ensure proper use of the results by consulting the Terms of Service for
 your provider.</p>

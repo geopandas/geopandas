@@ -143,3 +143,31 @@ However, ``GeoDataFrames`` also have a few extra methods for input and output wh
     :suppress:
 
     matplotlib.rcParams['figure.figsize'] = orig
+
+
+Display options
+---------------
+
+GeoPandas has an ``options`` attribute with currently a single configuration
+option to control:
+
+.. ipython:: python
+
+    import geopandas
+    geopandas.options
+
+The ``geopandas.options.display_precision` option can control the number of
+decimals to show in the display of coordinates in the geometry column. 
+In the ``world`` example of above, the default is to show 5 decimals for
+geographic coordinates:
+
+.. ipython:: python
+
+    world['centroid_column'].head()
+
+If you want to change this, for example to see more decimals, you can do:
+
+.. ipython:: python
+
+    geopandas.options.display_precision = 9
+    world['centroid_column'].head()

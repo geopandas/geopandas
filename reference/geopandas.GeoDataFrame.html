@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.GeoDataFrame &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>geopandas.GeoDataFrame &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul class="current">
@@ -198,38 +199,32 @@
 <h1>geopandas.GeoDataFrame<a class="headerlink" href="#geopandas-geodataframe" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="geopandas.GeoDataFrame">
-<em class="property">class </em><code class="descclassname">geopandas.</code><code class="descname">GeoDataFrame</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">GeoDataFrame</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame" title="Permalink to this definition">¶</a></dt>
 <dd><p>A GeoDataFrame object is a pandas.DataFrame that has a column
 with geometry. In addition to the standard DataFrame constructor arguments,
 GeoDataFrame also accepts the following keyword arguments:</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>crs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str (optional)</span></dt>
-<dd><p class="first last">Coordinate system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>crs</strong><span class="classifier">str (optional)</span></dt><dd><p>Coordinate system</p>
 </dd>
-<dt><strong>geometry</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str or array (optional)</span></dt>
-<dd><p class="first last">If str, column to use as geometry. If array, will be set as ‘geometry’
+<dt><strong>geometry</strong><span class="classifier">str or array (optional)</span></dt><dd><p>If str, column to use as geometry. If array, will be set as ‘geometry’
 column on GeoDataFrame.</p>
 </dd>
 </dl>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <div class="section" id="examples-using-geopandas-geodataframe">
 <h2>Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code><a class="headerlink" href="#examples-using-geopandas-geodataframe" title="Permalink to this headline">¶</a></h2>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a ``GeoDataFrame`` when starting from a *regular* ``DataFrame`..."><div class="figure" id="id1">
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a GeoDataFrame when starting from a *regular* DataFrame that h..."><div class="figure align-default" id="id1">
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" src="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure" id="id2">
+</div><div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure align-default" id="id2">
 <img alt="../_images/sphx_glr_cartopy_convert_thumb.png" src="../_images/sphx_glr_cartopy_convert_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="clear"></div></div>
 </div>

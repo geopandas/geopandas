@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.sjoin &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>geopandas.sjoin &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul class="current">
@@ -195,39 +196,30 @@
 <h1>geopandas.sjoin<a class="headerlink" href="#geopandas-sjoin" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="geopandas.sjoin">
-<code class="descclassname">geopandas.</code><code class="descname">sjoin</code><span class="sig-paren">(</span><em>left_df</em>, <em>right_df</em>, <em>how='inner'</em>, <em>op='intersects'</em>, <em>lsuffix='left'</em>, <em>rsuffix='right'</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.sjoin" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">sjoin</code><span class="sig-paren">(</span><em class="sig-param">left_df</em>, <em class="sig-param">right_df</em>, <em class="sig-param">how='inner'</em>, <em class="sig-param">op='intersects'</em>, <em class="sig-param">lsuffix='left'</em>, <em class="sig-param">rsuffix='right'</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.sjoin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spatial join of two GeoDataFrames.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>left_df, right_df</strong> <span class="classifier-delimiter">:</span> <span class="classifier">GeoDataFrames</span></dt>
-<dd></dd>
-<dt><strong>how</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘inner’</span></dt>
-<dd><p class="first">The type of join:</p>
-<ul class="last simple">
-<li>‘left’: use keys from left_df; retain only left_df geometry column</li>
-<li>‘right’: use keys from right_df; retain only right_df geometry column</li>
-<li>‘inner’: use intersection of keys from both dfs; retain only
-left_df geometry column</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>left_df, right_df</strong><span class="classifier">GeoDataFrames</span></dt><dd></dd>
+<dt><strong>how</strong><span class="classifier">string, default ‘inner’</span></dt><dd><p>The type of join:</p>
+<ul class="simple">
+<li><p>‘left’: use keys from left_df; retain only left_df geometry column</p></li>
+<li><p>‘right’: use keys from right_df; retain only right_df geometry column</p></li>
+<li><p>‘inner’: use intersection of keys from both dfs; retain only
+left_df geometry column</p></li>
 </ul>
 </dd>
-<dt><strong>op</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘intersection’</span></dt>
-<dd><p class="first last">Binary predicate, one of {‘intersects’, ‘contains’, ‘within’}.
+<dt><strong>op</strong><span class="classifier">string, default ‘intersection’</span></dt><dd><p>Binary predicate, one of {‘intersects’, ‘contains’, ‘within’}.
 See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates">http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates</a>.</p>
 </dd>
-<dt><strong>lsuffix</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘left’</span></dt>
-<dd><p class="first last">Suffix to apply to overlapping column names (left GeoDataFrame).</p>
+<dt><strong>lsuffix</strong><span class="classifier">string, default ‘left’</span></dt><dd><p>Suffix to apply to overlapping column names (left GeoDataFrame).</p>
 </dd>
-<dt><strong>rsuffix</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, default ‘right’</span></dt>
-<dd><p class="first last">Suffix to apply to overlapping column names (right GeoDataFrame).</p>
+<dt><strong>rsuffix</strong><span class="classifier">string, default ‘right’</span></dt><dd><p>Suffix to apply to overlapping column names (right GeoDataFrame).</p>
 </dd>
 </dl>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <div class="clear"></div></div>

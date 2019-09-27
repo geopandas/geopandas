@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Adding a background map to plots &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Adding a background map to plots &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html" />
+    <link rel="next" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" />
     <link rel="prev" title="Examples Gallery" href="index.html" /> 
 </head>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -92,12 +92,11 @@
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples Gallery</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Adding a background map to plots</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#convert-the-data-to-web-mercator">Convert the data to Web Mercator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#contextily-helper-function">Contextily helper function</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#add-background-tiles-to-plot">Add background tiles to plot</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
 </ul>
 </li>
@@ -114,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -189,8 +189,8 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-gallery-plotting-basemap-background-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-gallery-plotting-basemap-background-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="adding-a-background-map-to-plots">
 <span id="sphx-glr-gallery-plotting-basemap-background-py"></span><h1>Adding a background map to plots<a class="headerlink" href="#adding-a-background-map-to-plots" title="Permalink to this headline">¶</a></h1>
@@ -198,13 +198,13 @@
 with the geopandas <code class="docutils literal notranslate"><span class="pre">.plot()</span></code> method. This makes use of the
 <a class="reference external" href="https://github.com/darribas/contextily">contextily</a> package to retrieve
 web map tiles from several sources (OpenStreetMap, Stamen).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_number = 3</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_number = 3</span>
 <span class="kn">import</span> <span class="nn">geopandas</span>
 </pre></div>
 </div>
 <p>Let’s use the NYC borough boundary data that is available in geopandas
 datasets. Plotting this gives the following result:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s1">&#39;nybb&#39;</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s1">&#39;nybb&#39;</span><span class="p">))</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -216,53 +216,48 @@ datasets. Plotting this gives the following result:</p>
 (<a class="reference external" href="https://epsg.io/3857">EPSG 3857</a>), so we need to make sure to convert
 our data first to the same CRS to combine our polygons and background tiles
 in the same map:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">3857</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">3857</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="contextily-helper-function">
-<h2>Contextily helper function<a class="headerlink" href="#contextily-helper-function" title="Permalink to this headline">¶</a></h2>
-<p>We define a small helper function that uses
-<a class="reference external" href="https://github.com/darribas/contextily">contextily</a> to add a map
-as background to an existing plot:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">contextily</span> <span class="kn">as</span> <span class="nn">ctx</span>
-
-<span class="k">def</span> <span class="nf">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://tile.stamen.com/terrain/tileZ/tileX/tileY.png&#39;</span><span class="p">):</span>
-    <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">()</span>
-    <span class="n">basemap</span><span class="p">,</span> <span class="n">extent</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">bounds2img</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="n">zoom</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">basemap</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="n">extent</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;bilinear&#39;</span><span class="p">)</span>
-    <span class="c1"># restore original x/y limits</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">((</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">contextily</span> <span class="k">as</span> <span class="nn">ctx</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="add-background-tiles-to-plot">
 <h2>Add background tiles to plot<a class="headerlink" href="#add-background-tiles-to-plot" title="Permalink to this headline">¶</a></h2>
-<p>Now we can use the above function to easily add a background map to our
-plot. The <cite>zoom</cite> keyword is required and let’s you specify the detail of the
-map tiles (be careful to not specify a too high <cite>zoom</cite> level, as this can
-result in a large download):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
-<span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<p>We can use <cite>add_basemap</cite> function of contextily to easily add a background
+map to our plot. :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_plotting_basemap_background_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plotting_basemap_background_002.png" />
-<p>By default, contextily uses the Stamen Terrain style. We can specify a
-different style using <code class="docutils literal notranslate"><span class="pre">ctx.sources</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
-<span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">sources</span><span class="o">.</span><span class="n">ST_TONER_LITE</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<p>We can control the detail of the map tiles using the optional <cite>zoom</cite> keyword
+(be careful to not specify a too high <cite>zoom</cite> level,
+as this can result in a large download).:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_plotting_basemap_background_003.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plotting_basemap_background_003.png" />
-<p><strong>Total running time of the script:</strong> ( 0 minutes  3.182 seconds)</p>
+<p>By default, contextily uses the Stamen Terrain style. We can specify a
+different style using <code class="docutils literal notranslate"><span class="pre">ctx.providers</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">providers</span><span class="o">.</span><span class="n">Stamen</span><span class="o">.</span><span class="n">TonerLite</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/sphx_glr_plotting_basemap_background_004.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plotting_basemap_background_004.png" />
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  18.737 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-plotting-basemap-background-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/f26452f064ed4e594ba3e6f311b7bec3/plotting_basemap_background.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plotting_basemap_background.py</span></code></a></div>
-<div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/286849598ab2f93fcd7e3357cca3495c/plotting_basemap_background.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plotting_basemap_background.ipynb</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/618675ab25213dbacf0b068ecd3d8fd1/plotting_basemap_background.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plotting_basemap_background.py</span></code></a></p>
 </div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<div class="sphx-glr-download docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/bfbebd76922c0d2deefaa84ba3009b37/plotting_basemap_background.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plotting_basemap_background.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 </div>
 
@@ -274,7 +269,7 @@ different style using <code class="docutils literal notranslate"><span class="pr
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral float-right" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-right" title="Plotting with Geoplot and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral float-left" title="Examples Gallery" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

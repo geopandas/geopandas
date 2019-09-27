@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Installation &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Examples Gallery" href="gallery/index.html" />
-    <link rel="prev" title="GeoPandas 0.5.1" href="index.html" /> 
+    <link rel="prev" title="GeoPandas 0.6.0" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -113,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -188,7 +189,7 @@
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <p>GeoPandas depends for its spatial functionality on a large geospatial, open
-source stack of libraries (<a class="reference external" href="https://geos.osgeo.org">GEOS</a>, <a class="reference external" href="https://www.gdal.org/">GDAL</a>, <a class="reference external" href="https://proj4.org/">PROJ</a>). See the
+source stack of libraries (<a class="reference external" href="https://geos.osgeo.org">GEOS</a>, <a class="reference external" href="https://www.gdal.org/">GDAL</a>, <a class="reference external" href="https://proj.org/">PROJ</a>). See the
 <a class="reference internal" href="#dependencies"><span class="std std-ref">Dependencies</span></a> section below for more details. Those base C
 libraries can sometimes be a challenge to install. Therefore, we advise you
 to closely follow the recommendations below to avoid installation problems.</p>
@@ -222,8 +223,8 @@ channel, and can be installed as:</p>
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">We strongly recommend to either install everything from the <em>defaults</em>
+<p class="admonition-title">Note</p>
+<p>We strongly recommend to either install everything from the <em>defaults</em>
 channel, or everything from the <em>conda-forge</em> channel. Ending up with a
 mixture of packages from both channels for the dependencies of GeoPandas
 can lead to import problems.
@@ -257,12 +258,19 @@ as well:</p>
 </pre></div>
 </div>
 <div class="admonition warning" id="install-deps">
-<p class="first admonition-title">Warning</p>
-<p class="last">When using pip to install GeoPandas, you need to make sure that all dependencies are
-installed correctly. <a class="reference external" href="https://shapely.readthedocs.io">shapely</a> and <a class="reference external" href="https://fiona.readthedocs.io">fiona</a> provide binary wheels with the
-dependencies included for Mac and Linux, but not for Windows.
-<a class="reference external" href="https://github.com/jswhit/pyproj">pyproj</a> and <a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> don’t provide those.
-So depending on your platform, you might need to compile and install their
+<p class="admonition-title">Warning</p>
+<p>When using pip to install GeoPandas, you need to make sure that all dependencies are
+installed correctly.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://shapely.readthedocs.io">shapely</a> and <a class="reference external" href="https://fiona.readthedocs.io">fiona</a> provide binary wheels with the
+dependencies included for Mac and Linux, but not for Windows.</p></li>
+<li><p><a class="reference external" href="https://github.com/pyproj4/pyproj">pyproj</a> 2.x provides binary wheels with depencies included
+for Mac, Linux, and Windows. However <a class="reference external" href="https://github.com/pyproj4/pyproj">pyproj</a> 1.x does not provide wheels.</p></li>
+<li><p><a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> does not provide wheels.</p></li>
+<li><p>Windows wheels for <cite>shapely</cite>, <cite>fiona</cite>, <cite>pyproj</cite> and <cite>rtree</cite>
+can be found at <a class="reference external" href="https://www.lfd.uci.edu/~gohlke/pythonlibs/">Christopher Gohlke’s website</a>.</p></li>
+</ul>
+<p>So depending on your platform, you might need to compile and install their
 C dependencies manually. We refer to the individual packages for more
 details on installing those.
 Using conda (see above) avoids the need to compile the dependencies yourself.</p>
@@ -296,25 +304,25 @@ getting running with Anaconda.</p>
 <span id="id1"></span><h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <p>Required dependencies:</p>
 <ul class="simple">
-<li><a class="reference external" href="http://www.numpy.org">numpy</a></li>
-<li><a class="reference external" href="http://pandas.pydata.org">pandas</a> (version 0.23.4 or later)</li>
-<li><a class="reference external" href="https://shapely.readthedocs.io">shapely</a> (interface to <a class="reference external" href="https://geos.osgeo.org">GEOS</a>)</li>
-<li><a class="reference external" href="https://fiona.readthedocs.io">fiona</a> (interface to <a class="reference external" href="https://www.gdal.org/">GDAL</a>)</li>
-<li><a class="reference external" href="https://github.com/jswhit/pyproj">pyproj</a> (interface to <a class="reference external" href="https://proj4.org/">PROJ</a>)</li>
-<li><a class="reference external" href="https://pythonhosted.org/six">six</a></li>
+<li><p><a class="reference external" href="http://www.numpy.org">numpy</a></p></li>
+<li><p><a class="reference external" href="http://pandas.pydata.org">pandas</a> (version 0.23.4 or later)</p></li>
+<li><p><a class="reference external" href="https://shapely.readthedocs.io">shapely</a> (interface to <a class="reference external" href="https://geos.osgeo.org">GEOS</a>)</p></li>
+<li><p><a class="reference external" href="https://fiona.readthedocs.io">fiona</a> (interface to <a class="reference external" href="https://www.gdal.org/">GDAL</a>)</p></li>
+<li><p><a class="reference external" href="https://github.com/pyproj4/pyproj">pyproj</a> (interface to <a class="reference external" href="https://proj.org/">PROJ</a>)</p></li>
+<li><p><a class="reference external" href="https://pythonhosted.org/six">six</a></p></li>
 </ul>
 <p>Further, optional dependencies are:</p>
 <ul class="simple">
-<li><a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> (optional; spatial index to improve performance and required for
-overlay operations; interface to <a class="reference external" href="https://github.com/libspatialindex/libspatialindex">libspatialindex</a>)</li>
-<li><a class="reference external" href="https://pypi.python.org/pypi/psycopg2">psycopg2</a> (optional; for PostGIS connection)</li>
-<li><a class="reference external" href="https://github.com/geopy/geopy">geopy</a> (optional; for geocoding)</li>
+<li><p><a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a> (optional; spatial index to improve performance and required for
+overlay operations; interface to <a class="reference external" href="https://github.com/libspatialindex/libspatialindex">libspatialindex</a>)</p></li>
+<li><p><a class="reference external" href="https://pypi.python.org/pypi/psycopg2">psycopg2</a> (optional; for PostGIS connection)</p></li>
+<li><p><a class="reference external" href="https://github.com/geopy/geopy">geopy</a> (optional; for geocoding)</p></li>
 </ul>
 <p>For plotting, these additional packages may be used:</p>
 <ul class="simple">
-<li><a class="reference external" href="http://matplotlib.org">matplotlib</a> (&gt;= 2.0.1)</li>
-<li><a class="reference external" href="https://pypi.python.org/pypi/descartes">descartes</a></li>
-<li><a class="reference external" href="https://mapclassify.readthedocs.io/en/latest/">mapclassify</a></li>
+<li><p><a class="reference external" href="http://matplotlib.org">matplotlib</a> (&gt;= 2.0.1)</p></li>
+<li><p><a class="reference external" href="https://pypi.python.org/pypi/descartes">descartes</a></p></li>
+<li><p><a class="reference external" href="http://pysal.org/mapclassify">mapclassify</a></p></li>
 </ul>
 </div>
 </div>
@@ -330,7 +338,7 @@ overlay operations; interface to <a class="reference external" href="https://git
         <a href="gallery/index.html" class="btn btn-neutral float-right" title="Examples Gallery" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral float-left" title="GeoPandas 0.5.1" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="GeoPandas 0.6.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Examples Gallery &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Examples Gallery &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -91,8 +91,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Examples Gallery</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="plotting_basemap_background.html">Adding a background map to plots</a></li>
-<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
 </ul>
 </li>
@@ -109,6 +109,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -182,41 +183,43 @@
            <div itemprop="articleBody">
             
   <div class="section" id="examples-gallery">
-<span id="gallery"></span><h1>Examples Gallery<a class="headerlink" href="#examples-gallery" title="Permalink to this headline">¶</a></h1>
+<span id="gallery"></span><span id="sphx-glr-gallery"></span><h1>Examples Gallery<a class="headerlink" href="#examples-gallery" title="Permalink to this headline">¶</a></h1>
 <p>The following examples show off the functionality in GeoPandas. They highlight
 many of the things you can do with this package, and show off some
 best-practices.</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how you can add a background basemap to plots created with the geopandas ``...."><div class="figure" id="id1">
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how you can add a background basemap to plots created with the geopandas .pl..."><div class="figure align-default" id="id1">
 <img alt="../_images/sphx_glr_plotting_basemap_background_thumb.png" src="../_images/sphx_glr_plotting_basemap_background_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="plotting_basemap_background.html#sphx-glr-gallery-plotting-basemap-background-py"><span class="std std-ref">Adding a background map to plots</span></a></span></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="plotting_basemap_background.html#sphx-glr-gallery-plotting-basemap-background-py"><span class="std std-ref">Adding a background map to plots</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a ``GeoDataFrame`` when starting from a *regular* ``DataFrame`..."><div class="figure" id="id2">
-<img alt="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" src="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span></p>
-</div>
-</div><div class="toctree-wrapper compound">
-</div>
-<div class="sphx-glr-thumbcontainer" tooltip="`Geoplot &lt;https://residentmario.github.io/geoplot/index.html&gt;`_ is a Python library providing a..."><div class="figure" id="id3">
+<div class="sphx-glr-thumbcontainer" tooltip="`Geoplot &lt;https://residentmario.github.io/geoplot/index.html&gt;`_ is a Python library providing a..."><div class="figure align-default" id="id2">
 <img alt="../_images/sphx_glr_plotting_with_geoplot_thumb.png" src="../_images/sphx_glr_plotting_with_geoplot_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="plotting_with_geoplot.html#sphx-glr-gallery-plotting-with-geoplot-py"><span class="std std-ref">Plotting with Geoplot and GeoPandas</span></a></span></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="plotting_with_geoplot.html#sphx-glr-gallery-plotting-with-geoplot-py"><span class="std std-ref">Plotting with Geoplot and GeoPandas</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure" id="id4">
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a GeoDataFrame when starting from a *regular* DataFrame that h..."><div class="figure align-default" id="id3">
+<img alt="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" src="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="toctree-wrapper compound">
+</div>
+<div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure align-default" id="id4">
 <img alt="../_images/sphx_glr_cartopy_convert_thumb.png" src="../_images/sphx_glr_cartopy_convert_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
 <div style='clear:both'></div><div class="sphx-glr-footer class sphx-glr-footer-gallery docutils container">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/fb3cbc51a24c31fd75819bdc8129fd86/gallery_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_python.zip</span></code></a></div>
-<div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/2eeea5c7a6c0206b6d4efb9a1ce70c6b/gallery_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_jupyter.zip</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/ec63db5e318085fb6b71d447f21abc1b/gallery_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_python.zip</span></code></a></p>
 </div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<div class="sphx-glr-download docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/0ba376f5e596706a82d92995d8fc43ad/gallery_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_jupyter.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 
 

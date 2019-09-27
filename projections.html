@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Managing Projections &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Managing Projections &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -108,6 +108,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -190,9 +191,9 @@
 <p><em>geopandas</em> can accept lots of representations of CRS, including the <cite>proj4</cite> string itself (<code class="docutils literal notranslate"><span class="pre">&quot;+proj=longlat</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+no_defs&quot;</span></code>) or parameters broken out in a dictionary: <code class="docutils literal notranslate"><span class="pre">{'proj':</span> <span class="pre">'latlong',</span> <span class="pre">'ellps':</span> <span class="pre">'WGS84',</span> <span class="pre">'datum':</span> <span class="pre">'WGS84',</span> <span class="pre">'no_defs':</span> <span class="pre">True}</span></code>). In addition, some functions will take <cite>EPSG</cite> codes directly.</p>
 <p>For reference, a few very common projections and their proj4 strings:</p>
 <ul class="simple">
-<li>WGS84 Latitude/Longitude: <code class="docutils literal notranslate"><span class="pre">&quot;+proj=longlat</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+no_defs&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;+init=epsg:4326&quot;</span></code></li>
-<li>UTM Zones (North): <code class="docutils literal notranslate"><span class="pre">&quot;+proj=utm</span> <span class="pre">+zone=33</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+units=m</span> <span class="pre">+no_defs&quot;</span></code></li>
-<li>UTM Zones (South): <code class="docutils literal notranslate"><span class="pre">&quot;+proj=utm</span> <span class="pre">+zone=33</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+units=m</span> <span class="pre">+no_defs</span> <span class="pre">+south&quot;</span></code></li>
+<li><p>WGS84 Latitude/Longitude: <code class="docutils literal notranslate"><span class="pre">&quot;+proj=longlat</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+no_defs&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;+init=epsg:4326&quot;</span></code></p></li>
+<li><p>UTM Zones (North): <code class="docutils literal notranslate"><span class="pre">&quot;+proj=utm</span> <span class="pre">+zone=33</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+units=m</span> <span class="pre">+no_defs&quot;</span></code></p></li>
+<li><p>UTM Zones (South): <code class="docutils literal notranslate"><span class="pre">&quot;+proj=utm</span> <span class="pre">+zone=33</span> <span class="pre">+ellps=WGS84</span> <span class="pre">+datum=WGS84</span> <span class="pre">+units=m</span> <span class="pre">+no_defs</span> <span class="pre">+south&quot;</span></code></p></li>
 </ul>
 </div>
 <div class="section" id="setting-a-projection">

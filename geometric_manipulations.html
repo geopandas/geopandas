@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geometric Manipulations &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Geometric Manipulations &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -112,6 +112,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -192,27 +193,27 @@
 <h2>Constructive Methods<a class="headerlink" href="#constructive-methods" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="GeoSeries.buffer">
-<code class="descclassname">GeoSeries.</code><code class="descname">buffer</code><span class="sig-paren">(</span><em>distance</em>, <em>resolution=16</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.buffer" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">buffer</code><span class="sig-paren">(</span><em class="sig-param">distance</em>, <em class="sig-param">resolution=16</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.buffer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing all points within a given <cite>distance</cite>
 of each geometric object.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="GeoSeries.boundary">
-<code class="descclassname">GeoSeries.</code><code class="descname">boundary</code><a class="headerlink" href="#GeoSeries.boundary" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">boundary</code><a class="headerlink" href="#GeoSeries.boundary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of lower dimensional objects representing
 each geometries’s set-theoretic <cite>boundary</cite>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="GeoSeries.centroid">
-<code class="descclassname">GeoSeries.</code><code class="descname">centroid</code><a class="headerlink" href="#GeoSeries.centroid" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">centroid</code><a class="headerlink" href="#GeoSeries.centroid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of points for each geometric centroid.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="GeoSeries.convex_hull">
-<code class="descclassname">GeoSeries.</code><code class="descname">convex_hull</code><a class="headerlink" href="#GeoSeries.convex_hull" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">convex_hull</code><a class="headerlink" href="#GeoSeries.convex_hull" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing the smallest
 convex <cite>Polygon</cite> containing all the points in each object unless the
 number of points in the object is less than three. For two points,
@@ -221,7 +222,7 @@ the convex hull collapses to a <cite>LineString</cite>; for 1, a <cite>Point</ci
 
 <dl class="attribute">
 <dt id="GeoSeries.envelope">
-<code class="descclassname">GeoSeries.</code><code class="descname">envelope</code><a class="headerlink" href="#GeoSeries.envelope" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">envelope</code><a class="headerlink" href="#GeoSeries.envelope" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing the point or
 smallest rectangular polygon (with sides parallel to the coordinate
 axes) that contains each object.</p>
@@ -229,14 +230,14 @@ axes) that contains each object.</p>
 
 <dl class="method">
 <dt id="GeoSeries.simplify">
-<code class="descclassname">GeoSeries.</code><code class="descname">simplify</code><span class="sig-paren">(</span><em>tolerance</em>, <em>preserve_topology=True</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.simplify" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">simplify</code><span class="sig-paren">(</span><em class="sig-param">tolerance</em>, <em class="sig-param">preserve_topology=True</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.simplify" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> containing a simplified representation of
 each object.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="GeoSeries.unary_union">
-<code class="descclassname">GeoSeries.</code><code class="descname">unary_union</code><a class="headerlink" href="#GeoSeries.unary_union" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">unary_union</code><a class="headerlink" href="#GeoSeries.unary_union" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a geometry containing the union of all geometries in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p>
 </dd></dl>
 
@@ -245,50 +246,53 @@ each object.</p>
 <h2>Affine transformations<a class="headerlink" href="#affine-transformations" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="GeoSeries.affine_transform">
-<code class="descclassname">GeoSeries.</code><code class="descname">affine_transform</code><span class="sig-paren">(</span><em>self</em>, <em>matrix</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.affine_transform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">affine_transform</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">matrix</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.affine_transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform the geometries of the GeoSeries using an affine transformation matrix</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="GeoSeries.rotate">
-<code class="descclassname">GeoSeries.</code><code class="descname">rotate</code><span class="sig-paren">(</span><em>self</em>, <em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.rotate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">rotate</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">angle</em>, <em class="sig-param">origin='center'</em>, <em class="sig-param">use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.rotate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotate the coordinates of the GeoSeries.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="GeoSeries.scale">
-<code class="descclassname">GeoSeries.</code><code class="descname">scale</code><span class="sig-paren">(</span><em>self</em>, <em>xfact=1.0</em>, <em>yfact=1.0</em>, <em>zfact=1.0</em>, <em>origin='center'</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.scale" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">xfact=1.0</em>, <em class="sig-param">yfact=1.0</em>, <em class="sig-param">zfact=1.0</em>, <em class="sig-param">origin='center'</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.scale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Scale the geometries of the GeoSeries along each (x, y, z) dimensio.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="GeoSeries.skew">
-<code class="descclassname">GeoSeries.</code><code class="descname">skew</code><span class="sig-paren">(</span><em>self</em>, <em>angle</em>, <em>origin='center'</em>, <em>use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.skew" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">skew</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">angle</em>, <em class="sig-param">origin='center'</em>, <em class="sig-param">use_radians=False</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.skew" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="GeoSeries.translate">
-<code class="descclassname">GeoSeries.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>self</em>, <em>xoff=0.0</em>, <em>yoff=0.0</em>, <em>zoff=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.translate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">translate</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">xoff=0.0</em>, <em class="sig-param">yoff=0.0</em>, <em class="sig-param">zoff=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#GeoSeries.translate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shift the coordinates of the GeoSeries.</p>
 </dd></dl>
 
 <div class="section" id="examples-of-geometric-manipulations">
 <h3>Examples of Geometric Manipulations<a class="headerlink" href="#examples-of-geometric-manipulations" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">geopandas</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">geopandas</span> <span class="kn">import</span> <span class="n">GeoSeries</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p2</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p3</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">GeoSeries</span><span class="p">([</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
-<span class="go">0    POLYGON ((0.0000000000000000 0.000000000000000...</span>
-<span class="go">1    POLYGON ((0.0000000000000000 0.000000000000000...</span>
-<span class="go">2    POLYGON ((2.0000000000000000 0.000000000000000...</span>
-<span class="go">dtype: object</span>
+<span class="go">0         POLYGON ((0 0, 1 0, 1 1, 0 0))</span>
+<span class="go">1    POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))</span>
+<span class="go">2    POLYGON ((2 0, 3 0, 3 1, 2 1, 2 0))</span>
+<span class="go">dtype: geometry</span>
 </pre></div>
 </div>
 <img alt="_images/test.png" src="_images/test.png" />
 <p>Some geographic operations return normal pandas object.  The <code class="docutils literal notranslate"><span class="pre">area</span></code> property of a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> will return a <code class="docutils literal notranslate"><span class="pre">pandas.Series</span></code> containing the area of each item in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">g</span><span class="o">.</span><span class="n">area</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
 <span class="go">0    0.5</span>
 <span class="go">1    1.0</span>
 <span class="go">2    1.0</span>
@@ -297,11 +301,10 @@ each object.</p>
 </div>
 <p>Other operations return GeoPandas objects:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="go">Out[15]:</span>
 <span class="go">0    POLYGON ((-0.3535533905932737 0.35355339059327...</span>
-<span class="go">1    POLYGON ((-0.5000000000000000 0.00000000000000...</span>
-<span class="go">2    POLYGON ((1.5000000000000000 0.000000000000000...</span>
-<span class="go">dtype: object</span>
+<span class="go">1    POLYGON ((-0.5 0, -0.5 1, -0.4975923633360985 ...</span>
+<span class="go">2    POLYGON ((1.5 0, 1.5 1, 1.502407636663901 1.04...</span>
+<span class="go">dtype: geometry</span>
 </pre></div>
 </div>
 <img alt="_images/test_buffer.png" src="_images/test_buffer.png" />
@@ -311,41 +314,43 @@ each object.</p>
 </div>
 <p>GeoPandas also implements alternate constructors that can read any data format recognized by <a class="reference external" href="http://fiona.readthedocs.io/en/latest/">fiona</a>.  To read a zip file containing an ESRI shapefile with the <a class="reference external" href="https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm">borough boundaries of New York City</a> (GeoPandas includes this as an example dataset):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nybb_path</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;nybb&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">nybb_path</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">boros</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;BoroCode&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">boros</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">nybb_path</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;BoroCode&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span>
-<span class="go">               BoroName    Shape_Area     Shape_Leng  \</span>
+<span class="go">               BoroName     Shape_Leng    Shape_Area  \</span>
 <span class="go">BoroCode</span>
-<span class="go">1             Manhattan  6.364422e+08  358532.956418</span>
-<span class="go">2                 Bronx  1.186804e+09  464517.890553</span>
-<span class="go">3              Brooklyn  1.959432e+09  726568.946340</span>
-<span class="go">4                Queens  3.049947e+09  861038.479299</span>
-<span class="go">5         Staten Island  1.623853e+09  330385.036974</span>
+<span class="go">1             Manhattan  359299.096471  6.364715e+08</span>
+<span class="go">2                 Bronx  464392.991824  1.186925e+09</span>
+<span class="go">3              Brooklyn  741080.523166  1.937479e+09</span>
+<span class="go">4                Queens  896344.047763  3.045213e+09</span>
+<span class="go">5         Staten Island  330470.010332  1.623820e+09</span>
 
 <span class="go">                                                   geometry</span>
 <span class="go">BoroCode</span>
-<span class="go">1         (POLYGON ((981219.0557861328125000 188655.3157...</span>
-<span class="go">2         (POLYGON ((1012821.8057861328125000 229228.264...</span>
-<span class="go">3         (POLYGON ((1021176.4790039062500000 151374.796...</span>
-<span class="go">4         (POLYGON ((1029606.0765991210937500 156073.814...</span>
-<span class="go">5         (POLYGON ((970217.0223999023437500 145643.3322...</span>
+<span class="go">1         MULTIPOLYGON (((981219.0557861328 188655.31579...</span>
+<span class="go">2         MULTIPOLYGON (((1012821.805786133 229228.26458...</span>
+<span class="go">3         MULTIPOLYGON (((1021176.479003906 151374.79699...</span>
+<span class="go">4         MULTIPOLYGON (((1029606.076599121 156073.81420...</span>
+<span class="go">5         MULTIPOLYGON (((970217.0223999023 145643.33221...</span>
 </pre></div>
 </div>
 <img alt="_images/nyc.png" src="_images/nyc.png" />
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">convex_hull</span>
-<span class="go">0    POLYGON ((915517.6877458114176989 120121.88125...</span>
-<span class="go">1    POLYGON ((1000721.5317993164062500 136681.7761...</span>
-<span class="go">2    POLYGON ((988872.8212280273437500 146772.03179...</span>
-<span class="go">3    POLYGON ((977855.4451904296875000 188082.32238...</span>
-<span class="go">4    POLYGON ((1017949.9776000976562500 225426.8845...</span>
-<span class="go">dtype: object</span>
+<span class="go">BoroCode</span>
+<span class="go">1    POLYGON ((977855.4451904297 188082.3223876953,...</span>
+<span class="go">2    POLYGON ((1017949.977600098 225426.8845825195,...</span>
+<span class="go">3    POLYGON ((988872.8212280273 146772.0317993164,...</span>
+<span class="go">4    POLYGON ((1000721.531799316 136681.776184082, ...</span>
+<span class="go">5    POLYGON ((915517.6877458114 120121.8812543372,...</span>
+<span class="go">dtype: geometry</span>
 </pre></div>
 </div>
 <img alt="_images/nyc_hull.png" src="_images/nyc_hull.png" />
 <p>To demonstrate a more complex operation, we’ll generate a
 <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> containing 2000 random points:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="mi">900000</span><span class="p">,</span> <span class="mi">1080000</span><span class="p">,</span> <span class="mi">120000</span><span class="p">,</span> <span class="mi">280000</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xc</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span> <span class="o">+</span> <span class="n">xmin</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">yc</span> <span class="o">=</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span> <span class="o">+</span> <span class="n">ymin</span>
@@ -381,11 +386,11 @@ have been expressed simply as <code class="docutils literal notranslate"><span c
 borough that are in the holes:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">holes</span><span class="o">.</span><span class="n">area</span> <span class="o">/</span> <span class="n">boros</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">area</span>
 <span class="go">BoroCode</span>
-<span class="go">1           0.602015</span>
-<span class="go">2           0.523457</span>
-<span class="go">3           0.585901</span>
-<span class="go">4           0.577020</span>
-<span class="go">5           0.559507</span>
+<span class="go">1    0.579939</span>
+<span class="go">2    0.586833</span>
+<span class="go">3    0.608174</span>
+<span class="go">4    0.582172</span>
+<span class="go">5    0.558075</span>
 <span class="go">dtype: float64</span>
 </pre></div>
 </div>

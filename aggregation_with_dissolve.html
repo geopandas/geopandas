@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Aggregation with dissolve &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>Aggregation with dissolve &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -109,6 +109,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
@@ -202,11 +203,11 @@
 <span class="gh">Out[5]: </span><span class="go"></span>
 <span class="go">                                                        geometry</span>
 <span class="go">continent                                                       </span>
-<span class="go">Africa         (POLYGON ((49.54351891459575 -12.4698328589405...</span>
-<span class="go">Antarctica     (POLYGON ((-163.7128956777287 -78.595667413241...</span>
-<span class="go">Asia           (POLYGON ((120.2950142762069 -10.2586499976035...</span>
-<span class="go">Europe         (POLYGON ((-51.65779741067889 4.15623240805302...</span>
-<span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...</span>
+<span class="go">Africa         MULTIPOLYGON (((49.544 -12.470, 49.809 -12.895...</span>
+<span class="go">Antarctica     MULTIPOLYGON (((-163.713 -78.596, -163.713 -78...</span>
+<span class="go">Asia           MULTIPOLYGON (((120.295 -10.259, 118.968 -9.55...</span>
+<span class="go">Europe         MULTIPOLYGON (((-51.658 4.156, -52.249 3.241, ...</span>
+<span class="go">North America  MULTIPOLYGON (((-61.680 10.760, -61.105 10.890...</span>
 </pre></div>
 </div>
 <img alt="_images/continents1.png" src="_images/continents1.png" />
@@ -223,11 +224,11 @@
 <span class="gh">Out[10]: </span><span class="go"></span>
 <span class="go">                                                        geometry     pop_est</span>
 <span class="go">continent                                                                   </span>
-<span class="go">Africa         (POLYGON ((49.54351891459575 -12.4698328589405...  1219176238</span>
-<span class="go">Antarctica     (POLYGON ((-163.7128956777287 -78.595667413241...        4050</span>
-<span class="go">Asia           (POLYGON ((120.2950142762069 -10.2586499976035...  4389144868</span>
-<span class="go">Europe         (POLYGON ((-51.65779741067889 4.15623240805302...   746398461</span>
-<span class="go">North America  (POLYGON ((-61.68000000000001 10.76, -61.105 1...   573042112</span>
+<span class="go">Africa         MULTIPOLYGON (((49.544 -12.470, 49.809 -12.895...  1219176238</span>
+<span class="go">Antarctica     MULTIPOLYGON (((-163.713 -78.596, -163.713 -78...        4050</span>
+<span class="go">Asia           MULTIPOLYGON (((120.295 -10.259, 118.968 -9.55...  4389144868</span>
+<span class="go">Europe         MULTIPOLYGON (((-51.658 4.156, -52.249 3.241, ...   746398461</span>
+<span class="go">North America  MULTIPOLYGON (((-61.680 10.760, -61.105 10.890...   573042112</span>
 </pre></div>
 </div>
 <img alt="_images/continents2.png" src="_images/continents2.png" />
@@ -239,13 +240,13 @@
 <p>The <code class="docutils literal notranslate"><span class="pre">aggfunc</span> <span class="pre">=</span></code> argument defaults to ‘first’ which means that the first row of attributes values found in the dissolve routine will be assigned to the resultant dissolved geodataframe.
 However it also accepts other summary statistic options as allowed by <code class="docutils literal notranslate"><span class="pre">pandas.groupby()</span></code> including:</p>
 <ul class="simple">
-<li>‘first’</li>
-<li>‘last’</li>
-<li>‘min’</li>
-<li>‘max’</li>
-<li>‘sum’</li>
-<li>‘mean’</li>
-<li>‘median’</li>
+<li><p>‘first’</p></li>
+<li><p>‘last’</p></li>
+<li><p>‘min’</p></li>
+<li><p>‘max’</p></li>
+<li><p>‘sum’</p></li>
+<li><p>‘mean’</p></li>
+<li><p>‘median’</p></li>
 </ul>
 </div>
 </div>

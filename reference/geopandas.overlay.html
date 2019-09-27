@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.overlay &mdash; GeoPandas 0.5.1 documentation</title>
+  <title>geopandas.overlay &mdash; GeoPandas 0.6.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.5.1
+                0.6.0
               </div>
             
           
@@ -103,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul class="current">
@@ -195,37 +196,29 @@
 <h1>geopandas.overlay<a class="headerlink" href="#geopandas-overlay" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="geopandas.overlay">
-<code class="descclassname">geopandas.</code><code class="descname">overlay</code><span class="sig-paren">(</span><em>df1</em>, <em>df2</em>, <em>how='intersection'</em>, <em>make_valid=True</em>, <em>use_sindex=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.overlay" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">overlay</code><span class="sig-paren">(</span><em class="sig-param">df1</em>, <em class="sig-param">df2</em>, <em class="sig-param">how='intersection'</em>, <em class="sig-param">make_valid=True</em>, <em class="sig-param">use_sindex=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.overlay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform spatial overlay between two polygons.</p>
 <p>Currently only supports data GeoDataFrames with polygons.
 Implements several methods that are all effectively subsets of
 the union.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>df1</strong> <span class="classifier-delimiter">:</span> <span class="classifier">GeoDataFrame with MultiPolygon or Polygon geometry column</span></dt>
-<dd></dd>
-<dt><strong>df2</strong> <span class="classifier-delimiter">:</span> <span class="classifier">GeoDataFrame with MultiPolygon or Polygon geometry column</span></dt>
-<dd></dd>
-<dt><strong>how</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd><p class="first last">Method of spatial overlay: ‘intersection’, ‘union’,
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>df1</strong><span class="classifier">GeoDataFrame with MultiPolygon or Polygon geometry column</span></dt><dd></dd>
+<dt><strong>df2</strong><span class="classifier">GeoDataFrame with MultiPolygon or Polygon geometry column</span></dt><dd></dd>
+<dt><strong>how</strong><span class="classifier">string</span></dt><dd><p>Method of spatial overlay: ‘intersection’, ‘union’,
 ‘identity’, ‘symmetric_difference’ or ‘difference’.</p>
 </dd>
 </dl>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>df</strong> <span class="classifier-delimiter">:</span> <span class="classifier">GeoDataFrame</span></dt>
-<dd><p class="first last">GeoDataFrame with new set of polygons and attributes
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>df</strong><span class="classifier">GeoDataFrame</span></dt><dd><p>GeoDataFrame with new set of polygons and attributes
 resulting from the overlay</p>
 </dd>
 </dl>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <div class="clear"></div></div>

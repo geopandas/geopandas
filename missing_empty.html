@@ -1,0 +1,450 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Missing and empty geometries &mdash; GeoPandas 0.6.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="prev" title="Geocoding" href="geocoding.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> GeoPandas
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Missing and empty geometries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#changes-since-geopandas-v0-6-0">Changes since GeoPandas v0.6.0</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GeoPandas</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Missing and empty geometries</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/missing_empty.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="missing-and-empty-geometries">
+<span id="missing-empty"></span><h1>Missing and empty geometries<a class="headerlink" href="#missing-and-empty-geometries" title="Permalink to this headline">¶</a></h1>
+<p>GeoPandas supports, just like in pandas, the concept of missing values (NA
+or null values). But for geometry values, we have an additional concept of
+empty geometries:</p>
+<ul class="simple">
+<li><p><strong>Empty geometries</strong> are actual geometry objects but that have no coordinates
+(and thus also no area, for example). They can for example originate from
+taking the intersection of two polygons that have no overlap.
+The scalar object (when accessing a single element of a GeoSeries) is still
+a Shapely geometry object.</p></li>
+<li><p><strong>Missing geometries</strong> are unknown values in a GeoSeries. They will typically
+be propagated in operations (for example in calculations of the area or of
+the intersection), or ignored in reductions such as <code class="docutils literal notranslate"><span class="pre">unary_union</span></code>.
+The scalar object (when accessing a single element of a GeoSeries) is the
+Python <code class="docutils literal notranslate"><span class="pre">None</span></code> object.</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Starting from GeoPandas v0.6.0, those two concepts are more consistently
+separated. See <a class="reference internal" href="#missing-empty-changes-0-6-0"><span class="std std-ref">below</span></a> for more details
+on what changed compared to earlier versions.</p>
+</div>
+<p>Consider the following example GeoSeries with one polygon, one missing value
+and one empty polygon:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+
+<span class="gp">In [2]: </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]),</span> <span class="bp">None</span><span class="p">,</span> <span class="n">Polygon</span><span class="p">([])])</span>
+
+<span class="gp">In [3]: </span><span class="n">s</span>
+<span class="gh">Out[3]: </span><span class="go"></span>
+<span class="go">0    POLYGON ((0.000000000 0.000000000, 1.000000000...</span>
+<span class="go">1                                                 None</span>
+<span class="go">2                             GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
+<p>In spatial operations, missing geometries will typically propagate (be missing
+in the result as well), while empty geometries are treated as a geometry
+and the result will depend on the operation:</p>
+<pre class="literal-block">In [4]: s.area
+Out[4]: 
+0    0.5
+1    NaN
+2    0.0
+dtype: float64
+
+In [5]: s.union(Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]))
+Out[5]: 
+0    POLYGON ((0.000000000 1.000000000, 1.000000000...
+1                                                 None
+2    POLYGON ((0.000000000 0.000000000, 0.000000000...
+dtype: geometry
+
+In [6]: s.intersection(Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]))
+Out[6]: 
+0    POLYGON ((1.000000000 1.000000000, 0.000000000...
+1                                                 None
+2                             GEOMETRYCOLLECTION EMPTY
+dtype: geometry</pre>
+<p>The <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> method will only check for missing values and not
+for empty geometries:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [7]: </span><span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
+<span class="gh">Out[7]: </span><span class="go"></span>
+<span class="go">0    False</span>
+<span class="go">1     True</span>
+<span class="go">2    False</span>
+<span class="go">dtype: bool</span>
+</pre></div>
+</div>
+<p>On the other hand, if you want to know which values are empty geometries,
+you can use the <a class="reference internal" href="reference.html#geopandas.GeoSeries.is_empty" title="geopandas.GeoSeries.is_empty"><code class="xref py py-attr docutils literal notranslate"><span class="pre">GeoSeries.is_empty</span></code></a> attribute:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [8]: </span><span class="n">s</span><span class="o">.</span><span class="n">is_empty</span>
+<span class="gh">Out[8]: </span><span class="go"></span>
+<span class="go">0    False</span>
+<span class="go">1    False</span>
+<span class="go">2     True</span>
+<span class="go">dtype: bool</span>
+</pre></div>
+</div>
+<p>To get only the actual geometry objects that are neiter missing nor empty,
+you can use a combination of both:</p>
+<pre class="literal-block">In [9]: s.is_empty | s.isna()
+Out[9]: 
+0    False
+1     True
+2     True
+dtype: bool
+
+In [10]: s[~(s.is_empty | s.isna())]
+Out[10]: 
+0    POLYGON ((0.000000000 0.000000000, 1.000000000...
+dtype: geometry</pre>
+<div class="section" id="changes-since-geopandas-v0-6-0">
+<span id="missing-empty-changes-0-6-0"></span><h2>Changes since GeoPandas v0.6.0<a class="headerlink" href="#changes-since-geopandas-v0-6-0" title="Permalink to this headline">¶</a></h2>
+<p>In GeoPandas v0.6.0, the missing data handling was refactored and made more
+consistent across the library.</p>
+<p>Historically, missing (“NA”) values in a GeoSeries could be represented by empty
+geometric objects, in addition to standard representations such as <code class="docutils literal notranslate"><span class="pre">None</span></code> and
+<code class="docutils literal notranslate"><span class="pre">np.nan</span></code>. At least, this was the case in <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> or when a
+GeoSeries got aligned in geospatial operations. But, other methods like
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">dropna()</span></code> and <code class="xref py py-meth docutils literal notranslate"><span class="pre">fillna()</span></code> did not follow this
+approach and did not consider empty geometries as missing.</p>
+<p>In GeoPandas v0.6.0, the most important change is <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> no
+longer treating empty as missing:</p>
+<ul>
+<li><p>Using the small example from above, the old behaviour treated both the
+empty as missing geometry as “missing”:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">0    POLYGON ((0 0, 1 1, 0 1, 0 0))</span>
+<span class="go">1                              None</span>
+<span class="go">2          GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">dtype: object</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
+<span class="go">0    False</span>
+<span class="go">1     True</span>
+<span class="go">2     True</span>
+<span class="go">dtype: bool</span>
+</pre></div>
+</div>
+</li>
+<li><p>Starting from GeoPandas v0.6.0, it will now only see actual missing values
+as missing:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [11]: </span><span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
+<span class="gh">Out[11]: </span><span class="go"></span>
+<span class="go">0    False</span>
+<span class="go">1     True</span>
+<span class="go">2    False</span>
+<span class="go">dtype: bool</span>
+</pre></div>
+</div>
+<p>For now, when <code class="docutils literal notranslate"><span class="pre">isna()</span></code> is called on a GeoSeries with empty geometries,
+a warning is raised to alert the user of the changed behaviour with an
+indication how to solve this.</p>
+</li>
+</ul>
+<p>Additionally, the behaviour of <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.align()</span></code> changed to use
+missing values instead of empty geometries to fill non-matching indexes.
+Consider the following small toy example:</p>
+<pre class="literal-block">In [12]: from shapely.geometry import Point
+
+In [13]: s1 = geopandas.GeoSeries([Point(0, 0), Point(1, 1)], index=[0, 1])
+
+In [14]: s2 = geopandas.GeoSeries([Point(1, 1), Point(2, 2)], index=[1, 2])
+
+In [15]: s1
+Out[15]: 
+0    POINT (0.000000000 0.000000000)
+1    POINT (1.000000000 1.000000000)
+dtype: geometry
+
+In [16]: s2
+Out[16]: 
+1    POINT (1.000000000 1.000000000)
+2    POINT (2.000000000 2.000000000)
+dtype: geometry</pre>
+<ul>
+<li><p>Previously, the <code class="docutils literal notranslate"><span class="pre">align</span></code> method would use empty geometries to fill
+values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s1_aligned</span><span class="p">,</span> <span class="n">s2_aligned</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1_aligned</span>
+<span class="go">0                 POINT (0 0)</span>
+<span class="go">1                 POINT (1 1)</span>
+<span class="go">2    GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">dtype: object</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2_aligned</span>
+<span class="go">0    GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">1                 POINT (1 1)</span>
+<span class="go">2                 POINT (2 2)</span>
+<span class="go">dtype: object</span>
+</pre></div>
+</div>
+<p>This method is used under the hood when performing spatial operations on
+mis-aligned GeoSeries objects:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="go">0    GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">1                 POINT (1 1)</span>
+<span class="go">2    GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">dtype: object</span>
+</pre></div>
+</div>
+</li>
+<li><p>Starting from GeoPandas v0.6.0, <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.align()</span></code> will use missing
+values to fill in the non-aligned indices, to be consistent with the
+behaviour in pandas:</p>
+<pre class="literal-block">In [17]: s1_aligned, s2_aligned = s1.align(s2)
+
+In [18]: s1_aligned
+Out[18]: 
+0    POINT (0.000000000 0.000000000)
+1    POINT (1.000000000 1.000000000)
+2                               None
+dtype: geometry
+
+In [19]: s2_aligned
+Out[19]: 
+0                               None
+1    POINT (1.000000000 1.000000000)
+2    POINT (2.000000000 2.000000000)
+dtype: geometry</pre>
+<p>This has the consequence that spatial operations will also use missing
+values instead of empty geometries, which can have a different behaviour
+depending on the spatial operation:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [20]: </span><span class="n">s1</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+<span class="gh">Out[20]: </span><span class="go"></span>
+<span class="go">0                               None</span>
+<span class="go">1    POINT (1.000000000 1.000000000)</span>
+<span class="go">2                               None</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="geocoding.html" class="btn btn-neutral float-left" title="Geocoding" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2013–2019, GeoPandas developers
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
