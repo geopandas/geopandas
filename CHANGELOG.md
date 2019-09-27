@@ -1,7 +1,7 @@
 Changes
 =======
 
-Version 0.6.0 (September ??, 2019)
+Version 0.6.0 (September 27, 2019)
 ----------------------------------
 
 Important note! This will be the last release to support Python 2.7 (#1031)
@@ -26,6 +26,7 @@ New features and improvements:
 - The `legend_kwds` keyword of the `plot()` method can now also be used to specify keywords for the color bar (#1102).
 - Performance improvement in the `sjoin()` operation by re-using existing spatial index of the input dataframes, if available (#789).
 - Updated documentation to work with latest version of geoplot and contextily (#1044, #1088).
+- A new ``geopandas.options`` configuration, with currently a single option to control the display precision of the coordinates (``options.display_precision``). The default is now to show less coordinates (3 for projected and 5 for geographic coordinates), but the default can be overridden with the option.
 
 Bug fixes:
 
@@ -35,6 +36,8 @@ Bug fixes:
 - Fixed passing list-like colors in the `plot()` method in case of "multi" geometries (#1119).
 - Fixed the coloring of shapes and colorbar when passing a custom `norm` in the `plot()` method (#1091, #1089).
 - Fixed `GeoDataFrame.to_file` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
+- Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
+
 
 In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
