@@ -10,6 +10,7 @@ from six import PY2, PY3
 import shapely
 from shapely.geometry import Point, GeometryCollection
 
+import geopandas
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_024
 from geopandas.array import from_shapely
@@ -38,6 +39,29 @@ def df():
 def test_repr(s, df):
     assert "POINT" in repr(s)
     assert "POINT" in repr(df)
+
+
+@pytest.mark.skipif(
+    not PANDAS_GE_024, reason="formatting for EA only implemented in 0.24.0"
+)
+def test_repr_boxed_display_precision():
+    # geographic coordinates
+    p1 = Point(10.123456789, 50.123456789)
+    p2 = Point(4.123456789, 20.123456789)
+    s1 = GeoSeries([p1, p2, None])
+    assert "POINT (10.12346 50.12346)" in repr(s1)
+
+    # projected coordinates
+    p1 = Point(3000.123456789, 3000.123456789)
+    p2 = Point(4000.123456789, 4000.123456789)
+    s2 = GeoSeries([p1, p2, None])
+    assert "POINT (3000.123 3000.123)" in repr(s2)
+
+    geopandas.options.display_precision = 1
+    assert "POINT (10.1 50.1)" in repr(s1)
+
+    geopandas.options.display_precision = 9
+    assert "POINT (10.123456789 50.123456789)" in repr(s1)
 
 
 def test_indexing(s, df):
