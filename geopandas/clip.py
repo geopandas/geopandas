@@ -144,7 +144,7 @@ def _clip_multi_poly_line(gdf, clip_obj):
     return gpd.GeoDataFrame(pd.concat([poly_diss, line_diss], ignore_index=True))
 
 
-def clip_gdf(gdf, clip_obj):
+def clip(gdf, clip_obj):
     """Clip points, lines, or polygon geometries to the clip_obj extent.
 
     Both layers must be in the same Coordinate Reference System (CRS) and will
@@ -181,7 +181,7 @@ def clip_gdf(gdf, clip_obj):
         >>> glaciers = gpd.read_file(path_to_example('colorado-glaciers.geojson'))
         >>> glaciers.shape
         (134, 2)
-        >>> rmnp_glaciers = cl.clip_gdf(glaciers, rmnp)
+        >>> rmnp_glaciers = cl.clip(glaciers, rmnp)
         >>> rmnp_glaciers.shape
         (36, 2)
 
@@ -189,7 +189,7 @@ def clip_gdf(gdf, clip_obj):
     polygon (the boundary of Rocky Mountain National Park):
 
         >>> cdt = gpd.read_file(path_to_example('continental-div-trail.geojson'))
-        >>> rmnp_cdt_section = cl.clip_gdf(cdt, rmnp)
+        >>> rmnp_cdt_section = cl.clip(cdt, rmnp)
         >>> cdt['geometry'].length > rmnp_cdt_section['geometry'].length
         0    True
         dtype: bool
@@ -200,7 +200,7 @@ def clip_gdf(gdf, clip_obj):
         >>> counties = gpd.read_file(path_to_example('colorado-counties.geojson'))
         >>> counties.shape
         (64, 13)
-        >>> rmnp_counties = cl.clip_gdf(counties, rmnp)
+        >>> rmnp_counties = cl.clip(counties, rmnp)
         >>> rmnp_counties.shape
         (4, 13)
     """
