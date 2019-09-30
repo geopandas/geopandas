@@ -113,14 +113,14 @@ def multi_point(point_gdf):
 def test_not_gdf(single_rectangle_gdf):
     """Non-GeoDataFrame inputs raise attribute errors."""
     with pytest.raises(AttributeError):
-        cl.clip_shp((2, 3), single_rectangle_gdf)
+        cl.clip_gdf((2, 3), single_rectangle_gdf)
     with pytest.raises(AttributeError):
-        cl.clip_shp(single_rectangle_gdf, (2, 3))
+        cl.clip_gdf(single_rectangle_gdf, (2, 3))
 
 
 def test_returns_gdf(point_gdf, single_rectangle_gdf):
     """Test that function returns a GeoDataFrame (or GDF-like) object."""
-    out = cl.clip_shp(point_gdf, single_rectangle_gdf)
+    out = cl.clip_gdf(point_gdf, single_rectangle_gdf)
     assert hasattr(out, "geometry")
 
 
@@ -133,26 +133,26 @@ def test_non_overlapping_geoms():
         lambda x: shapely.affinity.translate(x, xoff=20)
     )
     with pytest.raises(ValueError):
-        cl.clip_shp(unit_gdf, non_overlapping_gdf)
+        cl.clip_gdf(unit_gdf, non_overlapping_gdf)
 
 
 def test_input_gdfs(single_rectangle_gdf):
     """Test that function fails if not provided with 2 GDFs."""
     with pytest.raises(AttributeError):
-        cl.clip_shp(list(), single_rectangle_gdf)
+        cl.clip_gdf(list(), single_rectangle_gdf)
     with pytest.raises(AttributeError):
-        cl.clip_shp(single_rectangle_gdf, list())
+        cl.clip_gdf(single_rectangle_gdf, list())
 
 
 def test_clip_points(point_gdf, single_rectangle_gdf):
     """Test clipping a points GDF with a generic polygon geometry."""
-    clip_pts = cl.clip_shp(point_gdf, single_rectangle_gdf)
+    clip_pts = cl.clip_gdf(point_gdf, single_rectangle_gdf)
     assert len(clip_pts.geometry) == 3 and clip_pts.geom_type[1] == "Point"
 
 
 def test_clip_poly(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon GDF with a generic polygon geometry."""
-    clipped_poly = cl.clip_shp(buffered_locations, single_rectangle_gdf)
+    clipped_poly = cl.clip_gdf(buffered_locations, single_rectangle_gdf)
     assert len(clipped_poly.geometry) == 3
     assert all(clipped_poly.geom_type == "Polygon")
 
@@ -162,7 +162,7 @@ def test_clip_multipoly(multi_poly_gdf, single_rectangle_gdf):
 
     Also the bounds of the object should == the bounds of the clip object
     if they fully overlap (as they do in these fixtures). """
-    clip = cl.clip_shp(multi_poly_gdf, single_rectangle_gdf)
+    clip = cl.clip_gdf(multi_poly_gdf, single_rectangle_gdf)
     assert hasattr(clip, "geometry")
     assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
     # 2 features should be returned with an attribute column
@@ -175,7 +175,7 @@ def test_clip_single_multipolygon(buffered_locations, larger_single_rectangle_gd
     no sliver shapes should be returned in this clip. """
 
     multi = buffered_locations.dissolve(by="type").reset_index()
-    clip = cl.clip_shp(multi, larger_single_rectangle_gdf)
+    clip = cl.clip_gdf(multi, larger_single_rectangle_gdf)
 
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
 
@@ -183,7 +183,7 @@ def test_clip_single_multipolygon(buffered_locations, larger_single_rectangle_gd
 def test_clip_multiline(multi_line, single_rectangle_gdf):
     """Test that clipping a multiline feature with a poly returns expected output."""
 
-    clip = cl.clip_shp(multi_line, single_rectangle_gdf)
+    clip = cl.clip_gdf(multi_line, single_rectangle_gdf)
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "MultiLineString"
 
 
@@ -192,7 +192,7 @@ def test_clip_multipoint(single_rectangle_gdf, multi_point):
 
     should return a geodataframe with a single multi point feature"""
 
-    clip = cl.clip_shp(multi_point, single_rectangle_gdf)
+    clip = cl.clip_gdf(multi_point, single_rectangle_gdf)
 
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "MultiPoint"
     assert hasattr(clip, "attr")
@@ -202,5 +202,5 @@ def test_clip_multipoint(single_rectangle_gdf, multi_point):
 
 def test_clip_lines(two_line_gdf, single_rectangle_gdf):
     """Test what happens when you give the clip_extent a line GDF."""
-    clip_line = cl.clip_shp(two_line_gdf, single_rectangle_gdf)
+    clip_line = cl.clip_gdf(two_line_gdf, single_rectangle_gdf)
     assert len(clip_line.geometry) == 2
