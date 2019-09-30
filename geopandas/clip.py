@@ -33,6 +33,13 @@ def _clip_points(gdf, clip_obj):
         with clip_obj.
     """
     poly = clip_obj.geometry.unary_union
+    
+    spatial_index = gdf.sindex
+    bbox = poly.bounds
+    sidx = list(spatial_index.intersection(bbox))
+    gdf_sub = gdf.iloc[sidx]
+    
+    return gdf_sub[gdf_sub.geometry.intersects(poly)]
     return gdf[gdf.geometry.intersects(poly)]
 
 
