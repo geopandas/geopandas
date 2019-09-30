@@ -19,6 +19,11 @@ import pandas as pd  # noqa
 import numpy as np  # noqa
 
 from ._version import get_versions
+try:
+    # register with dask
+    from . import _dask  # noqa
+except ImportError:
+    pass
 
 __version__ = get_versions()["version"]
 del get_versions
