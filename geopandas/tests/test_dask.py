@@ -13,7 +13,7 @@ def test_from_pandas():
     assert ds.dtype == s.dtype
     dd.utils.assert_eq(s, ds)
 
-    df = pd.DataFrame({'A': s})
+    df = pd.DataFrame({"A": s})
     ddf = dd.from_pandas(df, 2)
-    assert ddf.dtypes['A'] == s.dtype
+    assert ddf.dtypes["A"] == s.dtype
     dd.utils.assert_eq(df, ddf)
