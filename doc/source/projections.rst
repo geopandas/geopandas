@@ -3,7 +3,7 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
 
 
 Managing Projections
@@ -16,7 +16,7 @@ Coordinate Reference Systems
 
 CRS are important because the geometric shapes in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in an arbitrary space. A CRS tells Python how those coordinates related to places on the Earth.
 
-CRS are referred to using codes called `proj4 strings <https://en.wikipedia.org/wiki/PROJ.4>`_. You can find the codes for most commonly used projections from `www.spatialreference.org <http://spatialreference.org/>`_ or `remotesensing.org <http://www.remotesensing.org/geotiff/proj_list/>`_.
+CRS are referred to using codes called `proj4 strings <https://en.wikipedia.org/wiki/PROJ.4>`_. You can find the codes for most commonly used projections from `www.spatialreference.org <http://spatialreference.org/>`_.
 
 The same CRS can often be referred to in many ways. For example, one of the most commonly used CRS is the WGS84 latitude-longitude projection. One `proj4` representation of this projection is: ``"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"``. But common projections can also be referred to by `EPSG` codes, so this same projection can also called using the `proj4` string ``"+init=epsg:4326"``.
 
@@ -54,7 +54,7 @@ Re-projecting is the process of changing the representation of locations from on
 .. ipython:: python
 
     # load example data
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 
     # Check original projection
     # (it's Platte Carre! x-y are long and lat)

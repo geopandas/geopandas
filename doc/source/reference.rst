@@ -79,6 +79,8 @@ The following Shapely methods and attributes are available on
 
 `Affine transformations`
 
+.. automethod:: geopandas.GeoSeries.affine_transform
+
 .. automethod:: geopandas.GeoSeries.rotate
 
 .. automethod:: geopandas.GeoSeries.scale
@@ -106,7 +108,7 @@ Additionally, the following methods are implemented:
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
 ``Series`` rather than a ``GeoSeries`` result.  The methods
-``copy()``, ``align()``, ``isnull()`` and ``fillna()`` have been
+``isna()`` and ``fillna()`` have been
 implemented specifically for ``GeoSeries`` and are expected to work
 correctly.
 
@@ -129,6 +131,8 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 .. automethod:: geopandas.GeoDataFrame.to_json
 
 .. automethod:: geopandas.GeoDataFrame.plot
+
+.. automethod:: geopandas.GeoDataFrame.rename_geometry
 
 .. autoattribute:: geopandas.GeoDataFrame.__geo_interface__
 

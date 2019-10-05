@@ -23,13 +23,13 @@ operations in python that would otherwise require a spatial database
 such as PostGIS.
 
 .. _pandas: http://pandas.pydata.org
-.. _shapely: http://toblerity.github.io/shapely
+.. _shapely: http://shapely.readthedocs.io/en/latest/
 """
 
 if os.environ.get('READTHEDOCS', False) == 'True':
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ['pandas', 'shapely', 'fiona', 'pyproj']
+    INSTALL_REQUIRES = ['pandas >= 0.23.0', 'shapely', 'fiona', 'pyproj']
 
 # get all data dirs in the datasets module
 data_files = []
@@ -40,6 +40,8 @@ for item in os.listdir("geopandas/datasets"):
             data_files.append(os.path.join("datasets", item, '*'))
         elif item.endswith('.zip'):
             data_files.append(os.path.join("datasets", item))
+
+data_files.append('tests/data/*')
 
 
 setup(name='geopandas',
