@@ -1,29 +1,31 @@
 import sys
+
 import pandas as pd
+
 import shapely.wkb
 
 from geopandas import GeoDataFrame
 
 
-def _df_to_geodf(df, geom_col='geom', crs=None):
+def _df_to_geodf(df, geom_col="geom", crs=None):
     """
-        Transfoms a pandas DataFrame into a GeoDataFrame.
-        The column geo_col must be a geometry column in WKB representation.
+    Transfoms a pandas DataFrame into a GeoDataFrame.
+    The column geo_col must be a geometry column in WKB representation.
 
-        Parameters
-        ----------
-        df : DataFrame
-            pandas DataFrame with geometry column in WKB representation.
-        geom_col : string, default 'geom'
-            column name to convert to shapely geometries
-        crs : dict or str, optional
-            CRS to use for the returned GeoDataFrame; if not set, tries to
-            determine CRS from the SRID associated with the first geometry in
-            the database, and assigns that to all geometries.
+    Parameters
+    ----------
+    df : DataFrame
+        pandas DataFrame with geometry column in WKB representation.
+    geom_col : string, default 'geom'
+        column name to convert to shapely geometries
+    crs : dict or str, optional
+        CRS to use for the returned GeoDataFrame; if not set, tries to
+        determine CRS from the SRID associated with the first geometry in
+        the database, and assigns that to all geometries.
 
-        Returns
-        -------
-        GeoDataFrame
+    Returns
+    -------
+    GeoDataFrame
     """
 
     if geom_col not in df:
@@ -63,8 +65,17 @@ def _df_to_geodf(df, geom_col='geom', crs=None):
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
 
-def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
-                 coerce_float=True, parse_dates=None, params=None, chunksize=None):
+def read_postgis(
+    sql,
+    con,
+    geom_col="geom",
+    crs=None,
+    index_col=None,
+    coerce_float=True,
+    parse_dates=None,
+    params=None,
+    chunksize=None,
+):
     """
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
@@ -104,14 +115,26 @@ def read_postgis(sql, con, geom_col='geom', crs=None, index_col=None,
 
     if chunksize is None:
         # read all in one chunk and return a single GeoDataFrame
-        df = pd.read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
-                         parse_dates=parse_dates, params=params, chunksize=chunksize)
+        df = pd.read_sql(
+            sql,
+            con,
+            index_col=index_col,
+            coerce_float=coerce_float,
+            parse_dates=parse_dates,
+            params=params,
+            chunksize=chunksize,
+        )
         return _df_to_geodf(df, geom_col=geom_col, crs=crs)
 
     else:
         # read data in chunks and return a generator
-        df_generator = pd.read_sql(sql, con, index_col=index_col, coerce_float=coerce_float,
-                                   parse_dates=parse_dates, params=params, chunksize=chunksize)
+        df_generator = pd.read_sql(
+            sql,
+            con,
+            index_col=index_col,
+            coerce_float=coerce_float,
+            parse_dates=parse_dates,
+            params=params,
+            chunksize=chunksize,
+        )
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
-
-
