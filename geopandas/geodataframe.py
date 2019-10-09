@@ -473,6 +473,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
+    def to_feather(self, filename):
+        from geopandas.io.feather import to_feather
+
+        to_feather(self, filename)
+
+
     def to_file(self, filename, driver="ESRI Shapefile", schema=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
 

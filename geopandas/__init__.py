@@ -2,6 +2,7 @@ from geopandas.geoseries import GeoSeries  # noqa
 from geopandas.geodataframe import GeoDataFrame  # noqa
 from geopandas.array import _points_from_xy as points_from_xy  # noqa
 
+from geopandas.io.feather import read_feather
 from geopandas.io.file import read_file  # noqa
 from geopandas.io.sql import read_postgis  # noqa
 from geopandas.tools import sjoin  # noqa
