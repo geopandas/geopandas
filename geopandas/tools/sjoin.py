@@ -181,7 +181,8 @@ def sjoin(
                 right_index=True,
                 suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
             )
-            .set_index(index_left).drop(["_key_right"], axis=1)
+            .set_index(index_left)
+            .drop(["_key_right"], axis=1)
         )
         joined.index.name = left_index_name
 
@@ -196,7 +197,8 @@ def sjoin(
                 right_index=True,
                 suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
             )
-            .set_index(index_left).drop(["_key_right"], axis=1)
+            .set_index(index_left)
+            .drop(["_key_right"], axis=1)
         )
         joined.index.name = left_index_name
 

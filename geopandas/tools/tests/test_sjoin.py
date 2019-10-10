@@ -36,7 +36,7 @@ def dfs(request):
 
     df1 = GeoDataFrame({"geometry": polys1, "df1": [0, 1, 2]})
     df2 = GeoDataFrame({"geometry": polys2, "df2": [3, 4, 5]})
-    
+
     if request.param == "string-index":
         df1.index = ["a", "b", "c"]
         df2.index = ["d", "e", "f"]
@@ -48,11 +48,7 @@ def dfs(request):
     expected = {}
 
     part1 = df1.copy().reset_index()
-    part2 = (
-        df2.copy()
-        .iloc[[0, 1, 1, 2]]
-        .reset_index()
-    )
+    part2 = df2.copy().iloc[[0, 1, 1, 2]].reset_index()
     part1["_merge"] = [0, 1, 2]
     part2["_merge"] = [0, 0, 1, 3]
     exp = pd.merge(part1, part2, on="_merge", how="outer")
@@ -258,7 +254,7 @@ class TestSpatialJoinNYBB:
         # original index name should pass through to result
         if how == "right":
             assert res.index.name == "polyid"
-        else: # how == "left", how == "inner"
+        else:  # how == "left", how == "inner"
             assert res.index.name == "pointid"
 
     def test_sjoin_values(self):
