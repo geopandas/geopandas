@@ -36,27 +36,30 @@ def dfs(request):
 
     df1 = GeoDataFrame({"geometry": polys1, "df1": [0, 1, 2]})
     df2 = GeoDataFrame({"geometry": polys2, "df2": [3, 4, 5]})
+    
     if request.param == "string-index":
         df1.index = ["a", "b", "c"]
         df2.index = ["d", "e", "f"]
 
+    df1.index.name = "index_left"
+    df2.index.name = "index_right"
+
     # construction expected frames
     expected = {}
 
-    part1 = df1.copy().reset_index().rename(columns={"index": "index_left"})
+    part1 = df1.copy().reset_index()
     part2 = (
         df2.copy()
         .iloc[[0, 1, 1, 2]]
         .reset_index()
-        .rename(columns={"index": "index_right"})
     )
     part1["_merge"] = [0, 1, 2]
     part2["_merge"] = [0, 0, 1, 3]
     exp = pd.merge(part1, part2, on="_merge", how="outer")
     expected["intersects"] = exp.drop("_merge", axis=1).copy()
 
-    part1 = df1.copy().reset_index().rename(columns={"index": "index_left"})
-    part2 = df2.copy().reset_index().rename(columns={"index": "index_right"})
+    part1 = df1.copy().reset_index()
+    part2 = df2.copy().reset_index()
     part1["_merge"] = [0, 1, 2]
     part2["_merge"] = [0, 3, 3]
     exp = pd.merge(part1, part2, on="_merge", how="outer")
@@ -94,7 +97,7 @@ class TestSpatialJoin:
                 ["index_left", "index_right"]
             ].astype("int64")
         exp = exp.set_index("index_left")
-        exp.index.name = None
+        exp.index.name = df1.index.name
 
         assert_frame_equal(res, exp)
 
@@ -113,7 +116,7 @@ class TestSpatialJoin:
             # TODO: in result the dtype is object
             res["index_right"] = res["index_right"].astype(float)
         exp = exp.set_index("index_left")
-        exp.index.name = None
+        exp.index.name = df1.index.name
 
         assert_frame_equal(res, exp)
 
@@ -161,6 +164,7 @@ class TestSpatialJoin:
             res["index_left"] = res["index_left"].astype(float)
         exp = exp.set_index("index_right")
         exp = exp.reindex(columns=res.columns)
+        exp.index.name = df2.index.name
 
         assert_frame_equal(res, exp, check_index_type=False)
 
@@ -244,9 +248,18 @@ class TestSpatialJoinNYBB:
         # original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = "pointid"
-        sjoin(pointdf2, self.polydf, how=how)
+        polydf = self.polydf.copy()
+        polydf.index.name = "polyid"
+
+        res = sjoin(pointdf2, polydf, how=how)
         assert pointdf2.index.name == "pointid"
-        assert self.polydf.index.name is None
+        assert polydf.index.name == "polyid"
+
+        # original index name should pass through to result
+        if how == "right":
+            assert res.index.name == "polyid"
+        else: # how == "left", how == "inner"
+            assert res.index.name == "pointid"
 
     def test_sjoin_values(self):
         # GH190
