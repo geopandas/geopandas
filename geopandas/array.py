@@ -828,6 +828,9 @@ class GeometryArray(ExtensionArray):
         """
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
+
+        if _isna(value):
+            value = None
         elif not isinstance(value, BaseGeometry):
             raise NotImplementedError(
                 "fillna currently only supports filling with a scalar geometry"
