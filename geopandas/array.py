@@ -865,7 +865,12 @@ class GeometryArray(ExtensionArray):
                 return self.copy()
             else:
                 return self
-        return np.array(self, dtype=dtype, copy=copy)
+        elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
+            dtype
+        ):
+            return to_wkt(self).astype(dtype, copy=False)
+        else:
+            return np.array(self, dtype=dtype, copy=copy)
 
     def isna(self):
         """
