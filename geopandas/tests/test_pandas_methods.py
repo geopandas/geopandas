@@ -161,18 +161,35 @@ def test_astype(s, df):
 
     assert s.astype(str)[0] == "POINT (0 0)"
 
+    res = s.astype(object)
+    assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
+    assert res.dtype == object
+
     df = df.rename_geometry("geom_list")
 
     # check whether returned object is a geodataframe
-    df = df.astype({"value1": float})
-    assert isinstance(df, GeoDataFrame)
+    res = df.astype({"value1": float})
+    assert isinstance(res, GeoDataFrame)
 
     # check whether returned object is a datafrane
-    df = df.astype(str)
-    assert isinstance(df, pd.DataFrame)
+    res = df.astype(str)
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
-    df = df.astype({"geom_list": str})
-    assert isinstance(df, pd.DataFrame)
+    res = df.astype({"geom_list": str})
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
+
+    res = df.astype(object)
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
+    assert res["geom_list"].dtype == object
+
+
+def test_astype_invalid_geodataframe():
+    # https://github.com/geopandas/geopandas/issues/1144
+    # a GeoDataFrame without geometry column should not error in astype
+    df = GeoDataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    res = df.astype(object)
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
+    assert res["a"].dtype == object
 
 
 def test_to_csv(df):
