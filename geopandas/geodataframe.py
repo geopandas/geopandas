@@ -708,11 +708,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
-            df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
-            return df
-        except TypeError:
-            df = pd.DataFrame(df)
-            return df
+            geoms = df[self._geometry_column_name]
+            if is_geometry_type(geoms):
+                return geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
+        except KeyError:
+            pass
+        # if the geometry column is converted to non-geometries or did not exist
+        # do not return a GeoDataFrame
+        return pd.DataFrame(df)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
