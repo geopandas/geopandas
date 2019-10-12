@@ -13,7 +13,25 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 
+import pygeos
+
 from ._compat import PANDAS_GE_024, Iterable
+
+
+_names = {
+    "NAG": None,
+    "POINT": "Point",
+    "LINESTRING": "LineString",
+    "LINEARRING": "LinearRing",
+    "POLYGON": "Polygon",
+    "MULTIPOINT": "MultiPoint",
+    "MULTILINESTRING": "MultiLineString",
+    "MULTIPOLYGON": "MultiPolygon",
+    "GEOMETRYCOLLECTION": "GeometryCollection",
+}
+
+
+type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
 
 
 class GeometryDtype(ExtensionDtype):
@@ -59,6 +77,24 @@ def _isna(value):
 # -----------------------------------------------------------------------------
 
 
+def _pygeos_to_shapely(geom):
+    if geom is None:
+        return None
+    elif pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
+        return shapely.wkt.loads("POINT EMPTY")
+    else:
+        return shapely.wkb.loads(pygeos.to_wkb(geom))
+
+
+def _shapely_to_pygeos(geom):
+    if geom is None:
+        return None
+    elif geom.is_empty and geom.geom_type == "Point":
+        return pygeos.from_wkt("POINT EMPTY")
+    else:
+        return pygeos.from_wkb(geom.wkb)
+
+
 def from_shapely(data):
     """
     Convert a list or array of shapely objects to a GeometryArray.
@@ -71,18 +107,19 @@ def from_shapely(data):
 
     for idx in range(n):
         geom = data[idx]
-        if isinstance(geom, BaseGeometry):
+        if isinstance(geom, pygeos.Geometry):
             out.append(geom)
+        elif isinstance(geom, BaseGeometry):
+            out.append(_shapely_to_pygeos(geom))
         elif hasattr(geom, "__geo_interface__"):
             geom = shapely.geometry.asShape(geom)
-            out.append(geom)
+            out.append(_shapely_to_pygeos(geom))
         elif _isna(geom):
             out.append(None)
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
 
-    aout = np.empty(n, dtype=object)
-    aout[:] = out
+    aout = np.array(out, dtype=object)
     return GeometryArray(aout)
 
 
@@ -92,30 +129,17 @@ def to_shapely(geoms):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return geoms.data
+    out = np.empty(len(geoms), dtype=object)
+    out[:] = [_pygeos_to_shapely(geom) for geom in geoms.data]
+    return out
 
 
 def from_wkb(data):
     """
     Convert a list or array of WKB objects to a GeometryArray.
     """
-    import shapely.wkb
-
-    n = len(data)
-
-    out = []
-
-    for idx in range(n):
-        geom = data[idx]
-        if geom is not None and len(geom):
-            geom = shapely.wkb.loads(geom)
-        else:
-            geom = None
-        out.append(geom)
-
-    aout = np.empty(n, dtype=object)
-    aout[:] = out
-    return GeometryArray(aout)
+    out = pygeos.from_wkb(data)
+    return GeometryArray(out)
 
 
 def to_wkb(geoms):
@@ -124,43 +148,24 @@ def to_wkb(geoms):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    out = [geom.wkb if geom is not None else None for geom in geoms]
-    return np.array(out, dtype=object)
+    return pygeos.to_wkb(geoms.data)
 
 
 def from_wkt(data):
     """
     Convert a list or array of WKT objects to a GeometryArray.
     """
-    import shapely.wkt
-
-    n = len(data)
-
-    out = []
-
-    for idx in range(n):
-        geom = data[idx]
-        if geom is not None and len(geom):
-            if isinstance(geom, bytes):
-                geom = geom.decode("utf-8")
-            geom = shapely.wkt.loads(geom)
-        else:
-            geom = None
-        out.append(geom)
-
-    aout = np.empty(n, dtype=object)
-    aout[:] = out
-    return GeometryArray(aout)
+    out = pygeos.from_wkt(data)
+    return GeometryArray(out)
 
 
-def to_wkt(geoms):
+def to_wkt(geoms, **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKT objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    out = [geom.wkt if geom is not None else None for geom in geoms]
-    return np.array(out, dtype=object)
+    return pygeos.to_wkt(geoms.data, **kwargs)
 
 
 def _points_from_xy(x, y, z=None):
@@ -199,15 +204,29 @@ def points_from_xy(x, y, z=None):
     y = np.asarray(y, dtype="float64")
     if z is not None:
         z = np.asarray(z, dtype="float64")
-    out = _points_from_xy(x, y, z)
-    aout = np.empty(len(x), dtype=object)
-    aout[:] = out
-    return GeometryArray(aout)
+    out = pygeos.points(x, y, z)
+    return GeometryArray(out)
 
 
 # -----------------------------------------------------------------------------
 # Helper methods for the vectorized operations
 # -----------------------------------------------------------------------------
+
+
+def _binary_method(op, left, right, **kwargs):
+    # type: (str, GeometryArray, [GeometryArray/BaseGeometry]) -> array-like
+    if isinstance(right, BaseGeometry):
+        right = from_shapely([right]).data[0]
+        return getattr(pygeos, op)(left.data, right, **kwargs)
+    elif isinstance(right, GeometryArray):
+        if len(left) != len(right):
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
+                len(left), len(right)
+            )
+            raise ValueError(msg)
+        return getattr(pygeos, op)(left.data, right.data, **kwargs)
+    else:
+        raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
 
 
 def _binary_geo(op, left, right):
@@ -306,7 +325,7 @@ def _binary_op_float(op, left, right, *args, **kwargs):
             getattr(s, op)(right, *args, **kwargs)
             if not (s is None or s.is_empty or right.is_empty)
             else np.nan
-            for s in left.data
+            for s in left
         ]
         return np.array(data, dtype=float)
     elif isinstance(right, GeometryArray):
@@ -320,7 +339,7 @@ def _binary_op_float(op, left, right, *args, **kwargs):
             if not (this_elem is None or this_elem.is_empty)
             | (other_elem is None or other_elem.is_empty)
             else np.nan
-            for this_elem, other_elem in zip(left.data, right.data)
+            for this_elem, other_elem in zip(left, right)
         ]
         return np.array(data, dtype=float)
     else:
@@ -345,7 +364,7 @@ def _binary_op(op, left, right, *args, **kwargs):
     if isinstance(right, BaseGeometry):
         data = [
             getattr(s, op)(right, *args, **kwargs) if s is not None else null_value
-            for s in left.data
+            for s in left
         ]
         return np.array(data, dtype=dtype)
     elif isinstance(right, GeometryArray):
@@ -358,7 +377,7 @@ def _binary_op(op, left, right, *args, **kwargs):
             getattr(this_elem, op)(other_elem, *args, **kwargs)
             if not (this_elem is None or other_elem is None)
             else null_value
-            for this_elem, other_elem in zip(left.data, right.data)
+            for this_elem, other_elem in zip(left, right)
         ]
         return np.array(data, dtype=dtype)
     else:
@@ -370,14 +389,14 @@ def _unary_geo(op, left, *args, **kwargs):
     """Unary operation that returns new geometries"""
     # ensure 1D output, see note above
     data = np.empty(len(left), dtype=object)
-    data[:] = [getattr(geom, op, None) for geom in left.data]
-    return GeometryArray(data)
+    data[:] = [getattr(geom, op, None) for geom in left]
+    return from_shapely(data)
 
 
 def _unary_op(op, left, null_value=False):
     # type: (str, GeometryArray, Any) -> np.array
     """Unary operation that returns a Series"""
-    data = [getattr(geom, op, null_value) for geom in left.data]
+    data = [getattr(geom, op, null_value) for geom in left]
     return np.array(data, dtype=np.dtype(type(null_value)))
 
 
@@ -389,7 +408,7 @@ def _affinity_method(op, left, *args, **kwargs):
     # and skew fail (they try to unpack the bounds).
     # Here: consistently returning empty geom for input empty geom
     out = []
-    for geom in left.data:
+    for geom in left:
         if geom is None or geom.is_empty:
             res = geom
         else:
@@ -397,7 +416,7 @@ def _affinity_method(op, left, *args, **kwargs):
         out.append(res)
     data = np.empty(len(left), dtype=object)
     data[:] = out
-    return GeometryArray(data)
+    return from_shapely(data)
 
 
 class GeometryArray(ExtensionArray):
@@ -431,7 +450,7 @@ class GeometryArray(ExtensionArray):
 
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
-            return self.data[idx]
+            return _pygeos_to_shapely(self.data[idx])
         elif isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx])
         else:
@@ -451,6 +470,10 @@ class GeometryArray(ExtensionArray):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
+            elif isinstance(value, BaseGeometry):
+                value = from_shapely([value]).data[0]
+            else:
+                raise TypeError("should be valid geometry")
             if isinstance(key, (list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
                 value_array[:] = [value]
@@ -462,54 +485,75 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
 
+    def __getstate__(self):
+        return pygeos.to_wkb(self.data)
+
+    def __setstate__(self, state):
+        geoms = pygeos.from_wkb(state)
+        self.data = geoms
+        self.base = None
+
     # -------------------------------------------------------------------------
     # Geometry related methods
     # -------------------------------------------------------------------------
 
     @property
     def is_valid(self):
-        return _unary_op("is_valid", self, null_value=False)
+        return pygeos.is_valid(self.data)
+        # return _unary_op("is_valid", self, null_value=False)
 
     @property
     def is_empty(self):
-        return _unary_op("is_empty", self, null_value=False)
+        return pygeos.is_empty(self.data)
+        # return _unary_op("is_empty", self, null_value=False)
 
     @property
     def is_simple(self):
-        return _unary_op("is_simple", self, null_value=False)
+        return pygeos.is_simple(self.data)
+        # return _unary_op("is_simple", self, null_value=False)
 
     @property
     def is_ring(self):
         # operates on the exterior, so can't use _unary_op()
+        # XXX needed to change this because there is now a geometry collection
+        # in the shapely ones that was something else before?
         return np.array(
             [
                 geom.exterior.is_ring
-                if geom is not None and geom.exterior is not None
+                if geom is not None
+                and hasattr(geom, "exterior")
+                and geom.exterior is not None
                 else False
-                for geom in self.data
+                for geom in self
             ],
             dtype=bool,
         )
 
     @property
     def is_closed(self):
-        return _unary_op("is_closed", self, null_value=False)
+        return pygeos.is_closed(self.data)
+        # return _unary_op("is_closed", self, null_value=False)
 
     @property
     def has_z(self):
-        return _unary_op("has_z", self, null_value=False)
+        return pygeos.has_z(self.data)
+        # return _unary_op("has_z", self, null_value=False)
 
     @property
     def geom_type(self):
-        return _unary_op("geom_type", self, null_value=None)
+        res = pygeos.get_type_id(self.data)
+        return np.array([type_mapping[t] for t in res], dtype=object)
+        # return _unary_op("geom_type", self, null_value=None)
 
     @property
     def area(self):
-        return _unary_op("area", self, null_value=np.nan)
+        return pygeos.area(self.data)
+        # return _unary_op("area", self, null_value=np.nan)
 
     @property
     def length(self):
-        return _unary_op("length", self, null_value=np.nan)
+        return pygeos.length(self.data)
+        # return _unary_op("length", self, null_value=np.nan)
 
     #
     # Unary operations that return new geometries
@@ -517,29 +561,34 @@ class GeometryArray(ExtensionArray):
 
     @property
     def boundary(self):
-        return _unary_geo("boundary", self)
+        return GeometryArray(pygeos.boundary(self.data))
+        # return _unary_geo("boundary", self)
 
     @property
     def centroid(self):
-        return _unary_geo("centroid", self)
+        return GeometryArray(pygeos.centroid(self.data))
+        # return _unary_geo("centroid", self)
 
     @property
     def convex_hull(self):
-        return _unary_geo("convex_hull", self)
+        return GeometryArray(pygeos.convex_hull(self.data))
+        # return _unary_geo("convex_hull", self)
 
     @property
     def envelope(self):
-        return _unary_geo("envelope", self)
+        return GeometryArray(pygeos.envelope(self.data))
+        # return _unary_geo("envelope", self)
 
     @property
     def exterior(self):
-        return _unary_geo("exterior", self)
+        return GeometryArray(pygeos.get_exterior_ring(self.data))
+        # return _unary_geo("exterior", self)
 
     @property
     def interiors(self):
         has_non_poly = False
         inner_rings = []
-        for geom in self.data:
+        for geom in self:
             interior_ring_seq = getattr(geom, "interiors", None)
             # polygon case
             if interior_ring_seq is not None:
@@ -558,73 +607,104 @@ class GeometryArray(ExtensionArray):
         return data
 
     def representative_point(self):
+        return GeometryArray(pygeos.point_on_surface(self.data))
         # method and not a property -> can't use _unary_geo
-        data = np.empty(len(self), dtype=object)
-        data[:] = [
-            geom.representative_point() if geom is not None else None
-            for geom in self.data
-        ]
-        return GeometryArray(data)
+        # data = np.empty(len(self), dtype=object)
+        # data[:] = [
+        #     geom.representative_point() if geom is not None else None
+        #     for geom in self
+        # ]
+        # return from_shapely(data)
 
     #
     # Binary predicates
     #
 
     def covers(self, other):
-        return _binary_predicate("covers", self, other)
+        return _binary_method("covers", self, other)
+        # return _binary_predicate("covers", self, other)
 
     def contains(self, other):
-        return _binary_predicate("contains", self, other)
+        return _binary_method("contains", self, other)
+        # return _binary_predicate("contains", self, other)
 
     def crosses(self, other):
-        return _binary_predicate("crosses", self, other)
+        return _binary_method("crosses", self, other)
+        # return _binary_predicate("crosses", self, other)
 
     def disjoint(self, other):
-        return _binary_predicate("disjoint", self, other)
+        return _binary_method("disjoint", self, other)
+        # return _binary_predicate("disjoint", self, other)
 
     def equals(self, other):
-        return _binary_predicate("equals", self, other)
+        return _binary_method("equals", self, other)
+        # return _binary_predicate("equals", self, other)
 
     def intersects(self, other):
-        return _binary_predicate("intersects", self, other)
+        return _binary_method("intersects", self, other)
+        # return _binary_predicate("intersects", self, other)
 
     def overlaps(self, other):
-        return _binary_predicate("overlaps", self, other)
+        return _binary_method("overlaps", self, other)
+        # return _binary_predicate("overlaps", self, other)
 
     def touches(self, other):
-        return _binary_predicate("touches", self, other)
+        return _binary_method("touches", self, other)
+        # return _binary_predicate("touches", self, other)
 
     def within(self, other):
-        return _binary_predicate("within", self, other)
+        return _binary_method("within", self, other)
+        # return _binary_predicate("within", self, other)
 
     def equals_exact(self, other, tolerance):
-        return _binary_predicate("equals_exact", self, other, tolerance=tolerance)
+        # return _binary_method("equals_exact", self, other, tolerance=tolerance)
+        if isinstance(other, BaseGeometry):
+            other = _shapely_to_pygeos(other)
+            return pygeos.lib.equals_exact(self.data, other, tolerance)
+        elif isinstance(other, GeometryArray):
+            if len(self) != len(other):
+                msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
+                    len(self), len(other)
+                )
+                raise ValueError(msg)
+            return pygeos.lib.equals_exact(self.data, other.data, tolerance)
+        else:
+            raise TypeError(
+                "Type not known: {0} vs {1}".format(type(self), type(other))
+            )
+        # return _binary_predicate("equals_exact", self, other, tolerance=tolerance)
 
     def almost_equals(self, other, decimal):
-        return _binary_predicate("almost_equals", self, other, decimal=decimal)
+        return self.equals_exact(other, 0.5 * 10 ** (-decimal))
+        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 
     #
     # Binary operations that return new geometries
     #
 
     def difference(self, other):
-        return _binary_geo("difference", self, other)
+        return GeometryArray(_binary_method("difference", self, other))
+        # return _binary_geo("difference", self, other)
 
     def intersection(self, other):
-        return _binary_geo("intersection", self, other)
+        return GeometryArray(_binary_method("intersection", self, other))
+        # return _binary_geo("intersection", self, other)
 
     def symmetric_difference(self, other):
-        return _binary_geo("symmetric_difference", self, other)
+        return GeometryArray(_binary_method("symmetric_difference", self, other))
+        # return _binary_geo("symmetric_difference", self, other)
 
     def union(self, other):
-        return _binary_geo("union", self, other)
+        return GeometryArray(_binary_method("union", self, other))
+        # return _binary_geo("union", self, other)
 
     #
     # Other operations
     #
 
     def distance(self, other):
-        return _binary_op_float("distance", self, other)
+        return _binary_method("distance", self, other)
+        # return _binary_op_float("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
         data = data = np.empty(len(self), dtype=object)
@@ -637,15 +717,15 @@ class GeometryArray(ExtensionArray):
 
             data[:] = [
                 geom.buffer(dist, resolution, **kwargs) if geom is not None else None
-                for geom, dist in zip(self.data, distance)
+                for geom, dist in zip(self, distance)
             ]
-            return GeometryArray(data)
+            return from_shapely(data)
 
         data[:] = [
             geom.buffer(distance, resolution, **kwargs) if geom is not None else None
-            for geom in self.data
+            for geom in self
         ]
-        return GeometryArray(data)
+        return from_shapely(data)
 
     def interpolate(self, distance, normalized=False):
         data = data = np.empty(len(self), dtype=object)
@@ -657,20 +737,18 @@ class GeometryArray(ExtensionArray):
                 )
             data[:] = [
                 geom.interpolate(dist, normalized=normalized)
-                for geom, dist in zip(self.data, distance)
+                for geom, dist in zip(self, distance)
             ]
-            return GeometryArray(data)
+            return from_shapely(data)
 
-        data[:] = [
-            geom.interpolate(distance, normalized=normalized) for geom in self.data
-        ]
-        return GeometryArray(data)
+        data[:] = [geom.interpolate(distance, normalized=normalized) for geom in self]
+        return from_shapely(data)
 
     def simplify(self, *args, **kwargs):
         # method and not a property -> can't use _unary_geo
         data = np.empty(len(self), dtype=object)
-        data[:] = [geom.simplify(*args, **kwargs) for geom in self.data]
-        return GeometryArray(data)
+        data[:] = [geom.simplify(*args, **kwargs) for geom in self]
+        return from_shapely(data)
 
     def project(self, other, normalized=False):
         return _binary_op("project", self, other, normalized=normalized)
@@ -683,7 +761,7 @@ class GeometryArray(ExtensionArray):
     #
 
     def unary_union(self):
-        return shapely.ops.unary_union(self.data)
+        return _pygeos_to_shapely(pygeos.union_all(self.data))
 
     #
     # Affinity operations
@@ -739,7 +817,7 @@ class GeometryArray(ExtensionArray):
                 geom.bounds
                 if not (geom is None or geom.is_empty)
                 else (np.nan, np.nan, np.nan, np.nan)
-                for geom in self.data
+                for geom in self
             ]
         )
         return bounds
@@ -781,11 +859,15 @@ class GeometryArray(ExtensionArray):
 
         if allow_fill:
             if fill_value is None or pd.isna(fill_value):
-                fill_value = 0
+                fill_value = None
+            elif isinstance(fill_value, BaseGeometry):
+                fill_value = _shapely_to_pygeos(fill_value)
+            elif not isinstance(fill_value, pygeos.Geometry):
+                raise TypeError("provide geometry or None as fill value")
 
         result = take(self.data, indices, allow_fill=allow_fill, fill_value=fill_value)
-        if fill_value == 0:
-            result[result == 0] = None
+        if allow_fill and fill_value is None:
+            result[pd.isna(result)] = None
         return GeometryArray(result)
 
     def _fill(self, idx, value):
@@ -793,7 +875,7 @@ class GeometryArray(ExtensionArray):
 
         Value should be a BaseGeometry
         """
-        if not (isinstance(value, BaseGeometry) or value is None):
+        if not (isinstance(value, pygeos.Geometry) or value is None):
             raise TypeError(
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
@@ -832,6 +914,7 @@ class GeometryArray(ExtensionArray):
             raise NotImplementedError(
                 "fillna currently only supports filling with a scalar geometry"
             )
+        value = _shapely_to_pygeos(value)
 
         mask = self.isna()
         new_values = self.copy()
@@ -871,7 +954,7 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        return np.array([g is None for g in self.data], dtype="bool")
+        return pygeos.is_missing(self.data)
 
     def unique(self):
         """Compute the ExtensionArray of unique values.
@@ -1036,7 +1119,7 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name == "any" or name == "all":
-            return getattr(self.data, name)()
+            return getattr(np.asarray(self), name)()
         raise TypeError(
             "cannot perform {name} with type {dtype}".format(
                 name=name, dtype=self.dtype
@@ -1051,7 +1134,7 @@ class GeometryArray(ExtensionArray):
         -------
         values : numpy array
         """
-        return self.data
+        return to_shapely(self)
 
     def _binop(self, other, op):
         def convert_values(param):

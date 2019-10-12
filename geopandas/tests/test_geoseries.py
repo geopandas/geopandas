@@ -266,13 +266,15 @@ class TestConstructor:
     def test_single_geom_constructor(self):
         p = Point(1, 2)
         line = LineString([(2, 3), (4, 5), (5, 6)])
-        poly = Polygon([(0, 0), (1, 0), (1, 1)], [[(0.1, 0.1), (0.9, 0.1), (0.9, 0.9)]])
+        poly = Polygon(
+            [(0, 0), (1, 0), (1, 1), (0, 1)], [[(0.1, 0.1), (0.9, 0.1), (0.9, 0.9)]]
+        )
         mp = MultiPoint([(1, 2), (3, 4), (5, 6)])
         mline = MultiLineString([[(1, 2), (3, 4), (5, 6)], [(7, 8), (9, 10)]])
 
         poly2 = Polygon(
-            [(1, 1), (1, -1), (-1, -1), (-1, 1)],
-            [[(0.5, 0.5), (0.5, -0.5), (-0.5, -0.5), (-0.5, 0.5)]],
+            [(0, 0), (0, -1), (-1, -1), (-1, 0)],
+            [[(-0.1, -0.1), (-0.1, -0.5), (-0.5, -0.5), (-0.5, -0.1)]],
         )
         mpoly = MultiPolygon([poly, poly2])
 
@@ -282,12 +284,13 @@ class TestConstructor:
         for g in geoms:
             gs = GeoSeries(g)
             assert len(gs) == 1
-            assert gs.iloc[0] is g
+            # accessing elements no longer give identical objects
+            assert gs.iloc[0].equals(g)
 
             gs = GeoSeries(g, index=index)
             assert len(gs) == len(index)
             for x in gs:
-                assert x is g
+                assert x.equals(g)
 
     def test_no_geometries_fallback(self):
         with pytest.warns(FutureWarning):
