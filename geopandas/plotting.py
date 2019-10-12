@@ -376,6 +376,7 @@ def plot_dataframe(
     figsize=None,
     legend_kwds=None,
     classification_kwds=None,
+    missing_kwds=None,
     **style_kwds
 ):
     """
@@ -516,14 +517,18 @@ def plot_dataframe(
     if values.dtype is np.dtype("O"):
         categorical = True
 
+    nan_idx = np.array(
+        [True if str(n) == "nan" or n is None else False for n in values]
+    )
+
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = "tab10"
-        categories = list(set(values))
+        categories = list(set(values[~nan_idx]))
         categories.sort()
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
-        values = np.array([valuemap[k] for k in values])
+        values = np.array([valuemap[k] for k in values[~nan_idx]])
 
     if scheme is not None:
         if classification_kwds is None:
@@ -531,15 +536,21 @@ def plot_dataframe(
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
-        binning = _mapclassify_choro(values, scheme, **classification_kwds)
+        binning = _mapclassify_choro(
+            values[~np.isnan(values)], scheme, **classification_kwds
+        )
         # set categorical to True for creating the legend
         categorical = True
-        binedges = [values.min()] + binning.bins.tolist()
+        binedges = [values[~np.isnan(values)].min()] + binning.bins.tolist()
         categories = [
             "{0:.2f} - {1:.2f}".format(binedges[i], binedges[i + 1])
             for i in range(len(binedges) - 1)
         ]
         values = np.array(binning.yb)
+
+    if categorical:
+        for n in np.where(nan_idx)[0]:
+            values = np.insert(values, n, values[0])
 
     mn = values[~np.isnan(values)].min() if vmin is None else vmin
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
@@ -552,24 +563,36 @@ def plot_dataframe(
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = df.geometry[poly_idx]
+    polys = df.geometry[poly_idx * np.invert(nan_idx)]
     if not polys.empty:
         plot_polygon_collection(
-            ax, polys, values[poly_idx], vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            values[poly_idx * np.invert(nan_idx)],
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            **style_kwds
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = df.geometry[line_idx]
+    lines = df.geometry[line_idx * np.invert(nan_idx)]
     if not lines.empty:
         plot_linestring_collection(
-            ax, lines, values[line_idx], vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            lines,
+            values[line_idx * np.invert(nan_idx)],
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            **style_kwds
         )
 
     # plot all Points in the same collection
-    points = df.geometry[point_idx]
+    points = df.geometry[point_idx * np.invert(nan_idx)]
     if not points.empty:
         if isinstance(markersize, np.ndarray):
-            markersize = markersize[point_idx]
+            markersize = markersize[point_idx * np.invert(nan_idx)]
         plot_point_collection(
             ax,
             points,
@@ -580,6 +603,9 @@ def plot_dataframe(
             cmap=cmap,
             **style_kwds
         )
+
+    if missing_kwds is not None:
+        plot_series(df.geometry[nan_idx], ax=ax, **missing_kwds)
 
     if legend and not color:
 
@@ -609,7 +635,26 @@ def plot_dataframe(
                         markeredgewidth=0,
                     )
                 )
-
+            if missing_kwds is not None:
+                if "color" in missing_kwds:
+                    missing_kwds["facecolor"] = missing_kwds["color"]
+                patches.append(
+                    Line2D(
+                        [0],
+                        [0],
+                        linestyle="none",
+                        marker="o",
+                        alpha=missing_kwds.get("alpha", 1),
+                        markersize=10,
+                        markerfacecolor=missing_kwds.get("facecolor", None),
+                        markeredgecolor=missing_kwds.get("edgecolor", None),
+                        markeredgewidth=missing_kwds.get(
+                            "linewidth",
+                            1 if missing_kwds.get("edgecolor", False) else 0,
+                        ),
+                    )
+                )
+                categories.append(missing_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
             ax.legend(patches, categories, **legend_kwds)
