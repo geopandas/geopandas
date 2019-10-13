@@ -90,10 +90,26 @@ def sjoin(
     # and store references to the original indices, to be reaffixed later.
     # GH 352
     left_df = left_df.copy(deep=True)
-    left_df.index = left_df.index.rename(index_left)
+    try:
+        left_df_orig_index = left_df.index.name
+        left_df.index = left_df.index.rename(index_left)
+    except TypeError:
+        index_left = [
+            "index_%s" % lsuffix + str(l) for l, ix in enumerate(left_df.index.names)
+        ]
+        left_df_orig_index = left_df.index.names
+        left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
     right_df = right_df.copy(deep=True)
-    right_df.index = right_df.index.rename(index_right)
+    try:
+        right_df_orig_index = right_df.index.name
+        right_df.index = right_df.index.rename(index_right)
+    except TypeError:
+        index_right = [
+            "index_%s" % rsuffix + str(l) for l, ix in enumerate(right_df.index.names)
+        ]
+        right_df_orig_index = right_df.index.names
+        right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
     if op == "within":
@@ -178,7 +194,10 @@ def sjoin(
             suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
         )
         joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
-        joined.index.name = None
+        if isinstance(index_left, list):
+            joined.index.names = left_df_orig_index
+        else:
+            joined.index.name = left_df_orig_index
     elif how == "left":
         result = result.set_index("_key_left")
         joined = left_df.merge(
@@ -191,7 +210,10 @@ def sjoin(
             suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
         )
         joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
-        joined.index.name = None
+        if isinstance(index_left, list):
+            joined.index.names = left_df_orig_index
+        else:
+            joined.index.name = left_df_orig_index
     else:  # how == 'right':
         joined = (
             left_df.drop(left_df.geometry.name, axis=1)
@@ -206,5 +228,9 @@ def sjoin(
             .set_index(index_right)
         )
         joined = joined.drop(["_key_left", "_key_right"], axis=1)
+        if isinstance(index_right, list):
+            joined.index.names = right_df_orig_index
+        else:
+            joined.index.name = right_df_orig_index
 
     return joined
