@@ -41,21 +41,27 @@ def dfs(request):
         df1.index = ["a", "b", "c"]
         df2.index = ["d", "e", "f"]
 
-    df1.index.name = "index_left"
-    df2.index.name = "index_right"
+    if request.param == "named-index":
+        df1.index.name = "df1_ix"
+        df2.index.name = "df2_ix"
 
     # construction expected frames
     expected = {}
 
-    part1 = df1.copy().reset_index()
-    part2 = df2.copy().iloc[[0, 1, 1, 2]].reset_index()
+    part1 = df1.copy().reset_index().rename(columns={"index": "index_left"})
+    part2 = (
+        df2.copy()
+        .iloc[[0, 1, 1, 2]]
+        .reset_index()
+        .rename(columns={"index": "index_right"})
+    )
     part1["_merge"] = [0, 1, 2]
     part2["_merge"] = [0, 0, 1, 3]
     exp = pd.merge(part1, part2, on="_merge", how="outer")
     expected["intersects"] = exp.drop("_merge", axis=1).copy()
 
-    part1 = df1.copy().reset_index()
-    part2 = df2.copy().reset_index()
+    part1 = df1.copy().reset_index().rename(columns={"index": "index_left"})
+    part2 = df2.copy().reset_index().rename(columns={"index": "index_right"})
     part1["_merge"] = [0, 1, 2]
     part2["_merge"] = [0, 3, 3]
     exp = pd.merge(part1, part2, on="_merge", how="outer")
@@ -78,7 +84,9 @@ class TestSpatialJoin:
         with pytest.warns(UserWarning):
             sjoin(df1, df2)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize(
+        "dfs", ["default-index", "string-index", "named-index"], indirect=True
+    )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_inner(self, op, dfs):
         index, df1, df2, expected = dfs
@@ -92,27 +100,40 @@ class TestSpatialJoin:
             exp[["index_left", "index_right"]] = exp[
                 ["index_left", "index_right"]
             ].astype("int64")
-        exp = exp.set_index("index_left")
-        exp.index.name = df1.index.name
+        if index == "named-index":
+            exp[["df1_ix", "df2_ix"]] = exp[["df1_ix", "df2_ix"]].astype("int64")
+            exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
+        if index in ["default-index", "string-index"]:
+            exp = exp.set_index("index_left")
+            exp.index.name = None
 
         assert_frame_equal(res, exp)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize(
+        "dfs", ["default-index", "string-index", "named-index"], indirect=True
+    )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_left(self, op, dfs):
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how="left", op=op)
 
-        exp = expected[op].dropna(subset=["index_left"]).copy()
+        if index in ["default-index", "string-index"]:
+            exp = expected[op].dropna(subset=["index_left"]).copy()
+        elif index == "named-index":
+            exp = expected[op].dropna(subset=["df1_ix"]).copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
         exp["df1"] = exp["df1"].astype("int64")
         if index == "default-index":
             exp["index_left"] = exp["index_left"].astype("int64")
             # TODO: in result the dtype is object
             res["index_right"] = res["index_right"].astype(float)
-        exp = exp.set_index("index_left")
-        exp.index.name = df1.index.name
+        elif index == "named-index":
+            exp[["df1_ix"]] = exp[["df1_ix"]].astype("int64")
+            exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
+        if index in ["default-index", "string-index"]:
+            exp = exp.set_index("index_left")
+            exp.index.name = None
 
         assert_frame_equal(res, exp)
 
@@ -145,22 +166,31 @@ class TestSpatialJoin:
         with pytest.raises(ValueError, match="'right_df' should be GeoDataFrame"):
             sjoin(df1, df2.geometry)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize(
+        "dfs", ["default-index", "string-index", "named-index"], indirect=True
+    )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_right(self, op, dfs):
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how="right", op=op)
 
-        exp = expected[op].dropna(subset=["index_right"]).copy()
+        if index in ["default-index", "string-index"]:
+            exp = expected[op].dropna(subset=["index_right"]).copy()
+        elif index == "named-index":
+            exp = expected[op].dropna(subset=["df2_ix"]).copy()
         exp = exp.drop("geometry_x", axis=1).rename(columns={"geometry_y": "geometry"})
         exp["df2"] = exp["df2"].astype("int64")
         if index == "default-index":
             exp["index_right"] = exp["index_right"].astype("int64")
             res["index_left"] = res["index_left"].astype(float)
-        exp = exp.set_index("index_right")
-        exp = exp.reindex(columns=res.columns)
-        exp.index.name = df2.index.name
+        elif index == "named-index":
+            exp[["df2_ix"]] = exp[["df2_ix"]].astype("int64")
+            exp = exp.set_index("df2_ix").rename(columns={"df1_ix": "index_left"})
+        if index in ["default-index", "string-index"]:
+            exp = exp.set_index("index_right")
+            exp = exp.reindex(columns=res.columns)
+            exp.index.name = None
 
         assert_frame_equal(res, exp, check_index_type=False)
 
