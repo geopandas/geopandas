@@ -272,6 +272,47 @@ def test_read_file_filtered(df_nybb):
     assert filtered_df_shape == (2, 5)
 
 
+def test_read_file_filtered__row_filter(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    filtered_df = read_file(nybb_filename, row_filter=slice(None, 1))
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (1, 5)
+
+
+def test_read_file_filtered__row_filter_bbox(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    bbox = (
+        1031051.7879884212,
+        224272.49231459625,
+        1047224.3104931959,
+        244317.30894023244,
+    )
+    filtered_df = read_file(nybb_filename, bbox=bbox, row_filter=slice(-1, None))
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (1, 5)
+
+
+def test_read_file_filtered__row_filter_bbox__polygon(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    bbox = box(
+        1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
+    )
+    filtered_df = read_file(nybb_filename, bbox=bbox, row_filter=slice(-1, None))
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (1, 5)
+
+
+def read_file_filtered_row_filter_invalid():
+    with pytest.raises(TypeError):
+        read_file(geopandas.datasets.get_path("nybb"), row_filter="not_a_slice")
+
+
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
@@ -287,6 +328,28 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb):
         crs=CRS,
     )
     filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_filtered_with_gdf_boundary__mask(df_nybb):
+    gdf_mask = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_cities"),
+        mask=gdf_mask[gdf_mask.continent == "Africa"],
+    )
+    filtered_df_shape = gdf.shape
+    assert filtered_df_shape == (50, 2)
+
+
+def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = box(
+        1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
+    )
+    filtered_df = read_file(nybb_filename, mask=mask)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
@@ -308,6 +371,27 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb):
     )
     bbox.to_crs(epsg=4326, inplace=True)
     filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = geopandas.GeoDataFrame(
+        geometry=[
+            box(
+                1031051.7879884212,
+                224272.49231459625,
+                1047224.3104931959,
+                244317.30894023244,
+            )
+        ],
+        crs=CRS,
+    )
+    mask.to_crs(epsg=4326, inplace=True)
+    filtered_df = read_file(nybb_filename, mask=mask.geometry)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)

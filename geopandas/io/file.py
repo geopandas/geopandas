@@ -1,20 +1,22 @@
 from distutils.version import LooseVersion
+from urllib.parse import urlparse as parse_url
+from urllib.parse import uses_netloc, uses_params, uses_relative
+
+# Adapted from pandas.io.common
+from urllib.request import urlopen as _urlopen
 
 import numpy as np
-import pandas as pd
 
 import fiona
-
+import pandas as pd
 from geopandas import GeoDataFrame, GeoSeries
+from shapely.geometry import mapping
+from shapely.geometry.base import BaseGeometry
 
 try:
     from fiona import Env as fiona_env
 except ImportError:
     from fiona import drivers as fiona_env
-# Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
-from urllib.parse import urlparse as parse_url
-from urllib.parse import uses_relative, uses_netloc, uses_params
 
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
@@ -30,18 +32,27 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, **kwargs):
+def read_file(filename, bbox=None, mask=None, row_filter=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
+
+    .. versionadded:: 0.7.0 mask, row_filter
 
     Parameters
     ----------
     filename: str
         Either the absolute or relative path to the file or URL to
         be opened.
-    bbox : tuple | GeoDataFrame or GeoSeries, default None
-        Filter features by given bounding box, GeoSeries, or GeoDataFrame.
-        CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
+    bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
+        Filter features by given bounding box, GeoSeries, GeoDataFrame or a
+        shapely geometry. CRS mis-matches are resolved if given a GeoSeries
+        or GeoDataFrame. Cannot be used with mask.
+    mask: dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
+        Filter features by given dict-like geojson geometry, GeoSeries,
+        GeoDataFrame or a shapely geometry. CRS mis-matches are resolved
+        if given a GeoSeries or GeoDataFrame. Cannot be used with bbox.
+    row_filter: slice, default None
+        Load in specific rows by passing in a slice() object.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -54,7 +65,7 @@ def read_file(filename, bbox=None, **kwargs):
 
     Returns
     -------
-    geodataframe : GeoDataFrame
+    :obj:`geopandas.GeoDataFrame`
 
     Notes
     -----
@@ -82,11 +93,31 @@ def read_file(filename, bbox=None, **kwargs):
                 else features.crs_wkt
             )
 
+            # handle loading the bounding box
             if bbox is not None:
-                if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
+                if isinstance(bbox, (GeoDataFrame, GeoSeries)):
                     bbox = tuple(bbox.to_crs(crs).total_bounds)
+                elif isinstance(bbox, BaseGeometry):
+                    bbox = bbox.bounds
                 assert len(bbox) == 4
-                f_filt = features.filter(bbox=bbox)
+            # handle loading the mask
+            elif isinstance(mask, (GeoDataFrame, GeoSeries)):
+                mask = mapping(mask.to_crs(crs).unary_union)
+            elif isinstance(mask, BaseGeometry):
+                mask = mapping(mask)
+            # setup the data loading filter
+            if row_filter is not None:
+                if not isinstance(row_filter, slice):
+                    raise TypeError("'row_filter' must be a slice.")
+                f_filt = features.filter(
+                    row_filter.start,
+                    row_filter.stop,
+                    row_filter.step,
+                    bbox=bbox,
+                    mask=mask,
+                )
+            elif any((bbox, mask)):
+                f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
 
