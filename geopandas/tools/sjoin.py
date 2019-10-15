@@ -199,7 +199,6 @@ def sjoin(
             .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
-        joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
         if isinstance(index_left, list):
             joined.index.names = left_index_name
         else:
@@ -219,7 +218,6 @@ def sjoin(
             .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
-        joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
         if isinstance(index_left, list):
             joined.index.names = left_index_name
         else:
@@ -239,7 +237,6 @@ def sjoin(
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
         )
-        joined = joined.drop(["_key_left", "_key_right"], axis=1)
         if isinstance(index_right, list):
             joined.index.names = right_index_name
         else:
