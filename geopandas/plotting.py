@@ -516,9 +516,6 @@ def plot_dataframe(
     if values.dtype is np.dtype("O"):
         categorical = True
 
-    if len(set(values[~np.isnan(values)])) == 1:
-        categorical = True
-
     # Define `values` as a Series
     if categorical:
         if cmap is None:
@@ -597,6 +594,9 @@ def plot_dataframe(
         if not norm:
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+        if len(set(values[~np.isnan(values)])) == 1:
+            categorical = True
+            categories = list(set(values[~np.isnan(values)]))
         if categorical:
             patches = []
             for value, cat in enumerate(categories):

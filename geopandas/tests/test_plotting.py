@@ -196,9 +196,6 @@ class TestPointPlotting:
         # specifying values with single value (GH1162)
         self.df["one"] = 1
         ax = self.df.plot(column="one", legend=True)
-        _check_colors(
-            self.N, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * self.N
-        )
         point_colors = ax.collections[0].get_facecolors()
         legend_colors = ax.get_legend().axes.collections[0].get_facecolors()
         np.testing.assert_array_equal(point_colors, legend_colors)
