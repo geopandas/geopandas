@@ -36,6 +36,7 @@ def dfs(request):
 
     df1 = GeoDataFrame({"geometry": polys1, "df1": [0, 1, 2]})
     df2 = GeoDataFrame({"geometry": polys2, "df2": [3, 4, 5]})
+
     if request.param == "string-index":
         df1.index = ["a", "b", "c"]
         df2.index = ["d", "e", "f"]
@@ -93,6 +94,7 @@ class TestSpatialJoin:
         "dfs",
         ["default-index", "string-index", "named-index", "multi-index"],
         indirect=True,
+
     )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_inner(self, op, dfs):
@@ -144,7 +146,7 @@ class TestSpatialJoin:
             exp["index_left"] = exp["index_left"].astype("int64")
             # TODO: in result the dtype is object
             res["index_right"] = res["index_right"].astype(float)
-        if index == "named-index":
+        elif index == "named-index":
             exp[["df1_ix"]] = exp[["df1_ix"]].astype("int64")
             exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
         if index in ["default-index", "string-index"]:
@@ -209,7 +211,7 @@ class TestSpatialJoin:
         if index == "default-index":
             exp["index_right"] = exp["index_right"].astype("int64")
             res["index_left"] = res["index_left"].astype(float)
-        if index == "named-index":
+        elif index == "named-index":
             exp[["df2_ix"]] = exp[["df2_ix"]].astype("int64")
             exp = exp.set_index("df2_ix").rename(columns={"df1_ix": "index_left"})
         if index in ["default-index", "string-index"]:
@@ -304,9 +306,18 @@ class TestSpatialJoinNYBB:
         # original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = "pointid"
-        sjoin(pointdf2, self.polydf, how=how)
+        polydf = self.polydf.copy()
+        polydf.index.name = "polyid"
+
+        res = sjoin(pointdf2, polydf, how=how)
         assert pointdf2.index.name == "pointid"
-        assert self.polydf.index.name is None
+        assert polydf.index.name == "polyid"
+
+        # original index name should pass through to result
+        if how == "right":
+            assert res.index.name == "polyid"
+        else:  # how == "left", how == "inner"
+            assert res.index.name == "pointid"
 
     def test_sjoin_values(self):
         # GH190
