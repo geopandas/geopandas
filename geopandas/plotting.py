@@ -516,6 +516,9 @@ def plot_dataframe(
     if values.dtype is np.dtype("O"):
         categorical = True
 
+    if len(set(values[~np.isnan(values)])) == 1:
+        categorical = True
+        
     # Define `values` as a Series
     if categorical:
         if cmap is None:
