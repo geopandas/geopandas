@@ -100,7 +100,7 @@ def sjoin(
         left_index_name = left_df.index.names
         left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
-    
+
     right_df = right_df.copy(deep=True)
     try:
         right_index_name = right_df.index.name
@@ -244,6 +244,5 @@ def sjoin(
             joined.index.names = right_index_name
         else:
             joined.index.name = right_index_name
-
 
     return joined

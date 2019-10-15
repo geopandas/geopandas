@@ -94,7 +94,6 @@ class TestSpatialJoin:
         "dfs",
         ["default-index", "string-index", "named-index", "multi-index"],
         indirect=True,
-
     )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_inner(self, op, dfs):
