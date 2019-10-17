@@ -46,9 +46,13 @@ doc/_build/
 .spyproject
 .idea
 .ropeproject
+.vscode
 
 *.py~
 .DS_Store
+
+# pytest
+.pytest_cache
 
 examples/nybb_*.zip
 
