@@ -231,6 +231,23 @@ class TestPointPlotting:
         # colors are repeated for all components within a MultiPolygon
         _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
+    def test_categorical_list(self):
+        self.df['cats'] = ['cat1', 'cat2'] * 5
+        self.df['singlecat'] = ['cat2'] * 10
+        ax1 = self.df.plot('cats', legend=True)
+        ax2 = self.df.plot('singlecat', categories=['cat1', 'cat2'], legend=True)
+        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors2 = ax2.collections[0].get_facecolors()
+        np.testing.assert_array_equal(point_colors1[1], point_colors2[0])
+        legend1 = ax1.get_legend().axes.collections[0].get_facecolors()
+        legend2 = ax1.get_legend().axes.collections[0].get_facecolors()
+        np.testing.assert_array_equal(legend1, legend2)
+
+        with pytest.raises(ValueError):
+            self.df.plot(
+                column="cats", categories='non_list'
+            )
+
 
 class TestPointZPlotting:
     def setup_method(self):

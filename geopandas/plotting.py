@@ -376,6 +376,7 @@ def plot_dataframe(
     figsize=None,
     legend_kwds=None,
     classification_kwds=None,
+    categories=None,
     **style_kwds
 ):
     """
@@ -439,6 +440,8 @@ def plot_dataframe(
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() or
         matplotlib.pyplot.colorbar().
+    categories : list-like
+        Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
 
@@ -520,10 +523,22 @@ def plot_dataframe(
     if categorical:
         if cmap is None:
             cmap = "tab10"
-        categories = list(set(values))
-        categories.sort()
+
+        if categories is None:
+            categories = list(set(values))
+            categories.sort()
+        else:
+            if not pd.api.types.is_list_like(categories):
+                raise ValueError(
+                    "Categories must be a list-like object. Objects that are "
+                    "considered list-like are for example Python lists, tuples, sets, "
+                    "NumPy arrays, and Pandas Series."
+                )
+
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
         values = np.array([valuemap[k] for k in values])
+        vmin = 0 if vmin is None else vmin
+        vmax = max(valuemap.values()) if vmax is None else vmax
 
     if scheme is not None:
         if classification_kwds is None:
