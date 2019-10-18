@@ -37,9 +37,15 @@ coverage.xml
 
 # Sphinx documentation
 doc/_build/
+.buildinfo
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# pytest
+.pytest_cache
+
+.mypy_cache
 
 # projects
 .spyderproject
@@ -50,9 +56,6 @@ doc/_build/
 
 *.py~
 .DS_Store
-
-# pytest
-.pytest_cache
 
 examples/nybb_*.zip
 
