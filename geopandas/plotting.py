@@ -596,7 +596,7 @@ def plot_dataframe(
         plot_point_collection(
             ax,
             points,
-            values[point_idx],
+            values[point_idx * np.invert(nan_idx)],
             vmin=mn,
             vmax=mx,
             markersize=markersize,
