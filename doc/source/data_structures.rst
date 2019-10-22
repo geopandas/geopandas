@@ -55,27 +55,27 @@ in :doc:`geometric manipulations <geometric_manipulations>`.
 
 Attributes
 ^^^^^^^^^^^^^^^
-* :attr:`~geopandas.GeoSeries.area`: shape area (units of projection -- see :doc:`projections <projections>`)
-* :attr:`~geopandas.GeoSeries.bounds`: tuple of max and min coordinates on each axis for each shape
-* :attr:`~geopandas.GeoSeries.total_bounds`: tuple of max and min coordinates on each axis for entire GeoSeries
-* :attr:`~geopandas.GeoSeries.geom_type`: type of geometry.
-* :attr:`~geopandas.GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape (`according to this <http://www.opengeospatial.org/standards/sfa>`_).
+* :attr:`~GeoSeries.area`: shape area (units of projection -- see :doc:`projections <projections>`)
+* :attr:`~GeoSeries.bounds`: tuple of max and min coordinates on each axis for each shape
+* :attr:`~GeoSeries.total_bounds`: tuple of max and min coordinates on each axis for entire GeoSeries
+* :attr:`~GeoSeries.geom_type`: type of geometry.
+* :attr:`~GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape (`according to this <http://www.opengeospatial.org/standards/sfa>`_).
 
 Basic Methods
 ^^^^^^^^^^^^^^
 
-* :meth:`~geopandas.GeoSeries.distance`: returns ``Series`` with minimum distance from each entry to ``other``
-* :attr:`~geopandas.GeoSeries.centroid`: returns :class:`GeoSeries` of centroids
-* :meth:`~geopandas.GeoSeries.representative_point`:  returns :class:`GeoSeries` of points that are guaranteed to be within each geometry. It does **NOT** return centroids.
-* :meth:`~geopandas.GeoSeries.to_crs`: change coordinate reference system. See :doc:`projections <projections>`
-* :meth:`~geopandas.GeoSeries.plot`: plot :class:`GeoSeries`. See :doc:`mapping <mapping>`.
+* :meth:`~GeoSeries.distance`: returns ``Series`` with minimum distance from each entry to ``other``
+* :attr:`~GeoSeries.centroid`: returns :class:`GeoSeries` of centroids
+* :meth:`~GeoSeries.representative_point`:  returns :class:`GeoSeries` of points that are guaranteed to be within each geometry. It does **NOT** return centroids.
+* :meth:`~GeoSeries.to_crs`: change coordinate reference system. See :doc:`projections <projections>`
+* :meth:`~GeoSeries.plot`: plot :class:`GeoSeries`. See :doc:`mapping <mapping>`.
 
 Relationship Tests
 ^^^^^^^^^^^^^^^^^^^
 
-* :meth:`~geopandas.GeoSeries.geom_almost_equals`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
-* :meth:`~geopandas.GeoSeries.contains`: is shape contained within ``other``
-* :meth:`~geopandas.GeoSeries.intersects`: does shape intersect ``other``
+* :meth:`~GeoSeries.geom_almost_equals`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
+* :meth:`~GeoSeries.contains`: is shape contained within ``other``
+* :meth:`~GeoSeries.intersects`: does shape intersect ``other``
 
 
 GeoDataFrame
@@ -85,7 +85,7 @@ A :class:`GeoDataFrame` is a tabular data structure that contains a :class:`GeoS
 
 The most important property of a :class:`GeoDataFrame` is that it always has one :class:`GeoSeries` column that holds a special status. This :class:`GeoSeries` is referred to as the :class:`GeoDataFrame`'s "geometry". When a spatial method is applied to a :class:`GeoDataFrame` (or a spatial attribute like ``area`` is called), this commands will always act on the "geometry" column.
 
-The "geometry" column -- no matter its name -- can be accessed through the :attr:`GeoDataFrame.geometry` attribute (``gdf.geometry``), and the name of the ``geometry`` column can be found by typing ``gdf.geometry.name``.
+The "geometry" column -- no matter its name -- can be accessed through the :attr:`~GeoDataFrame.geometry` attribute (``gdf.geometry``), and the name of the ``geometry`` column can be found by typing ``gdf.geometry.name``.
 
 A :class:`GeoDataFrame` may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the :meth:`GeoDataFrame.set_geometry` method.
 
@@ -129,7 +129,7 @@ Now, we create centroids and make it the geometry:
 
     gdf = gdf.rename(columns={'old_name': 'new_name'}).set_geometry('new_name')
 
-**Note 2:** Somewhat confusingly, by default when you use the ``read_file`` command, the column containing spatial objects from the file is named "geometry" by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different :class:`GeoSeries` with the :meth:`GeoDataFrame.set_geometry` command. Further, ``gdf.geometry`` will always return the active geometry column, *not* the column named ``geometry``. If you wish to call a column named "geometry", and a different column is the active geometry column, use ``gdf['geometry']``, not ``gdf.geometry``.
+**Note 2:** Somewhat confusingly, by default when you use the ``read_file`` command, the column containing spatial objects from the file is named "geometry" by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different :class:`GeoSeries` with the :meth:`~GeoDataFrame.set_geometry` command. Further, ``gdf.geometry`` will always return the active geometry column, *not* the column named ``geometry``. If you wish to call a column named "geometry", and a different column is the active geometry column, use ``gdf['geometry']``, not ``gdf.geometry``.
 
 Attributes and Methods
 ~~~~~~~~~~~~~~~~~~~~~~
