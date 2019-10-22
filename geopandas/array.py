@@ -514,20 +514,21 @@ class GeometryArray(ExtensionArray):
 
     @property
     def is_ring(self):
-        # operates on the exterior, so can't use _unary_op()
-        # XXX needed to change this because there is now a geometry collection
-        # in the shapely ones that was something else before?
-        return np.array(
-            [
-                geom.exterior.is_ring
-                if geom is not None
-                and hasattr(geom, "exterior")
-                and geom.exterior is not None
-                else False
-                for geom in self
-            ],
-            dtype=bool,
-        )
+        return pygeos.is_ring(pygeos.get_exterior_ring(self.data))
+        # # operates on the exterior, so can't use _unary_op()
+        # # XXX needed to change this because there is now a geometry collection
+        # # in the shapely ones that was something else before?
+        # return np.array(
+        #     [
+        #         geom.exterior.is_ring
+        #         if geom is not None
+        #         and hasattr(geom, "exterior")
+        #         and geom.exterior is not None
+        #         else False
+        #         for geom in self
+        #     ],
+        #     dtype=bool,
+        # )
 
     @property
     def is_closed(self):
@@ -707,51 +708,66 @@ class GeometryArray(ExtensionArray):
         # return _binary_op_float("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
-        data = data = np.empty(len(self), dtype=object)
-        if isinstance(distance, np.ndarray):
-            if len(distance) != len(self):
-                raise ValueError(
-                    "Length of distance sequence does not match "
-                    "length of the GeoSeries"
-                )
+        return GeometryArray(
+            pygeos.buffer(self.data, distance, quadsegs=resolution, **kwargs)
+        )
+        # data = data = np.empty(len(self), dtype=object)
+        # if isinstance(distance, np.ndarray):
+        #     if len(distance) != len(self):
+        #         raise ValueError(
+        #             "Length of distance sequence does not match "
+        #             "length of the GeoSeries"
+        #         )
 
-            data[:] = [
-                geom.buffer(dist, resolution, **kwargs) if geom is not None else None
-                for geom, dist in zip(self, distance)
-            ]
-            return from_shapely(data)
+        #     data[:] = [
+        #         geom.buffer(dist, resolution, **kwargs) if geom is not None else None
+        #         for geom, dist in zip(self, distance)
+        #     ]
+        #     return from_shapely(data)
 
-        data[:] = [
-            geom.buffer(distance, resolution, **kwargs) if geom is not None else None
-            for geom in self
-        ]
-        return from_shapely(data)
+        # data[:] = [
+        #     geom.buffer(distance, resolution, **kwargs) if geom is not None else None
+        #     for geom in self
+        # ]
+        # return from_shapely(data)
 
     def interpolate(self, distance, normalized=False):
-        data = data = np.empty(len(self), dtype=object)
-        if isinstance(distance, np.ndarray):
-            if len(distance) != len(self):
-                raise ValueError(
-                    "Length of distance sequence does not match "
-                    "length of the GeoSeries"
-                )
-            data[:] = [
-                geom.interpolate(dist, normalized=normalized)
-                for geom, dist in zip(self, distance)
-            ]
-            return from_shapely(data)
+        return GeometryArray(
+            pygeos.line_interpolate_point(self.data, distance, normalize=normalized)
+        )
+        # data = data = np.empty(len(self), dtype=object)
+        # if isinstance(distance, np.ndarray):
+        #     if len(distance) != len(self):
+        #         raise ValueError(
+        #             "Length of distance sequence does not match "
+        #             "length of the GeoSeries"
+        #         )
+        #     data[:] = [
+        #         geom.interpolate(dist, normalized=normalized)
+        #         for geom, dist in zip(self, distance)
+        #     ]
+        #     return from_shapely(data)
 
-        data[:] = [geom.interpolate(distance, normalized=normalized) for geom in self]
-        return from_shapely(data)
+        # data[:] = [geom.interpolate(distance, normalized=normalized) for geom in self]
+        # return from_shapely(data)
 
-    def simplify(self, *args, **kwargs):
-        # method and not a property -> can't use _unary_geo
-        data = np.empty(len(self), dtype=object)
-        data[:] = [geom.simplify(*args, **kwargs) for geom in self]
-        return from_shapely(data)
+    def simplify(self, tolerance, preserve_topology=True):
+        # preserve_topology has different default as pygeos!
+        return GeometryArray(
+            pygeos.simplify(self.data, tolerance, preserve_topology=preserve_topology)
+        )
+        # # method and not a property -> can't use _unary_geo
+        # data = np.empty(len(self), dtype=object)
+        # data[:] = [geom.simplify(*args, **kwargs) for geom in self]
+        # return from_shapely(data)
 
     def project(self, other, normalized=False):
-        return _binary_op("project", self, other, normalized=normalized)
+        if isinstance(other, BaseGeometry):
+            other = _shapely_to_pygeos(other)
+        elif isinstance(other, GeometryArray):
+            other = other.data
+        return pygeos.line_locate_point(self.data, other, normalize=normalized)
+        # return _binary_op("project", self, other, normalized=normalized)
 
     def relate(self, other):
         return _binary_op("relate", self, other)
@@ -794,7 +810,8 @@ class GeometryArray(ExtensionArray):
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return _unary_op("x", self, null_value=np.nan)
+            return pygeos.get_x(self.data)
+            # return _unary_op("x", self, null_value=np.nan)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -803,7 +820,8 @@ class GeometryArray(ExtensionArray):
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return _unary_op("y", self, null_value=np.nan)
+            return pygeos.get_y(self.data)
+            # return _unary_op("y", self, null_value=np.nan)
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
