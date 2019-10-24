@@ -25,6 +25,7 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - pyarrow
   - pip:
     - geopy
     - codecov

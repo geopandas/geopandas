@@ -29,7 +29,7 @@ def test_decode_crs():
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
 def test_to_parquet(test_dataset, tmpdir):
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
     orig = df.copy()
 
@@ -44,7 +44,7 @@ def test_to_parquet(test_dataset, tmpdir):
 @pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
 def test_to_parquet_compression(compression, tmpdir):
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
 
     df.to_parquet(filename, compression=compression)
@@ -59,7 +59,7 @@ def test_to_parquet_compression(compression, tmpdir):
 
 def test_to_parquet_multiple_geom_cols(tmpdir):
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
 
     df["geom2"] = df.geometry.copy()
@@ -73,7 +73,7 @@ def test_to_parquet_multiple_geom_cols(tmpdir):
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
 def test_from_parquet(test_dataset, tmpdir):
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
 
     df.to_parquet(filename)
@@ -85,7 +85,7 @@ def test_from_parquet(test_dataset, tmpdir):
 
 def test_from_parquet_multiple_geom_cols(tmpdir):
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
 
     df["geom2"] = df.geometry.copy()
@@ -106,7 +106,7 @@ def test_from_parquet_columns(tmpdir):
     columns"""
 
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
     df.to_parquet(filename)
 
@@ -120,7 +120,7 @@ def test_from_parquet_columns_promote_secondary_geometry(tmpdir):
     column should promote the first geometry column present"""
 
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
     df["geom2"] = df.geometry.copy()
     df.to_parquet(filename)
@@ -137,7 +137,7 @@ def test_from_parquet_columns_no_geometry(tmpdir):
     should raise a warning"""
 
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
     df.to_parquet(filename)
 
@@ -147,7 +147,7 @@ def test_from_parquet_columns_no_geometry(tmpdir):
 
 def test_parquet_text_crs(tmpdir):
     test_dataset = "naturalearth_lowres"
-    filename = os.path.join(tmpdir, "test.pq")
+    filename = os.path.join(str(tmpdir), "test.pq")
     df = read_file(get_path(test_dataset))
 
     # Construct a GeoDataFrame with a PROJ4 version of crs
