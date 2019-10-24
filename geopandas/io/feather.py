@@ -3,15 +3,19 @@ import os
 import warnings
 
 from pandas.io.feather_format import (
-    to_feather as _base_to_feather, 
-    read_feather as _base_read_feather)
+    to_feather as _base_to_feather,
+    read_feather as _base_read_feather,
+)
 from shapely.wkb import loads
 from geopandas import GeoDataFrame
 
 
+# TODO: CRS that is not dict or proj4, test w/ WKT
+
+
 def to_feather(df, path):
     df = df.copy()
-    
+
     geom_col = df._geometry_column_name
 
     # write the crs to an associated file

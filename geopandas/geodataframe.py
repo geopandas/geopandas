@@ -483,14 +483,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     ):
         from geopandas.io.parquet import to_parquet
 
-        to_parquet(
-            self,
-            filename,
-            engine=engine,
-            compression=compression,
-            index=index,
-            **kwargs
-        )
+        to_parquet(self, filename, compression=compression, index=index, **kwargs)
 
     def to_file(self, filename, driver="ESRI Shapefile", schema=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
