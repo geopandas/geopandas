@@ -113,7 +113,7 @@ class PyArrowImpl(PandasPyArrowImpl):
         metadata = table.schema.metadata
 
         try:
-            geo_metadata = json.loads(metadata.get(b"geo", ""))
+            geo_metadata = json.loads(metadata.get(b"geo", b"").decode("utf-8"))
 
         except (TypeError, json.decoder.JSONDecodeError):
             raise ValueError("Missing or malformed geo metadata in parquet file")
