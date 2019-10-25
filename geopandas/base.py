@@ -6,7 +6,7 @@ from pandas import DataFrame, MultiIndex, Series
 
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union
 
 import geopandas as gpd
 
@@ -258,13 +258,13 @@ class GeoPandasBase(object):
     @property
     def cascaded_union(self):
         """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(self.geometry.values)
+        return cascaded_union(np.asarray(self.geometry.values))
 
     @property
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``."""
-        return unary_union(self.geometry.values)
+        return self.geometry.values.unary_union()
 
     #
     # Binary operations that return a pandas Series
