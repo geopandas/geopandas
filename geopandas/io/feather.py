@@ -39,7 +39,8 @@ def read_feather(path):
             crs = crs["proj4"]
     else:
         warnings.warn(
-            "{} coordinate reference system file is missing. No crs will be set for this GeoDataFrame.".format(
+            """{} coordinate reference system file is missing;
+            no crs will be set for this GeoDataFrame.""".format(
                 crsfilename
             )
         )

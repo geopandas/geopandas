@@ -18,7 +18,10 @@ def _encode_crs(crs):
 
 
 def _decode_crs(crs):
-    return crs.get("proj4", crs)
+    if crs and "proj4" in crs:
+        return crs["proj4"]
+
+    return crs
 
 
 class PyArrowImpl(PandasPyArrowImpl):
@@ -42,7 +45,7 @@ class PyArrowImpl(PandasPyArrowImpl):
 
         self.validate_dataframe(df)
 
-        geometry_columns = df.dtypes.loc[df.dtypes == "geometry"].index.to_list()
+        geometry_columns = df.dtypes.loc[df.dtypes == "geometry"].index.tolist()
         geometry_column = df._geometry_column_name
         crs = _encode_crs(df.crs)
 
