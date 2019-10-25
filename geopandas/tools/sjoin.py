@@ -90,9 +90,11 @@ def sjoin(
     # and store references to the original indices, to be reaffixed later.
     # GH 352
     left_df = left_df.copy(deep=True)
+    left_index_name = left_df.index.name
     left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
     right_df = right_df.copy(deep=True)
+    right_index_name = right_df.index.name
     right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
@@ -171,27 +173,35 @@ def sjoin(
 
     if how == "inner":
         result = result.set_index("_key_left")
-        joined = left_df.merge(result, left_index=True, right_index=True).merge(
-            right_df.drop(right_df.geometry.name, axis=1),
-            left_on="_key_right",
-            right_index=True,
-            suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+        joined = (
+            left_df.merge(result, left_index=True, right_index=True)
+            .merge(
+                right_df.drop(right_df.geometry.name, axis=1),
+                left_on="_key_right",
+                right_index=True,
+                suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+            )
+            .set_index(index_left)
+            .drop(["_key_right"], axis=1)
         )
-        joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
-        joined.index.name = None
+        joined.index.name = left_index_name
+
     elif how == "left":
         result = result.set_index("_key_left")
-        joined = left_df.merge(
-            result, left_index=True, right_index=True, how="left"
-        ).merge(
-            right_df.drop(right_df.geometry.name, axis=1),
-            how="left",
-            left_on="_key_right",
-            right_index=True,
-            suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+        joined = (
+            left_df.merge(result, left_index=True, right_index=True, how="left")
+            .merge(
+                right_df.drop(right_df.geometry.name, axis=1),
+                how="left",
+                left_on="_key_right",
+                right_index=True,
+                suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+            )
+            .set_index(index_left)
+            .drop(["_key_right"], axis=1)
         )
-        joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
-        joined.index.name = None
+        joined.index.name = left_index_name
+
     else:  # how == 'right':
         joined = (
             left_df.drop(left_df.geometry.name, axis=1)
@@ -204,7 +214,8 @@ def sjoin(
                 how="right",
             )
             .set_index(index_right)
+            .drop(["_key_left", "_key_right"], axis=1)
         )
-        joined = joined.drop(["_key_left", "_key_right"], axis=1)
+        joined.index.name = right_index_name
 
     return joined
