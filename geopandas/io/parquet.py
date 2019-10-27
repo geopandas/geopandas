@@ -76,7 +76,7 @@ class PyArrowImpl(PandasPyArrowImpl):
                 "geo": json.dumps(
                     {
                         "crs": crs,
-                        "primary": geometry_column,
+                        "primary_column": geometry_column,
                         "columns": geometry_columns,
                         "schema_version": PARQUET_METADATA_VERSION,
                         "creator": {
@@ -127,7 +127,7 @@ class PyArrowImpl(PandasPyArrowImpl):
             raise ValueError("Missing or malformed geo metadata in parquet file")
 
         # Validate that required keys are present
-        required_keys = ("crs", "primary", "columns")
+        required_keys = ("crs", "primary_column", "columns")
         for key in required_keys:
             if key not in geo_metadata:
                 raise ValueError("Geo metadata missing required key: {}".format(key))
@@ -145,7 +145,7 @@ class PyArrowImpl(PandasPyArrowImpl):
         for col in geometry_columns:
             df[col] = from_wkb(df[col].values)
 
-        geometry_column = geo_metadata["primary"]
+        geometry_column = geo_metadata["primary_column"]
         if geometry_column not in geometry_columns:
             geometry_column = geometry_columns[0]
 
