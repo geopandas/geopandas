@@ -473,11 +473,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
-    def to_feather(self, filename):
-        from geopandas.io.feather import to_feather
-
-        to_feather(self, filename)
-
     def to_parquet(
         self, filename, engine="auto", compression="snappy", index=None, **kwargs
     ):

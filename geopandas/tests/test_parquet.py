@@ -191,7 +191,7 @@ def test_from_parquet_columns_promote_secondary_geometry(tmpdir):
 
 def test_from_parquet_columns_no_geometry(tmpdir):
     """Reading a parquet file that is missing all of the geometry columns
-    should raise a warning"""
+    should raise a ValueError"""
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset))
@@ -199,7 +199,7 @@ def test_from_parquet_columns_no_geometry(tmpdir):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
 
-    with pytest.warns(UserWarning):
+    with pytest.raises(ValueError):
         read_parquet(filename, columns=["name"])
 
 

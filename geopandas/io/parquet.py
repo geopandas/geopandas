@@ -1,13 +1,15 @@
 import json
-import warnings
 
 from pandas.io.common import get_filepath_or_buffer
 from pandas.io.parquet import PyArrowImpl as PandasPyArrowImpl
 from pandas import DataFrame
 
-from shapely.wkb import loads
+from geopandas.array import from_wkb, to_wkb
+from geopandas import GeoDataFrame
+import geopandas
 
-from geopandas import GeoDataFrame, GeoSeries
+
+PARQUET_METADATA_VERSION = "1.0.0"
 
 
 def _encode_crs(crs):
@@ -45,7 +47,7 @@ class PyArrowImpl(PandasPyArrowImpl):
 
         self.validate_dataframe(df)
 
-        geometry_columns = df.dtypes.loc[df.dtypes == "geometry"].index.tolist()
+        geometry_columns = df.columns[df.dtypes == "geometry"].tolist()
         geometry_column = df._geometry_column_name
         crs = _encode_crs(df.crs)
 
@@ -57,7 +59,7 @@ class PyArrowImpl(PandasPyArrowImpl):
 
         # Encode all geometry columns to WKB
         for col in geometry_columns:
-            df[col] = df[col].apply(lambda g: g.wkb)
+            df[col] = to_wkb(df[col].values)
 
         if index is None:
             from_pandas_kwargs = {}
@@ -76,6 +78,12 @@ class PyArrowImpl(PandasPyArrowImpl):
                         "crs": crs,
                         "primary": geometry_column,
                         "columns": geometry_columns,
+                        "schema_version": PARQUET_METADATA_VERSION,
+                        "creator": {
+                            "library": "pyarrow",
+                            "version": self.api.__version__,
+                            "geopandas_version": geopandas.__version__,
+                        },
                     }
                 ).encode("utf-8")
             }
@@ -128,18 +136,14 @@ class PyArrowImpl(PandasPyArrowImpl):
         geometry_columns = df.columns.intersection(geo_metadata["columns"])
 
         if columns and not len(geometry_columns):
-            warnings.warn(
+            raise ValueError(
                 """No geometry columns are included in the columns read from
                 the parquet file.  This will return a DataFrame instead of a
-                GeoDataFrame.""",
-                UserWarning,
-                stacklevel=2,
+                GeoDataFrame."""
             )
 
-            return df
-
         for col in geometry_columns:
-            df[col] = GeoSeries(df[col].apply(lambda wkb: loads(wkb)))
+            df[col] = from_wkb(df[col].values)
 
         geometry_column = geo_metadata["primary"]
         if geometry_column not in geometry_columns:
@@ -184,7 +188,8 @@ def read_parquet(path, columns=None, **kwargs):
     You can read a subset of columns in the file using the ``columns`` parameter.
     However, the structure of the returned GeoDataFrame will depend on which
     columns you read:
-    * if no geometry columns are read, this will return a DataFrame instead
+    * if no geometry columns are read, this will raise a ``ValueError`` - you
+      should use the pandas `read_parquet` method instead.
     * if the primary geometry column saved to this file is not read, the first
       available geometry column will be set as the geometry column of the
       returned GeoDataFrame.
@@ -210,7 +215,7 @@ def read_parquet(path, columns=None, **kwargs):
         the primary geometry column is not included, the first secondary
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
-        a warning will be raised and a DataFrame will be returned instead.
+        a ``ValueError`` will be raised.
     **kwargs
         Any additional kwargs are passed to the engine.
 
