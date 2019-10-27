@@ -36,15 +36,6 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
-- GeoPandas supports Python 2 (2.7+) and Python 3 (3.5+) with a single
-  code base. Use modern Python idioms when possible that are
-  compatible with both major versions, and use the
-  [six](https://pythonhosted.org/six) library where helpful to smooth
-  over the differences. Use `from __future__ import` statements where
-  appropriate. Test code locally in both Python 2 and Python 3 when
-  possible (all supported versions will be automatically tested on
-  Travis CI).
-
 - GeoPandas follows [the PEP 8
   standard](http://www.python.org/dev/peps/pep-0008/) and uses
   [Black](https://black.readthedocs.io/en/stable/) and

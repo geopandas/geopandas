@@ -34,15 +34,6 @@ In particular, when submitting a pull request:
   line of a docstring should be a standalone summary.  Parameters and
   return values should be documented explicitly.
 
-- GeoPandas supports python 2 (2.7+) and python 3 (3.5+) with a single
-  code base.  Use modern python idioms when possible that are
-  compatible with both major versions, and use the
-  `six <https://pythonhosted.org/six>`_ library where helpful to smooth
-  over the differences.  Use ``from __future__ import`` statements where
-  appropriate.  Test code locally in both python 2 and python 3 when
-  possible (all supported versions will be automatically tested on
-  Travis CI).
-
 - Follow PEP 8 when possible. We use `Black
   <https://black.readthedocs.io/en/stable/>`_ and `Flake8
   <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code

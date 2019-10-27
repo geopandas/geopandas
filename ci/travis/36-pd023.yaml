@@ -4,7 +4,6 @@ channels:
 dependencies:
   - python=3.6
   - pip
-  - six
   # required
   - pandas==0.23.4
   - nomkl
