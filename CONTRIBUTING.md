@@ -36,6 +36,9 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
+- GeoPandas supports Python 3.5+ only. The last version of GeoPandas
+  supporting Python 2 is 0.6.
+
 - GeoPandas follows [the PEP 8
   standard](http://www.python.org/dev/peps/pep-0008/) and uses
   [Black](https://black.readthedocs.io/en/stable/) and
