@@ -1,7 +1,6 @@
 from distutils.version import LooseVersion
 
 import numpy as np
-import six
 
 import fiona
 
@@ -11,20 +10,13 @@ try:
     from fiona import Env as fiona_env
 except ImportError:
     from fiona import drivers as fiona_env
-
+# Adapted from pandas.io.common
+from urllib.request import urlopen as _urlopen
+from urllib.parse import urlparse as parse_url
+from urllib.parse import uses_relative, uses_netloc, uses_params
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
 
-
-# Adapted from pandas.io.common
-if six.PY3:
-    from urllib.request import urlopen as _urlopen
-    from urllib.parse import urlparse as parse_url
-    from urllib.parse import uses_relative, uses_netloc, uses_params
-else:
-    from urllib2 import urlopen as _urlopen
-    from urlparse import urlparse as parse_url
-    from urlparse import uses_relative, uses_netloc, uses_params
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

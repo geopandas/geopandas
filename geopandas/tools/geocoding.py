@@ -3,7 +3,6 @@ import time
 
 import numpy as np
 import pandas as pd
-from six import iteritems, string_types
 
 from fiona.crs import from_epsg
 from shapely.geometry import Point
@@ -139,12 +138,12 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     if not isinstance(data, pd.Series):
         data = pd.Series(data)
 
-    if isinstance(provider, string_types):
+    if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)
 
     coder = provider(**kwargs)
     results = {}
-    for i, s in iteritems(data):
+    for i, s in data.items():
         try:
             if forward:
                 results[i] = coder.geocode(s)
@@ -170,7 +169,7 @@ def _prepare_geocode_result(results):
     d = defaultdict(list)
     index = []
 
-    for i, s in iteritems(results):
+    for i, s in results.items():
         address, loc = s
 
         # loc is lat, lon and we want lon, lat

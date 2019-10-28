@@ -3,7 +3,6 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from six import PY3, string_types
 
 from shapely.geometry import mapping, shape
 
@@ -545,7 +544,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
+        if isinstance(key, str) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()
@@ -728,9 +727,4 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 
 
-if PY3:
-    DataFrame.set_geometry = _dataframe_set_geometry
-else:
-    import types
-
-    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None, DataFrame)
+DataFrame.set_geometry = _dataframe_set_geometry

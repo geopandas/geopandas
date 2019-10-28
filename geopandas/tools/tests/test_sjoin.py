@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import numpy as np
 import pandas as pd
 
@@ -10,10 +8,6 @@ from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
 
 from pandas.util.testing import assert_frame_equal
 import pytest
-
-pandas_0_18_problem = (
-    "fails under pandas < 0.19 due to pandas issue 15692, not problem with sjoin."
-)
 
 
 @pytest.fixture()

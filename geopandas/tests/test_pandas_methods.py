@@ -1,11 +1,8 @@
-from __future__ import absolute_import
-
 import os
 
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
-from six import PY2, PY3
 
 import shapely
 from shapely.geometry import Point, GeometryCollection
@@ -210,10 +207,8 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         s.sum()
 
-    if PY3:
-        # in python 2, objects are still orderable
-        with pytest.raises(TypeError):
-            s.max()
+    with pytest.raises(TypeError):
+        s.max()
 
     with pytest.raises(TypeError):
         s.idxmax()
@@ -304,7 +299,6 @@ def test_any_all():
 # Groupby / algos
 
 
-@pytest.mark.skipif(PY2, reason="pd.unique buggy with WKB values on py2")
 def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = from_shapely([Point(0, 0), Point(2, 2)])
