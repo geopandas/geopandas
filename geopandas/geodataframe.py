@@ -569,7 +569,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         returns a pandas ``DataFrame``.
 
         Returns
-        -----
+        -------
         GeoDataFrame or DataFrame
 
         Notes
@@ -578,7 +578,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         passed to DataFrame.merge.
 
         Reference
-        -----
+        ---------
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
         .DataFrame.merge.html
 
