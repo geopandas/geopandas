@@ -103,6 +103,7 @@ def test_prepare_result_none():
     # gets converted to that in conversion to pygeos. When converting back
     # on access, you now get a GeometryCollection object instead of Point,
     # which has no coords
+    # see https://github.com/Toblerity/Shapely/issues/742/#issuecomment-545296708
     # TODO we should probably replace this with a missing value instead of point?
     # assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
