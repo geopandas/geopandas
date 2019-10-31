@@ -3,7 +3,6 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from six import PY3, string_types
 
 from shapely.geometry import mapping, shape
 
@@ -552,7 +551,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
+        if isinstance(key, str) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()
@@ -570,6 +569,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     #
 
     def merge(self, *args, **kwargs):
+        r"""Merge two ``GeoDataFrame`` objects with a database-style join.
+
+        Returns a ``GeoDataFrame`` if a geometry column is present; otherwise,
+        returns a pandas ``DataFrame``.
+
+        Returns
+        -------
+        GeoDataFrame or DataFrame
+
+        Notes
+        -----
+        The extra arguments ``*args`` and keyword arguments ``**kwargs`` are
+        passed to DataFrame.merge.
+
+        Reference
+        ---------
+        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
+        .DataFrame.merge.html
+
+        """
         result = DataFrame.merge(self, *args, **kwargs)
         geo_col = self._geometry_column_name
         if isinstance(result, DataFrame) and geo_col in result:
@@ -715,11 +734,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
-            df = geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
-            return df
-        except TypeError:
-            df = pd.DataFrame(df)
-            return df
+            geoms = df[self._geometry_column_name]
+            if is_geometry_type(geoms):
+                return geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
+        except KeyError:
+            pass
+        # if the geometry column is converted to non-geometries or did not exist
+        # do not return a GeoDataFrame
+        return pd.DataFrame(df)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
@@ -732,9 +754,4 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 
 
-if PY3:
-    DataFrame.set_geometry = _dataframe_set_geometry
-else:
-    import types
-
-    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None, DataFrame)
+DataFrame.set_geometry = _dataframe_set_geometry

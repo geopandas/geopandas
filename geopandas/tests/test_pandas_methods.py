@@ -1,11 +1,8 @@
-from __future__ import absolute_import
-
 import os
 
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
-from six import PY2, PY3
 
 import shapely
 from shapely.geometry import Point, GeometryCollection
@@ -161,18 +158,35 @@ def test_astype(s, df):
 
     assert s.astype(str)[0] == "POINT (0 0)"
 
+    res = s.astype(object)
+    assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
+    assert res.dtype == object
+
     df = df.rename_geometry("geom_list")
 
     # check whether returned object is a geodataframe
-    df = df.astype({"value1": float})
-    assert isinstance(df, GeoDataFrame)
+    res = df.astype({"value1": float})
+    assert isinstance(res, GeoDataFrame)
 
     # check whether returned object is a datafrane
-    df = df.astype(str)
-    assert isinstance(df, pd.DataFrame)
+    res = df.astype(str)
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
-    df = df.astype({"geom_list": str})
-    assert isinstance(df, pd.DataFrame)
+    res = df.astype({"geom_list": str})
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
+
+    res = df.astype(object)
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
+    assert res["geom_list"].dtype == object
+
+
+def test_astype_invalid_geodataframe():
+    # https://github.com/geopandas/geopandas/issues/1144
+    # a GeoDataFrame without geometry column should not error in astype
+    df = GeoDataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    res = df.astype(object)
+    assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
+    assert res["a"].dtype == object
 
 
 def test_to_csv(df):
@@ -193,10 +207,8 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         s.sum()
 
-    if PY3:
-        # in python 2, objects are still orderable
-        with pytest.raises(TypeError):
-            s.max()
+    with pytest.raises(TypeError):
+        s.max()
 
     with pytest.raises(TypeError):
         s.idxmax()
@@ -237,6 +249,11 @@ def test_fillna(s):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
+
+    # allow np.nan although this does not change anything
+    # https://github.com/geopandas/geopandas/issues/1149
+    res = s2.fillna(np.nan)
+    assert_geoseries_equal(res, s2)
 
 
 def test_dropna():
@@ -282,7 +299,6 @@ def test_any_all():
 # Groupby / algos
 
 
-@pytest.mark.skipif(PY2, reason="pd.unique buggy with WKB values on py2")
 def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = from_shapely([Point(0, 0), Point(2, 2)])

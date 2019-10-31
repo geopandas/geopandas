@@ -1,6 +1,15 @@
 Changes
 =======
 
+Version 0.6.1 (October 12, 2019)
+--------------------------------
+
+Small bug-fix release fixing a few regressions:
+
+- Fix `astype` when converting to string with Multi geometries (#1145) or when converting a dataframe without geometries (#1144).
+- Fix `GeoSeries.fillna` to accept `np.nan` again (#1149).
+
+
 Version 0.6.0 (September 27, 2019)
 ----------------------------------
 

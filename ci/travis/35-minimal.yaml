@@ -4,7 +4,6 @@ channels:
   - conda-forge
 dependencies:
   - python=3.5
-  - six
   # required
   - numpy=1.12
   - pandas==0.23.4
