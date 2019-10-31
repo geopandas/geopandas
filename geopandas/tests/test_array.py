@@ -699,3 +699,23 @@ def test_buffer_single_multipolygon():
     equal_geometries(result, expected)
     result = arr.buffer(np.array([1]))
     equal_geometries(result, expected)
+
+
+def test_astype_multipolygon():
+    # https://github.com/geopandas/geopandas/issues/1145
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    arr = from_shapely([multi_poly])
+    result = arr.astype(str)
+    assert isinstance(result[0], str)
+    assert result[0] == multi_poly.wkt
+
+    # astype(object) does not convert to string
+    result = arr.astype(object)
+    assert isinstance(result[0], shapely.geometry.base.BaseGeometry)
+
+    # astype(np_dtype) honors the dtype
+    result = arr.astype(np.dtype("U10"))
+    assert result.dtype == np.dtype("U10")
+    assert result[0] == multi_poly.wkt[:10]

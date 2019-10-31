@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 import numbers
 import operator
 import warnings
@@ -15,7 +16,7 @@ import shapely.wkt
 
 import pygeos
 
-from ._compat import PANDAS_GE_024, Iterable
+from ._compat import PANDAS_GE_024
 
 
 _names = {
@@ -928,6 +929,9 @@ class GeometryArray(ExtensionArray):
         """
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
+
+        if _isna(value):
+            value = None
         elif not isinstance(value, BaseGeometry):
             raise NotImplementedError(
                 "fillna currently only supports filling with a scalar geometry"
@@ -966,7 +970,12 @@ class GeometryArray(ExtensionArray):
                 return self.copy()
             else:
                 return self
-        return np.array(self, dtype=dtype, copy=copy)
+        elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
+            dtype
+        ):
+            return to_wkt(self).astype(dtype, copy=False)
+        else:
+            return np.array(self, dtype=dtype, copy=copy)
 
     def isna(self):
         """
