@@ -121,7 +121,7 @@ In some cases one may want to plot data which contains missing values - for some
 .. ipython:: python
 
     import numpy as np
-    gdf.loc[np.random.choice(gdf.index, 40), 'pop_est'] = np.nan
+    world.loc[np.random.choice(world.index, 40), 'pop_est'] = np.nan
     @savefig missing_vals.png
     world.plot(column='pop_est');
 
@@ -137,6 +137,7 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
         column="pop_est",
         legend=True,
         scheme="quantiles",
+        figsize=(15, 10),
         missing_kwds={
             "color": "lightgrey",
             "edgecolor": "red",
