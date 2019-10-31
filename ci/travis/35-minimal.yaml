@@ -10,6 +10,7 @@ dependencies:
   - shapely=1.5
   - fiona=1.7
   - pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -24,3 +25,5 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - pip:
+    - git+https://github.com/pygeos/pygeos.git
