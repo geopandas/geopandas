@@ -13,7 +13,7 @@ There are two ways to combine datasets in *geopandas* -- attribute joins and spa
 
 In an attribute join, a ``GeoSeries`` or ``GeoDataFrame`` is combined with a regular *pandas* ``Series`` or ``DataFrame`` based on a common variable. This is analogous to normal merging or joining in *pandas*.
 
-In a Spatial Join, observations from to ``GeoSeries`` or ``GeoDataFrames`` are combined based on their spatial relationship to one another.
+In a Spatial Join, observations from ``GeoSeries`` or ``GeoDataFrames`` are combined based on their spatial relationship to one another.
 
 In the following examples, we use these datasets:
 
