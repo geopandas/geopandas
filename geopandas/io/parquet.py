@@ -1,4 +1,5 @@
 import json
+import warnings
 
 from pandas.io.common import get_filepath_or_buffer
 from pandas.io.parquet import PyArrowImpl as PandasPyArrowImpl
@@ -80,9 +81,8 @@ class PyArrowImpl(PandasPyArrowImpl):
                         "columns": geometry_columns,
                         "schema_version": PARQUET_METADATA_VERSION,
                         "creator": {
-                            "library": "pyarrow",
-                            "version": self.api.__version__,
-                            "geopandas_version": geopandas.__version__,
+                            "library": "geopandas",
+                            "version": geopandas.__version__,
                         },
                     }
                 ).encode("utf-8")
@@ -98,7 +98,15 @@ class PyArrowImpl(PandasPyArrowImpl):
             **kwargs
         )
 
-    def read(self, path, columns=None, **kwargs):
+    def read(
+        self,
+        path,
+        columns=None,
+        geometry_columns=None,
+        geometry=None,
+        crs=None,
+        **kwargs
+    ):
         """Read from a parquet file into a GeoDataFrame, converting any geometry
         columns present from WKB to GeoSeries.
 
@@ -124,34 +132,76 @@ class PyArrowImpl(PandasPyArrowImpl):
             geo_metadata = json.loads(metadata.get(b"geo", b"").decode("utf-8"))
 
         except (TypeError, json.decoder.JSONDecodeError):
-            raise ValueError("Missing or malformed geo metadata in parquet file")
+            warnings.warn(
+                "Missing or malformed geo metadata in parquet file", UserWarning
+            )
+            # raise ValueError("Missing or malformed geo metadata in parquet file")
+            geo_metadata = None
 
-        # Validate that required keys are present
-        required_keys = ("crs", "primary_column", "columns")
-        for key in required_keys:
-            if key not in geo_metadata:
-                raise ValueError("Geo metadata missing required key: {}".format(key))
+        if geo_metadata:
+            # Validate that required keys are present
+            required_keys = ("crs", "primary_column", "columns")
+            for key in required_keys:
+                if key not in geo_metadata:
+                    raise ValueError(
+                        "Geo metadata missing required key: {}".format(key)
+                    )
 
-        # Convert the WKB columns that are present back to geometry
-        geometry_columns = df.columns.intersection(geo_metadata["columns"])
+            if geometry_columns is None:
+                geometry_columns = df.columns.intersection(geo_metadata["columns"])
 
-        if columns and not len(geometry_columns):
+            if geometry is None:
+                geometry = geo_metadata["primary_column"]
+
+                # Missing geometry likely indicates a subset of columns was read;
+                # promote the first available geometry to the primary geometry.
+                if len(geometry_columns) and geometry not in geometry_columns:
+                    geometry = geometry_columns[0]
+
+            if crs is None:
+                crs = _decode_crs(geo_metadata["crs"])
+
+        elif geometry_columns is None:
             raise ValueError(
-                """No geometry columns are included in the columns read from
-                the parquet file.  This will return a DataFrame instead of a
-                GeoDataFrame."""
+                """geometry_columns must be specified;
+                these are not available from the metadata of the parquet file."""
             )
 
+        missing_cols = set(geometry_columns).difference(df.columns)
+        if len(missing_cols):
+            raise ValueError(
+                """The parquet file does not include the specified
+                geometry_columns: {}""".format(
+                    missing_cols
+                )
+            )
+
+        if not len(geometry_columns):
+            raise ValueError(
+                """No geometry columns are included in the columns read from
+                the parquet file."""
+            )
+
+            if geometry is None:
+                # promote first available geometry column
+                geometry = geometry_columns[0]
+
+            elif geometry not in geometry_columns:
+                # The user asked for a geometry that wasn't available;
+                # it would be a problem to promote a different column
+                # in this case.
+                raise ValueError(
+                    """The specified geometry column was not read from the
+                    parquet file: {}""".format(
+                        geometry
+                    )
+                )
+
+        # Convert the WKB columns that are present back to geometry
         for col in geometry_columns:
             df[col] = from_wkb(df[col].values)
 
-        geometry_column = geo_metadata["primary_column"]
-        if geometry_column not in geometry_columns:
-            geometry_column = geometry_columns[0]
-
-        return GeoDataFrame(
-            df, geometry=geometry_column, crs=_decode_crs(geo_metadata["crs"])
-        )
+        return GeoDataFrame(df, geometry=geometry, crs=crs)
 
 
 def to_parquet(df, path, compression="snappy", index=None, **kwargs):
@@ -181,9 +231,14 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
     return impl.write(df, path, compression=compression, index=index, **kwargs)
 
 
-def read_parquet(path, columns=None, **kwargs):
+def read_parquet(
+    path, columns=None, geometry_columns=None, geometry=None, crs=None, **kwargs
+):
     """
     Load a parquet object from the file path, returning a GeoDataFrame.
+
+    Either the list of geometry columns must be available in the metadata of the parquet
+    file or it must be passed in as a parameter.
 
     You can read a subset of columns in the file using the ``columns`` parameter.
     However, the structure of the returned GeoDataFrame will depend on which
@@ -210,12 +265,29 @@ def read_parquet(path, columns=None, **kwargs):
         By file-like object, we refer to objects with a ``read()`` method,
         such as a file handler (e.g. via builtin ``open`` function)
         or ``StringIO``.
-    columns : list, default=None
+    columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
+    geometry_columns : list-like of strings, default=None
+        If not None, these columns will be extracted as geometries;
+        this will take precedence over the list stored in the metadata
+        of the parquet file.
+        By default, the list of geometry columns is read from the
+        metadata of the parquet file.
+    geometry : string, default=None
+        If not None, is the name of the primary geometry column;
+        this will take precedence over the name stored in the metadata
+        of the parquet file.
+        By default, this column name is read from the metadata of the
+        parquet file.
+    crs : valid GeoPandas CRS object, default=None
+        If not None, will be set as the crs of the returned GeoDataFrame;
+        this will take precedence over the value stored in the metadata
+        of the parquet file.
+        By default, the crs is read from the metadata of the parquet file.
     **kwargs
         Any additional kwargs are passed to the engine.
 
@@ -225,4 +297,11 @@ def read_parquet(path, columns=None, **kwargs):
     """
 
     impl = PyArrowImpl()
-    return impl.read(path, columns=columns, **kwargs)
+    return impl.read(
+        path,
+        columns=columns,
+        geometry_columns=geometry_columns,
+        geometry=geometry,
+        crs=crs,
+        **kwargs
+    )
