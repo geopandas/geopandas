@@ -108,8 +108,8 @@ def _clip_line_poly(gdf, clip_obj):
     clipped = gdf_sub.copy()
     clipped["geometry"] = gdf_sub.intersection(poly)
 
-    # Return the clipped layer with no null geometry values
-    return clipped[clipped.geometry.notnull()]
+    # Return the clipped layer with no null geometry values or empty geometries
+    return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
 
 
 def _clip_multi_poly_line(gdf, clip_obj):
@@ -135,6 +135,9 @@ def _clip_multi_poly_line(gdf, clip_obj):
     """
 
     # Clip multi polygons
+    # Explode multi polygons so that intersection works with all parts of the polygon
+    # If this step isn't taken, intersection only gets the intersection of one part of the
+    # multi part object. Also reset index to get ride of the column made by explode.
     clipped = _clip_line_poly(gdf.explode().reset_index(level=[1]), clip_obj)
 
     lines = clipped[
@@ -209,10 +212,7 @@ def clip(gdf, clip_obj):
         >>> rmnp_counties.shape
         (4, 13)
     """
-    try:
-        gdf.geometry
-        clip_obj.geometry
-    except AttributeError:
+    if not isinstance(gdf, (gpd.GeoDataFrame, gpd.GeoSeries)) and isinstance(clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries)):
         raise AttributeError(
             "Please make sure that your input and clip GeoDataFrames have a"
             " valid geometry column"
