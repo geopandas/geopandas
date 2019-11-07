@@ -7,7 +7,7 @@ import numpy as np
 from geopandas import GeoDataFrame, GeoSeries, read_file, read_parquet
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
-from geopandas.io.parquet import _encode_crs, _decode_crs
+from geopandas.io.parquet import _encode_crs, _decode_crs, _validate_dataframe
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 
@@ -32,6 +32,29 @@ def test_decode_crs():
 
     crs = None
     assert _decode_crs(crs) == crs
+
+
+def test_validate_dataframe():
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    # valid: should not raise ValueError
+    _validate_dataframe(df)
+    _validate_dataframe(df.set_index("iso_a3"))
+
+    # add column with non-string type
+    df[0] = 1
+
+    # invalid: should raise ValueError
+    with pytest.raises(ValueError):
+        _validate_dataframe(df)
+
+    with pytest.raises(ValueError):
+        _validate_dataframe(df.set_index(0))
+
+    # not a DataFrame: should raise ValueError
+    with pytest.raises(ValueError):
+        _validate_dataframe("not a dataframe")
 
 
 @pytest.mark.parametrize(
