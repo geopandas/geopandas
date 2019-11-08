@@ -27,6 +27,37 @@ def _decode_crs(crs):
     return crs
 
 
+def _encode_metadata(metadata):
+    """Encode metadata dict to UTF-8 JSON string
+
+    Parameters
+    ----------
+    metadata : dict
+
+    Returns
+    -------
+    UTF-8 encoded JSON string
+    """
+    return json.dumps(metadata).encode("utf-8")
+
+
+def _decode_metadata(metadata_str):
+    """Decode a UTF-8 encoded JSON string to dict
+
+    Parameters
+    ----------
+    metadata_str : string (UTF-8 encoded)
+
+    Returns
+    -------
+    dict
+    """
+    if metadata_str is None:
+        return None
+
+    return json.loads(metadata_str.decode("utf-8"))
+
+
 def _validate_dataframe(df):
     """Validate that the GeoDataFrame conforms to requirements for writing
     to parquet format.
@@ -81,16 +112,22 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
     import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for parquet support."
     )
-    from pyarrow import parquet, Table
+    from pyarrow import parquet, Table, Schema
 
     _validate_dataframe(df)
 
     geometry_columns = df.columns[df.dtypes == "geometry"].tolist()
     geometry_column = df._geometry_column_name
-    crs = _encode_crs(df.crs)
+
+    # Encode CRS info for serialization
+    # TODO: getattr() is a shim until GeoSeries have crs attributes (#1193);
+    # defaults to CRS of GeoDataFrame if missing.
+    crs = {
+        col: _encode_crs(getattr(df[col], "crs", df.crs)) for col in geometry_columns
+    }
 
     # Convert to a DataFrame so we can convert geometries to WKB while
-    # retaining original column names
+    # retaining original column names.
     df = DataFrame(df.copy())
 
     path, _, _, _ = get_filepath_or_buffer(path, mode="wb")
@@ -104,16 +141,29 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
     else:
         from_pandas_kwargs = {"preserve_index": index}
 
-    table = Table.from_pandas(df, **from_pandas_kwargs)
+    schema = Schema.from_pandas(df, **from_pandas_kwargs)
 
+    # Store geopandas specific column level metadata
+    # This must be done BEFORE creating the parquet Table to be able to
+    # persist the values
+    for col in geometry_columns:
+        # only write CRS metadata if defined
+        if crs[col] is None:
+            continue
+
+        field = schema.field(col).with_metadata({"crs": _encode_metadata(crs[col])})
+        index = schema.get_field_index(col)
+        schema = schema.set(index, field)
+
+    table = Table.from_pandas(df, schema=schema)
+
+    # Store geopandas specific file-level metadata
+    # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
-
-    # Store geopandas specific metadata
     metadata.update(
         {
-            "geo": json.dumps(
+            "geo": _encode_metadata(
                 {
-                    "crs": crs,
                     "primary_column": geometry_column,
                     "columns": geometry_columns,
                     "schema_version": PARQUET_METADATA_VERSION,
@@ -122,11 +172,11 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
                         "version": geopandas.__version__,
                     },
                 }
-            ).encode("utf-8")
+            )
         }
     )
-    table = table.replace_schema_metadata(metadata)
 
+    table = table.replace_schema_metadata(metadata)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
@@ -175,7 +225,7 @@ def read_parquet(
         this will take precedence over the list stored in the metadata
         of the parquet file.
         By default, the list of geometry columns is read from the
-        metadata of the parquet file.
+        metadata of the parquet file,.
     geometry : string, default=None
         If not None, is the name of the primary geometry column;
         this will take precedence over the name stored in the metadata
@@ -186,7 +236,8 @@ def read_parquet(
         If not None, will be set as the crs of the returned GeoDataFrame;
         this will take precedence over the value stored in the metadata
         of the parquet file.
-        By default, the crs is read from the metadata of the parquet file.
+        By default, the crs is read from the metadata of the primary
+        geometry column read from the parquet file, if available.
     **kwargs
         Any additional kwargs are passed to the engine.
 
@@ -213,22 +264,27 @@ def read_parquet(
         except:  # noqa: flake8
             pass
 
-    metadata = table.schema.metadata
+    geo_metadata = None
 
     try:
-        geo_metadata = json.loads(metadata.get(b"geo", b"").decode("utf-8"))
+        metadata = table.schema.metadata
+        if metadata is not None:
+            geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
 
     except (TypeError, json.decoder.JSONDecodeError):
         warnings.warn("Missing or malformed geo metadata in parquet file", UserWarning)
-        # raise ValueError("Missing or malformed geo metadata in parquet file")
-        geo_metadata = None
 
     if geo_metadata:
         # Validate that required keys are present
-        required_keys = ("crs", "primary_column", "columns")
+        required_keys = ("primary_column", "columns")
         for key in required_keys:
             if key not in geo_metadata:
-                raise ValueError("Geo metadata missing required key: {}".format(key))
+                raise ValueError(
+                    """'geo' metadata in parquet file is missing required key:
+                    '{}'""".format(
+                        key
+                    )
+                )
 
         if geometry_columns is None:
             geometry_columns = df.columns.intersection(geo_metadata["columns"])
@@ -241,8 +297,27 @@ def read_parquet(
             if len(geometry_columns) and geometry not in geometry_columns:
                 geometry = geometry_columns[0]
 
-        if crs is None:
-            crs = _decode_crs(geo_metadata["crs"])
+        if crs is None and geometry in table.schema.names:
+            # if geometry column is not present, attempting to read
+            # its metadata will result in an error
+            col_metadata = table.schema.field(geometry).metadata
+            if col_metadata is not None:
+                crs = col_metadata.get(b"crs", None)
+
+                if crs is None:
+                    # if metadata is present for column but doesn't have CRS information
+                    # this indicates a possible issue with the file.
+                    # If CRS of original GeoDataFrame columm is None,
+                    # column metadata will be absent.
+                    warnings.warn(
+                        "Geometry column '{}' is missing expected 'crs' key".format(
+                            geometry
+                        ),
+                        UserWarning,
+                    )
+
+                if crs is not None:
+                    crs = _decode_crs(_decode_metadata(crs))
 
     elif geometry_columns is None:
         raise ValueError(
