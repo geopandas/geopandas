@@ -36,6 +36,7 @@ def df():
 def test_repr(s, df):
     assert "POINT" in repr(s)
     assert "POINT" in repr(df)
+    assert "POINT" in df._repr_html_()
 
 
 @pytest.mark.skipif(
@@ -65,6 +66,19 @@ def test_repr_all_missing():
     # https://github.com/geopandas/geopandas/issues/1195
     s = GeoSeries([None, None, None])
     assert "None" in repr(s)
+    df = GeoDataFrame({"a": [1, 2, 3], "geometry": s})
+    assert "None" in repr(df)
+    assert "geometry" in df._repr_html_()
+
+
+def test_repr_empty():
+    # https://github.com/geopandas/geopandas/issues/1195
+    s = GeoSeries([])
+    assert repr(s) == "GeoSeries([], dtype: geometry)"
+    df = GeoDataFrame({"a": [], "geometry": s})
+    assert "Empty GeoDataFrame" in repr(df)
+    # https://github.com/geopandas/geopandas/issues/1184
+    assert "geometry" in df._repr_html_()
 
 
 def test_indexing(s, df):
