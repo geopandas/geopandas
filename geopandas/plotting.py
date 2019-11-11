@@ -98,13 +98,11 @@ def plot_polygon_collection(
     if "markersize" in kwargs:
         del kwargs["markersize"]
     if color is not None:
-        if not is_color_like(color):
+        if is_color_like(color):
+            kwargs["color"] = color
+        else:
             if pd.api.types.is_list_like(color):
                 kwargs["color"] = np.take(color, multiindex)
-            else:
-                kwargs["color"] = color
-        else:
-            kwargs["color"] = color
 
     else:
         for att in ["facecolor", "edgecolor"]:
@@ -167,13 +165,11 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        if not is_color_like(color):
+        if is_color_like(color):
+            kwargs["color"] = color
+        else:
             if pd.api.types.is_list_like(color):
                 kwargs["color"] = np.take(color, multiindex)
-            else:
-                kwargs["color"] = color
-        else:
-            kwargs["color"] = color
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
