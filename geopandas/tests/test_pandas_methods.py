@@ -9,7 +9,7 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_024
+from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
 from geopandas.array import from_shapely
 
 from geopandas.tests.util import assert_geoseries_equal
@@ -74,7 +74,11 @@ def test_repr_all_missing():
 def test_repr_empty():
     # https://github.com/geopandas/geopandas/issues/1195
     s = GeoSeries([])
-    assert repr(s) == "GeoSeries([], dtype: geometry)"
+    if PANDAS_GE_025:
+        # repr with correct name fixed in pandas 0.25
+        assert repr(s) == "GeoSeries([], dtype: geometry)"
+    else:
+        assert repr(s) == "Series([], dtype: geometry)"
     df = GeoDataFrame({"a": [], "geometry": s})
     assert "Empty GeoDataFrame" in repr(df)
     # https://github.com/geopandas/geopandas/issues/1184
