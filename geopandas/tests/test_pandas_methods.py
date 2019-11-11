@@ -159,6 +159,12 @@ def test_take_empty(s, df):
     assert result.shape == (0, 3)
     assert isinstance(result.index, pd.DatetimeIndex)
 
+    # the original bug report was an empty boolean mask
+    for result in [df.loc[df["value"] > 100], df[df["value"] > 100]]:
+        assert isinstance(result, GeoDataFrame)
+        assert result.shape == (0, 3)
+        assert isinstance(result.index, pd.DatetimeIndex)
+
 
 def test_assignment(s, df):
     exp = GeoSeries([Point(10, 10), Point(1, 1), Point(2, 2)])
