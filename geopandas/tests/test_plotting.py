@@ -117,6 +117,12 @@ class TestPointPlotting:
         ax = self.df.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_facecolors(), ["green"] * self.N)
 
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * self.N
+        )
+
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column="values", color="green")
@@ -266,6 +272,12 @@ class TestLineStringPlotting:
         ax = self.df.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5)] * self.N
+        )
+
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column="values", color="green")
@@ -351,6 +363,10 @@ class TestPolygonPlotting:
         ax = self.df.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
+
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'values'

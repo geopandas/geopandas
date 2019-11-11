@@ -88,6 +88,7 @@ def plot_polygon_collection(
             "The descartes package is required for plotting polygons in geopandas."
         )
     from matplotlib.collections import PatchCollection
+    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
@@ -97,16 +98,20 @@ def plot_polygon_collection(
     if "markersize" in kwargs:
         del kwargs["markersize"]
     if color is not None:
-        kwargs["color"] = color
-        if pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
+        if not is_color_like(color):
+            if pd.api.types.is_list_like(color):
+                kwargs["color"] = np.take(color, multiindex)
+            else:
+                kwargs["color"] = color
         else:
             kwargs["color"] = color
+
     else:
         for att in ["facecolor", "edgecolor"]:
             if att in kwargs:
-                if pd.api.types.is_list_like(kwargs[att]):
-                    kwargs[att] = np.take(kwargs[att], multiindex)
+                if not is_color_like(kwargs[att]):
+                    if pd.api.types.is_list_like(kwargs[att]):
+                        kwargs[att] = np.take(kwargs[att], multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -150,6 +155,7 @@ def plot_linestring_collection(
 
     """
     from matplotlib.collections import LineCollection
+    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
@@ -161,8 +167,11 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        if pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
+        if not is_color_like(color):
+            if pd.api.types.is_list_like(color):
+                kwargs["color"] = np.take(color, multiindex)
+            else:
+                kwargs["color"] = color
         else:
             kwargs["color"] = color
 
@@ -213,6 +222,8 @@ def plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
+    from matplotlib.colors import is_color_like
+
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
@@ -230,8 +241,9 @@ def plot_point_collection(
         kwargs["s"] = markersize
 
     if color is not None:
-        if pd.api.types.is_list_like(color):
-            color = np.take(color, multiindex)
+        if not is_color_like(color):
+            if pd.api.types.is_list_like(color):
+                color = np.take(color, multiindex)
 
     if "norm" not in kwargs:
         collection = ax.scatter(
