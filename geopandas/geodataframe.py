@@ -180,7 +180,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         level = _ensure_geometry(level)
         index = frame.index
         frame[geo_column_name] = level
-        if frame.index is not index:
+        if frame.index is not index and len(frame.index) == len(index):
             # With pandas < 1.0 and an empty frame (no rows), the index gets reset
             # to a default RangeIndex -> set back the original index if needed
             frame.index = index
