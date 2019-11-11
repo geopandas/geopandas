@@ -160,7 +160,7 @@ def test_take_empty(s, df):
     assert isinstance(result.index, pd.DatetimeIndex)
 
     # the original bug report was an empty boolean mask
-    for result in [df.loc[df["value"] > 100], df[df["value"] > 100]]:
+    for result in [df.loc[df["value1"] > 100], df[df["value1"] > 100]]:
         assert isinstance(result, GeoDataFrame)
         assert result.shape == (0, 3)
         assert isinstance(result.index, pd.DatetimeIndex)
