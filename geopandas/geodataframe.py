@@ -472,7 +472,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
-    def to_file(self, filename, driver="ESRI Shapefile", schema=None, **kwargs):
+    def to_file(
+        self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
+    ):
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -491,16 +493,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
+        index : bool, default None
+            If True, write index into one or more columns (for MultiIndex).
+            Default None automatically determines if index is written if it
+            is either named or is a MultiIndex.
+
+        .. versionadded:: 0.7
+
+            Previously the index was not written.
 
         Notes
         -----
         The extra keyword arguments ``**kwargs`` are passed to fiona.open and
         can be used to write to multi-layer data, store data within archives
         (zip files), etc.
+
+        See Also
+        --------
+        GeoSeries.to_file
         """
         from geopandas.io.file import to_file
 
-        to_file(self, filename, driver, schema, **kwargs)
+        to_file(self, filename, driver, schema, index, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
