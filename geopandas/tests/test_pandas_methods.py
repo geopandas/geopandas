@@ -61,6 +61,12 @@ def test_repr_boxed_display_precision():
     assert "POINT (10.123456789 50.123456789)" in repr(s1)
 
 
+def test_repr_all_missing():
+    # https://github.com/geopandas/geopandas/issues/1195
+    s = GeoSeries([None, None, None])
+    assert "None" in repr(s)
+
+
 def test_indexing(s, df):
 
     # accessing scalar from the geometry (colunm)
