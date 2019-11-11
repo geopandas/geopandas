@@ -12,7 +12,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_024
 from geopandas.array import from_shapely
 
-from geopandas.tests.util import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 import pytest
 
@@ -116,6 +116,34 @@ def test_reindex(s, df):
 
     # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
     # should it return DataFrame instead ?
+
+
+def test_take(s, df):
+    inds = np.array([0, 2])
+
+    # GeoSeries take
+    result = s.take(inds)
+    expected = s.iloc[[0, 2]]
+    assert isinstance(result, GeoSeries)
+    assert_geoseries_equal(result, expected)
+
+    # GeoDataFrame take axis 0
+    result = df.take(inds, axis=0)
+    expected = df.iloc[[0, 2], :]
+    assert isinstance(result, GeoDataFrame)
+    assert_geodataframe_equal(result, expected)
+
+    # GeoDataFrame take axis 1
+    df = df.reindex(columns=["value1", "value2", "geometry"])  # ensure consistent order
+    result = df.take(inds, axis=1)
+    expected = df[["value1", "geometry"]]
+    assert isinstance(result, GeoDataFrame)
+    assert_geodataframe_equal(result, expected)
+
+    result = df.take(np.array([0, 1]), axis=1)
+    expected = df[["value1", "value2"]]
+    assert isinstance(result, pd.DataFrame)
+    assert_frame_equal(result, expected)
 
 
 def test_assignment(s, df):
