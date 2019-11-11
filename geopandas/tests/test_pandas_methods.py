@@ -146,6 +146,20 @@ def test_take(s, df):
     assert_frame_equal(result, expected)
 
 
+def test_take_empty(s, df):
+    # ensure that index type is preserved in an empty take
+    # https://github.com/geopandas/geopandas/issues/1190
+    inds = np.array([], dtype="int64")
+
+    # use non-default index
+    df.index = pd.date_range("2012-01-01", periods=len(df))
+
+    result = df.take(inds, axis=0)
+    assert isinstance(result, GeoDataFrame)
+    assert result.shape == (0, 3)
+    assert isinstance(result.index, pd.DatetimeIndex)
+
+
 def test_assignment(s, df):
     exp = GeoSeries([Point(10, 10), Point(1, 1), Point(2, 2)])
 
