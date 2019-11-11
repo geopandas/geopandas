@@ -418,6 +418,11 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), ["g"] * 2, alpha=0.4)
         _check_colors(2, ax.collections[0].get_edgecolors(), ["r"] * 2, alpha=0.4)
 
+        # check rgba tuple GH1178 for face and edge
+        ax = self.df.plot(facecolor=(0.5, 0.5, 0.5), edgecolor=(0.4, 0.5, 0.6))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6)] * 2)
+
     def test_legend_kwargs(self):
 
         ax = self.df.plot(
