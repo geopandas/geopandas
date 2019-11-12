@@ -100,9 +100,12 @@ def plot_polygon_collection(
     if color is not None:
         if is_color_like(color):
             kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex)
         else:
-            if pd.api.types.is_list_like(color):
-                kwargs["color"] = np.take(color, multiindex)
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
 
     else:
         for att in ["facecolor", "edgecolor"]:
@@ -110,6 +113,11 @@ def plot_polygon_collection(
                 if not is_color_like(kwargs[att]):
                     if pd.api.types.is_list_like(kwargs[att]):
                         kwargs[att] = np.take(kwargs[att], multiindex)
+                    elif kwargs[att] is not None:
+                        raise TypeError(
+                            "Color attribute has to be a single color or sequence "
+                            "of colors."
+                        )
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -167,9 +175,12 @@ def plot_linestring_collection(
     if color is not None:
         if is_color_like(color):
             kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex)
         else:
-            if pd.api.types.is_list_like(color):
-                kwargs["color"] = np.take(color, multiindex)
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -240,6 +251,10 @@ def plot_point_collection(
         if not is_color_like(color):
             if pd.api.types.is_list_like(color):
                 color = np.take(color, multiindex)
+            else:
+                raise TypeError(
+                    "Color attribute has to be a single color or sequence of colors."
+                )
 
     if "norm" not in kwargs:
         collection = ax.scatter(
