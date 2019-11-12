@@ -75,6 +75,8 @@ def read_file(filename, bbox=None, **kwargs):
             else:
                 crs = features.crs
 
+            schema = features.schema
+
             if bbox is not None:
                 if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
                     bbox = tuple(bbox.to_crs(crs).total_bounds)
@@ -84,7 +86,9 @@ def read_file(filename, bbox=None, **kwargs):
                 f_filt = features
 
             columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            gdf = GeoDataFrame.from_features(
+                f_filt, crs=crs, columns=columns, schema=schema
+            )
 
     return gdf
 
@@ -114,7 +118,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
     The path may specify a fiona VSI scheme.
     """
     if schema is None:
-        schema = infer_schema(df)
+        if df.schema is None:
+            schema = infer_schema(df)
+        else:
+            schema = df.schema
     with fiona_env():
         with fiona.open(
             filename, "w", driver=driver, crs=df.crs, schema=schema, **kwargs

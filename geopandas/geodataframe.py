@@ -63,6 +63,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # getitem accesses crs
         self.crs = crs
 
+        schema = kwargs.pop("schema", None)
+        self.schema = schema
+
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
         # in the data), so therefore need to ensure it here manually
@@ -236,7 +239,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file.read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None, columns=None):
+    def from_features(cls, features, crs=None, columns=None, schema=None):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -290,6 +293,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             rows.append(d)
         df = GeoDataFrame(rows, columns=columns)
         df.crs = crs
+        df.schema = schema
         return df
 
     @classmethod
