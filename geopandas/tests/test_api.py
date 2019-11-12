@@ -18,6 +18,5 @@ if mods:
     sys.exit(len(mods))
 """
     call = [sys.executable, "-c", code]
-    # TODO(py3) update with subprocess.run once python 2.7 is dropped
-    returncode = subprocess.call(call, stderr=subprocess.STDOUT)
+    returncode = subprocess.run(call).returncode
     assert returncode == 0
