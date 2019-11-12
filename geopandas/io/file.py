@@ -134,15 +134,12 @@ def infer_schema(df):
 
     def convert_type(column, in_type, schema):
         if in_type == object:
-            if "str" in schema["properties"][column]:
-                return schema["properties"][column]
-            return "str"
-        if in_type.name.startswith("datetime64"):
+            out_type = "str"
+        elif in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
-            if "datetime" in schema["properties"][column]:
-                return schema["properties"][column]
-            return "datetime"
-        out_type = type(np.zeros(1, in_type).item()).__name__
+            out_type = "datetime"
+        else:
+            out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"
         if not _FIONA18 and out_type == "bool":
@@ -151,8 +148,12 @@ def infer_schema(df):
                 + "which is unsupported in file writing with fiona "
                 "< 1.8. Consider casting the column to int type."
             )
-        if out_type in schema["properties"][column]:
-            return schema["properties"][column]
+        if schema:
+            try:
+                if out_type in schema["properties"][column]:
+                    return schema["properties"][column]
+            except KeyError:
+                return out_type
         return out_type
 
     properties = OrderedDict(
