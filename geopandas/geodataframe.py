@@ -48,6 +48,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
+    schema : dict (optional)
+        If specified, the schema dictionary is passed to Fiona to
+        better control how the file is written. If None, GeoPandas
+        will determine the schema based on each column's dtype
     """
 
     _metadata = ["crs", "_geometry_column_name"]
@@ -259,6 +263,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Optionally specify the column names to include in the output frame.
             This does not overwrite the property names of the input, but can
             ensure a consistent output format.
+        schema : dict, default None
+            If specified, the schema dictionary is passed to Fiona to
+            better control how the file is written. If None, GeoPandas
+            will determine the schema based on each column's dtype
 
         Returns
         -------
