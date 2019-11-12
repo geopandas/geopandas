@@ -118,10 +118,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
     The path may specify a fiona VSI scheme.
     """
     if schema is None:
-        if df.schema is None:
-            schema = infer_schema(df)
-        else:
-            schema = df.schema
+        schema = infer_schema(df)
     with fiona_env():
         with fiona.open(
             filename, "w", driver=driver, crs=df.crs, schema=schema, **kwargs
@@ -135,11 +132,15 @@ def infer_schema(df):
     except ImportError:
         from ordereddict import OrderedDict
 
-    def convert_type(column, in_type):
+    def convert_type(column, in_type, schema):
         if in_type == object:
+            if "str" in schema["properties"][column]:
+                return schema["properties"][column]
             return "str"
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
+            if "datetime" in schema["properties"][column]:
+                return schema["properties"][column]
             return "datetime"
         out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
@@ -150,11 +151,13 @@ def infer_schema(df):
                 + "which is unsupported in file writing with fiona "
                 "< 1.8. Consider casting the column to int type."
             )
+        if out_type in schema["properties"][column]:
+            return schema["properties"][column]
         return out_type
 
     properties = OrderedDict(
         [
-            (col, convert_type(col, _type))
+            (col, convert_type(col, _type, df.schema))
             for col, _type in zip(df.columns, df.dtypes)
             if col != df._geometry_column_name
         ]
