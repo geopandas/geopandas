@@ -7,3 +7,4 @@ import pandas as pd
 # -----------------------------------------------------------------------------
 
 PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
+PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
