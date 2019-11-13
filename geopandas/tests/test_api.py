@@ -9,7 +9,7 @@ def test_no_additional_imports():
 import sys
 import geopandas
 blacklist = {'pytest', 'py', 'ipython',
-             'matplotlib' 'descartes','mapclassify',
+             'matplotlib', 'descartes', 'mapclassify',
              # 'rtree',  # rtree actually gets imported if installed
              'sqlalchemy', 'psycopg2', 'geopy'}
 mods = blacklist & set(m.split('.')[0] for m in sys.modules)
