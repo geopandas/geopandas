@@ -119,6 +119,18 @@ class TestPointPlotting:
         ax = self.df.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_facecolors(), ["green"] * self.N)
 
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * self.N
+        )
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
+        )
+        with pytest.raises(TypeError):
+            self.df.plot(color="not color")
+
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column="values", color="green")
@@ -268,6 +280,18 @@ class TestLineStringPlotting:
         ax = self.df.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
+        )
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
+        )
+        with pytest.raises(TypeError):
+            self.df.plot(color="not color")
+
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column="values", color="green")
@@ -354,6 +378,14 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
 
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
+        with pytest.raises(TypeError):
+            self.df.plot(color="not color")
+
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'values'
             ax = self.df.plot(column="values", color="green")
@@ -403,6 +435,17 @@ class TestPolygonPlotting:
         ax = self.polys.plot(facecolor="g", edgecolor="r", alpha=0.4)
         _check_colors(2, ax.collections[0].get_facecolors(), ["g"] * 2, alpha=0.4)
         _check_colors(2, ax.collections[0].get_edgecolors(), ["r"] * 2, alpha=0.4)
+
+        # check rgba tuple GH1178 for face and edge
+        ax = self.df.plot(facecolor=(0.5, 0.5, 0.5), edgecolor=(0.4, 0.5, 0.6))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6)] * 2)
+
+        ax = self.df.plot(
+            facecolor=(0.5, 0.5, 0.5, 0.5), edgecolor=(0.4, 0.5, 0.6, 0.5)
+        )
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
 
     def test_legend_kwargs(self):
 
@@ -667,6 +710,10 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_edgecolors(), ["r", "g", "b"])
         ax.cla()
 
+        # not a color
+        with pytest.raises(TypeError):
+            plot_point_collection(ax, self.points, color="not color")
+
     def test_points_values(self):
         from geopandas.plotting import plot_point_collection
 
@@ -717,6 +764,10 @@ class TestPlotCollections:
         assert res_ls[0] == exp_ls[0]
         assert res_ls[1] == exp_ls[1]
         ax.cla()
+
+        # not a color
+        with pytest.raises(TypeError):
+            plot_linestring_collection(ax, self.lines, color="not color")
 
     def test_linestrings_values(self):
         from geopandas.plotting import plot_linestring_collection
@@ -785,6 +836,10 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["r"] * self.N)
         ax.cla()
+
+        # not a color
+        with pytest.raises(TypeError):
+            plot_polygon_collection(ax, self.polygons, color="not color")
 
     def test_polygons_values(self):
         from geopandas.plotting import plot_polygon_collection
