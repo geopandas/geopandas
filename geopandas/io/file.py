@@ -138,6 +138,8 @@ def infer_schema(df):
         elif in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
             out_type = "datetime"
+        elif in_type == "Int64":
+            out_type = "int"
         else:
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
