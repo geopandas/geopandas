@@ -300,6 +300,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             d.update(f["properties"])
             rows.append(d)
         df = GeoDataFrame(rows, columns=columns)
+        if schema:
+            for c, t in df.dtypes.iteritems():
+                if c != df._geometry_column_name:
+                    if "int" in schema["properties"][c] and t == "float":
+                        df[c] = df[c].astype("Int64")
+
         df.crs = crs
         df.schema = schema
         return df
