@@ -182,7 +182,8 @@ def clip(gdf, clip_obj):
 
         >>> import geopandas as gpd
         >>> import geopandas.clip as gc
-        >>> world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+        >>> path = geopandas.datasets.get_path('naturalearth_lowres')
+        >>> world = geopandas.read_file(path)
         >>> south_america = world[world['continent'] == "South America"]
         >>> capitals = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
         >>> capitals.shape
