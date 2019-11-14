@@ -616,6 +616,36 @@ def test_bounds():
         assert result.dtype == "float64"
         np.testing.assert_allclose(result, np.array([[np.nan] * 4]))
 
+    # empty array (https://github.com/geopandas/geopandas/issues/1195)
+    E = from_shapely([])
+    result = E.bounds
+    assert result.shape == (0, 4)
+    assert result.dtype == "float64"
+
+
+def test_total_bounds():
+    result = T.total_bounds
+    bounds = np.array(
+        [t.bounds if not (t is None or t.is_empty) else [np.nan] * 4 for t in triangles]
+    )
+    expected = np.array(
+        [
+            bounds[:, 0].min(),  # minx
+            bounds[:, 1].min(),  # miny
+            bounds[:, 2].max(),  # maxx
+            bounds[:, 3].max(),  # maxy
+        ]
+    )
+    np.testing.assert_allclose(result, expected)
+
+    # additional check for empty array or one empty / missing
+    for geoms in [[], [None], [shapely.geometry.Polygon()]]:
+        E = from_shapely(geoms)
+        result = E.total_bounds
+        assert result.ndim == 1
+        assert result.dtype == "float64"
+        np.testing.assert_allclose(result, np.array([np.nan] * 4))
+
 
 def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
