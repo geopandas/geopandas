@@ -108,8 +108,8 @@ def _clip_line_poly(gdf, clip_obj):
     clipped = gdf_sub.copy()
     clipped["geometry"] = gdf_sub.intersection(poly)
 
-    # Return the clipped layer with no null geometry values
-    return clipped[clipped.geometry.notnull()]
+    # Return the clipped layer with no null geometry values or empty geometries
+    return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
 
 
 def _clip_multi_poly_line(gdf, clip_obj):
@@ -135,6 +135,9 @@ def _clip_multi_poly_line(gdf, clip_obj):
     """
 
     # Clip multi polygons
+    # Explode multi polygons so that intersection works with all parts of the polygon
+    # If this step isn't taken, intersection only gets the intersection of one part of the
+    # multi part object. Also reset index to remove the column made by explode.
     clipped = _clip_line_poly(gdf.explode().reset_index(level=[1]), clip_obj)
 
     lines = clipped[
@@ -176,43 +179,20 @@ def clip(gdf, clip_obj):
 
     Examples
     --------
-    Clipping points (glacier locations in the state of Colorado) with
-    a polygon (the boundary of Rocky Mountain National Park):
+    Clip points (global capital cities) with a polygon (the South American continent):
 
         >>> import geopandas as gpd
-        >>> import earthpy.clip as cl
-        >>> from earthpy.io import path_to_example
-        >>> rmnp = gpd.read_file(path_to_example('rmnp.gdf'))
-        >>> glaciers = gpd.read_file(path_to_example('colorado-glaciers.geojson'))
-        >>> glaciers.shape
-        (134, 2)
-        >>> rmnp_glaciers = cl.clip(glaciers, rmnp)
-        >>> rmnp_glaciers.shape
-        (36, 2)
-
-    Clipping a line (the Continental Divide Trail) with a
-    polygon (the boundary of Rocky Mountain National Park):
-
-        >>> cdt = gpd.read_file(path_to_example('continental-div-trail.geojson'))
-        >>> rmnp_cdt_section = cl.clip(cdt, rmnp)
-        >>> cdt['geometry'].length > rmnp_cdt_section['geometry'].length
-        0    True
-        dtype: bool
-
-    Clipping a polygon (Colorado counties) with another polygon
-    (the boundary of Rocky Mountain National Park):
-
-        >>> counties = gpd.read_file(path_to_example('colorado-counties.geojson'))
-        >>> counties.shape
-        (64, 13)
-        >>> rmnp_counties = cl.clip(counties, rmnp)
-        >>> rmnp_counties.shape
-        (4, 13)
+        >>> import geopandas.clip as gc
+        >>> world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+        >>> south_america = world[world['continent'] == "South America"]
+        >>> capitals = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+        >>> capitals.shape
+        (202, 2)
+        >>> sa_capitals = cl.clip(capitals, south_america)
+        >>> sa_capitals.shape
+        (12, 2)
     """
-    try:
-        gdf.geometry
-        clip_obj.geometry
-    except AttributeError:
+    if not isinstance(gdf, (gpd.GeoDataFrame, gpd.GeoSeries)) and isinstance(clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries)):
         raise AttributeError(
             "Please make sure that your input and clip GeoDataFrames have a"
             " valid geometry column"
