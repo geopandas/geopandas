@@ -204,8 +204,11 @@ def clip(gdf, clip_obj):
             "(Multi)Polygon, got {}".format(type(gdf))
         )
 
-    xmin, ymin, xmax, ymax = gdf.total_bounds
-    if clip_obj.cx[xmin:xmax, ymin:ymax].empty:
+    if isinstance(clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        xmin, ymin, xmax, ymax = clip_obj.total_bounds
+    else:
+        xmin, ymin, xmax, ymax = clip_obj.bounds
+    if gdf.cx[xmin:xmax, ymin:ymax].empty:
         raise ValueError("Shape and crop extent do not overlap.")
 
     poly = clip_obj.geometry.unary_union
