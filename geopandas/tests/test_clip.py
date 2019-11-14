@@ -109,6 +109,7 @@ def multi_point(point_gdf):
     out_df["attr"] = ["tree", "another tree", "shrub", "berries"]
     return out_df
 
+
 @pytest.fixture
 def mixed_gdf():
     """ Create a Mixed Polygon and LineString For Testing """
@@ -224,4 +225,8 @@ def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
 def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
     """Test clipping a mixed GeoDataFrame"""
     clip = cl.clip(mixed_gdf, single_rectangle_gdf)
-    assert hasattr(clip, "geometry") and clip.geom_type[0] == "LineString" and clip.geom_type[1] == "Polygon"
+    assert (
+        hasattr(clip, "geometry")
+        and clip.geom_type[0] == "LineString"
+        and clip.geom_type[1] == "Polygon"
+    )
