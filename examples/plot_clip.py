@@ -11,14 +11,10 @@ of a polygon geometry using GeoPandas.
 # Clip Vector Data in Python Using GeoPandas
 # ---------------------------------------------
 #
-# .. note::
-#    The example below will show you how to use the clip() function to clip
-#    vector data such as points, lines and polygons to a vector boundary.
-#
-# The example below walks you through a typical workflow for clipping one
-# vector data file to the shape of another. Both vector data files must be
-# opened with GeoPandas as GeoDataFrames and be in the same Coordinate
-# Reference System (CRS) for the ``clip_shp()`` function in EarthPy to work.
+# The example below shows you how to clip a set of vector geometries
+# to the spatial extent / shape of another vector object. Both sets of geometries
+# must be opened with GeoPandas as GeoDataFrames and be in the same Coordinate
+# Reference System (CRS) for the ``clip()`` function in EarthPy to work.
 #
 # This example uses Polygons, a Line, and Points made with shapely and then
 # turned into GeoDataframes.
@@ -32,8 +28,7 @@ of a polygon geometry using GeoPandas.
 # Import Packages
 # ---------------
 #
-# To begin, import the needed packages. You will primarily use EarthPy's clip
-# utility alongside GeoPandas.
+# To begin, import the needed packages.
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,29 +40,14 @@ import geopandas.clip as gc
 # Create Example Data
 # -------------------
 #
-# Once the packages have been imported, you need to create the shapes to clip.
-# You need to make two polygons, one line, and one point feature with shapely,
-# and then open those shapes up with GeoPandas.
+# Below, some point, line and polygon geometries are created and coerced into
+# GeoDataFrames to demonstrate the use of clip.
 
 polygon1 = Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)])
 polygon2 = Polygon([(-5, -5), (-5, 5), (5, 5), (5, -5), (-5, -5)])
 line = LineString([(3, 4), (5, 7), (12, 2), (10, 5), (9, 7.5)])
 pts = np.array([[2, 2], [3, 4], [9, 8]])
 
-###############################################################################
-# Open Files with GeoPandas and Reproject the Data
-# -------------------------------------------------
-#
-# Open the data files to as GeoDataFrames using GeoPandas.
-#
-# .. note::
-#    Recall that the data must be in the same CRS in order to use the
-#    ``clip()`` function. If the data are not in the same CRS, be sure to use
-#    the ``to_crs()`` function from GeoPandas to match the projects between the
-#    two objects, as shown below. In this example, since you make all of the data,
-#    you don't have to change the CRS.
-
-# Now that since you have all of the shapes created, you can open them with GeoPandas
 poly_gdf1 = gpd.GeoDataFrame(
     [1], geometry=[polygon1], crs={"init": "epsg:4326"}
 )
@@ -80,10 +60,8 @@ points_gdf = gpd.GeoDataFrame(
 )
 
 ###############################################################################
-# The plot below shows all of the data before it has been clipped. Notice that
-# the ``.boundary`` method for a GeoPandas object is used to plot the
-# boundary rather than the filled polygon. This allows for other data, such as
-# the line and point data, to be overlayed on top of the polygon boundary.
+# Plot the Unclipped Data
+# -----------------------
 
 fig, ax = plt.subplots(figsize=(12, 8))
 poly_gdf1.boundary.plot(ax=ax)
@@ -98,15 +76,16 @@ plt.show()
 # Clip the Data
 # --------------
 #
-# Now that the data are opened as GeoDataFrame objects and in the same
-# projection, the data can be clipped! In this example we clip a polygon,
-# a line, and points to a created polygon.
+# When you call ``clip()``, the first object called is the object that will
+# be clipped. The second object called is the clip extent. The returned output
+# will be a new clipped GeoDataframe. All of the attributes for each returned
+# geometry will be retained when you clip.
 #
-# To clip the data, make
-# sure you put the object to be clipped as the first argument in
-# ``clip()``, followed by the vector object (boundary) to which you want
-# the first object clipped. The function will return the clipped GeoDataFrame
-# of the object that is being clipped (e.g. points).
+# .. note::
+#    Recall that the data must be in the same CRS in order to use the
+#    ``clip()`` function. If the data are not in the same CRS, be sure to use
+#    the GeoPandas ``to_crs()`` method to ensure both datasets are in the
+#    same CRS.
 
 ###############################################################################
 # Clip the Polygon Data

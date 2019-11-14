@@ -137,7 +137,7 @@ def _clip_multi_poly_line(gdf, clip_obj):
     # Clip multi polygons
     # Explode multi polygons so that intersection works with all parts of the polygon
     # If this step isn't taken, intersection only gets the intersection of one part of the
-    # multi part object. Also reset index to get ride of the column made by explode.
+    # multi part object. Also reset index to remove the column made by explode.
     clipped = _clip_line_poly(gdf.explode().reset_index(level=[1]), clip_obj)
 
     lines = clipped[
@@ -179,7 +179,7 @@ def clip(gdf, clip_obj):
 
     Examples
     --------
-    Clipping points (global capital cities) with a polygon (the South American continent):
+    Clip points (global capital cities) with a polygon (the South American continent):
 
         >>> import geopandas as gpd
         >>> import geopandas.clip as gc
