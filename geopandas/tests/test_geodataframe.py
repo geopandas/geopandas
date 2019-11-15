@@ -287,6 +287,12 @@ class TestDataFrame:
             assert i == r["geometry"].x
             assert i == r["geometry"].y
 
+    def test_set_geometry_empty(self):
+        df = pd.DataFrame(columns=["a", "geometry"], index=pd.DatetimeIndex([]))
+        result = df.set_geometry("geometry")
+        assert isinstance(result, GeoDataFrame)
+        assert isinstance(result.index, pd.DatetimeIndex)
+
     def test_align(self):
         df = self.df2
 
