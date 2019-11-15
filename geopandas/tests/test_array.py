@@ -9,6 +9,7 @@ import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
+from shapely._buildcfg import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -394,8 +395,8 @@ def test_binary_geo_scalar(attr):
 )
 def test_unary_predicates(attr):
     na_value = False
-    if attr == "is_simple":
-        # poly.is_simple raises an error for empty polygon
+    if attr == "is_simple" and geos_version < (3, 8):
+        # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         with pytest.raises(Exception):
             T.is_simple
         vals = triangle_no_missing
