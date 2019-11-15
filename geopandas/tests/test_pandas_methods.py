@@ -12,7 +12,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
 from geopandas.array import from_shapely
 
-from geopandas.tests.util import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 import pytest
 
@@ -140,6 +140,54 @@ def test_reindex(s, df):
 
     # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
     # should it return DataFrame instead ?
+
+
+def test_take(s, df):
+    inds = np.array([0, 2])
+
+    # GeoSeries take
+    result = s.take(inds)
+    expected = s.iloc[[0, 2]]
+    assert isinstance(result, GeoSeries)
+    assert_geoseries_equal(result, expected)
+
+    # GeoDataFrame take axis 0
+    result = df.take(inds, axis=0)
+    expected = df.iloc[[0, 2], :]
+    assert isinstance(result, GeoDataFrame)
+    assert_geodataframe_equal(result, expected)
+
+    # GeoDataFrame take axis 1
+    df = df.reindex(columns=["value1", "value2", "geometry"])  # ensure consistent order
+    result = df.take(inds, axis=1)
+    expected = df[["value1", "geometry"]]
+    assert isinstance(result, GeoDataFrame)
+    assert_geodataframe_equal(result, expected)
+
+    result = df.take(np.array([0, 1]), axis=1)
+    expected = df[["value1", "value2"]]
+    assert isinstance(result, pd.DataFrame)
+    assert_frame_equal(result, expected)
+
+
+def test_take_empty(s, df):
+    # ensure that index type is preserved in an empty take
+    # https://github.com/geopandas/geopandas/issues/1190
+    inds = np.array([], dtype="int64")
+
+    # use non-default index
+    df.index = pd.date_range("2012-01-01", periods=len(df))
+
+    result = df.take(inds, axis=0)
+    assert isinstance(result, GeoDataFrame)
+    assert result.shape == (0, 3)
+    assert isinstance(result.index, pd.DatetimeIndex)
+
+    # the original bug report was an empty boolean mask
+    for result in [df.loc[df["value1"] > 100], df[df["value1"] > 100]]:
+        assert isinstance(result, GeoDataFrame)
+        assert result.shape == (0, 3)
+        assert isinstance(result.index, pd.DatetimeIndex)
 
 
 def test_assignment(s, df):
