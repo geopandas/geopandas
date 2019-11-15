@@ -26,7 +26,7 @@ def test_no_additional_imports():
     code = """
 import sys
 import geopandas
-blacklist = {0:r}
+blacklist = {0!r}
 
 mods = blacklist & set(m.split('.')[0] for m in sys.modules)
 if mods:
