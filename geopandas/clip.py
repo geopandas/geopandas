@@ -193,7 +193,7 @@ def clip(gdf, clip_obj):
         (12, 2)
     """
     if not isinstance(gdf, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        raise AttributeError(
+        raise TypeError(
             "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
         )
 
