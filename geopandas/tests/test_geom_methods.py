@@ -297,6 +297,16 @@ class TestGeomMethods:
         result = gdf.bounds
         assert_frame_equal(expected, result)
 
+    def test_bounds_empty(self):
+        # test bounds of empty GeoSeries
+        # https://github.com/geopandas/geopandas/issues/1195
+        s = GeoSeries([])
+        result = s.bounds
+        expected = DataFrame(
+            columns=["minx", "miny", "maxx", "maxy"], index=s.index, dtype="float64"
+        )
+        assert_frame_equal(result, expected)
+
     def test_unary_union(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
