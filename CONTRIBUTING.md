@@ -46,7 +46,7 @@ Style
   code format throughout the project.
 
 - Imports should be grouped with standard library imports first,
-  3rd-party libraries next, and GeoPandas imports third. Within each
+  third-party libraries next, and GeoPandas imports third. Within each
   grouping, imports should be alphabetized. Always use absolute
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
