@@ -348,6 +348,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
+    gcoll_idx = np.asarray((geom_types == "GeometryCollection"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = s.geometry[poly_idx]
@@ -378,6 +379,12 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         values_ = values[point_idx] if cmap else None
         plot_point_collection(ax, points, values_, color=color, cmap=cmap, **style_kwds)
 
+    gcolls = s.geometry[gcoll_idx]
+    if not gcolls.empty:
+        exploded = s[gcoll_idx].explode()
+        plot_series(
+            exploded, cmap=cmap, color=color, ax=ax, figsize=figsize, **style_kwds
+        )
     plt.draw()
     return ax
 
