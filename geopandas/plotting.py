@@ -343,7 +343,9 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     geom_types = s.geometry.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
-        (geom_types == "LineString") | (geom_types == "MultiLineString")
+        (geom_types == "LineString")
+        | (geom_types == "MultiLineString")
+        | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
@@ -568,7 +570,9 @@ def plot_dataframe(
     geom_types = df.geometry.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
-        (geom_types == "LineString") | (geom_types == "MultiLineString")
+        (geom_types == "LineString")
+        | (geom_types == "MultiLineString")
+        | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
