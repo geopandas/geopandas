@@ -11,7 +11,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env
+from geopandas.io.file import fiona_env, _FIONA18
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -48,8 +48,7 @@ def df_points():
 # to_file tests
 # -----------------------------------------------------------------------------
 
-driver_ext_pairs = [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson"),
-                    ("GPKG", "gpkg")]
+driver_ext_pairs = [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson"), ("GPKG", "gpkg")]
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -74,7 +73,8 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_path(tmpdir, df_nybb, df_null, driver, ext):
+@pytest.mark.skipif(not _FIONA18, reason="pathlib support added to fiona in 1.8")
+def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
     """ Test to_file and from_file """
     temppath = pathlib.Path(os.path.join(str(tmpdir), "boros." + ext))
     df_nybb.to_file(temppath, driver=driver)
