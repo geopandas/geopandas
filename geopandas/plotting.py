@@ -88,25 +88,36 @@ def plot_polygon_collection(
             "The descartes package is required for plotting polygons in geopandas."
         )
     from matplotlib.collections import PatchCollection
+    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
         del kwargs["markersize"]
     if color is not None:
-        kwargs["color"] = color
-        if pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
-        else:
+        if is_color_like(color):
             kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex, axis=0)
+        else:
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
+
     else:
         for att in ["facecolor", "edgecolor"]:
             if att in kwargs:
-                if pd.api.types.is_list_like(kwargs[att]):
-                    kwargs[att] = np.take(kwargs[att], multiindex)
+                if not is_color_like(kwargs[att]):
+                    if pd.api.types.is_list_like(kwargs[att]):
+                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
+                    elif kwargs[att] is not None:
+                        raise TypeError(
+                            "Color attribute has to be a single color or sequence "
+                            "of colors."
+                        )
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -150,10 +161,11 @@ def plot_linestring_collection(
 
     """
     from matplotlib.collections import LineCollection
+    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -161,10 +173,14 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        if pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
-        else:
+        if is_color_like(color):
             kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex, axis=0)
+        else:
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -213,12 +229,14 @@ def plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
+    from matplotlib.colors import is_color_like
+
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
@@ -230,8 +248,13 @@ def plot_point_collection(
         kwargs["s"] = markersize
 
     if color is not None:
-        if pd.api.types.is_list_like(color):
-            color = np.take(color, multiindex)
+        if not is_color_like(color):
+            if pd.api.types.is_list_like(color):
+                color = np.take(color, multiindex, axis=0)
+            else:
+                raise TypeError(
+                    "Color attribute has to be a single color or sequence of colors."
+                )
 
     if "norm" not in kwargs:
         collection = ax.scatter(
