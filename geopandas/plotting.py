@@ -6,7 +6,7 @@ import pandas as pd
 import geopandas as gpd
 
 
-def _flatten_multi_geoms(geoms, colors=None):
+def _flatten_multi_geoms(geoms, colors=None, prefix="Multi"):
     """
     Returns Series like geoms and colors, except that any Multi geometries
     are split into their components and colors are repeated for all component
@@ -28,16 +28,13 @@ def _flatten_multi_geoms(geoms, colors=None):
 
     components, component_colors = [], []
 
-    if (
-        not geoms.geom_type.str.startswith("Multi").any()
-        and not geoms.geom_type.str.startswith("Geom").any()
-    ):
+    if not geoms.geom_type.str.startswith(prefix).any():
         return geoms, colors
 
     # precondition, so zip can't short-circuit
     assert len(geoms) == len(colors)
     for geom, color in zip(geoms, colors):
-        if geom.type.startswith("Multi") or geom.type.startswith("Geom"):
+        if geom.type.startswith(prefix):
             for poly in geom:
                 components.append(poly)
                 # repeat same color for all components
@@ -345,7 +342,14 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         style_kwds["vmin"] = style_kwds.get("vmin", values.min())
         style_kwds["vmax"] = style_kwds.get("vmax", values.max())
 
-    geom_types = s.geometry.type
+    # decompose GeometryCollections
+    geoms, multiindex = _flatten_multi_geoms(
+        s.geometry, range(len(s.geometry)), prefix="Geom"
+    )
+    values = np.take(values, multiindex, axis=0) if cmap else None
+    expl_series = gpd.GeoSeries(geoms)
+
+    geom_types = expl_series.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -353,11 +357,9 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
-    gcoll_idx = np.asarray((geom_types == "GeometryCollection"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = s.geometry[poly_idx]
-
+    polys = expl_series[poly_idx]
     if not polys.empty:
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
@@ -371,7 +373,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = s.geometry[line_idx]
+    lines = expl_series[line_idx]
     if not lines.empty:
         values_ = values[line_idx] if cmap else None
         plot_linestring_collection(
@@ -379,15 +381,11 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         )
 
     # plot all Points in the same collection
-    points = s.geometry[point_idx]
+    points = expl_series[point_idx]
     if not points.empty:
         values_ = values[point_idx] if cmap else None
         plot_point_collection(ax, points, values_, color=color, cmap=cmap, **style_kwds)
 
-    gcolls = s.geometry[gcoll_idx]
-    if not gcolls.empty:
-        exploded = s[gcoll_idx].explode()
-        plot_series(exploded, cmap=cmap, color=color, ax=ax, **style_kwds)
     plt.draw()
     return ax
 
@@ -577,7 +575,12 @@ def plot_dataframe(
     mn = values[~np.isnan(values)].min() if vmin is None else vmin
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
-    geom_types = df.geometry.type
+    # decompose GeometryCollections
+    geoms, multiindex = _flatten_multi_geoms(df.geometry, range(len(df)), prefix="Geom")
+    values = np.take(values, multiindex, axis=0)
+    expl_series = gpd.GeoSeries(geoms)
+
+    geom_types = expl_series.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -585,24 +588,23 @@ def plot_dataframe(
         | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
-    gcoll_idx = np.asarray((geom_types == "GeometryCollection"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = df.geometry[poly_idx]
+    polys = expl_series[poly_idx]
     if not polys.empty:
         plot_polygon_collection(
             ax, polys, values[poly_idx], vmin=mn, vmax=mx, cmap=cmap, **style_kwds
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = df.geometry[line_idx]
+    lines = expl_series[line_idx]
     if not lines.empty:
         plot_linestring_collection(
             ax, lines, values[line_idx], vmin=mn, vmax=mx, cmap=cmap, **style_kwds
         )
 
     # plot all Points in the same collection
-    points = df.geometry[point_idx]
+    points = expl_series[point_idx]
     if not points.empty:
         if isinstance(markersize, np.ndarray):
             markersize = markersize[point_idx]
@@ -616,70 +618,6 @@ def plot_dataframe(
             cmap=cmap,
             **style_kwds
         )
-
-    # plot GeometryCollection by decomposing it
-    gcolls = df.geometry[gcoll_idx]
-    if not gcolls.empty:
-        # decompose to geometries
-        geoms, multiindex = _flatten_multi_geoms(
-            df[gcoll_idx].geometry, values[gcoll_idx]
-        )
-        # decomposed values and geoms
-        expl_values = np.take(values, multiindex, axis=0)
-        expl_series = gpd.GeoSeries(geoms)
-
-        # plot decomposed geoms based on geom_type
-        expl_types = expl_series.type
-        expl_poly_idx = np.asarray(
-            (expl_types == "Polygon") | (expl_types == "MultiPolygon")
-        )
-        expl_line_idx = np.asarray(
-            (expl_types == "LineString")
-            | (expl_types == "MultiLineString")
-            | (expl_types == "LinearRing")
-        )
-        expl_point_idx = np.asarray(
-            (expl_types == "Point") | (expl_types == "MultiPoint")
-        )
-
-        polys = expl_series[expl_poly_idx]
-        if not polys.empty:
-            plot_polygon_collection(
-                ax,
-                polys,
-                expl_values[expl_poly_idx],
-                vmin=mn,
-                vmax=mx,
-                cmap=cmap,
-                **style_kwds
-            )
-
-        lines = expl_series[expl_line_idx]
-        if not lines.empty:
-            plot_linestring_collection(
-                ax,
-                lines,
-                expl_values[expl_line_idx],
-                vmin=mn,
-                vmax=mx,
-                cmap=cmap,
-                **style_kwds
-            )
-
-        points = expl_series[expl_point_idx]
-        if not points.empty:
-            if isinstance(markersize, np.ndarray):
-                markersize = markersize[expl_point_idx]
-            plot_point_collection(
-                ax,
-                points,
-                expl_values[expl_point_idx],
-                vmin=mn,
-                vmax=mx,
-                markersize=markersize,
-                cmap=cmap,
-                **style_kwds
-            )
 
     if legend and not color:
 
