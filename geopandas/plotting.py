@@ -6,44 +6,39 @@ import pandas as pd
 import geopandas as gpd
 
 
-def _flatten_multi_geoms(geoms, colors=None, prefix="Multi"):
+def _flatten_multi_geoms(geoms, prefix="Multi"):
     """
-    Returns Series like geoms and colors, except that any Multi geometries
-    are split into their components and colors are repeated for all component
-    in the same Multi geometry.  Maintains 1:1 matching of geometry to color.
-    Passing `color` is optional, and when no `color` is passed a list of None
-    values is returned as `component_colors`.
+    Returns Series like geoms and index, except that any Multi geometries
+    are split into their components and indices are repeated for all component
+    in the same Multi geometry.  Maintains 1:1 matching of geometry to value.
 
-    "Colors" are treated opaquely and so can actually contain any values.
+    Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and similar,
+    "Geom" for GeometryCollection.
 
     Returns
     -------
 
     components : list of geometry
 
-    component_colors : list of whatever type `colors` contains
+    component_index : list of whatever type `colors` contains
     """
-    if colors is None:
-        colors = [None] * len(geoms)
-
-    components, component_colors = [], []
+    components, component_index = [], []
 
     if not geoms.geom_type.str.startswith(prefix).any():
-        return geoms, colors
+        return geoms, range(len(geoms))
 
     # precondition, so zip can't short-circuit
-    assert len(geoms) == len(colors)
-    for geom, color in zip(geoms, colors):
+    for geom, ix in zip(geoms, range(len(geoms))):
         if geom.type.startswith(prefix):
             for poly in geom:
                 components.append(poly)
                 # repeat same color for all components
-                component_colors.append(color)
+                component_index.append(ix)
         else:
             components.append(geom)
-            component_colors.append(color)
+            component_index.append(ix)
 
-    return components, component_colors
+    return components, component_index
 
 
 def plot_polygon_collection(
@@ -92,7 +87,7 @@ def plot_polygon_collection(
     from matplotlib.collections import PatchCollection
     from matplotlib.colors import is_color_like
 
-    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex)
 
@@ -165,7 +160,7 @@ def plot_linestring_collection(
     from matplotlib.collections import LineCollection
     from matplotlib.colors import is_color_like
 
-    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex)
 
@@ -236,7 +231,7 @@ def plot_point_collection(
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex)
 
@@ -343,9 +338,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         style_kwds["vmax"] = style_kwds.get("vmax", values.max())
 
     # decompose GeometryCollections
-    geoms, multiindex = _flatten_multi_geoms(
-        s.geometry, range(len(s.geometry)), prefix="Geom"
-    )
+    geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0) if cmap else None
     expl_series = gpd.GeoSeries(geoms)
 
@@ -576,7 +569,7 @@ def plot_dataframe(
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     # decompose GeometryCollections
-    geoms, multiindex = _flatten_multi_geoms(df.geometry, range(len(df)), prefix="Geom")
+    geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0)
     expl_series = gpd.GeoSeries(geoms)
 
