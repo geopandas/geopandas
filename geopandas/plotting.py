@@ -92,7 +92,7 @@ def plot_polygon_collection(
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -101,7 +101,7 @@ def plot_polygon_collection(
         if is_color_like(color):
             kwargs["color"] = color
         elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
+            kwargs["color"] = np.take(color, multiindex, axis=0)
         else:
             raise TypeError(
                 "Color attribute has to be a single color or sequence of colors."
@@ -112,7 +112,7 @@ def plot_polygon_collection(
             if att in kwargs:
                 if not is_color_like(kwargs[att]):
                     if pd.api.types.is_list_like(kwargs[att]):
-                        kwargs[att] = np.take(kwargs[att], multiindex)
+                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
                     elif kwargs[att] is not None:
                         raise TypeError(
                             "Color attribute has to be a single color or sequence "
@@ -165,7 +165,7 @@ def plot_linestring_collection(
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -176,7 +176,7 @@ def plot_linestring_collection(
         if is_color_like(color):
             kwargs["color"] = color
         elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
+            kwargs["color"] = np.take(color, multiindex, axis=0)
         else:
             raise TypeError(
                 "Color attribute has to be a single color or sequence of colors."
@@ -236,7 +236,7 @@ def plot_point_collection(
 
     geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
@@ -250,7 +250,7 @@ def plot_point_collection(
     if color is not None:
         if not is_color_like(color):
             if pd.api.types.is_list_like(color):
-                color = np.take(color, multiindex)
+                color = np.take(color, multiindex, axis=0)
             else:
                 raise TypeError(
                     "Color attribute has to be a single color or sequence of colors."
