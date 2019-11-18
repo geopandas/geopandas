@@ -2,7 +2,7 @@ Changes
 =======
 
 
-Version 0.6.2 (November ??, 2019)
+Version 0.6.2 (November 18, 2019)
 ---------------------------------
 
 Small bug-fix release fixing a few regressions:
