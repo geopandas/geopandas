@@ -1,6 +1,20 @@
 Changes
 =======
 
+
+Version 0.6.2 (November ??, 2019)
+---------------------------------
+
+Small bug-fix release fixing a few regressions:
+
+- Fix a regression in passing an array of RRB(A) tuples to the ``.plot()``
+  method (#1178, #1211).
+- Fix the ``bounds`` and ``total_bounds`` attributes for empty GeoSeries, which
+  also fixes the repr of an empty or all-NA GeoSeries (#1184, #1195).
+- Fix filtering of a GeoDataFrame to preserve the index type when ending up
+  with an empty result (#1190).
+
+
 Version 0.6.1 (October 12, 2019)
 --------------------------------
 
