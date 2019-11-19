@@ -829,20 +829,21 @@ class GeometryArray(ExtensionArray):
 
     @property
     def bounds(self):
-        # ensure that for empty arrays, the result has the correct shape
-        if len(self) == 0:
-            return np.empty((0, 4), dtype="float64")
-        # need to explicitly check for empty (in addition to missing) geometries,
-        # as those return an empty tuple, not resulting in a 2D array
-        bounds = np.array(
-            [
-                geom.bounds
-                if not (geom is None or geom.is_empty)
-                else (np.nan, np.nan, np.nan, np.nan)
-                for geom in self
-            ]
-        )
-        return bounds
+        return pygeos.extent(self.data)
+        # # ensure that for empty arrays, the result has the correct shape
+        # if len(self) == 0:
+        #     return np.empty((0, 4), dtype="float64")
+        # # need to explicitly check for empty (in addition to missing) geometries,
+        # # as those return an empty tuple, not resulting in a 2D array
+        # bounds = np.array(
+        #     [
+        #         geom.bounds
+        #         if not (geom is None or geom.is_empty)
+        #         else (np.nan, np.nan, np.nan, np.nan)
+        #         for geom in self
+        #     ]
+        # )
+        # return bounds
 
     @property
     def total_bounds(self):
