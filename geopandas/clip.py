@@ -215,7 +215,11 @@ def clip(gdf, clip_obj):
     poly = clip_obj.geometry.unary_union
 
     geom_types = gdf.geometry.type
-    line_idx = np.asarray((geom_types == "Polygon") | (geom_types == "LineString"))
+    line_idx = np.asarray(
+    (geom_types == "LineString")
+    | (geom_types == "MultiLineString")
+    | (geom_types == "LinearRing")
+)
     multiline_idx = np.asarray(
         (geom_types == "MultiPolygon") | (geom_types == "MultiLineString")
     )
