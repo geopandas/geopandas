@@ -226,12 +226,8 @@ def clip(gdf, clip_obj):
     multipoly_line_idx = np.asarray(
         (geom_types == "MultiPolygon") | (geom_types == "MultiLineString")
     )
-    point_idx = np.asarray(
-        (geom_types == "Point")
-    )
-    multipoint_idx = np.asarray(
-        (geom_types == "MultiPoint")
-    )
+    point_idx = np.asarray((geom_types == "Point"))
+    multipoint_idx = np.asarray((geom_types == "MultiPoint"))
 
     multipoints = gdf[multipoint_idx]
     if not multipoints.empty:
