@@ -5,8 +5,6 @@ configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
 
-from __future__ import absolute_import
-
 import geopandas
 from geopandas import read_file, read_postgis
 

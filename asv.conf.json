@@ -58,7 +58,6 @@
         "cython": [],
         "fiona": [],
         "pyproj": [],
-        "six": [],
         "rtree": [],
         "matplotlib": [],
         "descartes": []

@@ -5,10 +5,6 @@
 
 environment:
   matrix:
-    - PYTHON_VERSION: "2.7"
-      MINICONDA: C:\Miniconda-x64
-      ENV_FILE: "ci/travis/27-latest-defaults.yaml"
-
     - PYTHON_VERSION: "3.7"
       MINICONDA: C:\Miniconda37-x64
       ENV_FILE: "ci/travis/37-latest-conda-forge.yaml"

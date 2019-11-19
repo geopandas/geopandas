@@ -9,6 +9,7 @@ import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
+from shapely._buildcfg import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -133,6 +134,13 @@ def test_from_wkb():
     assert res[-1] is None
     assert res[-2] is None
 
+    # single MultiPolygon
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    res = from_wkb([multi_poly.wkb])
+    assert res[0] == multi_poly
+
 
 def test_to_wkb():
     P = from_shapely(points_no_missing)
@@ -178,6 +186,13 @@ def test_from_wkt(string_type):
     res = from_wkt(L_wkt)
     assert res[-1] is None
     assert res[-2] is None
+
+    # single MultiPolygon
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    res = from_wkt([f(multi_poly.wkt)])
+    assert res[0] == multi_poly
 
 
 def test_to_wkt():
@@ -380,8 +395,8 @@ def test_binary_geo_scalar(attr):
 )
 def test_unary_predicates(attr):
     na_value = False
-    if attr == "is_simple":
-        # poly.is_simple raises an error for empty polygon
+    if attr == "is_simple" and geos_version < (3, 8):
+        # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         with pytest.raises(Exception):
             T.is_simple
         vals = triangle_no_missing
@@ -602,6 +617,36 @@ def test_bounds():
         assert result.dtype == "float64"
         np.testing.assert_allclose(result, np.array([[np.nan] * 4]))
 
+    # empty array (https://github.com/geopandas/geopandas/issues/1195)
+    E = from_shapely([])
+    result = E.bounds
+    assert result.shape == (0, 4)
+    assert result.dtype == "float64"
+
+
+def test_total_bounds():
+    result = T.total_bounds
+    bounds = np.array(
+        [t.bounds if not (t is None or t.is_empty) else [np.nan] * 4 for t in triangles]
+    )
+    expected = np.array(
+        [
+            bounds[:, 0].min(),  # minx
+            bounds[:, 1].min(),  # miny
+            bounds[:, 2].max(),  # maxx
+            bounds[:, 3].max(),  # maxy
+        ]
+    )
+    np.testing.assert_allclose(result, expected)
+
+    # additional check for empty array or one empty / missing
+    for geoms in [[], [None], [shapely.geometry.Polygon()]]:
+        E = from_shapely(geoms)
+        result = E.total_bounds
+        assert result.ndim == 1
+        assert result.dtype == "float64"
+        np.testing.assert_allclose(result, np.array([np.nan] * 4))
+
 
 def test_getitem():
     points = [shapely.geometry.Point(i, i) for i in range(10)]
@@ -623,6 +668,20 @@ def test_getitem():
     P5 = P[1]
     assert isinstance(P5, shapely.geometry.Point)
     assert P5.equals(points[1])
+
+
+def test_equality_ops():
+    with pytest.raises(ValueError):
+        P[:5] == P[:7]
+
+    a1 = from_shapely([points[1], points[2], points[3]])
+    a2 = from_shapely([points[1], points[0], points[3]])
+
+    res = a1 == a2
+    assert res.tolist() == [True, False, True]
+
+    res = a1 != a2
+    assert res.tolist() == [False, True, False]
 
 
 def test_dir():
@@ -653,3 +712,36 @@ def test_raise_on_bad_sizes():
     assert "lengths" in str(info.value).lower()
     assert "12" in str(info.value)
     assert "21" in str(info.value)
+
+
+def test_buffer_single_multipolygon():
+    # https://github.com/geopandas/geopandas/issues/1130
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    arr = from_shapely([multi_poly])
+    result = arr.buffer(1)
+    expected = [multi_poly.buffer(1)]
+    equal_geometries(result, expected)
+    result = arr.buffer(np.array([1]))
+    equal_geometries(result, expected)
+
+
+def test_astype_multipolygon():
+    # https://github.com/geopandas/geopandas/issues/1145
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    arr = from_shapely([multi_poly])
+    result = arr.astype(str)
+    assert isinstance(result[0], str)
+    assert result[0] == multi_poly.wkt
+
+    # astype(object) does not convert to string
+    result = arr.astype(object)
+    assert isinstance(result[0], shapely.geometry.base.BaseGeometry)
+
+    # astype(np_dtype) honors the dtype
+    result = arr.astype(np.dtype("U10"))
+    assert result.dtype == np.dtype("U10")
+    assert result[0] == multi_poly.wkt[:10]

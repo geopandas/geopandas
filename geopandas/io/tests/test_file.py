@@ -1,19 +1,17 @@
-from __future__ import absolute_import
-
 from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
 import os
+import pathlib
 import sys
 
-import numpy as np
-
 import fiona
+import numpy as np
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env
+from geopandas.io.file import fiona_env, _FIONA18
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -50,10 +48,10 @@ def df_points():
 # to_file tests
 # -----------------------------------------------------------------------------
 
+driver_ext_pairs = [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson"), ("GPKG", "gpkg")]
 
-@pytest.mark.parametrize(
-    "driver,ext", [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson")]
-)
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     """ Test to_file and from_file """
     tempfilename = os.path.join(str(tmpdir), "boros." + ext)
@@ -74,9 +72,20 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     assert np.alltrue(df["Name"].values == df_null["Name"])
 
 
-@pytest.mark.parametrize(
-    "driver,ext", [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson")]
-)
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+@pytest.mark.skipif(not _FIONA18, reason="pathlib support added to fiona in 1.8")
+def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
+    """ Test to_file and from_file """
+    temppath = pathlib.Path(os.path.join(str(tmpdir), "boros." + ext))
+    df_nybb.to_file(temppath, driver=driver)
+    # Read layer back in
+    df = GeoDataFrame.from_file(temppath)
+    assert "geometry" in df
+    assert len(df) == 5
+    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_bool(tmpdir, driver, ext):
     """Test error raise when writing with a boolean column (GH #437)."""
     tempfilename = os.path.join(str(tmpdir), "temp.{0}".format(ext))
@@ -119,9 +128,7 @@ def test_to_file_datetime(tmpdir):
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
 
-@pytest.mark.parametrize(
-    "ext, driver", [("shp", "ESRI Shapefile"), ("geojson", "GeoJSON")]
-)
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_with_point_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
@@ -136,9 +143,7 @@ def test_to_file_with_point_z(tmpdir, ext, driver):
     assert_geoseries_equal(df.geometry, df_read.geometry)
 
 
-@pytest.mark.parametrize(
-    "ext, driver", [("shp", "ESRI Shapefile"), ("geojson", "GeoJSON")]
-)
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_with_poly_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from pandas import DataFrame, Series
 
 from shapely.geometry import Point

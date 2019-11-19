@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import warnings
 
 import numpy as np
@@ -90,25 +88,44 @@ def plot_polygon_collection(
             "The descartes package is required for plotting polygons in geopandas."
         )
     from matplotlib.collections import PatchCollection
+    from matplotlib.colors import is_color_like
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
-    if None in values:
-        values = None
+    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    if values is not None:
+        values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
         del kwargs["markersize"]
-
-    # color=None overwrites specified facecolor/edgecolor with default color
     if color is not None:
-        kwargs["color"] = color
+        if is_color_like(color):
+            kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex, axis=0)
+        else:
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
+
+    else:
+        for att in ["facecolor", "edgecolor"]:
+            if att in kwargs:
+                if not is_color_like(kwargs[att]):
+                    if pd.api.types.is_list_like(kwargs[att]):
+                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
+                    elif kwargs[att] is not None:
+                        raise TypeError(
+                            "Color attribute has to be a single color or sequence "
+                            "of colors."
+                        )
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
         collection.set_cmap(cmap)
-        collection.set_clim(vmin, vmax)
+        if "norm" not in kwargs:
+            collection.set_clim(vmin, vmax)
 
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
@@ -144,10 +161,11 @@ def plot_linestring_collection(
 
     """
     from matplotlib.collections import LineCollection
+    from matplotlib.colors import is_color_like
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
-    if None in values:
-        values = None
+    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    if values is not None:
+        values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -155,7 +173,14 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        kwargs["color"] = color
+        if is_color_like(color):
+            kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex, axis=0)
+        else:
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -163,7 +188,8 @@ def plot_linestring_collection(
     if values is not None:
         collection.set_array(np.asarray(values))
         collection.set_cmap(cmap)
-        collection.set_clim(vmin, vmax)
+        if "norm" not in kwargs:
+            collection.set_clim(vmin, vmax)
 
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
@@ -203,12 +229,15 @@ def plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
+    from matplotlib.colors import is_color_like
+
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, values = _flatten_multi_geoms(geoms, values)
-    if None in values:
-        values = None
+    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    if values is not None:
+        values = np.take(values, multiindex, axis=0)
+
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
 
@@ -218,9 +247,22 @@ def plot_point_collection(
     if markersize is not None:
         kwargs["s"] = markersize
 
-    collection = ax.scatter(
-        x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
-    )
+    if color is not None:
+        if not is_color_like(color):
+            if pd.api.types.is_list_like(color):
+                color = np.take(color, multiindex, axis=0)
+            else:
+                raise TypeError(
+                    "Color attribute has to be a single color or sequence of colors."
+                )
+
+    if "norm" not in kwargs:
+        collection = ax.scatter(
+            x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
+        )
+    else:
+        collection = ax.scatter(x, y, color=color, cmap=cmap, marker=marker, **kwargs)
+
     return collection
 
 
@@ -314,6 +356,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         facecolor = style_kwds.pop("facecolor", None)
         if color is not None:
             facecolor = color
+
         values_ = values[poly_idx] if cmap else None
         plot_polygon_collection(
             ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
@@ -568,7 +611,9 @@ def plot_dataframe(
         from matplotlib.colors import Normalize
         from matplotlib import cm
 
-        norm = Normalize(vmin=mn, vmax=mx)
+        norm = style_kwds.get("norm", None)
+        if not norm:
+            norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
             patches = []
