@@ -193,14 +193,14 @@ def clip(gdf, clip_obj):
         (12, 2)
     """
     if not isinstance(gdf, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        raise AttributeError(
+        raise TypeError(
             "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
         )
 
     if not isinstance(
         clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries, Polygon, MultiPolygon)
     ):
-        raise AttributeError(
+        raise TypeError(
             "'clip_obj' should be GeoDataFrame, GeoSeries or"
             "(Multi)Polygon, got {}".format(type(gdf))
         )

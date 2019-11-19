@@ -32,7 +32,7 @@ of a polygon geometry using GeoPandas.
 
 import numpy as np
 import matplotlib.pyplot as plt
-import geopandas as gpd
+import geopandas
 from shapely.geometry import Polygon, LineString, Point
 import geopandas.clip as gc
 
