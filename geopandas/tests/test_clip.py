@@ -110,6 +110,15 @@ def multi_point(point_gdf):
     return out_df
 
 
+@pytest.fixture
+def mixed_gdf():
+    """ Create a Mixed Polygon and LineString For Testing """
+    line = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
+    poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
+    gdf = gpd.GeoDataFrame([1, 2], geometry=[line, poly], crs={"init": "epsg:4326"})
+    return gdf
+
+
 def test_not_gdf(single_rectangle_gdf):
     """Non-GeoDataFrame inputs raise attribute errors."""
     with pytest.raises(AttributeError):
@@ -204,3 +213,20 @@ def test_clip_lines(two_line_gdf, single_rectangle_gdf):
     """Test what happens when you give the clip_extent a line GDF."""
     clip_line = cl.clip(two_line_gdf, single_rectangle_gdf)
     assert len(clip_line.geometry) == 2
+
+
+def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
+    """Test clipping a polygon with a multipolygon."""
+    multi = buffered_locations.dissolve(by="type").reset_index()
+    clip = cl.clip(single_rectangle_gdf, multi)
+    assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
+
+
+def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
+    """Test clipping a mixed GeoDataFrame"""
+    clip = cl.clip(mixed_gdf, single_rectangle_gdf)
+    assert (
+        hasattr(clip, "geometry")
+        and clip.geom_type[0] == "LineString"
+        and clip.geom_type[1] == "Polygon"
+    )
