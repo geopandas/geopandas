@@ -48,13 +48,11 @@ capitals = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"
 world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
 
 # Create a subset of the world data that is just the South American continent
-south_america = world[world['continent'] == "South America"]
+south_america = world[world["continent"] == "South America"]
 
 # Create a custom polygon
 polygon = Polygon([(0, 0), (0, 90), (180, 90), (180, 0), (0, 0)])
-poly_gdf = geopandas.GeoDataFrame(
-    [1], geometry=[polygon], crs=world.crs
-)
+poly_gdf = geopandas.GeoDataFrame([1], geometry=[polygon], crs=world.crs)
 
 ###############################################################################
 # Plot the Unclipped Data
@@ -117,4 +115,3 @@ south_america.boundary.plot(ax=ax, color="green")
 ax.set_title("Capitals Clipped", fontsize=20)
 ax.set_axis_off()
 plt.show()
-
