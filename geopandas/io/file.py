@@ -1,8 +1,6 @@
 from distutils.version import LooseVersion
-import os
 
 import numpy as np
-import six
 
 import fiona
 
@@ -12,20 +10,13 @@ try:
     from fiona import Env as fiona_env
 except ImportError:
     from fiona import drivers as fiona_env
-
+# Adapted from pandas.io.common
+from urllib.request import urlopen as _urlopen
+from urllib.parse import urlparse as parse_url
+from urllib.parse import uses_relative, uses_netloc, uses_params
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
 
-
-# Adapted from pandas.io.common
-if six.PY3:
-    from urllib.request import urlopen as _urlopen
-    from urllib.parse import urlparse as parse_url
-    from urllib.parse import uses_relative, uses_netloc, uses_params
-else:
-    from urllib2 import urlopen as _urlopen
-    from urlparse import urlparse as parse_url
-    from urlparse import uses_relative, uses_netloc, uses_params
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -120,10 +111,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
+    The path may specify a fiona VSI scheme.
     """
     if schema is None:
         schema = infer_schema(df)
-    filename = os.path.abspath(os.path.expanduser(filename))
     with fiona_env():
         with fiona.open(
             filename, "w", driver=driver, crs=df.crs, schema=schema, **kwargs

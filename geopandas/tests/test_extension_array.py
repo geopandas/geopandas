@@ -13,6 +13,8 @@ A set of fixtures are defined to provide data for the tests (the fixtures
 expected to be available to pytest by the inherited pandas tests).
 
 """
+import operator
+
 import numpy as np
 import pandas as pd
 from pandas.tests.extension import base as extension_tests
@@ -261,7 +263,9 @@ def all_boolean_reductions(request):
     return request.param
 
 
-@pytest.fixture(params=["__eq__", "__ne__", "__le__", "__lt__", "__ge__", "__gt__"])
+# only == and != are support for GeometryArray
+# @pytest.fixture(params=["__eq__", "__ne__", "__le__", "__lt__", "__ge__", "__gt__"])
+@pytest.fixture(params=["__eq__", "__ne__"])
 def all_compare_operators(request):
     """
     Fixture for dunder names for common compare operations
@@ -393,30 +397,24 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
 
 
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
-    @not_yet_implemented
+    def _compare_other(self, s, data, op_name, other):
+        op = getattr(operator, op_name.strip("_"))
+        result = op(s, other)
+        expected = s.combine(other, op)
+        self.assert_series_equal(result, expected)
+
+    @skip_pandas_below_024
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
-        self._compare_other(s, data, op_name, 0)
+        self._compare_other(s, data, op_name, data[0])
 
-    @not_yet_implemented
+    @skip_pandas_below_024
     def test_compare_array(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
         other = pd.Series([data[0]] * len(data))
         self._compare_other(s, data, op_name, other)
-
-    def test_direct_arith_with_series_returns_not_implemented(self, data):
-        # EAs should return NotImplemented for ops with Series.
-        # Pandas takes care of unboxing the series and calling the EA's op.
-        other = pd.Series(data)
-        if hasattr(data, "__eq__"):
-            result = data.__eq__(other)
-            assert result is NotImplemented
-        else:
-            raise pytest.skip(
-                "{} does not implement __eq__".format(data.__class__.__name__)
-            )
 
 
 class TestMethods(extension_tests.BaseMethodsTests):

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import string
 
 import numpy as np
@@ -298,6 +296,16 @@ class TestGeomMethods:
         gdf = self.gdf1.set_geometry(self.g1)
         result = gdf.bounds
         assert_frame_equal(expected, result)
+
+    def test_bounds_empty(self):
+        # test bounds of empty GeoSeries
+        # https://github.com/geopandas/geopandas/issues/1195
+        s = GeoSeries([])
+        result = s.bounds
+        expected = DataFrame(
+            columns=["minx", "miny", "maxx", "maxy"], index=s.index, dtype="float64"
+        )
+        assert_frame_equal(result, expected)
 
     def test_unary_union(self):
         p1 = self.t1
