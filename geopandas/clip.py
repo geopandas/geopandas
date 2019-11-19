@@ -212,7 +212,10 @@ def clip(gdf, clip_obj):
     if gdf.cx[xmin:xmax, ymin:ymax].empty:
         raise ValueError("Shape and crop extent do not overlap.")
 
-    poly = clip_obj.geometry.unary_union
+    if isinstance(clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        poly = clip_obj.geometry.unary_union
+    else:
+        poly = clip_obj
 
     geom_types = gdf.geometry.type
     line_idx = np.asarray(
