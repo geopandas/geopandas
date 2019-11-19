@@ -218,36 +218,43 @@ def clip(gdf, clip_obj):
         poly = clip_obj
 
     geom_types = gdf.geometry.type
-    line_idx = np.asarray(
-    (geom_types == "LineString")
-    | (geom_types == "MultiLineString")
-    | (geom_types == "LinearRing")
-)
-    multiline_idx = np.asarray(
+    poly_line_idx = np.asarray(
+        (geom_types == "LineString")
+        | (geom_types == "LinearRing")
+        | (geom_types == "Polygon")
+    )
+    multipoly_line_idx = np.asarray(
         (geom_types == "MultiPolygon") | (geom_types == "MultiLineString")
     )
-    point_idx = np.asarray((geom_types == "Point"))
-    multipoint_idx = np.asarray((geom_types == "MultiPoint"))
+    point_idx = np.asarray(
+        (geom_types == "Point")
+    )
+    multipoint_idx = np.asarray(
+        (geom_types == "MultiPoint")
+    )
 
     multipoints = gdf[multipoint_idx]
     if not multipoints.empty:
         multipoint_gdf = _clip_multi_point(multipoints, poly)
     else:
         multipoint_gdf = None
+
     points = gdf[point_idx]
     if not points.empty:
         point_gdf = _clip_points(points, poly)
     else:
         point_gdf = None
-    multilines = gdf[multiline_idx]
-    if not multilines.empty:
-        multiline_gdf = _clip_multi_poly_line(multilines, poly)
-    else:
-        multiline_gdf = None
-    lines = gdf[line_idx]
-    if not lines.empty:
-        line_gdf = _clip_line_poly(lines, poly)
-    else:
-        line_gdf = None
 
-    return pd.concat([multipoint_gdf, point_gdf, multiline_gdf, line_gdf])
+    multipoly_lines = gdf[multipoly_line_idx]
+    if not multipoly_lines.empty:
+        multipoly_line_gdf = _clip_multi_poly_line(multipoly_lines, poly)
+    else:
+        multipoly_line_gdf = None
+
+    poly_lines = gdf[poly_line_idx]
+    if not poly_lines.empty:
+        poly_line_gdf = _clip_line_poly(poly_lines, poly)
+    else:
+        poly_line_gdf = None
+
+    return pd.concat([multipoint_gdf, point_gdf, multipoly_line_gdf, poly_line_gdf])
