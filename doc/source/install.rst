@@ -90,9 +90,17 @@ as well::
 .. warning::
 
     When using pip to install GeoPandas, you need to make sure that all dependencies are
-    installed correctly. `shapely`_ and `fiona`_ provide binary wheels with the
-    dependencies included for Mac and Linux, but not for Windows.
-    `pyproj`_ and `rtree`_ don't provide those.
+    installed correctly.
+
+    - `shapely`_ and `fiona`_ provide binary wheels with the
+      dependencies included for Mac and Linux, but not for Windows.
+    - `pyproj`_ 2.x provides binary wheels with depencies included
+      for Mac, Linux, and Windows. However `pyproj`_ 1.x does not provide wheels.
+    - `rtree`_ does not provide wheels.
+    - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
+      can be found at `Christopher Gohlke's website 
+      <https://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
+
     So depending on your platform, you might need to compile and install their
     C dependencies manually. We refer to the individual packages for more
     details on installing those.
@@ -175,7 +183,7 @@ For plotting, these additional packages may be used:
 
 .. _mapclassify: http://pysal.org/mapclassify
 
-.. _pyproj: https://github.com/jswhit/pyproj
+.. _pyproj: https://github.com/pyproj4/pyproj
 
 .. _rtree: https://github.com/Toblerity/rtree
 
@@ -195,4 +203,4 @@ For plotting, these additional packages may be used:
 
 .. _GEOS: https://geos.osgeo.org
 
-.. _PROJ: https://proj4.org/
+.. _PROJ: https://proj.org/

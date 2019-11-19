@@ -3,7 +3,6 @@ channels:
   - defaults
 dependencies:
   - python=3.7.3
-  - six
   # required
   - pandas
   - shapely

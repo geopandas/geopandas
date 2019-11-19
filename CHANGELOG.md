@@ -1,8 +1,31 @@
 Changes
 =======
 
-Version 0.6.0 (August ??, 2019)
--------------------------------
+
+Version 0.6.2 (November 18, 2019)
+---------------------------------
+
+Small bug-fix release fixing a few regressions:
+
+- Fix a regression in passing an array of RRB(A) tuples to the ``.plot()``
+  method (#1178, #1211).
+- Fix the ``bounds`` and ``total_bounds`` attributes for empty GeoSeries, which
+  also fixes the repr of an empty or all-NA GeoSeries (#1184, #1195).
+- Fix filtering of a GeoDataFrame to preserve the index type when ending up
+  with an empty result (#1190).
+
+
+Version 0.6.1 (October 12, 2019)
+--------------------------------
+
+Small bug-fix release fixing a few regressions:
+
+- Fix `astype` when converting to string with Multi geometries (#1145) or when converting a dataframe without geometries (#1144).
+- Fix `GeoSeries.fillna` to accept `np.nan` again (#1149).
+
+
+Version 0.6.0 (September 27, 2019)
+----------------------------------
 
 Important note! This will be the last release to support Python 2.7 (#1031)
 
@@ -12,22 +35,32 @@ API changes:
   - The `.dtype` of a GeoSeries is now a `'geometry'` dtype (and no longer a numpy `object` dtype).
   - The `.values` of a GeoSeries now returns a custom `GeometryArray`, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using `np.asarray(..)`.
 - The `GeoSeries` constructor now raises a warning when passed non-geometry data. Currently the constructor falls back to return a pandas `Series`, but in the future this will raise an error (#1085).
-- The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that:
+- The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that (see [the docs](https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html) for more details):
   - `GeoSeries.isna` now considers only missing values, and if you want to check for empty geometries, you can use `GeoSeries.is_empty` (`GeoDataFrame.isna` already only looked at missing values).
   - `GeoSeries.dropna` now actually drops missing values (before it didn't drop either missing or empty geometries)
   - `GeoSeries.fillna` only fills missing values (behaviour unchanged).
   - `GeoSeries.align` uses missing values instead of empty geometries by default to fill non-matching index entries.
 
-Other improvements:
+New features and improvements:
 
-- Addition of a `GeoSeries.affine_transform` method, equivalent of Shapely's function (#1008)
+- Addition of a `GeoSeries.affine_transform` method, equivalent of Shapely's function (#1008).
 - Addition of a `GeoDataFrame.rename_geometry` method to easily rename the active geometry column (#1053).
 - Addition of `geopandas.show_versions()` function, which can be used to give an overview of the installed libraries in bug reports (#899).
-- Updated documentation to work with latest version of geoplot and contextily (#1044, #1088)
+- The `legend_kwds` keyword of the `plot()` method can now also be used to specify keywords for the color bar (#1102).
+- Performance improvement in the `sjoin()` operation by re-using existing spatial index of the input dataframes, if available (#789).
+- Updated documentation to work with latest version of geoplot and contextily (#1044, #1088).
+- A new ``geopandas.options`` configuration, with currently a single option to control the display precision of the coordinates (``options.display_precision``). The default is now to show less coordinates (3 for projected and 5 for geographic coordinates), but the default can be overridden with the option.
 
 Bug fixes:
 
 - Also try to use `pysal` instead of `mapclassify` if available (#1082).
+- The `GeoDataFrame.astype()` method now correctly returns a `GeoDataFrame` if the geometry column is preserved (#1009).
+- The `to_crs` method now uses `always_xy=True` to ensure correct lon/lat order handling for pyproj>=2.2.0 (#1122).
+- Fixed passing list-like colors in the `plot()` method in case of "multi" geometries (#1119).
+- Fixed the coloring of shapes and colorbar when passing a custom `norm` in the `plot()` method (#1091, #1089).
+- Fixed `GeoDataFrame.to_file` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
+- Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
+
 
 In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
