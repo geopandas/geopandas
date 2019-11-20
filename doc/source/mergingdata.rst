@@ -30,6 +30,24 @@ In the following examples, we use these datasets:
    countries = world[['geometry', 'name']]
    countries = countries.rename(columns={'name':'country'})
 
+Appending DataFrames
+---------------------
+
+To simply append ('paste') two datasets together, use the ``append`` method.
+
+.. ipython:: python
+
+    # First check the sizes of the previously loaded datasets
+    # For the world dataframe:
+    world.shape
+
+    # For the cities dataframe:
+    cities.shape
+
+    # Then simpy append the geometries to each other and check that size
+    # of the dataframe is now the total of the previous two DataFrames.
+    merged = world['geometry'].append(cities['geometry'])
+    merged.shape
 
 Attribute Joins
 ----------------
