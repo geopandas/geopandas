@@ -121,9 +121,9 @@ def mixed_gdf():
 
 def test_not_gdf(single_rectangle_gdf):
     """Non-GeoDataFrame inputs raise attribute errors."""
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         cl.clip((2, 3), single_rectangle_gdf)
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         cl.clip(single_rectangle_gdf, (2, 3))
 
 
@@ -147,9 +147,9 @@ def test_non_overlapping_geoms():
 
 def test_input_gdfs(single_rectangle_gdf):
     """Test that function fails if not provided with 2 GDFs."""
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         cl.clip(list(), single_rectangle_gdf)
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         cl.clip(single_rectangle_gdf, list())
 
 
