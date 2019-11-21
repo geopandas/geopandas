@@ -48,10 +48,17 @@ ax.outline_patch.set_visible(True)
 ###############################################################################
 # ``polyplot`` is trivial and can only plot the geometries you pass to it. If
 # you want to use color as a visual variable, specify a ``choropleth``. Here
-# we sort GDP per person by country into five buckets by color.
+# we sort GDP per person by country into five buckets by color, using
+# "quantiles" binning from the `Mapclassify <https://pysal.org/mapclassify/>`_
+# library.
 
+import mapclassify
+gpd_per_person = world['gdp_md_est'] / world['pop_est']
+scheme = mapclassify.Quantiles(gpd_per_person, k=5)
+
+# Note: this code sample requires geoplot>=0.4.0.
 geoplot.choropleth(
-    world, hue=world['gdp_md_est'] / world['pop_est'],
+    world, hue=gpd_per_person, scheme=scheme,
     cmap='Greens', figsize=(8, 4)
 )
 
@@ -71,7 +78,7 @@ geoplot.polyplot(africa, edgecolor='gray', ax=ax)
 # three-dimensional heatmap on it using ``kdeplot``.
 
 ax = geoplot.kdeplot(
-    collisions, clip=boroughs.geometry,
+    collisions.head(1000), clip=boroughs.geometry,
     shade=True, cmap='Reds',
     projection=geoplot.crs.AlbersEqualArea())
 geoplot.polyplot(boroughs, ax=ax, zorder=1)
@@ -84,7 +91,7 @@ geoplot.polyplot(boroughs, ax=ax, zorder=1)
 ax = geoplot.voronoi(
     collisions.head(1000), projection=geoplot.crs.AlbersEqualArea(),
     clip=boroughs.simplify(0.001),
-    hue='NUMBER OF PERSONS INJURED', cmap='Reds', k=None,
+    hue='NUMBER OF PERSONS INJURED', cmap='Reds',
     legend=True,
     edgecolor='white'
 )
