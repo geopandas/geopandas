@@ -7,6 +7,8 @@ from geopandas.io.sql import read_postgis  # noqa
 from geopandas.tools import sjoin  # noqa
 from geopandas.tools import overlay  # noqa
 from geopandas.tools._show_versions import show_versions  # noqa
+from geopandas.tools.clip import clip  # noqa
+
 
 import geopandas.datasets  # noqa
 
