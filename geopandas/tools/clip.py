@@ -8,7 +8,7 @@ A module to clip vector data using GeoPandas.
 
 
 import pandas as pd
-import geopandas as gpd
+from geopandas import GeoDataFrame, GeoSeries
 import numpy as np
 
 from shapely.geometry import Polygon, MultiPolygon
@@ -192,27 +192,25 @@ def clip(gdf, clip_obj):
         >>> sa_capitals.shape
         (12, 2)
     """
-    if not isinstance(gdf, (gpd.GeoDataFrame, gpd.GeoSeries)):
+    if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
         raise TypeError(
             "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
         )
 
-    if not isinstance(
-        clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries, Polygon, MultiPolygon)
-    ):
+    if not isinstance(clip_obj, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
         raise TypeError(
             "'clip_obj' should be GeoDataFrame, GeoSeries or"
             "(Multi)Polygon, got {}".format(type(gdf))
         )
 
-    if isinstance(clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries)):
+    if isinstance(clip_obj, (GeoDataFrame, GeoSeries)):
         xmin, ymin, xmax, ymax = clip_obj.total_bounds
     else:
         xmin, ymin, xmax, ymax = clip_obj.bounds
     if gdf.cx[xmin:xmax, ymin:ymax].empty:
         raise ValueError("Shape and crop extent do not overlap.")
 
-    if isinstance(clip_obj, (gpd.GeoDataFrame, gpd.GeoSeries)):
+    if isinstance(clip_obj, (GeoDataFrame, GeoSeries)):
         poly = clip_obj.geometry.unary_union
     else:
         poly = clip_obj

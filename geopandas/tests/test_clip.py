@@ -105,7 +105,6 @@ def multi_point(point_gdf):
         ),
         crs={"init": "epsg:4326"},
     )
-    out_df = out_df.rename(columns={0: "geometry"}).set_geometry("geometry")
     out_df["attr"] = ["tree", "another tree", "shrub", "berries"]
     return out_df
 
@@ -113,9 +112,12 @@ def multi_point(point_gdf):
 @pytest.fixture
 def mixed_gdf():
     """ Create a Mixed Polygon and LineString For Testing """
+    point = Point([(2, 3), (11, 4), (7, 2), (8, 9), (1, 13)])
     line = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
-    gdf = GeoDataFrame([1, 2], geometry=[line, poly], crs={"init": "epsg:4326"})
+    gdf = GeoDataFrame(
+        [1, 2, 3], geometry=[point, line, poly], crs={"init": "epsg:4326"}
+    )
     return gdf
 
 
@@ -227,6 +229,7 @@ def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
     clip = gpd.clip(mixed_gdf, single_rectangle_gdf)
     assert (
         hasattr(clip, "geometry")
-        and clip.geom_type[0] == "LineString"
-        and clip.geom_type[1] == "Polygon"
+        and clip.geom_type[0] == "Point"
+        and clip.geom_type[1] == "LineString"
+        and clip.geom_type[2] == "Polygon"
     )

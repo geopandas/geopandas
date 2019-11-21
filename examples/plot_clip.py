@@ -32,8 +32,7 @@ using GeoPandas.
 # To begin, import the needed packages.
 
 import matplotlib.pyplot as plt
-import geopandas
-import geopandas.clip as gc
+import geopandas as gpd
 from shapely.geometry import Polygon
 
 ###############################################################################
@@ -44,15 +43,15 @@ from shapely.geometry import Polygon
 # Additionally, a polygon is created with shapely and then opened as a
 # GeoDataFrame with the same CRS as the GeoPandas world dataset.
 
-capitals = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
-world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+capitals = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
+world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
 
 # Create a subset of the world data that is just the South American continent
 south_america = world[world["continent"] == "South America"]
 
 # Create a custom polygon
 polygon = Polygon([(0, 0), (0, 90), (180, 90), (180, 0), (0, 0)])
-poly_gdf = geopandas.GeoDataFrame([1], geometry=[polygon], crs=world.crs)
+poly_gdf = gpd.GeoDataFrame([1], geometry=[polygon], crs=world.crs)
 
 ###############################################################################
 # Plot the Unclipped Data
@@ -88,7 +87,7 @@ plt.show()
 # Clip the World Data
 # --------------------
 
-world_clipped = gc.clip(world, polygon)
+world_clipped = gpd.clip(world, polygon)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the world
@@ -104,7 +103,7 @@ plt.show()
 # Clip the Capitals Data
 # ----------------------
 
-capitals_clipped = gc.clip(capitals, south_america)
+capitals_clipped = gpd.clip(capitals, south_america)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the capital cities
