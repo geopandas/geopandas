@@ -56,7 +56,7 @@ import mapclassify
 gpd_per_person = world['gdp_md_est'] / world['pop_est']
 scheme = mapclassify.Quantiles(gpd_per_person, k=5)
 
-import mapclassify
+# Note: this code sample requires geoplot>=0.4.0.
 geoplot.choropleth(
     world, hue=gpd_per_person, scheme=scheme,
     cmap='Greens', figsize=(8, 4)
