@@ -88,7 +88,7 @@ plt.show()
 # Clip the World Data
 # --------------------
 
-world_clipped = gc.clip(world, poly_gdf)
+world_clipped = gc.clip(world, polygon)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the world
