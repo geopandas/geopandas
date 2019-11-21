@@ -104,6 +104,14 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
+To make the color transparent for when you just want to show the boundary, you have two options. One option is to do ``world.plot(facecolor="none", edgecolor="black")``. However, this can cause a lot of confusion because ``"none"``  and ``None`` are different in the context of using ``facecolor`` and they do opposite things. ``None`` does the "default behavior" based on matplotlib, and if you use it for ``facecolor``, it actually adds a color. The second option is to use ``world.boundary.plot()``. This option is more explicit and clear.:
+
+.. ipython:: python
+
+    @savefig world_gdp_per_cap_transparent.png
+    world.boundary.plot();
+
+
 The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``mapclassify`` installed, which can be accomplished via ``conda install -c conda-forge mapclassify``). The ``scheme`` option can be set to any scheme provided by mapclassify (e.g. 'box_plot', 'equal_interval',
 'fisher_jenks', 'fisher_jenks_sampled', 'headtail_breaks', 'jenks_caspall', 'jenks_caspall_forced', 'jenks_caspall_sampled', 'max_p_classifier', 'maximum_breaks', 'natural_breaks', 'quantiles', 'percentiles', 'std_mean' or 'user_defined'). Arguments can be passed in classification_kwds dict. See the `mapclassify documentation <https://mapclassify.readthedocs.io>`_ for further details about these map classification schemes.
 
