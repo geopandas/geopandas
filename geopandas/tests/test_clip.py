@@ -102,7 +102,7 @@ def multi_point(point_gdf):
     """ Create a multi-point GeoDataFrame. """
     multi_point = point_gdf.unary_union
     out_df = gpd.GeoDataFrame(
-        gpd.GeoSeries([multi_point, Point(2, 5), Point(-11, -14), Point(-10, -12)]),
+        geometry=gpd.GeoSeries([multi_point, Point(2, 5), Point(-11, -14), Point(-10, -12)]),
         crs={"init": "epsg:4326"},
     )
     out_df = out_df.rename(columns={0: "geometry"}).set_geometry("geometry")
