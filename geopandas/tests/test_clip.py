@@ -130,7 +130,7 @@ def test_not_gdf(single_rectangle_gdf):
 def test_returns_gdf(point_gdf, single_rectangle_gdf):
     """Test that function returns a GeoDataFrame (or GDF-like) object."""
     out = cl.clip(point_gdf, single_rectangle_gdf)
-    assert hasattr(out, "geometry")
+    assert isinstance(out, GeoDataFrame)
 
 
 def test_non_overlapping_geoms():
