@@ -104,7 +104,7 @@ One can also modify the colors used by ``plot`` with the ``cmap`` option (for a 
     world.plot(column='gdp_per_cap', cmap='OrRd');
 
 
-To make the color transparent for when you just want to show the boundary, you have two options. One option is to do ``world.plot(facecolor='none', edgecolor='black')``. However, this can cause a lot of confusion because ``none``  and ``None`` are different in the context of using ``facecolor`` and they do opposite things. ``None`` does the "default thing" based on matplotlib, and if you use it for ``facecolor``, it actually adds a color. The second option is to use ``world.boundary.plot()``. This option is more explicit and clear.:
+To make the color transparent for when you just want to show the boundary, you have two options. One option is to do ``world.plot(facecolor="none", edgecolor="black")``. However, this can cause a lot of confusion because ``"none"``  and ``None`` are different in the context of using ``facecolor`` and they do opposite things. ``None`` does the "default behavior" based on matplotlib, and if you use it for ``facecolor``, it actually adds a color. The second option is to use ``world.boundary.plot()``. This option is more explicit and clear.:
 
 .. ipython:: python
 
