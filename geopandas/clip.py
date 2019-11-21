@@ -253,4 +253,7 @@ def clip(gdf, clip_obj):
     else:
         poly_line_gdf = None
 
-    return pd.concat([multipoint_gdf, point_gdf, multipoly_line_gdf, poly_line_gdf])
+    order = pd.Series(range(len(gdf)), index=gdf.index)
+    concat = pd.concat([multipoint_gdf, point_gdf, multipoly_line_gdf, poly_line_gdf])
+    concat["_order"] = order
+    return concat.sort_values(by="_order").drop(columns="_order")
