@@ -10,6 +10,7 @@ A module to clip vector data using GeoPandas.
 import pandas as pd
 from geopandas import GeoDataFrame, GeoSeries
 import numpy as np
+import warnings
 
 from shapely.geometry import Polygon, MultiPolygon
 
@@ -41,35 +42,6 @@ def _clip_points(gdf, poly):
     gdf_sub = gdf.iloc[sidx]
 
     return gdf_sub[gdf_sub.geometry.intersects(poly)]
-
-
-def _clip_multi_point(gdf, poly):
-    """Clip multi point features to the clip_obj GeoDataFrame extent.
-
-    Clip an input multi point to the polygon extent of the clip_obj
-    parameter. Points that intersect the clip_obj geometry are
-    extracted with associated attributes returned.
-
-    Parameters
-    ----------
-    gdf : GeoDataFrame
-        Multipoint geometry that is clipped to clip_obj.
-
-    poly : (Multi)Polygon
-        Reference geometry used to spatially clip the data.
-
-    Returns
-    -------
-    GeoDataFrame
-        The returned GeoDataFrame is a clipped subset of gdf
-        containing multi-point and point features.
-    """
-
-    # Explode multi-point features when clipping then recreate geom
-    clipped = _clip_points(gdf.explode().reset_index(level=[1]), poly)
-    clipped = clipped.dissolve(by=[clipped.index]).drop(columns="level_1")
-
-    return clipped
 
 
 def _clip_line_poly(gdf, poly):
@@ -109,46 +81,6 @@ def _clip_line_poly(gdf, poly):
 
     # Return the clipped layer with no null geometry values or empty geometries
     return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
-
-
-def _clip_multi_poly_line(gdf, poly):
-    """Clip multi lines and polygons to the clip_obj GeoDataFrame extent.
-
-    Clip an input multi line or polygon to the polygon extent of the clip_obj
-    parameter. Lines or Polygons that intersect the clip_obj geometry are
-    extracted with associated attributes and returned.
-
-    Parameters
-    ----------
-    gdf : GeoDataFrame
-        multiLine or multipolygon geometry that is clipped to clip_obj.
-
-    poly : (Multi)Polygon
-        Reference polygon for clipping.
-
-    Returns
-    -------
-    GeoDataFrame
-        The returned GeoDataFrame is a clipped subset of gdf
-        that intersects with clip_obj.
-    """
-
-    # Clip multi polygons
-    # Explode multi polygons so that intersection works with all parts of the polygon
-    # If this step isn't taken, intersection only gets the intersection of one part of
-    # the multi part object. Also reset index to remove the column made by explode.
-    clipped = _clip_line_poly(gdf.explode().reset_index(level=[1]), poly)
-
-    lines = clipped[
-        (clipped.geometry.type == "MultiLineString")
-        | (clipped.geometry.type == "LineString")
-    ]
-    line_diss = lines.dissolve(by=[lines.index]).drop(columns="level_1")
-
-    polys = clipped[clipped.geometry.type == "Polygon"]
-    poly_diss = polys.dissolve(by=[polys.index]).drop(columns="level_1")
-
-    return pd.concat([poly_diss, line_diss])
 
 
 def clip(gdf, clip_obj):
@@ -220,30 +152,17 @@ def clip(gdf, clip_obj):
         (geom_types == "LineString")
         | (geom_types == "LinearRing")
         | (geom_types == "Polygon")
+        | (geom_types == "MultiPolygon")
+        | (geom_types == "MultiLineString")
     )
-    multipoly_line_idx = np.asarray(
-        (geom_types == "MultiPolygon") | (geom_types == "MultiLineString")
-    )
-    point_idx = np.asarray((geom_types == "Point"))
-    multipoint_idx = np.asarray((geom_types == "MultiPoint"))
 
-    multipoints = gdf[multipoint_idx]
-    if not multipoints.empty:
-        multipoint_gdf = _clip_multi_point(multipoints, poly)
-    else:
-        multipoint_gdf = None
+    point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     points = gdf[point_idx]
     if not points.empty:
         point_gdf = _clip_points(points, poly)
     else:
         point_gdf = None
-
-    multipoly_lines = gdf[multipoly_line_idx]
-    if not multipoly_lines.empty:
-        multipoly_line_gdf = _clip_multi_poly_line(multipoly_lines, poly)
-    else:
-        multipoly_line_gdf = None
 
     poly_lines = gdf[poly_line_idx]
     if not poly_lines.empty:
@@ -252,6 +171,13 @@ def clip(gdf, clip_obj):
         poly_line_gdf = None
 
     order = pd.Series(range(len(gdf)), index=gdf.index)
-    concat = pd.concat([multipoint_gdf, point_gdf, multipoly_line_gdf, poly_line_gdf])
+    concat = pd.concat([point_gdf, poly_line_gdf])
     concat["_order"] = order
+
+    if "GeometryCollection" in concat.geom_type[0]:
+        warnings.warn(
+            "A geometry collection has been returned. This is likely due to a"
+            "line sliver being returned after clipping a polygon. To properly "
+            "plot your data you can use .explode()"
+        )
     return concat.sort_values(by="_order").drop(columns="_order")
