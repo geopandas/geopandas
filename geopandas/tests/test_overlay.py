@@ -2,7 +2,8 @@ import os
 
 import pandas as pd
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString
+from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
@@ -52,6 +53,11 @@ def how(request):
 
 @pytest.fixture(params=[True, False])
 def use_sindex(request):
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def strict(request):
     return request.param
 
 
@@ -269,15 +275,6 @@ def test_bad_how(dfs):
         overlay(df1, df2, how="spandex")
 
 
-# def test_raise_nonpoly(dfs):
-#     polydf, _ = dfs
-#     pointdf = polydf.copy()
-#     pointdf['geometry'] = pointdf.geometry.centroid
-#
-#     with pytest.raises(TypeError):
-#         overlay(pointdf, polydf, how="union")
-
-
 def test_duplicate_column_name(dfs):
     df1, df2 = dfs
     df2r = df2.rename(columns={"col2": "col1"})
@@ -335,3 +332,56 @@ def test_correct_index(dfs):
     )
     result = overlay(df3, df2)
     assert_geodataframe_equal(result, expected)
+
+
+@pytest.mark.parametrize("geom_types", ["polys", "poly_line", "poly_point"])
+def test_overlay_strict(how, strict, geom_types):
+    polys1 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
+
+    polys2 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df2 = GeoDataFrame({"geometry": polys2, "col2": [1, 2, 3]})
+    lines1 = GeoSeries(
+        [LineString([(2, 0), (2, 4), (6, 4)]), LineString([(0, 3), (6, 3)])]
+    )
+    df3 = GeoDataFrame({"col3": [1, 2], "geometry": lines1})
+    points1 = GeoSeries([Point((2, 2)), Point((3, 3))])
+    df4 = GeoDataFrame({"col4": [1, 2], "geometry": points1})
+
+    if geom_types == "polys":
+        result = overlay(df1, df2, how=how, strict=strict)
+    elif geom_types == "poly_line":
+        result = overlay(df1, df3, how=how, strict=strict)
+    elif geom_types == "poly_point":
+        result = overlay(df1, df4, how=how, strict=strict)
+
+    try:
+        expected = read_file(
+            os.path.join(
+                DATA,
+                "strict",
+                "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=strict),
+            )
+        )
+        assert_geodataframe_equal(
+            result,
+            expected,
+            check_column_type=False,
+            check_less_precise=True,
+            check_crs=False,
+            check_dtype=False,
+        )
+
+    except DriverError:
+        assert result.empty
