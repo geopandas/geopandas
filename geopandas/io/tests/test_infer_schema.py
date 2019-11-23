@@ -74,7 +74,6 @@ polygon_3D = Polygon(
         (-73.5541107525234, 45.5091983609661, 300),
     )
 )
-int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
 
 
 def test_infer_schema_only_points():
@@ -322,6 +321,7 @@ def test_infer_schema_null_geometry_all():
 
 @pytest.mark.skipif(not PANDAS_GE_024, reason="pandas >= 0.24 needed")
 def test_infer_schema_int64():
+    int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
     df = GeoDataFrame(geometry=[city_hall_entrance, city_hall_balcony])
     df["int64"] = int64col
 
