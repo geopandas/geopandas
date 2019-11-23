@@ -123,10 +123,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
 
 
 def infer_schema(df):
-    try:
-        from collections import OrderedDict
-    except ImportError:
-        from ordereddict import OrderedDict
+    from collections import OrderedDict
 
     def convert_type(column, in_type):
         if in_type == object:
@@ -134,6 +131,8 @@ def infer_schema(df):
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
             return "datetime"
+        if in_type == "Int64":
+            return "int"
         out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"

@@ -9,6 +9,8 @@ from shapely.geometry import (
     Polygon,
 )
 
+import pandas as pd
+import numpy as np
 from geopandas import GeoDataFrame
 from geopandas.io.file import _FIONA18, infer_schema
 
@@ -70,6 +72,7 @@ polygon_3D = Polygon(
         (-73.5541107525234, 45.5091983609661, 300),
     )
 )
+int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
 
 
 def test_infer_schema_only_points():
@@ -313,3 +316,13 @@ def test_infer_schema_null_geometry_all():
     # None geometry type in then replaced by 'Unknown'
     # (default geometry type supported by Fiona)
     assert infer_schema(df) == {"geometry": "Unknown", "properties": OrderedDict()}
+
+
+def test_infer_schema_int64():
+    df = GeoDataFrame(geometry=[city_hall_entrance, city_hall_balcony])
+    df["int64"] = int64col
+
+    assert infer_schema(df) == {
+        "geometry": "Point",
+        "properties": OrderedDict([("int64", "int")]),
+    }
