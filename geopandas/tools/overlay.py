@@ -185,11 +185,23 @@ def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
         raise NotImplementedError(
             "overlay currently only implemented for " "GeoDataFrames"
         )
+    polys = ["Polygon", "MultiPolygon"]
+    lines = ["LineString", "MultiLineString", "LinearRing"]
+    points = ["Point", "MultiPoint"]
+    for i, df in enumerate([df1, df2]):
+        poly_check = df.geom_type.isin(polys).any()
+        lines_check = df.geom_type.isin(lines).any()
+        points_check = df.geom_type.isin(points).any()
+        if poly_check + lines_check + points_check > 1:
+            raise NotImplementedError(
+                "df{} contains mixed geometry types, which is not supported.".format(
+                    i + 1
+                )
+            )
 
     # Computations
     df1 = df1.copy()
     df2 = df2.copy()
-    polys = ["Polygon", "MultiPolygon"]
     if df1.geom_type.isin(polys).all():
         df1[df1._geometry_column_name] = df1.geometry.buffer(0)
     if df2.geom_type.isin(polys).all():
@@ -208,8 +220,6 @@ def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
         result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if strict:
-        lines = ["LineString", "MultiLineString"]
-        points = ["Point", "MultiPoint"]
         type = df1.geom_type.iloc[0]
         if type in polys:
             result = result.loc[result.geom_type.isin(polys)]
