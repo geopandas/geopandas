@@ -1,10 +1,11 @@
-import warnings
 from functools import reduce
+import warnings
 
 import numpy as np
 import pandas as pd
-from shapely.ops import unary_union, polygonize
+
 from shapely.geometry import MultiLineString
+from shapely.ops import polygonize, unary_union
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -40,10 +41,10 @@ def _extract_rings(df):
     for i, feat in df.iterrows():
         geom = feat[geometry_column]
 
-        if geom.type not in ['Polygon', 'MultiPolygon']:
+        if geom.type not in ["Polygon", "MultiPolygon"]:
             raise TypeError(poly_msg)
 
-        if hasattr(geom, 'geoms'):
+        if hasattr(geom, "geoms"):
             for poly in geom.geoms:  # if it's a multipolygon
                 if not poly.is_valid:
                     # geom from layer is not valid attempting fix by buffer 0"
@@ -85,19 +86,22 @@ def _overlay_old(df1, df2, how, use_sindex=True, **kwargs):
 
     """
     allowed_hows = [
-        'intersection',
-        'union',
-        'identity',
-        'symmetric_difference',
-        'difference',  # aka erase
+        "intersection",
+        "union",
+        "identity",
+        "symmetric_difference",
+        "difference",  # aka erase
     ]
 
     if how not in allowed_hows:
-        raise ValueError("`how` was \"%s\" but is expected to be in %s" % \
-            (how, allowed_hows))
+        raise ValueError(
+            '`how` was "%s" but is expected to be in %s' % (how, allowed_hows)
+        )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
-        raise NotImplementedError("overlay currently only implemented for GeoDataFrames")
+        raise NotImplementedError(
+            "overlay currently only implemented for GeoDataFrames"
+        )
 
     # Collect the interior and exterior rings
     rings1 = _extract_rings(df1)
@@ -118,14 +122,16 @@ def _overlay_old(df1, df2, how, use_sindex=True, **kwargs):
         # FIXME there should be a higher-level abstraction to search by bounds
         # and fall back in the case of no index?
         if use_sindex and df1.sindex is not None:
-            candidates1 = [x.object for x in
-                           df1.sindex.intersection(newpoly.bounds, objects=True)]
+            candidates1 = [
+                x.object for x in df1.sindex.intersection(newpoly.bounds, objects=True)
+            ]
         else:
             candidates1 = [i for i, x in df1.iterrows()]
 
         if use_sindex and df2.sindex is not None:
-            candidates2 = [x.object for x in
-                           df2.sindex.intersection(newpoly.bounds, objects=True)]
+            candidates2 = [
+                x.object for x in df2.sindex.intersection(newpoly.bounds, objects=True)
+            ]
         else:
             candidates2 = [i for i, x in df2.iterrows()]
 
@@ -169,13 +175,17 @@ def _overlay_old(df1, df2, how, use_sindex=True, **kwargs):
             prop2 = pd.Series(dict.fromkeys(df2.columns, None))
 
         # Concat but don't retain the original geometries
-        out_series = pd.concat([prop1.drop(df1._geometry_column_name),
-                                prop2.drop(df2._geometry_column_name)])
+        out_series = pd.concat(
+            [
+                prop1.drop(df1._geometry_column_name),
+                prop2.drop(df2._geometry_column_name),
+            ]
+        )
 
         out_series.index = _uniquify(out_series.index)
 
         # Create a geoseries and add it to the collection
-        out_series['geometry'] = newpoly
+        out_series["geometry"] = newpoly
         collection.append(out_series)
 
     # Return geodataframe with new indices
@@ -187,12 +197,13 @@ def _ensure_geometry_column(df):
     Helper function to ensure the geometry column is called 'geometry'.
     If another column with that name exists, it will be dropped.
     """
-    if not df._geometry_column_name == 'geometry':
-        if 'geometry' in df.columns:
-            df.drop('geometry', axis=1, inplace=True)
-        df.rename(columns={df._geometry_column_name: 'geometry'},
-                  copy=False, inplace=True)
-        df.set_geometry('geometry', inplace=True)
+    if not df._geometry_column_name == "geometry":
+        if "geometry" in df.columns:
+            df.drop("geometry", axis=1, inplace=True)
+        df.rename(
+            columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True
+        )
+        df.set_geometry("geometry", inplace=True)
 
 
 def _overlay_intersection(df1, df2):
@@ -209,17 +220,17 @@ def _overlay_intersection(df1, df2):
         for k in j:
             nei.append([i, k])
     if nei != []:
-        pairs = pd.DataFrame(nei, columns=['__idx1', '__idx2'])
-        left = df1.geometry.take(pairs['__idx1'].values)
+        pairs = pd.DataFrame(nei, columns=["__idx1", "__idx2"])
+        left = df1.geometry.take(pairs["__idx1"].values)
         left.reset_index(drop=True, inplace=True)
-        right = df2.geometry.take(pairs['__idx2'].values)
+        right = df2.geometry.take(pairs["__idx2"].values)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         # removing buffer(0) from previous causes return of linestrings and points,
         # which in fact seems to be correct behaviour
         intersections = intersections.apply(
-         lambda g: g.buffer(0) if g.type in ['Polygon', 'MultiPolygon']
-         else g)
+            lambda g: g.buffer(0) if g.type in ["Polygon", "MultiPolygon"] else g
+        )
 
         # only keep actual intersecting geometries
         pairs_intersect = pairs[~intersections.is_empty]
@@ -230,17 +241,23 @@ def _overlay_intersection(df1, df2):
         df2 = df2.reset_index(drop=True)
         dfinter = pairs_intersect.merge(
             df1.drop(df1._geometry_column_name, axis=1),
-            left_on='__idx1', right_index=True)
+            left_on="__idx1",
+            right_index=True,
+        )
         dfinter = dfinter.merge(
             df2.drop(df2._geometry_column_name, axis=1),
-            left_on='__idx2', right_index=True, suffixes=['_1', '_2'])
+            left_on="__idx2",
+            right_index=True,
+            suffixes=["_1", "_2"],
+        )
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
         return GeoDataFrame(
             [],
-            columns=list(set(df1.columns).union(df2.columns)) + ['__idx1', '__idx2'],
-            crs=df1.crs)
+            columns=list(set(df1.columns).union(df2.columns)) + ["__idx1", "__idx2"],
+            crs=df1.crs,
+        )
 
 
 def _overlay_difference(df1, df2):
@@ -254,12 +271,14 @@ def _overlay_difference(df1, df2):
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
-        new = reduce(lambda x, y: x.difference(y),
-                     [geom] + list(df2.geometry.iloc[neighbours]))
+        new = reduce(
+            lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
+        )
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index)
     differences = differences.apply(
-     lambda g: g.buffer(0) if g.type in ['Polygon', 'MultiPolygon'] else g)
+        lambda g: g.buffer(0) if g.type in ["Polygon", "MultiPolygon"] else g
+    )
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff
@@ -272,22 +291,24 @@ def _overlay_symmetric_diff(df1, df2):
     """
     dfdiff1 = _overlay_difference(df1, df2)
     dfdiff2 = _overlay_difference(df2, df1)
-    dfdiff1['__idx1'] = range(len(dfdiff1))
-    dfdiff2['__idx2'] = range(len(dfdiff2))
-    dfdiff1['__idx2'] = np.nan
-    dfdiff2['__idx1'] = np.nan
+    dfdiff1["__idx1"] = range(len(dfdiff1))
+    dfdiff2["__idx2"] = range(len(dfdiff2))
+    dfdiff1["__idx2"] = np.nan
+    dfdiff2["__idx1"] = np.nan
     # ensure geometry name (otherwise merge goes wrong)
     _ensure_geometry_column(dfdiff1)
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
-    dfsym = dfdiff1.merge(dfdiff2, on=['__idx1', '__idx2'], how='outer',
-                          suffixes=['_1', '_2'])
+    dfsym = dfdiff1.merge(
+        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=["_1", "_2"]
+    )
     geometry = dfsym.geometry_1.copy()
-    geometry.name = 'geometry'
+    geometry.name = "geometry"
     # https://github.com/pandas-dev/pandas/issues/26468 use loc for now
-    geometry.loc[dfsym.geometry_1.isnull()] = \
-        dfsym.loc[dfsym.geometry_1.isnull(), 'geometry_2']
-    dfsym.drop(['geometry_1', 'geometry_2'], axis=1, inplace=True)
+    geometry.loc[dfsym.geometry_1.isnull()] = dfsym.loc[
+        dfsym.geometry_1.isnull(), "geometry_2"
+    ]
+    dfsym.drop(["geometry_1", "geometry_2"], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
     return dfsym
@@ -302,13 +323,14 @@ def _overlay_union(df1, df2):
     dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
     # keep geometry column last
     columns = list(dfunion.columns)
-    columns.remove('geometry')
-    columns = columns + ['geometry']
+    columns.remove("geometry")
+    columns = columns + ["geometry"]
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how='intersection', make_valid=True, strict=True,
-            use_sindex=None):
+def overlay(
+    df1, df2, how="intersection", make_valid=True, strict=True, use_sindex=None
+):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -331,51 +353,56 @@ def overlay(df1, df2, how='intersection', make_valid=True, strict=True,
 
     """
     if use_sindex is not None:
-        warnings.warn("'use_sindex' is deprecated. The overlay operation "
-                      "always requires a spatial index (rtree).",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "'use_sindex' is deprecated. The overlay operation "
+            "always requires a spatial index (rtree).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # Allowed operations
     allowed_hows = [
-        'intersection',
-        'union',
-        'identity',
-        'symmetric_difference',
-        'difference',  # aka erase
+        "intersection",
+        "union",
+        "identity",
+        "symmetric_difference",
+        "difference",  # aka erase
     ]
     # Error Messages
     if how not in allowed_hows:
-        raise ValueError("`how` was '{0}' but is expected to be "
-                         "in %s".format(how, allowed_hows))
+        raise ValueError(
+            "`how` was '{0}' but is expected to be in %s".format(how, allowed_hows)
+        )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
-        raise NotImplementedError("overlay currently only implemented for "
-                                  "GeoDataFrames")
+        raise NotImplementedError(
+            "overlay currently only implemented for " "GeoDataFrames"
+        )
 
     # Computations
     df1 = df1.copy()
     df2 = df2.copy()
-    polys = ['Polygon', 'MultiPolygon']
+    polys = ["Polygon", "MultiPolygon"]
     if df1.geom_type.isin(polys).all():
         df1[df1._geometry_column_name] = df1.geometry.buffer(0)
     if df2.geom_type.isin(polys).all():
         df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
-    if how == 'difference':
+    if how == "difference":
         return _overlay_difference(df1, df2)
-    elif how == 'intersection':
+    elif how == "intersection":
         result = _overlay_intersection(df1, df2)
-    elif how == 'symmetric_difference':
+    elif how == "symmetric_difference":
         result = _overlay_symmetric_diff(df1, df2)
-    elif how == 'union':
+    elif how == "union":
         result = _overlay_union(df1, df2)
-    elif how == 'identity':
+    elif how == "identity":
         dfunion = _overlay_union(df1, df2)
-        result = dfunion[dfunion['__idx1'].notnull()].copy()
+        result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if strict:
-        lines = ['LineString', 'MultiLineString']
-        points = ['Point', 'MultiPoint']
+        lines = ["LineString", "MultiLineString"]
+        points = ["Point", "MultiPoint"]
         type = df1.geom_type.iloc[0]
         if type in polys:
             result = result.loc[result.geom_type.isin(polys)]
@@ -387,5 +414,5 @@ def overlay(df1, df2, how='intersection', make_valid=True, strict=True,
             raise TypeError("`strict` does not support {}.".format(type))
 
     result.reset_index(drop=True, inplace=True)
-    result.drop(['__idx1', '__idx2'], axis=1, inplace=True)
+    result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
     return result
