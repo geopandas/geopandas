@@ -52,24 +52,18 @@ def how(request):
 
 
 @pytest.fixture(params=[True, False])
-def use_sindex(request):
-    return request.param
-
-
-@pytest.fixture(params=[True, False])
 def strict(request):
     return request.param
 
 
-@pytest.mark.filterwarnings("ignore:'use_sindex':DeprecationWarning")
-def test_overlay(dfs_index, how, use_sindex):
+def test_overlay(dfs_index, how):
     """
     Basic overlay test with small dummy example dataframes (from docs).
     Results obtained using QGIS 2.16 (Vector -> Geoprocessing Tools ->
     Intersection / Union / ...), saved to GeoJSON
     """
     df1, df2 = dfs_index
-    result = overlay(df1, df2, how=how, use_sindex=use_sindex)
+    result = overlay(df1, df2, how=how)
 
     # construction of result
 
@@ -100,7 +94,7 @@ def test_overlay(dfs_index, how, use_sindex):
 
     # for difference also reversed
     if how == "difference":
-        result = overlay(df2, df1, how=how, use_sindex=use_sindex)
+        result = overlay(df2, df1, how=how)
         result = result.reset_index(drop=True)
         expected = _read("difference-inverse")
         assert_geodataframe_equal(result, expected, check_column_type=False)
