@@ -254,11 +254,6 @@ class TestPointPlotting:
         leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
         np.testing.assert_array_equal(point_colors[0], leg_colors[0])
         np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
-        # ax = self.df.plot(column="values", categorical=True, legend=True)
-        # point_colors = ax.collections[0].get_facecolors()
-        # cbar_colors = ax.get_legend().axes.collections[0].get_facecolors()
-        # # first point == bottom of colorbar
-        # np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
 
 
 class TestPointZPlotting:
