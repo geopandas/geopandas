@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from shapely.geometry import Point, Polygon, LineString
+from shapely.geometry import Point, Polygon, LineString, GeometryCollection
 from fiona.errors import DriverError
 from geopandas.io.file import _FIONA18
 
@@ -433,3 +433,43 @@ def test_overlay_strict(how, strict, geom_types):
 
     except DriverError:
         assert result.empty
+
+
+def test_mixed_geom_error():
+    polys1 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
+    mixed = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            LineString([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    dfmixed = GeoDataFrame({"col1": [1, 2], "geometry": mixed})
+    with pytest.raises(NotImplementedError):
+        overlay(df1, dfmixed, strict=True)
+
+
+def test_strict_error():
+    gcol = GeoSeries(
+        GeometryCollection(
+            [
+                Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                LineString([(3, 3), (5, 3), (5, 5), (3, 5)]),
+            ]
+        )
+    )
+    dfcol = GeoDataFrame({"col1": [2], "geometry": gcol})
+    polys1 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
+    with pytest.raises(TypeError):
+        overlay(dfcol, df1, strict=True)

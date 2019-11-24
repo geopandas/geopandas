@@ -40,8 +40,6 @@ def _overlay_intersection(df1, df2):
         right = df2.geometry.take(pairs["__idx2"].values)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
-        # removing buffer(0) from previous causes return of linestrings and points,
-        # which in fact seems to be correct behaviour
         intersections = intersections.apply(
             lambda g: g.buffer(0) if g.type in ["Polygon", "MultiPolygon"] else g
         )
