@@ -121,6 +121,39 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
     world.plot(column='gdp_per_cap', cmap='OrRd', scheme='quantiles');
 
 
+Missing data
+~~~~~~~~~~~~
+
+In some cases one may want to plot data which contains missing values - for some features one simply does not know the value. Geopandas (from the version 0.7) by defaults ignores such features.
+
+.. ipython:: python
+
+    import numpy as np
+    world.loc[np.random.choice(world.index, 40), 'pop_est'] = np.nan
+    @savefig missing_vals.png
+    world.plot(column='pop_est');
+
+However, passing ``missing_kwds`` one can specify the style and label of features containing None or NaN.
+
+.. ipython:: python
+
+    @savefig missing_vals_grey.png
+    world.plot(column='pop_est', missing_kwds={'color': 'lightgrey'});
+
+    @savefig missing_vals_hatch.png
+    world.plot(
+        column="pop_est",
+        legend=True,
+        scheme="quantiles",
+        figsize=(15, 10),
+        missing_kwds={
+            "color": "lightgrey",
+            "edgecolor": "red",
+            "hatch": "///",
+            "label": "Missing values",
+        },
+    );
+
 Maps with Layers
 -----------------
 

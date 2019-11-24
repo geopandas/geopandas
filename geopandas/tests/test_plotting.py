@@ -241,6 +241,30 @@ class TestPointPlotting:
         # colors are repeated for all components within a MultiPolygon
         _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
+    def test_misssing(self):
+        self.df.loc[0, "values"] = np.nan
+        ax = self.df.plot("values")
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N - 1) / (self.N - 2))
+        _check_colors(self.N - 1, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df.plot("values", missing_kwds={"color": "r"})
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N - 1) / (self.N - 2))
+        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        _check_colors(self.N - 1, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df.plot(
+            "values", missing_kwds={"color": "r"}, categorical=True, legend=True
+        )
+        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        point_colors = ax.collections[0].get_facecolors()
+        nan_color = ax.collections[1].get_facecolors()
+        leg_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
+        np.testing.assert_array_equal(point_colors[0], leg_colors[0])
+        np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
+
 
 class TestPointZPlotting:
     def setup_method(self):
