@@ -444,7 +444,9 @@ def plot_dataframe(
         Keyword arguments to pass to mapclassify
     missing_kwds : dict (default None)
         Keyword arguments specifying color options (as style_kwds)
-        to be passed on to geometries with missing values.
+        to be passed on to geometries with missing values in addition to
+        or overwriting other style kwds. If None, geometries with missing
+        values are not plotted.
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
