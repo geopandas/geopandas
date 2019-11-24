@@ -3,7 +3,6 @@ channels:
     - conda-forge
 dependencies:
     # required
-    - Cython>=0.16
     - fiona>=1.7
     - pandas>=0.23.4
     - pyproj>=1.9.3
@@ -18,7 +17,7 @@ dependencies:
 
     # plotting
     - descartes>=1.0
-    - matplotlib>=1.2.1
+    - matplotlib>=2.0
 
     # testing
     - mock>=1.0.1   # technically not need for python >= 3.3
