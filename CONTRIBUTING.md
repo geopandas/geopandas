@@ -13,8 +13,13 @@ In general, GeoPandas follows the conventions of the pandas project
 where applicable. Please read the [pandas contributing
 guidelines](http://pandas.pydata.org/pandas-docs/stable/contributing.html).
 
+
 In particular, when submitting a pull request:
 
+- Install the requirements for the development environment (one can do this
+  with either conda, and the environment.yml file, or pip, and the
+  requirements-dev.txt file, and can use the pandas contributing guidelines
+  as a guide). 
 - All existing tests should pass. Please make sure that the test
   suite passes, both locally and on
   [Travis CI](https://travis-ci.org/geopandas/geopandas).  Status on

@@ -1,3 +1,10 @@
+# required
+Cython>=0.16
+fiona>=1.7
+pandas>=0.23.4
+pyproj>=1.9.3
+shapely>=1.5
+
 # geodatabase access
 psycopg2>=2.5.1
 SQLAlchemy>=0.8.3
@@ -10,15 +17,15 @@ descartes>=1.0
 matplotlib>=1.2.1
 mapclassify
 
-# running tests
+# testing 
 mock>=1.0.1  # technically not need for python >= 3.3
 pytest>=3.1.0
 pytest-cov
 codecov
 
-# spatial joins
+# spatial access methods 
 rtree>=0.8
 
-# formatting
+# styling
 black
 pre-commit
