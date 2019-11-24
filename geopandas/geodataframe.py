@@ -530,17 +530,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ----------
         crs: pyproj.CRS, optional if epsg provided
             The value can be anything accepted
-            by ``pyproj.CRS.from_user_input()``:
-
-            - CRS WKT string
-            - An authority string [i.e. "epsg:4326"]
-            - An EPSG integer code [i.e. 4326]
-            - A ``pyproj.CRS``
-            - An object with a to_wkt method.
-            - PROJ string
-            - Dictionary of PROJ parameters
-            - PROJ keyword arguments for parameters
-            - JSON string with PROJ parameters
+            by :meth:`pyproj.CRS.from_user_input`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
         epsg: int, optional if crs provided
             EPSG code specifying output projection.
         inplace: bool, optional, default: False
