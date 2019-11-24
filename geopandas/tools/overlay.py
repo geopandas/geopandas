@@ -192,11 +192,9 @@ def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
         poly_check = df.geom_type.isin(polys).any()
         lines_check = df.geom_type.isin(lines).any()
         points_check = df.geom_type.isin(points).any()
-        if poly_check + lines_check + points_check > 1:
+        if sum([poly_check, lines_check, points_check]) > 1:
             raise NotImplementedError(
-                "df{} contains mixed geometry types, which is not supported.".format(
-                    i + 1
-                )
+                "df{} contains mixed geometry types.".format(i + 1)
             )
 
     # Computations
