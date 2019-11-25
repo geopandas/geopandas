@@ -83,7 +83,7 @@ def _clip_line_poly(gdf, poly):
     return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
 
 
-def clip(gdf, clip_obj):
+def clip(gdf, clip_obj, drop_slivers=False):
     """Clip points, lines, or polygon geometries to the clip_obj extent.
 
     Both layers must be in the same Coordinate Reference System (CRS) and will
@@ -101,6 +101,9 @@ def clip(gdf, clip_obj):
           Polygon vector layer used to clip gdf.
           The clip_obj's geometry is dissolved into one geometric feature
           and intersected with gdf.
+    drop_slivers : Boolean
+          If a clip operation returns a GeometryCollection, remove polygon
+          slivers and only return polygon features.
 
     Returns
     -------
@@ -174,10 +177,18 @@ def clip(gdf, clip_obj):
     concat = pd.concat([point_gdf, poly_line_gdf])
     concat["_order"] = order
 
-    if "GeometryCollection" in concat.geom_type[0]:
-        warnings.warn(
-            "A geometry collection has been returned. This is likely due to a"
-            "line sliver being returned after clipping a polygon. To properly "
-            "plot your data you can use .explode()"
-        )
-    return concat.sort_values(by="_order").drop(columns="_order")
+    try:
+        if "GeometryCollection" in concat.geom_type[0] and not drop_slivers:
+            warnings.warn(
+                "A geometry collection has been returned. Use .explode() to "
+                "remove the collection object or drop_slivers=True to remove "
+                "sliver geometries."
+            )
+            return concat.sort_values(by="_order").drop(columns="_order")
+        elif "GeometryCollection" in concat.geom_type[0] and drop_slivers:
+            # Remove slivers and in turn collections if drop_slivers is True
+            polygons = [i for i in list(concat.iloc[0, 0]) if "POLYGON" in str(i)]
+            return GeoDataFrame(list(range(len(polygons))), geometry=polygons)
+        return concat.sort_values(by="_order").drop(columns="_order")
+    except KeyError:
+        return concat.sort_values(by="_order").drop(columns="_order")
