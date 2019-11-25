@@ -168,7 +168,7 @@ def test_clip_poly(buffered_locations, single_rectangle_gdf):
     assert all(clipped_poly.geom_type == "Polygon")
 
 
-def test_clip_multipoly_slivers(multi_poly_gdf, single_rectangle_gdf):
+def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
 
     Also the bounds of the object should == the bounds of the clip object
@@ -179,6 +179,18 @@ def test_clip_multipoly_slivers(multi_poly_gdf, single_rectangle_gdf):
     assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
     # Assert returned data is a geometry collection given sliver geoms
     assert "GeometryCollection" in clip.geom_type[0]
+
+
+def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
+    """Test a multi poly object where the return includes a sliver.
+
+    Also the bounds of the object should == the bounds of the clip object
+    if they fully overlap (as they do in these fixtures). """
+    clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf, drop_slivers=True)
+    assert hasattr(clip, "geometry")
+    assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
+    # Assert returned data is a geometry collection given sliver geoms
+    assert "Polygon" in clip.geom_type[0]
 
 
 def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
