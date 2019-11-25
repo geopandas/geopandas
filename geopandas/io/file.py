@@ -113,9 +113,8 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
         Default None automatically determines if index is written if it
         is either named or is a MultiIndex.
 
-    .. versionadded:: 0.7
-
-        Previously the index was not written.
+        .. versionadded:: 0.7
+            Previously the index was not written.
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
@@ -123,7 +122,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
     """
     if index is None:
         index = list(df.index.names) != [None]
-    if index is True:
+    if index:
         df = df.reset_index(drop=False)
     if schema is None:
         schema = infer_schema(df)

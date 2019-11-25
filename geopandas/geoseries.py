@@ -220,9 +220,8 @@ class GeoSeries(GeoPandasBase, Series):
             Default None automatically determines if index is written if it
             is either named or is a MultiIndex.
 
-        .. versionadded:: 0.7
-
-            Previously the index was not written.
+            .. versionadded:: 0.7
+                Previously the index was not written.
 
         Notes
         -----

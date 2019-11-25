@@ -321,20 +321,19 @@ def test_read_file_empty_shapefile(tmpdir):
 def test_write_index_to_file(tmpdir, df_points):
     tempfilename = os.path.join(str(tmpdir), "check.shp")
 
-    def do_checks(df):
+    def do_checks(df, index_is_used):
         # check combinations of index=None|True|False on GeoDataFrame/GeoSeries
         other_cols = list(df.columns)
         other_cols.remove("geometry")
 
         index_cols = list(df.index.names)
-        index_is_used = index_cols != [None]
         if not index_is_used:
             # pandas' default index name if not provided is 'index'
             index_cols = ["index"]
 
         # check GeoDataFrame with default index=None to autodetect
         df.to_file(tempfilename, index=None)
-        df_check = geopandas.GeoDataFrame.from_file(tempfilename)
+        df_check = read_file(tempfilename)
         expected_cols = []
         if len(other_cols) == 0:
             # note: ESRI Shapefile will add FID if no other columns are used
@@ -346,7 +345,7 @@ def test_write_index_to_file(tmpdir, df_points):
 
         # similar check on GeoSeries with index=None
         df.geometry.to_file(tempfilename, index=None)
-        df_check = geopandas.GeoDataFrame.from_file(tempfilename)
+        df_check = read_file(tempfilename)
         if index_is_used:
             expected_cols = index_cols + ["geometry"]
         else:
@@ -355,17 +354,17 @@ def test_write_index_to_file(tmpdir, df_points):
 
         # check GeoDataFrame with index=True
         df.to_file(tempfilename, index=True)
-        df_check = geopandas.GeoDataFrame.from_file(tempfilename)
+        df_check = read_file(tempfilename)
         assert list(df_check.columns) == index_cols + other_cols + ["geometry"]
 
         # similar check on GeoSeries with index=True
         df.geometry.to_file(tempfilename, index=True)
-        df_check = geopandas.GeoDataFrame.from_file(tempfilename)
+        df_check = read_file(tempfilename)
         assert list(df_check.columns) == index_cols + ["geometry"]
 
         # check GeoDataFrame with index=False
         df.to_file(tempfilename, index=False)
-        df_check = geopandas.GeoDataFrame.from_file(tempfilename)
+        df_check = read_file(tempfilename)
         if len(other_cols) == 0:
             expected_cols = ["FID", "geometry"]
         else:
@@ -374,34 +373,34 @@ def test_write_index_to_file(tmpdir, df_points):
 
         # similar check on GeoSeries with index=False
         df.geometry.to_file(tempfilename, index=False)
-        df_check = geopandas.GeoDataFrame.from_file(tempfilename)
+        df_check = read_file(tempfilename)
         assert list(df_check.columns) == ["FID", "geometry"]
 
     # default range index
     df_p = df_points.copy()
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    do_checks(df)
+    do_checks(df, False)
 
     # index is different than a default range index
     df_p = df_points.copy()
     df_p.index += 1
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    do_checks(df)
+    do_checks(df, False)
 
     # no other columns (except geometry)
     df_p = df_points.copy()
     df = GeoDataFrame(geometry=df_p.geometry)
-    do_checks(df)
+    do_checks(df, False)
 
     # index with a name
     df_p = df_points.copy()
     df_p.index.name = "foo_index"
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    do_checks(df)
+    do_checks(df, True)
 
     # with a MultiIndex
     df_p = df_points.copy()
     df_p["value3"] = df_p["value2"] - df_p["value1"]
     df_p.set_index(["value1", "value2"], inplace=True)
     df = GeoDataFrame(df_p, geometry=df_p.geometry)
-    do_checks(df)
+    do_checks(df, True)
