@@ -101,6 +101,10 @@ def clip(gdf, clip_obj, drop_slivers=False):
           Polygon vector layer used to clip gdf.
           The clip_obj's geometry is dissolved into one geometric feature
           and intersected with gdf.
+    drop_slivers : Boolean
+          Will drop slivers of a polygon if returned as a GeometryCollection.
+          This will get rid of all line features in a return and only return
+          the polygons.
 
     Returns
     -------
@@ -178,8 +182,10 @@ def clip(gdf, clip_obj, drop_slivers=False):
         if "GeometryCollection" in concat.geom_type[0] and not drop_slivers:
             warnings.warn(
                 "A geometry collection has been returned. This is likely due to a"
-                "line sliver being returned after clipping a polygon. To properly "
-                "plot your data you can use .explode()"
+                "line sliver being returned after clipping a polygon. To avoid "
+                "GeometryCollection you can use .explode(). To return the clip "
+                "as a GeoDataFrame without the slivers, set the drop_slivers "
+                "parameter to True."
             )
             return concat.sort_values(by="_order").drop(columns="_order")
         elif "GeometryCollection" in concat.geom_type[0] and drop_slivers:
