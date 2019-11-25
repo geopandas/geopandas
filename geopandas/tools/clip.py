@@ -181,14 +181,13 @@ def clip(gdf, clip_obj, drop_slivers=False):
     try:
         if "GeometryCollection" in concat.geom_type[0] and not drop_slivers:
             warnings.warn(
-                "A geometry collection has been returned. This is likely due to a"
-                "line sliver being returned after clipping a polygon. To avoid "
-                "GeometryCollection you can use .explode(). To return the clip "
-                "as a GeoDataFrame without the slivers, set the drop_slivers "
-                "parameter to True."
+                "A geometry collection has been returned. Use .explode() to "
+                "remove the collection object or drop_slivers=True to remove "
+                "sliver geometries."
             )
             return concat.sort_values(by="_order").drop(columns="_order")
         elif "GeometryCollection" in concat.geom_type[0] and drop_slivers:
+            # Remove slivers and in turn collections if drop_slivers is True
             polygons = [i for i in list(concat.iloc[0, 0]) if "POLYGON" in str(i)]
             return GeoDataFrame(list(range(len(polygons))), geometry=polygons)
         return concat.sort_values(by="_order").drop(columns="_order")
