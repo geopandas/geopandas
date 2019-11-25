@@ -190,7 +190,7 @@ def clip(gdf, clip_obj, drop_slivers=False):
             return concat.sort_values(by="_order").drop(columns="_order")
         elif "GeometryCollection" in concat.geom_type[0] and drop_slivers:
             polygons = [i for i in list(concat.iloc[0, 0]) if "POLYGON" in str(i)]
-            return GeoDataFrame(range(len(polygons)), geometry=polygons)
+            return GeoDataFrame(list(range(len(polygons))), geometry=polygons)
         return concat.sort_values(by="_order").drop(columns="_order")
     except KeyError:
         return concat.sort_values(by="_order").drop(columns="_order")
