@@ -9,10 +9,10 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_024
+from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
 from geopandas.array import from_shapely
 
-from geopandas.tests.util import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 import pytest
 
@@ -36,6 +36,7 @@ def df():
 def test_repr(s, df):
     assert "POINT" in repr(s)
     assert "POINT" in repr(df)
+    assert "POINT" in df._repr_html_()
 
 
 @pytest.mark.skipif(
@@ -59,6 +60,29 @@ def test_repr_boxed_display_precision():
 
     geopandas.options.display_precision = 9
     assert "POINT (10.123456789 50.123456789)" in repr(s1)
+
+
+def test_repr_all_missing():
+    # https://github.com/geopandas/geopandas/issues/1195
+    s = GeoSeries([None, None, None])
+    assert "None" in repr(s)
+    df = GeoDataFrame({"a": [1, 2, 3], "geometry": s})
+    assert "None" in repr(df)
+    assert "geometry" in df._repr_html_()
+
+
+def test_repr_empty():
+    # https://github.com/geopandas/geopandas/issues/1195
+    s = GeoSeries([])
+    if PANDAS_GE_025:
+        # repr with correct name fixed in pandas 0.25
+        assert repr(s) == "GeoSeries([], dtype: geometry)"
+    else:
+        assert repr(s) == "Series([], dtype: geometry)"
+    df = GeoDataFrame({"a": [], "geometry": s})
+    assert "Empty GeoDataFrame" in repr(df)
+    # https://github.com/geopandas/geopandas/issues/1184
+    assert "geometry" in df._repr_html_()
 
 
 def test_indexing(s, df):
@@ -116,6 +140,54 @@ def test_reindex(s, df):
 
     # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
     # should it return DataFrame instead ?
+
+
+def test_take(s, df):
+    inds = np.array([0, 2])
+
+    # GeoSeries take
+    result = s.take(inds)
+    expected = s.iloc[[0, 2]]
+    assert isinstance(result, GeoSeries)
+    assert_geoseries_equal(result, expected)
+
+    # GeoDataFrame take axis 0
+    result = df.take(inds, axis=0)
+    expected = df.iloc[[0, 2], :]
+    assert isinstance(result, GeoDataFrame)
+    assert_geodataframe_equal(result, expected)
+
+    # GeoDataFrame take axis 1
+    df = df.reindex(columns=["value1", "value2", "geometry"])  # ensure consistent order
+    result = df.take(inds, axis=1)
+    expected = df[["value1", "geometry"]]
+    assert isinstance(result, GeoDataFrame)
+    assert_geodataframe_equal(result, expected)
+
+    result = df.take(np.array([0, 1]), axis=1)
+    expected = df[["value1", "value2"]]
+    assert isinstance(result, pd.DataFrame)
+    assert_frame_equal(result, expected)
+
+
+def test_take_empty(s, df):
+    # ensure that index type is preserved in an empty take
+    # https://github.com/geopandas/geopandas/issues/1190
+    inds = np.array([], dtype="int64")
+
+    # use non-default index
+    df.index = pd.date_range("2012-01-01", periods=len(df))
+
+    result = df.take(inds, axis=0)
+    assert isinstance(result, GeoDataFrame)
+    assert result.shape == (0, 3)
+    assert isinstance(result.index, pd.DatetimeIndex)
+
+    # the original bug report was an empty boolean mask
+    for result in [df.loc[df["value1"] > 100], df[df["value1"] > 100]]:
+        assert isinstance(result, GeoDataFrame)
+        assert result.shape == (0, 3)
+        assert isinstance(result.index, pd.DatetimeIndex)
 
 
 def test_assignment(s, df):
