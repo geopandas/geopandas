@@ -5,6 +5,7 @@ import os
 import sys
 
 import numpy as np
+import pandas as pd
 
 import fiona
 from shapely.geometry import Point, Polygon, box
@@ -318,89 +319,168 @@ def test_read_file_empty_shapefile(tmpdir):
     assert all(empty.columns == ["A", "Z", "geometry"])
 
 
-def test_write_index_to_file(tmpdir, df_points):
-    tempfilename = os.path.join(str(tmpdir), "check.shp")
+@pytest.mark.parametrize(
+    "driver,ext", [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson")]
+)
+def test_write_index_to_file(tmpdir, df_points, driver, ext):
+    tempfilename = os.path.join(str(tmpdir), "check.{0}".format(ext))
 
     def do_checks(df, index_is_used):
         # check combinations of index=None|True|False on GeoDataFrame/GeoSeries
         other_cols = list(df.columns)
         other_cols.remove("geometry")
 
-        index_cols = list(df.index.names)
-        if not index_is_used:
-            # pandas' default index name if not provided is 'index'
+        if driver == "ESRI Shapefile":
+            # ESRI Shapefile will add FID if no other columns exist
+            driver_col = ["FID"]
+        else:
+            driver_col = []
+
+        if index_is_used:
+            index_cols = list(df.index.names)
+        else:
+            index_cols = [None] * len(df.index.names)
+
+        # replicate pandas' default index names for regular and MultiIndex
+        if index_cols == [None]:
             index_cols = ["index"]
+        elif len(index_cols) > 1 and not all(index_cols):
+            for level, index_col in enumerate(index_cols):
+                if index_col is None:
+                    index_cols[level] = "level_" + str(level)
 
         # check GeoDataFrame with default index=None to autodetect
-        df.to_file(tempfilename, index=None)
+        df.to_file(tempfilename, driver=driver, index=None)
         df_check = read_file(tempfilename)
-        expected_cols = []
         if len(other_cols) == 0:
-            # note: ESRI Shapefile will add FID if no other columns are used
-            expected_cols.append("FID")
+            expected_cols = driver_col[:]
+        else:
+            expected_cols = []
         if index_is_used:
             expected_cols += index_cols
         expected_cols += other_cols + ["geometry"]
         assert list(df_check.columns) == expected_cols
 
         # similar check on GeoSeries with index=None
-        df.geometry.to_file(tempfilename, index=None)
+        df.geometry.to_file(tempfilename, driver=driver, index=None)
         df_check = read_file(tempfilename)
         if index_is_used:
             expected_cols = index_cols + ["geometry"]
         else:
-            expected_cols = ["FID", "geometry"]
+            expected_cols = driver_col + ["geometry"]
         assert list(df_check.columns) == expected_cols
 
         # check GeoDataFrame with index=True
-        df.to_file(tempfilename, index=True)
+        df.to_file(tempfilename, driver=driver, index=True)
         df_check = read_file(tempfilename)
         assert list(df_check.columns) == index_cols + other_cols + ["geometry"]
 
         # similar check on GeoSeries with index=True
-        df.geometry.to_file(tempfilename, index=True)
+        df.geometry.to_file(tempfilename, driver=driver, index=True)
         df_check = read_file(tempfilename)
         assert list(df_check.columns) == index_cols + ["geometry"]
 
         # check GeoDataFrame with index=False
-        df.to_file(tempfilename, index=False)
+        df.to_file(tempfilename, driver=driver, index=False)
         df_check = read_file(tempfilename)
         if len(other_cols) == 0:
-            expected_cols = ["FID", "geometry"]
+            expected_cols = driver_col + ["geometry"]
         else:
             expected_cols = other_cols + ["geometry"]
         assert list(df_check.columns) == expected_cols
 
         # similar check on GeoSeries with index=False
-        df.geometry.to_file(tempfilename, index=False)
+        df.geometry.to_file(tempfilename, driver=driver, index=False)
         df_check = read_file(tempfilename)
-        assert list(df_check.columns) == ["FID", "geometry"]
+        assert list(df_check.columns) == driver_col + ["geometry"]
 
-    # default range index
+        return
+
+    #
+    # Checks where index is not used/saved
+    #
+
+    # index is a default RangeIndex
     df_p = df_points.copy()
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    do_checks(df, False)
+    do_checks(df, index_is_used=False)
 
-    # index is different than a default range index
-    df_p = df_points.copy()
-    df_p.index += 1
+    # index is a RangeIndex, starting from 1
+    df.index += 1
+    do_checks(df, index_is_used=False)
+
+    # index is a Int64Index regular sequence from 1
+    df_p.index = list(range(1, len(df) + 1))
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    do_checks(df, False)
+    do_checks(df, index_is_used=False)
+
+    # index was a default RangeIndex, but delete one row to make an Int64Index
+    df_p = df_points.copy()
+    df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry).drop(5, axis=0)
+    do_checks(df, index_is_used=False)
 
     # no other columns (except geometry)
-    df_p = df_points.copy()
     df = GeoDataFrame(geometry=df_p.geometry)
-    do_checks(df, False)
+    do_checks(df, index_is_used=False)
 
-    # index with a name
+    #
+    # Checks where index is used/saved
+    #
+
+    # named index
     df_p = df_points.copy()
-    df_p.index.name = "foo_index"
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    do_checks(df, True)
+    df.index.name = "foo_index"
+    do_checks(df, index_is_used=True)
 
-    # with a MultiIndex
+    # named index, same as pandas' default name after .reset_index(drop=False)
+    df.index.name = "index"
+    do_checks(df, index_is_used=True)
+
+    # named MultiIndex
     df_p = df_points.copy()
     df_p["value3"] = df_p["value2"] - df_p["value1"]
     df_p.set_index(["value1", "value2"], inplace=True)
     df = GeoDataFrame(df_p, geometry=df_p.geometry)
-    do_checks(df, True)
+    do_checks(df, index_is_used=True)
+
+    # partially unnamed MultiIndex
+    df.index.names = ['first', None]
+    do_checks(df, index_is_used=True)
+
+    # unnamed MultiIndex
+    df.index.names = [None, None]
+    do_checks(df, index_is_used=True)
+
+    # unnamed Float64Index
+    df_p = df_points.copy()
+    df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
+    df.index = df_p.index.astype(float) / 10
+    do_checks(df, index_is_used=True)
+
+    # named Float64Index
+    df.index.name = "centile"
+    do_checks(df, index_is_used=True)
+
+    # index as string
+    df_p = df_points.copy()
+    df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
+    df.index = pd.TimedeltaIndex(range(len(df)), "days")
+    # TODO: TimedeltaIndex is an invalid field type
+    df.index = df.index.astype(str)
+    do_checks(df, index_is_used=True)
+
+    # unnamed DatetimeIndex
+    df_p = df_points.copy()
+    df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
+    df.index = pd.TimedeltaIndex(range(len(df)), "days") + pd.DatetimeIndex(
+        ["1999-12-27"] * len(df)
+    )
+    if driver == "ESRI Shapefile":
+        # Shapefile driver does not support datetime fields
+        df.index = df.index.astype(str)
+    do_checks(df, index_is_used=True)
+
+    # named DatetimeIndex
+    df.index.name = "datetime"
+    do_checks(df, index_is_used=True)

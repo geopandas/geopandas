@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import numpy as np
+import pandas as pd
 
 import fiona
 
@@ -111,7 +112,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
     index : bool, default None
         If True, write index into one or more columns (for MultiIndex).
         Default None automatically determines if index is written if it
-        is either named or is a MultiIndex.
+        is either named, is a MultiIndex, or has a non-integer data type.
 
         .. versionadded:: 0.7
             Previously the index was not written.
@@ -121,7 +122,12 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
     The path may specify a fiona VSI scheme.
     """
     if index is None:
-        index = list(df.index.names) != [None]
+        # Determine if index attribute(s) should be saved to file
+        index = (
+            list(df.index.names) != [None]
+            or not isinstance(df.index, (pd.RangeIndex, pd.Int64Index))
+            or isinstance(df.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
+        )
     if index:
         df = df.reset_index(drop=False)
     if schema is None:

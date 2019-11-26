@@ -496,7 +496,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None automatically determines if index is written if it
-            is either named or is a MultiIndex.
+            is either named, is a MultiIndex, or has a non-integer data type.
 
             .. versionadded:: 0.7
                 Previously the index was not written.
