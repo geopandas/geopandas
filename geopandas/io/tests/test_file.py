@@ -326,11 +326,27 @@ def test_read_file_empty_shapefile(tmpdir):
     assert all(empty.columns == ["A", "Z", "geometry"])
 
 
+class FileNumber(object):
+    def __init__(self, tmpdir, base, ext):
+        self.tmpdir = str(tmpdir)
+        self.base = base
+        self.ext = ext
+        self.fileno = 0
+
+    def __repr__(self):
+        filename = "{0}{1:02d}.{2}".format(self.base, self.fileno, self.ext)
+        return os.path.join(self.tmpdir, filename)
+
+    def __next__(self):
+        self.fileno += 1
+        return repr(self)
+
+
 @pytest.mark.parametrize(
     "driver,ext", [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson")]
 )
 def test_write_index_to_file(tmpdir, df_points, driver, ext):
-    tempfilename = os.path.join(str(tmpdir), "check.{0}".format(ext))
+    fngen = FileNumber(tmpdir, "check", ext)
 
     def do_checks(df, index_is_used):
         # check combinations of index=None|True|False on GeoDataFrame/GeoSeries
@@ -357,6 +373,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
                     index_cols[level] = "level_" + str(level)
 
         # check GeoDataFrame with default index=None to autodetect
+        tempfilename = next(fngen)
         df.to_file(tempfilename, driver=driver, index=None)
         df_check = read_file(tempfilename)
         if len(other_cols) == 0:
@@ -369,6 +386,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
         assert list(df_check.columns) == expected_cols
 
         # similar check on GeoSeries with index=None
+        tempfilename = next(fngen)
         df.geometry.to_file(tempfilename, driver=driver, index=None)
         df_check = read_file(tempfilename)
         if index_is_used:
@@ -378,16 +396,19 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
         assert list(df_check.columns) == expected_cols
 
         # check GeoDataFrame with index=True
+        tempfilename = next(fngen)
         df.to_file(tempfilename, driver=driver, index=True)
         df_check = read_file(tempfilename)
         assert list(df_check.columns) == index_cols + other_cols + ["geometry"]
 
         # similar check on GeoSeries with index=True
+        tempfilename = next(fngen)
         df.geometry.to_file(tempfilename, driver=driver, index=True)
         df_check = read_file(tempfilename)
         assert list(df_check.columns) == index_cols + ["geometry"]
 
         # check GeoDataFrame with index=False
+        tempfilename = next(fngen)
         df.to_file(tempfilename, driver=driver, index=False)
         df_check = read_file(tempfilename)
         if len(other_cols) == 0:
@@ -397,6 +418,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
         assert list(df_check.columns) == expected_cols
 
         # similar check on GeoSeries with index=False
+        tempfilename = next(fngen)
         df.geometry.to_file(tempfilename, driver=driver, index=False)
         df_check = read_file(tempfilename)
         assert list(df_check.columns) == driver_col + ["geometry"]
@@ -452,7 +474,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
     do_checks(df, index_is_used=True)
 
     # partially unnamed MultiIndex
-    df.index.names = ['first', None]
+    df.index.names = ["first", None]
     do_checks(df, index_is_used=True)
 
     # unnamed MultiIndex
