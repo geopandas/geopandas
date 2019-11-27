@@ -618,6 +618,7 @@ def plot_dataframe(
     subset = values[point_idx & np.invert(nan_idx)]
     if not points.empty:
         if isinstance(markersize, np.ndarray):
+            markersize = np.take(markersize, multiindex, axis=0)
             markersize = markersize[point_idx & np.invert(nan_idx)]
         plot_point_collection(
             ax,
