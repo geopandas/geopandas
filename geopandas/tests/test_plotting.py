@@ -243,6 +243,30 @@ class TestPointPlotting:
         # colors are repeated for all components within a MultiPolygon
         _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
+    def test_misssing(self):
+        self.df.loc[0, "values"] = np.nan
+        ax = self.df.plot("values")
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N - 1) / (self.N - 2))
+        _check_colors(self.N - 1, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df.plot("values", missing_kwds={"color": "r"})
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N - 1) / (self.N - 2))
+        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        _check_colors(self.N - 1, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df.plot(
+            "values", missing_kwds={"color": "r"}, categorical=True, legend=True
+        )
+        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        point_colors = ax.collections[0].get_facecolors()
+        nan_color = ax.collections[1].get_facecolors()
+        leg_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
+        np.testing.assert_array_equal(point_colors[0], leg_colors[0])
+        np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
+
 
 class TestPointZPlotting:
     def setup_method(self):
@@ -753,6 +777,23 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_edgecolors(), ["r", "g", "b"])
         ax.cla()
 
+        coll = plot_point_collection(
+            ax,
+            self.points,
+            color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_facecolors(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_edgecolors(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        ax.cla()
+
         # not a color
         with pytest.raises(TypeError):
             plot_point_collection(ax, self.points, color="not color")
@@ -798,6 +839,18 @@ class TestPlotCollections:
         # list of colors
         coll = plot_linestring_collection(ax, self.lines, color=["r", "g", "b"])
         _check_colors(self.N, coll.get_colors(), ["r", "g", "b"])
+        ax.cla()
+
+        coll = plot_linestring_collection(
+            ax,
+            self.lines,
+            color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_colors(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
         ax.cla()
 
         # pass through of kwargs
@@ -866,6 +919,23 @@ class TestPlotCollections:
         coll = plot_polygon_collection(ax, self.polygons, color=["g", "b", "r"])
         _check_colors(self.N, coll.get_facecolor(), ["g", "b", "r"])
         _check_colors(self.N, coll.get_edgecolor(), ["g", "b", "r"])
+        ax.cla()
+
+        coll = plot_polygon_collection(
+            ax,
+            self.polygons,
+            color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_facecolor(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_edgecolor(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
         ax.cla()
 
         # only setting facecolor keeps default for edgecolor

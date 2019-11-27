@@ -21,7 +21,7 @@ dependencies:
 - cartopy=0.17.0
 - contextily=1.0rc2
 - rasterio=1.0.24
-- geoplot=0.3.0
+- geoplot=0.4.0
 - sphinx-gallery=0.4.0
 - jinja2=2.10
 - doc2dash
