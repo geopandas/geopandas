@@ -571,7 +571,7 @@ class TestGeometryCollectionPlotting:
         coll1 = GeometryCollection(
             [
                 Polygon([(1, 0), (2, 0), (2, 1)]),
-                LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)]),
+                MultiLineString([((0.5, 0.5), (1, 1)), ((1, 0.5), (1.5, 1))]),
             ]
         )
         coll2 = GeometryCollection(
@@ -584,17 +584,17 @@ class TestGeometryCollectionPlotting:
     def test_colors(self):
         # default uniform color
         ax = self.series.plot()
-        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])
-        _check_colors(1, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])
-        _check_colors(2, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])
+        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])  # poly
+        _check_colors(2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])  # line
+        _check_colors(2, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
 
     def test_values(self):
         ax = self.df.plot("values")
         cmap = plt.get_cmap()
         exp_colors = cmap(np.arange(2) / 1)
-        _check_colors(1, ax.collections[0].get_facecolors(), exp_colors)
-        _check_colors(1, ax.collections[1].get_facecolors(), [exp_colors[0]])
-        _check_colors(2, ax.collections[2].get_facecolors(), [exp_colors[1]])
+        _check_colors(1, ax.collections[0].get_facecolors(), exp_colors)  # poly
+        _check_colors(2, ax.collections[1].get_edgecolors(), [exp_colors[0]])  # line
+        _check_colors(2, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
 
 
 class TestNonuniformGeometryPlotting:

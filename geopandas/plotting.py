@@ -20,25 +20,24 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
 
     components : list of geometry
 
-    component_index : list of whatever type `colors` contains
+    component_index : index array
+        indices are repeated for all components in the same Multi geometry
     """
     components, component_index = [], []
 
     if not geoms.geom_type.str.startswith(prefix).any():
-        return geoms, range(len(geoms))
+        return geoms, np.arange(len(geoms))
 
-    # precondition, so zip can't short-circuit
-    for geom, ix in zip(geoms, range(len(geoms))):
+    for ix, geom in enumerate(geoms):
         if geom.type.startswith(prefix):
             for poly in geom:
                 components.append(poly)
-                # repeat same color for all components
                 component_index.append(ix)
         else:
             components.append(geom)
             component_index.append(ix)
 
-    return components, component_index
+    return components, np.array(component_index)
 
 
 def plot_polygon_collection(
