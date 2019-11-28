@@ -85,7 +85,9 @@ def plot_polygon_collection(
         from descartes.patch import PolygonPatch
     except ImportError:
         raise ImportError(
-            "The descartes package is required for plotting polygons in geopandas."
+            "The descartes package is required for plotting polygons in geopandas. "
+            "You can install it using 'conda install -c conda-forge descartes' or "
+            "'pip install descartes'."
         )
     from matplotlib.collections import PatchCollection
     from matplotlib.colors import is_color_like
@@ -317,7 +319,14 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         )
         ax = style_kwds.pop("axes")
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -499,7 +508,14 @@ def plot_dataframe(
         )
         column = None
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
 
     if ax is None:
         if cax is not None:
