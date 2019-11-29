@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import sys
 
 from shapely.geometry import Point, Polygon
@@ -11,8 +12,16 @@ import pytest
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSeriesSindex:
-    def test_empty_index(self):
-        assert GeoSeries().sindex is None
+    def test_empty_geoseries(self):
+        import rtree
+
+        if LooseVersion(rtree.__version__) >= LooseVersion("0.9"):
+            # See https://github.com/Toblerity/rtree/issues/122
+            # rtree version 0.9 now creates an empty index instead of raising
+            # an error (which was captured when creating the sindex)
+            assert GeoSeries().sindex is not None
+        else:
+            assert GeoSeries().sindex is None
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -24,11 +33,14 @@ class TestSeriesSindex:
 
     def test_empty_point(self):
         s = GeoSeries([Point()])
-        assert s.sindex is None
-        assert s._sindex_generated is True
+        import rtree
 
-    def test_empty_geo_series(self):
-        assert GeoSeries().sindex is None
+        if LooseVersion(rtree.__version__) >= LooseVersion("0.9"):
+            # see above
+            assert s.sindex is not None
+        else:
+            assert s.sindex is None
+        assert s._sindex_generated is True
 
     def test_polygons(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
