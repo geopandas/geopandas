@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-import geopandas as gpd
+import geopandas
 
 
 def _flatten_multi_geoms(geoms, prefix="Multi"):
@@ -339,7 +339,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     # decompose GeometryCollections
     geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0) if cmap else None
-    expl_series = gpd.GeoSeries(geoms)
+    expl_series = geopandas.GeoSeries(geoms)
 
     geom_types = expl_series.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
@@ -585,7 +585,7 @@ def plot_dataframe(
     geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0)
     nan_idx = np.take(nan_idx, multiindex, axis=0)
-    expl_series = gpd.GeoSeries(geoms)
+    expl_series = geopandas.GeoSeries(geoms)
 
     geom_types = expl_series.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
