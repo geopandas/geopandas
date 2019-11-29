@@ -11,7 +11,6 @@ import pytest
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSeriesSindex:
-    @pytest.mark.skip(reason="rtree 0.9 - temp")
     def test_empty_index(self):
         assert GeoSeries().sindex is None
 
@@ -23,13 +22,11 @@ class TestSeriesSindex:
         hits = s.sindex.intersection((-2, -2, -1, -1))
         assert len(list(hits)) == 0
 
-    @pytest.mark.skip(reason="rtree 0.9 - temp")
     def test_empty_point(self):
         s = GeoSeries([Point()])
         assert s.sindex is None
         assert s._sindex_generated is True
 
-    @pytest.mark.skip(reason="rtree 0.9 - temp")
     def test_empty_geo_series(self):
         assert GeoSeries().sindex is None
 
