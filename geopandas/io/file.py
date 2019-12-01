@@ -89,7 +89,7 @@ def read_file(filename, bbox=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
+def to_file(df, filename, driver="ESRI Shapefile", schema=None, mode="w", **kwargs):
     """
     Write this GeoDataFrame to an OGR data source
 
@@ -108,6 +108,11 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
         will determine the schema based on each column's dtype
+    mode : string, default 'w'
+        The write mode, 'w' to overwrite the existing file and 'a' to append.
+        Not all drivers support appending. The drivers that support appending
+        are listed in
+        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
@@ -117,7 +122,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
         schema = infer_schema(df)
     with fiona_env():
         with fiona.open(
-            filename, "w", driver=driver, crs=df.crs, schema=schema, **kwargs
+            filename, mode=mode, driver=driver, crs=df.crs, schema=schema, **kwargs
         ) as colxn:
             colxn.writerecords(df.iterfeatures())
 
