@@ -216,7 +216,7 @@ def test_to_file_schema(tmpdir, df_nybb):
     assert result_schema == schema
 
 
-def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
+def test_append_file(tmpdir, df_nybb, df_null):
     """ Test to_file with append mode and from_file """
     tempfilename = os.path.join(str(tmpdir), "boros.shp")
     df_nybb.to_file(tempfilename, driver="ESRI Shapefile")
