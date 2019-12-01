@@ -123,10 +123,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
 
 
 def infer_schema(df):
-    try:
-        from collections import OrderedDict
-    except ImportError:
-        from ordereddict import OrderedDict
+    from collections import OrderedDict
+
+    # TODO: test pandas string type and boolean type once released
+    types = {"Int64": "int", "string": "str", "boolean": "bool"}
 
     def convert_type(column, in_type):
         if in_type == object:
@@ -134,7 +134,10 @@ def infer_schema(df):
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
             return "datetime"
-        out_type = type(np.zeros(1, in_type).item()).__name__
+        if str(in_type) in types:
+            out_type = types[str(in_type)]
+        else:
+            out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"
         if not _FIONA18 and out_type == "bool":

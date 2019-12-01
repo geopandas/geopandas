@@ -287,19 +287,7 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(
-    params=[
-        "GeoJSON",
-        "ESRI Shapefile",
-        pytest.param(
-            "GPKG",
-            marks=pytest.mark.skipif(
-                (sys.version_info < (3, 0)) and sys.platform.startswith("win"),
-                reason="GPKG tests failing on AppVeyor for Python 2.7",
-            ),
-        ),
-    ]
-)
+@pytest.fixture(params=["GeoJSON", "ESRI Shapefile", "GPKG"])
 def ogr_driver(request):
     return request.param
 
