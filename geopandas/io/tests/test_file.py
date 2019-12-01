@@ -216,6 +216,34 @@ def test_to_file_schema(tmpdir, df_nybb):
     assert result_schema == schema
 
 
+def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
+    """ Test to_file with append mode and from_file """
+    tempfilename = os.path.join(str(tmpdir), "boros.shp")
+    df_nybb.to_file(tempfilename, driver="ESRI Shapefile")
+    df_nybb.to_file(tempfilename, mode="a", driver="ESRI Shapefile")
+    # Read layer back in
+    df = GeoDataFrame.from_file(tempfilename)
+    assert "geometry" in df
+    assert len(df) == (5 * 2)
+    assert np.alltrue(
+        df["BoroName"].values
+        == np.concatenate([df_nybb["BoroName"].values, df_nybb["BoroName"].values])
+    )
+
+    # Write layer with null geometry out to file
+    tempfilename = os.path.join(str(tmpdir), "null_geom.shp")
+    df_null.to_file(tempfilename, driver="ESRI Shapefile")
+    df_null.to_file(tempfilename, mode="a", driver="ESRI Shapefile")
+    # Read layer back in
+    df = GeoDataFrame.from_file(tempfilename)
+    assert "geometry" in df
+    assert len(df) == (2 * 2)
+    assert np.alltrue(
+        df["Name"].values
+        == np.concatenate([df_null["Name"].values, df_null["Name"].values])
+    )
+
+
 # -----------------------------------------------------------------------------
 # read_file tests
 # -----------------------------------------------------------------------------
