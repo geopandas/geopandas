@@ -151,14 +151,12 @@ def clip(gdf, clip_obj, drop_slivers=False):
         poly = clip_obj
 
     geom_types = gdf.geometry.type
-    poly_line_idx = np.asarray(
+    poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
+    line_idx = np.asarray(
         (geom_types == "LineString")
         | (geom_types == "LinearRing")
-        | (geom_types == "Polygon")
-        | (geom_types == "MultiPolygon")
         | (geom_types == "MultiLineString")
     )
-
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     points = gdf[point_idx]
@@ -167,28 +165,40 @@ def clip(gdf, clip_obj, drop_slivers=False):
     else:
         point_gdf = None
 
-    poly_lines = gdf[poly_line_idx]
-    if not poly_lines.empty:
-        poly_line_gdf = _clip_line_poly(poly_lines, poly)
+    polys = gdf[poly_idx]
+    if not polys.empty:
+        poly_gdf = _clip_line_poly(polys, poly)
     else:
-        poly_line_gdf = None
+        poly_gdf = None
+
+    lines = gdf[line_idx]
+    if not lines.empty:
+        line_gdf = _clip_line_poly(lines, poly)
+    else:
+        line_gdf = None
 
     order = pd.Series(range(len(gdf)), index=gdf.index)
-    concat = pd.concat([point_gdf, poly_line_gdf])
-    concat["_order"] = order
+    concat = pd.concat([point_gdf, line_gdf, poly_gdf])
 
-    try:
-        if "GeometryCollection" in concat.geom_type[0] and not drop_slivers:
-            warnings.warn(
-                "A geometry collection has been returned. Use .explode() to "
-                "remove the collection object or drop_slivers=True to remove "
-                "sliver geometries."
-            )
-            return concat.sort_values(by="_order").drop(columns="_order")
-        elif "GeometryCollection" in concat.geom_type[0] and drop_slivers:
-            # Remove slivers and in turn collections if drop_slivers is True
-            polygons = [i for i in list(concat.iloc[0, 0]) if "POLYGON" in str(i)]
-            return GeoDataFrame(list(range(len(polygons))), geometry=polygons)
-        return concat.sort_values(by="_order").drop(columns="_order")
-    except KeyError:
-        return concat.sort_values(by="_order").drop(columns="_order")
+    if (concat.geom_type == "GeometryCollection").any() and drop_slivers:
+        concat = concat.explode()
+        if not polys.empty:
+            concat = concat.loc[concat.geom_type.isin(["Polygon", "MultiPolygon"])]
+        elif not lines.empty:
+            concat = concat.loc[
+                concat.geom_type.isin(["LineString", "MultiLineString", "LinearRing"])
+            ]
+        elif not points.empty:
+            concat = concat.loc[concat.geom_type.isin(["Point", "MultiPoint"])]
+        else:
+            raise TypeError("`drop_sliver` does not support {}.".format(type))
+    elif (concat.geom_type == "GeometryCollection").any() and not drop_slivers:
+        warnings.warn(
+            "A geometry collection has been returned. Use .explode() to "
+            "remove the collection object or drop_slivers=True to remove "
+            "sliver geometries."
+        )
+    elif drop_slivers:
+        warnings.warn("Drop slivers was called when no slivers existed.")
+    concat["_order"] = order
+    return concat.sort_values(by="_order").drop(columns="_order")

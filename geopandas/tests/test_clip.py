@@ -188,8 +188,8 @@ def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
     clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf, drop_slivers=True)
     assert hasattr(clip, "geometry")
     assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
-    # Assert returned data is a geometry collection given sliver geoms
-    assert "Polygon" in clip.geom_type[0]
+    # Assert returned data is a not geometry collection
+    assert (clip.geom_type == "Polygon").any()
 
 
 def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
