@@ -69,6 +69,7 @@ class TestTools:
                 "+init=epsg:4326"
             )
 
+    @pytest.mark.filterwarnings("ignore:explicit_crs_from_epsg:FutureWarning")
     def test_explicit_crs_from_epsg__missing_input(self):
         with pytest.raises(ValueError):
             explicit_crs_from_epsg()

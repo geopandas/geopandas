@@ -61,6 +61,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
+        self._crs = None
         self.crs = crs
 
         # set_geometry ensures the geometry data have the proper dtype,

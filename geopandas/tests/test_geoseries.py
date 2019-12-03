@@ -35,7 +35,7 @@ class TestSeries:
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = {"init": "epsg:4326", "no_defs": True}
+        self.g3.crs = "epsg:4326"
         self.g4 = GeoSeries([self.t2, self.t1])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, self.t2, None])
@@ -45,9 +45,7 @@ class TestSeries:
         self.a2.index = ["B", "C"]
         self.esb = Point(-73.9847, 40.7484)
         self.sol = Point(-74.0446, 40.6893)
-        self.landmarks = GeoSeries(
-            [self.esb, self.sol], crs={"init": "epsg:4326", "no_defs": True}
-        )
+        self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -79,17 +77,17 @@ class TestSeries:
 
     def test_align_crs(self):
         a1 = self.a1
-        a1.crs = {"init": "epsg:4326", "no_defs": True}
+        a1.crs = "epsg:4326"
         a2 = self.a2
-        a2.crs = {"init": "epsg:31370", "no_defs": True}
+        a2.crs = "epsg:31370"
 
         res1, res2 = a1.align(a2)
-        assert res1.crs == {"init": "epsg:4326", "no_defs": True}
-        assert res2.crs == {"init": "epsg:31370", "no_defs": True}
+        assert res1.crs == "epsg:4326"
+        assert res2.crs == "epsg:31370"
 
         a2.crs = None
         res1, res2 = a1.align(a2)
-        assert res1.crs == {"init": "epsg:4326", "no_defs": True}
+        assert res1.crs == "epsg:4326"
         assert res2.crs is None
 
     def test_align_mixed(self):

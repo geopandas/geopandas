@@ -1,6 +1,7 @@
 """
 Testing functionality for geopandas objects.
 """
+import warnings
 
 import pandas as pd
 
@@ -121,10 +122,18 @@ def assert_geoseries_equal(
             right.type,
         )
 
-    if check_less_precise:
-        assert geom_almost_equals(left, right)
+    if not check_crs:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "GeoSeries crs mismatch", UserWarning)
+            if check_less_precise:
+                assert geom_almost_equals(left, right)
+            else:
+                assert geom_equals(left, right)
     else:
-        assert geom_equals(left, right)
+        if check_less_precise:
+            assert geom_almost_equals(left, right)
+        else:
+            assert geom_equals(left, right)
 
 
 def assert_geodataframe_equal(

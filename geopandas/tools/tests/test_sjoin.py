@@ -88,7 +88,7 @@ class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
-        df1.crs = {"init": "epsg:4326", "no_defs": True}
+        df1.crs = "epsg:4326"
         with pytest.warns(UserWarning):
             sjoin(df1, df2)
 
@@ -383,9 +383,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_inner = GeoDataFrame(
-            expected_inner_df, crs={"init": "epsg:4326", "no_defs": True}
-        )
+        expected_inner = GeoDataFrame(expected_inner_df, crs="epsg:4326")
 
         expected_right_df = pd.concat(
             [
@@ -402,9 +400,9 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_right = GeoDataFrame(
-            expected_right_df, crs={"init": "epsg:4326", "no_defs": True}
-        ).set_index("index_right")
+        expected_right = GeoDataFrame(expected_right_df, crs="epsg:4326").set_index(
+            "index_right"
+        )
 
         expected_left_df = pd.concat(
             [
@@ -415,9 +413,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_left = GeoDataFrame(
-            expected_left_df, crs={"init": "epsg:4326", "no_defs": True}
-        )
+        expected_left = GeoDataFrame(expected_left_df, crs="epsg:4326")
 
         assert expected_inner.equals(df_inner)
         assert expected_right.equals(df_right)

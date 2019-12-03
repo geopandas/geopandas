@@ -444,7 +444,7 @@ class TestDataFrame:
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)
-            crs = f.crs
+            crs = f.crs_wkt
 
         df = GeoDataFrame.from_features(features, crs=crs)
         validate_boro_df(df, case_sensitive=True)

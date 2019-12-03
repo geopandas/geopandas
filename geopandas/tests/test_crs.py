@@ -62,11 +62,12 @@ def test_to_crs_geo_column_name():
 @pytest.fixture(
     params=[
         4326,
+        "epsg:4326",
         {"init": "epsg:4326"},
         "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         {"proj": "latlong", "ellps": "WGS84", "datum": "WGS84", "no_defs": True},
     ],
-    ids=["epsg_number", "epsg_dict", "proj4_string", "proj4_dict"],
+    ids=["epsg_number", "epsg_string", "epsg_dict", "proj4_string", "proj4_dict"],
 )
 def epsg4326(request):
     if isinstance(request.param, int):
@@ -77,11 +78,12 @@ def epsg4326(request):
 @pytest.fixture(
     params=[
         26918,
+        "epsg:26918",
         {"init": "epsg:26918", "no_defs": True},
         "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ",
         {"proj": "utm", "zone": 18, "datum": "NAD83", "units": "m", "no_defs": True},
     ],
-    ids=["epsg_number", "epsg_dict", "proj4_string", "proj4_dict"],
+    ids=["epsg_number", "epsg_string", "epsg_dict", "proj4_string", "proj4_dict"],
 )
 def epsg26918(request):
     if isinstance(request.param, int):
@@ -89,6 +91,7 @@ def epsg26918(request):
     return dict(crs=request.param)
 
 
+@pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
 def test_transform2(epsg4326, epsg26918):
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
