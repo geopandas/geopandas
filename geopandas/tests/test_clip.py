@@ -172,12 +172,13 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
 
     Also the bounds of the object should == the bounds of the clip object
     if they fully overlap (as they do in these fixtures). """
-    clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf)
-
-    assert hasattr(clip, "geometry")
-    assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
-    # Assert returned data is a geometry collection given sliver geoms
-    assert "GeometryCollection" in clip.geom_type[0]
+    with pytest.warns(UserWarning):
+        clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf)
+        warnings.warn("A geometry collection has been returned. ", UserWarning)
+        assert hasattr(clip, "geometry")
+        assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
+        # Assert returned data is a geometry collection given sliver geoms
+        assert "GeometryCollection" in clip.geom_type[0]
 
 
 def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
@@ -255,3 +256,17 @@ def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
         and clip.geom_type[1] == "LineString"
         and clip.geom_type[2] == "Polygon"
     )
+
+
+def test_clip_warning_no_slivers(buffered_locations, single_rectangle_gdf):
+    """Test a warning is provided to the user if no slivers are found."""
+    with pytest.warns(UserWarning):
+        gpd.clip(buffered_locations, single_rectangle_gdf, True)
+        warnings.warn("Drop slivers was called when no slivers existed.", UserWarning)
+
+
+def test_clip_with_polygon(single_rectangle_gdf):
+    """Test clip when using a shapely object"""
+    polygon = Polygon([(0, 0), (5, 12), (10, 0), (0, 0)])
+    clip = gpd.clip(single_rectangle_gdf, polygon)
+    assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
