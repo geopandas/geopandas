@@ -184,7 +184,7 @@ def clip(gdf, clip_obj, drop_slivers=False):
     lines = ["LineString", "MultiLineString", "LinearRing"]
     points = ["Point", "MultiPoint"]
 
-    # Check that the gdf submitted does not contain multiple geom types (points, lines and/or polys) GeoDataFrame
+    # Check that the gdf for multiple geom types (points, lines and/or polys)
     orig_types_total = sum(
         [
             gdf.geom_type.isin(polys).any(),
