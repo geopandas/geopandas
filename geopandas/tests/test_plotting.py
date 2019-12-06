@@ -8,9 +8,11 @@ from shapely.geometry import (
     MultiPolygon,
     Polygon,
     LineString,
+    LinearRing,
     Point,
     MultiPoint,
     MultiLineString,
+    GeometryCollection,
 )
 
 
@@ -294,12 +296,24 @@ class TestLineStringPlotting:
             {"geometry": [multiline1, multiline2], "values": [0, 1]}
         )
 
+        self.linearrings = GeoSeries(
+            [LinearRing([(0, i), (4, i + 0.5), (9, i)]) for i in range(self.N)],
+            index=list("ABCDEFGHIJ"),
+        )
+        self.df3 = GeoDataFrame({"geometry": self.linearrings, "values": values})
+
     def test_single_color(self):
 
         ax = self.lines.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
         ax = self.df.plot(color="green")
+        _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
+
+        ax = self.linearrings.plot(color="green")
+        _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
+
+        ax = self.df3.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
         # check rgba tuple GH1178
@@ -550,6 +564,37 @@ class TestPolygonZPlotting:
     def test_plot(self):
         # basic test that points with z coords don't break plotting
         self.df.plot()
+
+
+class TestGeometryCollectionPlotting:
+    def setup_method(self):
+        coll1 = GeometryCollection(
+            [
+                Polygon([(1, 0), (2, 0), (2, 1)]),
+                MultiLineString([((0.5, 0.5), (1, 1)), ((1, 0.5), (1.5, 1))]),
+            ]
+        )
+        coll2 = GeometryCollection(
+            [Point(0.75, 0.25), Polygon([(2, 2), (3, 2), (2, 3)])]
+        )
+
+        self.series = GeoSeries([coll1, coll2])
+        self.df = GeoDataFrame({"geometry": self.series, "values": [1, 2]})
+
+    def test_colors(self):
+        # default uniform color
+        ax = self.series.plot()
+        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])  # poly
+        _check_colors(2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])  # line
+        _check_colors(2, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
+
+    def test_values(self):
+        ax = self.df.plot("values")
+        cmap = plt.get_cmap()
+        exp_colors = cmap(np.arange(2) / 1)
+        _check_colors(1, ax.collections[0].get_facecolors(), exp_colors)  # poly
+        _check_colors(2, ax.collections[1].get_edgecolors(), [exp_colors[0]])  # line
+        _check_colors(2, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
 
 
 class TestNonuniformGeometryPlotting:
