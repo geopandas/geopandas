@@ -12,17 +12,17 @@ import warnings
 
 @pytest.fixture
 def point_gdf():
-    """ Create a point GeoDataFrame. """
+    """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
     gdf = GeoDataFrame(
-        [Point(xy) for xy in pts], columns=["geometry"], crs={"init": "epsg:4326"}
+        [Point(xy) for xy in pts], columns=["geometry"], crs={"init": "epsg:4326"},
     )
     return gdf
 
 
 @pytest.fixture
 def single_rectangle_gdf():
-    """Create a single rectangle for clipping. """
+    """Create a single rectangle for clipping."""
     poly_inters = Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)])
     gdf = GeoDataFrame([1], geometry=[poly_inters], crs={"init": "epsg:4326"})
     gdf["attr2"] = "site-boundary"
@@ -32,7 +32,6 @@ def single_rectangle_gdf():
 @pytest.fixture
 def larger_single_rectangle_gdf():
     """Create a slightly larger rectangle for clipping.
-
      The smaller single rectangle is used to test the edge case where slivers
      are returned when you clip polygons. This fixture is larger which
      eliminates the slivers in the clip return."""
@@ -44,7 +43,7 @@ def larger_single_rectangle_gdf():
 
 @pytest.fixture
 def buffered_locations(point_gdf):
-    """Buffer points to create a multi-polygon. """
+    """Buffer points to create a multi-polygon."""
     buffered_locs = point_gdf
     buffered_locs["geometry"] = buffered_locs.buffer(4)
     buffered_locs["type"] = "plot"
@@ -53,7 +52,7 @@ def buffered_locations(point_gdf):
 
 @pytest.fixture
 def donut_geometry(buffered_locations, single_rectangle_gdf):
-    """ Make a geometry with a hole in the middle (a donut). """
+    """Make a geometry with a hole in the middle (a donut)."""
     donut = gpd.overlay(
         buffered_locations, single_rectangle_gdf, how="symmetric_difference"
     )
@@ -62,7 +61,7 @@ def donut_geometry(buffered_locations, single_rectangle_gdf):
 
 @pytest.fixture
 def two_line_gdf():
-    """ Create Line Objects For Testing """
+    """Create Line Objects For Testing"""
     linea = LineString([(1, 1), (2, 2), (3, 2), (5, 3)])
     lineb = LineString([(3, 4), (5, 7), (12, 2), (10, 5), (9, 7.5)])
     gdf = GeoDataFrame([1, 2], geometry=[linea, lineb], crs={"init": "epsg:4326"})
@@ -71,7 +70,7 @@ def two_line_gdf():
 
 @pytest.fixture
 def multi_poly_gdf(donut_geometry):
-    """ Create a multi-polygon GeoDataFrame. """
+    """Create a multi-polygon GeoDataFrame."""
     multi_poly = donut_geometry.unary_union
     out_df = GeoDataFrame(geometry=gpd.GeoSeries(multi_poly), crs={"init": "epsg:4326"})
     out_df["attr"] = ["pool"]
@@ -80,15 +79,13 @@ def multi_poly_gdf(donut_geometry):
 
 @pytest.fixture
 def multi_line(two_line_gdf):
-    """ Create a multi-line GeoDataFrame.
-
-    This GDF has one multiline and one regular line.
-    """
+    """Create a multi-line GeoDataFrame.
+    This GDF has one multiline and one regular line."""
     # Create a single and multi line object
     multiline_feat = two_line_gdf.unary_union
     linec = LineString([(2, 1), (3, 1), (4, 1), (5, 2)])
     out_df = GeoDataFrame(
-        geometry=gpd.GeoSeries([multiline_feat, linec]), crs={"init": "epsg:4326"}
+        geometry=gpd.GeoSeries([multiline_feat, linec]), crs={"init": "epsg:4326"},
     )
     out_df["attr"] = ["road", "stream"]
     return out_df
@@ -96,7 +93,7 @@ def multi_line(two_line_gdf):
 
 @pytest.fixture
 def multi_point(point_gdf):
-    """ Create a multi-point GeoDataFrame. """
+    """Create a multi-point GeoDataFrame."""
     multi_point = point_gdf.unary_union
     out_df = GeoDataFrame(
         geometry=gpd.GeoSeries(
@@ -110,13 +107,22 @@ def multi_point(point_gdf):
 
 @pytest.fixture
 def mixed_gdf():
-    """ Create a Mixed Polygon and LineString For Testing """
+    """Create a Mixed Polygon and LineString For Testing"""
     point = Point([(2, 3), (11, 4), (7, 2), (8, 9), (1, 13)])
     line = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
     gdf = GeoDataFrame(
         [1, 2, 3], geometry=[point, line, poly], crs={"init": "epsg:4326"}
     )
+    return gdf
+
+
+@pytest.fixture
+def sliver_line():
+    """Create a line that will create a point when clipped."""
+    linea = LineString([(10, 5), (13, 5), (15, 5)])
+    lineb = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
+    gdf = GeoDataFrame([1, 2], geometry=[linea, lineb], crs={"init": "epsg:4326"})
     return gdf
 
 
@@ -169,9 +175,8 @@ def test_clip_poly(buffered_locations, single_rectangle_gdf):
 
 def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
-
     Also the bounds of the object should == the bounds of the clip object
-    if they fully overlap (as they do in these fixtures). """
+    if they fully overlap (as they do in these fixtures)."""
     with pytest.warns(UserWarning):
         clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf)
         warnings.warn("A geometry collection has been returned. ", UserWarning)
@@ -183,9 +188,8 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
 
 def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
-
     Also the bounds of the object should == the bounds of the clip object
-    if they fully overlap (as they do in these fixtures). """
+    if they fully overlap (as they do in these fixtures)."""
     clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf, drop_slivers=True)
     assert hasattr(clip, "geometry")
     assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
@@ -195,7 +199,6 @@ def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
 
 def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
     """Test that a user warning is provided when clip outputs a sliver."""
-
     with pytest.warns(UserWarning):
         gpd.clip(multi_poly_gdf, single_rectangle_gdf)
         warnings.warn("A geometry collection has been returned. ", UserWarning)
@@ -204,10 +207,8 @@ def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
 def test_clip_single_multipoly_no_slivers(
     buffered_locations, larger_single_rectangle_gdf
 ):
-    """Test clipping a multi poly with another poly
-
-    No sliver shapes are returned in this clip operation. """
-
+    """Test clipping a multi poly with another poly no sliver
+    shapes are returned in this clip operation."""
     multi = buffered_locations.dissolve(by="type").reset_index()
     clip = gpd.clip(multi, larger_single_rectangle_gdf)
 
@@ -216,18 +217,14 @@ def test_clip_single_multipoly_no_slivers(
 
 def test_clip_multiline(multi_line, single_rectangle_gdf):
     """Test that clipping a multiline feature with a poly returns expected output."""
-
     clip = gpd.clip(multi_line, single_rectangle_gdf)
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "MultiLineString"
 
 
 def test_clip_multipoint(single_rectangle_gdf, multi_point):
     """Clipping a multipoint feature with a polygon works as expected.
-
     should return a geodataframe with a single multi point feature"""
-
     clip = gpd.clip(multi_point, single_rectangle_gdf)
-
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "MultiPoint"
     assert hasattr(clip, "attr")
     # All points should intersect the clip geom
@@ -270,3 +267,32 @@ def test_clip_with_polygon(single_rectangle_gdf):
     polygon = Polygon([(0, 0), (5, 12), (10, 0), (0, 0)])
     clip = gpd.clip(single_rectangle_gdf, polygon)
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
+
+
+def test_clip_with_line_sliver(single_rectangle_gdf, sliver_line):
+    """Test clipping a line so that there is a sliver drops the sliver."""
+    clip = gpd.clip(sliver_line, single_rectangle_gdf, drop_slivers=True)
+    assert hasattr(clip, "geometry")
+    assert len(clip.geometry) == 1
+    # Assert returned data is a not geometry collection
+    assert (clip.geom_type == "LineString").any()
+
+
+def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
+    """Test the correct warnings are raised if a point sliver is returned"""
+    with pytest.warns(UserWarning):
+        clip = gpd.clip(sliver_line, single_rectangle_gdf)
+        warnings.warn(
+            "More geometry types were returned than were in the original ", UserWarning,
+        )
+        assert hasattr(clip, "geometry")
+        # Assert returned data is a geometry collection given sliver geoms
+        assert "Point" == clip.geom_type[0]
+        assert "LineString" == clip.geom_type[1]
+
+
+def test_warning_slivers_mixed(single_rectangle_gdf, mixed_gdf):
+    """Test the correct warnings are raised if drop_slivers is called on a mixed GDF"""
+    with pytest.warns(UserWarning):
+        gpd.clip(mixed_gdf, single_rectangle_gdf)
+        warnings.warn("Drop slivers was called on a mixed type GeoDataFrame.")

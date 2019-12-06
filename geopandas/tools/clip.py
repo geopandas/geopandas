@@ -180,25 +180,61 @@ def clip(gdf, clip_obj, drop_slivers=False):
     order = pd.Series(range(len(gdf)), index=gdf.index)
     concat = pd.concat([point_gdf, line_gdf, poly_gdf])
 
-    if (concat.geom_type == "GeometryCollection").any() and drop_slivers:
-        concat = concat.explode()
-        if not polys.empty:
-            concat = concat.loc[concat.geom_type.isin(["Polygon", "MultiPolygon"])]
-        elif not lines.empty:
-            concat = concat.loc[
-                concat.geom_type.isin(["LineString", "MultiLineString", "LinearRing"])
-            ]
-        elif not points.empty:
-            concat = concat.loc[concat.geom_type.isin(["Point", "MultiPoint"])]
-        else:
-            raise TypeError("`drop_sliver` does not support {}.".format(type))
-    elif (concat.geom_type == "GeometryCollection").any() and not drop_slivers:
+    polys = ["Polygon", "MultiPolygon"]
+    lines = ["LineString", "MultiLineString", "LinearRing"]
+    points = ["Point", "MultiPoint"]
+
+    # Check that the gdf submitted is not a multi type GeoDataFrame
+    orig_types_total = sum(
+        [
+            gdf.geom_type.isin(polys).any(),
+            gdf.geom_type.isin(lines).any(),
+            gdf.geom_type.isin(points).any(),
+        ]
+    )
+
+    # Check how many geometry types are in the clipped GeoDataFrame
+    clip_types_total = sum(
+        [
+            concat.geom_type.isin(polys).any(),
+            concat.geom_type.isin(lines).any(),
+            concat.geom_type.isin(points).any(),
+        ]
+    )
+
+    # Check if the clipped geometry is a geometry collection
+    geometry_collection = (concat.geom_type == "GeometryCollection").any()
+
+    # Check there aren't any additional geometries in the clipped GeoDataFrame
+    more_types = orig_types_total < clip_types_total
+
+    if orig_types_total > 1 and drop_slivers:
+        warnings.warn(
+            "Drop slivers was called on a mixed type GeoDataFrame. "
+            "Slivers cannot be dropped on mixed type GeoDataFrames. "
+            "The data will be return with slivers present."
+        )
+    elif drop_slivers and not geometry_collection and not more_types:
+        warnings.warn("Drop slivers was called when no slivers existed.")
+    elif drop_slivers and (geometry_collection or more_types):
+        orig_type = gdf.geom_type.iloc[0]
+        if geometry_collection:
+            concat = concat.explode()
+        if orig_type in polys:
+            concat = concat.loc[concat.geom_type.isin(polys)]
+        elif orig_type in lines:
+            concat = concat.loc[concat.geom_type.isin(lines)]
+    elif geometry_collection and not drop_slivers:
         warnings.warn(
             "A geometry collection has been returned. Use .explode() to "
             "remove the collection object or drop_slivers=True to remove "
             "sliver geometries."
         )
-    elif drop_slivers:
-        warnings.warn("Drop slivers was called when no slivers existed.")
+    elif more_types and not drop_slivers:
+        warnings.warn(
+            "More geometry types were returned than were in the original "
+            "GeoDataFrame. This is likely due to a sliver being created. "
+            "To remove the slivers set drop_slivers=True. "
+        )
     concat["_order"] = order
     return concat.sort_values(by="_order").drop(columns="_order")
