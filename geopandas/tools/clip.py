@@ -184,7 +184,7 @@ def clip(gdf, clip_obj, drop_slivers=False):
     lines = ["LineString", "MultiLineString", "LinearRing"]
     points = ["Point", "MultiPoint"]
 
-    # Check that the gdf submitted is not a multi type GeoDataFrame
+    # Check that the gdf submitted does not contain multiple geom types (points, lines and/or polys) GeoDataFrame
     orig_types_total = sum(
         [
             gdf.geom_type.isin(polys).any(),
@@ -202,10 +202,10 @@ def clip(gdf, clip_obj, drop_slivers=False):
         ]
     )
 
-    # Check if the clipped geometry is a geometry collection
+    # Check if the clipped geometry contains a geometry collection
     geometry_collection = (concat.geom_type == "GeometryCollection").any()
 
-    # Check there aren't any additional geometries in the clipped GeoDataFrame
+    # Check there aren't any new geom types in the clipped GeoDataFrame
     more_types = orig_types_total < clip_types_total
 
     if orig_types_total > 1 and drop_slivers:
@@ -233,8 +233,8 @@ def clip(gdf, clip_obj, drop_slivers=False):
     elif more_types and not drop_slivers:
         warnings.warn(
             "More geometry types were returned than were in the original "
-            "GeoDataFrame. This is likely due to a sliver being created. "
-            "To remove the slivers set drop_slivers=True. "
+            "GeoDataFrame. This is likely due to a sliver being created from. "
+            "a polygon. To remove the slivers set drop_slivers=True. "
         )
     concat["_order"] = order
     return concat.sort_values(by="_order").drop(columns="_order")
