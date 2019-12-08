@@ -200,21 +200,20 @@ Before combining maps, however, remember to always ensure they share a common CR
     @savefig capitals_over_countries_2.png
     plt.show();
 
-Control the order of multiple layers in a map
-------------------------------------------------
+Control the order of multiple layers in a plot
+~~~~~~~~~~~~~~~~
 
-When plotting multiple layers, use zorder to take control of the order of layers being rendered. 
-Lower the zorder, lower the layer is on the map and vice versa 
+When plotting multiple layers, use ``zorder`` to take control of the order of layers being plotted. 
+The lower the ``zorder`` is, the lower the layer is on the map and vice versa. 
 
-Without zorder cities gets plotted below world
+Without specified ``zorder``, cities (Points) gets plotted below world (Polygons), following the default order based on geometry types.
 
 .. ipython:: python
 
     ax = cities.plot(color='k')
     world.plot(ax=ax)
 
-
-We can set the zorder of cities higher than world so that it's on top 
+We can set the ``zorder`` for cities higher than for world to move it of top. 
 
 .. ipython:: python
 
