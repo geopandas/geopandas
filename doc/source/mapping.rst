@@ -203,34 +203,23 @@ Before combining maps, however, remember to always ensure they share a common CR
 Control the order of multiple layers in a map
 ------------------------------------------------
 
-When plotting multiple layers, use zorder to take control of the order of layers being rendered
+When plotting multiple layers, use zorder to take control of the order of layers being rendered. 
+Lower the zorder, lower the layer is on the map and vice versa 
 
-The example below shows you how you can control the zorder of individual layers
-
-To plot layer1 on top of layer2
-
-.. ipython:: python
-
-    import matplotlib.pyplot as plt
-    from shapely.geometry import LineString,Point
-    layer1 = geopandas.GeoSeries([LineString([(0, 0), (0, 1), (1, 0),(1, 1)])])
-    layer2 = geopandas.GeoSeries([Point(0, 0.2), Point(1, 0.6), Point(0.6, 0.4)])
-    fig, ax = plt.subplots()
-    layer1.plot(ax= ax, linewidth= 5, label= 'zorder 1', zorder= 1)
-    layer2.plot(ax= ax, color= 'red', label= 'zorder 2', zorder= 2)
-    legend = plt.legend()
-    plt.show();
-
-To plot layer2 on top of Layer1
+Without zorder cities gets plotted below world
 
 .. ipython:: python
 
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
-    layer2.plot(ax= ax, color= 'red', label= 'zorder 1', zorder= 1)
-    layer1.plot(ax= ax, linewidth= 5, label= 'zorder 2', zorder= 2)
-    legend = plt.legend()
-    plt.show();
+    ax = cities.plot(color='k')
+    world.plot(ax=ax)
+
+
+We can set the zorder of cities higher than world so that it's on top 
+
+.. ipython:: python
+
+    ax = cities.plot(color='k', zorder=2)
+    world.plot(ax=ax, zorder=1)
 
 Other Resources
 -----------------
