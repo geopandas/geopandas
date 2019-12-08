@@ -213,7 +213,6 @@ Without zorder cities gets plotted below world
     ax = cities.plot(color='k')
     world.plot(ax=ax)
 
-
 We can set the zorder of cities higher than world so that it's on top 
 
 .. ipython:: python
