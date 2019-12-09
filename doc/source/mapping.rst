@@ -201,7 +201,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     plt.show();
 
 Control the order of multiple layers in a plot
-~~~~~~~~~~~~~~~~
+----------------------------------------------
 
 When plotting multiple layers, use ``zorder`` to take control of the order of layers being plotted. 
 The lower the ``zorder`` is, the lower the layer is on the map and vice versa. 
