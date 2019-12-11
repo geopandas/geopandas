@@ -1,4 +1,3 @@
-from distutils.version import LooseVersion
 import sys
 
 from shapely.geometry import Point, Polygon
@@ -13,15 +12,8 @@ import pytest
 @pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSeriesSindex:
     def test_empty_geoseries(self):
-        import rtree
 
-        if LooseVersion(rtree.__version__) >= LooseVersion("0.9"):
-            # See https://github.com/Toblerity/rtree/issues/122
-            # rtree version 0.9 now creates an empty index instead of raising
-            # an error (which was captured when creating the sindex)
-            assert GeoSeries().sindex is not None
-        else:
-            assert GeoSeries().sindex is None
+        assert GeoSeries().sindex is None
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -33,13 +25,8 @@ class TestSeriesSindex:
 
     def test_empty_point(self):
         s = GeoSeries([Point()])
-        import rtree
 
-        if LooseVersion(rtree.__version__) >= LooseVersion("0.9"):
-            # see above
-            assert s.sindex is not None
-        else:
-            assert s.sindex is None
+        assert s.sindex is None
         assert s._sindex_generated is True
 
     def test_polygons(self):
