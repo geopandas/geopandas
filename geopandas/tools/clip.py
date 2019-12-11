@@ -14,16 +14,16 @@ from shapely.geometry import Polygon, MultiPolygon
 
 
 def _clip_points(gdf, poly):
-    """Clip point geometry to the clip_obj GeoDataFrame extent.
+    """Clip point geometry to the polygon extent.
 
-    Clip an input point GeoDataFrame to the polygon extent of the clip_obj
-    parameter. Points that intersect the clip_obj geometry are extracted with
+    Clip an input point GeoDataFrame to the polygon extent of the poly
+    parameter. Points that intersect the poly geometry are extracted with
     associated attributes and returned.
 
     Parameters
     ----------
     gdf : GeoDataFrame
-        Composed of point geometry that will be clipped to the clip_obj.
+        Composed of point geometry that will be clipped to the poly.
 
     poly : (Multi)Polygon
         Reference geometry used to spatially clip the data.
@@ -32,7 +32,7 @@ def _clip_points(gdf, poly):
     -------
     GeoDataFrame
         The returned GeoDataFrame is a subset of gdf that intersects
-        with clip_obj.
+        with poly.
     """
     spatial_index = gdf.sindex
     bbox = poly.bounds
@@ -43,16 +43,16 @@ def _clip_points(gdf, poly):
 
 
 def _clip_line_poly(gdf, poly):
-    """Clip line and polygon geometry to the clip_obj GeoDataFrame extent.
+    """Clip line and polygon geometry to the polygon extent.
 
-    Clip an input line or polygon to the polygon extent of the clip_obj
-    parameter. Lines or Polygons that intersect the clip_obj geometry are
+    Clip an input line or polygon to the polygon extent of the poly
+    parameter. Parts of Lines or Polygons that intersect the poly geometry are
     extracted with associated attributes and returned.
 
     Parameters
     ----------
     gdf : GeoDataFrame
-        Line or polygon geometry that is clipped to clip_obj.
+        Line or polygon geometry that is clipped to poly.
 
     poly : (Multi)Polygon
         Reference polygon for clipping.
@@ -61,7 +61,7 @@ def _clip_line_poly(gdf, poly):
     -------
     GeoDataFrame
         The returned GeoDataFrame is a clipped subset of gdf
-        that intersects with clip_obj.
+        that intersects with poly.
     """
     # Create a single polygon object for clipping
     spatial_index = gdf.sindex
@@ -100,8 +100,8 @@ def clip(gdf, clip_obj, drop_slivers=False):
           The clip_obj's geometry is dissolved into one geometric feature
           and intersected with gdf.
     drop_slivers : Boolean
-          If a clip operation returns a GeometryCollection, remove polygon
-          slivers and only return polygon features.
+          If a clip operation returns a GeometryCollection, remove
+          slivers and only return features of original geometry type.
 
     Returns
     -------
@@ -141,7 +141,7 @@ def clip(gdf, clip_obj, drop_slivers=False):
     else:
         xmin, ymin, xmax, ymax = clip_obj.bounds
     if gdf.cx[xmin:xmax, ymin:ymax].empty:
-        raise ValueError("Shape and crop extent do not overlap.")
+        raise ValueError("gdf and clip_obj extent do not overlap.")
 
     if isinstance(clip_obj, (GeoDataFrame, GeoSeries)):
         poly = clip_obj.geometry.unary_union
@@ -207,9 +207,9 @@ def clip(gdf, clip_obj, drop_slivers=False):
     more_types = orig_types_total < clip_types_total
 
     if orig_types_total > 1 and drop_slivers:
-        warnings.warn("Drop_slivers can not be called on a mixed type GeoDataFrame. ")
+        warnings.warn("drop_slivers can not be called on a mixed type GeoDataFrame.")
     elif drop_slivers and not geometry_collection and not more_types:
-        warnings.warn("Drop slivers was called when no slivers existed.")
+        warnings.warn("drop_slivers was called when no slivers existed.")
     elif drop_slivers and (geometry_collection or more_types):
         orig_type = gdf.geom_type.iloc[0]
         if geometry_collection:
@@ -221,14 +221,14 @@ def clip(gdf, clip_obj, drop_slivers=False):
     elif geometry_collection and not drop_slivers:
         warnings.warn(
             "A geometry collection has been returned. Use .explode() to "
-            "remove the collection object or drop_slivers=True to remove "
+            "decompose the collection object or drop_slivers=True to remove "
             "sliver geometries."
         )
     elif more_types and not drop_slivers:
         warnings.warn(
             "More geometry types were returned than were in the original "
-            "GeoDataFrame. This is likely due to a sliver being created from. "
-            "a polygon. To remove the slivers set drop_slivers=True. "
+            "GeoDataFrame. This is likely due to a sliver being created. "
+            "To remove the slivers set drop_slivers=True."
         )
     concat["_order"] = order
     return concat.sort_values(by="_order").drop(columns="_order")
