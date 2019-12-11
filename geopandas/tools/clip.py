@@ -22,7 +22,7 @@ def _clip_points(gdf, poly):
 
     Parameters
     ----------
-    gdf : GeoDataFrame
+    gdf : GeoDataFrame, GeoSeries
         Composed of point geometry that will be clipped to the poly.
 
     poly : (Multi)Polygon
@@ -51,7 +51,7 @@ def _clip_line_poly(gdf, poly):
 
     Parameters
     ----------
-    gdf : GeoDataFrame
+    gdf : GeoDataFrame, GeoSeries
         Line or polygon geometry that is clipped to poly.
 
     poly : (Multi)Polygon
@@ -75,10 +75,13 @@ def _clip_line_poly(gdf, poly):
 
     # Clip the data - with these data
     clipped = gdf_sub.copy()
-    clipped["geometry"] = gdf_sub.intersection(poly)
+    if isinstance(clipped, GeoDataFrame):
+        clipped["geometry"] = gdf_sub.intersection(poly)
 
-    # Return the clipped layer with no null geometry values or empty geometries
-    return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
+        # Return the clipped layer with no null geometry values or empty geometries
+        return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
+    clipped = gdf_sub.intersection(poly)
+    return clipped[~clipped.is_empty & clipped.notnull()]
 
 
 def clip(gdf, clip_obj, drop_slivers=False):
@@ -230,5 +233,9 @@ def clip(gdf, clip_obj, drop_slivers=False):
             "GeoDataFrame. This is likely due to a sliver being created. "
             "To remove the slivers set drop_slivers=True."
         )
+    if isinstance(concat, GeoDataFrame):
+        concat["_order"] = order
+        return concat.sort_values(by="_order").drop(columns="_order")
+    concat = GeoDataFrame(geometry=concat)
     concat["_order"] = order
-    return concat.sort_values(by="_order").drop(columns="_order")
+    return concat.sort_values(by="_order").geometry

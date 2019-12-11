@@ -6,7 +6,7 @@ import numpy as np
 from shapely.geometry import Polygon, Point, LineString
 import shapely
 import geopandas as gpd
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 import warnings
 
 
@@ -15,7 +15,7 @@ def point_gdf():
     """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
     gdf = GeoDataFrame(
-        [Point(xy) for xy in pts], columns=["geometry"], crs={"init": "epsg:4326"},
+        [Point(xy) for xy in pts], columns=["geometry"], crs={"init": "epsg:4326"}
     )
     return gdf
 
@@ -85,7 +85,7 @@ def multi_line(two_line_gdf):
     multiline_feat = two_line_gdf.unary_union
     linec = LineString([(2, 1), (3, 1), (4, 1), (5, 2)])
     out_df = GeoDataFrame(
-        geometry=gpd.GeoSeries([multiline_feat, linec]), crs={"init": "epsg:4326"},
+        geometry=gpd.GeoSeries([multiline_feat, linec]), crs={"init": "epsg:4326"}
     )
     out_df["attr"] = ["road", "stream"]
     return out_df
@@ -112,7 +112,7 @@ def mixed_gdf():
     line = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
     gdf = GeoDataFrame(
-        [1, 2, 3], geometry=[point, line, poly], crs={"init": "epsg:4326"}
+        [1, 2, 3], geometry=[point, poly, line], crs={"init": "epsg:4326"}
     )
     return gdf
 
@@ -138,6 +138,12 @@ def test_returns_gdf(point_gdf, single_rectangle_gdf):
     """Test that function returns a GeoDataFrame (or GDF-like) object."""
     out = gpd.clip(point_gdf, single_rectangle_gdf)
     assert isinstance(out, GeoDataFrame)
+
+
+def test_returns_series(point_gdf, single_rectangle_gdf):
+    """Test that function returns a GeoSeries if GeoSeries is passed."""
+    out = gpd.clip(point_gdf.geometry, single_rectangle_gdf)
+    assert isinstance(out, GeoSeries)
 
 
 def test_non_overlapping_geoms():
@@ -173,6 +179,13 @@ def test_clip_poly(buffered_locations, single_rectangle_gdf):
     assert all(clipped_poly.geom_type == "Polygon")
 
 
+def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
+    """Test clipping a polygon GDF with a generic polygon geometry."""
+    clipped_poly = gpd.clip(buffered_locations.geometry, single_rectangle_gdf)
+    assert len(clipped_poly) == 3
+    assert all(clipped_poly.geom_type == "Polygon")
+
+
 def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
@@ -201,7 +214,6 @@ def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
     """Test that a user warning is provided when clip outputs a sliver."""
     with pytest.warns(UserWarning):
         gpd.clip(multi_poly_gdf, single_rectangle_gdf)
-        warnings.warn("A geometry collection has been returned. ", UserWarning)
 
 
 def test_clip_single_multipoly_no_slivers(
@@ -250,8 +262,18 @@ def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
     assert (
         hasattr(clip, "geometry")
         and clip.geom_type[0] == "Point"
-        and clip.geom_type[1] == "LineString"
-        and clip.geom_type[2] == "Polygon"
+        and clip.geom_type[1] == "Polygon"
+        and clip.geom_type[2] == "LineString"
+    )
+
+
+def test_mixed_series(mixed_gdf, single_rectangle_gdf):
+    """Test clipping a mixed GeoSeries"""
+    clip = gpd.clip(mixed_gdf.geometry, single_rectangle_gdf)
+    assert (
+        clip.geom_type[0] == "Point"
+        and clip.geom_type[1] == "Polygon"
+        and clip.geom_type[2] == "LineString"
     )
 
 
@@ -283,7 +305,7 @@ def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
     with pytest.warns(UserWarning):
         clip = gpd.clip(sliver_line, single_rectangle_gdf)
         warnings.warn(
-            "More geometry types were returned than were in the original ", UserWarning,
+            "More geometry types were returned than were in the original ", UserWarning
         )
         assert hasattr(clip, "geometry")
         # Assert returned data is a geometry collection given sliver geoms
