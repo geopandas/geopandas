@@ -210,9 +210,7 @@ def clip(gdf, clip_obj, drop_slivers=False):
 
     if orig_types_total > 1 and drop_slivers:
         warnings.warn(
-            "Drop slivers was called on a mixed type GeoDataFrame. "
-            "Slivers cannot be dropped on mixed type GeoDataFrames. "
-            "The data will be return with slivers present."
+            "Drop_slivers can not be called on a mixed type GeoDataFrame. "
         )
     elif drop_slivers and not geometry_collection and not more_types:
         warnings.warn("Drop slivers was called when no slivers existed.")
