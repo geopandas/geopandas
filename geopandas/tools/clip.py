@@ -6,12 +6,10 @@ A module to clip vector data using GeoPandas.
 
 """
 
-
 import pandas as pd
 from geopandas import GeoDataFrame, GeoSeries
 import numpy as np
 import warnings
-
 from shapely.geometry import Polygon, MultiPolygon
 
 
@@ -209,9 +207,7 @@ def clip(gdf, clip_obj, drop_slivers=False):
     more_types = orig_types_total < clip_types_total
 
     if orig_types_total > 1 and drop_slivers:
-        warnings.warn(
-            "Drop_slivers can not be called on a mixed type GeoDataFrame. "
-        )
+        warnings.warn("Drop_slivers can not be called on a mixed type GeoDataFrame. ")
     elif drop_slivers and not geometry_collection and not more_types:
         warnings.warn("Drop slivers was called when no slivers existed.")
     elif drop_slivers and (geometry_collection or more_types):
