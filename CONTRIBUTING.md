@@ -36,19 +36,32 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
-- GeoPandas supports Python 2 (2.7+) and Python 3 (3.5+) with a single
-  code base. Use modern Python idioms when possible that are
-  compatible with both major versions, and use the
-  [six](https://pythonhosted.org/six) library where helpful to smooth
-  over the differences. Use `from __future__ import` statements where
-  appropriate. Test code locally in both Python 2 and Python 3 when
-  possible (all supported versions will be automatically tested on
-  Travis CI).
+- GeoPandas supports Python 3.5+ only. The last version of GeoPandas
+  supporting Python 2 is 0.6.
 
-- Follow PEP 8 when possible.
+- GeoPandas follows [the PEP 8
+  standard](http://www.python.org/dev/peps/pep-0008/) and uses
+  [Black](https://black.readthedocs.io/en/stable/) and
+  [Flake8](http://flake8.pycqa.org/en/latest/) to ensure a consistent
+  code format throughout the project.
 
 - Imports should be grouped with standard library imports first,
   3rd-party libraries next, and GeoPandas imports third. Within each
   grouping, imports should be alphabetized. Always use absolute
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
+
+- You can set up [pre-commit hooks](https://pre-commit.com/) to
+  automatically run `black` and `flake8` when you make a git
+  commit. This can be done by installing `pre-commit`:
+
+    $ python -m pip install pre-commit
+
+  From the root of the geopandas repository, you should then install
+  `pre-commit`:
+
+    $ pre-commit install
+
+  Then `black` and `flake8` will be run automatically each time you
+  commit changes. You can skip these checks with `git commit
+  --no-verify`.

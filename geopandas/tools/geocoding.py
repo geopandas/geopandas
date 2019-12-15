@@ -1,11 +1,11 @@
 from collections import defaultdict
 import time
 
-from fiona.crs import from_epsg
 import numpy as np
 import pandas as pd
+
+from fiona.crs import from_epsg
 from shapely.geometry import Point
-from six import iteritems, string_types
 
 import geopandas
 
@@ -16,6 +16,7 @@ def _get_throttle_time(provider):
     that specify rate limits in their terms of service.
     """
     import geopy.geocoders
+
     # https://operations.osmfoundation.org/policies/nominatim/
     if provider == geopy.geocoders.Nominatim:
         return 1
@@ -65,7 +66,7 @@ def geocode(strings, provider=None, **kwargs):
 
     if provider is None:
         # https://geocode.farm/geocoding/free-api-documentation/
-        provider = 'geocodefarm'
+        provider = "geocodefarm"
         throttle_time = 0.25
     else:
         throttle_time = _get_throttle_time(provider)
@@ -121,7 +122,7 @@ def reverse_geocode(points, provider=None, **kwargs):
 
     if provider is None:
         # https://geocode.farm/geocoding/free-api-documentation/
-        provider = 'geocodefarm'
+        provider = "geocodefarm"
         throttle_time = 0.25
     else:
         throttle_time = _get_throttle_time(provider)
@@ -137,12 +138,12 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     if not isinstance(data, pd.Series):
         data = pd.Series(data)
 
-    if isinstance(provider, string_types):
+    if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)
 
     coder = provider(**kwargs)
     results = {}
-    for i, s in iteritems(data):
+    for i, s in data.items():
         try:
             if forward:
                 results[i] = coder.geocode(s)
@@ -168,7 +169,7 @@ def _prepare_geocode_result(results):
     d = defaultdict(list)
     index = []
 
-    for i, s in iteritems(results):
+    for i, s in results.items():
         address, loc = s
 
         # loc is lat, lon and we want lon, lat
@@ -180,8 +181,8 @@ def _prepare_geocode_result(results):
         if address is None:
             address = np.nan
 
-        d['geometry'].append(p)
-        d['address'].append(address)
+        d["geometry"].append(p)
+        d["address"].append(address)
         index.append(i)
 
     df = geopandas.GeoDataFrame(d, index=index)

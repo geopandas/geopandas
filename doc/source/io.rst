@@ -28,6 +28,20 @@ a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>
     url = "http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson"
     df = geopandas.read_file(url)
 
+You can also load ZIP files that contain your data::
+
+    zipfile = "zip:///Users/name/Downloads/cb_2017_us_state_500k.zip"
+    states = geopandas.read_file(zipfile)
+
+If the dataset is in a folder in the ZIP file, you have to append its name::
+
+    zipfile = "zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data"
+
+If there are multiple datasets in a folder in the ZIP file, you also have to specify the filename::
+
+    zipfile = "zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data/gadm36_AFG_1.shp"
+
+
 *geopandas* can also get data from a PostGIS database using the ``read_postgis()`` command.
 
 

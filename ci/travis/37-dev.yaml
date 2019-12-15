@@ -2,8 +2,7 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
-  - six
+  - python=3.7.3
   - cython
   # required
   - pandas

@@ -1,23 +1,19 @@
-from __future__ import absolute_import
-
 import string
 
 import numpy as np
-from pandas import Series, DataFrame, MultiIndex
-from shapely.geometry import (
-    Point, LinearRing, LineString, Polygon, MultiPoint)
+from numpy.testing import assert_array_equal
+from pandas import DataFrame, MultiIndex, Series
+
+from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
-from geopandas.tests.util import (
-    geom_equals, geom_almost_equals, assert_geoseries_equal)
-
+from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 import pytest
-from numpy.testing import assert_array_equal
-from pandas.util.testing import assert_series_equal, assert_frame_equal
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -28,42 +24,52 @@ def assert_array_dtype_equal(a, b, *args, **kwargs):
 
 
 class TestGeomMethods:
-
     def setup_method(self):
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-        self.inner_sq = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75),
-                                 (0.25, 0.75)])
-        self.nested_squares = Polygon(self.sq.boundary,
-                                      [self.inner_sq.boundary])
+        self.inner_sq = Polygon(
+            [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
+        )
+        self.nested_squares = Polygon(self.sq.boundary, [self.inner_sq.boundary])
         self.p0 = Point(5, 5)
         self.p3d = Point(5, 5, 5)
-        self.g0 = GeoSeries([self.t1, self.t2, self.sq, self.inner_sq,
-                             self.nested_squares, self.p0])
+        self.g0 = GeoSeries(
+            [
+                self.t1,
+                self.t2,
+                self.sq,
+                self.inner_sq,
+                self.nested_squares,
+                self.p0,
+                None,
+            ]
+        )
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = {'init': 'epsg:4326', 'no_defs': True}
+        self.g3.crs = {"init": "epsg:4326", "no_defs": True}
         self.g4 = GeoSeries([self.t2, self.t1])
-        self.g4.crs = {'init': 'epsg:4326', 'no_defs': True}
+        self.g4.crs = {"init": "epsg:4326", "no_defs": True}
         self.g_3d = GeoSeries([self.p0, self.p3d])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, None])
         self.a1 = self.g1.copy()
-        self.a1.index = ['A', 'B']
+        self.a1.index = ["A", "B"]
         self.a2 = self.g2.copy()
-        self.a2.index = ['B', 'C']
+        self.a2.index = ["B", "C"]
         self.esb = Point(-73.9847, 40.7484)
         self.sol = Point(-74.0446, 40.6893)
-        self.landmarks = GeoSeries([self.esb, self.sol],
-                                   crs={'init': 'epsg:4326', 'no_defs': True})
+        self.landmarks = GeoSeries(
+            [self.esb, self.sol], crs={"init": "epsg:4326", "no_defs": True}
+        )
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
         self.g6 = GeoSeries([self.p0, self.t3])
         self.empty = GeoSeries([])
+        self.all_none = GeoSeries([None, None])
         self.empty_poly = Polygon()
 
         # Crossed lines
@@ -73,12 +79,12 @@ class TestGeomMethods:
 
         # Placeholder for testing, will just drop in different geometries
         # when needed
-        self.gdf1 = GeoDataFrame({'geometry': self.g1,
-                                  'col0': [1.0, 2.0],
-                                  'col1': ['geo', 'pandas']})
-        self.gdf2 = GeoDataFrame({'geometry': self.g1,
-                                  'col3': [4, 5],
-                                  'col4': ['rand', 'string']})
+        self.gdf1 = GeoDataFrame(
+            {"geometry": self.g1, "col0": [1.0, 2.0], "col1": ["geo", "pandas"]}
+        )
+        self.gdf2 = GeoDataFrame(
+            {"geometry": self.g1, "col3": [4, 5], "col4": ["rand", "string"]}
+        )
 
     def _test_unary_real(self, op, expected, a):
         """ Tests for 'area', 'length', 'is_valid', etc. """
@@ -89,7 +95,10 @@ class TestGeomMethods:
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            def fcmp(a, b): assert a.equals(b)
+
+            def fcmp(a, b):
+                assert a.equals(b)
+
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
@@ -97,20 +106,20 @@ class TestGeomMethods:
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            def fcmp(a, b): assert geom_equals(a, b)
+
+            def fcmp(a, b):
+                assert geom_equals(a, b)
 
         if isinstance(b, GeoPandasBase):
             right_df = True
         else:
             right_df = False
 
-        self._binary_op_test(op, expected, a, b, fcmp, True, right_df,
-                             *args, **kwargs)
+        self._binary_op_test(op, expected, a, b, fcmp, True, right_df, *args, **kwargs)
 
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
         fcmp = assert_series_equal
-        self._binary_op_test(op, expected, a, b, fcmp, True, False,
-                             *args, **kwargs)
+        self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
 
     def _test_binary_operator(self, op, expected, a, b):
         """
@@ -121,7 +130,9 @@ class TestGeomMethods:
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
-            def fcmp(a, b): assert geom_equals(a, b)
+
+            def fcmp(a, b):
+                assert geom_equals(a, b)
 
         if isinstance(b, GeoPandasBase):
             right_df = True
@@ -130,9 +141,9 @@ class TestGeomMethods:
 
         self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
 
-    def _binary_op_test(self, op, expected, left, right, fcmp, left_df,
-                        right_df,
-                        *args, **kwargs):
+    def _binary_op_test(
+        self, op, expected, left, right, fcmp, left_df, right_df, *args, **kwargs
+    ):
         """
         This is a helper to call a function on GeoSeries and GeoDataFrame
         arguments. For example, 'intersection' is a member of both GeoSeries
@@ -157,15 +168,17 @@ class TestGeomMethods:
             GeoDataFrame
 
         """
+
         def _make_gdf(s):
             n = len(s)
             col1 = string.ascii_lowercase[:n]
             col2 = range(n)
 
-            return GeoDataFrame({'geometry': s.values,
-                                 'col1': col1,
-                                 'col2': col2},
-                                index=s.index, crs=s.crs)
+            return GeoDataFrame(
+                {"geometry": s.values, "col1": col1, "col2": col2},
+                index=s.index,
+                crs=s.crs,
+            )
 
         # Test GeoSeries.op(GeoSeries)
         result = getattr(left, op)(right, *args, **kwargs)
@@ -208,35 +221,33 @@ class TestGeomMethods:
     #                                       self.g3, no_crs_g3)
 
     def test_intersection(self):
-        self._test_binary_topological('intersection', self.t1,
-                                      self.g1, self.g2)
-        self._test_binary_topological('intersection', self.empty_poly,
-                                      self.g1, self.empty)
+        self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
+        self._test_binary_topological(
+            "intersection", self.all_none, self.g1, self.empty
+        )
 
     def test_union_series(self):
-        self._test_binary_topological('union', self.sq, self.g1, self.g2)
+        self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
     def test_union_polygon(self):
-        self._test_binary_topological('union', self.sq, self.g1, self.t2)
+        self._test_binary_topological("union", self.sq, self.g1, self.t2)
 
     def test_symmetric_difference_series(self):
-        self._test_binary_topological('symmetric_difference', self.sq,
-                                      self.g3, self.g4)
+        self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
     def test_symmetric_difference_poly(self):
         expected = GeoSeries([GeometryCollection(), self.sq], crs=self.g3.crs)
-        self._test_binary_topological('symmetric_difference', expected,
-                                      self.g3, self.t1)
+        self._test_binary_topological(
+            "symmetric_difference", expected, self.g3, self.t1
+        )
 
     def test_difference_series(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        self._test_binary_topological('difference', expected,
-                                      self.g1, self.g2)
+        self._test_binary_topological("difference", expected, self.g1, self.g2)
 
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])
-        self._test_binary_topological('difference', expected,
-                                      self.g1, self.t2)
+        self._test_binary_topological("difference", expected, self.g1, self.t2)
 
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
@@ -257,21 +268,27 @@ class TestGeomMethods:
         l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
         expected = GeoSeries([l1, l2], index=self.g1.index, crs=self.g1.crs)
 
-        self._test_unary_topological('boundary', expected, self.g1)
+        self._test_unary_topological("boundary", expected, self.g1)
 
     def test_area(self):
         expected = Series(np.array([0.5, 1.0]), index=self.g1.index)
-        self._test_unary_real('area', expected, self.g1)
+        self._test_unary_real("area", expected, self.g1)
 
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
-        self._test_unary_real('area', expected, self.na_none)
+        self._test_unary_real("area", expected, self.na_none)
 
     def test_bounds(self):
         # Set columns to get the order right
-        expected = DataFrame({'minx': [0.0, 0.0], 'miny': [0.0, 0.0],
-                              'maxx': [1.0, 1.0], 'maxy': [1.0, 1.0]},
-                             index=self.g1.index,
-                             columns=['minx', 'miny', 'maxx', 'maxy'])
+        expected = DataFrame(
+            {
+                "minx": [0.0, 0.0],
+                "miny": [0.0, 0.0],
+                "maxx": [1.0, 1.0],
+                "maxy": [1.0, 1.0],
+            },
+            index=self.g1.index,
+            columns=["minx", "miny", "maxx", "maxy"],
+        )
 
         result = self.g1.bounds
         assert_frame_equal(expected, result)
@@ -280,64 +297,75 @@ class TestGeomMethods:
         result = gdf.bounds
         assert_frame_equal(expected, result)
 
+    def test_bounds_empty(self):
+        # test bounds of empty GeoSeries
+        # https://github.com/geopandas/geopandas/issues/1195
+        s = GeoSeries([])
+        result = s.bounds
+        expected = DataFrame(
+            columns=["minx", "miny", "maxx", "maxy"], index=s.index, dtype="float64"
+        )
+        assert_frame_equal(result, expected)
+
     def test_unary_union(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         expected = unary_union([p1, p2])
         g = GeoSeries([p1, p2])
 
-        self._test_unary_topological('unary_union', expected, g)
+        self._test_unary_topological("unary_union", expected, g)
 
     def test_contains(self):
-        expected = [True, False, True, False, False, False]
+        expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
-        self._test_unary_real('length', expected, self.g1)
+        self._test_unary_real("length", expected, self.g1)
 
-        expected = Series(
-                        np.array([2 + np.sqrt(2), np.nan]),
-                        index=self.na_none.index)
-        self._test_unary_real('length', expected, self.na_none)
+        expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
+        self._test_unary_real("length", expected, self.na_none)
 
     def test_crosses(self):
-        expected = [False, False, False, False, False, False]
+        expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))
 
         expected = [False, True]
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
     def test_disjoint(self):
-        expected = [False, False, False, False, False, True]
+        expected = [False, False, False, False, False, True, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
     def test_relate(self):
-        expected = Series(['212101212',
-                           '212101212',
-                           '212FF1FF2',
-                           '2FFF1FFF2',
-                           'FF2F112F2',
-                           'FF0FFF212'],
-                          index=self.g0.index)
+        expected = Series(
+            [
+                "212101212",
+                "212101212",
+                "212FF1FF2",
+                "2FFF1FFF2",
+                "FF2F112F2",
+                "FF0FFF212",
+                None,
+            ],
+            index=self.g0.index,
+        )
         assert_array_dtype_equal(expected, self.g0.relate(self.inner_sq))
 
-        expected = Series(['FF0FFF212',
-                           None],
-                          index=self.g6.index)
+        expected = Series(["FF0FFF212", None], index=self.g6.index)
         assert_array_dtype_equal(expected, self.g6.relate(self.na_none))
 
     def test_distance(self):
-        expected = Series(np.array([np.sqrt((5 - 1)**2 + (5 - 1)**2), np.nan]),
-                          self.na_none.index)
+        expected = Series(
+            np.array([np.sqrt((5 - 1) ** 2 + (5 - 1) ** 2), np.nan]), self.na_none.index
+        )
         assert_array_dtype_equal(expected, self.na_none.distance(self.p0))
 
-        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]),
-                          self.g6.index)
+        expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
     def test_intersects(self):
-        expected = [True, True, True, True, True, False]
+        expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
 
         expected = [True, False]
@@ -347,49 +375,48 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.empty.intersects(self.t1))
 
         expected = np.array([], dtype=bool)
-        assert_array_dtype_equal(
-                expected, self.empty.intersects(self.empty_poly))
+        assert_array_dtype_equal(expected, self.empty.intersects(self.empty_poly))
 
-        expected = [False] * 6
+        expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
     def test_overlaps(self):
-        expected = [True, True, False, False, False, False]
+        expected = [True, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.overlaps(self.inner_sq))
 
         expected = [False, False]
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
     def test_touches(self):
-        expected = [False, True, False, False, False, False]
+        expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
 
     def test_within(self):
-        expected = [True, False, False, False, False, False]
+        expected = [True, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.t1))
 
-        expected = [True, True, True, True, True, False]
+        expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
 
     def test_is_valid(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
-        self._test_unary_real('is_valid', expected, self.g1)
+        self._test_unary_real("is_valid", expected, self.g1)
 
     def test_is_empty(self):
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
-        self._test_unary_real('is_empty', expected, self.g1)
+        self._test_unary_real("is_empty", expected, self.g1)
 
     def test_is_ring(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
-        self._test_unary_real('is_ring', expected, self.g1)
+        self._test_unary_real("is_ring", expected, self.g1)
 
     def test_is_simple(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
-        self._test_unary_real('is_simple', expected, self.g1)
+        self._test_unary_real("is_simple", expected, self.g1)
 
     def test_has_z(self):
         expected = Series([False, True], self.g_3d.index)
-        self._test_unary_real('has_z', expected, self.g_3d)
+        self._test_unary_real("has_z", expected, self.g_3d)
 
     def test_xy_points(self):
         expected_x = [-73.9847, -74.0446]
@@ -435,21 +462,23 @@ class TestGeomMethods:
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
-        self._test_binary_topological('interpolate', expected, self.g5,
-                                      0.75, normalized=True)
+        self._test_binary_topological(
+            "interpolate", expected, self.g5, 0.75, normalized=True
+        )
 
         expected = GeoSeries([Point(0.5, 1.0), Point(1.0, 0.5)])
-        self._test_binary_topological('interpolate', expected, self.g5,
-                                      1.5)
+        self._test_binary_topological("interpolate", expected, self.g5, 1.5)
 
     def test_interpolate_distance_array(self):
         expected = GeoSeries([Point(0.0, 0.75), Point(1.0, 0.5)])
-        self._test_binary_topological('interpolate', expected, self.g5,
-                                      np.array([0.75, 1.5]))
+        self._test_binary_topological(
+            "interpolate", expected, self.g5, np.array([0.75, 1.5])
+        )
 
         expected = GeoSeries([Point(0.5, 1.0), Point(0.0, 1.0)])
-        self._test_binary_topological('interpolate', expected, self.g5,
-                                      np.array([0.75, 1.5]), normalized=True)
+        self._test_binary_topological(
+            "interpolate", expected, self.g5, np.array([0.75, 1.5]), normalized=True
+        )
 
     def test_interpolate_distance_wrong_length(self):
         distances = np.array([1, 2, 3])
@@ -464,14 +493,13 @@ class TestGeomMethods:
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
         p = Point(1.0, 0.5)
-        self._test_binary_real('project', expected, self.g5, p)
+        self._test_binary_real("project", expected, self.g5, p)
 
         expected = Series([1.0, 0.5], index=self.g5.index)
-        self._test_binary_real('project', expected, self.g5, p,
-                               normalized=True)
+        self._test_binary_real("project", expected, self.g5, p, normalized=True)
 
     def test_affine_transform(self):
-        #45 degree reflection matrix
+        # 45 degree reflection matrix
         matrix = [0, 1, 1, 0, 0, 0]
         expected = self.g4
 
@@ -499,8 +527,8 @@ class TestGeomMethods:
     def test_scale(self):
         expected = self.g4
 
-        scale = 2., 1.
-        inv = tuple(1./i for i in scale)
+        scale = 2.0, 1.0
+        inv = tuple(1.0 / i for i in scale)
 
         o = Point(0, 0)
         res = self.g4.scale(*scale, origin=o).scale(*inv, origin=o)
@@ -513,7 +541,7 @@ class TestGeomMethods:
     def test_skew(self):
         expected = self.g4
 
-        skew = 45.
+        skew = 45.0
         o = Point(0, 0)
 
         # Test xs
@@ -534,8 +562,7 @@ class TestGeomMethods:
 
     def test_buffer(self):
         original = GeoSeries([Point(0, 0)])
-        expected = GeoSeries([Polygon(((5, 0), (0, -5), (-5, 0), (0, 5),
-                                       (5, 0)))])
+        expected = GeoSeries([Polygon(((5, 0), (0, -5), (-5, 0), (0, 5), (5, 0)))])
         calculated = original.buffer(5, resolution=1)
         assert geom_almost_equals(expected, calculated)
 
@@ -543,15 +570,20 @@ class TestGeomMethods:
         args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
         calculated_series = self.g0.buffer(10, **args)
         for original, calculated in zip(self.g0, calculated_series):
-            expected = original.buffer(10, **args)
-            assert calculated.equals(expected)
+            if original is None:
+                assert calculated is None
+            else:
+                expected = original.buffer(10, **args)
+                assert calculated.equals(expected)
 
     def test_buffer_distance_array(self):
         original = GeoSeries([self.p0, self.p0])
         expected = GeoSeries(
-            [Polygon(((6, 5), (5, 4), (4, 5), (5, 6), (6, 5))),
-             Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
-             ])
+            [
+                Polygon(((6, 5), (5, 4), (4, 5), (5, 6), (6, 5))),
+                Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
+            ]
+        )
         calculated = original.buffer(np.array([1, 5]), resolution=1)
         assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
@@ -567,6 +599,15 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             original.buffer(distances)
 
+    def test_buffer_empty_none(self):
+        p = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+        s = GeoSeries([p, GeometryCollection(), None])
+        result = s.buffer(0)
+        assert_geoseries_equal(result, s)
+
+        result = s.buffer(np.array([0, 0, 0]))
+        assert_geoseries_equal(result, s)
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))
@@ -578,35 +619,39 @@ class TestGeomMethods:
         assert isinstance(self.landmarks.total_bounds, np.ndarray)
         assert tuple(self.landmarks.total_bounds) == bbox
 
-        df = GeoDataFrame({'geometry': self.landmarks,
-                           'col1': range(len(self.landmarks))})
+        df = GeoDataFrame(
+            {"geometry": self.landmarks, "col1": range(len(self.landmarks))}
+        )
         assert tuple(df.total_bounds) == bbox
 
     def test_explode_geoseries(self):
-        s = GeoSeries([MultiPoint([(0, 0), (1, 1)]),
-                       MultiPoint([(2, 2), (3, 3), (4, 4)])])
-        s.index.name = 'test_index_name'
-        expected_index_name = ['test_index_name', None]
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s.index.name = "test_index_name"
+        expected_index_name = ["test_index_name", None]
         index = [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2)]
-        expected = GeoSeries([Point(0, 0), Point(1, 1), Point(2, 2),
-                              Point(3, 3), Point(4, 4)],
-                             index=MultiIndex.from_tuples(
-                                index, names=expected_index_name))
+        expected = GeoSeries(
+            [Point(0, 0), Point(1, 1), Point(2, 2), Point(3, 3), Point(4, 4)],
+            index=MultiIndex.from_tuples(index, names=expected_index_name),
+        )
         assert_geoseries_equal(expected, s.explode())
 
-    @pytest.mark.parametrize("index_name", [None, 'test'])
+    @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
-        df = GeoDataFrame({'col': [1, 2], 'geometry': s})
+        df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
         test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
-        expected_df = GeoDataFrame({'col': [1, 1, 2], 'geometry': expected_s})
-        expected_index = MultiIndex([[0, 1], [0, 1]],  # levels
-                                    [[0, 0, 1], [0, 1, 0]],  # labels/codes
-                                    names=[index_name, None])
+        expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
+        expected_index = MultiIndex(
+            [[0, 1], [0, 1]],  # levels
+            [[0, 0, 1], [0, 1, 0]],  # labels/codes
+            names=[index_name, None],
+        )
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
@@ -616,21 +661,21 @@ class TestGeomMethods:
     # GeoSeries, GeoDataFrame or Shapely geometry
     #
     def test_intersection_operator(self):
-        self._test_binary_operator('__and__', self.t1, self.g1, self.g2)
+        self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
 
     def test_union_operator(self):
-        self._test_binary_operator('__or__', self.sq, self.g1, self.g2)
+        self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
 
     def test_union_operator_polygon(self):
-        self._test_binary_operator('__or__', self.sq, self.g1, self.t2)
+        self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        self._test_binary_operator('__xor__', self.sq, self.g3, self.g4)
+        self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        self._test_binary_operator('__sub__', expected, self.g1, self.g2)
+        self._test_binary_operator("__sub__", expected, self.g1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        self._test_binary_operator('__sub__', expected, self.g1, self.t2)
+        self._test_binary_operator("__sub__", expected, self.g1, self.t2)

@@ -51,7 +51,7 @@ world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 ax = world[world.continent == 'South America'].plot(
     color='white', edgecolor='black')
 
-# We can now plot our GeoDataFrame.
+# We can now plot our ``GeoDataFrame``.
 gdf.plot(ax=ax, color='red')
 
 plt.show()
@@ -64,9 +64,9 @@ plt.show()
 df = pd.DataFrame(
     {'City': ['Buenos Aires', 'Brasilia', 'Santiago', 'Bogota', 'Caracas'],
      'Country': ['Argentina', 'Brazil', 'Chile', 'Colombia', 'Venezuela'],
-     'Coordinates': ['POINT(-34.58 -58.66)', 'POINT(-15.78 -47.91)',
-                     'POINT(-33.45 -70.66)', 'POINT(4.60 -74.08)',
-                     'POINT(10.48 -66.86)']})
+     'Coordinates': ['POINT(-58.66 -34.58)', 'POINT(-47.91 -15.78)',
+                     'POINT(-70.66 -33.45)', 'POINT(-74.08 4.60)',
+                     'POINT(-66.86 10.48)']})
 
 ###############################################################################
 # We use ``shapely.wkt`` sub-module to parse wkt format:
@@ -80,3 +80,12 @@ df['Coordinates'] = df['Coordinates'].apply(wkt.loads)
 gdf = geopandas.GeoDataFrame(df, geometry='Coordinates')
 
 print(gdf.head())
+
+#################################################################################
+# Again, we can plot our ``GeoDataFrame``.
+ax = world[world.continent == 'South America'].plot(
+    color='white', edgecolor='black')
+
+gdf.plot(ax=ax, color='red')
+
+plt.show()

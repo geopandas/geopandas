@@ -1,15 +1,11 @@
-from __future__ import absolute_import
+from pandas import DataFrame, Series
 
-import warnings
-
-from pandas import Series, DataFrame
 from shapely.geometry import Point
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 
 
 class TestSeries:
-
     def setup_method(self):
         N = self.N = 10
         r = 0.5
@@ -49,30 +45,36 @@ class TestSeries:
 
 
 class TestDataFrame:
-
     def setup_method(self):
         N = 10
-        self.df = GeoDataFrame([
-            {'geometry': Point(x, y), 'value1': x + y, 'value2': x*y}
-            for x, y in zip(range(N), range(N))])
+        self.df = GeoDataFrame(
+            [
+                {"geometry": Point(x, y), "value1": x + y, "value2": x * y}
+                for x, y in zip(range(N), range(N))
+            ]
+        )
 
     def test_geometry(self):
         assert type(self.df.geometry) is GeoSeries
         # still GeoSeries if different name
-        df2 = GeoDataFrame({"coords": [Point(x, y) for x, y in zip(range(5),
-                                                                   range(5))],
-                            "nums": range(5)}, geometry="coords")
+        df2 = GeoDataFrame(
+            {
+                "coords": [Point(x, y) for x, y in zip(range(5), range(5))],
+                "nums": range(5),
+            },
+            geometry="coords",
+        )
         assert type(df2.geometry) is GeoSeries
-        assert type(df2['coords']) is GeoSeries
+        assert type(df2["coords"]) is GeoSeries
 
     def test_nongeometry(self):
-        assert type(self.df['value1']) is Series
+        assert type(self.df["value1"]) is Series
 
     def test_geometry_multiple(self):
-        assert type(self.df[['geometry', 'value1']]) is GeoDataFrame
+        assert type(self.df[["geometry", "value1"]]) is GeoDataFrame
 
     def test_nongeometry_multiple(self):
-        assert type(self.df[['value1', 'value2']]) is DataFrame
+        assert type(self.df[["value1", "value2"]]) is DataFrame
 
     def test_slice(self):
         assert type(self.df[:2]) is GeoDataFrame
