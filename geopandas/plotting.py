@@ -316,7 +316,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds=None, classification_kwds=None, fmt="{:.2f}",**style_kwds):
+                   legend_kwds={'fmt':"{:.2f}"}, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -379,8 +379,6 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         Keyword arguments to pass to ax.legend()
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
-    fmt : string (default '{:.2f}')
-        Formatting for choropleth legend when a mapclassify scheme is used.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -457,6 +455,9 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         binning = _mapclassify_choro(values, scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
+        fmt = '{:f}'
+        if 'fmt' in legend_kwds:
+            fmt = legend_kwds.pop('fmt')
         categories = binning.get_legend_classes(fmt)
         values = np.array(binning.yb)
 
