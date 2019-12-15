@@ -316,7 +316,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                    categorical=False, legend=False, scheme=None, k=5,
                    vmin=None, vmax=None, markersize=None, figsize=None,
-                   legend_kwds={'fmt':"{:.2f}"}, classification_kwds=None, **style_kwds):
+                   legend_kwds=None, classification_kwds=None, **style_kwds):
     """
     Plot a GeoDataFrame.
 
@@ -455,8 +455,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
         binning = _mapclassify_choro(values, scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
-        fmt = '{:f}'
-        if 'fmt' in legend_kwds:
+        fmt = '{:.2f}'
+        if legend_kwds is not None and 'fmt' in legend_kwds:
             fmt = legend_kwds.pop('fmt')
         categories = binning.get_legend_classes(fmt)
         values = np.array(binning.yb)
@@ -517,6 +517,8 @@ def plot_dataframe(df, column=None, cmap=None, color=None, ax=None, cax=None,
                 legend_kwds = {}
             legend_kwds.setdefault('numpoints', 1)
             legend_kwds.setdefault('loc', 'best')
+            if 'fmt' in legend_kwds:
+                fmt = legend_kwds.pop('fmt')
             ax.legend(patches, categories, **legend_kwds)
         else:
             n_cmap.set_array([])
