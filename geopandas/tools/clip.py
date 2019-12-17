@@ -84,7 +84,7 @@ def _clip_line_poly(gdf, poly):
     return clipped[~clipped.is_empty & clipped.notnull()]
 
 
-def clip(gdf, clip_obj, drop_slivers=False):
+def clip(gdf, clip_obj, keep_geom_type=False):
     """Clip points, lines, or polygon geometries to the clip_obj extent.
 
     Both layers must be in the same Coordinate Reference System (CRS) and will
@@ -102,9 +102,9 @@ def clip(gdf, clip_obj, drop_slivers=False):
           Polygon vector layer used to clip gdf.
           The clip_obj's geometry is dissolved into one geometric feature
           and intersected with gdf.
-    drop_slivers : Boolean
-          If a clip operation returns a GeometryCollection, remove
-          slivers and only return features of original geometry type.
+    keep_geom_type : Boolean
+          If a clip operation returns a GeometryCollection or more geometry
+          types than the input, remove extra geometries from the output.
 
     Returns
     -------
@@ -209,11 +209,11 @@ def clip(gdf, clip_obj, drop_slivers=False):
     # Check there aren't any new geom types in the clipped GeoDataFrame
     more_types = orig_types_total < clip_types_total
 
-    if orig_types_total > 1 and drop_slivers:
-        warnings.warn("drop_slivers can not be called on a mixed type GeoDataFrame.")
-    elif drop_slivers and not geometry_collection and not more_types:
-        warnings.warn("drop_slivers was called when no slivers existed.")
-    elif drop_slivers and (geometry_collection or more_types):
+    if orig_types_total > 1 and keep_geom_type:
+        warnings.warn("keep_geom_type can not be called on a mixed type GeoDataFrame.")
+    elif keep_geom_type and not geometry_collection and not more_types:
+        warnings.warn("keep_geom_type was called when no extra geometry types existed.")
+    elif keep_geom_type and (geometry_collection or more_types):
         orig_type = gdf.geom_type.iloc[0]
         if geometry_collection:
             concat = concat.explode()
@@ -221,17 +221,18 @@ def clip(gdf, clip_obj, drop_slivers=False):
             concat = concat.loc[concat.geom_type.isin(polys)]
         elif orig_type in lines:
             concat = concat.loc[concat.geom_type.isin(lines)]
-    elif geometry_collection and not drop_slivers:
+    elif geometry_collection and not keep_geom_type:
         warnings.warn(
             "A geometry collection has been returned. Use .explode() to "
-            "decompose the collection object or drop_slivers=True to remove "
-            "sliver geometries."
+            "decompose the collection object or keep_geom_type=True to remove "
+            "extra geometry types."
         )
-    elif more_types and not drop_slivers:
+    elif more_types and not keep_geom_type:
         warnings.warn(
             "More geometry types were returned than were in the original "
-            "GeoDataFrame. This is likely due to a sliver being created. "
-            "To remove the slivers set drop_slivers=True."
+            "GeoDataFrame. This is likely due to an extra geometry type "
+            "being created. To remove the extra geometry types set "
+            "keep_geom_type=True."
         )
     if isinstance(concat, GeoDataFrame):
         concat["_order"] = order

@@ -199,11 +199,11 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
         assert "GeometryCollection" in clip.geom_type[0]
 
 
-def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
+def test_clip_multipoly_keep_geom_type(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
     if they fully overlap (as they do in these fixtures)."""
-    clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf, drop_slivers=True)
+    clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf, keep_geom_type=True)
     assert hasattr(clip, "geometry")
     assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
     # Assert returned data is a not geometry collection
@@ -211,19 +211,19 @@ def test_clip_multipoly_drop_slivers(multi_poly_gdf, single_rectangle_gdf):
 
 
 def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
-    """Test that a user warning is provided when clip outputs a sliver."""
+    """Test that a user warning is provided when clip outputs a feature that is of a geom
+    type that is different from the input geom."""
     with pytest.warns(UserWarning):
         gpd.clip(multi_poly_gdf, single_rectangle_gdf)
 
 
-def test_clip_single_multipoly_no_slivers(
+def test_clip_single_multipoly_no_extra_geoms(
     buffered_locations, larger_single_rectangle_gdf
 ):
-    """Test clipping a multi poly with another poly no sliver
-    shapes are returned in this clip operation."""
+    """When clipping a multi-polygon feature, no additional geom types
+    should be returned."""
     multi = buffered_locations.dissolve(by="type").reset_index()
     clip = gpd.clip(multi, larger_single_rectangle_gdf)
-
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
 
 
@@ -277,11 +277,14 @@ def test_mixed_series(mixed_gdf, single_rectangle_gdf):
     )
 
 
-def test_clip_warning_no_slivers(buffered_locations, single_rectangle_gdf):
-    """Test a warning is provided to the user if no slivers are found."""
+def test_clip_warning_no_extra_geoms(buffered_locations, single_rectangle_gdf):
+    """Test a user warning is provided if no new geometry types are found."""
     with pytest.warns(UserWarning):
         gpd.clip(buffered_locations, single_rectangle_gdf, True)
-        warnings.warn("Drop slivers was called when no slivers existed.", UserWarning)
+        warnings.warn(
+            "keep_geom_type was called when no extra geometry types existed.",
+            UserWarning,
+        )
 
 
 def test_clip_with_polygon(single_rectangle_gdf):
@@ -291,9 +294,10 @@ def test_clip_with_polygon(single_rectangle_gdf):
     assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
 
 
-def test_clip_with_line_sliver(single_rectangle_gdf, sliver_line):
-    """Test clipping a line so that there is a sliver drops the sliver."""
-    clip = gpd.clip(sliver_line, single_rectangle_gdf, drop_slivers=True)
+def test_clip_with_line_extra_geom(single_rectangle_gdf, sliver_line):
+    """When the output of a clipped line returns a geom collection,
+    and keep_geom_type is True, no geometry collections should be returned."""
+    clip = gpd.clip(sliver_line, single_rectangle_gdf, keep_geom_type=True)
     assert hasattr(clip, "geometry")
     assert len(clip.geometry) == 1
     # Assert returned data is a not geometry collection
@@ -301,7 +305,8 @@ def test_clip_with_line_sliver(single_rectangle_gdf, sliver_line):
 
 
 def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
-    """Test the correct warnings are raised if a point sliver is returned"""
+    """Test the correct warnings are raised if a point is returned
+    from a line only geometry type."""
     with pytest.warns(UserWarning):
         clip = gpd.clip(sliver_line, single_rectangle_gdf)
         warnings.warn(
@@ -313,8 +318,9 @@ def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
         assert "LineString" == clip.geom_type[1]
 
 
-def test_warning_slivers_mixed(single_rectangle_gdf, mixed_gdf):
-    """Test the correct warnings are raised if drop_slivers is called on a mixed GDF"""
+def test_warning_extra_geoms_mixed(single_rectangle_gdf, mixed_gdf):
+    """Test the correct warnings are raised if keep_geom_type is
+    called on a mixed GDF"""
     with pytest.warns(UserWarning):
         gpd.clip(mixed_gdf, single_rectangle_gdf)
-        warnings.warn("Drop slivers was called on a mixed type GeoDataFrame.")
+        warnings.warn("keep_geom_type can not be called on a mixed type GeoDataFrame.")
