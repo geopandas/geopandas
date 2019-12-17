@@ -53,7 +53,7 @@ def how(request):
 
 
 @pytest.fixture(params=[True, False])
-def strict(request):
+def keep_geom_type(request):
     return request.param
 
 
@@ -332,7 +332,7 @@ def test_correct_index(dfs):
 @pytest.mark.parametrize(
     "geom_types", ["polys", "poly_line", "poly_point", "line_poly", "point_poly"]
 )
-def test_overlay_strict(how, strict, geom_types):
+def test_overlay_strict(how, keep_geom_type, geom_types):
     """
     Test of mixed geometry types on input and output. Expected results initially
     generated using following snippet.
@@ -359,20 +359,20 @@ def test_overlay_strict(how, strict, geom_types):
 
         for p in params:
             for s in stricts:
-                exp = gpd.overlay(df1, df2, how=p, strict=s)
+                exp = gpd.overlay(df1, df2, how=p, keep_geom_type=s)
                 if not exp.empty:
                     exp.to_file('polys_{p}_{s}.geojson'.format(p=p, s=s),
                                 driver='GeoJSON')
 
         for p in params:
             for s in stricts:
-                exp = gpd.overlay(df1, df3, how=p, strict=s)
+                exp = gpd.overlay(df1, df3, how=p, keep_geom_type=s)
                 if not exp.empty:
                     exp.to_file('poly_line_{p}_{s}.geojson'.format(p=p, s=s),
                                 driver='GeoJSON')
         for p in params:
             for s in stricts:
-                exp = gpd.overlay(df1, df4, how=p, strict=s)
+                exp = gpd.overlay(df1, df4, how=p, keep_geom_type=s)
                 if not exp.empty:
                     exp.to_file('poly_point_{p}_{s}.geojson'.format(p=p, s=s),
                                 driver='GeoJSON')
@@ -401,15 +401,15 @@ def test_overlay_strict(how, strict, geom_types):
     df4 = GeoDataFrame({"col4": [1, 2], "geometry": points1})
 
     if geom_types == "polys":
-        result = overlay(df1, df2, how=how, strict=strict)
+        result = overlay(df1, df2, how=how, keep_geom_type=keep_geom_type)
     elif geom_types == "poly_line":
-        result = overlay(df1, df3, how=how, strict=strict)
+        result = overlay(df1, df3, how=how, keep_geom_type=keep_geom_type)
     elif geom_types == "poly_point":
-        result = overlay(df1, df4, how=how, strict=strict)
+        result = overlay(df1, df4, how=how, keep_geom_type=keep_geom_type)
     elif geom_types == "line_poly":
-        result = overlay(df3, df1, how=how, strict=strict)
+        result = overlay(df3, df1, how=how, keep_geom_type=keep_geom_type)
     elif geom_types == "point_poly":
-        result = overlay(df4, df1, how=how, strict=strict)
+        result = overlay(df4, df1, how=how, keep_geom_type=keep_geom_type)
 
     if not _FIONA18 and result.empty:
         raise pytest.skip()
@@ -419,7 +419,7 @@ def test_overlay_strict(how, strict, geom_types):
             os.path.join(
                 DATA,
                 "strict",
-                "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=strict),
+                "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=keep_geom_type),
             )
         )
         assert_geodataframe_equal(
@@ -451,10 +451,10 @@ def test_mixed_geom_error():
     )
     dfmixed = GeoDataFrame({"col1": [1, 2], "geometry": mixed})
     with pytest.raises(NotImplementedError):
-        overlay(df1, dfmixed, strict=True)
+        overlay(df1, dfmixed, keep_geom_type=True)
 
 
-def test_strict_error():
+def test_keep_geom_type_error():
     gcol = GeoSeries(
         GeometryCollection(
             [
@@ -472,4 +472,4 @@ def test_strict_error():
     )
     df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
     with pytest.raises(TypeError):
-        overlay(dfcol, df1, strict=True)
+        overlay(dfcol, df1, keep_geom_type=True)

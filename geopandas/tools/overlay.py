@@ -140,7 +140,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
+def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     """Perform spatial overlay between two polygons.
 
     Currently only supports data GeoDataFrames with polygons.
@@ -154,7 +154,7 @@ def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
     how : string
         Method of spatial overlay: 'intersection', 'union',
         'identity', 'symmetric_difference' or 'difference'.
-    strict : bool
+    keep_geom_type : bool
         If True, return only geometries of the same geometry type as df1 has,
         if False, return all resulting gemetries.
 
@@ -215,7 +215,7 @@ def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
         dfunion = _overlay_union(df1, df2)
         result = dfunion[dfunion["__idx1"].notnull()].copy()
 
-    if strict:
+    if keep_geom_type:
         type = df1.geom_type.iloc[0]
         if type in polys:
             result = result.loc[result.geom_type.isin(polys)]
@@ -224,7 +224,7 @@ def overlay(df1, df2, how="intersection", make_valid=True, strict=True):
         elif type in points:
             result = result.loc[result.geom_type.isin(points)]
         else:
-            raise TypeError("`strict` does not support {}.".format(type))
+            raise TypeError("`keep_geom_type` does not support {}.".format(type))
 
     result.reset_index(drop=True, inplace=True)
     result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
