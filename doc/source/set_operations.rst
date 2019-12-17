@@ -191,11 +191,11 @@ Changing the "how" option allows for different types of overlay operations. For 
     plt.close('all')
 
 
-Strict keyword
---------------
+keep_geom_type keyword
+----------------------
 
 In default settings, ``overlay`` returns only geometries of the same geometry type as df1
-(left one) has. You can control this behavior using ``strict`` option, which is set to
+(left one) has. You can control this behavior using ``keep_geom_type`` option, which is set to
 True by default. Once set to False, ``overlay`` will return all geometry types resulting from
 selected set-operation.
 
