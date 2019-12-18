@@ -7,11 +7,13 @@ import sys
 
 import fiona
 import numpy as np
+import pandas as pd
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas.io.file import fiona_env, _FIONA18
+from geopandas._compat import PANDAS_GE_024
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -181,6 +183,17 @@ def test_to_file_types(tmpdir, df_points):
     )
     df = GeoDataFrame(data, geometry=geometry)
     df.to_file(tempfilename)
+
+
+@pytest.mark.skipif(not PANDAS_GE_024, reason="pandas >= 0.24 needed")
+def test_to_file_int64(tmpdir, df_points):
+    tempfilename = os.path.join(str(tmpdir), "int64.shp")
+    geometry = df_points.geometry
+    df = GeoDataFrame(geometry=geometry)
+    df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
+    df.to_file(tempfilename)
+    df_read = GeoDataFrame.from_file(tempfilename)
+    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
 
 
 def test_to_file_empty(tmpdir):
