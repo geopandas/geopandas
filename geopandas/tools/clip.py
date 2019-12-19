@@ -102,9 +102,10 @@ def clip(gdf, clip_obj, keep_geom_type=False):
           Polygon vector layer used to clip gdf.
           The clip_obj's geometry is dissolved into one geometric feature
           and intersected with gdf.
-    keep_geom_type : Boolean
-          If a clip operation returns a GeometryCollection or more geometry
-          types than the input, remove extra geometries from the output.
+    keep_geom_type : boolean
+         If True, return only geometries of original type in case of intersection
+         resulting in multiple geometry types or GeometryCollection.
+         If False, return all resulting geometries (mixed-types).
 
     Returns
     -------
