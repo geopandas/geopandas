@@ -6,6 +6,15 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
+import geopandas as gpd
+from sqlalchemy import create_engine
+from geoalchemy2 import Geometry
+from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
+from shapely.wkb import dumps
+import pandas._libs.lib as lib
+import io
+from pyproj import CRS
+import csv
 
 def read_postgis(
     sql,
@@ -96,3 +105,157 @@ def read_postgis(
                 crs = {"init": "epsg:{}".format(srid)}
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
+
+
+def get_geometry_type(gdf):
+    """Get basic geometry type of a GeoDataFrame, and information if the gdf contains Geometry Collections."""
+    geom_types = list(gdf.geometry.geom_type.unique())
+    geom_collection = False
+    
+    # Get the basic geometry type 
+    basic_types = []
+    for gt in geom_types:
+        if 'Multi' in gt:
+            geom_collection = True
+            basic_types.append(gt.replace('Multi', ''))
+        else:
+            basic_types.append(gt)
+    geom_types = list(set(basic_types))
+    
+    # Check for mixed geometry types
+    assert len(geom_types) < 2, "GeoDataFrame contains mixed geometry types, cannot proceed with mixed geometries."
+    geom_type = geom_types[0]
+    return (geom_type, geom_collection)
+
+def get_srid_from_crs(gdf):
+        """
+        Get EPSG code from CRS if available. If not, return -1. 
+        """
+        if gdf.crs is not None:
+            try:
+                srid = CRS(gdf.crs).to_epsg(min_confidence=25)
+                if srid is None:
+                    srid = -1
+            except:
+                srid = -1
+        if srid == -1:
+            print("Warning: Could not parse coordinate reference system from GeoDataFrame. Inserting data without defined CRS.")
+    
+        return srid
+    
+def copy_to_postgis(gdf, engine, table, if_exists='fail',  
+                    schema=None, dtype=None, index=False,
+                    ):
+    """
+    Fast upload of GeoDataFrame into PostGIS database using COPY. 
+    
+    Parameters
+    ----------
+    
+    gdf : GeoDataFrame
+        GeoDataFrame containing the data for upload.
+    engine : SQLAclchemy engine.
+        Connection.
+    if_exists : str
+        What to do if table exists already: 'replace' | 'append' | 'fail'.
+    schema : db-schema
+        Database schema where the data will be uploaded (optional).
+    dtype : dict of column name to SQL type, default None
+        Optional specifying the datatype for columns. The SQL type should be a 
+        SQLAlchemy type, or a string for sqlite3 fallback connection.
+    index : bool
+        Store DataFrame index to the database as well.
+    """
+    gdf = gdf.copy()
+    geom_name = gdf.geometry.name
+    if schema is not None:
+        schema_name = schema
+    else:
+        schema_name = 'public'
+    
+    # Get srid
+    srid = get_srid_from_crs(gdf)
+    
+    # Check geometry types
+    geometry_type, contains_multi_geoms = get_geometry_type(gdf)
+    
+    # Build target geometry type
+    if contains_multi_geoms:
+        target_geom_type = "Multi{geom_type}".format(geom_type=geometry_type)
+    else:
+        target_geom_type = geometry_type
+    
+    # Build dtype with Geometry (srid is updated afterwards)
+    if dtype is not None:
+        dtype[geom_name] = Geometry(geometry_type=target_geom_type)
+    else:
+        dtype = {geom_name: Geometry(geometry_type=target_geom_type)}
+        
+    # Get Pandas SQLTable object (ignore 'geometry')
+    # If dtypes is used, update table schema accordingly.
+    pandas_sql = pd.io.sql.SQLDatabase(engine)
+    tbl = pd.io.sql.SQLTable(name=table, pandas_sql_engine=pandas_sql, 
+                             frame=gdf, dtype=dtype, index=index)
+    
+    # Check if table exists
+    if tbl.exists():
+        # If it exists, check if should overwrite    
+        if if_exists == 'replace':
+            pandas_sql.drop_table(table)
+            tbl.create()
+        elif if_exists == 'fail':
+            raise Exception("Table '{table}' exists in the database.".format(table=table))
+        elif if_exists == 'append':
+            pass
+    else:
+        tbl.create()
+    
+    # Ensure all geometries all Geometry collections if there were MultiGeometries in the table
+    if contains_multi_geoms:
+        mask = gdf[geom_name].geom_type==geometry_type
+        if geometry_type == 'Point':
+            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiPoint([geom]))
+        elif geometry_type == 'LineString':
+            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiLineString([geom]))
+        elif geometry_type == 'Polygon':
+            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiPolygon([geom]))
+            
+    # Convert columns to lists and make a generator
+    args = [list(gdf[i]) for i in gdf.columns]
+    if index:
+        args.insert(0,list(gdf.index))
+    
+    data_iter = zip(*args)
+    
+    # Convert geometries to wkb 
+    gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
+    
+    # If there are datetime objects they need to be converted to text
+    # TODO
+    
+    # get list of columns using pandas
+    keys = tbl.insert_data()[0]
+    columns = ', '.join('"{}"'.format(k) for k in list(keys))
+    # borrowed from https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#insertion-method
+    s_buf = io.StringIO()
+    writer = csv.writer(s_buf)
+    writer.writerows(data_iter)
+    s_buf.seek(0)
+    
+    conn = engine.raw_connection()
+    cur = conn.cursor()
+    
+    sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
+        table, columns)
+    
+    try:
+        cur.copy_expert(sql=sql, file=s_buf)
+        cur.execute("SELECT UpdateGeometrySRID('{table}', '{geometry}', {srid})".format(
+                schema=schema, table=table, geometry=geom_name, srid=srid))
+        conn.commit()
+    except Exception as e:
+        conn.connection.rollback()
+        conn.close()
+        raise(e)
+    conn.close()
+    return
