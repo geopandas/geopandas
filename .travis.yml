@@ -13,7 +13,11 @@ matrix:
 
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
+
+    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml"
+
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
+
 
 install:
   # Install conda
