@@ -234,7 +234,10 @@ def _binary_geo(op, left, right):
         # intersection can return empty GeometryCollections, and if the
         # result are only those, numpy will coerce it to empty 2D array
         data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(s, op)(right) if s and right else None for s in left.data]
+        data[:] = [
+            getattr(s, op)(right) if s is not None and right is not None else None
+            for s in left.data
+        ]
         return GeometryArray(data)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
@@ -244,7 +247,9 @@ def _binary_geo(op, left, right):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, op)(other_elem) if this_elem and other_elem else None
+            getattr(this_elem, op)(other_elem)
+            if this_elem is not None and other_elem is not None
+            else None
             for this_elem, other_elem in zip(left.data, right.data)
         ]
         return GeometryArray(data)
