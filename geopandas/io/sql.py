@@ -6,15 +6,6 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
-import geopandas as gpd
-from sqlalchemy import create_engine
-from geoalchemy2 import Geometry
-from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
-import pandas._libs.lib as lib
-import io
-from pyproj import CRS
-import csv
-import pygeos
 
 def read_postgis(
     sql,
@@ -132,6 +123,8 @@ def get_srid_from_crs(gdf):
     """
     Get EPSG code from CRS if available. If not, return -1.
     """
+    from pyproj import CRS
+
     if gdf.crs is not None:
         try:
             if isinstance(gdf.crs, dict):
@@ -172,6 +165,9 @@ def convert_to_wkb(gdf, geom_name):
 
 
 def write_to_db(gdf, engine, index, tbl, table, schema, srid, geom_name):
+    import io
+    import csv
+
     # Convert columns to lists and make a generator
     args = [list(gdf[i]) for i in gdf.columns]
     if index:
@@ -228,6 +224,9 @@ def write_postgis(gdf, engine, table, if_exists='fail',
     index : bool
         Store DataFrame index to the database as well.
     """
+    from geoalchemy2 import Geometry
+    from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
+
     gdf = gdf.copy()
     geom_name = gdf.geometry.name
     if schema is not None:
