@@ -142,10 +142,8 @@ def get_srid_from_crs(gdf):
                 srid = -1
         except Exception:
             srid = -1
-            print("""
-            Warning: Could not parse coordinate reference system from GeoDataFrame. 
-            Inserting data without defined CRS.""")
-
+            print("Warning: Could not parse coordinate reference system from GeoDataFrame.",
+                  "Inserting data without defined CRS.")
     return srid
 
 
