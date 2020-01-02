@@ -130,7 +130,8 @@ def get_srid_from_crs(gdf):
     if gdf.crs is not None:
         try:
             if isinstance(gdf.crs, dict):
-                # If CRS is in dictionary format use only the value to avoid pyproj Future warning
+                # If CRS is in dictionary format use only the value
+                # to avoid pyproj Future warning
                 if 'init' in gdf.crs.keys():
                     srid = CRS(gdf.crs['init']).to_epsg(min_confidence=25)
                 else:
@@ -139,7 +140,7 @@ def get_srid_from_crs(gdf):
                 srid = CRS(gdf).to_epsg(min_confidence=25)
             if srid is None:
                 srid = -1
-        except Exception as e:
+        except Exception:
             srid = -1
             print("""
             Warning: Could not parse coordinate reference system from GeoDataFrame. 
@@ -159,7 +160,8 @@ def convert_to_wkb(gdf, geom_name):
 
     if use_pygeos:
         # With pygeos
-        gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()), hex=True)
+        gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()),
+                                       hex=True)
     else:
         # With Shapely
         gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
@@ -201,13 +203,12 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name):
 
     except Exception as e:
         conn.connection.rollback()
-        raise (e)
+        raise e
     conn.close()
 
 
 def write_postgis(gdf, engine, table, if_exists='fail',
-                    schema=None, dtype=None, index=False,
-                    ):
+                  schema=None, dtype=None, index=False):
     """
     Upload GeoDataFrame into PostGIS database.
 
