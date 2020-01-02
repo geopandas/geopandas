@@ -20,7 +20,7 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - geoalchemy2
+  #- geoalchemy2
   - pip:
     - codecov
     - geopy
