@@ -270,21 +270,25 @@ def write_postgis(gdf, engine, table, if_exists='fail',
             pandas_sql.drop_table(table)
             tbl.create()
         elif if_exists == 'fail':
-            raise Exception("Table '{table}' exists in the database.".format(table=table))
+            raise Exception("Table '{table}' exists in the database.".format(
+                table=table))
         elif if_exists == 'append':
             pass
     else:
         tbl.create()
 
-    # Ensure all geometries all Geometry collections if there were MultiGeometries in the table
+    # Convert to MultiGeoms if needed
     if contains_multi_geoms:
         mask = gdf[geom_name].geom_type == geometry_type
         if geometry_type == 'Point':
-            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiPoint([geom]))
+            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
+                lambda geom: MultiPoint([geom]))
         elif geometry_type == 'LineString':
-            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiLineString([geom]))
+            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
+                lambda geom: MultiLineString([geom]))
         elif geometry_type == 'Polygon':
-            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiPolygon([geom]))
+            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
+                lambda geom: MultiPolygon([geom]))
 
     # Convert geometries to WKB
     gdf = convert_to_wkb(gdf, geom_name)
