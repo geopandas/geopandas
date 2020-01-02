@@ -305,15 +305,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_postgis(
-        cls,
-        sql,
-        con,
-        geom_col="geom",
-        crs=None,
-        index_col=None,
-        coerce_float=True,
-        parse_dates=None,
-        params=None,
+            cls,
+            sql,
+            con,
+            geom_col="geom",
+            crs=None,
+            index_col=None,
+            coerce_float=True,
+            parse_dates=None,
+            params=None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -746,6 +746,36 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def to_postgis(self, engine, table,
+                   if_exists='fail',
+                   schema=None, dtype=None, index=False):
+
+        """
+        Upload GeoDataFrame into PostGIS database.
+
+        Parameters
+        ----------
+        engine : SQLAclchemy engine.
+            Connection.
+        table : str
+            Target table to write the data.
+        if_exists : str
+            What to do if table exists already: 'replace' | 'append' | 'fail'.
+        schema : db-schema
+            Database schema where the data will be uploaded (optional).
+        dtype : dict of column name to SQL type, default None
+            Optional specifying the datatype for columns. The SQL type should be a
+            SQLAlchemy type, or a string for sqlite3 fallback connection.
+        index : bool
+            Store DataFrame index to the database as well.
+        """
+        gdf = self.copy()
+        geopandas.io.sql.write_postgis(gdf, engine, table,
+                                       if_exists=if_exists,
+                                       schema=schema, dtype=dtype,
+                                       index=index
+                                       )
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

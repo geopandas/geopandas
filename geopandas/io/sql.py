@@ -15,6 +15,7 @@ import pandas._libs.lib as lib
 import io
 from pyproj import CRS
 import csv
+import pygeos
 
 def read_postgis(
     sql,
@@ -111,8 +112,8 @@ def get_geometry_type(gdf):
     """Get basic geometry type of a GeoDataFrame, and information if the gdf contains Geometry Collections."""
     geom_types = list(gdf.geometry.geom_type.unique())
     geom_collection = False
-    
-    # Get the basic geometry type 
+
+    # Get the basic geometry type
     basic_types = []
     for gt in geom_types:
         if 'Multi' in gt:
@@ -121,37 +122,91 @@ def get_geometry_type(gdf):
         else:
             basic_types.append(gt)
     geom_types = list(set(basic_types))
-    
+
     # Check for mixed geometry types
     assert len(geom_types) < 2, "GeoDataFrame contains mixed geometry types, cannot proceed with mixed geometries."
     geom_type = geom_types[0]
     return (geom_type, geom_collection)
 
+
 def get_srid_from_crs(gdf):
-        """
-        Get EPSG code from CRS if available. If not, return -1. 
-        """
-        if gdf.crs is not None:
-            try:
-                srid = CRS(gdf.crs).to_epsg(min_confidence=25)
-                if srid is None:
-                    srid = -1
-            except:
+    """
+    Get EPSG code from CRS if available. If not, return -1.
+    """
+    if gdf.crs is not None:
+        try:
+            if isinstance(gdf.crs, dict):
+                # If CRS is in dictionary format use only the value to avoid pyproj Future warning
+                if 'init' in gdf.crs.keys():
+                    srid = CRS(gdf.crs['init']).to_epsg(min_confidence=25)
+                else:
+                    srid = CRS(gdf.crs).to_epsg(min_confidence=25)
+            else:
+                srid = CRS(gdf).to_epsg(min_confidence=25)
+            if srid is None:
                 srid = -1
-        if srid == -1:
-            print("Warning: Could not parse coordinate reference system from GeoDataFrame. Inserting data without defined CRS.")
-    
-        return srid
-    
-def copy_to_postgis(gdf, engine, table, if_exists='fail',  
+        except:
+            srid = -1
+    if srid == -1:
+        print(
+            "Warning: Could not parse coordinate reference system from GeoDataFrame. Inserting data without defined CRS.")
+
+    return srid
+
+
+def convert_to_wkb(gdf, geom_name):
+    # Convert geometries to wkb
+    # With pygeos
+    gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()), hex=True)
+
+    # With Shapely
+    # gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
+    return gdf
+
+
+def write_to_db(gdf, engine, index, tbl, table, schema, srid, geom_name):
+    # Convert columns to lists and make a generator
+    args = [list(gdf[i]) for i in gdf.columns]
+    if index:
+        args.insert(0, list(gdf.index))
+
+    data_iter = zip(*args)
+
+    # get list of columns using pandas
+    keys = tbl.insert_data()[0]
+    columns = ', '.join('"{}"'.format(k) for k in list(keys))
+
+    s_buf = io.StringIO()
+    writer = csv.writer(s_buf)
+    writer.writerows(data_iter)
+    s_buf.seek(0)
+
+    conn = engine.raw_connection()
+    cur = conn.cursor()
+
+    sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
+        table, columns)
+
+    try:
+        cur.copy_expert(sql=sql, file=s_buf)
+        cur.execute("SELECT UpdateGeometrySRID('{table}', '{geometry}', {srid})".format(
+            schema=schema, table=table, geometry=geom_name, srid=srid))
+        conn.commit()
+    except Exception as e:
+        conn.connection.rollback()
+        raise (e)
+    conn.close()
+
+
+def write_postgis(gdf, engine, table, if_exists='fail',
                     schema=None, dtype=None, index=False,
                     ):
     """
-    Fast upload of GeoDataFrame into PostGIS database using COPY. 
-    
+    Upload GeoDataFrame into PostGIS database.
+
     Parameters
     ----------
-    
+
     gdf : GeoDataFrame
         GeoDataFrame containing the data for upload.
     engine : SQLAclchemy engine.
@@ -161,7 +216,7 @@ def copy_to_postgis(gdf, engine, table, if_exists='fail',
     schema : db-schema
         Database schema where the data will be uploaded (optional).
     dtype : dict of column name to SQL type, default None
-        Optional specifying the datatype for columns. The SQL type should be a 
+        Optional specifying the datatype for columns. The SQL type should be a
         SQLAlchemy type, or a string for sqlite3 fallback connection.
     index : bool
         Store DataFrame index to the database as well.
@@ -172,34 +227,34 @@ def copy_to_postgis(gdf, engine, table, if_exists='fail',
         schema_name = schema
     else:
         schema_name = 'public'
-    
+
     # Get srid
     srid = get_srid_from_crs(gdf)
-    
+
     # Check geometry types
     geometry_type, contains_multi_geoms = get_geometry_type(gdf)
-    
+
     # Build target geometry type
     if contains_multi_geoms:
         target_geom_type = "Multi{geom_type}".format(geom_type=geometry_type)
     else:
         target_geom_type = geometry_type
-    
+
     # Build dtype with Geometry (srid is updated afterwards)
     if dtype is not None:
         dtype[geom_name] = Geometry(geometry_type=target_geom_type)
     else:
         dtype = {geom_name: Geometry(geometry_type=target_geom_type)}
-        
+
     # Get Pandas SQLTable object (ignore 'geometry')
     # If dtypes is used, update table schema accordingly.
     pandas_sql = pd.io.sql.SQLDatabase(engine)
-    tbl = pd.io.sql.SQLTable(name=table, pandas_sql_engine=pandas_sql, 
+    tbl = pd.io.sql.SQLTable(name=table, pandas_sql_engine=pandas_sql,
                              frame=gdf, dtype=dtype, index=index)
-    
+
     # Check if table exists
     if tbl.exists():
-        # If it exists, check if should overwrite    
+        # If it exists, check if should overwrite
         if if_exists == 'replace':
             pandas_sql.drop_table(table)
             tbl.create()
@@ -209,53 +264,21 @@ def copy_to_postgis(gdf, engine, table, if_exists='fail',
             pass
     else:
         tbl.create()
-    
+
     # Ensure all geometries all Geometry collections if there were MultiGeometries in the table
     if contains_multi_geoms:
-        mask = gdf[geom_name].geom_type==geometry_type
+        mask = gdf[geom_name].geom_type == geometry_type
         if geometry_type == 'Point':
             gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiPoint([geom]))
         elif geometry_type == 'LineString':
             gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiLineString([geom]))
         elif geometry_type == 'Polygon':
             gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(lambda geom: MultiPolygon([geom]))
-            
-    # Convert columns to lists and make a generator
-    args = [list(gdf[i]) for i in gdf.columns]
-    if index:
-        args.insert(0,list(gdf.index))
-    
-    data_iter = zip(*args)
-    
-    # Convert geometries to wkb 
-    gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
-    
-    # If there are datetime objects they need to be converted to text
-    # TODO
-    
-    # get list of columns using pandas
-    keys = tbl.insert_data()[0]
-    columns = ', '.join('"{}"'.format(k) for k in list(keys))
-    # borrowed from https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#insertion-method
-    s_buf = io.StringIO()
-    writer = csv.writer(s_buf)
-    writer.writerows(data_iter)
-    s_buf.seek(0)
-    
-    conn = engine.raw_connection()
-    cur = conn.cursor()
-    
-    sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
-        table, columns)
-    
-    try:
-        cur.copy_expert(sql=sql, file=s_buf)
-        cur.execute("SELECT UpdateGeometrySRID('{table}', '{geometry}', {srid})".format(
-                schema=schema, table=table, geometry=geom_name, srid=srid))
-        conn.commit()
-    except Exception as e:
-        conn.connection.rollback()
-        conn.close()
-        raise(e)
-    conn.close()
+
+    # Convert geometries to WKB
+    gdf = convert_to_wkb(gdf, geom_name)
+
+    # Write to database
+    write_to_db(gdf, engine, index, tbl, table, schema, srid, geom_name)
+
     return
