@@ -107,6 +107,7 @@ def _get_deps_info():
         "pysal",
         "geopy",
         "psycopg2",
+        "geoalchemy2"
     ]
 
     def get_version(module):
