@@ -10,7 +10,6 @@ import geopandas as gpd
 from sqlalchemy import create_engine
 from geoalchemy2 import Geometry
 from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
-from shapely.wkb import dumps
 import pandas._libs.lib as lib
 import io
 from pyproj import CRS
@@ -155,12 +154,20 @@ def get_srid_from_crs(gdf):
 
 
 def convert_to_wkb(gdf, geom_name):
-    # Convert geometries to wkb
-    # With pygeos
-    gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()), hex=True)
+    """Convert geometries to wkb. Use pygeos if available, otherwise use shapely."""
+    try:
+        import pygeos
+        pygeos = True
+    except:
+        pygeos = False
+        from shapely.wkb import dumps
 
-    # With Shapely
-    # gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
+    if pygeos:
+        # With pygeos
+        gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()), hex=True)
+    else:
+        # With Shapely
+        gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
     return gdf
 
 
