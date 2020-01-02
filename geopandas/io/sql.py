@@ -99,7 +99,9 @@ def read_postgis(
 
 
 def get_geometry_type(gdf):
-    """Get basic geometry type of a GeoDataFrame, and information if the gdf contains Geometry Collections."""
+    """
+    Get basic geometry type of a GeoDataFrame,
+    and information if the gdf contains Geometry Collections."""
     geom_types = list(gdf.geometry.geom_type.unique())
     geom_collection = False
 
@@ -114,7 +116,7 @@ def get_geometry_type(gdf):
     geom_types = list(set(basic_types))
 
     # Check for mixed geometry types
-    assert len(geom_types) < 2, "GeoDataFrame contains mixed geometry types, cannot proceed with mixed geometries."
+    assert len(geom_types) < 2, "GeoDataFrame contains mixed geometry types."
     geom_type = geom_types[0]
     return (geom_type, geom_collection)
 
@@ -137,11 +139,11 @@ def get_srid_from_crs(gdf):
                 srid = CRS(gdf).to_epsg(min_confidence=25)
             if srid is None:
                 srid = -1
-        except:
+        except Exception as e:
             srid = -1
-    if srid == -1:
-        print(
-            "Warning: Could not parse coordinate reference system from GeoDataFrame. Inserting data without defined CRS.")
+            print("""
+            Warning: Could not parse coordinate reference system from GeoDataFrame. 
+            Inserting data without defined CRS.""")
 
     return srid
 
@@ -150,12 +152,12 @@ def convert_to_wkb(gdf, geom_name):
     """Convert geometries to wkb. Use pygeos if available, otherwise use shapely."""
     try:
         import pygeos
-        pygeos = True
-    except:
-        pygeos = False
+        use_pygeos = True
+    except ModuleNotFoundError:
+        use_pygeos = False
         from shapely.wkb import dumps
 
-    if pygeos:
+    if use_pygeos:
         # With pygeos
         gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()), hex=True)
     else:
@@ -164,7 +166,7 @@ def convert_to_wkb(gdf, geom_name):
     return gdf
 
 
-def write_to_db(gdf, engine, index, tbl, table, schema, srid, geom_name):
+def write_to_db(gdf, engine, index, tbl, srid, geom_name):
     import io
     import csv
 
@@ -187,14 +189,16 @@ def write_to_db(gdf, engine, index, tbl, table, schema, srid, geom_name):
     conn = engine.raw_connection()
     cur = conn.cursor()
 
-    sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
-        table, columns)
-
     try:
+        sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
+            tbl.table.fullname, columns)
         cur.copy_expert(sql=sql, file=s_buf)
-        cur.execute("SELECT UpdateGeometrySRID('{table}', '{geometry}', {srid})".format(
-            schema=schema, table=table, geometry=geom_name, srid=srid))
+
+        sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
+            schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=srid)
+        cur.execute(sql)
         conn.commit()
+
     except Exception as e:
         conn.connection.rollback()
         raise (e)
@@ -217,7 +221,7 @@ def write_postgis(gdf, engine, table, if_exists='fail',
     if_exists : str
         What to do if table exists already: 'replace' | 'append' | 'fail'.
     schema : db-schema
-        Database schema where the data will be uploaded (optional).
+        Database schema where the data will be uploaded (default: 'public').
     dtype : dict of column name to SQL type, default None
         Optional specifying the datatype for columns. The SQL type should be a
         SQLAlchemy type, or a string for sqlite3 fallback connection.
@@ -256,7 +260,8 @@ def write_postgis(gdf, engine, table, if_exists='fail',
     # If dtypes is used, update table schema accordingly.
     pandas_sql = pd.io.sql.SQLDatabase(engine)
     tbl = pd.io.sql.SQLTable(name=table, pandas_sql_engine=pandas_sql,
-                             frame=gdf, dtype=dtype, index=index)
+                             frame=gdf, dtype=dtype, index=index,
+                             schema=schema_name)
 
     # Check if table exists
     if tbl.exists():
@@ -285,6 +290,6 @@ def write_postgis(gdf, engine, table, if_exists='fail',
     gdf = convert_to_wkb(gdf, geom_name)
 
     # Write to database
-    write_to_db(gdf, engine, index, tbl, table, schema, srid, geom_name)
+    write_to_db(gdf, engine, index, tbl, srid, geom_name)
 
     return
