@@ -21,5 +21,6 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - geoalchemy2
   # TEMP: workaround until conda-forge fixes the issues with gdal
   - zstd
