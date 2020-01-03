@@ -193,7 +193,7 @@ class TestIO:
 
     def test_write_postgis_replace_when_table_exists(self, df_nybb):
         """
-        Tests that uploading the same table raises error when: if_replace='fail'.
+        Tests that replacing a table is possible when: if_replace='replace'.
         """
         engine = connect_engine("test_geopandas")
         table = 'nybb'
@@ -207,6 +207,39 @@ class TestIO:
             sql = "SELECT * FROM nybb;"
             df = read_postgis(sql, engine, geom_col='geometry')
             validate_boro_df(df)
+        except ValueError as e:
+            raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_append_when_table_exists(self, df_nybb):
+        """
+        Tests that appending to existing table produces correct results when:
+        if_replace='append'.
+        """
+        engine = connect_engine("test_geopandas")
+        table = 'nybb'
+
+        if engine is None:
+            raise pytest.skip()
+
+        try:
+            orig_rows, orig_cols = df_nybb.shape
+            write_postgis(df_nybb, con=engine, table=table, if_exists='replace')
+            write_postgis(df_nybb, con=engine, table=table, if_exists='append')
+            # Validate
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, engine, geom_col='geometry')
+            new_rows, new_cols = df.shape
+            # There should be twice as many rows in the new table
+            assert new_rows == orig_rows * 2, ("There should be {target} rows,",
+                                               "found: {current}".format(target=orig_rows*2,
+                                                                         current=new_rows))
+            # Number of columns should stay the same
+            assert new_cols == orig_cols, ("There should be {target} columns,",
+                                               "found: {current}".format(target=orig_cols,
+                                                                         current=new_cols))
+
         except ValueError as e:
             raise e
         finally:
