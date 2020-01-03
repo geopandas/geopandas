@@ -240,4 +240,3 @@ def drop_table_if_exists(engine, table):
         table = metadata.tables.get(table)
         if table is not None:
             base.metadata.drop_all(engine, [table], checkfirst=True)
-
