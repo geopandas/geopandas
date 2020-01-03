@@ -151,8 +151,11 @@ def convert_to_wkb(gdf, geom_name):
     """Convert geometries to wkb. Use pygeos if available, otherwise use shapely."""
     try:
         import pygeos
+        from shapely.geos import geos_version_string as shapely_geos_version
+        # Pygeos and Shapely GEOS version should match
+        assert pygeos.geos_capi_version_string.strip() == shapely_geos_version.strip()
         use_pygeos = True
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, AssertionError):
         use_pygeos = False
         from shapely.wkb import dumps
 
@@ -205,7 +208,7 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name):
     conn.close()
 
 
-def write_postgis(gdf, engine, table, if_exists='fail',
+def write_postgis(gdf, con, table, if_exists='fail',
                   schema=None, dtype=None, index=False):
     """
     Upload GeoDataFrame into PostGIS database.
@@ -215,8 +218,8 @@ def write_postgis(gdf, engine, table, if_exists='fail',
 
     gdf : GeoDataFrame
         GeoDataFrame containing the data for upload.
-    engine : SQLAclchemy engine.
-        Connection.
+    con : sqlalchemy.engine.Engine.
+        Connection engine to the database.
     if_exists : str
         What to do if table exists already: 'replace' | 'append' | 'fail'.
     schema : db-schema
@@ -257,7 +260,7 @@ def write_postgis(gdf, engine, table, if_exists='fail',
 
     # Get Pandas SQLTable object (ignore 'geometry')
     # If dtypes is used, update table schema accordingly.
-    pandas_sql = pd.io.sql.SQLDatabase(engine)
+    pandas_sql = pd.io.sql.SQLDatabase(con)
     tbl = pd.io.sql.SQLTable(name=table, pandas_sql_engine=pandas_sql,
                              frame=gdf, dtype=dtype, index=index,
                              schema=schema_name)
@@ -269,7 +272,7 @@ def write_postgis(gdf, engine, table, if_exists='fail',
             pandas_sql.drop_table(table)
             tbl.create()
         elif if_exists == 'fail':
-            raise Exception("Table '{table}' exists in the database.".format(
+            raise ValueError("Table '{table}' already exists.".format(
                 table=table))
         elif if_exists == 'append':
             pass
@@ -293,6 +296,6 @@ def write_postgis(gdf, engine, table, if_exists='fail',
     gdf = convert_to_wkb(gdf, geom_name)
 
     # Write to database
-    write_to_db(gdf, engine, index, tbl, srid, geom_name)
+    write_to_db(gdf, con, index, tbl, srid, geom_name)
 
     return
