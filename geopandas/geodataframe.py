@@ -747,8 +747,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
-    def to_postgis(self, engine, table,
-                   if_exists='fail',
+    def to_postgis(self, engine, table, if_exists='fail',
                    schema=None, dtype=None, index=False):
 
         """
