@@ -169,7 +169,7 @@ def convert_to_wkb(gdf, geom_name):
     return gdf
 
 
-def write_to_db(gdf, engine, index, tbl, srid, geom_name):
+def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
     import io
     import csv
 
@@ -193,10 +193,19 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name):
     cur = conn.cursor()
 
     try:
+        # If appending to an existing table, temporarily change
+        # the srid to 0, and update the SRID afterwards
+        if if_exists == 'append':
+            sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
+                schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=0)
+            cur.execute(sql)
+
         sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
             tbl.table.fullname, columns)
         cur.copy_expert(sql=sql, file=s_buf)
 
+        # SRID needs to be updated afterwards as the current approach does not support
+        # the use of EWKT geometries.
         sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
             schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=srid)
         cur.execute(sql)
@@ -275,7 +284,16 @@ def write_postgis(gdf, con, table, if_exists='fail',
             raise ValueError("Table '{table}' already exists.".format(
                 table=table))
         elif if_exists == 'append':
-            pass
+            # Check that the geometry srid matches with the current GeoDataFrame
+            target_srid = con.execute(
+                "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                    schema=schema_name,
+                    table=table,
+                    geom_col=geom_name)
+                    ).fetchone()[0]
+
+            assert target_srid == srid, ("The CRS of the target table differs",
+                                         "from the CRS of current GeoDataFrame.")
     else:
         tbl.create()
 
@@ -296,6 +314,6 @@ def write_postgis(gdf, con, table, if_exists='fail',
     gdf = convert_to_wkb(gdf, geom_name)
 
     # Write to database
-    write_to_db(gdf, con, index, tbl, srid, geom_name)
+    write_to_db(gdf, con, index, tbl, srid, geom_name, if_exists)
 
     return
