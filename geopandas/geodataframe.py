@@ -747,7 +747,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
-    def to_postgis(self, engine, table, if_exists='fail',
+    def to_postgis(self, con, table, if_exists='fail',
                    schema=None, dtype=None, index=False):
 
         """
@@ -755,7 +755,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        engine : SQLAclchemy engine.
+        con : sqlalchemy.engine.Engine
             Connection.
         table : str
             Target table to write the data.
@@ -770,7 +770,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Store DataFrame index to the database as well.
         """
         gdf = self.copy()
-        geopandas.io.sql.write_postgis(gdf, engine, table,
+        geopandas.io.sql.write_postgis(gdf, con, table,
                                        if_exists=if_exists,
                                        schema=schema, dtype=dtype,
                                        index=index
