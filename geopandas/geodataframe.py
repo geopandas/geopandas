@@ -305,15 +305,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_postgis(
-            cls,
-            sql,
-            con,
-            geom_col="geom",
-            crs=None,
-            index_col=None,
-            coerce_float=True,
-            parse_dates=None,
-            params=None,
+        cls,
+        sql,
+        con,
+        geom_col="geom",
+        crs=None,
+        index_col=None,
+        coerce_float=True,
+        parse_dates=None,
+        params=None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -747,8 +747,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
-    def to_postgis(self, con, table, if_exists='fail',
-                   schema=None, dtype=None, index=False):
+    def to_postgis(
+        self, con, table, if_exists="fail", schema=None, dtype=None, index=False
+    ):
 
         """
         Upload GeoDataFrame into PostGIS database.
@@ -770,11 +771,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Store DataFrame index to the database as well.
         """
         gdf = self.copy()
-        geopandas.io.sql.write_postgis(gdf, con, table,
-                                       if_exists=if_exists,
-                                       schema=schema, dtype=dtype,
-                                       index=index
-                                       )
+        geopandas.io.sql.write_postgis(
+            gdf,
+            con,
+            table,
+            if_exists=if_exists,
+            schema=schema,
+            dtype=dtype,
+            index=index,
+        )
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

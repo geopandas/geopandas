@@ -157,17 +157,17 @@ class TestIO:
         if engine is None:
             raise pytest.skip()
 
-        table = 'nybb'
+        table = "nybb"
 
         # If table exists, delete it before trying to write with defaults
         drop_table_if_exists(engine, table)
 
         try:
             # Write to db
-            write_postgis(df_nybb, con=engine, table=table, if_exists='fail')
+            write_postgis(df_nybb, con=engine, table=table, if_exists="fail")
             # Validate
             sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, engine, geom_col='geometry')
+            df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
         finally:
             engine.dispose()
@@ -180,10 +180,10 @@ class TestIO:
         if engine is None:
             raise pytest.skip()
 
-        table = 'nybb'
+        table = "nybb"
 
         try:
-            write_postgis(df_nybb, con=engine, table=table, if_exists='fail')
+            write_postgis(df_nybb, con=engine, table=table, if_exists="fail")
         except ValueError as e:
             if "already exists" in str(e):
                 pass
@@ -200,13 +200,13 @@ class TestIO:
         if engine is None:
             raise pytest.skip()
 
-        table = 'nybb'
+        table = "nybb"
 
         try:
-            write_postgis(df_nybb, con=engine, table=table, if_exists='replace')
+            write_postgis(df_nybb, con=engine, table=table, if_exists="replace")
             # Validate
             sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, engine, geom_col='geometry')
+            df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
         except ValueError as e:
             raise e
@@ -222,25 +222,25 @@ class TestIO:
         if engine is None:
             raise pytest.skip()
 
-        table = 'nybb'
+        table = "nybb"
         try:
             orig_rows, orig_cols = df_nybb.shape
-            write_postgis(df_nybb, con=engine, table=table, if_exists='replace')
-            write_postgis(df_nybb, con=engine, table=table, if_exists='append')
+            write_postgis(df_nybb, con=engine, table=table, if_exists="replace")
+            write_postgis(df_nybb, con=engine, table=table, if_exists="append")
             # Validate
             sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, engine, geom_col='geometry')
+            df = read_postgis(sql, engine, geom_col="geometry")
             new_rows, new_cols = df.shape
             # There should be twice as many rows in the new table
-            assert new_rows == orig_rows * 2, ("There should be {target} rows,",
-                                               "found: {current}".format(
-                                                   target=orig_rows * 2,
-                                                   current=new_rows))
+            assert new_rows == orig_rows * 2, (
+                "There should be {target} rows,",
+                "found: {current}".format(target=orig_rows * 2, current=new_rows),
+            )
             # Number of columns should stay the same
-            assert new_cols == orig_cols, ("There should be {target} columns,",
-                                               "found: {current}".format(
-                                                   target=orig_cols,
-                                                   current=new_cols))
+            assert new_cols == orig_cols, (
+                "There should be {target} columns,",
+                "found: {current}".format(target=orig_cols, current=new_cols),
+            )
 
         except ValueError as e:
             raise e

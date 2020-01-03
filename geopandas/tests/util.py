@@ -82,9 +82,16 @@ def connect_engine(dbname, user=None, password=None, host=None, port=None):
     host = host or os.environ.get("PGHOST")
     port = port or os.environ.get("PGPORT")
     try:
-        con = create_engine(URL(drivername='postgresql+psycopg2', username=user,
-                                database=dbname, password=password,
-                                host=host, port=port))
+        con = create_engine(
+            URL(
+                drivername="postgresql+psycopg2",
+                username=user,
+                database=dbname,
+                password=password,
+                host=host,
+                port=port,
+            )
+        )
         con.begin()
     except Exception:
         return None

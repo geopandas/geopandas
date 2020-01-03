@@ -108,9 +108,9 @@ def get_geometry_type(gdf):
     # Get the basic geometry type
     basic_types = []
     for gt in geom_types:
-        if 'Multi' in gt:
+        if "Multi" in gt:
             geom_collection = True
-            basic_types.append(gt.replace('Multi', ''))
+            basic_types.append(gt.replace("Multi", ""))
         else:
             basic_types.append(gt)
     geom_types = list(set(basic_types))
@@ -132,8 +132,8 @@ def get_srid_from_crs(gdf):
             if isinstance(gdf.crs, dict):
                 # If CRS is in dictionary format use only the value
                 # to avoid pyproj Future warning
-                if 'init' in gdf.crs.keys():
-                    srid = CRS(gdf.crs['init']).to_epsg(min_confidence=25)
+                if "init" in gdf.crs.keys():
+                    srid = CRS(gdf.crs["init"]).to_epsg(min_confidence=25)
                 else:
                     srid = CRS(gdf.crs).to_epsg(min_confidence=25)
             else:
@@ -142,8 +142,10 @@ def get_srid_from_crs(gdf):
                 srid = -1
         except Exception:
             srid = -1
-            print("Warning: Could not parse CRS from the GeoDataFrame.",
-                  "Inserting data without defined CRS.")
+            print(
+                "Warning: Could not parse CRS from the GeoDataFrame.",
+                "Inserting data without defined CRS.",
+            )
     return srid
 
 
@@ -168,7 +170,7 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
 
     # get list of columns using pandas
     keys = tbl.insert_data()[0]
-    columns = ', '.join('"{}"'.format(k) for k in list(keys))
+    columns = ", ".join('"{}"'.format(k) for k in list(keys))
 
     s_buf = io.StringIO()
     writer = csv.writer(s_buf)
@@ -181,19 +183,20 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
     try:
         # If appending to an existing table, temporarily change
         # the srid to 0, and update the SRID afterwards
-        if if_exists == 'append':
+        if if_exists == "append":
             sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
-                schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=0)
+                schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=0
+            )
             cur.execute(sql)
 
-        sql = 'COPY {} ({}) FROM STDIN WITH CSV'.format(
-            tbl.table.fullname, columns)
+        sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
         cur.copy_expert(sql=sql, file=s_buf)
 
         # SRID needs to be updated afterwards as the current approach does not support
         # the use of EWKT geometries.
         sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
-            schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=srid)
+            schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=srid
+        )
         cur.execute(sql)
         conn.commit()
 
@@ -203,8 +206,9 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
     conn.close()
 
 
-def write_postgis(gdf, con, table, if_exists='fail',
-                  schema=None, dtype=None, index=False):
+def write_postgis(
+    gdf, con, table, if_exists="fail", schema=None, dtype=None, index=False
+):
     """
     Upload GeoDataFrame into PostGIS database.
 
@@ -233,7 +237,7 @@ def write_postgis(gdf, con, table, if_exists='fail',
     if schema is not None:
         schema_name = schema
     else:
-        schema_name = 'public'
+        schema_name = "public"
 
     # Get srid
     srid = get_srid_from_crs(gdf)
@@ -256,45 +260,53 @@ def write_postgis(gdf, con, table, if_exists='fail',
     # Get Pandas SQLTable object (ignore 'geometry')
     # If dtypes is used, update table schema accordingly.
     pandas_sql = pd.io.sql.SQLDatabase(con)
-    tbl = pd.io.sql.SQLTable(name=table, pandas_sql_engine=pandas_sql,
-                             frame=gdf, dtype=dtype, index=index,
-                             schema=schema_name)
+    tbl = pd.io.sql.SQLTable(
+        name=table,
+        pandas_sql_engine=pandas_sql,
+        frame=gdf,
+        dtype=dtype,
+        index=index,
+        schema=schema_name,
+    )
 
     # Check if table exists
     if tbl.exists():
         # If it exists, check if should overwrite
-        if if_exists == 'replace':
+        if if_exists == "replace":
             pandas_sql.drop_table(table)
             tbl.create()
-        elif if_exists == 'fail':
-            raise ValueError("Table '{table}' already exists.".format(
-                table=table))
-        elif if_exists == 'append':
+        elif if_exists == "fail":
+            raise ValueError("Table '{table}' already exists.".format(table=table))
+        elif if_exists == "append":
             # Check that the geometry srid matches with the current GeoDataFrame
             target_srid = con.execute(
                 "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema=schema_name,
-                    table=table,
-                    geom_col=geom_name)
-                    ).fetchone()[0]
+                    schema=schema_name, table=table, geom_col=geom_name
+                )
+            ).fetchone()[0]
 
-            assert target_srid == srid, ("The CRS of the target table differs",
-                                         "from the CRS of current GeoDataFrame.")
+            assert target_srid == srid, (
+                "The CRS of the target table differs",
+                "from the CRS of current GeoDataFrame.",
+            )
     else:
         tbl.create()
 
     # Convert to MultiGeoms if needed
     if contains_multi_geoms:
         mask = gdf[geom_name].geom_type == geometry_type
-        if geometry_type == 'Point':
+        if geometry_type == "Point":
             gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-                lambda geom: MultiPoint([geom]))
-        elif geometry_type == 'LineString':
+                lambda geom: MultiPoint([geom])
+            )
+        elif geometry_type == "LineString":
             gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-                lambda geom: MultiLineString([geom]))
-        elif geometry_type == 'Polygon':
+                lambda geom: MultiLineString([geom])
+            )
+        elif geometry_type == "Polygon":
             gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-                lambda geom: MultiPolygon([geom]))
+                lambda geom: MultiPolygon([geom])
+            )
 
     # Convert geometries to WKB
     gdf = convert_to_wkb(gdf, geom_name)
