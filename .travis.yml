@@ -12,7 +12,7 @@ matrix:
     - env: ENV_FILE="ci/travis/36-pd024.yaml"
 
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true
-    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
+    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
 
 install:
@@ -34,7 +34,6 @@ install:
   - if [ "$DEV" ]; then pip install git+https://github.com/pydata/pandas.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/Toblerity/Shapely.git; fi
-  - if [ "$PYGEOS" ]; then pip install git+https://github.com/pygeos/pygeos.git; fi
   - if [ "$STYLE" ]; then pip install black flake8; fi
   - pip install -e .
   - conda list
