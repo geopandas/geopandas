@@ -148,24 +148,10 @@ def get_srid_from_crs(gdf):
 
 
 def convert_to_wkb(gdf, geom_name):
-    """Convert geometries to wkb. Use pygeos if available, otherwise use shapely."""
-    try:
-        import pygeos
-        from shapely.geos import geos_version_string as shapely_geos_version
-        # Pygeos and Shapely GEOS version should match
-        assert pygeos.geos_capi_version_string.strip() == shapely_geos_version.strip()
-        use_pygeos = True
-    except (ModuleNotFoundError, AssertionError):
-        use_pygeos = False
-        from shapely.wkb import dumps
+    """Convert geometries to wkb. """
+    from shapely.wkb import dumps
 
-    if use_pygeos:
-        # With pygeos
-        gdf[geom_name] = pygeos.to_wkb(pygeos.from_shapely(gdf[geom_name].to_list()),
-                                       hex=True)
-    else:
-        # With Shapely
-        gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
+    gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
     return gdf
 
 
