@@ -184,8 +184,8 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
         # If appending to an existing table, temporarily change
         # the srid to 0, and update the SRID afterwards
         if if_exists == "append":
-            sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
-                schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=0
+            sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{crs})".format(
+                schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, crs=0
             )
             cur.execute(sql)
 
