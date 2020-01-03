@@ -6,14 +6,16 @@ see geopandas.tests.util for more information.
 """
 
 import geopandas
-from geopandas import read_file, read_postgis
+from geopandas import read_file, read_postgis, write_postgis
 
 from geopandas.tests.util import (
     connect,
+    connect_engine,
     connect_spatialite,
     create_postgis,
     create_spatialite,
     validate_boro_df,
+    drop_table_if_exists,
 )
 import pytest
 
@@ -148,3 +150,64 @@ class TestIO:
         finally:
             if "con" in locals():
                 con.close()
+
+    def test_write_postgis_default(self, df_nybb):
+        """Tests that GeoDataFrame can be written to PostGIS with defaults."""
+        engine = connect_engine("test_geopandas")
+        table = 'nybb'
+
+        if engine is None:
+            raise pytest.skip()
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        try:
+            # Write to db
+            write_postgis(df_nybb, con=engine, table=table, if_exists='fail')
+            # Validate
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, engine, geom_col='geometry')
+            validate_boro_df(df)
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_fail_when_table_exists(self, df_nybb):
+        """
+        Tests that uploading the same table raises error when: if_replace='fail'.
+        """
+        engine = connect_engine("test_geopandas")
+        table = 'nybb'
+
+        if engine is None:
+            raise pytest.skip()
+
+        try:
+            write_postgis(df_nybb, con=engine, table=table, if_exists='fail')
+        except ValueError as e:
+            if "already exists" in str(e):
+                pass
+            else:
+                raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_replace_when_table_exists(self, df_nybb):
+        """
+        Tests that uploading the same table raises error when: if_replace='fail'.
+        """
+        engine = connect_engine("test_geopandas")
+        table = 'nybb'
+
+        if engine is None:
+            raise pytest.skip()
+
+        try:
+            write_postgis(df_nybb, con=engine, table=table, if_exists='replace')
+            # Validate
+            sql = "SELECT * FROM nybb;"
+            df = read_postgis(sql, engine, geom_col='geometry')
+            validate_boro_df(df)
+        except ValueError as e:
+            raise e
+        finally:
+            engine.dispose()
