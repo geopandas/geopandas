@@ -18,6 +18,10 @@ PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
 try:
     import psycopg2
     from psycopg2 import OperationalError
+    from sqlalchemy import create_engine, MetaData
+    from sqlalchemy.engine.url import URL
+    from sqlalchemy.ext.declarative import declarative_base
+
 except ImportError:
 
     class OperationalError(Exception):
@@ -64,6 +68,22 @@ def connect(dbname, user=None, password=None, host=None, port=None):
     except (NameError, OperationalError):
         return None
 
+    return con
+
+
+def connect_engine(dbname, user=None, password=None, host=None, port=None):
+    """
+    Initiaties a connection (engine) to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+
+    user = user or os.environ.get("PGUSER")
+    password = password or os.environ.get("PGPASSWORD")
+    host = host or os.environ.get("PGHOST")
+    port = port or os.environ.get("PGPORT")
+    con = create_engine(URL(drivername='postgresql+psycopg2', username=user,
+                            database=dbname, password=password,
+                            host=host, port=port))
     return con
 
 
@@ -205,3 +225,14 @@ def create_postgis(df, srid=None, geom_col="geom"):
         con.close()
 
     return True
+
+
+def drop_table_if_exists(engine, table):
+    if engine.has_table(table):
+        base = declarative_base()
+        metadata = MetaData(engine)
+        metadata.reflect()
+        table = metadata.tables.get(table)
+        if table is not None:
+            base.metadata.drop_all(engine, [table], checkfirst=True)
+
