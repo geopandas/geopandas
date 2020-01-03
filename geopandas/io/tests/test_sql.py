@@ -153,15 +153,12 @@ class TestIO:
 
     def test_write_postgis_default(self, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
-        try:
-            engine = connect_engine("test_geopandas")
-        except Exception:
+        engine = connect_engine("test_geopandas")
+        if engine is None:
             raise pytest.skip()
 
         table = 'nybb'
 
-        if engine is None:
-            raise pytest.skip()
         # If table exists, delete it before trying to write with defaults
         drop_table_if_exists(engine, table)
 
@@ -179,9 +176,8 @@ class TestIO:
         """
         Tests that uploading the same table raises error when: if_replace='fail'.
         """
-        try:
-            engine = connect_engine("test_geopandas")
-        except Exception:
+        engine = connect_engine("test_geopandas")
+        if engine is None:
             raise pytest.skip()
 
         table = 'nybb'
@@ -200,9 +196,8 @@ class TestIO:
         """
         Tests that replacing a table is possible when: if_replace='replace'.
         """
-        try:
-            engine = connect_engine("test_geopandas")
-        except Exception:
+        engine = connect_engine("test_geopandas")
+        if engine is None:
             raise pytest.skip()
 
         table = 'nybb'
@@ -223,9 +218,8 @@ class TestIO:
         Tests that appending to existing table produces correct results when:
         if_replace='append'.
         """
-        try:
-            engine = connect_engine("test_geopandas")
-        except Exception:
+        engine = connect_engine("test_geopandas")
+        if engine is None:
             raise pytest.skip()
 
         table = 'nybb'
