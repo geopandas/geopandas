@@ -9,3 +9,4 @@ pytest-cov
 codecov
 rtree>=0.8
 mapclassify
+geoalchemy2
