@@ -153,7 +153,11 @@ class TestIO:
 
     def test_write_postgis_default(self, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
-        engine = connect_engine("test_geopandas")
+        try:
+            engine = connect_engine("test_geopandas")
+        except Exception:
+            raise pytest.skip()
+
         table = 'nybb'
 
         if engine is None:
@@ -175,11 +179,12 @@ class TestIO:
         """
         Tests that uploading the same table raises error when: if_replace='fail'.
         """
-        engine = connect_engine("test_geopandas")
-        table = 'nybb'
-
-        if engine is None:
+        try:
+            engine = connect_engine("test_geopandas")
+        except Exception:
             raise pytest.skip()
+
+        table = 'nybb'
 
         try:
             write_postgis(df_nybb, con=engine, table=table, if_exists='fail')
@@ -195,11 +200,12 @@ class TestIO:
         """
         Tests that replacing a table is possible when: if_replace='replace'.
         """
-        engine = connect_engine("test_geopandas")
-        table = 'nybb'
-
-        if engine is None:
+        try:
+            engine = connect_engine("test_geopandas")
+        except Exception:
             raise pytest.skip()
+
+        table = 'nybb'
 
         try:
             write_postgis(df_nybb, con=engine, table=table, if_exists='replace')
@@ -217,12 +223,12 @@ class TestIO:
         Tests that appending to existing table produces correct results when:
         if_replace='append'.
         """
-        engine = connect_engine("test_geopandas")
-        table = 'nybb'
-
-        if engine is None:
+        try:
+            engine = connect_engine("test_geopandas")
+        except Exception:
             raise pytest.skip()
 
+        table = 'nybb'
         try:
             orig_rows, orig_cols = df_nybb.shape
             write_postgis(df_nybb, con=engine, table=table, if_exists='replace')
