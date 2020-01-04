@@ -19,7 +19,6 @@ dependencies:
   - rtree
   - matplotlib=2
   - descartes
-  - mapclassify>=2.2.0
   #- geopy
   - SQLalchemy
   - psycopg2
@@ -27,3 +26,4 @@ dependencies:
   - pip:
     - geopy
     - codecov
+    - mapclassify>=2.2.0
