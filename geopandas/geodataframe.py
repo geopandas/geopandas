@@ -708,17 +708,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         df_copy = self.copy()
 
+        df_copy["__order"] = range(len(df_copy))
+
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = pd.concat(
-            [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
+        df = pd.merge(
+            df_copy.drop(df_copy._geometry_column_name, axis=1),
+            exploded_geom,
+            left_index=True,
+            right_index=True,
+            sort=False,
+            how="left",
         )
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
         df.index.names = list(self.index.names) + [None]
-        geo_df = df.set_geometry(self._geometry_column_name)
+        df.sort_values("__order", inplace=True)
+        geo_df = df.set_geometry(self._geometry_column_name).drop("__order", axis=1)
         return geo_df
 
     # overrides the pandas astype method to ensure the correct return type
