@@ -55,6 +55,12 @@ def read_file(filename, bbox=None, **kwargs):
     Returns
     -------
     geodataframe : GeoDataFrame
+
+    Notes
+    -----
+    The format drivers will attempt to detect the encoding of your data, but
+    may fail. In this case, the proper encoding can be specified explicitly
+    by using the encoding keyword parameter: encoding='utf-8'.
     """
     if _is_url(filename):
         req = _urlopen(filename)
