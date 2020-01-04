@@ -655,6 +655,17 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+        df.index = [1, 0]
+        df.index.name = index_name
+        test_df2 = df.explode()
+        expected_index2 = MultiIndex(
+            [[0, 1], [0, 1]],  # levels
+            [[1, 1, 0], [0, 1, 0]],  # labels/codes
+            names=[index_name, None],
+        )
+        expected_df2 = expected_df.set_index(expected_index2)
+        assert_frame_equal(test_df2, expected_df2)
+
     #
     # Test '&', '|', '^', and '-'
     # The left can only be a GeoSeries. The right hand side can be a
