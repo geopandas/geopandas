@@ -511,7 +511,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         The format drivers will attempt to detect the encoding of your data, but
         may fail. In this case, the proper encoding can be specified explicitly
-        by using the encoding keyword parameter: encoding='utf-8'.
+        by using the encoding keyword parameter, e.g. `encoding='utf-8'`.
         """
         from geopandas.io.file import to_file
 
