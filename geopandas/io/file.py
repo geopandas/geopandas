@@ -60,7 +60,7 @@ def read_file(filename, bbox=None, **kwargs):
     -----
     The format drivers will attempt to detect the encoding of your data, but
     may fail. In this case, the proper encoding can be specified explicitly
-    by using the encoding keyword parameter, e.g. `encoding='utf-8'`.
+    by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     if _is_url(filename):
         req = _urlopen(filename)
@@ -123,7 +123,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
     -----
     The format drivers will attempt to detect the encoding of your data, but
     may fail. In this case, the proper encoding can be specified explicitly
-    by using the encoding keyword parameter, e.g. `encoding='utf-8'`.
+    by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     if schema is None:
         schema = infer_schema(df)
