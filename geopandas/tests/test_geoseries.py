@@ -18,7 +18,7 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries
+from geopandas import GeoSeries, GeoDataFrame
 from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.tests.util import geom_equals
@@ -324,3 +324,12 @@ class TestConstructor:
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
         assert s.index is g.index
+
+    # GH 1216
+    def test_expanddim(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode()
+        df = s.reset_index()
+        assert type(df) == GeoDataFrame
