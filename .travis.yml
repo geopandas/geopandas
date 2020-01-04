@@ -33,6 +33,7 @@ install:
   - source activate test
   - if [ "$DEV" ]; then pip install git+https://github.com/pydata/pandas.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
+  - if [ "$DEV" ]; then pip install git+https://github.com/Toblerity/Shapely.git; fi
   - if [ "$STYLE" ]; then pip install black flake8; fi
   - pip install -e .
   - conda list
