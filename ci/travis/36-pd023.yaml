@@ -19,7 +19,7 @@ dependencies:
   - rtree
   - matplotlib=2
   - descartes
-  - mapclassify
+  - mapclassify>=2.2.0
   #- geopy
   - SQLalchemy
   - psycopg2

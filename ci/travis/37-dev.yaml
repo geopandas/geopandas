@@ -24,4 +24,4 @@ dependencies:
   - pip:
     - codecov
     - geopy
-    - mapclassify
+    - mapclassify>=2.2.0
