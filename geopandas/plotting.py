@@ -570,8 +570,8 @@ def plot_dataframe(
         categories.sort()
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
         values = np.array([valuemap[k] for k in values[~nan_idx]])
-        if legend_kwds is not None and 'fmt' in legend_kwds:
-            fmt = legend_kwds.pop('fmt')
+        if legend_kwds is not None and "fmt" in legend_kwds:
+            fmt = legend_kwds.pop("fmt")
 
     if scheme is not None:
         if classification_kwds is None:
@@ -582,9 +582,9 @@ def plot_dataframe(
         binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
-        fmt = '{:.2f}'
-        if legend_kwds is not None and 'fmt' in legend_kwds:
-            fmt = legend_kwds.pop('fmt')
+        fmt = "{:.2f}"
+        if legend_kwds is not None and "fmt" in legend_kwds:
+            fmt = legend_kwds.pop("fmt")
         categories = binning.get_legend_classes(fmt)
         values = np.array(binning.yb)
 

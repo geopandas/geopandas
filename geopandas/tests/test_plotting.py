@@ -650,7 +650,11 @@ class TestMapclassifyPlotting:
                 column="pop_est", scheme="QUANTILES", k=3, cmap="OrRd", legend=True
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'[       140.00,    5217064.00]', u'(   5217064.00,   19532732.33]', u'(  19532732.33, 1379302771.00]']
+        expected = [
+            u"[       140.00,    5217064.00]",
+            u"(   5217064.00,   19532732.33]",
+            u"(  19532732.33, 1379302771.00]",
+        ]
         assert labels == expected
 
     def test_negative_legend(self):
@@ -658,7 +662,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u'[-10.00,  -3.41]', u'( -3.41,   3.30]', u'(  3.30,  10.00]']
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -676,7 +680,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ['[       140.00,    9961396.00]', '(   9961396.00, 1379302771.00]' ]
+        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
         assert labels == expected
 
     def test_invalid_scheme(self):
