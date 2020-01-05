@@ -164,6 +164,20 @@ not operate in a meaningful way on the ``geometry`` column and may not
 return a ``GeoDataFrame`` result even when it would be appropriate to
 do so.
 
+Testing
+-------
+
+GeoPandas includes specific functions to test its objects.
+
+.. autofunction:: geopandas.testing.geom_equals
+
+.. autofunction:: geopandas.testing.geom_almost_equals
+
+.. autofunction:: geopandas.testing.assert_geoseries_equal
+
+.. autofunction:: geopandas.testing.assert_geodataframe_equal
+
+
 Top-level Functions
 -------------------
 
