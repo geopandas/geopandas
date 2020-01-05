@@ -59,7 +59,6 @@ doc/_build/
 
 examples/nybb_*.zip
 
-doc/source/gallery
 doc/source/savefig
 doc/source/reference
 

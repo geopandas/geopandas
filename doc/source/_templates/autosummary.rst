@@ -7,8 +7,6 @@
 
 {% if objtype in ['class', 'method', 'function'] %}
 
-.. include:: {{module}}.{{objname}}.examples
-
 .. raw:: html
 
     <div class="clear"></div>
