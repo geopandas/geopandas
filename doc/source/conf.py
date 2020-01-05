@@ -27,11 +27,12 @@ import sys, os
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['IPython.sphinxext.ipython_console_highlighting',
               'IPython.sphinxext.ipython_directive',
-              'sphinx_gallery.gen_gallery',
+              #'sphinx_gallery.gen_gallery',
               'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
               'numpydoc',
+              'nbsphinx',
 ]
 
 # continue doc build and only print warnings/errors in examples
@@ -56,17 +57,17 @@ templates_path = ['_templates']
 autosummary_generate = True
 
 # Sphinx gallery configuration
-sphinx_gallery_conf = {
-    'examples_dirs': ['../../examples'],
-    'filename_pattern': '^((?!sgskip).)*$',
-    'gallery_dirs': ['gallery'],
-    'doc_module': ('geopandas',),
-    'reference_url': {'matplotlib': 'http://matplotlib.org',
-                      'numpy': 'http://docs.scipy.org/doc/numpy',
-                      'scipy': 'http://docs.scipy.org/doc/scipy/reference',
-                      'geopandas': None},
-    'backreferences_dir': 'reference'
-}
+# sphinx_gallery_conf = {
+#     'examples_dirs': ['../../examples'],
+#     'filename_pattern': '^((?!sgskip).)*$',
+#     'gallery_dirs': ['gallery'],
+#     'doc_module': ('geopandas',),
+#     'reference_url': {'matplotlib': 'http://matplotlib.org',
+#                       'numpy': 'http://docs.scipy.org/doc/numpy',
+#                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
+#                       'geopandas': None},
+#     'backreferences_dir': 'reference'
+# }
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -79,7 +80,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013–2019, GeoPandas developers'
+copyright = u'2013–2020, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -99,7 +100,7 @@ version = release = geopandas.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = ['**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -277,3 +278,23 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+# -- nbsphinx ----
+# This is processed by Jinja2 and inserted before each notebook
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. nbinfo::
+
+        This page was generated from `{{ docname }}`__.
+        Interactive online version:
+        :raw-html:`<a href="https://mybinder.org/v2/gh/geopandas/geopandas/master/doc/source/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+
+    __ https://github.com/geopandas/geopandas/blob/master/doc/source/{{ docname }}
+"""
+nbsphinx_execute = "always"
