@@ -1,0 +1,20 @@
+name: binder
+channels:
+- conda-forge
+dependencies:
+- python
+- pandas
+- shapely
+- fiona
+- pyproj
+- rtree
+- geopy
+- matplotlib
+- descartes
+- mapclassify
+- cartopy
+- contextily
+- rasterio
+- geoplot
+- pysal
+- folium
