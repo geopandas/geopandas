@@ -194,7 +194,7 @@ Changing the "how" option allows for different types of overlay operations. For 
 More Examples
 -------------
 
-A larger set of examples of the use of ``overlay`` can be found `here <http://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/examples/overlays.ipynb>`_
+A larger set of examples of the use of ``overlay`` can be found in examples gallery.
 
 
 
