@@ -25,6 +25,10 @@ The following Shapely methods and attributes are available on
 
 .. autoattribute:: geopandas.GeoSeries.interiors
 
+.. autoattribute:: geopandas.GeoSeries.x
+
+.. autoattribute:: geopandas.GeoSeries.y
+
 `Unary Predicates`
 
 .. autoattribute:: geopandas.GeoSeries.is_empty
@@ -97,6 +101,10 @@ Additionally, the following methods are implemented:
 
 .. automethod:: geopandas.GeoSeries.from_file
 
+.. automethod:: geopandas.GeoSeries.to_file
+
+.. automethod:: geopandas.GeoSeries.to_json
+
 .. automethod:: geopandas.GeoSeries.to_crs
 
 .. automethod:: geopandas.GeoSeries.plot
@@ -104,6 +112,13 @@ Additionally, the following methods are implemented:
 .. autoattribute:: geopandas.GeoSeries.total_bounds
 
 .. autoattribute:: geopandas.GeoSeries.__geo_interface__
+
+.. automethod:: geopandas.GeoSeries.isna
+
+.. automethod:: geopandas.GeoSeries.notna
+
+.. automethod:: geopandas.GeoSeries.fillna
+
 
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
@@ -122,6 +137,8 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 
 .. automethod:: geopandas.GeoDataFrame.from_file
 
+.. automethod:: geopandas.GeoDataFrame.from_features
+
 .. automethod:: geopandas.GeoDataFrame.from_postgis
 
 .. automethod:: geopandas.GeoDataFrame.to_crs
@@ -136,6 +153,10 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 
 .. automethod:: geopandas.GeoDataFrame.set_geometry
 
+.. automethod:: geopandas.GeoDataFrame.explode
+
+.. automethod:: geopandas.GeoDataFrame.dissolve
+
 .. autoattribute:: geopandas.GeoDataFrame.__geo_interface__
 
 All pandas ``DataFrame`` methods are also available, although they may
@@ -143,8 +164,8 @@ not operate in a meaningful way on the ``geometry`` column and may not
 return a ``GeoDataFrame`` result even when it would be appropriate to
 do so.
 
-API Pages
----------
+Top-level Functions
+-------------------
 
 .. currentmodule:: geopandas
 .. autosummary::
@@ -157,4 +178,6 @@ API Pages
   read_file
   sjoin
   tools.geocode
+  tools.collect
+  points_from_xy
   datasets.get_path
