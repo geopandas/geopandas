@@ -27,6 +27,31 @@ def df_nybb():
     return df
 
 
+def df_mixed_single_and_multi():
+    from shapely.geometry import LineString, MultiLineString
+    df = geopandas.GeoDataFrame(
+        {'geometry': [
+            LineString([(0, 0), (1, 1)]),
+            MultiLineString([[(0, 0), (1, 1)],
+                             [(2, 2), (3, 3)]]),
+        ]},
+    )
+    return df
+
+
+def df_geom_collection():
+    from shapely.geometry import Point, LineString, Polygon, GeometryCollection
+    df = geopandas.GeoDataFrame(
+        {'geometry': [
+            GeometryCollection([
+                Polygon([(0, 0), (1, 1), (0, 1)]),
+                LineString([(0, 0), (1, 1)]),
+                Point(0, 0),
+            ])
+        ]},
+        )
+    return df
+
 class TestIO:
     def test_read_postgis_default(self, df_nybb):
         con = connect("test_geopandas")
@@ -164,9 +189,9 @@ class TestIO:
 
         try:
             # Write to db
-            write_postgis(df_nybb, con=engine, table=table, if_exists="fail")
+            write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
             # Validate
-            sql = "SELECT * FROM nybb;"
+            sql = "SELECT * FROM {table};".format(table=table)
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
         finally:
@@ -183,7 +208,7 @@ class TestIO:
         table = "nybb"
 
         try:
-            write_postgis(df_nybb, con=engine, table=table, if_exists="fail")
+            write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         except ValueError as e:
             if "already exists" in str(e):
                 pass
@@ -203,9 +228,9 @@ class TestIO:
         table = "nybb"
 
         try:
-            write_postgis(df_nybb, con=engine, table=table, if_exists="replace")
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
             # Validate
-            sql = "SELECT * FROM nybb;"
+            sql = "SELECT * FROM {table};".format(table=table)
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
         except ValueError as e:
@@ -225,10 +250,10 @@ class TestIO:
         table = "nybb"
         try:
             orig_rows, orig_cols = df_nybb.shape
-            write_postgis(df_nybb, con=engine, table=table, if_exists="replace")
-            write_postgis(df_nybb, con=engine, table=table, if_exists="append")
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+            write_postgis(df_nybb, con=engine, name=table, if_exists="append")
             # Validate
-            sql = "SELECT * FROM nybb;"
+            sql = "SELECT * FROM {table};".format(table=table)
             df = read_postgis(sql, engine, geom_col="geometry")
             new_rows, new_cols = df.shape
             # There should be twice as many rows in the new table
@@ -242,7 +267,87 @@ class TestIO:
                 "found: {current}".format(target=orig_cols, current=new_cols),
             )
 
-        except ValueError as e:
+        except AssertionError as e:
+            raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_without_crs(self, df_nybb):
+        """
+        Tests that GeoDataFrame can be written to PostGIS without CRS information.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "nybb"
+
+        try:
+            # Write to db
+            df_nybb = df_nybb
+            df_nybb.crs = None
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+            # Validate that srid is -1
+            target_srid = engine.execute(
+                "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                    schema='public', table=table, geom_col='geometry'
+                )
+            ).fetchone()[0]
+            assert target_srid == 0, "SRID should be 0, found %s" % target_srid
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_geometry_collection(self, df_nybb):
+        """
+        Tests that writing a mix of different geometry types is possible.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "geomtype_tests"
+        try:
+            write_postgis(df_geom_collection(), con=engine, name=table, if_exists="replace")
+
+            # Validate geometry type
+            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(table=table)
+            geom_type = engine.execute(sql).fetchone()[0]
+            sql = "SELECT * FROM {table};".format(table=table)
+            df = read_postgis(sql, engine, geom_col="geometry")
+
+            assert geom_type.upper() == 'GEOMETRYCOLLECTION'
+            assert df.geom_type.unique()[0] == 'GeometryCollection'
+
+        except AssertionError as e:
+            raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_mixed_geometry_types(self, df_nybb):
+        """
+        Tests that writing a mix of single and MultiGeometries is possible.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "geomtype_tests"
+        try:
+            write_postgis(df_mixed_single_and_multi(), con=engine, name=table, if_exists="replace")
+
+            # Validate geometry type
+            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(table=table)
+            res = engine.execute(sql).fetchall()
+            geom_type_1 = res[0][0]
+            geom_type_2 = res[1][0]
+            assert geom_type_1.upper() == 'LINESTRING', \
+                ("Geometry type should be 'LINESTRING',",
+                 "found: {gt}".format(gt=geom_type_1))
+            assert geom_type_2.upper() == 'MULTILINESTRING', \
+                ("Geometry type should be 'MULTILINESTRING',",
+                 "found: {gt}".format(gt=geom_type_1))
+
+        except AssertionError as e:
             raise e
         finally:
             engine.dispose()
