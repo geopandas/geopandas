@@ -19,7 +19,6 @@ def test_no_additional_imports():
         "psycopg2",
         "geopy",
         "geoalchemy2",
-        "pygeos",
     }
     if PANDAS_GE_10:
         # pandas > 0.25 stopped importing matplotlib by default
