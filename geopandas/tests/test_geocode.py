@@ -9,7 +9,7 @@ from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
 from geopandas.tests.util import assert_geoseries_equal, mock
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 import pytest
 
 geopy = pytest.importorskip("geopy")
