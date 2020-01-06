@@ -13,7 +13,7 @@ from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 
