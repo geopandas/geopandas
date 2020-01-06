@@ -98,35 +98,66 @@ def read_postgis(
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
 
-def get_geometry_type(gdf):
+def _get_geometry_type(gdf):
     """
-    Get basic geometry type of a GeoDataFrame,
-    and information if the gdf contains Geometry Collections."""
+    Get basic geometry type of a GeoDataFrame. See more info from:
+    https://geoalchemy-2.readthedocs.io/en/latest/types.html#geoalchemy2.types._GISType
+
+    Following rules apply:
+     - if geometries all share the same geometry-type,
+       geometries are inserted with the given GeometryType (e.g. POINT).
+     - if the GeoSeries contain different geometry-types of the same "root-geometry",
+       such as a mix of Polygons and MultiPolygons, geometries are inserted as GEOMETRY.
+     - if the GeoSeries contain a mix of different geometry-types,
+       such as a mix of Points and LineStrings, geometries are inserted as GEOMETRY.
+     - if a single geometry is a GeometryCollection,
+       such as GeometryCollection([Point, LineStrings]),
+       geometries are inserted as GEOMETRY.
+     """
     geom_types = list(gdf.geometry.geom_type.unique())
-    geom_collection = False
+    has_single = False
+    has_multi = False
 
     # Get the basic geometry type
     basic_types = []
+
     for gt in geom_types:
         if "Multi" in gt:
-            geom_collection = True
+            has_multi = True
+            # Keep track of the "root" geometry types
             basic_types.append(gt.replace("Multi", ""))
         else:
+            has_single = True
             basic_types.append(gt)
+
     geom_types = list(set(basic_types))
 
-    # Check for mixed geometry types
-    assert len(geom_types) < 2, "GeoDataFrame contains mixed geometry types."
-    geom_type = geom_types[0]
-    return (geom_type, geom_collection)
+    # If there are mixed geometry types, use GEOMETRY.
+    if len(geom_types) > 1:
+        # TODO: Should we warn about mixed geometry types?
+        # print("UserWarning: GeoDataFrame contains mixed geometry types.")
+        target_geom_type = "GEOMETRY"
+    # If there is a mix of single and multi-geometries, use GEOMETRY.
+    elif has_single and has_multi:
+        target_geom_type = "GEOMETRY"
+    elif has_multi:
+        target_geom_type = "MULTI{geom_type}".format(geom_type=geom_types[0].upper())
+    else:
+        target_geom_type = geom_types[0].upper()
+    return target_geom_type
 
 
-def get_srid_from_crs(gdf):
+def _get_srid_from_crs(gdf):
     """
     Get EPSG code from CRS if available. If not, return -1.
     """
+    # TODO: Simplify this once new pyproj.CRS class has been
+    #  integrated (#1101) -> https://github.com/geopandas/geopandas/pull/1101
     from pyproj import CRS
 
+    # Use geoalchemy2 default for srid
+    # Note: undefined srid in PostGIS is 0
+    srid = -1
     if gdf.crs is not None:
         try:
             if isinstance(gdf.crs, dict):
@@ -141,7 +172,6 @@ def get_srid_from_crs(gdf):
             if srid is None:
                 srid = -1
         except Exception:
-            srid = -1
             print(
                 "Warning: Could not parse CRS from the GeoDataFrame.",
                 "Inserting data without defined CRS.",
@@ -149,15 +179,15 @@ def get_srid_from_crs(gdf):
     return srid
 
 
-def convert_to_wkb(gdf, geom_name):
+def _convert_to_wkb(gdf, geom_name):
     """Convert geometries to wkb. """
     from shapely.wkb import dumps
 
-    gdf[geom_name] = gdf[geom_name].apply(lambda x: dumps(x, hex=True))
+    gdf[geom_name] = gdf[geom_name].apply(lambda geom: dumps(geom, hex=True))
     return gdf
 
 
-def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
+def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize):
     import io
     import csv
 
@@ -192,8 +222,9 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
         sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
         cur.copy_expert(sql=sql, file=s_buf)
 
-        # SRID needs to be updated afterwards as the current approach does not support
-        # the use of EWKT geometries.
+        # SRID needs to be updated afterwards as Shapely does not support
+        # EWKT/EWKB geometries, see:
+        # https://community.gispython.narkive.com/qTVQCl3f/ewkt-ewkb-support-in-shapely
         sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
             schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=srid
         )
@@ -207,30 +238,48 @@ def write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists):
 
 
 def write_postgis(
-    gdf, con, table, if_exists="fail", schema=None, dtype=None, index=False
+    gdf,
+    name,
+    con,
+    schema=None,
+    if_exists="fail",
+    index=False,
+    index_label=None,
+    chunksize=None,
+    dtype=None,
 ):
     """
     Upload GeoDataFrame into PostGIS database.
 
     Parameters
     ----------
-
-    gdf : GeoDataFrame
-        GeoDataFrame containing the data for upload.
-    con : sqlalchemy.engine.Engine.
-        Connection engine to the database.
-    if_exists : str
-        What to do if table exists already: 'replace' | 'append' | 'fail'.
-    schema : db-schema
-        Database schema where the data will be uploaded (default: 'public').
+    name : str
+        Name of the target table.
+    con : sqlalchemy.engine.Engine
+        Active connection to the PostGIS database.
+    if_exists : {‘fail’, ‘replace’, ‘append’}, default ‘fail’
+        How to behave if the table already exists.
+          - fail: Raise a ValueError.
+          - replace: Drop the table before inserting new values.
+          - append: Insert new values to the existing table.
+    schema : string, optional
+        Specify the schema. If None, use default schema: 'public'.
+    index : bool, default True
+        Write DataFrame index as a column.
+        Uses *index_label* as the column name in the table.
+    index_label : string or sequence, default None
+        Column label for index column(s).
+        If None is given (default) and index is True,
+        then the index names are used.
+    chunksize : int, optional
+        Rows will be written in batches of this size at a time.
+        By default, all rows will be written at once.
     dtype : dict of column name to SQL type, default None
-        Optional specifying the datatype for columns. The SQL type should be a
-        SQLAlchemy type, or a string for sqlite3 fallback connection.
-    index : bool
-        Store DataFrame index to the database as well.
+        Specifying the datatype for columns.
+        The keys should be the column names and the values
+        should be the SQLAlchemy types.
     """
     from geoalchemy2 import Geometry
-    from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
 
     gdf = gdf.copy()
     geom_name = gdf.geometry.name
@@ -240,32 +289,27 @@ def write_postgis(
         schema_name = "public"
 
     # Get srid
-    srid = get_srid_from_crs(gdf)
+    srid = _get_srid_from_crs(gdf)
 
-    # Check geometry types
-    geometry_type, contains_multi_geoms = get_geometry_type(gdf)
-
-    # Build target geometry type
-    if contains_multi_geoms:
-        target_geom_type = "Multi{geom_type}".format(geom_type=geometry_type)
-    else:
-        target_geom_type = geometry_type
+    # Get geometry type
+    geometry_type = _get_geometry_type(gdf)
 
     # Build dtype with Geometry (srid is updated afterwards)
     if dtype is not None:
-        dtype[geom_name] = Geometry(geometry_type=target_geom_type)
+        dtype[geom_name] = Geometry(geometry_type=geometry_type)
     else:
-        dtype = {geom_name: Geometry(geometry_type=target_geom_type)}
+        dtype = {geom_name: Geometry(geometry_type=geometry_type)}
 
     # Get Pandas SQLTable object (ignore 'geometry')
     # If dtypes is used, update table schema accordingly.
     pandas_sql = pd.io.sql.SQLDatabase(con)
     tbl = pd.io.sql.SQLTable(
-        name=table,
+        name=name,
         pandas_sql_engine=pandas_sql,
         frame=gdf,
         dtype=dtype,
         index=index,
+        index_label=index_label,
         schema=schema_name,
     )
 
@@ -273,15 +317,15 @@ def write_postgis(
     if tbl.exists():
         # If it exists, check if should overwrite
         if if_exists == "replace":
-            pandas_sql.drop_table(table)
+            pandas_sql.drop_table(name)
             tbl.create()
         elif if_exists == "fail":
-            raise ValueError("Table '{table}' already exists.".format(table=table))
+            raise ValueError("Table '{table}' already exists.".format(table=name))
         elif if_exists == "append":
             # Check that the geometry srid matches with the current GeoDataFrame
             target_srid = con.execute(
                 "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema=schema_name, table=table, geom_col=geom_name
+                    schema=schema_name, table=name, geom_col=geom_name
                 )
             ).fetchone()[0]
 
@@ -292,26 +336,10 @@ def write_postgis(
     else:
         tbl.create()
 
-    # Convert to MultiGeoms if needed
-    if contains_multi_geoms:
-        mask = gdf[geom_name].geom_type == geometry_type
-        if geometry_type == "Point":
-            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-                lambda geom: MultiPoint([geom])
-            )
-        elif geometry_type == "LineString":
-            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-                lambda geom: MultiLineString([geom])
-            )
-        elif geometry_type == "Polygon":
-            gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
-                lambda geom: MultiPolygon([geom])
-            )
-
     # Convert geometries to WKB
-    gdf = convert_to_wkb(gdf, geom_name)
+    gdf = _convert_to_wkb(gdf, geom_name)
 
     # Write to database
-    write_to_db(gdf, con, index, tbl, srid, geom_name, if_exists)
+    _write_to_db(gdf, con, index, tbl, srid, geom_name, if_exists, chunksize)
 
     return

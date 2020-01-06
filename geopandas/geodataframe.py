@@ -748,7 +748,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return pd.DataFrame(df)
 
     def to_postgis(
-        self, con, table, if_exists="fail", schema=None, dtype=None, index=False
+        self,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
     ):
 
         """
@@ -756,29 +764,35 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
+        name : str
+            Name of the target table.
         con : sqlalchemy.engine.Engine
-            Connection.
-        table : str
-            Target table to write the data.
-        if_exists : str
-            What to do if table exists already: 'replace' | 'append' | 'fail'.
-        schema : db-schema
-            Database schema where the data will be uploaded (optional).
+            Active connection to the PostGIS database.
+        if_exists : {‘fail’, ‘replace’, ‘append’}, default ‘fail’
+            How to behave if the table already exists.
+              - fail: Raise a ValueError.
+              - replace: Drop the table before inserting new values.
+              - append: Insert new values to the existing table.
+        schema : string, optional
+            Specify the schema. If None, use default schema: 'public'.
+        index : bool, default True
+            Write DataFrame index as a column.
+            Uses *index_label* as the column name in the table.
+        index_label : string or sequence, default None
+            Column label for index column(s).
+            If None is given (default) and index is True,
+            then the index names are used.
+        chunksize : int, optional
+            Rows will be written in batches of this size at a time.
+            By default, all rows will be written at once.
         dtype : dict of column name to SQL type, default None
-            Optional specifying the datatype for columns. The SQL type should be a
-            SQLAlchemy type, or a string for sqlite3 fallback connection.
-        index : bool
-            Store DataFrame index to the database as well.
+            Specifying the datatype for columns.
+            The keys should be the column names and the values
+            should be the SQLAlchemy types.
         """
         gdf = self.copy()
         geopandas.io.sql.write_postgis(
-            gdf,
-            con,
-            table,
-            if_exists=if_exists,
-            schema=schema,
-            dtype=dtype,
-            index=index,
+            gdf, name, con, schema, if_exists, index, index_label, chunksize, dtype,
         )
 
 
