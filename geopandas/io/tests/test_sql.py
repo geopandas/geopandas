@@ -29,28 +29,36 @@ def df_nybb():
 
 def df_mixed_single_and_multi():
     from shapely.geometry import LineString, MultiLineString
+
     df = geopandas.GeoDataFrame(
-        {'geometry': [
-            LineString([(0, 0), (1, 1)]),
-            MultiLineString([[(0, 0), (1, 1)],
-                             [(2, 2), (3, 3)]]),
-        ]},
+        {
+            "geometry": [
+                LineString([(0, 0), (1, 1)]),
+                MultiLineString([[(0, 0), (1, 1)], [(2, 2), (3, 3)]]),
+            ]
+        },
     )
     return df
 
 
 def df_geom_collection():
     from shapely.geometry import Point, LineString, Polygon, GeometryCollection
+
     df = geopandas.GeoDataFrame(
-        {'geometry': [
-            GeometryCollection([
-                Polygon([(0, 0), (1, 1), (0, 1)]),
-                LineString([(0, 0), (1, 1)]),
-                Point(0, 0),
-            ])
-        ]},
-        )
+        {
+            "geometry": [
+                GeometryCollection(
+                    [
+                        Polygon([(0, 0), (1, 1), (0, 1)]),
+                        LineString([(0, 0), (1, 1)]),
+                        Point(0, 0),
+                    ]
+                )
+            ]
+        },
+    )
     return df
+
 
 class TestIO:
     def test_read_postgis_default(self, df_nybb):
@@ -290,7 +298,7 @@ class TestIO:
             # Validate that srid is -1
             target_srid = engine.execute(
                 "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema='public', table=table, geom_col='geometry'
+                    schema="public", table=table, geom_col="geometry"
                 )
             ).fetchone()[0]
             assert target_srid == 0, "SRID should be 0, found %s" % target_srid
@@ -307,16 +315,20 @@ class TestIO:
 
         table = "geomtype_tests"
         try:
-            write_postgis(df_geom_collection(), con=engine, name=table, if_exists="replace")
+            write_postgis(
+                df_geom_collection(), con=engine, name=table, if_exists="replace"
+            )
 
             # Validate geometry type
-            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(table=table)
+            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+                table=table
+            )
             geom_type = engine.execute(sql).fetchone()[0]
             sql = "SELECT * FROM {table};".format(table=table)
             df = read_postgis(sql, engine, geom_col="geometry")
 
-            assert geom_type.upper() == 'GEOMETRYCOLLECTION'
-            assert df.geom_type.unique()[0] == 'GeometryCollection'
+            assert geom_type.upper() == "GEOMETRYCOLLECTION"
+            assert df.geom_type.unique()[0] == "GeometryCollection"
 
         except AssertionError as e:
             raise e
@@ -333,19 +345,25 @@ class TestIO:
 
         table = "geomtype_tests"
         try:
-            write_postgis(df_mixed_single_and_multi(), con=engine, name=table, if_exists="replace")
+            write_postgis(
+                df_mixed_single_and_multi(), con=engine, name=table, if_exists="replace"
+            )
 
             # Validate geometry type
-            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(table=table)
+            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+                table=table
+            )
             res = engine.execute(sql).fetchall()
             geom_type_1 = res[0][0]
             geom_type_2 = res[1][0]
-            assert geom_type_1.upper() == 'LINESTRING', \
-                ("Geometry type should be 'LINESTRING',",
-                 "found: {gt}".format(gt=geom_type_1))
-            assert geom_type_2.upper() == 'MULTILINESTRING', \
-                ("Geometry type should be 'MULTILINESTRING',",
-                 "found: {gt}".format(gt=geom_type_1))
+            assert geom_type_1.upper() == "LINESTRING", (
+                "Geometry type should be 'LINESTRING',",
+                "found: {gt}".format(gt=geom_type_1),
+            )
+            assert geom_type_2.upper() == "MULTILINESTRING", (
+                "Geometry type should be 'MULTILINESTRING',",
+                "found: {gt}".format(gt=geom_type_1),
+            )
 
         except AssertionError as e:
             raise e
