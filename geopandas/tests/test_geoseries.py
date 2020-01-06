@@ -22,7 +22,7 @@ from geopandas import GeoSeries
 from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.tests.util import geom_equals
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 import pytest
 
 
