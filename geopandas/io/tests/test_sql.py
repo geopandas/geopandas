@@ -426,9 +426,7 @@ class TestIO:
                 chunksize=1,
             )
             # Validate row count
-            sql = "SELECT COUNT(geometry) FROM {table};".format(
-                table=table
-            )
+            sql = "SELECT COUNT(geometry) FROM {table};".format(table=table)
             row_cnt = engine.execute(sql).fetchone()[0]
 
             # Validate geometry type
