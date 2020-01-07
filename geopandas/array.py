@@ -13,7 +13,8 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 
-from ._compat import PANDAS_GE_024, Iterable
+from ._compat import PANDAS_GE_024, PANDAS_GE_10
+from collections.abc import Iterable
 
 
 class GeometryDtype(ExtensionDtype):
@@ -441,7 +442,18 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return self.data[idx]
-        elif isinstance(idx, (Iterable, slice)):
+        # array-like, slice
+        if PANDAS_GE_10 and pd.api.types.is_list_like(idx):
+            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
+            # to numpy array
+            if not pd.api.types.is_array_like(idx):
+                idx = pd.array(idx)
+            dtype = idx.dtype
+            if pd.api.types.is_bool_dtype(dtype):
+                idx = pd.api.indexers.check_bool_array_indexer(self, idx)
+            elif pd.api.types.is_integer_dtype(dtype):
+                idx = np.asarray(idx, dtype="int")
+        if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx])
         else:
             raise TypeError("Index type not supported", idx)
