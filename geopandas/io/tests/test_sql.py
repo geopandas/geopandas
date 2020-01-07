@@ -27,20 +27,23 @@ def df_nybb():
     return df
 
 
+@pytest.fixture
 def df_mixed_single_and_multi():
-    from shapely.geometry import LineString, MultiLineString
+    from shapely.geometry import Point, LineString, MultiLineString
 
     df = geopandas.GeoDataFrame(
         {
             "geometry": [
                 LineString([(0, 0), (1, 1)]),
                 MultiLineString([[(0, 0), (1, 1)], [(2, 2), (3, 3)]]),
+                Point(0, 1),
             ]
         },
     )
     return df
 
 
+@pytest.fixture
 def df_geom_collection():
     from shapely.geometry import Point, LineString, Polygon, GeometryCollection
 
@@ -56,6 +59,16 @@ def df_geom_collection():
                 )
             ]
         },
+    )
+    return df
+
+
+@pytest.fixture
+def df_linear_ring():
+    from shapely.geometry import LinearRing
+
+    df = geopandas.GeoDataFrame(
+        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]},
     )
     return df
 
@@ -305,7 +318,7 @@ class TestIO:
         finally:
             engine.dispose()
 
-    def test_write_postgis_geometry_collection(self, df_nybb):
+    def test_write_postgis_geometry_collection(self, df_geom_collection):
         """
         Tests that writing a mix of different geometry types is possible.
         """
@@ -316,7 +329,7 @@ class TestIO:
         table = "geomtype_tests"
         try:
             write_postgis(
-                df_geom_collection(), con=engine, name=table, if_exists="replace"
+                df_geom_collection, con=engine, name=table, if_exists="replace"
             )
 
             # Validate geometry type
@@ -335,7 +348,7 @@ class TestIO:
         finally:
             engine.dispose()
 
-    def test_write_postgis_mixed_geometry_types(self, df_nybb):
+    def test_write_postgis_mixed_geometry_types(self, df_mixed_single_and_multi):
         """
         Tests that writing a mix of single and MultiGeometries is possible.
         """
@@ -346,7 +359,7 @@ class TestIO:
         table = "geomtype_tests"
         try:
             write_postgis(
-                df_mixed_single_and_multi(), con=engine, name=table, if_exists="replace"
+                df_mixed_single_and_multi, con=engine, name=table, if_exists="replace"
             )
 
             # Validate geometry type
@@ -364,6 +377,68 @@ class TestIO:
                 "Geometry type should be 'MULTILINESTRING',",
                 "found: {gt}".format(gt=geom_type_1),
             )
+
+        except AssertionError as e:
+            raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_linear_ring(self, df_linear_ring):
+        """
+        Tests that writing a LinearRing.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "geomtype_tests"
+        try:
+            write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
+
+            # Validate geometry type
+            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+                table=table
+            )
+            geom_type = engine.execute(sql).fetchone()[0]
+
+            assert geom_type.upper() == "LINESTRING"
+
+        except AssertionError as e:
+            raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_in_chunks(self, df_mixed_single_and_multi):
+        """
+        Tests that writing a LinearRing.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "geomtype_tests"
+        try:
+            write_postgis(
+                df_mixed_single_and_multi,
+                con=engine,
+                name=table,
+                if_exists="replace",
+                chunksize=1,
+            )
+            # Validate row count
+            sql = "SELECT COUNT(geometry) FROM {table};".format(
+                table=table
+            )
+            row_cnt = engine.execute(sql).fetchone()[0]
+
+            # Validate geometry type
+            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+                table=table
+            )
+            geom_type = engine.execute(sql).fetchone()[0]
+
+            assert row_cnt == 3
+            assert geom_type.upper() == "LINESTRING"
 
         except AssertionError as e:
             raise e
