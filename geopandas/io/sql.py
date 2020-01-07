@@ -105,18 +105,20 @@ def _get_geometry_type(gdf):
 
     Following rules apply:
      - if geometries all share the same geometry-type,
-       geometries are inserted with the given GeometryType (e.g. POINT).
-     - if the GeoSeries contain different geometry-types of the same "root-geometry",
-       such as a mix of Polygons and MultiPolygons, geometries are inserted as GEOMETRY.
-     - if the GeoSeries contain a mix of different geometry-types,
-       such as a mix of Points and LineStrings, geometries are inserted as GEOMETRY.
-     - if a single geometry is a GeometryCollection,
-       such as GeometryCollection([Point, LineStrings]),
-       geometries are inserted as GEOMETRY.
+       geometries are inserted with the given GeometryType with following types:
+        - Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon,
+          GeometryCollection.
+        - LinearRing geometries will be converted into LineString -objects.
+     - in all other cases, geometries will be inserted with type GEOMETRY:
+        - a mix of Polygons and MultiPolygons in GeoSeries
+        - a mix of Points and LineStrings in GeoSeries
+        - geometry is of type GeometryCollection,
+          such as GeometryCollection([Point, LineStrings])
      """
     geom_types = list(gdf.geometry.geom_type.unique())
     has_single = False
     has_multi = False
+    has_curve = False
 
     # Get the basic geometry type
     basic_types = []
@@ -126,6 +128,10 @@ def _get_geometry_type(gdf):
             has_multi = True
             # Keep track of the "root" geometry types
             basic_types.append(gt.replace("Multi", ""))
+        elif "LinearRing" in gt:
+            if "LineString" not in basic_types:
+                basic_types.append("LineString")
+                has_curve = True
         else:
             has_single = True
             basic_types.append(gt)
@@ -144,7 +150,7 @@ def _get_geometry_type(gdf):
         target_geom_type = "MULTI{geom_type}".format(geom_type=geom_types[0].upper())
     else:
         target_geom_type = geom_types[0].upper()
-    return target_geom_type
+    return target_geom_type, has_curve
 
 
 def _get_srid_from_crs(gdf):
@@ -179,6 +185,16 @@ def _get_srid_from_crs(gdf):
     return srid
 
 
+def _convert_linearring_to_linestring(gdf, geom_name):
+    from shapely.geometry import LineString
+
+    mask = gdf.geom_type == "LinearRing"
+    gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
+        lambda geom: LineString(geom)
+    )
+    return gdf
+
+
 def _convert_to_wkb(gdf, geom_name):
     """Convert geometries to wkb. """
     from shapely.wkb import dumps
@@ -187,7 +203,7 @@ def _convert_to_wkb(gdf, geom_name):
     return gdf
 
 
-def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize):
+def _populate_db(gdf, conn, cur, index, tbl):
     import io
     import csv
 
@@ -207,6 +223,29 @@ def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize)
     writer.writerows(data_iter)
     s_buf.seek(0)
 
+    try:
+
+        sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
+        cur.copy_expert(sql=sql, file=s_buf)
+        conn.commit()
+
+    except Exception as e:
+        raise e
+
+
+def _get_chunks(gdf, chunksize):
+    assert isinstance(
+        chunksize, int
+    ), "'chunksize' should be passed as an integer number."
+    import numpy as np
+
+    chunk_cnt = np.ceil(len(gdf) / chunksize)
+    chunks = np.array_split(gdf, chunk_cnt)
+    return chunks
+
+
+def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize):
+
     conn = engine.raw_connection()
     cur = conn.cursor()
 
@@ -219,8 +258,14 @@ def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize)
             )
             cur.execute(sql)
 
-        sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
-        cur.copy_expert(sql=sql, file=s_buf)
+        if chunksize is None:
+            _populate_db(gdf, conn, cur, index, tbl)
+        else:
+            # Insert in chunks
+            chunks = _get_chunks(gdf, chunksize)
+
+            for chunk in chunks:
+                _populate_db(chunk, conn, cur, index, tbl)
 
         # SRID needs to be updated afterwards as Shapely does not support
         # EWKT/EWKB geometries, see:
@@ -234,7 +279,8 @@ def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize)
     except Exception as e:
         conn.connection.rollback()
         raise e
-    conn.close()
+    finally:
+        conn.close()
 
 
 def write_postgis(
@@ -291,8 +337,8 @@ def write_postgis(
     # Get srid
     srid = _get_srid_from_crs(gdf)
 
-    # Get geometry type
-    geometry_type = _get_geometry_type(gdf)
+    # Get geometry type and info whether data contains LinearRing
+    geometry_type, has_curve = _get_geometry_type(gdf)
 
     # Build dtype with Geometry (srid is updated afterwards)
     if dtype is not None:
@@ -335,6 +381,10 @@ def write_postgis(
             )
     else:
         tbl.create()
+
+    # Convert LinearRing geometries to LineString
+    if has_curve:
+        gdf = _convert_linearring_to_linestring(gdf, geom_name)
 
     # Convert geometries to WKB
     gdf = _convert_to_wkb(gdf, geom_name)
