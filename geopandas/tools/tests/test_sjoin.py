@@ -6,7 +6,7 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import pytest
 
 
