@@ -12,7 +12,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 
