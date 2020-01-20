@@ -15,7 +15,7 @@ from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
-from pandas.util.testing import (
+from pandas.testing import (
     assert_frame_equal,
     assert_index_equal,
     assert_series_equal,
