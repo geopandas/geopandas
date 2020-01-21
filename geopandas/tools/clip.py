@@ -1,16 +1,18 @@
 """
 geopandas.clip
-============
+==============
 
 A module to clip vector data using GeoPandas.
 
 """
-
-import pandas as pd
-from geopandas import GeoDataFrame, GeoSeries
-import numpy as np
 import warnings
+
+import numpy as np
+import pandas as pd
+
 from shapely.geometry import Polygon, MultiPolygon
+
+from geopandas import GeoDataFrame, GeoSeries
 
 
 def _clip_points(gdf, poly):
@@ -63,7 +65,6 @@ def _clip_line_poly(gdf, poly):
         The returned GeoDataFrame is a clipped subset of gdf
         that intersects with poly.
     """
-    # Create a single polygon object for clipping
     spatial_index = gdf.sindex
 
     # Create a box for the initial intersection
@@ -73,61 +74,63 @@ def _clip_line_poly(gdf, poly):
     sidx = list(spatial_index.intersection(bbox))
     gdf_sub = gdf.iloc[sidx]
 
-    # Clip the data - with these data
-    clipped = gdf_sub.copy()
-    if isinstance(clipped, GeoDataFrame):
+    # Clip the data with the polygon
+    if isinstance(gdf_sub, GeoDataFrame):
+        clipped = gdf_sub.copy()
         clipped["geometry"] = gdf_sub.intersection(poly)
 
         # Return the clipped layer with no null geometry values or empty geometries
         return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
-    clipped = gdf_sub.intersection(poly)
-    return clipped[~clipped.is_empty & clipped.notnull()]
+    else:
+        # GeoSeries
+        clipped = gdf_sub.intersection(poly)
+        return clipped[~clipped.is_empty & clipped.notnull()]
 
 
 def clip(gdf, clip_obj, keep_geom_type=False):
     """Clip points, lines, or polygon geometries to the clip_obj extent.
 
-    Both layers must be in the same Coordinate Reference System (CRS) and will
-    be clipped to the full extent of the clip object.
+    Both layers must be in the same Coordinate Reference System (CRS).
+    The `gdf` will be clipped to the full extent of the clip object.
 
-    If there are multiple polygons in clip_obj,
-    data from gdf will be clipped to the total boundary of
-    all polygons in clip_obj.
+    If there are multiple polygons in clip_obj, data from `gdf` will be
+    clipped to the total boundary of all polygons in clip_obj.
 
     Parameters
     ----------
-    gdf : GeoDataFrame
-          Vector layer (point, line, polygon) to be clipped to clip_obj.
+    gdf : GeoDataFrame or GeoSeries
+        Vector layer (point, line, polygon) to be clipped to clip_obj.
     clip_obj : GeoDataFrame, GeoSeries, (Multi)Polygon
-          Polygon vector layer used to clip gdf.
-          The clip_obj's geometry is dissolved into one geometric feature
-          and intersected with gdf.
+        Polygon vector layer used to clip `gdf`.
+        The clip_obj's geometry is dissolved into one geometric feature
+        and intersected with `gdf`.
     keep_geom_type : boolean
-         If True, return only geometries of original type in case of intersection
-         resulting in multiple geometry types or GeometryCollection.
-         If False, return all resulting geometries (mixed-types).
+        If True, return only geometries of original type in case of intersection
+        resulting in multiple geometry types or GeometryCollections.
+        If False, return all resulting geometries (potentially mixed-types).
 
     Returns
     -------
-    GeoDataFrame
-         Vector data (points, lines, polygons) from gdf clipped to
+    GeoDataFrame or GeoSeries
+         Vector data (points, lines, polygons) from `gdf` clipped to
          polygon boundary from clip_obj.
 
     Examples
     --------
-    Clip points (global capital cities) with a polygon (the South American continent):
+    Clip points (global cities) with a polygon (the South American continent):
 
-        >>> import geopandas as gpd
-        >>> import geopandas.clip as gc
-        >>> path = geopandas.datasets.get_path('naturalearth_lowres')
-        >>> world = geopandas.read_file(path)
-        >>> south_america = world[world['continent'] == "South America"]
-        >>> capitals = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
-        >>> capitals.shape
-        (202, 2)
-        >>> sa_capitals = cl.clip(capitals, south_america)
-        >>> sa_capitals.shape
-        (12, 2)
+    >>> import geopandas
+    >>> path =
+    >>> world = geopandas.read_file(
+    ...     geopandas.datasets.get_path('naturalearth_lowres'))
+    >>> south_america = world[world['continent'] == "South America"]
+    >>> capitals = geopandas.read_file(
+    ...     geopandas.datasets.get_path('naturalearth_cities'))
+    >>> capitals.shape
+    (202, 2)
+    >>> sa_capitals = geopandas.clip(capitals, south_america)
+    >>> sa_capitals.shape
+    (12, 2)
     """
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
         raise TypeError(
@@ -161,21 +164,18 @@ def clip(gdf, clip_obj, keep_geom_type=False):
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
-    points = gdf[point_idx]
-    if not points.empty:
-        point_gdf = _clip_points(points, poly)
+    if point_idx.any():
+        point_gdf = _clip_points(gdf[point_idx], poly)
     else:
         point_gdf = None
 
-    polys = gdf[poly_idx]
-    if not polys.empty:
-        poly_gdf = _clip_line_poly(polys, poly)
+    if poly_idx.any():
+        poly_gdf = _clip_line_poly(gdf[poly_idx], poly)
     else:
         poly_gdf = None
 
-    lines = gdf[line_idx]
-    if not lines.empty:
-        line_gdf = _clip_line_poly(lines, poly)
+    if line_idx.any():
+        line_gdf = _clip_line_poly(gdf[line_idx], poly)
     else:
         line_gdf = None
 
@@ -235,9 +235,12 @@ def clip(gdf, clip_obj, keep_geom_type=False):
             "being created. To remove the extra geometry types set "
             "keep_geom_type=True."
         )
+
+    # preserve the original order of the input
     if isinstance(concat, GeoDataFrame):
         concat["_order"] = order
         return concat.sort_values(by="_order").drop(columns="_order")
-    concat = GeoDataFrame(geometry=concat)
-    concat["_order"] = order
-    return concat.sort_values(by="_order").geometry
+    else:
+        concat = GeoDataFrame(geometry=concat)
+        concat["_order"] = order
+        return concat.sort_values(by="_order").geometry

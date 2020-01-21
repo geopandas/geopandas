@@ -153,8 +153,9 @@ API Pages
 
   GeoDataFrame
   GeoSeries
-  overlay
   read_file
   sjoin
+  overlay
+  clip
   tools.geocode
   datasets.get_path

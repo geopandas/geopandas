@@ -1,13 +1,16 @@
 """Tests for the clip module."""
 
+import warnings
+
+import numpy as np
+
+import shapely
+from shapely.geometry import Polygon, Point, LineString
+
+import geopandas
+from geopandas import GeoDataFrame, GeoSeries, clip
 
 import pytest
-import numpy as np
-from shapely.geometry import Polygon, Point, LineString
-import shapely
-import geopandas as gpd
-from geopandas import GeoDataFrame, GeoSeries
-import warnings
 
 
 @pytest.fixture
@@ -32,9 +35,10 @@ def single_rectangle_gdf():
 @pytest.fixture
 def larger_single_rectangle_gdf():
     """Create a slightly larger rectangle for clipping.
-     The smaller single rectangle is used to test the edge case where slivers
-     are returned when you clip polygons. This fixture is larger which
-     eliminates the slivers in the clip return."""
+    The smaller single rectangle is used to test the edge case where slivers
+    are returned when you clip polygons. This fixture is larger which
+    eliminates the slivers in the clip return.
+    """
     poly_inters = Polygon([(-5, -5), (-5, 15), (15, 15), (15, -5), (-5, -5)])
     gdf = GeoDataFrame([1], geometry=[poly_inters], crs={"init": "epsg:4326"})
     gdf["attr2"] = ["study area"]
@@ -53,7 +57,7 @@ def buffered_locations(point_gdf):
 @pytest.fixture
 def donut_geometry(buffered_locations, single_rectangle_gdf):
     """Make a geometry with a hole in the middle (a donut)."""
-    donut = gpd.overlay(
+    donut = geopandas.overlay(
         buffered_locations, single_rectangle_gdf, how="symmetric_difference"
     )
     return donut
@@ -72,7 +76,7 @@ def two_line_gdf():
 def multi_poly_gdf(donut_geometry):
     """Create a multi-polygon GeoDataFrame."""
     multi_poly = donut_geometry.unary_union
-    out_df = GeoDataFrame(geometry=gpd.GeoSeries(multi_poly), crs={"init": "epsg:4326"})
+    out_df = GeoDataFrame(geometry=GeoSeries(multi_poly), crs={"init": "epsg:4326"})
     out_df["attr"] = ["pool"]
     return out_df
 
@@ -85,7 +89,7 @@ def multi_line(two_line_gdf):
     multiline_feat = two_line_gdf.unary_union
     linec = LineString([(2, 1), (3, 1), (4, 1), (5, 2)])
     out_df = GeoDataFrame(
-        geometry=gpd.GeoSeries([multiline_feat, linec]), crs={"init": "epsg:4326"}
+        geometry=GeoSeries([multiline_feat, linec]), crs={"init": "epsg:4326"}
     )
     out_df["attr"] = ["road", "stream"]
     return out_df
@@ -96,7 +100,7 @@ def multi_point(point_gdf):
     """Create a multi-point GeoDataFrame."""
     multi_point = point_gdf.unary_union
     out_df = GeoDataFrame(
-        geometry=gpd.GeoSeries(
+        geometry=GeoSeries(
             [multi_point, Point(2, 5), Point(-11, -14), Point(-10, -12)]
         ),
         crs={"init": "epsg:4326"},
@@ -129,20 +133,20 @@ def sliver_line():
 def test_not_gdf(single_rectangle_gdf):
     """Non-GeoDataFrame inputs raise attribute errors."""
     with pytest.raises(TypeError):
-        gpd.clip((2, 3), single_rectangle_gdf)
+        clip((2, 3), single_rectangle_gdf)
     with pytest.raises(TypeError):
-        gpd.clip(single_rectangle_gdf, (2, 3))
+        clip(single_rectangle_gdf, (2, 3))
 
 
 def test_returns_gdf(point_gdf, single_rectangle_gdf):
     """Test that function returns a GeoDataFrame (or GDF-like) object."""
-    out = gpd.clip(point_gdf, single_rectangle_gdf)
+    out = clip(point_gdf, single_rectangle_gdf)
     assert isinstance(out, GeoDataFrame)
 
 
 def test_returns_series(point_gdf, single_rectangle_gdf):
     """Test that function returns a GeoSeries if GeoSeries is passed."""
-    out = gpd.clip(point_gdf.geometry, single_rectangle_gdf)
+    out = clip(point_gdf.geometry, single_rectangle_gdf)
     assert isinstance(out, GeoSeries)
 
 
@@ -155,33 +159,25 @@ def test_non_overlapping_geoms():
         lambda x: shapely.affinity.translate(x, xoff=20)
     )
     with pytest.raises(ValueError):
-        gpd.clip(unit_gdf, non_overlapping_gdf)
-
-
-def test_input_gdfs(single_rectangle_gdf):
-    """Test that function fails if not provided with 2 GDFs."""
-    with pytest.raises(TypeError):
-        gpd.clip(list(), single_rectangle_gdf)
-    with pytest.raises(TypeError):
-        gpd.clip(single_rectangle_gdf, list())
+        clip(unit_gdf, non_overlapping_gdf)
 
 
 def test_clip_points(point_gdf, single_rectangle_gdf):
     """Test clipping a points GDF with a generic polygon geometry."""
-    clip_pts = gpd.clip(point_gdf, single_rectangle_gdf)
+    clip_pts = clip(point_gdf, single_rectangle_gdf)
     assert len(clip_pts.geometry) == 3 and clip_pts.geom_type[1] == "Point"
 
 
 def test_clip_poly(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon GDF with a generic polygon geometry."""
-    clipped_poly = gpd.clip(buffered_locations, single_rectangle_gdf)
+    clipped_poly = clip(buffered_locations, single_rectangle_gdf)
     assert len(clipped_poly.geometry) == 3
     assert all(clipped_poly.geom_type == "Polygon")
 
 
 def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon GDF with a generic polygon geometry."""
-    clipped_poly = gpd.clip(buffered_locations.geometry, single_rectangle_gdf)
+    clipped_poly = clip(buffered_locations.geometry, single_rectangle_gdf)
     assert len(clipped_poly) == 3
     assert all(clipped_poly.geom_type == "Polygon")
 
@@ -191,30 +187,30 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     Also the bounds of the object should == the bounds of the clip object
     if they fully overlap (as they do in these fixtures)."""
     with pytest.warns(UserWarning):
-        clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf)
+        clipped = clip(multi_poly_gdf, single_rectangle_gdf)
         warnings.warn("A geometry collection has been returned. ", UserWarning)
-        assert hasattr(clip, "geometry")
-        assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
+        assert hasattr(clipped, "geometry")
+        assert np.array_equal(clipped.total_bounds, single_rectangle_gdf.total_bounds)
         # Assert returned data is a geometry collection given sliver geoms
-        assert "GeometryCollection" in clip.geom_type[0]
+        assert "GeometryCollection" in clipped.geom_type[0]
 
 
 def test_clip_multipoly_keep_geom_type(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
     if they fully overlap (as they do in these fixtures)."""
-    clip = gpd.clip(multi_poly_gdf, single_rectangle_gdf, keep_geom_type=True)
-    assert hasattr(clip, "geometry")
-    assert np.array_equal(clip.total_bounds, single_rectangle_gdf.total_bounds)
+    clipped = clip(multi_poly_gdf, single_rectangle_gdf, keep_geom_type=True)
+    assert hasattr(clipped, "geometry")
+    assert np.array_equal(clipped.total_bounds, single_rectangle_gdf.total_bounds)
     # Assert returned data is a not geometry collection
-    assert (clip.geom_type == "Polygon").any()
+    assert (clipped.geom_type == "Polygon").any()
 
 
 def test_clip_multipoly_warning(multi_poly_gdf, single_rectangle_gdf):
     """Test that a user warning is provided when clip outputs a feature that is of a geom
     type that is different from the input geom."""
     with pytest.warns(UserWarning):
-        gpd.clip(multi_poly_gdf, single_rectangle_gdf)
+        clip(multi_poly_gdf, single_rectangle_gdf)
 
 
 def test_clip_single_multipoly_no_extra_geoms(
@@ -223,64 +219,64 @@ def test_clip_single_multipoly_no_extra_geoms(
     """When clipping a multi-polygon feature, no additional geom types
     should be returned."""
     multi = buffered_locations.dissolve(by="type").reset_index()
-    clip = gpd.clip(multi, larger_single_rectangle_gdf)
-    assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
+    clipped = clip(multi, larger_single_rectangle_gdf)
+    assert hasattr(clipped, "geometry") and clipped.geom_type[0] == "Polygon"
 
 
 def test_clip_multiline(multi_line, single_rectangle_gdf):
     """Test that clipping a multiline feature with a poly returns expected output."""
-    clip = gpd.clip(multi_line, single_rectangle_gdf)
-    assert hasattr(clip, "geometry") and clip.geom_type[0] == "MultiLineString"
+    clipped = clip(multi_line, single_rectangle_gdf)
+    assert hasattr(clipped, "geometry") and clipped.geom_type[0] == "MultiLineString"
 
 
 def test_clip_multipoint(single_rectangle_gdf, multi_point):
     """Clipping a multipoint feature with a polygon works as expected.
     should return a geodataframe with a single multi point feature"""
-    clip = gpd.clip(multi_point, single_rectangle_gdf)
-    assert hasattr(clip, "geometry") and clip.geom_type[0] == "MultiPoint"
-    assert hasattr(clip, "attr")
+    clipped = clip(multi_point, single_rectangle_gdf)
+    assert hasattr(clipped, "geometry") and clipped.geom_type[0] == "MultiPoint"
+    assert hasattr(clipped, "attr")
     # All points should intersect the clip geom
-    assert all(clip.intersects(single_rectangle_gdf.unary_union))
+    assert all(clipped.intersects(single_rectangle_gdf.unary_union))
 
 
 def test_clip_lines(two_line_gdf, single_rectangle_gdf):
     """Test what happens when you give the clip_extent a line GDF."""
-    clip_line = gpd.clip(two_line_gdf, single_rectangle_gdf)
+    clip_line = clip(two_line_gdf, single_rectangle_gdf)
     assert len(clip_line.geometry) == 2
 
 
 def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon with a multipolygon."""
     multi = buffered_locations.dissolve(by="type").reset_index()
-    clip = gpd.clip(single_rectangle_gdf, multi)
-    assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
+    clipped = clip(single_rectangle_gdf, multi)
+    assert hasattr(clipped, "geometry") and clipped.geom_type[0] == "Polygon"
 
 
 def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
     """Test clipping a mixed GeoDataFrame"""
-    clip = gpd.clip(mixed_gdf, single_rectangle_gdf)
+    clipped = clip(mixed_gdf, single_rectangle_gdf)
     assert (
-        hasattr(clip, "geometry")
-        and clip.geom_type[0] == "Point"
-        and clip.geom_type[1] == "Polygon"
-        and clip.geom_type[2] == "LineString"
+        hasattr(clipped, "geometry")
+        and clipped.geom_type[0] == "Point"
+        and clipped.geom_type[1] == "Polygon"
+        and clipped.geom_type[2] == "LineString"
     )
 
 
 def test_mixed_series(mixed_gdf, single_rectangle_gdf):
     """Test clipping a mixed GeoSeries"""
-    clip = gpd.clip(mixed_gdf.geometry, single_rectangle_gdf)
+    clipped = clip(mixed_gdf.geometry, single_rectangle_gdf)
     assert (
-        clip.geom_type[0] == "Point"
-        and clip.geom_type[1] == "Polygon"
-        and clip.geom_type[2] == "LineString"
+        clipped.geom_type[0] == "Point"
+        and clipped.geom_type[1] == "Polygon"
+        and clipped.geom_type[2] == "LineString"
     )
 
 
 def test_clip_warning_no_extra_geoms(buffered_locations, single_rectangle_gdf):
     """Test a user warning is provided if no new geometry types are found."""
     with pytest.warns(UserWarning):
-        gpd.clip(buffered_locations, single_rectangle_gdf, True)
+        clip(buffered_locations, single_rectangle_gdf, True)
         warnings.warn(
             "keep_geom_type was called when no extra geometry types existed.",
             UserWarning,
@@ -290,37 +286,37 @@ def test_clip_warning_no_extra_geoms(buffered_locations, single_rectangle_gdf):
 def test_clip_with_polygon(single_rectangle_gdf):
     """Test clip when using a shapely object"""
     polygon = Polygon([(0, 0), (5, 12), (10, 0), (0, 0)])
-    clip = gpd.clip(single_rectangle_gdf, polygon)
-    assert hasattr(clip, "geometry") and clip.geom_type[0] == "Polygon"
+    clipped = clip(single_rectangle_gdf, polygon)
+    assert hasattr(clipped, "geometry") and clipped.geom_type[0] == "Polygon"
 
 
 def test_clip_with_line_extra_geom(single_rectangle_gdf, sliver_line):
     """When the output of a clipped line returns a geom collection,
     and keep_geom_type is True, no geometry collections should be returned."""
-    clip = gpd.clip(sliver_line, single_rectangle_gdf, keep_geom_type=True)
-    assert hasattr(clip, "geometry")
-    assert len(clip.geometry) == 1
+    clipped = clip(sliver_line, single_rectangle_gdf, keep_geom_type=True)
+    assert hasattr(clipped, "geometry")
+    assert len(clipped.geometry) == 1
     # Assert returned data is a not geometry collection
-    assert (clip.geom_type == "LineString").any()
+    assert (clipped.geom_type == "LineString").any()
 
 
 def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
     """Test the correct warnings are raised if a point is returned
     from a line only geometry type."""
     with pytest.warns(UserWarning):
-        clip = gpd.clip(sliver_line, single_rectangle_gdf)
+        clipped = clip(sliver_line, single_rectangle_gdf)
         warnings.warn(
             "More geometry types were returned than were in the original ", UserWarning
         )
-        assert hasattr(clip, "geometry")
+        assert hasattr(clipped, "geometry")
         # Assert returned data is a geometry collection given sliver geoms
-        assert "Point" == clip.geom_type[0]
-        assert "LineString" == clip.geom_type[1]
+        assert "Point" == clipped.geom_type[0]
+        assert "LineString" == clipped.geom_type[1]
 
 
 def test_warning_extra_geoms_mixed(single_rectangle_gdf, mixed_gdf):
     """Test the correct warnings are raised if keep_geom_type is
     called on a mixed GDF"""
     with pytest.warns(UserWarning):
-        gpd.clip(mixed_gdf, single_rectangle_gdf)
+        clip(mixed_gdf, single_rectangle_gdf)
         warnings.warn("keep_geom_type can not be called on a mixed type GeoDataFrame.")

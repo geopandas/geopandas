@@ -5,16 +5,16 @@ Clip Vector Data with GeoPandas
 Learn how to clip geometries to the boundary of a polygon geometry
 using GeoPandas.
 
+.. currentmodule:: geopandas
+
 """
 
 ###############################################################################
-# Clip Vector Data in Python Using GeoPandas
-# ---------------------------------------------
 #
 # The example below shows you how to clip a set of vector geometries
 # to the spatial extent / shape of another vector object. Both sets of geometries
 # must be opened with GeoPandas as GeoDataFrames and be in the same Coordinate
-# Reference System (CRS) for the ``clip()`` function in GeoPandas to work.
+# Reference System (CRS) for the :func:`clip` function in GeoPandas to work.
 #
 # This example uses GeoPandas example data ``'naturalearth_cities'`` and
 # ``'naturalearth_lowres'``, alongside a custom rectangle geometry made with
@@ -32,7 +32,7 @@ using GeoPandas.
 # To begin, import the needed packages.
 
 import matplotlib.pyplot as plt
-import geopandas as gpd
+import geopandas
 from shapely.geometry import Polygon
 
 ###############################################################################
@@ -40,18 +40,18 @@ from shapely.geometry import Polygon
 # --------------------------
 #
 # Below, the example GeoPandas data is imported and opened as a GeoDataFrame.
-# Additionally, a polygon is created with shapely and then opened as a
+# Additionally, a polygon is created with shapely and then converted into a
 # GeoDataFrame with the same CRS as the GeoPandas world dataset.
 
-capitals = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
-world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+capitals = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
+world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
 
 # Create a subset of the world data that is just the South American continent
 south_america = world[world["continent"] == "South America"]
 
 # Create a custom polygon
 polygon = Polygon([(0, 0), (0, 90), (180, 90), (180, 0), (0, 0)])
-poly_gdf = gpd.GeoDataFrame([1], geometry=[polygon], crs=world.crs)
+poly_gdf = geopandas.GeoDataFrame([1], geometry=[polygon], crs=world.crs)
 
 ###############################################################################
 # Plot the Unclipped Data
@@ -72,22 +72,22 @@ plt.show()
 # Clip the Data
 # --------------
 #
-# When you call ``clip()``, the first object called is the object that will
+# When you call :func:`clip`, the first object called is the object that will
 # be clipped. The second object called is the clip extent. The returned output
 # will be a new clipped GeoDataframe. All of the attributes for each returned
 # geometry will be retained when you clip.
 #
 # .. note::
 #    Recall that the data must be in the same CRS in order to use the
-#    ``clip()`` function. If the data are not in the same CRS, be sure to use
-#    the GeoPandas ``to_crs()`` method to ensure both datasets are in the
-#    same CRS.
+#    :func:`clip` function. If the data are not in the same CRS, be sure to use
+#    the GeoPandas :meth:`~GeoDataFrame.to_crs` method to ensure both datasets
+#    are in the same CRS.
 
 ###############################################################################
 # Clip the World Data
 # --------------------
 
-world_clipped = gpd.clip(world, polygon)
+world_clipped = geopandas.clip(world, polygon)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the world
@@ -103,7 +103,7 @@ plt.show()
 # Clip the Capitals Data
 # ----------------------
 
-capitals_clipped = gpd.clip(capitals, south_america)
+capitals_clipped = geopandas.clip(capitals, south_america)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the capital cities
