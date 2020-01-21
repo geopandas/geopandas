@@ -29,7 +29,9 @@ def df_nybb():
 
 @pytest.fixture
 def df_null():
-    return read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+    return read_file(
+        os.path.join(PACKAGE_DIR, "doc/source/gallery", "null_geom.geojson")
+    )
 
 
 @pytest.fixture

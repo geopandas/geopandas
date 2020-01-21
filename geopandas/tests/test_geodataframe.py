@@ -15,11 +15,7 @@ from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
-from pandas.testing import (
-    assert_frame_equal,
-    assert_index_equal,
-    assert_series_equal,
-)
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -38,7 +34,9 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+        self.df3 = read_file(
+            os.path.join(PACKAGE_DIR, "doc/source/gallery", "null_geom.geojson")
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
