@@ -11,13 +11,9 @@ from geopandas.testing import assert_geodataframe_equal
 import pytest
 
 
-if LooseVersion(pyproj.__version__) < LooseVersion("2.3.1"):
-    # pyproj 2.3.1 fixed a segfault for the case working in an environment
-    # https://github.com/pyproj4/pyproj/issues/415
-    import os
-
-    datadir = pyproj.datadir.get_data_dir()
-    os.environ["PROJ_DIR"] = datadir
+# pyproj 2.3.1 fixed a segfault for the case working in an environment with
+# 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
+PYPROJ_LT_231 = LooseVersion(pyproj.__version__) < LooseVersion("2.3.1")
 
 
 def _create_df(x, y=None, crs=None):
@@ -75,7 +71,10 @@ def test_to_crs_geo_column_name():
     params=[
         4326,
         "epsg:4326",
-        {"init": "epsg:4326"},
+        pytest.param(
+            {"init": "epsg:4326"},
+            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
+        ),
         "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         {"proj": "latlong", "ellps": "WGS84", "datum": "WGS84", "no_defs": True},
     ],
@@ -91,7 +90,10 @@ def epsg4326(request):
     params=[
         26918,
         "epsg:26918",
-        {"init": "epsg:26918", "no_defs": True},
+        pytest.param(
+            {"init": "epsg:26918", "no_defs": True},
+            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
+        ),
         "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ",
         {"proj": "utm", "zone": 18, "datum": "NAD83", "units": "m", "no_defs": True},
     ],
