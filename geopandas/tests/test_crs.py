@@ -1,11 +1,23 @@
+from distutils.version import LooseVersion
+
 import numpy as np
 
 from shapely.geometry import Point
+import pyproj
 
 from geopandas import GeoDataFrame, points_from_xy
 
 from geopandas.testing import assert_geodataframe_equal
 import pytest
+
+
+if LooseVersion(pyproj.__version__) < LooseVersion("2.3.1"):
+    # pyproj 2.3.1 fixed a segfault for the case working in an environment
+    # https://github.com/pyproj4/pyproj/issues/415
+    import os
+
+    datadir = pyproj.datadir.get_data_dir()
+    os.environ["PROJ_DIR"] = datadir
 
 
 def _create_df(x, y=None, crs=None):
