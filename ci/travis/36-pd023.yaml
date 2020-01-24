@@ -25,6 +25,6 @@ dependencies:
   - psycopg2
   - libspatialite
   - pip:
-    - pyproj
+    - pyproj==2.3
     - geopy
     - codecov

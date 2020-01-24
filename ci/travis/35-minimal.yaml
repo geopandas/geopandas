@@ -25,4 +25,4 @@ dependencies:
   - psycopg2
   - libspatialite
   - pip:
-    - pyproj
+    - pyproj==2.2
