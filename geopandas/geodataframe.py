@@ -508,6 +508,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         The extra keyword arguments ``**kwargs`` are passed to fiona.open and
         can be used to write to multi-layer data, store data within archives
         (zip files), etc.
+
+        The format drivers will attempt to detect the encoding of your data, but
+        may fail. In this case, the proper encoding can be specified explicitly
+        by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
         """
         from geopandas.io.file import to_file
 
