@@ -18,11 +18,11 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries
+from geopandas import GeoSeries, GeoDataFrame
 from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.tests.util import geom_equals
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 import pytest
 
 
@@ -242,6 +242,12 @@ def test_missing_values():
     assert len(s.dropna()) == 3
 
 
+def test_geoseries_crs():
+    gs = GeoSeries()
+    gs.crs = "IGNF:ETRS89UTM28"
+    assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
 # -----------------------------------------------------------------------------
 # # Constructor tests
 # -----------------------------------------------------------------------------
@@ -323,8 +329,11 @@ class TestConstructor:
         assert s.name == g.name
         assert s.index is g.index
 
-
-def test_geoseries_crs():
-    gs = GeoSeries()
-    gs.crs = "IGNF:ETRS89UTM28"
-    assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+    # GH 1216
+    def test_expanddim(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode()
+        df = s.reset_index()
+        assert type(df) == GeoDataFrame

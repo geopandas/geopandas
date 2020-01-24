@@ -4,7 +4,7 @@ import pandas as pd
 import geopandas
 from geopandas import GeoDataFrame, read_file
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import pytest
 
 

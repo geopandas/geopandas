@@ -54,6 +54,12 @@ def read_file(filename, bbox=None, **kwargs):
     Returns
     -------
     geodataframe : GeoDataFrame
+
+    Notes
+    -----
+    The format drivers will attempt to detect the encoding of your data, but
+    may fail. In this case, the proper encoding can be specified explicitly
+    by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     if _is_url(filename):
         req = _urlopen(filename)
@@ -112,6 +118,12 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     The path may specify a fiona VSI scheme.
+
+    Notes
+    -----
+    The format drivers will attempt to detect the encoding of your data, but
+    may fail. In this case, the proper encoding can be specified explicitly
+    by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     if schema is None:
         schema = infer_schema(df)
@@ -132,10 +144,10 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
 
 
 def infer_schema(df):
-    try:
-        from collections import OrderedDict
-    except ImportError:
-        from ordereddict import OrderedDict
+    from collections import OrderedDict
+
+    # TODO: test pandas string type and boolean type once released
+    types = {"Int64": "int", "string": "str", "boolean": "bool"}
 
     def convert_type(column, in_type):
         if in_type == object:
@@ -143,7 +155,10 @@ def infer_schema(df):
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
             return "datetime"
-        out_type = type(np.zeros(1, in_type).item()).__name__
+        if str(in_type) in types:
+            out_type = types[str(in_type)]
+        else:
+            out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"
         if not _FIONA18 and out_type == "bool":

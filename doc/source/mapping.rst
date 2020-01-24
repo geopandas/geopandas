@@ -121,6 +121,39 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
     world.plot(column='gdp_per_cap', cmap='OrRd', scheme='quantiles');
 
 
+Missing data
+~~~~~~~~~~~~
+
+In some cases one may want to plot data which contains missing values - for some features one simply does not know the value. Geopandas (from the version 0.7) by defaults ignores such features.
+
+.. ipython:: python
+
+    import numpy as np
+    world.loc[np.random.choice(world.index, 40), 'pop_est'] = np.nan
+    @savefig missing_vals.png
+    world.plot(column='pop_est');
+
+However, passing ``missing_kwds`` one can specify the style and label of features containing None or NaN.
+
+.. ipython:: python
+
+    @savefig missing_vals_grey.png
+    world.plot(column='pop_est', missing_kwds={'color': 'lightgrey'});
+
+    @savefig missing_vals_hatch.png
+    world.plot(
+        column="pop_est",
+        legend=True,
+        scheme="quantiles",
+        figsize=(15, 10),
+        missing_kwds={
+            "color": "lightgrey",
+            "edgecolor": "red",
+            "hatch": "///",
+            "label": "Missing values",
+        },
+    );
+
 Maps with Layers
 -----------------
 
@@ -167,6 +200,27 @@ Before combining maps, however, remember to always ensure they share a common CR
     @savefig capitals_over_countries_2.png
     plt.show();
 
+Control the order of multiple layers in a plot
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When plotting multiple layers, use ``zorder`` to take control of the order of layers being plotted.
+The lower the ``zorder`` is, the lower the layer is on the map and vice versa.
+
+Without specified ``zorder``, cities (Points) gets plotted below world (Polygons), following the default order based on geometry types.
+
+.. ipython:: python
+
+    ax = cities.plot(color='k')
+    @savefig zorder_default.png
+    world.plot(ax=ax);
+
+We can set the ``zorder`` for cities higher than for world to move it of top.
+
+.. ipython:: python
+
+    ax = cities.plot(color='k', zorder=2)
+    @savefig zorder_set.png
+    world.plot(ax=ax, zorder=1);
 
 Other Resources
 -----------------
