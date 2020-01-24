@@ -382,11 +382,11 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        crs: pyproj.CRS, optional if epsg provided
+        crs : pyproj.CRS, optional if `epsg` is specified
             The value can be anything accepted
-            by :meth:`pyproj.CRS.from_user_input`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        epsg: int, optional if crs provided
+            by :meth:`pyproj.CRS.from_user_input`, such as an authority
+            string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
         """
         if self.crs is None:

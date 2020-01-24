@@ -533,13 +533,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        crs: pyproj.CRS, optional if epsg provided
+        crs : pyproj.CRS, optional if `epsg` is specified
             The value can be anything accepted
-            by :meth:`pyproj.CRS.from_user_input`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        epsg: int, optional if crs provided
+            by :meth:`pyproj.CRS.from_user_input`, such as an authority
+            string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
-        inplace: bool, optional, default: False
+        inplace : bool, optional, default: False
             Whether to return a new GeoDataFrame or do the transformation in
             place.
         """

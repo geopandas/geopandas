@@ -137,11 +137,13 @@ class GeoPandasBase(object):
     @property
     def crs(self):
         """
-        :getter: Returns a ``pyproj.CRS`` or None.
-        :setter: Sets the value of the crs.
-            The value can be anything accepted
-            by :meth:`pyproj.CRS.from_user_input`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
+        object.
+
+        Returns None if the CRS is not set, and to set the value it
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        can be anything accepted by :meth:`pyproj.CRS.from_user_input`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
         """
         return self._crs
 

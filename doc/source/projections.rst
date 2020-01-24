@@ -15,15 +15,18 @@ Coordinate Reference Systems
 
 CRS are important because the geometric shapes in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in an arbitrary space. A CRS tells Python how those coordinates related to places on the Earth.
 
-You can find the codes for most commonly used projections from `www.spatialreference.org <http://spatialreference.org/>`_.
+You can find the codes for most commonly used projections from
+`www.spatialreference.org <http://spatialreference.org/>`_.
 
-The same CRS can often be referred to in many ways. For example, one of the most commonly used CRS is the WGS84 latitude-longitude projection. This can be referred to using the authority code ``"EPSG:4326"``.
+The same CRS can often be referred to in many ways. For example, one of the most
+commonly used CRS is the WGS84 latitude-longitude projection. This can be
+referred to using the authority code ``"EPSG:4326"``.
 
 *geopandas* can accept anything accepted by `pyproj.CRS.from_user_input() <https://pyproj4.github.io/pyproj/stable/api/crs.html#pyproj.crs.CRS.from_user_input>`_:
 
 - CRS WKT string
-- An authority string [i.e. "epsg:4326"]
-- An EPSG integer code [i.e. 4326]
+- An authority string (i.e. "epsg:4326")
+- An EPSG integer code (i.e. 4326)
 - A ``pyproj.CRS``
 - An object with a to_wkt method.
 - PROJ string
@@ -41,11 +44,10 @@ For reference, a few very common projections and their EPSG codes:
 What is the best format to store the CRS information?
 -----------------------------------------------------
 
-"Generally, WKT or SRID’s are preferred over PROJ strings as they can contain more information about a given CRS.
-Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations.
-...If possible WKT2 should be used."
+Generally, WKT or SRID's are preferred over PROJ strings as they can contain more information about a given CRS.
+Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations. If possible WKT2 should be used.
 
-From: https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
+For more details, see https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
 
 
 Setting a Projection
