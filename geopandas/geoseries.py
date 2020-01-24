@@ -220,6 +220,12 @@ class GeoSeries(GeoPandasBase, Series):
     def _constructor(self):
         return _geoseries_constructor_with_fallback
 
+    @property
+    def _constructor_expanddim(self):
+        from geopandas import GeoDataFrame
+
+        return GeoDataFrame
+
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
