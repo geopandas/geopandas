@@ -1,5 +1,3 @@
-from distutils.version import LooseVersion
-from functools import partial
 import json
 import warnings
 
@@ -8,7 +6,7 @@ import pandas as pd
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
-import pyproj
+from pyproj import CRS, Transformer
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
@@ -17,9 +15,6 @@ from geopandas.plotting import plot_series
 
 from .array import GeometryDtype, from_shapely
 from .base import is_geometry_type
-
-
-_PYPROJ_VERSION = LooseVersion(pyproj.__version__)
 
 
 _SERIES_WARNING_MSG = """\
@@ -81,7 +76,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     """
 
-    _metadata = ["name", "crs"]
+    _metadata = ["name", "_crs"]
 
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
         # we need to use __new__ because we want to return Series instance
@@ -183,7 +178,6 @@ class GeoSeries(GeoPandasBase, Series):
             access multi-layer data, data stored within archives (zip files),
             etc.
         """
-
         from geopandas import GeoDataFrame
 
         df = GeoDataFrame.from_file(filename, **kwargs)
@@ -378,8 +372,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         Transform all geometries in a GeoSeries to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
-        be set.  Either ``crs`` in string or dictionary form or an EPSG code
-        may be specified for output.
+        be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
         or projecting entire geometries.  All segments joining points are
@@ -389,47 +382,31 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        crs : dict or str
-            Output projection parameters as string or in dictionary form.
-        epsg : int
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input`, such as an authority
+            string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
         """
-        from fiona.crs import from_epsg
-
-        if crs is None and epsg is None:
-            raise TypeError("Must set either crs or epsg for output.")
-
         if self.crs is None:
             raise ValueError(
                 "Cannot transform naive geometries.  "
                 "Please set a crs on the object first."
             )
+        if crs is not None:
+            crs = CRS.from_user_input(crs)
+        elif epsg is not None:
+            crs = CRS.from_epsg(epsg)
+        else:
+            raise ValueError("Must pass either crs or epsg.")
 
-        if crs is None:
-            try:
-                crs = from_epsg(epsg)
-            except (TypeError, ValueError):
-                raise ValueError("Invalid epsg: {}".format(epsg))
-
-        # skip transformation if the input CRS and output CRS are the exact same
-        if _PYPROJ_VERSION >= LooseVersion("2.1.2") and pyproj.CRS.from_user_input(
-            self.crs
-        ).is_exact_same(pyproj.CRS.from_user_input(crs)):
+        # skip if the input CRS and output CRS are the exact same
+        if self.crs.is_exact_same(crs):
             return self
 
-        if _PYPROJ_VERSION >= LooseVersion("2.2.0"):
-            # if availale, use always_xy=True to preserve GIS axis order
-            transformer = pyproj.Transformer.from_crs(self.crs, crs, always_xy=True)
-            project = transformer.transform
-        elif _PYPROJ_VERSION >= LooseVersion("2.1.0"):
-            # use transformer for repeated transformations
-            transformer = pyproj.Transformer.from_crs(self.crs, crs)
-            project = transformer.transform
-        else:
-            proj_in = pyproj.Proj(self.crs, preserve_units=True)
-            proj_out = pyproj.Proj(crs, preserve_units=True)
-            project = partial(pyproj.transform, proj_in, proj_out)
-        result = self.apply(lambda geom: transform(project, geom))
+        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
+        result = self.apply(lambda geom: transform(transformer.transform, geom))
         result.__class__ = GeoSeries
         result.crs = crs
         result._invalidate_sindex()

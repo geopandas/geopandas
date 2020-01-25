@@ -4,7 +4,6 @@ import time
 import numpy as np
 import pandas as pd
 
-from fiona.crs import from_epsg
 from shapely.geometry import Point
 
 import geopandas
@@ -185,7 +184,6 @@ def _prepare_geocode_result(results):
         d["address"].append(address)
         index.append(i)
 
-    df = geopandas.GeoDataFrame(d, index=index)
-    df.crs = from_epsg(4326)
+    df = geopandas.GeoDataFrame(d, index=index, crs="EPSG:4326")
 
     return df

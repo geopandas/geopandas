@@ -50,7 +50,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         column on GeoDataFrame.
     """
 
-    _metadata = ["crs", "_geometry_column_name"]
+    _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
@@ -61,6 +61,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
+        self._crs = None
         self.crs = crs
 
         # set_geometry ensures the geometry data have the proper dtype,
@@ -522,8 +523,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Transform all geometries in a GeoSeries to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
-        be set.  Either ``crs`` in string or dictionary form or an EPSG code
-        may be specified for output.
+        be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
         or projecting entire geometries.  All segments joining points are
@@ -533,9 +533,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        crs : dict or str
-            Output projection parameters as string or in dictionary form.
-        epsg : int
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input`, such as an authority
+            string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
         inplace : bool, optional, default: False
             Whether to return a new GeoDataFrame or do the transformation in

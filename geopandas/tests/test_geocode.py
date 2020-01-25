@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from fiona.crs import from_epsg
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -72,7 +71,7 @@ def test_prepare_result():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert from_epsg(4326) == df.crs
+    assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
@@ -94,7 +93,7 @@ def test_prepare_result_none():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert from_epsg(4326) == df.crs
+    assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
@@ -128,7 +127,7 @@ def test_forward(locations, points):
         n = len(locations)
         assert isinstance(g, GeoDataFrame)
         expected = GeoSeries(
-            [Point(float(x) + 0.5, float(x)) for x in range(n)], crs=from_epsg(4326)
+            [Point(float(x) + 0.5, float(x)) for x in range(n)], crs="EPSG:4326"
         )
         assert_geoseries_equal(expected, g["geometry"])
         assert_series_equal(g["address"], pd.Series(locations, name="address"))
@@ -144,7 +143,7 @@ def test_reverse(locations, points):
 
         assert isinstance(g, GeoDataFrame)
 
-        expected = GeoSeries(points, crs=from_epsg(4326))
+        expected = GeoSeries(points, crs="EPSG:4326")
         assert_geoseries_equal(expected, g["geometry"])
         address = pd.Series(
             ["address" + str(x) for x in range(len(points))], name="address"
