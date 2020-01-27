@@ -64,6 +64,7 @@ sphinx_gallery_conf = {
     'reference_url': {'matplotlib': 'http://matplotlib.org',
                       'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
+                      'pyproj': 'http://pyproj4.github.io/pyproj/stable/',
                       'geopandas': None},
     'backreferences_dir': 'reference'
 }

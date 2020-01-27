@@ -100,6 +100,7 @@ def test_overlay(dfs_index, how, use_sindex):
         assert_geodataframe_equal(result, expected, check_column_type=False)
 
 
+@pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
 def test_overlay_nybb(how):
     polydf = read_file(geopandas.datasets.get_path("nybb"))
 
@@ -296,7 +297,7 @@ def test_preserve_crs(dfs, how):
     df1, df2 = dfs
     result = overlay(df1, df2, how=how)
     assert result.crs is None
-    crs = {"init": "epsg:4326"}
+    crs = "epsg:4326"
     df1.crs = crs
     df2.crs = crs
     result = overlay(df1, df2, how=how)

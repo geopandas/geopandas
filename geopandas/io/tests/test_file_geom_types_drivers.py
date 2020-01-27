@@ -109,13 +109,12 @@ def _expected_error_on(gdf, ogr_driver, is_fiona_above_1_8):
 # TEST CASES
 _geodataframes_to_write = []
 _expected_exceptions = {}
+_CRS = "epsg:4326"
 
 # ------------------
 # gdf with Points
 gdf = GeoDataFrame(
-    {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
-    geometry=[city_hall_entrance, city_hall_balcony],
+    {"a": [1, 2]}, crs=_CRS, geometry=[city_hall_entrance, city_hall_balcony]
 )
 _geodataframes_to_write.append(gdf)
 
@@ -123,7 +122,7 @@ _geodataframes_to_write.append(gdf)
 # gdf with MultiPoints
 gdf = GeoDataFrame(
     {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[
         MultiPoint([city_hall_balcony, city_hall_council_chamber]),
         MultiPoint([city_hall_entrance, city_hall_balcony, city_hall_council_chamber]),
@@ -135,7 +134,7 @@ _geodataframes_to_write.append(gdf)
 # gdf with Points and MultiPoints
 gdf = GeoDataFrame(
     {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[MultiPoint([city_hall_entrance, city_hall_balcony]), city_hall_balcony],
 )
 _geodataframes_to_write.append(gdf)
@@ -154,14 +153,14 @@ _expect_writing(gdf, "ESRI Shapefile", _Fiona.above_1_8).to_raise(
 
 # ------------------
 # gdf with LineStrings
-gdf = GeoDataFrame({"a": [1, 2]}, crs={"init": "epsg:4326"}, geometry=city_hall_walls)
+gdf = GeoDataFrame({"a": [1, 2]}, crs=_CRS, geometry=city_hall_walls)
 _geodataframes_to_write.append(gdf)
 
 # ------------------
 # gdf with MultiLineStrings
 gdf = GeoDataFrame(
     {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[MultiLineString(city_hall_walls), MultiLineString(city_hall_walls)],
 )
 _geodataframes_to_write.append(gdf)
@@ -170,7 +169,7 @@ _geodataframes_to_write.append(gdf)
 # gdf with LineStrings and MultiLineStrings
 gdf = GeoDataFrame(
     {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]],
 )
 _geodataframes_to_write.append(gdf)
@@ -183,9 +182,7 @@ _expect_writing(gdf, "GPKG", _Fiona.below_1_8).to_raise(
 # ------------------
 # gdf with Polygons
 gdf = GeoDataFrame(
-    {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
-    geometry=[city_hall_boundaries, vauquelin_place],
+    {"a": [1, 2]}, crs=_CRS, geometry=[city_hall_boundaries, vauquelin_place]
 )
 _geodataframes_to_write.append(gdf)
 
@@ -193,7 +190,7 @@ _geodataframes_to_write.append(gdf)
 # gdf with MultiPolygon
 gdf = GeoDataFrame(
     {"a": [1]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[MultiPolygon((city_hall_boundaries, vauquelin_place))],
 )
 _geodataframes_to_write.append(gdf)
@@ -202,7 +199,7 @@ _geodataframes_to_write.append(gdf)
 # gdf with Polygon and MultiPolygon
 gdf = GeoDataFrame(
     {"a": [1, 2]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[
         MultiPolygon((city_hall_boundaries, vauquelin_place)),
         city_hall_boundaries,
@@ -217,26 +214,24 @@ _expect_writing(gdf, "GPKG", _Fiona.below_1_8).to_raise(
 
 # ------------------
 # gdf with null geometry and Point
-gdf = GeoDataFrame(
-    {"a": [1, 2]}, crs={"init": "epsg:4326"}, geometry=[None, city_hall_entrance]
-)
+gdf = GeoDataFrame({"a": [1, 2]}, crs=_CRS, geometry=[None, city_hall_entrance])
 _geodataframes_to_write.append(gdf)
 
 # ------------------
 # gdf with null geometry and 3D Point
-gdf = GeoDataFrame({"a": [1, 2]}, crs={"init": "epsg:4326"}, geometry=[None, point_3D])
+gdf = GeoDataFrame({"a": [1, 2]}, crs=_CRS, geometry=[None, point_3D])
 _geodataframes_to_write.append(gdf)
 
 # ------------------
 # gdf with null geometries only
-gdf = GeoDataFrame({"a": [1, 2]}, crs={"init": "epsg:4326"}, geometry=[None, None])
+gdf = GeoDataFrame({"a": [1, 2]}, crs=_CRS, geometry=[None, None])
 _geodataframes_to_write.append(gdf)
 
 # ------------------
 # gdf with all shape types mixed together
 gdf = GeoDataFrame(
     {"a": [1, 2, 3, 4, 5, 6]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[
         MultiPolygon((city_hall_boundaries, vauquelin_place)),
         city_hall_entrance,
@@ -260,7 +255,7 @@ _expect_writing(gdf, "ESRI Shapefile", _Fiona.above_1_8).to_raise(
 # gdf with all 2D shape types and 3D Point mixed together
 gdf = GeoDataFrame(
     {"a": [1, 2, 3, 4, 5, 6, 7]},
-    crs={"init": "epsg:4326"},
+    crs=_CRS,
     geometry=[
         MultiPolygon((city_hall_boundaries, vauquelin_place)),
         city_hall_entrance,
