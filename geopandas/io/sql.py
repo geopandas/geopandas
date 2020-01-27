@@ -5,6 +5,7 @@ import pandas as pd
 import shapely.wkb
 
 from geopandas import GeoDataFrame
+import warnings
 
 
 def read_postgis(
@@ -157,30 +158,21 @@ def _get_srid_from_crs(gdf):
     """
     Get EPSG code from CRS if available. If not, return -1.
     """
-    # TODO: Simplify this once new pyproj.CRS class has been
-    #  integrated (#1101) -> https://github.com/geopandas/geopandas/pull/1101
-    from pyproj import CRS
 
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
     srid = -1
     if gdf.crs is not None:
         try:
-            if isinstance(gdf.crs, dict):
-                # If CRS is in dictionary format use only the value
-                # to avoid pyproj Future warning
-                if "init" in gdf.crs.keys():
-                    srid = CRS(gdf.crs["init"]).to_epsg(min_confidence=25)
-                else:
-                    srid = CRS(gdf.crs).to_epsg(min_confidence=25)
-            else:
-                srid = CRS(gdf).to_epsg(min_confidence=25)
+            srid = gdf.crs.to_epsg(min_confidence=25)
             if srid is None:
                 srid = -1
         except Exception:
-            print(
+            warnings.warn(
                 "Warning: Could not parse CRS from the GeoDataFrame.",
                 "Inserting data without defined CRS.",
+                UserWarning,
+                stacklevel=2,
             )
     return srid
 
