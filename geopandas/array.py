@@ -442,16 +442,10 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return self.data[idx]
         # array-like, slice
-        if PANDAS_GE_10 and pd.api.types.is_list_like(idx):
+        if PANDAS_GE_10:
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # to numpy array
-            if not pd.api.types.is_array_like(idx):
-                idx = pd.array(idx)
-            dtype = idx.dtype
-            if pd.api.types.is_bool_dtype(dtype):
-                idx = pd.api.indexers.check_bool_array_indexer(self, idx)
-            elif pd.api.types.is_integer_dtype(dtype):
-                idx = np.asarray(idx, dtype="int")
+            # to numpy array, pass-through non-array-like indexers
+            idx = pd.api.indexers.check_array_indexer(self, idx)
         if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx])
         else:
