@@ -25,7 +25,11 @@ class GeometryDtype(ExtensionDtype):
 
     @classmethod
     def construct_from_string(cls, string):
-        if string == cls.name:
+        if not isinstance(string, str):
+            raise TypeError(
+                "'construct_from_string' expects a string, got {}".format(type(string))
+            )
+        elif string == cls.name:
             return cls()
         else:
             raise TypeError(
