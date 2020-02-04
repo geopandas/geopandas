@@ -144,10 +144,14 @@ def clip(gdf, clip_obj, keep_geom_type=False):
         )
 
     if isinstance(clip_obj, (GeoDataFrame, GeoSeries)):
-        xmin, ymin, xmax, ymax = clip_obj.total_bounds
+        box_obj = clip_obj.total_bounds
     else:
-        xmin, ymin, xmax, ymax = clip_obj.bounds
-    if gdf.cx[xmin:xmax, ymin:ymax].empty:
+        box_obj = clip_obj.bounds
+    box_gdf = gdf.total_bounds
+    if not (
+        ((box_obj[0] <= box_gdf[2]) and (box_gdf[0] <= box_obj[2]))
+        and ((box_obj[1] <= box_gdf[3]) and (box_gdf[1] <= box_obj[3]))
+    ):
         raise ValueError("gdf and clip_obj extent do not overlap.")
 
     if isinstance(clip_obj, (GeoDataFrame, GeoSeries)):
