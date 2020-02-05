@@ -104,7 +104,7 @@ def clip(gdf, mask, keep_geom_type=False):
         Polygon vector layer used to clip `gdf`.
         The mask's geometry is dissolved into one geometric feature
         and intersected with `gdf`.
-    keep_geom_type : boolean
+    keep_geom_type : boolean, default False
         If True, return only geometries of original type in case of intersection
         resulting in multiple geometry types or GeometryCollections.
         If False, return all resulting geometries (potentially mixed-types).
@@ -192,12 +192,12 @@ def clip(gdf, mask, keep_geom_type=False):
     order = pd.Series(range(len(gdf)), index=gdf.index)
     concat = pd.concat([point_gdf, line_gdf, poly_gdf, geomcoll_gdf])
 
-    geomcoll_concat = (concat.geom_type == "GeometryCollection").any()
-    geomcoll_orig = geomcoll_idx.any()
-
-    new_collection = geomcoll_concat and not geomcoll_orig
-
     if keep_geom_type:
+        geomcoll_concat = (concat.geom_type == "GeometryCollection").any()
+        geomcoll_orig = geomcoll_idx.any()
+
+        new_collection = geomcoll_concat and not geomcoll_orig
+
         if geomcoll_orig:
             warnings.warn(
                 "keep_geom_type can not be called on a "
