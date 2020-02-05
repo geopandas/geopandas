@@ -327,6 +327,12 @@ def test_fillna(s):
     res = s2.fillna(np.nan)
     assert_geoseries_equal(res, s2)
 
+    # allow non-geometry fill value if there are no missing values
+    # https://github.com/geopandas/geopandas/issues/1149
+    s3 = s2.dropna()
+    res = s3.fillna(0)
+    assert_geoseries_equal(res, s3)
+
 
 def test_dropna():
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
