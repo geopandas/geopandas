@@ -317,7 +317,7 @@ def test_select_dtypes(df):
 # Missing values
 
 
-def test_fillna(s):
+def test_fillna(s, df):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
@@ -327,11 +327,20 @@ def test_fillna(s):
     res = s2.fillna(np.nan)
     assert_geoseries_equal(res, s2)
 
+    # raise exception if trying to fill missing geometry w/ non-geometry
+    df2 = df.copy()
+    df2['geometry'] = s2
+    res = df2.fillna(Point(1, 1))
+    assert_geodataframe_equal(res, df)
+    with pytest.raises(NotImplementedError):
+        df2.fillna(0)
+
     # allow non-geometry fill value if there are no missing values
     # https://github.com/geopandas/geopandas/issues/1149
-    s3 = s2.dropna()
-    res = s3.fillna(0)
-    assert_geoseries_equal(res, s3)
+    df3 = df.copy()
+    df3.loc[0, 'value1'] = np.nan
+    res = df3.fillna(0)
+    assert_geodataframe_equal(res.astype({'value1': int}), df)
 
 
 def test_dropna():
