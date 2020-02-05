@@ -167,6 +167,7 @@ def clip(gdf, mask, keep_geom_type=False):
         | (geom_types == "MultiLineString")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
+    geomcoll_idx = np.asarray((geom_types == "GeometryCollection"))
 
     if point_idx.any():
         point_gdf = _clip_points(gdf[point_idx], poly)
@@ -183,50 +184,63 @@ def clip(gdf, mask, keep_geom_type=False):
     else:
         line_gdf = None
 
+    if geomcoll_idx.any():
+        geomcoll_gdf = _clip_line_poly(gdf[geomcoll_idx], poly)
+    else:
+        geomcoll_gdf = None
+
     order = pd.Series(range(len(gdf)), index=gdf.index)
-    concat = pd.concat([point_gdf, line_gdf, poly_gdf])
+    concat = pd.concat([point_gdf, line_gdf, poly_gdf, geomcoll_gdf])
 
-    polys = ["Polygon", "MultiPolygon"]
-    lines = ["LineString", "MultiLineString", "LinearRing"]
-    points = ["Point", "MultiPoint"]
+    geomcoll_concat = (concat.geom_type == "GeometryCollection").any()
+    geomcoll_orig = geomcoll_idx.any()
 
-    # Check that the gdf for multiple geom types (points, lines and/or polys)
-    orig_types_total = sum(
-        [
-            gdf.geom_type.isin(polys).any(),
-            gdf.geom_type.isin(lines).any(),
-            gdf.geom_type.isin(points).any(),
-        ]
-    )
-
-    # Check how many geometry types are in the clipped GeoDataFrame
-    clip_types_total = sum(
-        [
-            concat.geom_type.isin(polys).any(),
-            concat.geom_type.isin(lines).any(),
-            concat.geom_type.isin(points).any(),
-        ]
-    )
-
-    # Check if the clipped geometry contains a geometry collection
-    geometry_collection = (concat.geom_type == "GeometryCollection").any()
-
-    # Check there aren't any new geom types in the clipped GeoDataFrame
-    more_types = orig_types_total < clip_types_total
+    new_collection = geomcoll_concat and not geomcoll_orig
 
     if keep_geom_type:
-        if orig_types_total > 1:
+        if geomcoll_orig:
             warnings.warn(
-                "keep_geom_type can not be called on a mixed type GeoDataFrame."
+                "keep_geom_type can not be called on a "
+                "GeoDataFrame with GeometryCollection."
             )
-        elif geometry_collection or more_types:
-            orig_type = gdf.geom_type.iloc[0]
-            if geometry_collection:
-                concat = concat.explode()
-            if orig_type in polys:
-                concat = concat.loc[concat.geom_type.isin(polys)]
-            elif orig_type in lines:
-                concat = concat.loc[concat.geom_type.isin(lines)]
+        else:
+            polys = ["Polygon", "MultiPolygon"]
+            lines = ["LineString", "MultiLineString", "LinearRing"]
+            points = ["Point", "MultiPoint"]
+
+            # Check that the gdf for multiple geom types (points, lines and/or polys)
+            orig_types_total = sum(
+                [
+                    gdf.geom_type.isin(polys).any(),
+                    gdf.geom_type.isin(lines).any(),
+                    gdf.geom_type.isin(points).any(),
+                ]
+            )
+
+            # Check how many geometry types are in the clipped GeoDataFrame
+            clip_types_total = sum(
+                [
+                    concat.geom_type.isin(polys).any(),
+                    concat.geom_type.isin(lines).any(),
+                    concat.geom_type.isin(points).any(),
+                ]
+            )
+
+            # Check there aren't any new geom types in the clipped GeoDataFrame
+            more_types = orig_types_total < clip_types_total
+
+            if orig_types_total > 1:
+                warnings.warn(
+                    "keep_geom_type can not be called on a mixed type GeoDataFrame."
+                )
+            elif new_collection or more_types:
+                orig_type = gdf.geom_type.iloc[0]
+                if new_collection:
+                    concat = concat.explode()
+                if orig_type in polys:
+                    concat = concat.loc[concat.geom_type.isin(polys)]
+                elif orig_type in lines:
+                    concat = concat.loc[concat.geom_type.isin(lines)]
 
     # preserve the original order of the input
     if isinstance(concat, GeoDataFrame):
