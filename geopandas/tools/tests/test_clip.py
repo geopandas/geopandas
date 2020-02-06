@@ -112,7 +112,7 @@ def mixed_gdf():
     point = Point([(2, 3), (11, 4), (7, 2), (8, 9), (1, 13)])
     line = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
-    ring = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
+    ring = LinearRing([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     gdf = GeoDataFrame(
         [1, 2, 3, 4], geometry=[point, poly, line, ring], crs="EPSG:4326"
     )
