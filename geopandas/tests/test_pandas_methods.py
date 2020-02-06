@@ -329,7 +329,7 @@ def test_fillna(s, df):
 
     # raise exception if trying to fill missing geometry w/ non-geometry
     df2 = df.copy()
-    df2['geometry'] = s2
+    df2["geometry"] = s2
     res = df2.fillna(Point(1, 1))
     assert_geodataframe_equal(res, df)
     with pytest.raises(NotImplementedError):
@@ -338,9 +338,9 @@ def test_fillna(s, df):
     # allow non-geometry fill value if there are no missing values
     # https://github.com/geopandas/geopandas/issues/1149
     df3 = df.copy()
-    df3.loc[0, 'value1'] = np.nan
+    df3.loc[0, "value1"] = np.nan
     res = df3.fillna(0)
-    assert_geodataframe_equal(res.astype({'value1': int}), df)
+    assert_geodataframe_equal(res.astype({"value1": int}), df)
 
 
 def test_dropna():
