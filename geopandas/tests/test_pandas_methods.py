@@ -340,7 +340,7 @@ def test_fillna(s, df):
     df3 = df.copy()
     df3.loc[0, "value1"] = np.nan
     res = df3.fillna(0)
-    assert_geodataframe_equal(res.astype({"value1": int}), df)
+    assert_geodataframe_equal(res.astype({"value1": "int64"}), df)
 
 
 def test_dropna():
