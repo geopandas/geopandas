@@ -13,8 +13,7 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 
-from ._compat import PANDAS_GE_024, PANDAS_GE_10
-from collections.abc import Iterable
+from ._compat import PANDAS_GE_024, PANDAS_GE_10, Iterable
 
 
 class GeometryDtype(ExtensionDtype):
