@@ -456,6 +456,10 @@ class GeometryArray(ExtensionArray):
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
+        if PANDAS_GE_10:
+            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
+            # keys to numpy array, pass-through non-array-like indexers
+            key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
         if isinstance(value, (list, np.ndarray)):
