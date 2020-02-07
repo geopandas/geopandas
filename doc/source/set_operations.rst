@@ -195,9 +195,11 @@ keep_geom_type keyword
 ----------------------
 
 In default settings, ``overlay`` returns only geometries of the same geometry type as df1
-(left one) has. You can control this behavior using ``keep_geom_type`` option, which is set to
+(left one) has, where Polygon and MultiPolygon is considered as a same type (other types likewise).
+You can control this behavior using ``keep_geom_type`` option, which is set to
 True by default. Once set to False, ``overlay`` will return all geometry types resulting from
-selected set-operation.
+selected set-operation. Different types can result for example from intersection of touching geometries,
+where two polygons intersects in a line or a point.
 
 
 More Examples
