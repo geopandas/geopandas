@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+import warnings
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -68,6 +69,14 @@ sphinx_gallery_conf = {
                       'geopandas': None},
     'backreferences_dir': 'reference'
 }
+
+# suppress matplotlib warning in examples
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="Matplotlib is currently using agg, which is a"
+    " non-GUI backend, so cannot show the figure.",
+)
 
 # The suffix of source filenames.
 source_suffix = '.rst'
