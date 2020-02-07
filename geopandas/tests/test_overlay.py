@@ -4,7 +4,6 @@ import pandas as pd
 
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection
 from fiona.errors import DriverError
-from geopandas.io.file import _FIONA18
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
@@ -411,9 +410,6 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
     elif geom_types == "point_poly":
         result = overlay(df4, df1, how=how, keep_geom_type=keep_geom_type)
 
-    if not _FIONA18 and result.empty:
-        raise pytest.skip()
-
     try:
         expected = read_file(
             os.path.join(
@@ -431,7 +427,10 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
             check_dtype=False,
         )
 
-    except DriverError:
+    except DriverError:  # fiona >= 1.8
+        assert result.empty
+
+    except OSError:  # fiona < 1.8
         assert result.empty
 
 
