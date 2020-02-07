@@ -572,8 +572,6 @@ def plot_dataframe(
         categories.sort()
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
         values = np.array([valuemap[k] for k in values[~nan_idx]])
-        if legend_kwds is not None and "fmt" in legend_kwds:
-            fmt = legend_kwds.pop("fmt")
 
     if scheme is not None:
         if classification_kwds is None:
@@ -757,7 +755,6 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
         raise ImportError(
             "The 'mapclassify' >= 2.2.0 package is required to use the 'scheme' keyword"
         )
-
     from mapclassify import __version__ as mc_version
 
     if mc_version < LooseVersion("2.2.0"):
