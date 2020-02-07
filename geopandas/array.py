@@ -25,7 +25,11 @@ class GeometryDtype(ExtensionDtype):
 
     @classmethod
     def construct_from_string(cls, string):
-        if string == cls.name:
+        if not isinstance(string, str):
+            raise TypeError(
+                "'construct_from_string' expects a string, got {}".format(type(string))
+            )
+        elif string == cls.name:
             return cls()
         else:
             raise TypeError(
@@ -234,7 +238,10 @@ def _binary_geo(op, left, right):
         # intersection can return empty GeometryCollections, and if the
         # result are only those, numpy will coerce it to empty 2D array
         data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(s, op)(right) if s and right else None for s in left.data]
+        data[:] = [
+            getattr(s, op)(right) if s is not None and right is not None else None
+            for s in left.data
+        ]
         return GeometryArray(data)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
@@ -244,7 +251,9 @@ def _binary_geo(op, left, right):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, op)(other_elem) if this_elem and other_elem else None
+            getattr(this_elem, op)(other_elem)
+            if this_elem is not None and other_elem is not None
+            else None
             for this_elem, other_elem in zip(left.data, right.data)
         ]
         return GeometryArray(data)
@@ -437,22 +446,20 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return self.data[idx]
         # array-like, slice
-        if PANDAS_GE_10 and pd.api.types.is_list_like(idx):
+        if PANDAS_GE_10:
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # to numpy array
-            if not pd.api.types.is_array_like(idx):
-                idx = pd.array(idx)
-            dtype = idx.dtype
-            if pd.api.types.is_bool_dtype(dtype):
-                idx = pd.api.indexers.check_bool_array_indexer(self, idx)
-            elif pd.api.types.is_integer_dtype(dtype):
-                idx = np.asarray(idx, dtype="int")
+            # to numpy array, pass-through non-array-like indexers
+            idx = pd.api.indexers.check_array_indexer(self, idx)
         if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx])
         else:
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
+        if PANDAS_GE_10:
+            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
+            # keys to numpy array, pass-through non-array-like indexers
+            key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
         if isinstance(value, (list, np.ndarray)):
@@ -851,18 +858,17 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
-        if _isna(value):
-            value = None
-        elif not isinstance(value, BaseGeometry):
-            raise NotImplementedError(
-                "fillna currently only supports filling with a scalar geometry"
-            )
-
         mask = self.isna()
         new_values = self.copy()
 
         if mask.any():
             # fill with value
+            if _isna(value):
+                value = None
+            elif not isinstance(value, BaseGeometry):
+                raise NotImplementedError(
+                    "fillna currently only supports filling with a scalar geometry"
+                )
             new_values = new_values._fill(mask, value)
 
         return new_values

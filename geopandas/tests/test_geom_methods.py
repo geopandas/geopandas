@@ -49,9 +49,9 @@ class TestGeomMethods:
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = {"init": "epsg:4326", "no_defs": True}
+        self.g3.crs = "epsg:4326"
         self.g4 = GeoSeries([self.t2, self.t1])
-        self.g4.crs = {"init": "epsg:4326", "no_defs": True}
+        self.g4.crs = "epsg:4326"
         self.g_3d = GeoSeries([self.p0, self.p3d])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, None])
@@ -61,9 +61,7 @@ class TestGeomMethods:
         self.a2.index = ["B", "C"]
         self.esb = Point(-73.9847, 40.7484)
         self.sol = Point(-74.0446, 40.6893)
-        self.landmarks = GeoSeries(
-            [self.esb, self.sol], crs={"init": "epsg:4326", "no_defs": True}
-        )
+        self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])

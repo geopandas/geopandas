@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 import fiona
+from pyproj.exceptions import CRSError
 from shapely.geometry import Point
 
 import geopandas
@@ -15,11 +16,7 @@ from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
-from pandas.testing import (
-    assert_frame_equal,
-    assert_index_equal,
-    assert_series_equal,
-)
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -30,7 +27,7 @@ class TestDataFrame:
         nybb_filename = geopandas.datasets.get_path("nybb")
         self.df = read_file(nybb_filename)
         self.tempdir = tempfile.mkdtemp()
-        self.crs = {"init": "epsg:4326"}
+        self.crs = "epsg:4326"
         self.df2 = GeoDataFrame(
             [
                 {"geometry": Point(x, y), "value1": x + y, "value2": x * y}
@@ -62,13 +59,8 @@ class TestDataFrame:
         assert df._geometry_column_name == "location"
 
         geom2 = [Point(x, y) for x, y in zip(range(5, 10), range(5))]
-        df2 = df.set_geometry(geom2, crs="dummy_crs")
-        assert "location" in df2
-        assert df2.crs == "dummy_crs"
-        assert df2.geometry.crs == "dummy_crs"
-        # reset so it outputs okay
-        df2.crs = df.crs
-        assert_geoseries_equal(df2.geometry, GeoSeries(geom2, crs=df2.crs))
+        with pytest.raises(CRSError):
+            df.set_geometry(geom2, crs="dummy_crs")
 
     def test_geo_getitem(self):
         data = {
@@ -167,9 +159,9 @@ class TestDataFrame:
         assert_geoseries_equal(df["geometry"], new_geom)
 
         # new crs
-        gs = GeoSeries(new_geom, crs="epsg:26018")
+        gs = GeoSeries(new_geom, crs="epsg:3857")
         df.geometry = gs
-        assert df.crs == "epsg:26018"
+        assert df.crs == "epsg:3857"
 
     def test_geometry_property_errors(self):
         with pytest.raises(AttributeError):
@@ -228,14 +220,14 @@ class TestDataFrame:
             self.df.set_geometry(self.df)
 
         # new crs - setting should default to GeoSeries' crs
-        gs = GeoSeries(geom, crs="epsg:26018")
+        gs = GeoSeries(geom, crs="epsg:3857")
         new_df = self.df.set_geometry(gs)
-        assert new_df.crs == "epsg:26018"
+        assert new_df.crs == "epsg:3857"
 
         # explicit crs overrides self and dataframe
-        new_df = self.df.set_geometry(gs, crs="epsg:27159")
-        assert new_df.crs == "epsg:27159"
-        assert new_df.geometry.crs == "epsg:27159"
+        new_df = self.df.set_geometry(gs, crs="epsg:26909")
+        assert new_df.crs == "epsg:26909"
+        assert new_df.geometry.crs == "epsg:26909"
 
         # Series should use dataframe's
         new_df = self.df.set_geometry(geom.values)
@@ -448,7 +440,7 @@ class TestDataFrame:
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)
-            crs = f.crs
+            crs = f.crs_wkt
 
         df = GeoDataFrame.from_features(features, crs=crs)
         validate_boro_df(df, case_sensitive=True)
@@ -871,3 +863,9 @@ class TestConstructor:
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
+
+
+def test_geodataframe_crs():
+    gdf = GeoDataFrame()
+    gdf.crs = "IGNF:ETRS89UTM28"
+    assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")

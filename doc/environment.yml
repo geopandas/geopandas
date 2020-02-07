@@ -5,8 +5,8 @@ dependencies:
 - python=3.7
 - pandas=0.25.0
 - shapely=1.6.4
-- fiona=1.8.6
-- pyproj=1.9.6
+- fiona=1.8.11
+- pyproj=2.4.1
 - rtree=0.8.3
 - geopy=1.20.0
 - matplotlib=3.1.1
@@ -20,7 +20,7 @@ dependencies:
 - mock=3.0.5
 - cartopy=0.17.0
 - contextily=1.0rc2
-- rasterio=1.0.24
+- rasterio=1.1.0
 - geoplot=0.4.0
 - sphinx-gallery=0.4.0
 - jinja2=2.10

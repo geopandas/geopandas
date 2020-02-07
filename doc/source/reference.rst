@@ -93,11 +93,13 @@ The following Shapely methods and attributes are available on
 
 .. autoattribute:: geopandas.GeoSeries.unary_union
 
-Additionally, the following methods are implemented:
+Additionally, the following attributes and methods are implemented:
 
-.. automethod:: geopandas.GeoSeries.from_file
+.. autoattribute:: geopandas.GeoSeries.crs
 
 .. automethod:: geopandas.GeoSeries.to_crs
+
+.. automethod:: geopandas.GeoSeries.from_file
 
 .. automethod:: geopandas.GeoSeries.plot
 
@@ -118,13 +120,15 @@ GeoDataFrame
 A ``GeoDataFrame`` is a tablular data structure that contains a column
 called ``geometry`` which contains a `GeoSeries``.
 
-Currently, the following methods are implemented for a ``GeoDataFrame``:
+Currently, the following methods/attributes are implemented for a ``GeoDataFrame``:
+
+.. autoattribute:: geopandas.GeoDataFrame.crs
+
+.. automethod:: geopandas.GeoDataFrame.to_crs
 
 .. automethod:: geopandas.GeoDataFrame.from_file
 
 .. automethod:: geopandas.GeoDataFrame.from_postgis
-
-.. automethod:: geopandas.GeoDataFrame.to_crs
 
 .. automethod:: geopandas.GeoDataFrame.to_file
 
