@@ -22,6 +22,7 @@ dependencies:
 - contextily=1.0rc2
 - rasterio=1.1.1
 - geoplot=0.4.0
-- sphinx-gallery=0.5.0
+# 0.5.0 has a bug (https://github.com/sphinx-gallery/sphinx-gallery/issues/568)
+- sphinx-gallery=0.4.0
 - jinja2=2.11.1
 - doc2dash
