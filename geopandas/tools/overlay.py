@@ -40,9 +40,8 @@ def _overlay_intersection(df1, df2):
         right = df2.geometry.take(pairs["__idx2"].values)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
-        intersections = intersections.apply(
-            lambda g: g.buffer(0) if g.type in ["Polygon", "MultiPolygon"] else g
-        )
+        poly_ix = intersections.type.isin(["Polygon", "MultiPolygon"])
+        intersections.loc[poly_ix] = intersections[poly_ix].buffer(0)
 
         # only keep actual intersecting geometries
         pairs_intersect = pairs[~intersections.is_empty]
@@ -88,9 +87,8 @@ def _overlay_difference(df1, df2):
         )
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index)
-    differences = differences.apply(
-        lambda g: g.buffer(0) if g.type in ["Polygon", "MultiPolygon"] else g
-    )
+    poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
+    differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff
