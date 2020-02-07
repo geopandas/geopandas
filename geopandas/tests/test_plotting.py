@@ -635,10 +635,7 @@ class TestMapclassifyPlotting:
         try:
             import mapclassify  # noqa
         except ImportError:
-            try:
-                import pysal  # noqa
-            except ImportError:
-                pytest.importorskip("mapclassify")
+            pytest.importorskip("mapclassify")
         pth = get_path("naturalearth_lowres")
         cls.df = read_file(pth)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
