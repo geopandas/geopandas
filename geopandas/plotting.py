@@ -5,6 +5,8 @@ import pandas as pd
 
 import geopandas
 
+from distutils.version import LooseVersion
+
 
 def _flatten_multi_geoms(geoms, prefix="Multi"):
     """
@@ -750,11 +752,19 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
     """
     try:
         import mapclassify.classifiers as classifiers
+
     except ImportError:
         raise ImportError(
-            "The 'mapclassify' package is required to use the 'scheme'" " keyword"
+            "The 'mapclassify' >= 2.2.0 package is required to use the 'scheme' keyword"
         )
 
+    from mapclassify import __version__ as mc_version
+
+    if mc_version < LooseVersion("2.2.0"):
+        raise ImportError(
+            "The 'mapclassify' >= 2.2.0 package is required to "
+            "use the 'scheme' keyword"
+        )
     schemes = {}
     for classifier in classifiers.CLASSIFIERS:
         schemes[classifier.lower()] = getattr(classifiers, classifier)
@@ -799,10 +809,8 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
             )
 
     if classification_kwds["k"] is not None:
-        try:
-            from inspect import getfullargspec as getspec
-        except ImportError:
-            from inspect import getargspec as getspec
+        from inspect import getfullargspec as getspec
+
         spec = getspec(scheme_class.__init__)
         if "k" not in spec.args:
             del classification_kwds["k"]
