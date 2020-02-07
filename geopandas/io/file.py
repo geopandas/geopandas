@@ -15,9 +15,8 @@ from urllib.request import urlopen as _urlopen
 from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_relative, uses_netloc, uses_params
 
+
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
-
-
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
@@ -55,6 +54,12 @@ def read_file(filename, bbox=None, **kwargs):
     Returns
     -------
     geodataframe : GeoDataFrame
+
+    Notes
+    -----
+    The format drivers will attempt to detect the encoding of your data, but
+    may fail. In this case, the proper encoding can be specified explicitly
+    by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     if _is_url(filename):
         req = _urlopen(filename)
@@ -68,12 +73,13 @@ def read_file(filename, bbox=None, **kwargs):
         with reader(path_or_bytes, **kwargs) as features:
 
             # In a future Fiona release the crs attribute of features will
-            # no longer be a dict. The following code will be both forward
-            # and backward compatible.
-            if hasattr(features.crs, "to_dict"):
-                crs = features.crs.to_dict()
-            else:
-                crs = features.crs
+            # no longer be a dict, but will behave like a dict. So this should
+            # be forwards compatible
+            crs = (
+                features.crs["init"]
+                if features.crs and "init" in features.crs
+                else features.crs_wkt
+            )
 
             if bbox is not None:
                 if isinstance(bbox, GeoDataFrame) or isinstance(bbox, GeoSeries):
@@ -112,12 +118,27 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     The path may specify a fiona VSI scheme.
+
+    Notes
+    -----
+    The format drivers will attempt to detect the encoding of your data, but
+    may fail. In this case, the proper encoding can be specified explicitly
+    by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     if schema is None:
         schema = infer_schema(df)
     with fiona_env():
+        crs_wkt = None
+        try:
+            gdal_version = fiona.env.get_gdal_release_name()
+        except AttributeError:
+            gdal_version = "2.0.0"  # just assume it is not the latest
+        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and df.crs:
+            crs_wkt = df.crs.to_wkt()
+        elif df.crs:
+            crs_wkt = df.crs.to_wkt("WKT1_GDAL")
         with fiona.open(
-            filename, "w", driver=driver, crs=df.crs, schema=schema, **kwargs
+            filename, "w", driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
             colxn.writerecords(df.iterfeatures())
 

@@ -143,8 +143,8 @@ First, we load the countries and cities example datasets and select :
     countries = countries[['geometry', 'name']]
 
     # Project to crs that uses meters as distance measure
-    countries = countries.to_crs('+init=epsg:3395')
-    capitals = capitals.to_crs('+init=epsg:3395')
+    countries = countries.to_crs('epsg:3395')
+    capitals = capitals.to_crs('epsg:3395')
 
 To illustrate the ``overlay`` function, consider the following case in which one
 wishes to identify the "core" portion of each country -- defined as areas within
