@@ -20,6 +20,9 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 import pytest
 
 
+_CRS = "epsg:4326"
+
+
 @pytest.fixture
 def df_nybb():
     nybb_path = geopandas.datasets.get_path("nybb")
@@ -35,7 +38,7 @@ def df_null():
 @pytest.fixture
 def df_points():
     N = 10
-    crs = {"init": "epsg:4326"}
+    crs = _CRS
     df = GeoDataFrame(
         [
             {"geometry": Point(x, y), "value1": x + y, "value2": x * y}
@@ -137,9 +140,7 @@ def test_to_file_with_point_z(tmpdir, ext, driver):
     tempfilename = os.path.join(str(tmpdir), "test_3Dpoint." + ext)
     point3d = Point(0, 0, 500)
     point2d = Point(1, 1)
-    df = GeoDataFrame(
-        {"a": [1, 2]}, geometry=[point3d, point2d], crs={"init": "epsg:4326"}
-    )
+    df = GeoDataFrame({"a": [1, 2]}, geometry=[point3d, point2d], crs=_CRS)
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
@@ -152,9 +153,7 @@ def test_to_file_with_poly_z(tmpdir, ext, driver):
     tempfilename = os.path.join(str(tmpdir), "test_3Dpoly." + ext)
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
-    df = GeoDataFrame(
-        {"a": [1, 2]}, geometry=[poly3d, poly2d], crs={"init": "epsg:4326"}
-    )
+    df = GeoDataFrame({"a": [1, 2]}, geometry=[poly3d, poly2d], crs=_CRS)
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
@@ -235,7 +234,7 @@ def test_to_file_schema(tmpdir, df_nybb):
 
 
 with fiona.open(geopandas.datasets.get_path("nybb")) as f:
-    CRS = f.crs
+    CRS = f.crs["init"] if "init" in f.crs else f.crs_wkt
     NYBB_COLUMNS = list(f.meta["schema"]["properties"].keys())
 
 

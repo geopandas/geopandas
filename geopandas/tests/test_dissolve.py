@@ -4,7 +4,7 @@ import pandas as pd
 import geopandas
 from geopandas import GeoDataFrame, read_file
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import pytest
 
 
@@ -31,6 +31,7 @@ def merged_shapes(nybb_polydf):
         {"myshapes": collapsed},
         geometry="myshapes",
         index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
     )
 
     return merged_shapes

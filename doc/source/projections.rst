@@ -10,23 +10,45 @@ Managing Projections
 =========================================
 
 
-
 Coordinate Reference Systems
 -----------------------------
 
 CRS are important because the geometric shapes in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in an arbitrary space. A CRS tells Python how those coordinates related to places on the Earth.
 
-CRS are referred to using codes called `proj4 strings <https://en.wikipedia.org/wiki/PROJ.4>`_. You can find the codes for most commonly used projections from `www.spatialreference.org <http://spatialreference.org/>`_.
+You can find the codes for most commonly used projections from
+`www.spatialreference.org <http://spatialreference.org/>`_.
 
-The same CRS can often be referred to in many ways. For example, one of the most commonly used CRS is the WGS84 latitude-longitude projection. One `proj4` representation of this projection is: ``"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"``. But common projections can also be referred to by `EPSG` codes, so this same projection can also called using the `proj4` string ``"+init=epsg:4326"``.
+The same CRS can often be referred to in many ways. For example, one of the most
+commonly used CRS is the WGS84 latitude-longitude projection. This can be
+referred to using the authority code ``"EPSG:4326"``.
 
-*geopandas* can accept lots of representations of CRS, including the `proj4` string itself (``"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"``) or parameters broken out in a dictionary: ``{'proj': 'latlong', 'ellps': 'WGS84', 'datum': 'WGS84', 'no_defs': True}``). In addition, some functions will take `EPSG` codes directly.
+*geopandas* can accept anything accepted by `pyproj.CRS.from_user_input() <https://pyproj4.github.io/pyproj/stable/api/crs.html#pyproj.crs.CRS.from_user_input>`_:
 
-For reference, a few very common projections and their proj4 strings:
+- CRS WKT string
+- An authority string (i.e. "epsg:4326")
+- An EPSG integer code (i.e. 4326)
+- A ``pyproj.CRS``
+- An object with a to_wkt method.
+- PROJ string
+- Dictionary of PROJ parameters
+- PROJ keyword arguments for parameters
+- JSON string with PROJ parameters
 
-* WGS84 Latitude/Longitude: ``"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"`` or ``"+init=epsg:4326"``
-* UTM Zones (North): ``"+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"``
-* UTM Zones (South): ``"+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs +south"``
+For reference, a few very common projections and their EPSG codes:
+
+* WGS84 Latitude/Longitude: ``"EPSG:4326"``
+* UTM Zones (North): ``"EPSG:32633"``
+* UTM Zones (South): ``"EPSG:32733"``
+
+
+What is the best format to store the CRS information?
+-----------------------------------------------------
+
+Generally, WKT or SRID's are preferred over PROJ strings as they can contain more information about a given CRS.
+Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations. If possible WKT2 should be used.
+
+For more details, see https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
+
 
 Setting a Projection
 ----------------------
@@ -35,21 +57,21 @@ There are two relevant operations for projections: setting a projection and re-p
 
 Setting a projection may be necessary when for some reason *geopandas* has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells *geopandas* how to interpret coordinates. If no CRS is set, *geopandas* geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
 
-Be aware that **most of the time** you don't have to set a projection. Data loaded from a reputable source (using the ``from_file()`` command) *should* always include projection information. You can see an objects current CRS through the ``crs`` attribute: ``my_geoseries.crs``.
+Be aware that **most of the time** you don't have to set a projection. Data loaded from a reputable source (using the :func:`geopandas.read_file()` command) *should* always include projection information. You can see an objects current CRS through the :attr:`GeoSeries.crs` attribute.
 
 From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
 
-For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the ``crs`` attribute:
+For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the :attr:`GeoSeries.crs` attribute:
 
 .. sourcecode:: python
 
-   my_geoseries.crs = {'init' :'epsg:4326'}
+   my_geoseries.crs = "EPSG:4326"
 
 
 Re-Projecting
 ----------------
 
-Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane `are distortions <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the ``to_crs`` command:
+Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane `are distortions <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
 
 .. ipython:: python
 
@@ -67,7 +89,7 @@ Re-projecting is the process of changing the representation of locations from on
 
     # Reproject to Mercator (after dropping Antartica)
     world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-    world = world.to_crs({'init': 'epsg:3395'}) # world.to_crs(epsg=3395) would also work
+    world = world.to_crs("EPSG:3395") # world.to_crs(epsg=3395) would also work
     ax = world.plot()
     @savefig world_reproj.png
     ax.set_title("Mercator");

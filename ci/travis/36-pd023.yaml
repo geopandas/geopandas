@@ -10,7 +10,7 @@ dependencies:
   - shapely
   - gdal=2.3
   - fiona
-  - pyproj
+  #- pyproj
   # testing
   - pytest
   - pytest-cov
@@ -24,6 +24,7 @@ dependencies:
   - psycopg2
   - libspatialite
   - pip:
+    - pyproj==2.3.1
     - geopy
     - codecov
     - mapclassify>=2.2.0
