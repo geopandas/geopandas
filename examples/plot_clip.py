@@ -91,6 +91,7 @@ world_clipped = geopandas.clip(world, polygon)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the world
+# sphinx_gallery_thumbnail_number = 2
 fig, ax = plt.subplots(figsize=(12, 8))
 world_clipped.plot(ax=ax, color="purple")
 world.boundary.plot(ax=ax)
@@ -107,7 +108,6 @@ capitals_clipped = geopandas.clip(capitals, south_america)
 
 # Plot the clipped data
 # The plot below shows the results of the clip function applied to the capital cities
-# sphinx_gallery_thumbnail_number = 3
 fig, ax = plt.subplots(figsize=(12, 8))
 capitals_clipped.plot(ax=ax, color="purple")
 south_america.boundary.plot(ax=ax, color="green")
