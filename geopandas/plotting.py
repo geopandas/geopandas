@@ -340,9 +340,7 @@ def plot_series(
         if s.crs and s.crs.is_geographic:
             bounds = s.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
-
             ax.set_aspect(1 / np.cos(y_coord * np.pi / 180), share=True)
-
         else:
             ax.set_aspect("equal", share=True)
     else:
@@ -556,9 +554,7 @@ def plot_dataframe(
         if df.crs and df.crs.is_geographic:
             bounds = df.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
-
             ax.set_aspect(1 / np.cos(y_coord * np.pi / 180), share=True)
-
         else:
             ax.set_aspect("equal", share=True)
     else:
