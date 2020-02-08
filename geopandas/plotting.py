@@ -264,7 +264,9 @@ def plot_point_collection(
     return collection
 
 
-def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
+def plot_series(
+    s, cmap=None, color=None, ax=None, figsize=None, set_aspect="auto", **style_kwds
+):
     """
     Plot a GeoSeries.
 
@@ -326,7 +328,18 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if set_aspect == "auto":
+        if s.crs.is_geographic:
+            bounds = s.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180), share=True)
+
+        else:
+            ax.set_aspect("equal", share=True)
+    else:
+        ax.set_aspect(set_aspect, share=True)
 
     if s.empty:
         warnings.warn(
@@ -409,6 +422,7 @@ def plot_dataframe(
     legend_kwds=None,
     classification_kwds=None,
     missing_kwds=None,
+    set_aspect="auto",
     **style_kwds
 ):
     """
@@ -479,6 +493,8 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
+    set_aspect : 'auto', 'equal' or float [0, 1]
+        Set aspect of axis. 'auto' geog, etc. TO WRITE
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -523,7 +539,18 @@ def plot_dataframe(
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if set_aspect == "auto":
+        if df.crs.is_geographic:
+            bounds = df.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180), share=True)
+
+        else:
+            ax.set_aspect("equal", share=True)
+    else:
+        ax.set_aspect(set_aspect, share=True)
 
     if df.empty:
         warnings.warn(
@@ -544,6 +571,7 @@ def plot_dataframe(
             ax=ax,
             figsize=figsize,
             markersize=markersize,
+            set_aspect=set_aspect,
             **style_kwds
         )
 
