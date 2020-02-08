@@ -38,7 +38,7 @@ violations of this code outside these spaces may affect a person's ability to
 participate within them.
 
 By embracing the following principles, guidelines and actions to follow or
-avoid, you will help us make Jupyter a welcoming and productive community. Feel
+avoid, you will help us make GeoPandas a welcoming and productive community. Feel
 free to contact the Code of Conduct Committee at
 [*conduct@geopandas.org*](mailto:conduct@geopandas.org) with any questions.
 
