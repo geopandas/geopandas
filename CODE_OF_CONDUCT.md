@@ -1,6 +1,6 @@
-# GeoPandas Code of Conduct
+# GeoPandas Project Code of Conduct
 
-Behind GeoPandas is an engaged and respectful community made up of people
+Behind GeoPandas Project is an engaged and respectful community made up of people
 from all over the world and of wide range of backgrounds.
 Naturally, this implies diversity of ideas and perspectives on often complex
 problems. Disagreement and healthy discussion of conflicting viewpoints is
@@ -31,14 +31,14 @@ for that: we welcome reports by emailing
 form](https://goo.gl/forms/CHANGETHELINK).
 
 This code applies equally to founders, developers, mentors and new community
-members, in all spaces managed by GeoPandas. This
+members, in all spaces managed by GeoPandas Project. This
 includes the mailing lists, our GitHub organization, our chat room, in-person
 events, and any other forums created by the project team. In addition,
 violations of this code outside these spaces may affect a person's ability to
 participate within them.
 
 By embracing the following principles, guidelines and actions to follow or
-avoid, you will help us make GeoPandas a welcoming and productive community. Feel
+avoid, you will help us make GeoPandas Project a welcoming and productive community. Feel
 free to contact the Code of Conduct Committee at
 [*conduct@geopandas.org*](mailto:conduct@geopandas.org) with any questions.
 
@@ -85,7 +85,7 @@ free to contact the Code of Conduct Committee at
    expectations is preferable to demands for another person's time.
 
 7. **When we disagree, try to understand why**. Disagreements, both social and
-   technical, happen all the time and GeoPandas is no exception.  Try to
+   technical, happen all the time and GeoPandas Project is no exception.  Try to
    understand where others are coming from, as seeing a question from their
    viewpoint may help find a new path forward.  And don’t forget that it is
    human to err: blaming each other doesn’t get us anywhere, while we can learn
@@ -113,13 +113,13 @@ report, we will take appropriate action.
 
 ## Enforcement
 
-Enforcement procedures within GeoPandas follow Project Jupyter's
+Enforcement procedures within GeoPandas Project follow Project Jupyter's
 [*Enforcement Manual*](https://github.com/jupyter/governance/blob/master/conduct/enforcement.md). For information on enforcement, please view the [original manual](https://github.com/jupyter/governance/blob/master/conduct/enforcement.md).
 
 Original text courtesy of the [*Speak
 Up!*](http://web.archive.org/web/20141109123859/http://speakup.io/coc.html),
 [*Django*](https://www.djangoproject.com/conduct) and [*Jupyter*](https://github.com/jupyter/governance/blob/master/conduct/code_of_conduct.md) Projects,
-modified by GeoPandas. We are grateful to those projects for contributing these materials under open licensing terms for us to easily reuse.
+modified by GeoPandas Project. We are grateful to those projects for contributing these materials under open licensing terms for us to easily reuse.
 
 All content on this page is licensed under a [*Creative Commons
 Attribution*](http://creativecommons.org/licenses/by/3.0/) license.
