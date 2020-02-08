@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "col1": 1.0, "col3": 2.0 }, "geometry": { "type": "LineString", "coordinates": [ [ 1.0, 3.0 ], [ 3.0, 3.0 ] ] } },
+{ "type": "Feature", "properties": { "col1": 2.0, "col3": 2.0 }, "geometry": { "type": "LineString", "coordinates": [ [ 5.0, 3.0 ], [ 3.0, 3.0 ] ] } },
+{ "type": "Feature", "properties": { "col1": 1.0, "col3": 1.0 }, "geometry": { "type": "LineString", "coordinates": [ [ 2.0, 1.0 ], [ 2.0, 3.0 ] ] } },
+{ "type": "Feature", "properties": { "col1": 2.0, "col3": 1.0 }, "geometry": { "type": "LineString", "coordinates": [ [ 3.0, 4.0 ], [ 5.0, 4.0 ] ] } },
+{ "type": "Feature", "properties": { "col1": 1.0, "col3": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 1.0, 1.0 ], [ 1.0, 3.0 ], [ 2.0, 3.0 ], [ 3.0, 3.0 ], [ 3.0, 1.0 ], [ 2.0, 1.0 ], [ 1.0, 1.0 ] ] ] } },
+{ "type": "Feature", "properties": { "col1": 2.0, "col3": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 3.0, 3.0 ], [ 3.0, 4.0 ], [ 3.0, 5.0 ], [ 5.0, 5.0 ], [ 5.0, 4.0 ], [ 5.0, 3.0 ], [ 3.0, 3.0 ] ] ] } },
+{ "type": "Feature", "properties": { "col1": null, "col3": 1.0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 0.0 ], [ 2.0, 1.0 ] ], [ [ 2.0, 3.0 ], [ 2.0, 4.0 ], [ 3.0, 4.0 ] ], [ [ 5.0, 4.0 ], [ 6.0, 4.0 ] ] ] } },
+{ "type": "Feature", "properties": { "col1": null, "col3": 2.0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 3.0 ], [ 1.0, 3.0 ] ], [ [ 5.0, 3.0 ], [ 6.0, 3.0 ] ] ] } }
+]
+}
