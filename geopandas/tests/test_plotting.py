@@ -629,6 +629,51 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [10]
 
 
+class TestGeographicAspect:
+    def setup_class(self):
+        pth = get_path("naturalearth_lowres")
+        df = read_file(pth)
+        self.north = df.loc[df.continent == "North America"]
+        self.north_proj = self.north.to_crs("ESRI:102008")
+        bounds = self.north.total_bounds
+        y_coord = np.mean([bounds[1], bounds[3]])
+        self.exp = 1 / np.cos(y_coord * np.pi / 180)
+
+    def test_auto(self):
+        ax = self.north.geometry.plot()
+        assert ax.get_aspect() == self.exp
+        ax2 = self.north_proj.geometry.plot()
+        assert ax2.get_aspect() == "equal"
+        ax = self.north.plot()
+        assert ax.get_aspect() == self.exp
+        ax2 = self.north_proj.plot()
+        assert ax2.get_aspect() == "equal"
+        ax3 = self.north.plot("pop_est")
+        assert ax3.get_aspect() == self.exp
+        ax4 = self.north_proj.plot("pop_est")
+        assert ax4.get_aspect() == "equal"
+
+    def test_manual(self):
+        ax = self.north.geometry.plot(set_aspect="equal")
+        assert ax.get_aspect() == "equal"
+        ax2 = self.north.geometry.plot(set_aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.geometry.plot(set_aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        ax = self.north.plot(set_aspect="equal")
+        assert ax.get_aspect() == "equal"
+        ax2 = self.north.plot(set_aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.plot(set_aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        ax = self.north.plot("pop_est", set_aspect="equal")
+        assert ax.get_aspect() == "equal"
+        ax2 = self.north.plot("pop_est", set_aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.plot("pop_est", set_aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+
+
 class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):

@@ -293,6 +293,13 @@ def plot_series(
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
+    set_aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
+        the GeoSeries (the mean of the y range of bounding box). This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -330,7 +337,7 @@ def plot_series(
         fig, ax = plt.subplots(figsize=figsize)
 
     if set_aspect == "auto":
-        if s.crs.is_geographic:
+        if s.crs and s.crs.is_geographic:
             bounds = s.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
 
@@ -493,8 +500,13 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
-    set_aspect : 'auto', 'equal' or float [0, 1]
-        Set aspect of axis. 'auto' geog, etc. TO WRITE
+    set_aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
+        the GeoDataFrame (the mean of the y range of bounding box). This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -541,7 +553,7 @@ def plot_dataframe(
         fig, ax = plt.subplots(figsize=figsize)
 
     if set_aspect == "auto":
-        if df.crs.is_geographic:
+        if df.crs and df.crs.is_geographic:
             bounds = df.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
 
