@@ -516,6 +516,19 @@ class TestPolygonPlotting:
 
         assert ax.get_figure().axes[1].get_xlabel() == label_txt
 
+    def test_fmt_ignore(self):
+        # test if fmt is removed if scheme is not passed (it would raise Error)
+        # GH #1253
+
+        self.df.plot(
+            column="values",
+            categorical=True,
+            legend=True,
+            legend_kwds={"fmt": "{:.0f}"},
+        )
+
+        self.df.plot(column="values", legend=True, legend_kwds={"fmt": "{:.0f}"})
+
     def test_multipolygons(self):
 
         # MultiPolygons
