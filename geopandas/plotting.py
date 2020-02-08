@@ -660,6 +660,8 @@ def plot_dataframe(
 
         if legend_kwds is None:
             legend_kwds = {}
+        if "fmt" in legend_kwds:
+            legend_kwds.pop("fmt")
 
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
