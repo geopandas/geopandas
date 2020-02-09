@@ -53,7 +53,7 @@ GeoDataFrames can be exported to many different standard formats using the ``Geo
 .. note::
 
     GeoDataFrame can contain more field types than most of the file types. For example tuples or lists
-    can be easily stored in the GeoDataFrame, but saving them to GeoPackage will raise a ValueError.
+    can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
     Before saving to a file, they need to be converted to a format supported by a selected driver.
 
 **Writing to Shapefile**::
