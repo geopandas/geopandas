@@ -7,7 +7,7 @@ dependencies:
   - pandas=0.24
   - shapely
   - fiona=1.7
-  - pyproj
+  #- pyproj
   # testing
   - pytest
   - pytest-cov
@@ -21,6 +21,7 @@ dependencies:
   - psycopg2
   - libspatialite
   - pip:
+    - pyproj
     - codecov
     - geopy
     - mapclassify

@@ -1,6 +1,16 @@
 Changes
 =======
 
+Version 0.6.3 (February 6, 2020)
+---------------------------------
+
+Small bug-fix release:
+
+- Compatibility with Shapely 1.7 and pandas 1.0 (#1244).    
+- Fix `GeoDataFrame.fillna` to accept non-geometry values again when there are
+  no missing values in the geometry column. This should make it easier to fill
+  the numerical columns of the GeoDataFrame (#1279).
+
 
 Version 0.6.2 (November 18, 2019)
 ---------------------------------

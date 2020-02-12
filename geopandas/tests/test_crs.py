@@ -3,12 +3,17 @@ from distutils.version import LooseVersion
 import numpy as np
 
 from shapely.geometry import Point
+import pyproj
 
 from geopandas import GeoDataFrame, points_from_xy
-from geopandas.geoseries import _PYPROJ_VERSION
 
 from geopandas.testing import assert_geodataframe_equal
 import pytest
+
+
+# pyproj 2.3.1 fixed a segfault for the case working in an environment with
+# 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
+PYPROJ_LT_231 = LooseVersion(pyproj.__version__) < LooseVersion("2.3.1")
 
 
 def _create_df(x, y=None, crs=None):
@@ -28,7 +33,7 @@ def df_epsg26918():
     return _create_df(
         x=range(-1683723, -1683723 + 10, 1),
         y=range(6689139, 6689139 + 10, 1),
-        crs={"init": "epsg:26918", "no_defs": True},
+        crs="epsg:26918",
     )
 
 
@@ -65,11 +70,15 @@ def test_to_crs_geo_column_name():
 @pytest.fixture(
     params=[
         4326,
-        {"init": "epsg:4326"},
+        "epsg:4326",
+        pytest.param(
+            {"init": "epsg:4326"},
+            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
+        ),
         "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         {"proj": "latlong", "ellps": "WGS84", "datum": "WGS84", "no_defs": True},
     ],
-    ids=["epsg_number", "epsg_dict", "proj4_string", "proj4_dict"],
+    ids=["epsg_number", "epsg_string", "epsg_dict", "proj4_string", "proj4_dict"],
 )
 def epsg4326(request):
     if isinstance(request.param, int):
@@ -80,11 +89,15 @@ def epsg4326(request):
 @pytest.fixture(
     params=[
         26918,
-        {"init": "epsg:26918", "no_defs": True},
+        "epsg:26918",
+        pytest.param(
+            {"init": "epsg:26918", "no_defs": True},
+            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
+        ),
         "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ",
         {"proj": "utm", "zone": 18, "datum": "NAD83", "units": "m", "no_defs": True},
     ],
-    ids=["epsg_number", "epsg_dict", "proj4_string", "proj4_dict"],
+    ids=["epsg_number", "epsg_string", "epsg_dict", "proj4_string", "proj4_dict"],
 )
 def epsg26918(request):
     if isinstance(request.param, int):
@@ -92,6 +105,7 @@ def epsg26918(request):
     return dict(crs=request.param)
 
 
+@pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
 def test_transform2(epsg4326, epsg26918):
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
@@ -101,10 +115,6 @@ def test_transform2(epsg4326, epsg26918):
     assert_geodataframe_equal(df, utm, check_less_precise=True, check_crs=False)
 
 
-@pytest.mark.skipif(
-    _PYPROJ_VERSION < LooseVersion("2.2.0"),
-    reason="EPSG strings without +init= won't work on previous versions of pyproj.",
-)
 def test_crs_axis_order__always_xy():
     df = GeoDataFrame(geometry=[Point(-1683723, 6689139)], crs="epsg:26918")
     lonlat = df.to_crs("epsg:4326")
