@@ -117,8 +117,9 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
         will determine the schema based on each column's dtype
     index : bool, default None
         If True, write index into one or more columns (for MultiIndex).
-        Default None automatically determines if index is written if it
-        is either named, is a MultiIndex, or has a non-integer data type.
+        Default None writes the index into one or more columns only if
+        the index is named, is a MultiIndex, or has a non-integer data
+        type. If False, no index is written.
 
         .. versionadded:: 0.7
             Previously the index was not written.
@@ -135,10 +136,9 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
     """
     if index is None:
         # Determine if index attribute(s) should be saved to file
-        index = (
-            list(df.index.names) != [None]
-            or not isinstance(df.index, (pd.RangeIndex, pd.Int64Index))
-            or isinstance(df.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
+        index = list(df.index.names) != [None] or type(df.index) not in (
+            pd.RangeIndex,
+            pd.Int64Index,
         )
     if index:
         df = df.reset_index(drop=False)

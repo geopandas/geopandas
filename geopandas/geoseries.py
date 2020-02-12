@@ -211,8 +211,9 @@ class GeoSeries(GeoPandasBase, Series):
             The OGR format driver used to write the vector file.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
-            Default None automatically determines if index is written if it
-            is either named, is a MultiIndex, or has a non-integer data type.
+            Default None writes the index into one or more columns only if
+            the index is named, is a MultiIndex, or has a non-integer data
+            type. If False, no index is written.
 
             .. versionadded:: 0.7
                 Previously the index was not written.
