@@ -127,7 +127,7 @@ def _get_geometry_type(gdf):
 
     if len(geom_types) == 1:
         if has_curve:
-            target_geom_type = 'LINESTRING'
+            target_geom_type = "LINESTRING"
         else:
             if geom_types[0] is None:
                 raise ValueError("No valid geometries in the data.")
@@ -175,6 +175,7 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 def _convert_to_wkb(gdf, geom_name):
     """Convert geometries to wkb. """
     from geopandas.array import from_shapely, to_wkb
+
     geom_array = from_shapely(gdf[geom_name])
     gdf[geom_name] = to_wkb(geom_array, hex=True)
     return gdf
