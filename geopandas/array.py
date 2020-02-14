@@ -473,7 +473,7 @@ class GeometryArray(ExtensionArray):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
-            if isinstance(key, (list, np.ndarray)):
+            if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
                 value_array[:] = [value]
                 self.data[key] = value_array
