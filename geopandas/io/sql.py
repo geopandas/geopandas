@@ -117,40 +117,25 @@ def _get_geometry_type(gdf):
           such as GeometryCollection([Point, LineStrings])
      """
     geom_types = list(gdf.geometry.geom_type.unique())
-    has_single = False
-    has_multi = False
     has_curve = False
 
-    # Get the basic geometry type
-    basic_types = []
-
     for gt in geom_types:
-        if "Multi" in gt:
-            has_multi = True
-            # Keep track of the "root" geometry types
-            basic_types.append(gt.replace("Multi", ""))
+        if gt is None:
+            continue
         elif "LinearRing" in gt:
-            if "LineString" not in basic_types:
-                basic_types.append("LineString")
-                has_curve = True
+            has_curve = True
+
+    if len(geom_types) == 1:
+        if has_curve:
+            target_geom_type = 'LINESTRING'
         else:
-            has_single = True
-            basic_types.append(gt)
-
-    geom_types = list(set(basic_types))
-
-    # If there are mixed geometry types, use GEOMETRY.
-    if len(geom_types) > 1:
-        # TODO: Should we warn about mixed geometry types?
-        # print("UserWarning: GeoDataFrame contains mixed geometry types.")
-        target_geom_type = "GEOMETRY"
-    # If there is a mix of single and multi-geometries, use GEOMETRY.
-    elif has_single and has_multi:
-        target_geom_type = "GEOMETRY"
-    elif has_multi:
-        target_geom_type = "MULTI{geom_type}".format(geom_type=geom_types[0].upper())
+            if geom_types[0] is None:
+                raise ValueError("No valid geometries in the data.")
+            else:
+                target_geom_type = geom_types[0].upper()
     else:
-        target_geom_type = geom_types[0].upper()
+        target_geom_type = "GEOMETRY"
+
     return target_geom_type, has_curve
 
 
@@ -189,9 +174,9 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 def _convert_to_wkb(gdf, geom_name):
     """Convert geometries to wkb. """
-    from shapely.wkb import dumps
-
-    gdf[geom_name] = gdf[geom_name].apply(lambda geom: dumps(geom, hex=True))
+    from geopandas.array import from_shapely, to_wkb
+    geom_array = from_shapely(gdf[geom_name])
+    gdf[geom_name] = to_wkb(geom_array, hex=True)
     return gdf
 
 
