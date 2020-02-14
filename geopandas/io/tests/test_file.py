@@ -1,23 +1,25 @@
+from collections import OrderedDict
 import datetime
+from distutils.version import LooseVersion
 import os
 import pathlib
 import sys
-from collections import OrderedDict
-from distutils.version import LooseVersion
 
 import numpy as np
+import pandas as pd
 
 import fiona
-import geopandas
-import pandas as pd
-import pytest
 from shapely.geometry import Point, Polygon, box
 
+import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import PANDAS_GE_024
 from geopandas.io.file import _FIONA18, fiona_env
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+
+import pytest
+
 
 _CRS = "epsg:4326"
 

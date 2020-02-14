@@ -48,7 +48,7 @@ If there are multiple datasets in a folder in the ZIP file, you also have to spe
 Reading subsets of the data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since geopandas is powered by `Fiona`, which is powered by `GDAL`, you can take advantage of
+Since geopandas is powered by Fiona, which is powered by GDAL, you can take advantage of
 pre-filtering when loading in larger datasets. This can be done geospatially with a geometry
 or bounding box. You can also filter rows loaded with a slice. Read more at :func:`geopandas.read_file`.
 
@@ -91,13 +91,18 @@ Row Filter
 
 .. versionadded:: 0.7.0
 
-Filter the rows loaded in from the file using a slice object.
+Filter the rows loaded in from the file using an integer (for the first n rows)
+or a slice object.
 
 .. code-block:: python
 
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
-        rows=slice(10),
+        rows=10,
+    )
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        rows=slice(10, 20),
     )
 
 

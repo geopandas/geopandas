@@ -1,13 +1,9 @@
 from distutils.version import LooseVersion
-from urllib.parse import urlparse as parse_url
-from urllib.parse import uses_netloc, uses_params, uses_relative
 
-# Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
-
-import fiona
 import numpy as np
 import pandas as pd
+
+import fiona
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
@@ -17,6 +13,12 @@ except ImportError:
     from fiona import drivers as fiona_env
 
 from geopandas import GeoDataFrame, GeoSeries
+
+
+# Adapted from pandas.io.common
+from urllib.request import urlopen as _urlopen
+from urllib.parse import urlparse as parse_url
+from urllib.parse import uses_netloc, uses_params, uses_relative
 
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
@@ -114,7 +116,7 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 elif not isinstance(rows, slice):
                     raise TypeError("'rows' must be an integer or a slice.")
                 f_filt = features.filter(
-                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask,
+                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
                 )
             elif any((bbox, mask)):
                 f_filt = features.filter(bbox=bbox, mask=mask)
