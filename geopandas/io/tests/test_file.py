@@ -1,24 +1,23 @@
-from collections import OrderedDict
 import datetime
-from distutils.version import LooseVersion
 import os
 import pathlib
 import sys
+from collections import OrderedDict
+from distutils.version import LooseVersion
+
+import numpy as np
 
 import fiona
-import numpy as np
+import geopandas
 import pandas as pd
+import pytest
 from shapely.geometry import Point, Polygon, box
 
-import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env, _FIONA18
 from geopandas._compat import PANDAS_GE_024
-
+from geopandas.io.file import _FIONA18, fiona_env
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
-import pytest
-
 
 _CRS = "epsg:4326"
 
@@ -275,7 +274,7 @@ def test_read_file_filtered(df_nybb):
 def test_read_file_filtered__rows(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
-    filtered_df = read_file(nybb_filename, rows=slice(None, 1))
+    filtered_df = read_file(nybb_filename, rows=1)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (1, 5)

@@ -5,11 +5,9 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 # Adapted from pandas.io.common
 from urllib.request import urlopen as _urlopen
 
-import numpy as np
-
 import fiona
+import numpy as np
 import pandas as pd
-from geopandas import GeoDataFrame, GeoSeries
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
@@ -17,6 +15,8 @@ try:
     from fiona import Env as fiona_env
 except ImportError:
     from fiona import drivers as fiona_env
+
+from geopandas import GeoDataFrame, GeoSeries
 
 
 _FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
@@ -52,8 +52,9 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox.
-    rows: slice, default None
-        Load in specific rows by passing in a slice() object.
+    rows: slice or int, default None
+        Load in specific rows by passing in a slice() object or an integer
+        for the first n-rows.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -108,8 +109,10 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 mask = mapping(mask)
             # setup the data loading filter
             if rows is not None:
-                if not isinstance(rows, slice):
-                    raise TypeError("'rows' must be a slice.")
+                if isinstance(rows, int):
+                    rows = slice(rows)
+                elif not isinstance(rows, slice):
+                    raise TypeError("'rows' must be an integer or a slice.")
                 f_filt = features.filter(
                     rows.start, rows.stop, rows.step, bbox=bbox, mask=mask,
                 )
