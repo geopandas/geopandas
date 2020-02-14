@@ -54,9 +54,9 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox.
-    rows: slice or int, default None
-        Load in specific rows by passing in a slice() object or an integer
-        for the first n-rows.
+    rows: int or slice, default None
+        Load in specific rows by passing an integer (first `n` rows) or a
+        slice() object.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
