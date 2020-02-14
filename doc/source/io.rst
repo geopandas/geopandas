@@ -106,7 +106,7 @@ Writing Spatial Data
 ---------------------
 
 GeoDataFrames can be exported to many different standard formats using the
-:meth:`geopandas.GeoDataFrame.to_file()` method.
+:meth:`geopandas.GeoDataFrame.to_file` method.
 For a full list of supported formats, type ``import fiona; fiona.supported_drivers``.
 
 **Writing to Shapefile**::
