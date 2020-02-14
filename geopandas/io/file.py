@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import numpy as np
+import pandas as pd
 
 import fiona
 
@@ -95,7 +96,7 @@ def read_file(filename, bbox=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
+def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs):
     """
     Write this GeoDataFrame to an OGR data source
 
@@ -114,6 +115,14 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
         will determine the schema based on each column's dtype
+    index : bool, default None
+        If True, write index into one or more columns (for MultiIndex).
+        Default None writes the index into one or more columns only if
+        the index is named, is a MultiIndex, or has a non-integer data
+        type. If False, no index is written.
+
+        .. versionadded:: 0.7
+            Previously the index was not written.
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
@@ -125,6 +134,14 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    if index is None:
+        # Determine if index attribute(s) should be saved to file
+        index = list(df.index.names) != [None] or type(df.index) not in (
+            pd.RangeIndex,
+            pd.Int64Index,
+        )
+    if index:
+        df = df.reset_index(drop=False)
     if schema is None:
         schema = infer_schema(df)
     with fiona_env():

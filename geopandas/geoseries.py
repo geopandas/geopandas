@@ -197,14 +197,42 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
-    def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
+    def to_file(self, filename, driver="ESRI Shapefile", index=None, **kwargs):
+        """Write the ``GeoSeries`` to a file.
+
+        By default, an ESRI shapefile is written, but any OGR data source
+        supported by Fiona can be written.
+
+        Parameters
+        ----------
+        filename : string
+            File path or file handle to write to.
+        driver : string, default: 'ESRI Shapefile'
+            The OGR format driver used to write the vector file.
+        index : bool, default None
+            If True, write index into one or more columns (for MultiIndex).
+            Default None writes the index into one or more columns only if
+            the index is named, is a MultiIndex, or has a non-integer data
+            type. If False, no index is written.
+
+            .. versionadded:: 0.7
+                Previously the index was not written.
+
+        Notes
+        -----
+        The extra keyword arguments ``**kwargs`` are passed to fiona.open and
+        can be used to write to multi-layer data, store data within archives
+        (zip files), etc.
+
+        See Also
+        --------
+        GeoDataFrame.to_file
+        """
         from geopandas import GeoDataFrame
 
-        data = GeoDataFrame(
-            {"geometry": self, "id": self.index.values}, index=self.index
-        )
+        data = GeoDataFrame({"geometry": self}, index=self.index)
         data.crs = self.crs
-        data.to_file(filename, driver, **kwargs)
+        data.to_file(filename, driver, index=index, **kwargs)
 
     #
     # Implement pandas methods
