@@ -83,7 +83,7 @@ The bounding box filter only loads data that intersects with the bounding box.
     )
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("nybb"),
-        bbox=mask,
+        bbox=bbox,
     )
 
 Row Filter
