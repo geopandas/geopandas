@@ -126,13 +126,16 @@ def from_wkb(data):
     return GeometryArray(aout)
 
 
-def to_wkb(geoms):
+def to_wkb(geoms, hex=False):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    out = [geom.wkb if geom is not None else None for geom in geoms]
+    if hex:
+        out = [geom.wkb_hex if geom is not None else None for geom in geoms]
+    else:
+        out = [geom.wkb if geom is not None else None for geom in geoms]
     return np.array(out, dtype=object)
 
 

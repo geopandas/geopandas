@@ -4,7 +4,6 @@ from geopandas.array import _points_from_xy as points_from_xy  # noqa
 
 from geopandas.io.file import read_file  # noqa
 from geopandas.io.sql import read_postgis  # noqa
-from geopandas.io.sql import write_postgis  # noqa
 from geopandas.tools import sjoin  # noqa
 from geopandas.tools import overlay  # noqa
 from geopandas.tools._show_versions import show_versions  # noqa

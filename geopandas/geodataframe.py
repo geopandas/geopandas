@@ -810,9 +810,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             The keys should be the column names and the values
             should be the SQLAlchemy types.
         """
-        gdf = self.copy()
         geopandas.io.sql.write_postgis(
-            gdf, name, con, schema, if_exists, index, index_label, chunksize, dtype,
+            self, name, con, schema, if_exists, index, index_label, chunksize, dtype,
         )
 
 

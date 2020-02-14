@@ -6,7 +6,8 @@ see geopandas.tests.util for more information.
 """
 
 import geopandas
-from geopandas import read_file, read_postgis, write_postgis
+from geopandas import read_file, read_postgis
+from geopandas.io.sql import write_postgis
 
 from geopandas.tests.util import (
     connect,
