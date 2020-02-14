@@ -32,11 +32,11 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, mask=None, row_filter=None, **kwargs):
+def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
-    .. versionadded:: 0.7.0 mask, row_filter
+    .. versionadded:: 0.7.0 mask, rows
 
     Parameters
     ----------
@@ -48,10 +48,11 @@ def read_file(filename, bbox=None, mask=None, row_filter=None, **kwargs):
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
         or GeoDataFrame. Cannot be used with mask.
     mask: dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
-        Filter features by given dict-like geojson geometry, GeoSeries,
-        GeoDataFrame or a shapely geometry. CRS mis-matches are resolved
-        if given a GeoSeries or GeoDataFrame. Cannot be used with bbox.
-    row_filter: slice, default None
+        Filter for features that intersect with the given dict-like geojson
+        geometry, GeoSeries, GeoDataFrame or shapely geometry.
+        CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
+        Cannot be used with bbox.
+    rows: slice, default None
         Load in specific rows by passing in a slice() object.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
@@ -106,15 +107,11 @@ def read_file(filename, bbox=None, mask=None, row_filter=None, **kwargs):
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
             # setup the data loading filter
-            if row_filter is not None:
-                if not isinstance(row_filter, slice):
-                    raise TypeError("'row_filter' must be a slice.")
+            if rows is not None:
+                if not isinstance(rows, slice):
+                    raise TypeError("'rows' must be a slice.")
                 f_filt = features.filter(
-                    row_filter.start,
-                    row_filter.stop,
-                    row_filter.step,
-                    bbox=bbox,
-                    mask=mask,
+                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask,
                 )
             elif any((bbox, mask)):
                 f_filt = features.filter(bbox=bbox, mask=mask)

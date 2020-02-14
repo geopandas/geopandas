@@ -272,16 +272,16 @@ def test_read_file_filtered(df_nybb):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered__row_filter(df_nybb):
+def test_read_file_filtered__rows(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
-    filtered_df = read_file(nybb_filename, row_filter=slice(None, 1))
+    filtered_df = read_file(nybb_filename, rows=slice(None, 1))
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (1, 5)
 
 
-def test_read_file_filtered__row_filter_bbox(df_nybb):
+def test_read_file_filtered__rows_bbox(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = (
@@ -290,27 +290,27 @@ def test_read_file_filtered__row_filter_bbox(df_nybb):
         1047224.3104931959,
         244317.30894023244,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox, row_filter=slice(-1, None))
+    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (1, 5)
 
 
-def test_read_file_filtered__row_filter_bbox__polygon(df_nybb):
+def test_read_file_filtered__rows_bbox__polygon(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox, row_filter=slice(-1, None))
+    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (1, 5)
 
 
-def read_file_filtered_row_filter_invalid():
+def read_file_filtered_rows_invalid():
     with pytest.raises(TypeError):
-        read_file(geopandas.datasets.get_path("nybb"), row_filter="not_a_slice")
+        read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb):

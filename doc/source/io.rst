@@ -97,7 +97,7 @@ Filter the rows loaded in from the file using a slice object.
 
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
-        row_filter=slice(10),
+        rows=slice(10),
     )
 
 
