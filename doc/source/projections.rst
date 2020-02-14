@@ -215,12 +215,39 @@ Further, on websites such as `spatialreference.org <https://spatialreference.org
 and `epsg.io <https://epsg.io/>`__ the descriptions of many CRS can be found
 including their EPSG codes and proj4 string definitions.
 
+**Other formats**
+
+Next to the EPSG code mentioned above, there are also other ways to specify the
+CRS: an actual ``pyproj.CRS`` object, a WKT string, a PROJ JSON string, etc. 
+Anything that is accepted by ``pyproj.CRS.from_user_input`` can by specified
+to the ``crs`` keyword/attribute in GeoPandas.
+
+Also compatible CRS objects, such as from the ``rasterio`` package, can be
+passed directly to GeoPandas.
+
 
 What is it with the axis order?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Briefly explain that certain CRS can have different axis order (eg EPSG:4326),
-  but in GeoPandas always x, y (or lon, lat)
+Starting with PROJ 6 / pyproj 2, the axis order of the official EPSG definition
+is honoured. For example, when using geographic coordinates (degrees of longitude
+and latitude) in the standard EPSG:4326, the CRS will look like:
+
+.. code-block:: python
+
+   >>> pyproj.CRS(3EPSG:4326")
+   <Geographic 2D CRS: EPSG:4326>
+   ...
+   Axis Info [ellipsoidal]:
+   - Lat[north]: Geodetic latitude (degree)
+   - Lon[east]: Geodetic longitude (degree)
+   ...
+
+This mentions the order as (lat, lon), as that is the official order of coordinates
+in EPSG:4326. In GeoPandas, however, the coordinates are always stored as (x, y),
+and thus as (lon, lat), regardless of the CRS  (i.e. the "traditional" order used
+in GIS). When reprojecting, GeoPandas and pyproj will under the hood take care of
+this difference in axis order, so the user doesn't need to care about this.
 
 
 I get a "BoundCRS"?
