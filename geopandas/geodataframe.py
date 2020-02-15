@@ -122,15 +122,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        col : column label or array
-        drop : boolean, default True
+        col: column label or array
+        drop: boolean, default True
             Delete column to be used as the new geometry
-        inplace : boolean, default False
+        inplace: boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
-        crs : str/result of fion.get_crs (optional)
-            Coordinate system to use. If passed, overrides both DataFrame and
-            col's crs. Otherwise, tries to get crs from passed col values or
-            DataFrame.
+        crs: pyproj.crs.CRS, optional
+            Coordinate system to use. The value can be anything accepted
+            by :meth:`pyproj.crs.CRS.from_user_input`, such as an authority
+            string (eg "EPSG:4326") or a WKT string. If passed, overrides
+            both DataFrame and col's crs. Otherwise, tries to get crs
+            from passed col values or DataFrame.
 
         Examples
         --------
@@ -139,7 +141,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Returns
         -------
-        geodataframe : GeoDataFrame
+        GeoDataFrame
         """
         # Most of the code here is taken from DataFrame.set_index()
         if inplace:
@@ -547,15 +549,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        crs : pyproj.CRS, optional if `epsg` is specified
+        crs: pyproj.crs.CRS, optional if `epsg` is specified
             The value can be anything accepted
-            by :meth:`pyproj.CRS.from_user_input`, such as an authority
+            by :meth:`pyproj.crs.CRS.from_user_input`, such as an authority
             string (eg "EPSG:4326") or a WKT string.
-        epsg : int, optional if `crs` is specified
+        epsg: int, optional if `crs` is specified
             EPSG code specifying output projection.
-        inplace : bool, optional, default: False
+        inplace: bool, optional, default: False
             Whether to return a new GeoDataFrame or do the transformation in
             place.
+
+        Returns
+        -------
+        GeoDataFrame
         """
         if inplace:
             df = self
