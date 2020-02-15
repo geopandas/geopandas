@@ -5,9 +5,10 @@ import os
 import pathlib
 import sys
 
-import fiona
 import numpy as np
 import pandas as pd
+
+import fiona
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -17,6 +18,7 @@ from geopandas._compat import PANDAS_GE_024
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+
 import pytest
 
 
@@ -272,6 +274,47 @@ def test_read_file_filtered(df_nybb):
     assert filtered_df_shape == (2, 5)
 
 
+def test_read_file_filtered__rows(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    filtered_df = read_file(nybb_filename, rows=1)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (1, 5)
+
+
+def test_read_file_filtered__rows_bbox(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    bbox = (
+        1031051.7879884212,
+        224272.49231459625,
+        1047224.3104931959,
+        244317.30894023244,
+    )
+    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (1, 5)
+
+
+def test_read_file_filtered__rows_bbox__polygon(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    bbox = box(
+        1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
+    )
+    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (1, 5)
+
+
+def read_file_filtered_rows_invalid():
+    with pytest.raises(TypeError):
+        read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
+
+
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
@@ -287,6 +330,28 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb):
         crs=CRS,
     )
     filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_filtered_with_gdf_boundary__mask(df_nybb):
+    gdf_mask = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_cities"),
+        mask=gdf_mask[gdf_mask.continent == "Africa"],
+    )
+    filtered_df_shape = gdf.shape
+    assert filtered_df_shape == (50, 2)
+
+
+def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = box(
+        1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
+    )
+    filtered_df = read_file(nybb_filename, mask=mask)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
@@ -308,6 +373,27 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb):
     )
     bbox.to_crs(epsg=4326, inplace=True)
     filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = geopandas.GeoDataFrame(
+        geometry=[
+            box(
+                1031051.7879884212,
+                224272.49231459625,
+                1047224.3104931959,
+                244317.30894023244,
+            )
+        ],
+        crs=CRS,
+    )
+    mask.to_crs(epsg=4326, inplace=True)
+    filtered_df = read_file(nybb_filename, mask=mask.geometry)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
