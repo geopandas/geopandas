@@ -97,6 +97,7 @@ Re-projecting is the process of changing the representation of locations from on
     @savefig world_reproj.png
     ax.set_title("Mercator");
 
+
 Upgrading to GeoPandas 0.7 with pyproj > 2.2 and PROJ > 6
 ---------------------------------------------------------
 
@@ -145,6 +146,10 @@ yields a proper CRS:
 
    df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
    df.crs
+
+However, in certain cases (with older CRS formats), the resulting CRS object
+might not be fully as expected. See the :ref:`section below <unrecognized-crs-reasons>`
+for possible reasons and how to solve it.
 
 
 Manually specifying the CRS
@@ -227,8 +232,8 @@ Also compatible CRS objects, such as from the ``rasterio`` package, can be
 passed directly to GeoPandas.
 
 
-I have a different axis order?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The axis order of a CRS
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with PROJ 6 / pyproj 2, the axis order of the official EPSG definition
 is honoured. For example, when using geographic coordinates (degrees of longitude
@@ -250,14 +255,16 @@ and thus as (lon, lat) order, regardless of the CRS (i.e. the "traditional" orde
 in GIS). When reprojecting, GeoPandas and pyproj will under the hood take care of
 this difference in axis order, so the user doesn't need to care about this.
 
+.. _unrecognized-crs-reasons:
 
 Why is it not properly recognizing my CRS?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are many file sources and CRS definitions out there "in the wild" that
 might have a CRS description that does not fully conform to the new standards of
-PROJ > 6. In such cases, you will get a ``pyproj.CRS`` object that might not be
-fully what you expected. Below we list a few possible cases.
+PROJ > 6 (proj4 strings, older WKT formats, ...). In such cases, you will get a
+``pyproj.CRS`` object that might not be fully what you expected (e.g. not equal
+to the expected EPSG code). Below we list a few possible cases.
 
 I get a "Bound CRS"?
 ~~~~~~~~~~~~~~~~~~~~
@@ -312,6 +319,85 @@ number:
 
    >>> crs.source_crs.to_epsg()
    31370
+
+I have a different axis order?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As mentioned above, pyproj now honours the axis order of the EPSG definition.
+However, proj4 strings or older WKT versions don't specify this correctly, which
+can be a reason that the CRS object is not equal to the expected EPSG code.
+
+Consider the following example of a Canadian projected CRS "EPSG:2953". When
+constructing the CRS object from the WKT string as provided on
+`https://epsg.io/2953 <https://epsg.io/2953>`__:
+
+.. code-block:: python
+
+   >>> crs = pyproj.CRS("""PROJCS["NAD83(CSRS) / New Brunswick Stereographic",
+   ...     GEOGCS["NAD83(CSRS)",
+   ...         DATUM["NAD83_Canadian_Spatial_Reference_System",
+   ...             SPHEROID["GRS 1980",6378137,298.257222101,
+   ...                 AUTHORITY["EPSG","7019"]],
+   ...             AUTHORITY["EPSG","6140"]],
+   ...         PRIMEM["Greenwich",0,
+   ...             AUTHORITY["EPSG","8901"]],
+   ...         UNIT["degree",0.0174532925199433,
+   ...             AUTHORITY["EPSG","9122"]],
+   ...         AUTHORITY["EPSG","4617"]],
+   ...     PROJECTION["Oblique_Stereographic"],
+   ...     PARAMETER["latitude_of_origin",46.5],
+   ...     PARAMETER["central_meridian",-66.5],
+   ...     PARAMETER["scale_factor",0.999912],
+   ...     PARAMETER["false_easting",2500000],
+   ...     PARAMETER["false_northing",7500000],
+   ...     UNIT["metre",1,
+   ...         AUTHORITY["EPSG","9001"]],
+   ...     AUTHORITY["EPSG","2953"]]""")
+
+   >>> crs
+   <Projected CRS: PROJCS["NAD83(CSRS) / New Brunswick Stereographic" ...>
+   Name: NAD83(CSRS) / New Brunswick Stereographic
+   Axis Info [cartesian]:
+   - E[east]: Easting (metre)
+   - N[north]: Northing (metre)
+   ...
+
+Although this is the WKT string as found online for "EPSG:2953", this CRS object
+does not evaluate equal to this EPSG code:
+
+.. code-block:: python
+
+   >>> crs == "EPSG:2953"
+   False
+
+If we construct the CRS object from the EPSG code (truncated output):
+
+.. code-block:: python
+
+   >>> pyproj.CRS("EPSG:2953")
+   <Projected CRS: EPSG:2953>
+   Name: NAD83(CSRS) / New Brunswick Stereographic
+   Axis Info [cartesian]:
+   - N[north]: Northing (metre)
+   - E[east]: Easting (metre)
+   ...
+
+You can see that the CRS object constructed from the WKT string has a "Easting,
+Northing" (i.e. x, y) axis order, while the CRS object constructed from the EPSG
+code has a (Northing, Easting) axis order. 
+
+Only having this difference in axis order is no problem when using the CRS in
+GeoPandas, since GeoPandas always uses a (x, y) order to store the data
+regardless of the CRS definition. But, you might still want to verify it is
+equivalent to the expected EPSG code. By lowering the `min_confidence`, the axis
+order will be ignored:
+
+.. code-block:: python
+
+   >>> crs.to_epsg()
+
+   >>> crs.to_epsg(min_confidence=20)
+   2953
 
 
 The ``.crs`` attribute is no longer a dict or string
