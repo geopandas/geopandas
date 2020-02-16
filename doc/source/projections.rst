@@ -190,13 +190,13 @@ For example, instead of:
 
 .. code-block:: python
 
-   gdf.crs = "+proj=lcc +lat_0=90 +lon_0=4.36748666666667 +lat_1=51.1666672333333 +lat_2=49.8333339 +x_0=150000.013 +y_0=5400088.438 +ellps=intl +units=m +no_defs +type=crs"
+   gdf.crs = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 
 we recommenend to do:
 
 .. code-block:: python
 
-   gdf.crs = "EPSG:31370"
+   gdf.crs = "EPSG:2163"
 
 *if* you know the EPSG code for the projection you are using.
 
@@ -204,9 +204,10 @@ One possible way to find out the EPSG code is using pyproj for this:
 
 .. code-block:: python
 
-   >>> crs = pyproj.CRS("+proj=lcc +lat_0=90 +lon_0=4.36748666666667 +lat_1=51.1666672333333 +lat_2=49.8333339 +x_0=150000.013 +y_0=5400088.438 +ellps=intl +units=m +no_defs +type=crs")
+   >>> import pyproj
+   >>> crs = pyproj.CRS("+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs")
    >>> crs.to_epsg()
-   31370
+   2163
 
 (you might need to set the ``min_confidence`` keyword of ``to_epsg`` to a lower
 value if the match is not perfect)
@@ -218,7 +219,7 @@ including their EPSG codes and proj4 string definitions.
 **Other formats**
 
 Next to the EPSG code mentioned above, there are also other ways to specify the
-CRS: an actual ``pyproj.CRS`` object, a WKT string, a PROJ JSON string, etc. 
+CRS: an actual ``pyproj.CRS`` object, a WKT string, a PROJ JSON string, etc.
 Anything that is accepted by ``pyproj.CRS.from_user_input`` can by specified
 to the ``crs`` keyword/attribute in GeoPandas.
 
@@ -226,8 +227,8 @@ Also compatible CRS objects, such as from the ``rasterio`` package, can be
 passed directly to GeoPandas.
 
 
-What is it with the axis order?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+I have a different axis order?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Starting with PROJ 6 / pyproj 2, the axis order of the official EPSG definition
 is honoured. For example, when using geographic coordinates (degrees of longitude
@@ -245,16 +246,72 @@ and latitude) in the standard EPSG:4326, the CRS will look like:
 
 This mentions the order as (lat, lon), as that is the official order of coordinates
 in EPSG:4326. In GeoPandas, however, the coordinates are always stored as (x, y),
-and thus as (lon, lat), regardless of the CRS  (i.e. the "traditional" order used
+and thus as (lon, lat) order, regardless of the CRS (i.e. the "traditional" order used
 in GIS). When reprojecting, GeoPandas and pyproj will under the hood take care of
 this difference in axis order, so the user doesn't need to care about this.
 
 
-I get a "BoundCRS"?
-^^^^^^^^^^^^^^^^^^^
+Why is it not properly recognizing my CRS?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- If you have a crs definition with towgs84 term, you will get a BoundCRS. Can
-  use ``.source_crs`` attribute to get the actual CRS.
+There are many file sources and CRS definitions out there "in the wild" that
+might have a CRS description that does not fully conform to the new standards of
+PROJ > 6. In such cases, you will get a ``pyproj.CRS`` object that might not be
+fully what you expected. Below we list a few possible cases.
+
+I get a "Bound CRS"?
+~~~~~~~~~~~~~~~~~~~~
+
+Some CRS definitions include a *"towgs84" clause*, which can give problems in
+recognizing the actual CRS.
+
+For example, both the proj4 and WKT representation for EPSG:31370 (the local
+projection used in Belgium) as can be found at `https://spatialreference.org/ref/epsg/31370/ <https://spatialreference.org/ref/epsg/31370/>`__
+include this. When taking one of those definitions from that site, and creating
+a CRS object:
+
+.. code-block:: python
+
+   >>> import pyproj
+   >>> crs = pyproj.CRS("+proj=lcc +lat_1=51.16666723333333 +lat_2=49.8333339 +lat_0=90 +lon_0=4.367486666666666 +x_0=150000.013 +y_0=5400088.438 +ellps=intl +towgs84=106.869,-52.2978,103.724,-0.33657,0.456955,-1.84218,1 +units=m +no_defs")
+   >>> crs
+   <Bound CRS: +proj=lcc +lat_1=51.16666723333333 +lat_2=49.83333 ...>
+   Name: unknown
+   Axis Info [cartesian]:
+   - E[east]: Easting (metre)
+   - N[north]: Northing (metre)
+   Area of Use:
+   - undefined
+   Coordinate Operation:
+   - name: Transformation from unknown to WGS84
+   - method: Position Vector transformation (geog2D domain)
+   Datum: Unknown based on International 1909 (Hayford) ellipsoid
+   - Ellipsoid: International 1909 (Hayford)
+   - Prime Meridian: Greenwich
+   Source CRS: unknown
+
+You notice that the above is a not a "Projected CRS" as expected, but a "Bound CRS".
+This is because it is "bound" to a conversion to WGS84, and will always use this
+when reprojecting instead of letting PROJ determine the best conversion.
+
+To get the actual underlying projected CRS, you can use the ``.source_crs`` attribute:
+
+.. code-block:: python
+
+   >>> crs.source_crs
+   <Projected CRS: PROJCRS["unknown",BASEGEOGCRS["unknown",DATUM["Unk ...>
+   Name: unknown
+   ...
+
+Now we have a "Projected CRS", and now it will also recognize the correct EPSG
+number:
+
+.. code-block:: python
+
+   >>> crs.to_epsg()
+
+   >>> crs.source_crs.to_epsg()
+   31370
 
 
 The ``.crs`` attribute is no longer a dict or string
