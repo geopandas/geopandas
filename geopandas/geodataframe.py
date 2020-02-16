@@ -122,17 +122,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        col: column label or array
-        drop: boolean, default True
+        col : column label or array
+        drop : boolean, default True
             Delete column to be used as the new geometry
-        inplace: boolean, default False
+        inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
-        crs: pyproj.crs.CRS, optional
+        crs : pyproj.CRS, optional
             Coordinate system to use. The value can be anything accepted
-            by :meth:`pyproj.crs.CRS.from_user_input`, such as an authority
-            string (eg "EPSG:4326") or a WKT string. If passed, overrides
-            both DataFrame and col's crs. Otherwise, tries to get crs
-            from passed col values or DataFrame.
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+            If passed, overrides both DataFrame and col's crs.
+            Otherwise, tries to get crs from passed col values or DataFrame.
 
         Examples
         --------
@@ -549,13 +549,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        crs: pyproj.crs.CRS, optional if `epsg` is specified
-            The value can be anything accepted
-            by :meth:`pyproj.crs.CRS.from_user_input`, such as an authority
-            string (eg "EPSG:4326") or a WKT string.
-        epsg: int, optional if `crs` is specified
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
-        inplace: bool, optional, default: False
+        inplace : bool, optional, default: False
             Whether to return a new GeoDataFrame or do the transformation in
             place.
 
