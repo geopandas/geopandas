@@ -4,6 +4,8 @@ Changes
 Version 0.7.0 (February 16, 2020)
 ---------------------------------
 
+Support for Python 2.7 has been dropped. GeoPandas now works with Python >= 3.5.
+
 The important API change of this release is that GeoPandas now requires
 PROJ > 6 and pyproj > 2.2, and that the `.crs` attribute of a GeoSeries and
 GeoDataFrame no longer stores the CRS information as a proj4 string or dict,
