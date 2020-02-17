@@ -26,3 +26,8 @@ dependencies:
 - sphinx-gallery=0.4.0
 - jinja2=2.11.1
 - doc2dash
+# specify additional dependencies to reduce solving for conda
+- gdal=3.0.4
+- libgdal=3.0.4
+- proj=6.3.0
+- geos=3.8.0
