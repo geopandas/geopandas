@@ -1,12 +1,57 @@
 Changes
 =======
 
+Version 0.7.0 (February 16, 2020)
+---------------------------------
+
+Support for Python 2.7 has been dropped. GeoPandas now works with Python >= 3.5.
+
+The important API change of this release is that GeoPandas now requires
+PROJ > 6 and pyproj > 2.2, and that the `.crs` attribute of a GeoSeries and
+GeoDataFrame no longer stores the CRS information as a proj4 string or dict,
+but as a ``pyproj.CRS`` object (#1101).
+
+This gives a better user interface and integrates improvements from pyproj and
+PROJ 6, but might also require some changes in your code. Check the
+[migration guide](https://geopandas.readthedocs.io/en/latest/projections.html#upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6)
+in the documentation.
+
+Other API changes;
+
+- The `GeoDataFrame.to_file` method will now also write the GeoDataFrame index
+  to the file, if the index is named and/or non-integer. You can use the
+  `index=True/False` keyword to overwrite this default inference (#1059).
+
+New features and improvements:
+
+- A new `geopandas.clip` function to clip a GeoDataFrame to the spatial extent
+  of another shape (#1128).
+- The `geopandas.overlay` function now works for all geometry types, including
+  points and linestrings in addition to polygons (#1110).
+- The `plot()` method gained support for missing values (in the column that
+  determines the colors). By default it doesn't plot the corresponding
+  geometries, but using the new `missing_kwds` argument you can specify how to
+  style those geometries (#1156).
+- The `plot()` method now also supports plotting GeometryCollection and
+  LinearRing objects (#1225).
+- Added support for filtering with a geometry or reading a subset of the rows in
+  `geopandas.read_file` (#1160).
+- Added support for the new nullable integer data type of pandas in
+  `GeoDataFrame.to_file` (#1220).
+
+Bug fixes:
+
+- `GeoSeries.reset_index()` now correctly results in a GeoDataFrame instead of DataFrame (#1252).
+- Fixed the `geopandas.sjoin` function to handle MultiIndex correctly (#1159).
+- Fixed the `geopandas.sjoin` function to preserve the index name of the left GeoDataFrame (#1150).
+
+
 Version 0.6.3 (February 6, 2020)
 ---------------------------------
 
 Small bug-fix release:
 
-- Compatibility with Shapely 1.7 and pandas 1.0 (#1244).    
+- Compatibility with Shapely 1.7 and pandas 1.0 (#1244).
 - Fix `GeoDataFrame.fillna` to accept non-geometry values again when there are
   no missing values in the geometry column. This should make it easier to fill
   the numerical columns of the GeoDataFrame (#1279).
