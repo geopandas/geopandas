@@ -642,10 +642,10 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        # if USE_PYGEOS:
-        return pygeos.is_missing(self.data)
-        # else:
-        # return np.array([g is None for g in self.data], dtype="bool")
+        if USE_PYGEOS:
+            return pygeos.is_missing(self.data)
+        else:
+            return np.array([g is None for g in self.data], dtype="bool")
 
     def unique(self):
         """Compute the ExtensionArray of unique values.
@@ -810,7 +810,8 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name == "any" or name == "all":
-            return getattr(np.asarray(self), name)()
+            # TODO(pygeos)
+            return getattr(to_shapely(self), name)()
         raise TypeError(
             "cannot perform {name} with type {dtype}".format(
                 name=name, dtype=self.dtype

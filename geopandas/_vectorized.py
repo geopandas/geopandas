@@ -402,7 +402,7 @@ def _affinity_method(op, left, *args, **kwargs):
         out.append(res)
     data = np.empty(len(left), dtype=object)
     data[:] = out
-    return from_shapely(data)
+    return data
 
 
 # -----------------------------------------------------------------------------
@@ -510,7 +510,7 @@ def _unary_geo(op, left, *args, **kwargs):
     # ensure 1D output, see note above
     data = np.empty(len(left), dtype=object)
     data[:] = [getattr(geom, op, None) for geom in left]
-    return from_shapely(data)
+    return data
 
 
 def boundary(data):
@@ -580,7 +580,7 @@ def representative_point(data):
         out[:] = [
             geom.representative_point() if geom is not None else None for geom in data
         ]
-        return from_shapely(out)
+        return out
 
 
 #
@@ -726,13 +726,13 @@ def buffer(data, distance, resolution=16, **kwargs):
                 geom.buffer(dist, resolution, **kwargs) if geom is not None else None
                 for geom, dist in zip(data, distance)
             ]
-            return from_shapely(out)
+            return out
 
         out[:] = [
             geom.buffer(distance, resolution, **kwargs) if geom is not None else None
             for geom in data
         ]
-        return from_shapely(out)
+        return out
 
 
 def interpolate(data, distance, normalized=False):
@@ -750,10 +750,10 @@ def interpolate(data, distance, normalized=False):
                 geom.interpolate(dist, normalized=normalized)
                 for geom, dist in zip(data, distance)
             ]
-            return from_shapely(out)
+            return out
 
         out[:] = [geom.interpolate(distance, normalized=normalized) for geom in data]
-        return from_shapely(out)
+        return out
 
 
 def simplify(data, tolerance, preserve_topology=True):
@@ -767,7 +767,7 @@ def simplify(data, tolerance, preserve_topology=True):
             geom.simplify(tolerance, preserve_topology=preserve_topology)
             for geom in data
         ]
-        return from_shapely(out)
+        return out
 
 
 def project(data, other, normalized=False):
