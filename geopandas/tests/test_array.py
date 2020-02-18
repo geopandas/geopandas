@@ -409,8 +409,17 @@ def test_binary_geo_scalar(attr):
 )
 def test_unary_predicates(attr):
     na_value = False
+    if attr == "is_simple" and geos_version < (3, 8) and not USE_PYGEOS:
+        # poly.is_simple raises an error for empty polygon for GEOS < 3.8
+        with pytest.raises(Exception):
+            T.is_simple
+        vals = triangle_no_missing
+        V = from_shapely(vals)
+    else:
+        vals = triangles
+        V = T
 
-    result = getattr(T, attr)
+    result = getattr(V, attr)
 
     if attr == "is_simple" and (geos_version < (3, 8) or USE_PYGEOS):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
@@ -418,20 +427,18 @@ def test_unary_predicates(attr):
         # But even for Shapely with GEOS >= 3.8, empty GeometryCollection
         # returns True instead of False
         expected = [
-            getattr(t.exterior, attr)
-            if t is not None and t.exterior is not None and not t.is_empty
-            else na_value
-            for t in triangles
+            getattr(t, attr) if t is not None and not t.is_empty else na_value
+            for t in vals
         ]
     elif attr == "is_ring":
         expected = [
             getattr(t.exterior, attr)
             if t is not None and t.exterior is not None
             else na_value
-            for t in triangles
+            for t in vals
         ]
     else:
-        expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
+        expected = [getattr(t, attr) if t is not None else na_value for t in vals]
     assert result.tolist() == expected
 
 

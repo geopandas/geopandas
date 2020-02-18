@@ -404,7 +404,7 @@ def _affinity_method(op, left, *args, **kwargs):
         out.append(res)
     data = np.empty(len(left), dtype=object)
     data[:] = out
-    return data
+    return from_shapely(data)
 
 
 # -----------------------------------------------------------------------------
