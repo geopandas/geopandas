@@ -314,12 +314,7 @@ def test_predicates_vector_vector(attr, args):
         "centroid",
         "convex_hull",
         "envelope",
-        pytest.param(
-            "exterior",
-            marks=pytest.mark.xfail(
-                USE_PYGEOS, strict=True, reason="TODO linearrings vs linestrings"
-            ),
-        ),
+        "exterior",
         # 'interiors',
     ],
 )
@@ -339,7 +334,17 @@ def test_unary_geo(attr):
         A = T
 
     result = getattr(A, attr)
-    expected = [getattr(t, attr) if t is not None else na_value for t in values]
+    if USE_PYGEOS:
+        # TODO(pygeos)
+        # empty Polygon() has an exterior with shapely > 1.7, which gives
+        # empty LinearRing instead of None,
+        # but conversion to pygeos still results in empty GeometryCollection
+        expected = [
+            getattr(t, attr) if t is not None and not t.is_empty else na_value
+            for t in values
+        ]
+    else:
+        expected = [getattr(t, attr) if t is not None else na_value for t in values]
 
     assert equal_geometries(result, expected)
 
