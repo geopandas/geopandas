@@ -46,8 +46,8 @@ install:
 script:
   - echo "Testing without PyGEOS"
   - USE_PYGEOS=0 pytest geopandas --cov geopandas -v --cov-report term-missing
-  - if [ "$PYGEOS" ]; echo "Testing with PyGEOS"; fi
-  - if [ "$PYGEOS" ]; USE_PYGEOS=1 pytest geopandas --cov geopandas -v --cov-report term-missing; fi
+  - if [ "$PYGEOS" ]; then echo "Testing with PyGEOS"; fi
+  - if [ "$PYGEOS" ]; then USE_PYGEOS=1 pytest geopandas --cov geopandas -v --cov-report term-missing; fi
   - if [ "$STYLE" ]; then black --check geopandas; fi
   - if [ "$STYLE" ]; then flake8 geopandas; fi
 
