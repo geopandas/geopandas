@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Plotting with CartoPy and GeoPandas &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Plotting with CartoPy and GeoPandas &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Data Structures" href="../data_structures.html" />
-    <link rel="prev" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html" /> 
+    <link rel="prev" title="Clip Vector Data with GeoPandas" href="plot_clip.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -91,8 +91,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples Gallery</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="plotting_basemap_background.html">Adding a background map to plots</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plot_clip.html">Clip Vector Data with GeoPandas</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Plotting with CartoPy and GeoPandas</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#plotting-with-cartopy">Plotting with CartoPy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cartopy-to-geopandas">CartoPy to GeoPandas</a></li>
@@ -205,7 +206,7 @@ between GeoPandas and CartoPy.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_number = 7</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">geopandas</span>
-<span class="kn">from</span> <span class="nn">cartopy</span> <span class="k">import</span> <span class="n">crs</span> <span class="k">as</span> <span class="n">ccrs</span>
+<span class="kn">from</span> <span class="nn">cartopy</span> <span class="kn">import</span> <span class="n">crs</span> <span class="k">as</span> <span class="n">ccrs</span>
 
 <span class="n">path</span> <span class="o">=</span> <a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">)</span>
 <span class="n">df</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -289,18 +290,14 @@ of each with GeoPandas and plot it on top.</p>
 
 <span class="c1"># Calculate centroids and plot</span>
 <span class="n">df_aea_centroids</span> <span class="o">=</span> <span class="n">df_aea</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">centroid</span>
-<span class="n">df_aea_centroids</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="c1"># Need to provide &quot;zorder&quot; to ensure the points are plotted above the polygons</span>
+<span class="n">df_aea_centroids</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_cartopy_convert_007.png" class="sphx-glr-single-img" src="../_images/sphx_glr_cartopy_convert_007.png" />
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/scipy/geopandas/examples/cartopy_convert.py:105: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
-  plt.show()
-</pre></div>
-</div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.607 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.807 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-cartopy-convert-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/72e4c1c14262621007b6c2767d383076/cartopy_convert.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cartopy_convert.py</span></code></a></p>
@@ -324,7 +321,7 @@ of each with GeoPandas and plot it on top.</p>
         <a href="../data_structures.html" class="btn btn-neutral float-right" title="Data Structures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral float-left" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="plot_clip.html" class="btn btn-neutral float-left" title="Clip Vector Data with GeoPandas" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

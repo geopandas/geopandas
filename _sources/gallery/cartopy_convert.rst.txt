@@ -192,7 +192,8 @@ of each with GeoPandas and plot it on top.
 
     # Calculate centroids and plot
     df_aea_centroids = df_aea.geometry.centroid
-    df_aea_centroids.plot(ax=ax, markersize=5, color='r')
+    # Need to provide "zorder" to ensure the points are plotted above the polygons
+    df_aea_centroids.plot(ax=ax, markersize=5, color='r', zorder=10)
 
     plt.show()
 
@@ -202,21 +203,12 @@ of each with GeoPandas and plot it on top.
     :class: sphx-glr-single-img
 
 
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    /home/joris/scipy/geopandas/examples/cartopy_convert.py:105: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
-      plt.show()
-
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.607 seconds)
+   **Total running time of the script:** ( 0 minutes  1.807 seconds)
 
 
 .. _sphx_glr_download_gallery_cartopy_convert.py:

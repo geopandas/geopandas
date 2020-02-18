@@ -89,12 +89,12 @@ of ``shapely.Point`` objects and set it as a ``geometry`` while creating the
 
  .. code-block:: none
 
-               City    Country  Latitude  Longitude               geometry
-    0  Buenos Aires  Argentina    -34.58     -58.66  POINT (-58.66 -34.58)
-    1      Brasilia     Brazil    -15.78     -47.91  POINT (-47.91 -15.78)
-    2      Santiago      Chile    -33.45     -70.66  POINT (-70.66 -33.45)
-    3        Bogota   Colombia      4.60     -74.08     POINT (-74.08 4.6)
-    4       Caracas  Venezuela     10.48     -66.86   POINT (-66.86 10.48)
+               City    Country  Latitude  Longitude                     geometry
+    0  Buenos Aires  Argentina    -34.58     -58.66  POINT (-58.66000 -34.58000)
+    1      Brasilia     Brazil    -15.78     -47.91  POINT (-47.91000 -15.78000)
+    2      Santiago      Chile    -33.45     -70.66  POINT (-70.66000 -33.45000)
+    3        Bogota   Colombia      4.60     -74.08    POINT (-74.08000 4.60000)
+    4       Caracas  Venezuela     10.48     -66.86   POINT (-66.86000 10.48000)
 
 
 
@@ -121,15 +121,6 @@ Finally, we plot the coordinates over a country-level map.
 .. image:: /gallery/images/sphx_glr_create_geopandas_from_pandas_001.png
     :class: sphx-glr-single-img
 
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    /home/joris/scipy/geopandas/examples/create_geopandas_from_pandas.py:57: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
-      plt.show()
 
 
 
@@ -189,12 +180,12 @@ The ``GeoDataFrame`` is constructed as follows :
 
  .. code-block:: none
 
-               City    Country            Coordinates
-    0  Buenos Aires  Argentina  POINT (-58.66 -34.58)
-    1      Brasilia     Brazil  POINT (-47.91 -15.78)
-    2      Santiago      Chile  POINT (-70.66 -33.45)
-    3        Bogota   Colombia     POINT (-74.08 4.6)
-    4       Caracas  Venezuela   POINT (-66.86 10.48)
+               City    Country                  Coordinates
+    0  Buenos Aires  Argentina  POINT (-58.66000 -34.58000)
+    1      Brasilia     Brazil  POINT (-47.91000 -15.78000)
+    2      Santiago      Chile  POINT (-70.66000 -33.45000)
+    3        Bogota   Colombia    POINT (-74.08000 4.60000)
+    4       Caracas  Venezuela   POINT (-66.86000 10.48000)
 
 
 
@@ -216,21 +207,12 @@ Again, we can plot our ``GeoDataFrame``.
     :class: sphx-glr-single-img
 
 
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    /home/joris/scipy/geopandas/examples/create_geopandas_from_pandas.py:91: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
-      plt.show()
-
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.461 seconds)
+   **Total running time of the script:** ( 0 minutes  0.278 seconds)
 
 
 .. _sphx_glr_download_gallery_create_geopandas_from_pandas.py:

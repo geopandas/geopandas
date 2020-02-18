@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Reference &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -113,9 +113,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#api-pages">API Pages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.overlay.html">geopandas.overlay</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.read_file.html">geopandas.read_file</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.sjoin.html">geopandas.sjoin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.overlay.html">geopandas.overlay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.clip.html">geopandas.clip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
@@ -718,7 +719,45 @@ dimensions respectively.</p>
 <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p>
 </dd></dl>
 
-<p>Additionally, the following methods are implemented:</p>
+<p>Additionally, the following attributes and methods are implemented:</p>
+<dl class="attribute">
+<dt id="geopandas.GeoSeries.crs">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">crs</code><a class="headerlink" href="#geopandas.GeoSeries.crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Coordinate Reference System (CRS) represented as a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code>
+object.</p>
+<p>Returns None if the CRS is not set, and to set the value it
+:getter: Returns a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> or None. When setting, the value
+can be anything accepted by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoSeries.to_crs">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">to_crs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">epsg=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.to_crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with all geometries transformed to a new
+coordinate reference system.</p>
+<p>Transform all geometries in a GeoSeries to a different coordinate
+reference system.  The <code class="docutils literal notranslate"><span class="pre">crs</span></code> attribute on the current GeoSeries must
+be set.  Either <code class="docutils literal notranslate"><span class="pre">crs</span></code> or <code class="docutils literal notranslate"><span class="pre">epsg</span></code> may be specified for output.</p>
+<p>This method will transform all points in all objects.  It has no notion
+or projecting entire geometries.  All segments joining points are
+assumed to be lines in the current projection, not geodesics.  Objects
+crossing the dateline (or other projection boundary) will have
+undesirable behavior.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional if <cite>epsg</cite> is specified</span></dt><dd><p>The value can be anything accepted
+by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>, such as an authority
+string (eg “EPSG:4326”) or a WKT string.</p>
+</dd>
+<dt><strong>epsg</strong><span class="classifier">int, optional if <cite>crs</cite> is specified</span></dt><dd><p>EPSG code specifying output projection.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="geopandas.GeoSeries.from_file">
 <em class="property">classmethod </em><code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">from_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.from_file" title="Permalink to this definition">¶</a></dt>
@@ -735,32 +774,6 @@ are included, the content of filename may vary. See
 <dt><strong>kwargs</strong><span class="classifier">key-word arguments</span></dt><dd><p>These arguments are passed to fiona.open, and can be used to
 access multi-layer data, data stored within archives (zip files),
 etc.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="geopandas.GeoSeries.to_crs">
-<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">to_crs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">epsg=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.to_crs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with all geometries transformed to a new
-coordinate reference system.</p>
-<p>Transform all geometries in a GeoSeries to a different coordinate
-reference system.  The <code class="docutils literal notranslate"><span class="pre">crs</span></code> attribute on the current GeoSeries must
-be set.  Either <code class="docutils literal notranslate"><span class="pre">crs</span></code> in string or dictionary form or an EPSG code
-may be specified for output.</p>
-<p>This method will transform all points in all objects.  It has no notion
-or projecting entire geometries.  All segments joining points are
-assumed to be lines in the current projection, not geodesics.  Objects
-crossing the dateline (or other projection boundary) will have
-undesirable behavior.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>crs</strong><span class="classifier">dict or str</span></dt><dd><p>Output projection parameters as string or in dictionary form.</p>
-</dd>
-<dt><strong>epsg</strong><span class="classifier">int</span></dt><dd><p>EPSG code specifying output projection.</p>
 </dd>
 </dl>
 </dd>
@@ -838,7 +851,47 @@ correctly.</p>
 <h2>GeoDataFrame<a class="headerlink" href="#geodataframe" title="Permalink to this headline">¶</a></h2>
 <p>A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is a tablular data structure that contains a column
 called <code class="docutils literal notranslate"><span class="pre">geometry</span></code> which contains a <cite>GeoSeries`</cite>.</p>
-<p>Currently, the following methods are implemented for a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>:</p>
+<p>Currently, the following methods/attributes are implemented for a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>:</p>
+<dl class="attribute">
+<dt id="geopandas.GeoDataFrame.crs">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">crs</code><a class="headerlink" href="#geopandas.GeoDataFrame.crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Coordinate Reference System (CRS) represented as a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code>
+object.</p>
+<p>Returns None if the CRS is not set, and to set the value it
+:getter: Returns a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> or None. When setting, the value
+can be anything accepted by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoDataFrame.to_crs">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_crs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">epsg=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform geometries to a new coordinate reference system.</p>
+<p>Transform all geometries in a GeoSeries to a different coordinate
+reference system.  The <code class="docutils literal notranslate"><span class="pre">crs</span></code> attribute on the current GeoSeries must
+be set.  Either <code class="docutils literal notranslate"><span class="pre">crs</span></code> or <code class="docutils literal notranslate"><span class="pre">epsg</span></code> may be specified for output.</p>
+<p>This method will transform all points in all objects.  It has no notion
+or projecting entire geometries.  All segments joining points are
+assumed to be lines in the current projection, not geodesics.  Objects
+crossing the dateline (or other projection boundary) will have
+undesirable behavior.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional if <cite>epsg</cite> is specified</span></dt><dd><p>The value can be anything accepted
+by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>, such as an authority
+string (eg “EPSG:4326”) or a WKT string.</p>
+</dd>
+<dt><strong>epsg</strong><span class="classifier">int, optional if <cite>crs</cite> is specified</span></dt><dd><p>EPSG code specifying output projection.</p>
+</dd>
+<dt><strong>inplace</strong><span class="classifier">bool, optional, default: False</span></dt><dd><p>Whether to return a new GeoDataFrame or do the transformation in
+place.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="geopandas.GeoDataFrame.from_file">
 <em class="property">classmethod </em><code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">from_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.from_file" title="Permalink to this definition">¶</a></dt>
@@ -860,7 +913,7 @@ etc.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;nybb.shp&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;nybb.shp&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -901,7 +954,7 @@ without native Datetime support, such as SQLite.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT geom, highway FROM roads&quot;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT geom, highway FROM roads&quot;</span>
 <span class="go">SpatiaLite</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT ST_Binary(geom) AS geom, highway FROM roads&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_postgis</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
@@ -910,47 +963,19 @@ without native Datetime support, such as SQLite.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt id="geopandas.GeoDataFrame.to_crs">
-<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_crs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">epsg=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_crs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform geometries to a new coordinate reference system.</p>
-<p>Transform all geometries in a GeoSeries to a different coordinate
-reference system.  The <code class="docutils literal notranslate"><span class="pre">crs</span></code> attribute on the current GeoSeries must
-be set.  Either <code class="docutils literal notranslate"><span class="pre">crs</span></code> in string or dictionary form or an EPSG code
-may be specified for output.</p>
-<p>This method will transform all points in all objects.  It has no notion
-or projecting entire geometries.  All segments joining points are
-assumed to be lines in the current projection, not geodesics.  Objects
-crossing the dateline (or other projection boundary) will have
-undesirable behavior.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>crs</strong><span class="classifier">dict or str</span></dt><dd><p>Output projection parameters as string or in dictionary form.</p>
-</dd>
-<dt><strong>epsg</strong><span class="classifier">int</span></dt><dd><p>EPSG code specifying output projection.</p>
-</dd>
-<dt><strong>inplace</strong><span class="classifier">bool, optional, default: False</span></dt><dd><p>Whether to return a new GeoDataFrame or do the transformation in
-place.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
 <dt id="geopandas.GeoDataFrame.to_file">
-<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_file</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">filename</em>, <em class="sig-param">driver='ESRI Shapefile'</em>, <em class="sig-param">schema=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_file</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">filename</em>, <em class="sig-param">driver='ESRI Shapefile'</em>, <em class="sig-param">schema=None</em>, <em class="sig-param">index=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> to a file.</p>
 <p>By default, an ESRI shapefile is written, but any OGR data source
 supported by Fiona can be written. A dictionary of supported OGR
 providers is available via:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fiona</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">fiona</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fiona</span><span class="o">.</span><span class="n">supported_drivers</span>
 </pre></div>
 </div>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
+<dd class="field-odd"><dl>
 <dt><strong>filename</strong><span class="classifier">string</span></dt><dd><p>File path or file handle to write to.</p>
 </dd>
 <dt><strong>driver</strong><span class="classifier">string, default: ‘ESRI Shapefile’</span></dt><dd><p>The OGR format driver used to write the vector file.</p>
@@ -958,13 +983,30 @@ providers is available via:</p>
 <dt><strong>schema</strong><span class="classifier">dict, default: None</span></dt><dd><p>If specified, the schema dictionary is passed to Fiona to
 better control how the file is written.</p>
 </dd>
+<dt><strong>index</strong><span class="classifier">bool, default None</span></dt><dd><p>If True, write index into one or more columns (for MultiIndex).
+Default None writes the index into one or more columns only if
+the index is named, is a MultiIndex, or has a non-integer data
+type. If False, no index is written.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7: </span>Previously the index was not written.</p>
+</div>
+</dd>
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.to_file</span></code></dt><dd></dd>
+</dl>
+</div>
 <p class="rubric">Notes</p>
 <p>The extra keyword arguments <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> are passed to fiona.open and
 can be used to write to multi-layer data, store data within archives
 (zip files), etc.</p>
+<p>The format drivers will attempt to detect the encoding of your data, but
+may fail. In this case, the proper encoding can be specified explicitly
+by using the encoding keyword parameter, e.g. <code class="docutils literal notranslate"><span class="pre">encoding='utf-8'</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1057,6 +1099,11 @@ matplotlib.pyplot.colorbar().</p>
 </dd>
 <dt><strong>classification_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments to pass to mapclassify</p>
 </dd>
+<dt><strong>missing_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments specifying color options (as style_kwds)
+to be passed on to geometries with missing values in addition to
+or overwriting other style kwds. If None, geometries with missing
+values are not plotted.</p>
+</dd>
 <dt><strong>**style_kwds</strong><span class="classifier">dict</span></dt><dd><p>Color options to be passed on to the actual plot function, such
 as <code class="docutils literal notranslate"><span class="pre">edgecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">facecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">linewidth</span></code>, <code class="docutils literal notranslate"><span class="pre">markersize</span></code>,
 <code class="docutils literal notranslate"><span class="pre">alpha</span></code>.</p>
@@ -1092,12 +1139,45 @@ the specified name. By default yields a new object.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename_geometry</span><span class="p">(</span><span class="s1">&#39;geom1&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename_geometry</span><span class="p">(</span><span class="s1">&#39;geom1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;geom1&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">rename_geometry</span><span class="p">(</span><span class="s1">&#39;geom1&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;geom1&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoDataFrame.set_geometry">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">set_geometry</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">col</em>, <em class="sig-param">drop=False</em>, <em class="sig-param">inplace=False</em>, <em class="sig-param">crs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.set_geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the GeoDataFrame geometry using either an existing column or
+the specified input. By default yields a new object.</p>
+<p>The original geometry column is replaced with the input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>col</strong><span class="classifier">column label or array</span></dt><dd></dd>
+<dt><strong>drop</strong><span class="classifier">boolean, default True</span></dt><dd><p>Delete column to be used as the new geometry</p>
+</dd>
+<dt><strong>inplace</strong><span class="classifier">boolean, default False</span></dt><dd><p>Modify the GeoDataFrame in place (do not create a new object)</p>
+</dd>
+<dt><strong>crs</strong><span class="classifier">str/result of fion.get_crs (optional)</span></dt><dd><p>Coordinate system to use. If passed, overrides both DataFrame and
+col’s crs. Otherwise, tries to get crs from passed col values or
+DataFrame.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>geodataframe</strong><span class="classifier">GeoDataFrame</span></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;geom1&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1132,19 +1212,22 @@ do so.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>(*args, **kwargs)</p></td>
 <td><p>A Series object designed to store shapely geometry objects.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.overlay.html#geopandas.overlay" title="geopandas.overlay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay</span></code></a>(df1, df2[, how, make_valid, use_sindex])</p></td>
-<td><p>Perform spatial overlay between two polygons.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(filename[, bbox])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(filename[, bbox, mask, rows])</p></td>
 <td><p>Returns a GeoDataFrame from a file or URL.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.sjoin.html#geopandas.sjoin" title="geopandas.sjoin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sjoin</span></code></a>(left_df, right_df[, how, op, lsuffix, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.sjoin.html#geopandas.sjoin" title="geopandas.sjoin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sjoin</span></code></a>(left_df, right_df[, how, op, lsuffix, …])</p></td>
 <td><p>Spatial join of two GeoDataFrames.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.tools.geocode.html#geopandas.tools.geocode" title="geopandas.tools.geocode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools.geocode</span></code></a>(strings[, provider])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.overlay.html#geopandas.overlay" title="geopandas.overlay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay</span></code></a>(df1, df2[, how, make_valid, …])</p></td>
+<td><p>Perform spatial overlay between two polygons.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.clip.html#geopandas.clip" title="geopandas.clip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clip</span></code></a>(gdf, mask[, keep_geom_type])</p></td>
+<td><p>Clip points, lines, or polygon geometries to the mask extent.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.tools.geocode.html#geopandas.tools.geocode" title="geopandas.tools.geocode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools.geocode</span></code></a>(strings[, provider])</p></td>
 <td><p>Geocode a set of strings and get a GeoDataFrame of the resulting points.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="geopandas.datasets.get_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">datasets.get_path</span></code></a>(dataset)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="geopandas.datasets.get_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">datasets.get_path</span></code></a>(dataset)</p></td>
 <td><p>Get the path to the data file.</p></td>
 </tr>
 </tbody>

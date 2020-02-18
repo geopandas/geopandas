@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.tools.geocode &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>geopandas.tools.geocode &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="geopandas.datasets.get_path" href="geopandas.datasets.get_path.html" />
-    <link rel="prev" title="geopandas.sjoin" href="geopandas.sjoin.html" /> 
+    <link rel="prev" title="geopandas.clip" href="geopandas.clip.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -113,9 +113,10 @@
 <li class="toctree-l2 current"><a class="reference internal" href="../reference.html#api-pages">API Pages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.read_file.html">geopandas.read_file</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.sjoin.html">geopandas.sjoin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.clip.html">geopandas.clip</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">geopandas.tools.geocode</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
@@ -221,7 +222,7 @@ your provider.</p>
 <p>Geocoding requires geopy. Install it using ‘pip install geopy’. See also
 <a class="reference external" href="https://github.com/geopy/geopy">https://github.com/geopy/geopy</a></p>
 <p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geocode</span><span class="p">([</span><span class="s1">&#39;boston, ma&#39;</span><span class="p">,</span> <span class="s1">&#39;1600 pennsylvania ave. washington, dc&#39;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geocode</span><span class="p">([</span><span class="s1">&#39;boston, ma&#39;</span><span class="p">,</span> <span class="s1">&#39;1600 pennsylvania ave. washington, dc&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span>
 <span class="go">                                             address  \</span>
 <span class="go">0                                    Boston, MA, USA</span>
@@ -246,7 +247,7 @@ your provider.</p>
         <a href="geopandas.datasets.get_path.html" class="btn btn-neutral float-right" title="geopandas.datasets.get_path" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="geopandas.sjoin.html" class="btn btn-neutral float-left" title="geopandas.sjoin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="geopandas.clip.html" class="btn btn-neutral float-left" title="geopandas.clip" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

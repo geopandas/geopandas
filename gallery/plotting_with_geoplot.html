@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Plotting with Geoplot and GeoPandas &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Plotting with Geoplot and GeoPandas &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -37,8 +37,8 @@
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html" />
-    <link rel="prev" title="Adding a background map to plots" href="plotting_basemap_background.html" /> 
+    <link rel="next" title="Clip Vector Data with GeoPandas" href="plot_clip.html" />
+    <link rel="prev" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -91,11 +91,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples Gallery</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="plotting_basemap_background.html">Adding a background map to plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Plotting with Geoplot and GeoPandas</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#plotting-with-geoplot">Plotting with Geoplot</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plot_clip.html">Clip Vector Data with GeoPandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
 </ul>
 </li>
@@ -234,15 +235,22 @@ CartoPy (see the list
 </div>
 <img alt="../_images/sphx_glr_plotting_with_geoplot_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plotting_with_geoplot_002.png" />
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/miniconda3/envs/latest3/lib/python3.7/site-packages/geoplot/geoplot.py:620: UserWarning: Plot extent lies outside of the Orthographic projection&#39;s viewport. Defaulting to global extent.
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/miniconda3/envs/geopandas_docs/lib/python3.7/site-packages/geoplot/geoplot.py:680: UserWarning: Plot extent lies outside of the Orthographic projection&#39;s viewport. Defaulting to global extent.
   &#39;Plot extent lies outside of the Orthographic projection\&#39;s &#39;
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">polyplot</span></code> is trivial and can only plot the geometries you pass to it. If
 you want to use color as a visual variable, specify a <code class="docutils literal notranslate"><span class="pre">choropleth</span></code>. Here
-we sort GDP per person by country into five buckets by color.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">geoplot</span><span class="o">.</span><span class="n">choropleth</span><span class="p">(</span>
-    <span class="n">world</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;gdp_md_est&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">world</span><span class="p">[</span><span class="s1">&#39;pop_est&#39;</span><span class="p">],</span>
+we sort GDP per person by country into five buckets by color, using
+“quantiles” binning from the <a class="reference external" href="https://pysal.org/mapclassify/">Mapclassify</a>
+library.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mapclassify</span>
+<span class="n">gpd_per_person</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="s1">&#39;gdp_md_est&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">world</span><span class="p">[</span><span class="s1">&#39;pop_est&#39;</span><span class="p">]</span>
+<span class="n">scheme</span> <span class="o">=</span> <span class="n">mapclassify</span><span class="o">.</span><span class="n">Quantiles</span><span class="p">(</span><span class="n">gpd_per_person</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="c1"># Note: this code sample requires geoplot&gt;=0.4.0.</span>
+<span class="n">geoplot</span><span class="o">.</span><span class="n">choropleth</span><span class="p">(</span>
+    <span class="n">world</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="n">gpd_per_person</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="n">scheme</span><span class="p">,</span>
     <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greens&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -262,7 +270,7 @@ population estimates for countries in Africa.</p>
 <p>If we have data in the shape of points in space, we may generate a
 three-dimensional heatmap on it using <code class="docutils literal notranslate"><span class="pre">kdeplot</span></code>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">geoplot</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span>
-    <span class="n">collisions</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="n">boroughs</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span>
+    <span class="n">collisions</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span> <span class="n">clip</span><span class="o">=</span><span class="n">boroughs</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span>
     <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Reds&#39;</span><span class="p">,</span>
     <span class="n">projection</span><span class="o">=</span><span class="n">geoplot</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">AlbersEqualArea</span><span class="p">())</span>
 <span class="n">geoplot</span><span class="o">.</span><span class="n">polyplot</span><span class="p">(</span><span class="n">boroughs</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -275,7 +283,7 @@ or not a certain data column is spatially correlated.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">geoplot</span><span class="o">.</span><span class="n">voronoi</span><span class="p">(</span>
     <span class="n">collisions</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span> <span class="n">projection</span><span class="o">=</span><span class="n">geoplot</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">AlbersEqualArea</span><span class="p">(),</span>
     <span class="n">clip</span><span class="o">=</span><span class="n">boroughs</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="mf">0.001</span><span class="p">),</span>
-    <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;NUMBER OF PERSONS INJURED&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Reds&#39;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;NUMBER OF PERSONS INJURED&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Reds&#39;</span><span class="p">,</span>
     <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span>
 <span class="p">)</span>
@@ -288,7 +296,7 @@ many other possibilities not covered in this brief introduction. For more
 examples, refer to the
 <a class="reference external" href="https://residentmario.github.io/geoplot/gallery/index.html">Gallery</a> in
 the Geoplot documentation.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  22.809 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  12.994 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-plotting-with-geoplot-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8da84c7d5d162c26425c8ccf1002dcea/plotting_with_geoplot.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plotting_with_geoplot.py</span></code></a></p>
@@ -309,10 +317,10 @@ the Geoplot documentation.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral float-right" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="plot_clip.html" class="btn btn-neutral float-right" title="Clip Vector Data with GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="plotting_basemap_background.html" class="btn btn-neutral float-left" title="Adding a background map to plots" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral float-left" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

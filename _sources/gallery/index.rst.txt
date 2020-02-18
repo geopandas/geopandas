@@ -37,6 +37,26 @@ best-practices.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a GeoDataFrame when starting from a *regular* DataFrame that h...">
+
+.. only:: html
+
+    .. figure:: /gallery/images/thumb/sphx_glr_create_geopandas_from_pandas_thumb.png
+
+        :ref:`sphx_glr_gallery_create_geopandas_from_pandas.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /gallery/create_geopandas_from_pandas
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="`Geoplot &lt;https://residentmario.github.io/geoplot/index.html&gt;`_ is a Python library providing a...">
 
 .. only:: html
@@ -57,13 +77,13 @@ best-practices.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a GeoDataFrame when starting from a *regular* DataFrame that h...">
+    <div class="sphx-glr-thumbcontainer" tooltip="Learn how to clip geometries to the boundary of a polygon geometry using GeoPandas.">
 
 .. only:: html
 
-    .. figure:: /gallery/images/thumb/sphx_glr_create_geopandas_from_pandas_thumb.png
+    .. figure:: /gallery/images/thumb/sphx_glr_plot_clip_thumb.png
 
-        :ref:`sphx_glr_gallery_create_geopandas_from_pandas.py`
+        :ref:`sphx_glr_gallery_plot_clip.py`
 
 .. raw:: html
 
@@ -73,7 +93,7 @@ best-practices.
 .. toctree::
    :hidden:
 
-   /gallery/create_geopandas_from_pandas
+   /gallery/plot_clip
 
 .. raw:: html
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Merging Data &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Merging Data &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -209,72 +209,76 @@
 <h2>Attribute Joins<a class="headerlink" href="#attribute-joins" title="Permalink to this headline">¶</a></h2>
 <p>Attribute joins are accomplished using the <code class="docutils literal notranslate"><span class="pre">merge</span></code> method. In general, it is recommended to use the <code class="docutils literal notranslate"><span class="pre">merge</span></code> method called from the spatial dataset. With that said, the stand-alone <code class="docutils literal notranslate"><span class="pre">merge</span></code> function will work if the GeoDataFrame is in the <code class="docutils literal notranslate"><span class="pre">left</span></code> argument; if a DataFrame is in the <code class="docutils literal notranslate"><span class="pre">left</span></code> argument and a GeoDataFrame is in the <code class="docutils literal notranslate"><span class="pre">right</span></code> position, the result will no longer be a GeoDataFrame.</p>
 <p>For example, consider the following merge that adds full names to a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> that initially has only ISO codes for each country by merging it with a <em>pandas</em> <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>.</p>
-<pre class="literal-block"># `country_shapes` is GeoDataFrame with country shapes and iso codes
-In [7]: country_shapes.head()
-Out[7]: 
-                                            geometry iso_a3
-0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...    FJI
-1  POLYGON ((33.903711197 -0.950000000, 34.072620...    TZA
-2  POLYGON ((-8.665589565 27.656425890, -8.665124...    ESH
-3  MULTIPOLYGON (((-122.840000000 49.000000000, -...    CAN
-4  MULTIPOLYGON (((-122.840000000 49.000000000, -...    USA
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># `country_shapes` is GeoDataFrame with country shapes and iso codes</span>
+<span class="gp">In [7]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[7]: </span><span class="go"></span>
+<span class="go">                                            geometry iso_a3</span>
+<span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...    FJI</span>
+<span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...    TZA</span>
+<span class="go">2  POLYGON ((-8.665589565 27.656425890, -8.665124...    ESH</span>
+<span class="go">3  MULTIPOLYGON (((-122.840000000 49.000000000, -...    CAN</span>
+<span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...    USA</span>
 
-# `country_names` is DataFrame with country names and iso codes
-In [8]: country_names.head()
-Out[8]: 
-                       name iso_a3
-0                      Fiji    FJI
-1                  Tanzania    TZA
-2                 W. Sahara    ESH
-3                    Canada    CAN
-4  United States of America    USA
+<span class="go"># `country_names` is DataFrame with country names and iso codes</span>
+<span class="gp">In [8]: </span><span class="n">country_names</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[8]: </span><span class="go"></span>
+<span class="go">                       name iso_a3</span>
+<span class="go">0                      Fiji    FJI</span>
+<span class="go">1                  Tanzania    TZA</span>
+<span class="go">2                 W. Sahara    ESH</span>
+<span class="go">3                    Canada    CAN</span>
+<span class="go">4  United States of America    USA</span>
 
-# Merge with `merge` method on shared variable (iso codes):
-In [9]: country_shapes = country_shapes.merge(country_names, on='iso_a3')
+<span class="go"># Merge with `merge` method on shared variable (iso codes):</span>
+<span class="gp">In [9]: </span><span class="n">country_shapes</span> <span class="o">=</span> <span class="n">country_shapes</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">country_names</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;iso_a3&#39;</span><span class="p">)</span>
 
-In [10]: country_shapes.head()
-Out[10]: 
-                                            geometry iso_a3                      name
-0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...    FJI                      Fiji
-1  POLYGON ((33.903711197 -0.950000000, 34.072620...    TZA                  Tanzania
-2  POLYGON ((-8.665589565 27.656425890, -8.665124...    ESH                 W. Sahara
-3  MULTIPOLYGON (((-122.840000000 49.000000000, -...    CAN                    Canada
-4  MULTIPOLYGON (((-122.840000000 49.000000000, -...    USA  United States of America</pre>
+<span class="gp">In [10]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[10]: </span><span class="go"></span>
+<span class="go">                                            geometry iso_a3                      name</span>
+<span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...    FJI                      Fiji</span>
+<span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...    TZA                  Tanzania</span>
+<span class="go">2  POLYGON ((-8.665589565 27.656425890, -8.665124...    ESH                 W. Sahara</span>
+<span class="go">3  MULTIPOLYGON (((-122.840000000 49.000000000, -...    CAN                    Canada</span>
+<span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...    USA  United States of America</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="spatial-joins">
 <h2>Spatial Joins<a class="headerlink" href="#spatial-joins" title="Permalink to this headline">¶</a></h2>
 <p>In a Spatial Join, two geometry objects are merged based on their spatial relationship to one another.</p>
-<pre class="literal-block"># One GeoDataFrame of countries, one of Cities.
-# Want to merge so we can get each city's country.
-In [11]: countries.head()
-Out[11]: 
-                                            geometry                   country
-0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...                      Fiji
-1  POLYGON ((33.903711197 -0.950000000, 34.072620...                  Tanzania
-2  POLYGON ((-8.665589565 27.656425890, -8.665124...                 W. Sahara
-3  MULTIPOLYGON (((-122.840000000 49.000000000, -...                    Canada
-4  MULTIPOLYGON (((-122.840000000 49.000000000, -...  United States of America
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># One GeoDataFrame of countries, one of Cities.</span>
+<span class="go"># Want to merge so we can get each city&#39;s country.</span>
+<span class="gp">In [11]: </span><span class="n">countries</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[11]: </span><span class="go"></span>
+<span class="go">                                            geometry                   country</span>
+<span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...                      Fiji</span>
+<span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...                  Tanzania</span>
+<span class="go">2  POLYGON ((-8.665589565 27.656425890, -8.665124...                 W. Sahara</span>
+<span class="go">3  MULTIPOLYGON (((-122.840000000 49.000000000, -...                    Canada</span>
+<span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...  United States of America</span>
 
-In [12]: cities.head()
-Out[12]: 
-           name                           geometry
-0  Vatican City  POINT (12.453386545 41.903282180)
-1    San Marino  POINT (12.441770158 43.936095835)
-2         Vaduz   POINT (9.516669473 47.133723774)
-3    Luxembourg   POINT (6.130002806 49.611660379)
-4       Palikir  POINT (158.149974324 6.916643696)
+<span class="gp">In [12]: </span><span class="n">cities</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[12]: </span><span class="go"></span>
+<span class="go">           name                           geometry</span>
+<span class="go">0  Vatican City  POINT (12.453386545 41.903282180)</span>
+<span class="go">1    San Marino  POINT (12.441770158 43.936095835)</span>
+<span class="go">2         Vaduz   POINT (9.516669473 47.133723774)</span>
+<span class="go">3    Luxembourg   POINT (6.130002806 49.611660379)</span>
+<span class="go">4       Palikir  POINT (158.149974324 6.916643696)</span>
 
-# Execute spatial join
-In [13]: cities_with_country = geopandas.sjoin(cities, countries, how=&quot;inner&quot;, op='intersects')
+<span class="go"># Execute spatial join</span>
+<span class="gp">In [13]: </span><span class="n">cities_with_country</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cities</span><span class="p">,</span> <span class="n">countries</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
 
-In [14]: cities_with_country.head()
-Out[14]: 
-             name                           geometry  index_right  country
-0    Vatican City  POINT (12.453386545 41.903282180)          141    Italy
-1      San Marino  POINT (12.441770158 43.936095835)          141    Italy
-192          Rome  POINT (12.481312563 41.897901485)          141    Italy
-2           Vaduz   POINT (9.516669473 47.133723774)          114  Austria
-184        Vienna  POINT (16.364693097 48.201961137)          114  Austria</pre>
+<span class="gp">In [14]: </span><span class="n">cities_with_country</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[14]: </span><span class="go"></span>
+<span class="go">             name                           geometry  index_right  country</span>
+<span class="go">0    Vatican City  POINT (12.453386545 41.903282180)          141    Italy</span>
+<span class="go">1      San Marino  POINT (12.441770158 43.936095835)          141    Italy</span>
+<span class="go">192          Rome  POINT (12.481312563 41.897901485)          141    Italy</span>
+<span class="go">2           Vaduz   POINT (9.516669473 47.133723774)          114  Austria</span>
+<span class="go">184        Vienna  POINT (16.364693097 48.201961137)          114  Austria</span>
+</pre></div>
+</div>
 <div class="section" id="sjoin-arguments">
 <h3>Sjoin Arguments<a class="headerlink" href="#sjoin-arguments" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">sjoin.()</span></code> has two core arguments: <code class="docutils literal notranslate"><span class="pre">how</span></code> and <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>

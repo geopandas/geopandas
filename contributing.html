@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Contributing to GeoPandas &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Contributing to GeoPandas &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -225,14 +225,6 @@ tests for your code and make sure that they pass on your pull request.</p></li>
 <li><p>Classes, methods, functions, etc. should have docstrings.  The first
 line of a docstring should be a standalone summary.  Parameters and
 return values should be documented explicitly.</p></li>
-<li><p>GeoPandas supports python 2 (2.7+) and python 3 (3.5+) with a single
-code base.  Use modern python idioms when possible that are
-compatible with both major versions, and use the
-<a class="reference external" href="https://pythonhosted.org/six">six</a> library where helpful to smooth
-over the differences.  Use <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">__future__</span> <span class="pre">import</span></code> statements where
-appropriate.  Test code locally in both python 2 and python 3 when
-possible (all supported versions will be automatically tested on
-Travis CI).</p></li>
 <li><p>Follow PEP 8 when possible. We use <a class="reference external" href="https://black.readthedocs.io/en/stable/">Black</a> and <a class="reference external" href="http://flake8.pycqa.org/en/latest/">Flake8</a> to ensure a consistent code
 format throughout the project. For more details see
 <a class="reference internal" href="#contributing-style"><span class="std std-ref">below</span></a>.</p></li>
@@ -241,6 +233,8 @@ format throughout the project. For more details see
 grouping, imports should be alphabetized.  Always use absolute
 imports when possible, and explicit relative imports for local
 imports when necessary in tests.</p></li>
+<li><p>GeoPandas supports Python 3.5+ only. The last version of GeoPandas
+supporting Python 2 is 0.6.</p></li>
 </ul>
 <div class="section" id="seven-steps-for-contributing">
 <h3>Seven Steps for Contributing<a class="headerlink" href="#seven-steps-for-contributing" title="Permalink to this headline">¶</a></h3>

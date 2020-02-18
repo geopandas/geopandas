@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reading and Writing Files &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Reading and Writing Files &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -95,7 +95,15 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reading and Writing Files</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#reading-spatial-data">Reading Spatial Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reading-spatial-data">Reading Spatial Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reading-subsets-of-the-data">Reading subsets of the data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#geometry-filter">Geometry Filter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#bounding-box-filter">Bounding Box Filter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#row-filter">Row Filter</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#writing-spatial-data">Writing Spatial Data</a></li>
 </ul>
 </li>
@@ -189,7 +197,7 @@
 </pre></div>
 </div>
 <p>which returns a GeoDataFrame object. (This is possible because <em>geopandas</em> makes use of the great <a class="reference external" href="http://fiona.readthedocs.io/en/latest/manual.html">fiona</a> library, which in turn makes use of a massive open-source program called <a class="reference external" href="http://www.gdal.org/">GDAL/OGR</a> designed to facilitate spatial data transformations).</p>
-<p>Any arguments passed to <code class="docutils literal notranslate"><span class="pre">read_file()</span></code> after the file name will be passed directly to <code class="docutils literal notranslate"><span class="pre">fiona.open</span></code>, which does the actual data importation. In general, <code class="docutils literal notranslate"><span class="pre">read_file</span></code> is pretty smart and should do what you want without extra arguments, but for more help, type:</p>
+<p>Any arguments passed to <a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a> after the file name will be passed directly to <code class="docutils literal notranslate"><span class="pre">fiona.open</span></code>, which does the actual data importation. In general, <a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a> is pretty smart and should do what you want without extra arguments, but for more help, type:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">fiona</span><span class="p">;</span> <span class="n">help</span><span class="p">(</span><span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -203,11 +211,82 @@ a web URL, for example for GeoJSON files from <a class="reference external" href
 <span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><em>geopandas</em> can also get data from a PostGIS database using the <code class="docutils literal notranslate"><span class="pre">read_postgis()</span></code> command.</p>
+<p>You can also load ZIP files that contain your data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/cb_2017_us_state_500k.zip&quot;</span>
+<span class="n">states</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">zipfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the dataset is in a folder in the ZIP file, you have to append its name:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data&quot;</span>
+</pre></div>
+</div>
+<p>If there are multiple datasets in a folder in the ZIP file, you also have to specify the filename:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data/gadm36_AFG_1.shp&quot;</span>
+</pre></div>
+</div>
+<p><em>geopandas</em> can also get data from a PostGIS database using the <code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_postgis()</span></code> command.</p>
+<div class="section" id="reading-subsets-of-the-data">
+<h3>Reading subsets of the data<a class="headerlink" href="#reading-subsets-of-the-data" title="Permalink to this headline">¶</a></h3>
+<p>Since geopandas is powered by Fiona, which is powered by GDAL, you can take advantage of
+pre-filtering when loading in larger datasets. This can be done geospatially with a geometry
+or bounding box. You can also filter rows loaded with a slice. Read more at <a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a>.</p>
+<div class="section" id="geometry-filter">
+<h4>Geometry Filter<a class="headerlink" href="#geometry-filter" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7.0.</span></p>
+</div>
+<p>The geometry filter only loads data that intersects with the geometry.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf_mask</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_cities&quot;</span><span class="p">),</span>
+    <span class="n">mask</span><span class="o">=</span><span class="n">gdf_mask</span><span class="p">[</span><span class="n">gdf_mask</span><span class="o">.</span><span class="n">continent</span><span class="o">==</span><span class="s2">&quot;Africa&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="bounding-box-filter">
+<h4>Bounding Box Filter<a class="headerlink" href="#bounding-box-filter" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<p>The bounding box filter only loads data that intersects with the bounding box.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bbox</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="mf">1031051.7879884212</span><span class="p">,</span> <span class="mf">224272.49231459625</span><span class="p">,</span> <span class="mf">1047224.3104931959</span><span class="p">,</span> <span class="mf">244317.30894023244</span>
+<span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;nybb&quot;</span><span class="p">),</span>
+    <span class="n">bbox</span><span class="o">=</span><span class="n">bbox</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="row-filter">
+<h4>Row Filter<a class="headerlink" href="#row-filter" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7.0.</span></p>
+</div>
+<p>Filter the rows loaded in from the file using an integer (for the first n rows)
+or a slice object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">rows</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">rows</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
 </div>
 <div class="section" id="writing-spatial-data">
 <h2>Writing Spatial Data<a class="headerlink" href="#writing-spatial-data" title="Permalink to this headline">¶</a></h2>
-<p>GeoDataFrames can be exported to many different standard formats using the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame.to_file()</span></code> method. For a full list of supported formats, type <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">fiona.supported_drivers</span></code>.</p>
+<p>GeoDataFrames can be exported to many different standard formats using the
+<a class="reference internal" href="reference.html#geopandas.GeoDataFrame.to_file" title="geopandas.GeoDataFrame.to_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame.to_file()</span></code></a> method.
+For a full list of supported formats, type <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">fiona.supported_drivers</span></code>.</p>
 <p><strong>Writing to Shapefile</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;countries.shp&quot;</span><span class="p">)</span>
 </pre></div>

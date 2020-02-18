@@ -1,0 +1,368 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Clip Vector Data with GeoPandas &mdash; GeoPandas 0.7.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Plotting with CartoPy and GeoPandas" href="cartopy_convert.html" />
+    <link rel="prev" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> GeoPandas
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples Gallery</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="plotting_basemap_background.html">Adding a background map to plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Clip Vector Data with GeoPandas</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#import-packages">Import Packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-or-create-example-data">Get or Create Example Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-the-unclipped-data">Plot the Unclipped Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clip-the-data">Clip the Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clip-the-world-data">Clip the World Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clip-the-capitals-data">Clip the Capitals Data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_structures.html">Data Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../indexing.html">Indexing and Selecting Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mapping.html">Making Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../projections.html">Managing Projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../geometric_manipulations.html">Geometric Manipulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../set_operations.html">Set Operations with overlay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html">Reference to All Attributes and Methods</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to GeoPandas</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GeoPandas</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Examples Gallery</a> &raquo;</li>
+        
+      <li>Clip Vector Data with GeoPandas</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/gallery/plot_clip.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-gallery-plot-clip-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="clip-vector-data-with-geopandas">
+<span id="sphx-glr-gallery-plot-clip-py"></span><h1>Clip Vector Data with GeoPandas<a class="headerlink" href="#clip-vector-data-with-geopandas" title="Permalink to this headline">¶</a></h1>
+<p>Learn how to clip geometries to the boundary of a polygon geometry
+using GeoPandas.</p>
+<p>The example below shows you how to clip a set of vector geometries
+to the spatial extent / shape of another vector object. Both sets of geometries
+must be opened with GeoPandas as GeoDataFrames and be in the same Coordinate
+Reference System (CRS) for the <a class="reference internal" href="../reference/geopandas.clip.html#geopandas.clip" title="geopandas.clip"><code class="xref py py-func docutils literal notranslate"><span class="pre">clip()</span></code></a> function in GeoPandas to work.</p>
+<p>This example uses GeoPandas example data <code class="docutils literal notranslate"><span class="pre">'naturalearth_cities'</span></code> and
+<code class="docutils literal notranslate"><span class="pre">'naturalearth_lowres'</span></code>, alongside a custom rectangle geometry made with
+shapely and then turned into a GeoDataFrame.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The object to be clipped will be clipped to the full extent of the clip
+object. If there are multiple polygons in clip object, the input data will
+be clipped to the total boundary of all polygons in clip object.</p>
+</div>
+<div class="section" id="import-packages">
+<h2>Import Packages<a class="headerlink" href="#import-packages" title="Permalink to this headline">¶</a></h2>
+<p>To begin, import the needed packages.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">geopandas</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="get-or-create-example-data">
+<h2>Get or Create Example Data<a class="headerlink" href="#get-or-create-example-data" title="Permalink to this headline">¶</a></h2>
+<p>Below, the example GeoPandas data is imported and opened as a GeoDataFrame.
+Additionally, a polygon is created with shapely and then converted into a
+GeoDataFrame with the same CRS as the GeoPandas world dataset.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capitals</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s2">&quot;naturalearth_cities&quot;</span><span class="p">))</span>
+<span class="n">world</span> <span class="o">=</span> <a href="../reference/geopandas.read_file.html#geopandas.read_file" title="View documentation for geopandas.read_file"><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span></a><span class="p">(</span><a href="../reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="View documentation for geopandas.datasets.get_path"><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span></a><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">))</span>
+
+<span class="c1"># Create a subset of the world data that is just the South American continent</span>
+<span class="n">south_america</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="p">[</span><span class="s2">&quot;continent&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;South America&quot;</span><span class="p">]</span>
+
+<span class="c1"># Create a custom polygon</span>
+<span class="n">polygon</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">),</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">90</span><span class="p">),</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+<span class="n">poly_gdf</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">geometry</span><span class="o">=</span><span class="p">[</span><span class="n">polygon</span><span class="p">],</span> <span class="n">crs</span><span class="o">=</span><span class="n">world</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="plot-the-unclipped-data">
+<h2>Plot the Unclipped Data<a class="headerlink" href="#plot-the-unclipped-data" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">poly_gdf</span><span class="o">.</span><span class="n">boundary</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">south_america</span><span class="o">.</span><span class="n">boundary</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">)</span>
+<span class="n">capitals</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;purple&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;All Unclipped World Data&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;All Unclipped Capital Data&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/sphx_glr_plot_clip_001.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_clip_001.png" />
+</div>
+<div class="section" id="clip-the-data">
+<h2>Clip the Data<a class="headerlink" href="#clip-the-data" title="Permalink to this headline">¶</a></h2>
+<p>When you call <a class="reference internal" href="../reference/geopandas.clip.html#geopandas.clip" title="geopandas.clip"><code class="xref py py-func docutils literal notranslate"><span class="pre">clip()</span></code></a>, the first object called is the object that will
+be clipped. The second object called is the clip extent. The returned output
+will be a new clipped GeoDataframe. All of the attributes for each returned
+geometry will be retained when you clip.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Recall that the data must be in the same CRS in order to use the
+<a class="reference internal" href="../reference/geopandas.clip.html#geopandas.clip" title="geopandas.clip"><code class="xref py py-func docutils literal notranslate"><span class="pre">clip()</span></code></a> function. If the data are not in the same CRS, be sure to use
+the GeoPandas <a class="reference internal" href="../reference.html#geopandas.GeoDataFrame.to_crs" title="geopandas.GeoDataFrame.to_crs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_crs()</span></code></a> method to ensure both datasets
+are in the same CRS.</p>
+</div>
+</div>
+<div class="section" id="clip-the-world-data">
+<h2>Clip the World Data<a class="headerlink" href="#clip-the-world-data" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">world_clipped</span> <span class="o">=</span> <a href="../reference/geopandas.clip.html#geopandas.clip" title="View documentation for geopandas.clip"><span class="n">geopandas</span><span class="o">.</span><span class="n">clip</span></a><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">polygon</span><span class="p">)</span>
+
+<span class="c1"># Plot the clipped data</span>
+<span class="c1"># The plot below shows the results of the clip function applied to the world</span>
+<span class="c1"># sphinx_gallery_thumbnail_number = 2</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">world_clipped</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;purple&quot;</span><span class="p">)</span>
+<span class="n">world</span><span class="o">.</span><span class="n">boundary</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">poly_gdf</span><span class="o">.</span><span class="n">boundary</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;World Clipped&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/sphx_glr_plot_clip_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_clip_002.png" />
+</div>
+<div class="section" id="clip-the-capitals-data">
+<h2>Clip the Capitals Data<a class="headerlink" href="#clip-the-capitals-data" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capitals_clipped</span> <span class="o">=</span> <a href="../reference/geopandas.clip.html#geopandas.clip" title="View documentation for geopandas.clip"><span class="n">geopandas</span><span class="o">.</span><span class="n">clip</span></a><span class="p">(</span><span class="n">capitals</span><span class="p">,</span> <span class="n">south_america</span><span class="p">)</span>
+
+<span class="c1"># Plot the clipped data</span>
+<span class="c1"># The plot below shows the results of the clip function applied to the capital cities</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">capitals_clipped</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;purple&quot;</span><span class="p">)</span>
+<span class="n">south_america</span><span class="o">.</span><span class="n">boundary</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Capitals Clipped&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/sphx_glr_plot_clip_003.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_clip_003.png" />
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.878 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-plot-clip-py">
+<div class="sphx-glr-download docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/0ce383b7c4165f32e90adf27958b314b/plot_clip.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_clip.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/06cc24b966eea40f0b27f6105e65633c/plot_clip.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_clip.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cartopy_convert.html" class="btn btn-neutral float-right" title="Plotting with CartoPy and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-left" title="Plotting with Geoplot and GeoPandas" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2013–2019, GeoPandas developers
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

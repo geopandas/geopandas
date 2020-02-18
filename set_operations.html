@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Set-Operations with Overlay &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Set-Operations with Overlay &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -102,6 +102,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Set Operations with overlay</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-different-overlay-operations">The different Overlay operations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#overlay-countries-example">Overlay Countries Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#keep-geom-type-keyword">keep_geom_type keyword</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#more-examples">More Examples</a><ul class="simple">
 </ul>
 </li>
@@ -347,9 +348,9 @@ but with the geometries obtained from overlaying <code class="docutils literal n
 <span class="gp">In [36]: </span><span class="n">countries</span> <span class="o">=</span> <span class="n">countries</span><span class="p">[[</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">]]</span>
 
 <span class="go"># Project to crs that uses meters as distance measure</span>
-<span class="gp">In [37]: </span><span class="n">countries</span> <span class="o">=</span> <span class="n">countries</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="s1">&#39;+init=epsg:3395&#39;</span><span class="p">)</span>
+<span class="gp">In [37]: </span><span class="n">countries</span> <span class="o">=</span> <span class="n">countries</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="s1">&#39;epsg:3395&#39;</span><span class="p">)</span>
 
-<span class="gp">In [38]: </span><span class="n">capitals</span> <span class="o">=</span> <span class="n">capitals</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="s1">&#39;+init=epsg:3395&#39;</span><span class="p">)</span>
+<span class="gp">In [38]: </span><span class="n">capitals</span> <span class="o">=</span> <span class="n">capitals</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="s1">&#39;epsg:3395&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To illustrate the <code class="docutils literal notranslate"><span class="pre">overlay</span></code> function, consider the following case in which one
@@ -362,7 +363,21 @@ wishes to identify the “core” portion of each country – defined as areas w
 <span class="go"># Now buffer cities to find area within 500km.</span>
 <span class="go"># Check CRS -- World Mercator, units of meters.</span>
 <span class="gp">In [40]: </span><span class="n">capitals</span><span class="o">.</span><span class="n">crs</span>
-<span class="gh">Out[40]: </span><span class="go">&#39;+init=epsg:3395&#39;</span>
+<span class="gh">Out[40]: </span><span class="go"></span>
+<span class="go">&lt;Projected CRS: EPSG:3395&gt;</span>
+<span class="go">Name: WGS 84 / World Mercator</span>
+<span class="go">Axis Info [cartesian]:</span>
+<span class="go">- E[east]: Easting (metre)</span>
+<span class="go">- N[north]: Northing (metre)</span>
+<span class="go">Area of Use:</span>
+<span class="go">- name: World - between 80°S and 84°N</span>
+<span class="go">- bounds: (-180.0, -80.0, 180.0, 84.0)</span>
+<span class="go">Coordinate Operation:</span>
+<span class="go">- name: World Mercator</span>
+<span class="go">- method: Mercator (variant A)</span>
+<span class="go">Datum: World Geodetic System 1984</span>
+<span class="go">- Ellipsoid: WGS 84</span>
+<span class="go">- Prime Meridian: Greenwich</span>
 
 <span class="go"># make 500km buffer</span>
 <span class="gp">In [41]: </span><span class="n">capitals</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">capitals</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="mi">500000</span><span class="p">)</span>
@@ -386,6 +401,15 @@ wishes to identify the “core” portion of each country – defined as areas w
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/country_peripheries.png"><img alt="_images/country_peripheries.png" src="_images/country_peripheries.png" style="width: 5in;" /></a>
+</div>
+<div class="section" id="keep-geom-type-keyword">
+<h2>keep_geom_type keyword<a class="headerlink" href="#keep-geom-type-keyword" title="Permalink to this headline">¶</a></h2>
+<p>In default settings, <code class="docutils literal notranslate"><span class="pre">overlay</span></code> returns only geometries of the same geometry type as df1
+(left one) has, where Polygon and MultiPolygon is considered as a same type (other types likewise).
+You can control this behavior using <code class="docutils literal notranslate"><span class="pre">keep_geom_type</span></code> option, which is set to
+True by default. Once set to False, <code class="docutils literal notranslate"><span class="pre">overlay</span></code> will return all geometry types resulting from
+selected set-operation. Different types can result for example from intersection of touching geometries,
+where two polygons intersects in a line or a point.</p>
 </div>
 <div class="section" id="more-examples">
 <h2>More Examples<a class="headerlink" href="#more-examples" title="Permalink to this headline">¶</a></h2>

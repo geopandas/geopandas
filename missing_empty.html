@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Missing and empty geometries &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Missing and empty geometries &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -206,7 +206,7 @@ on what changed compared to earlier versions.</p>
 and one empty polygon:</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
 
-<span class="gp">In [2]: </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]),</span> <span class="bp">None</span><span class="p">,</span> <span class="n">Polygon</span><span class="p">([])])</span>
+<span class="gp">In [2]: </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Polygon</span><span class="p">([])])</span>
 
 <span class="gp">In [3]: </span><span class="n">s</span>
 <span class="gh">Out[3]: </span><span class="go"></span>
@@ -219,26 +219,28 @@ and one empty polygon:</p>
 <p>In spatial operations, missing geometries will typically propagate (be missing
 in the result as well), while empty geometries are treated as a geometry
 and the result will depend on the operation:</p>
-<pre class="literal-block">In [4]: s.area
-Out[4]: 
-0    0.5
-1    NaN
-2    0.0
-dtype: float64
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [4]: </span><span class="n">s</span><span class="o">.</span><span class="n">area</span>
+<span class="gh">Out[4]: </span><span class="go"></span>
+<span class="go">0    0.5</span>
+<span class="go">1    NaN</span>
+<span class="go">2    0.0</span>
+<span class="go">dtype: float64</span>
 
-In [5]: s.union(Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]))
-Out[5]: 
-0    POLYGON ((0.000000000 1.000000000, 1.000000000...
-1                                                 None
-2    POLYGON ((0.000000000 0.000000000, 0.000000000...
-dtype: geometry
+<span class="gp">In [5]: </span><span class="n">s</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]))</span>
+<span class="gh">Out[5]: </span><span class="go"></span>
+<span class="go">0    POLYGON ((0.000000000 1.000000000, 1.000000000...</span>
+<span class="go">1                                                 None</span>
+<span class="go">2    POLYGON ((0.000000000 0.000000000, 0.000000000...</span>
+<span class="go">dtype: geometry</span>
 
-In [6]: s.intersection(Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]))
-Out[6]: 
-0    POLYGON ((1.000000000 1.000000000, 0.000000000...
-1                                                 None
-2                             GEOMETRYCOLLECTION EMPTY
-dtype: geometry</pre>
+<span class="gp">In [6]: </span><span class="n">s</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]))</span>
+<span class="gh">Out[6]: </span><span class="go"></span>
+<span class="go">0    POLYGON ((1.000000000 1.000000000, 0.000000000...</span>
+<span class="go">1                                                 None</span>
+<span class="go">2                             GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
 <p>The <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> method will only check for missing values and not
 for empty geometries:</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [7]: </span><span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
@@ -261,17 +263,19 @@ you can use the <a class="reference internal" href="reference.html#geopandas.Geo
 </div>
 <p>To get only the actual geometry objects that are neiter missing nor empty,
 you can use a combination of both:</p>
-<pre class="literal-block">In [9]: s.is_empty | s.isna()
-Out[9]: 
-0    False
-1     True
-2     True
-dtype: bool
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [9]: </span><span class="n">s</span><span class="o">.</span><span class="n">is_empty</span> <span class="o">|</span> <span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
+<span class="gh">Out[9]: </span><span class="go"></span>
+<span class="go">0    False</span>
+<span class="go">1     True</span>
+<span class="go">2     True</span>
+<span class="go">dtype: bool</span>
 
-In [10]: s[~(s.is_empty | s.isna())]
-Out[10]: 
-0    POLYGON ((0.000000000 0.000000000, 1.000000000...
-dtype: geometry</pre>
+<span class="gp">In [10]: </span><span class="n">s</span><span class="p">[</span><span class="o">~</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">is_empty</span> <span class="o">|</span> <span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">())]</span>
+<span class="gh">Out[10]: </span><span class="go"></span>
+<span class="go">0    POLYGON ((0.000000000 0.000000000, 1.000000000...</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
 <div class="section" id="changes-since-geopandas-v0-6-0">
 <span id="missing-empty-changes-0-6-0"></span><h2>Changes since GeoPandas v0.6.0<a class="headerlink" href="#changes-since-geopandas-v0-6-0" title="Permalink to this headline">¶</a></h2>
 <p>In GeoPandas v0.6.0, the missing data handling was refactored and made more
@@ -319,23 +323,25 @@ indication how to solve this.</p>
 <p>Additionally, the behaviour of <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.align()</span></code> changed to use
 missing values instead of empty geometries to fill non-matching indexes.
 Consider the following small toy example:</p>
-<pre class="literal-block">In [12]: from shapely.geometry import Point
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [12]: </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
 
-In [13]: s1 = geopandas.GeoSeries([Point(0, 0), Point(1, 1)], index=[0, 1])
+<span class="gp">In [13]: </span><span class="n">s1</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 
-In [14]: s2 = geopandas.GeoSeries([Point(1, 1), Point(2, 2)], index=[1, 2])
+<span class="gp">In [14]: </span><span class="n">s2</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 
-In [15]: s1
-Out[15]: 
-0    POINT (0.000000000 0.000000000)
-1    POINT (1.000000000 1.000000000)
-dtype: geometry
+<span class="gp">In [15]: </span><span class="n">s1</span>
+<span class="gh">Out[15]: </span><span class="go"></span>
+<span class="go">0    POINT (0.000000000 0.000000000)</span>
+<span class="go">1    POINT (1.000000000 1.000000000)</span>
+<span class="go">dtype: geometry</span>
 
-In [16]: s2
-Out[16]: 
-1    POINT (1.000000000 1.000000000)
-2    POINT (2.000000000 2.000000000)
-dtype: geometry</pre>
+<span class="gp">In [16]: </span><span class="n">s2</span>
+<span class="gh">Out[16]: </span><span class="go"></span>
+<span class="go">1    POINT (1.000000000 1.000000000)</span>
+<span class="go">2    POINT (2.000000000 2.000000000)</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
 <ul>
 <li><p>Previously, the <code class="docutils literal notranslate"><span class="pre">align</span></code> method would use empty geometries to fill
 values:</p>
@@ -367,21 +373,23 @@ mis-aligned GeoSeries objects:</p>
 <li><p>Starting from GeoPandas v0.6.0, <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.align()</span></code> will use missing
 values to fill in the non-aligned indices, to be consistent with the
 behaviour in pandas:</p>
-<pre class="literal-block">In [17]: s1_aligned, s2_aligned = s1.align(s2)
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [17]: </span><span class="n">s1_aligned</span><span class="p">,</span> <span class="n">s2_aligned</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
 
-In [18]: s1_aligned
-Out[18]: 
-0    POINT (0.000000000 0.000000000)
-1    POINT (1.000000000 1.000000000)
-2                               None
-dtype: geometry
+<span class="gp">In [18]: </span><span class="n">s1_aligned</span>
+<span class="gh">Out[18]: </span><span class="go"></span>
+<span class="go">0    POINT (0.000000000 0.000000000)</span>
+<span class="go">1    POINT (1.000000000 1.000000000)</span>
+<span class="go">2                               None</span>
+<span class="go">dtype: geometry</span>
 
-In [19]: s2_aligned
-Out[19]: 
-0                               None
-1    POINT (1.000000000 1.000000000)
-2    POINT (2.000000000 2.000000000)
-dtype: geometry</pre>
+<span class="gp">In [19]: </span><span class="n">s2_aligned</span>
+<span class="gh">Out[19]: </span><span class="go"></span>
+<span class="go">0                               None</span>
+<span class="go">1    POINT (1.000000000 1.000000000)</span>
+<span class="go">2    POINT (2.000000000 2.000000000)</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
 <p>This has the consequence that spatial operations will also use missing
 values instead of empty geometries, which can have a different behaviour
 depending on the spatial operation:</p>

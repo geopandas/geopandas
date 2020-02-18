@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>geopandas.clip &mdash; GeoPandas 0.7.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="geopandas.tools.geocode" href="geopandas.tools.geocode.html" />
+    <link rel="prev" title="geopandas.overlay" href="geopandas.overlay.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> GeoPandas
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../data_structures.html">Data Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../indexing.html">Indexing and Selecting Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mapping.html">Making Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../projections.html">Managing Projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../geometric_manipulations.html">Geometric Manipulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../set_operations.html">Set Operations with overlay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mergingdata.html">Merging Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../missing_empty.html">Missing and empty geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../reference.html">Reference to All Attributes and Methods</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#geoseries">GeoSeries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#geodataframe">GeoDataFrame</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#api-pages">API Pages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_file.html">geopandas.read_file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.sjoin.html">geopandas.sjoin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">geopandas.clip</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#examples-using-geopandas-clip">Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.clip</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to GeoPandas</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GeoPandas</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../reference.html">Reference</a> &raquo;</li>
+        
+      <li>geopandas.clip</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/reference/geopandas.clip.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="geopandas-clip">
+<h1>geopandas.clip<a class="headerlink" href="#geopandas-clip" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="geopandas.clip">
+<code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">clip</code><span class="sig-paren">(</span><em class="sig-param">gdf</em>, <em class="sig-param">mask</em>, <em class="sig-param">keep_geom_type=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.clip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clip points, lines, or polygon geometries to the mask extent.</p>
+<p>Both layers must be in the same Coordinate Reference System (CRS).
+The <cite>gdf</cite> will be clipped to the full extent of the clip object.</p>
+<p>If there are multiple polygons in mask, data from <cite>gdf</cite> will be
+clipped to the total boundary of all polygons in mask.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>gdf</strong><span class="classifier">GeoDataFrame or GeoSeries</span></dt><dd><p>Vector layer (point, line, polygon) to be clipped to mask.</p>
+</dd>
+<dt><strong>mask</strong><span class="classifier">GeoDataFrame, GeoSeries, (Multi)Polygon</span></dt><dd><p>Polygon vector layer used to clip <cite>gdf</cite>.
+The mask’s geometry is dissolved into one geometric feature
+and intersected with <cite>gdf</cite>.</p>
+</dd>
+<dt><strong>keep_geom_type</strong><span class="classifier">boolean, default False</span></dt><dd><p>If True, return only geometries of original type in case of intersection
+resulting in multiple geometry types or GeometryCollections.
+If False, return all resulting geometries (potentially mixed-types).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>GeoDataFrame or GeoSeries</dt><dd><p>Vector data (points, lines, polygons) from <cite>gdf</cite> clipped to
+polygon boundary from mask.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Clip points (global cities) with a polygon (the South American continent):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">geopandas</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">path</span> <span class="o">=</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">south_america</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;continent&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;South America&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">capitals</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_cities&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">capitals</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(202, 2)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sa_capitals</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">capitals</span><span class="p">,</span> <span class="n">south_america</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sa_capitals</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(12, 2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<div class="section" id="examples-using-geopandas-clip">
+<h2>Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.clip</span></code><a class="headerlink" href="#examples-using-geopandas-clip" title="Permalink to this headline">¶</a></h2>
+<div class="sphx-glr-thumbcontainer" tooltip="Learn how to clip geometries to the boundary of a polygon geometry using GeoPandas."><div class="figure align-default" id="id1">
+<img alt="../_images/sphx_glr_plot_clip_thumb.png" src="../_images/sphx_glr_plot_clip_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/plot_clip.html#sphx-glr-gallery-plot-clip-py"><span class="std std-ref">Clip Vector Data with GeoPandas</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="clear"></div></div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="geopandas.tools.geocode.html" class="btn btn-neutral float-right" title="geopandas.tools.geocode" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="geopandas.overlay.html" class="btn btn-neutral float-left" title="geopandas.overlay" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2013–2019, GeoPandas developers
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

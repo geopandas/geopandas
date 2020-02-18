@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Data Structures &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Data Structures &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -194,12 +194,12 @@
             
   <div class="section" id="data-structures">
 <h1>Data Structures<a class="headerlink" href="#data-structures" title="Permalink to this headline">¶</a></h1>
-<p>GeoPandas implements two main data structures, a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> and a
-<code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>.  These are subclasses of pandas <code class="docutils literal notranslate"><span class="pre">Series</span></code> and
+<p>GeoPandas implements two main data structures, a <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> and a
+<a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a>.  These are subclasses of pandas <code class="docutils literal notranslate"><span class="pre">Series</span></code> and
 <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>, respectively.</p>
 <div class="section" id="geoseries">
 <h2>GeoSeries<a class="headerlink" href="#geoseries" title="Permalink to this headline">¶</a></h2>
-<p>A <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> is essentially a vector where each entry in the vector
+<p>A <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> is essentially a vector where each entry in the vector
 is a set of shapes corresponding to one observation. An entry may consist
 of only one shape (like a single polygon) or multiple shapes that are
 meant to be thought of as one observation (like the many polygons that
@@ -210,18 +210,18 @@ make up the State of Hawaii or a country like Indonesia).</p>
 <li><p>Lines / Multi-Lines</p></li>
 <li><p>Polygons / Multi-Polygons</p></li>
 </ul>
-<p>Note that all entries in  a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> need not be of the same geometric type, although certain export operations will fail if this is not the case.</p>
+<p>Note that all entries in  a <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> need not be of the same geometric type, although certain export operations will fail if this is not the case.</p>
 <div class="section" id="overview-of-attributes-and-methods">
 <h3>Overview of Attributes and Methods<a class="headerlink" href="#overview-of-attributes-and-methods" title="Permalink to this headline">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> class implements nearly all of the attributes and
-methods of Shapely objects.  When applied to a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>, they
+<p>The <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> class implements nearly all of the attributes and
+methods of Shapely objects.  When applied to a <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>, they
 will apply elementwise to all geometries in the series.  Binary
-operations can be applied between two <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>, in which case the
+operations can be applied between two <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>, in which case the
 operation is carried out elementwise.  The two series will be aligned
 by matching indices.  Binary operations can also be applied to a
 single geometry, in which case the operation is carried out for each
 element of the series with that geometry.  In either case, a
-<code class="docutils literal notranslate"><span class="pre">Series</span></code> or a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> will be returned, as appropriate.</p>
+<code class="docutils literal notranslate"><span class="pre">Series</span></code> or a <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> will be returned, as appropriate.</p>
 <p>A short summary of a few attributes and methods for GeoSeries is
 presented here, and a full list can be found in the <a class="reference internal" href="reference.html"><span class="doc">all attributes and methods page</span></a>.
 There is also a family of methods for creating new shapes by expanding
@@ -230,39 +230,39 @@ in <a class="reference internal" href="geometric_manipulations.html"><span class
 <div class="section" id="attributes">
 <h4>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">area</span></code>: shape area (units of projection – see <a class="reference internal" href="projections.html"><span class="doc">projections</span></a>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">bounds</span></code>: tuple of max and min coordinates on each axis for each shape</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">total_bounds</span></code>: tuple of max and min coordinates on each axis for entire GeoSeries</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">geom_type</span></code>: type of geometry.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">is_valid</span></code>: tests if coordinates make a shape that is reasonable geometric shape (<a class="reference external" href="http://www.opengeospatial.org/standards/sfa">according to this</a>).</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.area" title="geopandas.GeoSeries.area"><code class="xref py py-attr docutils literal notranslate"><span class="pre">area</span></code></a>: shape area (units of projection – see <a class="reference internal" href="projections.html"><span class="doc">projections</span></a>)</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.bounds" title="geopandas.GeoSeries.bounds"><code class="xref py py-attr docutils literal notranslate"><span class="pre">bounds</span></code></a>: tuple of max and min coordinates on each axis for each shape</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.total_bounds" title="geopandas.GeoSeries.total_bounds"><code class="xref py py-attr docutils literal notranslate"><span class="pre">total_bounds</span></code></a>: tuple of max and min coordinates on each axis for entire GeoSeries</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.geom_type" title="geopandas.GeoSeries.geom_type"><code class="xref py py-attr docutils literal notranslate"><span class="pre">geom_type</span></code></a>: type of geometry.</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.is_valid" title="geopandas.GeoSeries.is_valid"><code class="xref py py-attr docutils literal notranslate"><span class="pre">is_valid</span></code></a>: tests if coordinates make a shape that is reasonable geometric shape (<a class="reference external" href="http://www.opengeospatial.org/standards/sfa">according to this</a>).</p></li>
 </ul>
 </div>
 <div class="section" id="basic-methods">
 <h4>Basic Methods<a class="headerlink" href="#basic-methods" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">distance(other)</span></code>: returns <code class="docutils literal notranslate"><span class="pre">Series</span></code> with minimum distance from each entry to <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">centroid</span></code>: returns <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of centroids</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">representative_point()</span></code>:  returns <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of points that are guaranteed to be within each geometry. It does <strong>NOT</strong> return centroids.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">to_crs()</span></code>: change coordinate reference system. See <a class="reference internal" href="projections.html"><span class="doc">projections</span></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">plot()</span></code>: plot <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>. See <a class="reference internal" href="mapping.html"><span class="doc">mapping</span></a>.</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.distance" title="geopandas.GeoSeries.distance"><code class="xref py py-meth docutils literal notranslate"><span class="pre">distance()</span></code></a>: returns <code class="docutils literal notranslate"><span class="pre">Series</span></code> with minimum distance from each entry to <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
+<li><p><a class="reference internal" href="geometric_manipulations.html#GeoSeries.centroid" title="GeoSeries.centroid"><code class="xref py py-attr docutils literal notranslate"><span class="pre">centroid</span></code></a>: returns <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> of centroids</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.representative_point" title="geopandas.GeoSeries.representative_point"><code class="xref py py-meth docutils literal notranslate"><span class="pre">representative_point()</span></code></a>:  returns <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> of points that are guaranteed to be within each geometry. It does <strong>NOT</strong> return centroids.</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.to_crs" title="geopandas.GeoSeries.to_crs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_crs()</span></code></a>: change coordinate reference system. See <a class="reference internal" href="projections.html"><span class="doc">projections</span></a></p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.plot" title="geopandas.GeoSeries.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code></a>: plot <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>. See <a class="reference internal" href="mapping.html"><span class="doc">mapping</span></a>.</p></li>
 </ul>
 </div>
 <div class="section" id="relationship-tests">
 <h4>Relationship Tests<a class="headerlink" href="#relationship-tests" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">geom_almost_equals(other)</span></code>: is shape almost the same as <code class="docutils literal notranslate"><span class="pre">other</span></code> (good when floating point precision issues make shapes slightly different)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">contains(other)</span></code>: is shape contained within <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">intersects(other)</span></code>: does shape intersect <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.geom_almost_equals" title="geopandas.GeoSeries.geom_almost_equals"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geom_almost_equals()</span></code></a>: is shape almost the same as <code class="docutils literal notranslate"><span class="pre">other</span></code> (good when floating point precision issues make shapes slightly different)</p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.contains" title="geopandas.GeoSeries.contains"><code class="xref py py-meth docutils literal notranslate"><span class="pre">contains()</span></code></a>: is shape contained within <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
+<li><p><a class="reference internal" href="reference.html#geopandas.GeoSeries.intersects" title="geopandas.GeoSeries.intersects"><code class="xref py py-meth docutils literal notranslate"><span class="pre">intersects()</span></code></a>: does shape intersect <code class="docutils literal notranslate"><span class="pre">other</span></code></p></li>
 </ul>
 </div>
 </div>
 </div>
 <div class="section" id="geodataframe">
 <h2>GeoDataFrame<a class="headerlink" href="#geodataframe" title="Permalink to this headline">¶</a></h2>
-<p>A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is a tabular data structure that contains a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p>
-<p>The most important property of a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is that it always has one <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> column that holds a special status. This <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> is referred to as the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>’s “geometry”. When a spatial method is applied to a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> (or a spatial attribute like <code class="docutils literal notranslate"><span class="pre">area</span></code> is called), this commands will always act on the “geometry” column.</p>
-<p>The “geometry” column – no matter its name – can be accessed through the <code class="docutils literal notranslate"><span class="pre">geometry</span></code> attribute (<code class="docutils literal notranslate"><span class="pre">gdf.geometry</span></code>), and the name of the <code class="docutils literal notranslate"><span class="pre">geometry</span></code> column can be found by typing <code class="docutils literal notranslate"><span class="pre">gdf.geometry.name</span></code>.</p>
-<p>A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the <code class="docutils literal notranslate"><span class="pre">set_geometry</span></code> method.</p>
+<p>A <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a> is a tabular data structure that contains a <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>.</p>
+<p>The most important property of a <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a> is that it always has one <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> column that holds a special status. This <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> is referred to as the <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a>’s “geometry”. When a spatial method is applied to a <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a> (or a spatial attribute like <code class="docutils literal notranslate"><span class="pre">area</span></code> is called), this commands will always act on the “geometry” column.</p>
+<p>The “geometry” column – no matter its name – can be accessed through the <code class="xref py py-attr docutils literal notranslate"><span class="pre">geometry</span></code> attribute (<code class="docutils literal notranslate"><span class="pre">gdf.geometry</span></code>), and the name of the <code class="docutils literal notranslate"><span class="pre">geometry</span></code> column can be found by typing <code class="docutils literal notranslate"><span class="pre">gdf.geometry.name</span></code>.</p>
+<p>A <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a> may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the <a class="reference internal" href="reference.html#geopandas.GeoDataFrame.set_geometry" title="geopandas.GeoDataFrame.set_geometry"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoDataFrame.set_geometry()</span></code></a> method.</p>
 <p>An example using the <code class="docutils literal notranslate"><span class="pre">worlds</span></code> GeoDataFrame:</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
@@ -302,14 +302,14 @@ geometry column:</p>
 </pre></div>
 </div>
 <img alt="_images/world_centroids.png" src="_images/world_centroids.png" />
-<p><strong>Note:</strong> A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> keeps track of the active column by name, so if you rename the active geometry column, you must also reset the geometry:</p>
+<p><strong>Note:</strong> A <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a> keeps track of the active column by name, so if you rename the active geometry column, you must also reset the geometry:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;old_name&#39;</span><span class="p">:</span> <span class="s1">&#39;new_name&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;new_name&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Note 2:</strong> Somewhat confusingly, by default when you use the <code class="docutils literal notranslate"><span class="pre">read_file</span></code> command, the column containing spatial objects from the file is named “geometry” by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with the <code class="docutils literal notranslate"><span class="pre">set_geometry</span></code> command. Further, <code class="docutils literal notranslate"><span class="pre">gdf.geometry</span></code> will always return the active geometry column, <em>not</em> the column named <code class="docutils literal notranslate"><span class="pre">geometry</span></code>. If you wish to call a column named “geometry”, and a different column is the active geometry column, use <code class="docutils literal notranslate"><span class="pre">gdf['geometry']</span></code>, not <code class="docutils literal notranslate"><span class="pre">gdf.geometry</span></code>.</p>
+<p><strong>Note 2:</strong> Somewhat confusingly, by default when you use the <code class="docutils literal notranslate"><span class="pre">read_file</span></code> command, the column containing spatial objects from the file is named “geometry” by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> with the <a class="reference internal" href="reference.html#geopandas.GeoDataFrame.set_geometry" title="geopandas.GeoDataFrame.set_geometry"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_geometry()</span></code></a> command. Further, <code class="docutils literal notranslate"><span class="pre">gdf.geometry</span></code> will always return the active geometry column, <em>not</em> the column named <code class="docutils literal notranslate"><span class="pre">geometry</span></code>. If you wish to call a column named “geometry”, and a different column is the active geometry column, use <code class="docutils literal notranslate"><span class="pre">gdf['geometry']</span></code>, not <code class="docutils literal notranslate"><span class="pre">gdf.geometry</span></code>.</p>
 <div class="section" id="attributes-and-methods">
 <h3>Attributes and Methods<a class="headerlink" href="#attributes-and-methods" title="Permalink to this headline">¶</a></h3>
-<p>Any of the attributes calls or methods described for a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> will work on a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> – effectively, they are just applied to the “geometry” <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p>
+<p>Any of the attributes calls or methods described for a <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a> will work on a <a class="reference internal" href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a> – effectively, they are just applied to the “geometry” <a class="reference internal" href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>.</p>
 <p>However, <code class="docutils literal notranslate"><span class="pre">GeoDataFrames</span></code> also have a few extra methods for input and output which are described on the <a class="reference internal" href="io.html"><span class="doc">Input and Output</span></a> page and for geocoding with are described in <a class="reference internal" href="geocoding.html"><span class="doc">Geocoding</span></a>.</p>
 </div>
 </div>
@@ -329,9 +329,9 @@ option to control:</p>
 <span class="go">      decimals for geographic coordinates.)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">geopandas.options.display_precision`</span> <span class="pre">option</span> <span class="pre">can</span> <span class="pre">control</span> <span class="pre">the</span> <span class="pre">number</span> <span class="pre">of</span>
-<span class="pre">decimals</span> <span class="pre">to</span> <span class="pre">show</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">display</span> <span class="pre">of</span> <span class="pre">coordinates</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">geometry</span> <span class="pre">column.</span>
-<span class="pre">In</span> <span class="pre">the</span> <span class="pre">``world</span></code> example of above, the default is to show 5 decimals for
+<p>The <code class="docutils literal notranslate"><span class="pre">geopandas.options.display_precision</span></code> option can control the number of
+decimals to show in the display of coordinates in the geometry column.
+In the <code class="docutils literal notranslate"><span class="pre">world</span></code> example of above, the default is to show 5 decimals for
 geographic coordinates:</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [12]: </span><span class="n">world</span><span class="p">[</span><span class="s1">&#39;centroid_column&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[12]: </span><span class="go"></span>

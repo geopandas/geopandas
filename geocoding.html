@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geocoding &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Geocoding &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -195,21 +195,119 @@ with the detailed borough boundary file included within <code class="docutils li
 <span class="go">Name: BoroName, dtype: object</span>
 
 <span class="gp">In [3]: </span><span class="n">boro_locations</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span><span class="p">)</span>
+<span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">timeout</span><span class="g g-Whitespace">                                   </span>Traceback (most recent call last)
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/site-packages/geopy/geocoders/base.py</span> in <span class="ni">_call_geocoder</span><span class="nt">(self, url, timeout, raw, requester, deserializer, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">354</span>         <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">355</span>             <span class="n">page</span> <span class="o">=</span> <span class="n">requester</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">356</span>         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/urllib/request.py</span> in <span class="ni">open</span><span class="nt">(self, fullurl, data, timeout)</span>
+<span class="g g-Whitespace">    </span><span class="mi">524</span> 
+<span class="ne">--&gt; </span><span class="mi">525</span>         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">526</span> 
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/urllib/request.py</span> in <span class="ni">_open</span><span class="nt">(self, req, data)</span>
+<span class="g g-Whitespace">    </span><span class="mi">542</span>         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handle_open</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="n">protocol</span> <span class="o">+</span>
+<span class="ne">--&gt; </span><span class="mi">543</span>                                   <span class="s1">&#39;_open&#39;</span><span class="p">,</span> <span class="n">req</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">544</span>         <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/urllib/request.py</span> in <span class="ni">_call_chain</span><span class="nt">(self, chain, kind, meth_name, *args)</span>
+<span class="g g-Whitespace">    </span><span class="mi">502</span>             <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">meth_name</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">503</span>             <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">504</span>             <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/urllib/request.py</span> in <span class="ni">https_open</span><span class="nt">(self, req)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1361</span>             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_open</span><span class="p">(</span><span class="n">http</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">HTTPSConnection</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span>
+<span class="ne">-&gt; </span><span class="mi">1362</span>                 <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_context</span><span class="p">,</span> <span class="n">check_hostname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_hostname</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1363</span> 
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/urllib/request.py</span> in <span class="ni">do_open</span><span class="nt">(self, http_class, req, **http_conn_args)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1321</span>                 <span class="k">raise</span> <span class="n">URLError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1322</span>             <span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">getresponse</span><span class="p">()</span>
+<span class="g g-Whitespace">   </span><span class="mi">1323</span>         <span class="k">except</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/http/client.py</span> in <span class="ni">getresponse</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1343</span>             <span class="k">try</span><span class="p">:</span>
+<span class="ne">-&gt; </span><span class="mi">1344</span>                 <span class="n">response</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
+<span class="g g-Whitespace">   </span><span class="mi">1345</span>             <span class="k">except</span> <span class="ne">ConnectionError</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/http/client.py</span> in <span class="ni">begin</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">305</span>         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">306</span>             <span class="n">version</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_status</span><span class="p">()</span>
+<span class="g g-Whitespace">    </span><span class="mi">307</span>             <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="n">CONTINUE</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/http/client.py</span> in <span class="ni">_read_status</span><span class="nt">(self)</span>
+<span class="g g-Whitespace">    </span><span class="mi">266</span>     <span class="k">def</span> <span class="nf">_read_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="ne">--&gt; </span><span class="mi">267</span>         <span class="n">line</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fp</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="n">_MAXLINE</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;iso-8859-1&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">268</span>         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_MAXLINE</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/socket.py</span> in <span class="ni">readinto</span><span class="nt">(self, b)</span>
+<span class="g g-Whitespace">    </span><span class="mi">588</span>             <span class="k">try</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">589</span>                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sock</span><span class="o">.</span><span class="n">recv_into</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">590</span>             <span class="k">except</span> <span class="n">timeout</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/ssl.py</span> in <span class="ni">recv_into</span><span class="nt">(self, buffer, nbytes, flags)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1070</span>                   <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1071</span>             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytes</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1072</span>         <span class="k">else</span><span class="p">:</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/ssl.py</span> in <span class="ni">read</span><span class="nt">(self, len, buffer)</span>
+<span class="g g-Whitespace">    </span><span class="mi">928</span>             <span class="k">if</span> <span class="n">buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">929</span>                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sslobj</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">930</span>             <span class="k">else</span><span class="p">:</span>
+
+<span class="ne">timeout</span>: The read operation timed out
+
+<span class="n">During</span> <span class="n">handling</span> <span class="n">of</span> <span class="n">the</span> <span class="n">above</span> <span class="n">exception</span><span class="p">,</span> <span class="n">another</span> <span class="n">exception</span> <span class="n">occurred</span><span class="p">:</span>
+
+<span class="ne">GeocoderTimedOut</span><span class="g g-Whitespace">                          </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">3</span><span class="o">-</span><span class="mi">2354</span><span class="n">aa2d31fd</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">boro_locations</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">boros</span><span class="o">.</span><span class="n">BoroName</span><span class="p">)</span>
+
+<span class="nn">~/scipy/geopandas/geopandas/tools/geocoding.py</span> in <span class="ni">geocode</span><span class="nt">(strings, provider, **kwargs)</span>
+<span class="g g-Whitespace">     </span><span class="mi">71</span>         <span class="n">throttle_time</span> <span class="o">=</span> <span class="n">_get_throttle_time</span><span class="p">(</span><span class="n">provider</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">72</span> 
+<span class="ne">---&gt; </span><span class="mi">73</span>     <span class="k">return</span> <span class="n">_query</span><span class="p">(</span><span class="n">strings</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">provider</span><span class="p">,</span> <span class="n">throttle_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">74</span> 
+<span class="g g-Whitespace">     </span><span class="mi">75</span> 
+
+<span class="nn">~/scipy/geopandas/geopandas/tools/geocoding.py</span> in <span class="ni">_query</span><span class="nt">(data, forward, provider, throttle_time, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">146</span>         <span class="k">try</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">147</span>             <span class="k">if</span> <span class="n">forward</span><span class="p">:</span>
+<span class="ne">--&gt; </span><span class="mi">148</span>                 <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">coder</span><span class="o">.</span><span class="n">geocode</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">149</span>             <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">150</span>                 <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">coder</span><span class="o">.</span><span class="n">reverse</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">exactly_one</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/site-packages/geopy/geocoders/geocodefarm.py</span> in <span class="ni">geocode</span><span class="nt">(self, query, exactly_one, timeout)</span>
+<span class="g g-Whitespace">    </span><span class="mi">104</span>         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.geocode: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">105</span>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_json</span><span class="p">(</span>
+<span class="ne">--&gt; </span><span class="mi">106</span>             <span class="bp">self</span><span class="o">.</span><span class="n">_call_geocoder</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">),</span> <span class="n">exactly_one</span>
+<span class="g g-Whitespace">    </span><span class="mi">107</span>         <span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">108</span> 
+
+<span class="nn">~/miniconda3/envs/geopandas_docs/lib/python3.7/site-packages/geopy/geocoders/base.py</span> in <span class="ni">_call_geocoder</span><span class="nt">(self, url, timeout, raw, requester, deserializer, **kwargs)</span>
+<span class="g g-Whitespace">    </span><span class="mi">380</span>                     <span class="k">raise</span> <span class="n">GeocoderUnavailable</span><span class="p">(</span><span class="s1">&#39;Service not available&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">381</span>             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">SocketTimeout</span><span class="p">):</span>
+<span class="ne">--&gt; </span><span class="mi">382</span>                 <span class="k">raise</span> <span class="n">GeocoderTimedOut</span><span class="p">(</span><span class="s1">&#39;Service timed out&#39;</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">383</span>             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">SSLError</span><span class="p">):</span>
+<span class="g g-Whitespace">    </span><span class="mi">384</span>                 <span class="k">if</span> <span class="s2">&quot;timed out&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">:</span>
+
+<span class="ne">GeocoderTimedOut</span>: Service timed out
 
 <span class="gp">In [4]: </span><span class="n">boro_locations</span>
-<span class="gh">Out[4]: </span><span class="go"></span>
-<span class="go">                             geometry                       address</span>
-<span class="go">0  POINT (-74.150201215 40.579536649)        Staten Island, NY, USA</span>
-<span class="go">1  POINT (-73.794851209 40.728226673)               Queens, NY, USA</span>
-<span class="go">2  POINT (-73.944151212 40.678176665)             Brooklyn, NY, USA</span>
-<span class="go">3  POINT (-73.971241212 40.783066682)  Manhattan, New York, NY, USA</span>
-<span class="go">4  POINT (-73.864821210 40.844786692)                Bronx, NY, USA</span>
+<span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">4</span><span class="o">-</span><span class="mi">796</span><span class="n">f7e9a655e</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">boro_locations</span>
 
-<span class="gp">In [5]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="ne">NameError</span>: name &#39;boro_locations&#39; is not defined
+
+<span class="gp">In [5]: </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="gp">In [6]: </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
-<span class="gp">In [7]: </span><span class="n">boros</span><span class="o">.</span><span class="n">to_crs</span><span class="p">({</span><span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="s2">&quot;epsg:4326&quot;</span><span class="p">})</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">);</span>
+<span class="gp">In [7]: </span><span class="n">boros</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">);</span>
 
 <span class="gp">In [8]: </span><span class="n">boro_locations</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">);</span>
 </pre></div>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.read_file &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>geopandas.read_file &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="geopandas.sjoin" href="geopandas.sjoin.html" />
-    <link rel="prev" title="geopandas.overlay" href="geopandas.overlay.html" /> 
+    <link rel="prev" title="geopandas.GeoSeries" href="geopandas.GeoSeries.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -113,12 +113,13 @@
 <li class="toctree-l2 current"><a class="reference internal" href="../reference.html#api-pages">API Pages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
-<li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">geopandas.read_file</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#examples-using-geopandas-read-file">Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.read_file</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.sjoin.html">geopandas.sjoin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.clip.html">geopandas.clip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
@@ -199,16 +200,28 @@
 <h1>geopandas.read_file<a class="headerlink" href="#geopandas-read-file" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="geopandas.read_file">
-<code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">read_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">bbox=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.read_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">read_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">bbox=None</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">rows=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.read_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a GeoDataFrame from a file or URL.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7.0: </span>mask, rows</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>filename: str</strong></dt><dd><p>Either the absolute or relative path to the file or URL to
 be opened.</p>
 </dd>
-<dt><strong>bbox</strong><span class="classifier">tuple | GeoDataFrame or GeoSeries, default None</span></dt><dd><p>Filter features by given bounding box, GeoSeries, or GeoDataFrame.
-CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.</p>
+<dt><strong>bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None</strong></dt><dd><p>Filter features by given bounding box, GeoSeries, GeoDataFrame or a
+shapely geometry. CRS mis-matches are resolved if given a GeoSeries
+or GeoDataFrame. Cannot be used with mask.</p>
+</dd>
+<dt><strong>mask: dict | GeoDataFrame or GeoSeries | shapely Geometry, default None</strong></dt><dd><p>Filter for features that intersect with the given dict-like geojson
+geometry, GeoSeries, GeoDataFrame or shapely geometry.
+CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
+Cannot be used with bbox.</p>
+</dd>
+<dt><strong>rows: int or slice, default None</strong></dt><dd><p>Load in specific rows by passing an integer (first <cite>n</cite> rows) or a
+slice() object.</p>
 </dd>
 <dt><strong>**kwargs:</strong></dt><dd><p>Keyword args to be passed to the <cite>open</cite> or <cite>BytesCollection</cite> method
 in the fiona library when opening the file. For more information on
@@ -219,12 +232,16 @@ possible keywords, type:
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>geodataframe</strong><span class="classifier">GeoDataFrame</span></dt><dd></dd>
+<dt><a class="reference internal" href="geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code></a></dt><dd></dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The format drivers will attempt to detect the encoding of your data, but
+may fail. In this case, the proper encoding can be specified explicitly
+by using the encoding keyword parameter, e.g. <code class="docutils literal notranslate"><span class="pre">encoding='utf-8'</span></code>.</p>
 <p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;nybb.shp&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;nybb.shp&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -235,17 +252,21 @@ possible keywords, type:
 <img alt="../_images/sphx_glr_plotting_basemap_background_thumb.png" src="../_images/sphx_glr_plotting_basemap_background_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/plotting_basemap_background.html#sphx-glr-gallery-plotting-basemap-background-py"><span class="std std-ref">Adding a background map to plots</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="`Geoplot &lt;https://residentmario.github.io/geoplot/index.html&gt;`_ is a Python library providing a..."><div class="figure align-default" id="id2">
-<img alt="../_images/sphx_glr_plotting_with_geoplot_thumb.png" src="../_images/sphx_glr_plotting_with_geoplot_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/plotting_with_geoplot.html#sphx-glr-gallery-plotting-with-geoplot-py"><span class="std std-ref">Plotting with Geoplot and GeoPandas</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a GeoDataFrame when starting from a *regular* DataFrame that h..."><div class="figure align-default" id="id3">
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example shows how to create a GeoDataFrame when starting from a *regular* DataFrame that h..."><div class="figure align-default" id="id2">
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" src="../_images/sphx_glr_create_geopandas_from_pandas_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/create_geopandas_from_pandas.html#sphx-glr-gallery-create-geopandas-from-pandas-py"><span class="std std-ref">Creating a GeoDataFrame from a DataFrame with coordinates</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure align-default" id="id4">
+</div><div class="sphx-glr-thumbcontainer" tooltip="`Geoplot &lt;https://residentmario.github.io/geoplot/index.html&gt;`_ is a Python library providing a..."><div class="figure align-default" id="id3">
+<img alt="../_images/sphx_glr_plotting_with_geoplot_thumb.png" src="../_images/sphx_glr_plotting_with_geoplot_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/plotting_with_geoplot.html#sphx-glr-gallery-plotting-with-geoplot-py"><span class="std std-ref">Plotting with Geoplot and GeoPandas</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Learn how to clip geometries to the boundary of a polygon geometry using GeoPandas."><div class="figure align-default" id="id4">
+<img alt="../_images/sphx_glr_plot_clip_thumb.png" src="../_images/sphx_glr_plot_clip_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/plot_clip.html#sphx-glr-gallery-plot-clip-py"><span class="std std-ref">Clip Vector Data with GeoPandas</span></a></span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Converting between GeoPandas and CartoPy for visualizing data."><div class="figure align-default" id="id5">
 <img alt="../_images/sphx_glr_cartopy_convert_thumb.png" src="../_images/sphx_glr_cartopy_convert_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="../gallery/cartopy_convert.html#sphx-glr-gallery-cartopy-convert-py"><span class="std std-ref">Plotting with CartoPy and GeoPandas</span></a></span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="clear"></div></div>
 </div>
@@ -261,7 +282,7 @@ possible keywords, type:
         <a href="geopandas.sjoin.html" class="btn btn-neutral float-right" title="geopandas.sjoin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="geopandas.overlay.html" class="btn btn-neutral float-left" title="geopandas.overlay" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="geopandas.GeoSeries.html" class="btn btn-neutral float-left" title="geopandas.GeoSeries" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

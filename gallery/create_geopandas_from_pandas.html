@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Creating a GeoDataFrame from a DataFrame with coordinates &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Creating a GeoDataFrame from a DataFrame with coordinates &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -37,8 +37,8 @@
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Plotting with CartoPy and GeoPandas" href="cartopy_convert.html" />
-    <link rel="prev" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" /> 
+    <link rel="next" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" />
+    <link rel="prev" title="Adding a background map to plots" href="plotting_basemap_background.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -91,12 +91,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples Gallery</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="plotting_basemap_background.html">Adding a background map to plots</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Creating a GeoDataFrame from a DataFrame with coordinates</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#from-longitudes-and-latitudes">From longitudes and latitudes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#from-wkt-format">From WKT format</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plot_clip.html">Clip Vector Data with GeoPandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
 </ul>
 </li>
@@ -229,12 +230,12 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>           City    Country  Latitude  Longitude               geometry
-0  Buenos Aires  Argentina    -34.58     -58.66  POINT (-58.66 -34.58)
-1      Brasilia     Brazil    -15.78     -47.91  POINT (-47.91 -15.78)
-2      Santiago      Chile    -33.45     -70.66  POINT (-70.66 -33.45)
-3        Bogota   Colombia      4.60     -74.08     POINT (-74.08 4.6)
-4       Caracas  Venezuela     10.48     -66.86   POINT (-66.86 10.48)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>           City    Country  Latitude  Longitude                     geometry
+0  Buenos Aires  Argentina    -34.58     -58.66  POINT (-58.66000 -34.58000)
+1      Brasilia     Brazil    -15.78     -47.91  POINT (-47.91000 -15.78000)
+2      Santiago      Chile    -33.45     -70.66  POINT (-70.66000 -33.45000)
+3        Bogota   Colombia      4.60     -74.08    POINT (-74.08000 4.60000)
+4       Caracas  Venezuela     10.48     -66.86   POINT (-66.86000 10.48000)
 </pre></div>
 </div>
 <p>Finally, we plot the coordinates over a country-level map.</p>
@@ -251,11 +252,6 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_001.png" class="sphx-glr-single-img" src="../_images/sphx_glr_create_geopandas_from_pandas_001.png" />
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/scipy/geopandas/examples/create_geopandas_from_pandas.py:57: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
-  plt.show()
-</pre></div>
-</div>
 </div>
 <div class="section" id="from-wkt-format">
 <h2>From WKT format<a class="headerlink" href="#from-wkt-format" title="Permalink to this headline">¶</a></h2>
@@ -269,7 +265,7 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <p>We use <code class="docutils literal notranslate"><span class="pre">shapely.wkt</span></code> sub-module to parse wkt format:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapely</span> <span class="k">import</span> <span class="n">wkt</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapely</span> <span class="kn">import</span> <span class="n">wkt</span>
 
 <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">)</span>
 </pre></div>
@@ -281,12 +277,12 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>           City    Country            Coordinates
-0  Buenos Aires  Argentina  POINT (-58.66 -34.58)
-1      Brasilia     Brazil  POINT (-47.91 -15.78)
-2      Santiago      Chile  POINT (-70.66 -33.45)
-3        Bogota   Colombia     POINT (-74.08 4.6)
-4       Caracas  Venezuela   POINT (-66.86 10.48)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>           City    Country                  Coordinates
+0  Buenos Aires  Argentina  POINT (-58.66000 -34.58000)
+1      Brasilia     Brazil  POINT (-47.91000 -15.78000)
+2      Santiago      Chile  POINT (-70.66000 -33.45000)
+3        Bogota   Colombia    POINT (-74.08000 4.60000)
+4       Caracas  Venezuela   POINT (-66.86000 10.48000)
 </pre></div>
 </div>
 <p>Again, we can plot our <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>.</p>
@@ -299,12 +295,7 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_create_geopandas_from_pandas_002.png" />
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/joris/scipy/geopandas/examples/create_geopandas_from_pandas.py:91: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
-  plt.show()
-</pre></div>
-</div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.461 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.278 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-create-geopandas-from-pandas-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/5a028ec8b27cdb6e5147767c92f67a6b/create_geopandas_from_pandas.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">create_geopandas_from_pandas.py</span></code></a></p>
@@ -325,10 +316,10 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="cartopy_convert.html" class="btn btn-neutral float-right" title="Plotting with CartoPy and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-right" title="Plotting with Geoplot and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-left" title="Plotting with Geoplot and GeoPandas" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="plotting_basemap_background.html" class="btn btn-neutral float-left" title="Adding a background map to plots" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

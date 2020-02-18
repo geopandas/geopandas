@@ -2,3 +2,16 @@
 div.section a span {
     color: #2980B9 !important
 }
+
+/*Copied from sphinx' basic.css to ensure the sphinx >2.0 docstrings are
+rendered somewhat properly (xref https://github.com/numpy/numpydoc/issues/215) */
+
+.classifier {
+    font-style: oblique;
+}
+
+.classifier:before {
+    font-style: normal;
+    margin: 0.5em;
+    content: ":";
+}

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Adding a background map to plots &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Adding a background map to plots &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Plotting with Geoplot and GeoPandas" href="plotting_with_geoplot.html" />
+    <link rel="next" title="Creating a GeoDataFrame from a DataFrame with coordinates" href="create_geopandas_from_pandas.html" />
     <link rel="prev" title="Examples Gallery" href="index.html" /> 
 </head>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -95,8 +95,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#add-background-tiles-to-plot">Add background tiles to plot</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="create_geopandas_from_pandas.html">Creating a GeoDataFrame from a DataFrame with coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_with_geoplot.html">Plotting with Geoplot and GeoPandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plot_clip.html">Clip Vector Data with GeoPandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cartopy_convert.html">Plotting with CartoPy and GeoPandas</a></li>
 </ul>
 </li>
@@ -248,7 +249,7 @@ different style using <code class="docutils literal notranslate"><span class="pr
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_plotting_basemap_background_004.png" class="sphx-glr-single-img" src="../_images/sphx_glr_plotting_basemap_background_004.png" />
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  18.737 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  15.333 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-plotting-basemap-background-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/618675ab25213dbacf0b068ecd3d8fd1/plotting_basemap_background.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plotting_basemap_background.py</span></code></a></p>
@@ -269,7 +270,7 @@ different style using <code class="docutils literal notranslate"><span class="pr
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="plotting_with_geoplot.html" class="btn btn-neutral float-right" title="Plotting with Geoplot and GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="create_geopandas_from_pandas.html" class="btn btn-neutral float-right" title="Creating a GeoDataFrame from a DataFrame with coordinates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral float-left" title="Examples Gallery" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

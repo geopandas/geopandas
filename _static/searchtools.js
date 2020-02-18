@@ -4,7 +4,7 @@
  *
  * Sphinx JavaScript utilities for the full-text search.
  *
- * :copyright: Copyright 2007-2019 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -245,7 +245,7 @@ var Search = {
       if (results.length) {
         var item = results.pop();
         var listItem = $('<li style="display:none"></li>');
-        if (DOCUMENTATION_OPTIONS.FILE_SUFFIX === '') {
+        if (DOCUMENTATION_OPTIONS.BUILDER === 'dirhtml') {
           // dirhtml builder
           var dirname = item[0] + '/';
           if (dirname.match(/\/index\/$/)) {
@@ -424,7 +424,7 @@ var Search = {
         for (j = 0; j < _files.length; j++) {
           file = _files[j];
           if (!(file in scoreMap))
-            scoreMap[file] = {}
+            scoreMap[file] = {};
           scoreMap[file][word] = o.score;
         }
       });
@@ -432,7 +432,7 @@ var Search = {
       // create the mapping
       for (j = 0; j < files.length; j++) {
         file = files[j];
-        if (file in fileMap)
+        if (file in fileMap && fileMap[file].indexOf(word) === -1)
           fileMap[file].push(word);
         else
           fileMap[file] = [word];

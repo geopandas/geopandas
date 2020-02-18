@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Geometric Manipulations &mdash; GeoPandas 0.6.0 documentation</title>
+  <title>Geometric Manipulations &mdash; GeoPandas 0.7.0 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -292,7 +292,7 @@ each object.</p>
 </div>
 <img alt="_images/test.png" src="_images/test.png" />
 <p>Some geographic operations return normal pandas object.  The <code class="docutils literal notranslate"><span class="pre">area</span></code> property of a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> will return a <code class="docutils literal notranslate"><span class="pre">pandas.Series</span></code> containing the area of each item in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
 <span class="go">0    0.5</span>
 <span class="go">1    1.0</span>
 <span class="go">2    1.0</span>
@@ -315,8 +315,8 @@ each object.</p>
 <p>GeoPandas also implements alternate constructors that can read any data format recognized by <a class="reference external" href="http://fiona.readthedocs.io/en/latest/">fiona</a>.  To read a zip file containing an ESRI shapefile with the <a class="reference external" href="https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm">borough boundaries of New York City</a> (GeoPandas includes this as an example dataset):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nybb_path</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;nybb&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">nybb_path</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;BoroCode&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;BoroCode&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">boros</span>
 <span class="go">               BoroName     Shape_Leng    Shape_Area  \</span>
 <span class="go">BoroCode</span>
@@ -349,7 +349,7 @@ each object.</p>
 <img alt="_images/nyc_hull.png" src="_images/nyc_hull.png" />
 <p>To demonstrate a more complex operation, we’ll generate a
 <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> containing 2000 random points:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="mi">900000</span><span class="p">,</span> <span class="mi">1080000</span><span class="p">,</span> <span class="mi">120000</span><span class="p">,</span> <span class="mi">280000</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">xc</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span> <span class="o">+</span> <span class="n">xmin</span>
