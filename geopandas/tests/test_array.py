@@ -334,7 +334,7 @@ def test_unary_geo(attr):
         A = T
 
     result = getattr(A, attr)
-    if USE_PYGEOS:
+    if attr == "exterior" and USE_PYGEOS:
         # TODO(pygeos)
         # empty Polygon() has an exterior with shapely > 1.7, which gives
         # empty LinearRing instead of None,
