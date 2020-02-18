@@ -35,8 +35,10 @@ _names = {
     "GEOMETRYCOLLECTION": "GeometryCollection",
 }
 
-
-type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
+if USE_PYGEOS:
+    type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
+else:
+    type_mapping = None
 
 
 def _isna(value):
