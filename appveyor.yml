@@ -9,6 +9,10 @@ environment:
       MINICONDA: C:\Miniconda37-x64
       ENV_FILE: "ci/travis/37-latest-conda-forge.yaml"
 
+    - PYTHON_VERSION: "3.8"
+      MINICONDA: C:\Miniconda37-x64
+      ENV_FILE: "ci/travis/38-latest-conda-forge.yaml"
+
 # all our python builds have to happen in tests_script...
 build: false
 
