@@ -435,7 +435,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
 
-        new_data = vectorized.transform(self.array.data, transformer.transform)
+        new_data = vectorized.transform(self.values.data, transformer.transform)
         return GeoSeries(
             GeometryArray(new_data), crs=crs, index=self.index, name=self.name
         )
