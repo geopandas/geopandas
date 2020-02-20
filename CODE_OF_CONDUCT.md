@@ -74,7 +74,7 @@ free to contact the Code of Conduct Committee at
    * Posting sexually explicit or violent material
    * Posting (or threatening to post) other people's personally identifying
      information ("doxing")
-   * Personal insults, especially those using racist or sexist terms
+   * Personal insults, especially those using xenophobic or sexist terms
    * Unwelcome sexual attention
    * Advocating for, or encouraging, any of the above behavior
    * Repeated harassment of others. In general, if someone asks you to stop,
