@@ -589,7 +589,7 @@ def plot_dataframe(
                                  format(len(legend_kwds['labels']),
                                         binning.k))
             else:
-                categories = legend_kwds.pop('labels')
+                categories = list(legend_kwds.pop('labels'))
         else:
             categories = [
                 "{0:.2f} - {1:.2f}".format(binedges[i], binedges[i + 1])
