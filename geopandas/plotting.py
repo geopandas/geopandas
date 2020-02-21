@@ -583,15 +583,14 @@ def plot_dataframe(
         categorical = True
         binedges = [values[~nan_idx].min()] + binning.bins.tolist()
         if legend_kwds is not None and 'labels' in legend_kwds:
-            if len(legend_kwds['labels']) != classification_kwds['k']:
-                raise AttributeError('Number of labels must match number of bins, '
-                                     'received {} labels for {} bins'.
-                                     format(len(legend_kwds['labels']),
-                                            classification_kwds['k']))
+            if len(legend_kwds['labels']) != binning.k:
+                raise ValueError('Number of labels must match number of bins, '
+                                 'received {} labels for {} bins'.
+                                 format(len(legend_kwds['labels']),
+                                        binning.k))
             else:
                 categories = list(legend_kwds['labels'])
-                # The 'label' keyword raises an error
-                del legend_kwds['labels']
+                legend_kwds.pop('labels')
         else:
             categories = [
                 "{0:.2f} - {1:.2f}".format(binedges[i], binedges[i + 1])
