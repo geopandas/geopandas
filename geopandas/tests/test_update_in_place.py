@@ -33,6 +33,8 @@ class TestUpdateInPlace:
         gdf = self.gdf.copy()
         old_sindex = gdf.sindex
         gdf.rename(columns={"values": "new_values"}, inplace=True)
+        # a rename shouldn't invalidate the index
         assert gdf._sindex_generated
+        # and the "new" should be the same
         new_sindex = gdf.sindex
         assert old_sindex == new_sindex
