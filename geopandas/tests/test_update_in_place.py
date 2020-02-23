@@ -15,15 +15,24 @@ class TestUpdateInPlace:
             {"geometry": GeoSeries([poly1, poly2]), "values": [1, 2]}
         )
 
-    def test_update_in_place(self):
-        old_sindex = self.gdf.sindex
+    def test_order_changing(self):
+        gdf = self.gdf.copy()
+        old_sindex = gdf.sindex
         # sorting in place
-        self.gdf.sort_values("values", inplace=True)
+        gdf.sort_values("values", inplace=True)
         # spatial index should be invalidated
-        assert not self.gdf._sindex_generated
-        new_sindex = self.gdf.sindex
+        assert not gdf._sindex_generated
+        new_sindex = gdf.sindex
         # and should be different
         assert new_sindex != old_sindex
 
         # sorting should still have happened though
-        assert_geodataframe_equal(self.gdf, self.sorted_gdf)
+        assert_geodataframe_equal(gdf, self.sorted_gdf)
+
+    def test_order_unchanging(self):
+        gdf = self.gdf.copy()
+        old_sindex = gdf.sindex
+        gdf.rename(columns={"values": "new_values"}, inplace=True)
+        assert gdf._sindex_generated
+        new_sindex = gdf.sindex
+        assert old_sindex == new_sindex
