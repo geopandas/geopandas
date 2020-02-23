@@ -625,15 +625,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return result
 
     def _update_inplace(self, *args, **kwargs):
-        r"""Update in place for a geodataframe and invalidate spatial index
+        r"""Update in place for a geodataframe and invalidate spatial index if needed
 
         Notes
         -----
         The extra arguments ``*args`` and keyword arguments ``**kwargs`` are
         passed to DataFrame._update_inplace.
         """
+        old_index = self.index
         DataFrame._update_inplace(self, *args, **kwargs)
-        self._invalidate_sindex()
+        new_index = self.index
+        # only invalidate the index if the old index was
+        # not identical to the new one after updating in place
+        if not old_index.identical(new_index):
+            self._invalidate_sindex()
 
     @property
     def _constructor(self):
