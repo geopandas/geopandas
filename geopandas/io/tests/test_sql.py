@@ -499,7 +499,7 @@ class TestIO:
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
         # Should raise a ValueError when table exists
-        except ValueError as e:
+        except ValueError:
             pass
 
         # Try with replace flag on
