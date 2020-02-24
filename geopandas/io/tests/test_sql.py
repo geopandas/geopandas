@@ -443,3 +443,69 @@ class TestIO:
             raise e
         finally:
             engine.dispose()
+
+    def test_write_postgis_to_different_schema(self, df_nybb):
+        """
+        Tests writing data to alternative schema.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "nybb"
+
+        try:
+            schema_to_use = 'test'
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace",
+                          schema=schema_to_use)
+            # Validate
+            sql = "SELECT * FROM {schema}.{table};".format(schema=schema_to_use,
+                                                           table=table)
+
+            df = read_postgis(sql, engine, geom_col="geometry")
+            validate_boro_df(df)
+        except ValueError as e:
+            raise e
+        finally:
+            engine.dispose()
+
+    def test_write_postgis_to_different_schema_when_table_exists(self, df_nybb):
+        """
+        Tests writing data to alternative schema.
+        """
+        engine = connect_engine("test_geopandas")
+        if engine is None:
+            raise pytest.skip()
+
+        table = "nybb"
+        schema_to_use = 'test'
+
+        try:
+
+            write_postgis(df_nybb, con=engine, name=table, if_exists="fail",
+                          schema=schema_to_use)
+            # Validate
+            sql = "SELECT * FROM {schema}.{table};".format(schema=schema_to_use,
+                                                           table=table)
+
+            df = read_postgis(sql, engine, geom_col="geometry")
+            validate_boro_df(df)
+        # Should raise a ValueError when table exists
+        except ValueError as e:
+            pass
+
+        # Try with replace flag on
+        try:
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace",
+                          schema=schema_to_use)
+            # Validate
+            sql = "SELECT * FROM {schema}.{table};".format(schema=schema_to_use,
+                                                           table=table)
+
+            df = read_postgis(sql, engine, geom_col="geometry")
+            validate_boro_df(df)
+
+        except ValueError as e:
+            raise e
+        finally:
+            engine.dispose()
