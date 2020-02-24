@@ -455,12 +455,18 @@ class TestIO:
         table = "nybb"
 
         try:
-            schema_to_use = 'test'
-            write_postgis(df_nybb, con=engine, name=table, if_exists="replace",
-                          schema=schema_to_use)
+            schema_to_use = "test"
+            write_postgis(
+                df_nybb,
+                con=engine,
+                name=table,
+                if_exists="replace",
+                schema=schema_to_use,
+            )
             # Validate
-            sql = "SELECT * FROM {schema}.{table};".format(schema=schema_to_use,
-                                                           table=table)
+            sql = "SELECT * FROM {schema}.{table};".format(
+                schema=schema_to_use, table=table
+            )
 
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
@@ -478,15 +484,17 @@ class TestIO:
             raise pytest.skip()
 
         table = "nybb"
-        schema_to_use = 'test'
+        schema_to_use = "test"
 
         try:
 
-            write_postgis(df_nybb, con=engine, name=table, if_exists="fail",
-                          schema=schema_to_use)
+            write_postgis(
+                df_nybb, con=engine, name=table, if_exists="fail", schema=schema_to_use
+            )
             # Validate
-            sql = "SELECT * FROM {schema}.{table};".format(schema=schema_to_use,
-                                                           table=table)
+            sql = "SELECT * FROM {schema}.{table};".format(
+                schema=schema_to_use, table=table
+            )
 
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
@@ -496,11 +504,17 @@ class TestIO:
 
         # Try with replace flag on
         try:
-            write_postgis(df_nybb, con=engine, name=table, if_exists="replace",
-                          schema=schema_to_use)
+            write_postgis(
+                df_nybb,
+                con=engine,
+                name=table,
+                if_exists="replace",
+                schema=schema_to_use,
+            )
             # Validate
-            sql = "SELECT * FROM {schema}.{table};".format(schema=schema_to_use,
-                                                           table=table)
+            sql = "SELECT * FROM {schema}.{table};".format(
+                schema=schema_to_use, table=table
+            )
 
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
