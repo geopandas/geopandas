@@ -66,11 +66,11 @@ sphinx_gallery_conf = {
     'reference_url': {'matplotlib': 'http://matplotlib.org',
                       'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
-                      'pyproj': 'http://pyproj4.github.io/pyproj/stable/',
                       'geopandas': None},
     'backreferences_dir': 'reference'
 }
-
+# connect docs in other projects
+intersphinx_mapping = {'pyproj': ('http://pyproj4.github.io/pyproj/stable/', None)}
 # suppress matplotlib warning in examples
 warnings.filterwarnings(
     "ignore",

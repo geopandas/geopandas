@@ -25,7 +25,7 @@ The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
 referred to using the authority code ``"EPSG:4326"``.
 
-*geopandas* can accept anything accepted by `pyproj.CRS.from_user_input() <https://pyproj4.github.io/pyproj/stable/api/crs.html#pyproj.crs.CRS.from_user_input>`_:
+*geopandas* can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
 
 - CRS WKT string
 - An authority string (i.e. "epsg:4326")
