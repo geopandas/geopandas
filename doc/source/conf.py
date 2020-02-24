@@ -32,6 +32,7 @@ extensions = ['IPython.sphinxext.ipython_console_highlighting',
               'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
+              'recommonmark',
               'numpydoc',
 ]
 
@@ -79,7 +80,7 @@ warnings.filterwarnings(
 )
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'

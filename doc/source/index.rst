@@ -45,12 +45,14 @@ such as PostGIS.
   Merging Data <mergingdata>
   Geocoding <geocoding>
   missing_empty
+  Changelog <changelog>
 
 .. toctree::
   :maxdepth: 1
   :caption: Reference Guide
 
   Reference to All Attributes and Methods <reference>
+
 
 
 .. toctree::
