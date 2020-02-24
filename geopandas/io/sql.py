@@ -341,7 +341,7 @@ def write_postgis(
     if tbl.exists():
         # If it exists, check if should overwrite
         if if_exists == "replace":
-            pandas_sql.drop_table(name)
+            pandas_sql.drop_table(name, schema_name)
             tbl.create()
         elif if_exists == "fail":
             raise ValueError("Table '{table}' already exists.".format(table=name))
