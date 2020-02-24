@@ -70,15 +70,19 @@ def test_points_from_xy():
     gsz = [shapely.geometry.Point(x, x, x) for x in range(10)]
     geometry1 = geopandas.points_from_xy(df["x"], df["y"])
     geometry2 = geopandas.points_from_xy(df["x"], df["y"], df["z"])
-    assert geometry1 == gs
-    assert geometry2 == gsz
+    assert isinstance(geometry1, GeometryArray)
+    assert isinstance(geometry2, GeometryArray)
+    assert list(geometry1) == gs
+    assert list(geometry2) == gsz
 
     # using Series or numpy arrays or lists
     for s in [pd.Series(range(10)), np.arange(10), list(range(10))]:
         geometry1 = geopandas.points_from_xy(s, s)
         geometry2 = geopandas.points_from_xy(s, s, s)
-        assert geometry1 == gs
-        assert geometry2 == gsz
+        assert isinstance(geometry1, GeometryArray)
+        assert isinstance(geometry2, GeometryArray)
+        assert list(geometry1) == gs
+        assert list(geometry2) == gsz
 
     # using different lengths should throw error
     arr_10 = np.arange(10)

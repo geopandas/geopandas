@@ -180,14 +180,7 @@ def _points_from_xy(x, y, z=None):
 
     Parameters
     ----------
-    x, y, z : array
-
-    Examples
-    --------
-    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
-    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
-    >>> gdf = geopandas.GeoDataFrame(
-            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+    x, y, z : iterable
 
     Returns
     -------
@@ -205,7 +198,24 @@ def _points_from_xy(x, y, z=None):
 
 
 def points_from_xy(x, y, z=None):
-    """Convert arrays of x and y values to a GeometryArray of points."""
+    """
+    Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
+
+    Parameters
+    ----------
+    x, y, z : iterable
+
+    Examples
+    --------
+    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
+    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
+    >>> gdf = geopandas.GeoDataFrame(
+            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+
+    Returns
+    -------
+    output : GeometryArray
+    """
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")
     if z is not None:
@@ -476,7 +486,7 @@ class GeometryArray(ExtensionArray):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
-            if isinstance(key, (list, np.ndarray)):
+            if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
                 value_array[:] = [value]
                 self.data[key] = value_array
