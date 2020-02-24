@@ -129,7 +129,9 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, mode="w", **kwargs):
+def to_file(
+    df, filename, driver="ESRI Shapefile", schema=None, index=None, mode="w", **kwargs
+):
 
     """
     Write this GeoDataFrame to an OGR data source
