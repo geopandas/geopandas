@@ -28,8 +28,8 @@ work, there is urgency or risk to someone, nobody is intervening publicly and
 you don't feel comfortable speaking in public, etc. For these or other
 reasons, structured follow-up may be necessary and here we provide the means
 for that: we welcome reports by emailing
-`conduct@geopandas.org <mailto:conduct@geopandas.org>`__ or by filling out `this
-form <https://goo.gl/forms/CHANGETHELINK>`__.
+`geopandas-conduct@googlegroups.com <mailto:geopandas-conduct@googlegroups.com>`__ or by filling out `this
+form <https://docs.google.com/forms/d/e/1FAIpQLSd8Tbi2zNl1i2N9COX0yavHEqTGFIPQ1_cLcy1A3JgVc1OrAQ/viewform>`__.
 
 This code applies equally to founders, developers, mentors and new community
 members, in all spaces managed by the GeoPandas Project. This
@@ -41,7 +41,7 @@ participate within them.
 By embracing the following principles, guidelines and actions to follow or
 avoid, you will help us make Jupyter a welcoming and productive community. Feel
 free to contact the Code of Conduct Committee at
-`conduct@geopandas.org <mailto:conduct@geopandas.org>`__ with any questions.
+`geopandas-conduct@googlegroups.com <mailto:geopandas-conduct@googlegroups.com>`__ with any questions.
 
 1. **Be friendly and patient**.
 
@@ -102,8 +102,8 @@ a timely manner. Code of conduct violations reduce the value of the community
 for everyone and we take them seriously.
 
 You can file a report by emailing
-`conduct@geopandas.org <mailto:conduct@geopandas.org>`__ or by filing out
-`this form <https://goo.gl/forms/CHANGETHELINK>`__.
+`geopandas-conduct@googlegroups.com <mailto:geopandas-conduct@googlegroups.com>`__ or by filing out
+`this form <https://docs.google.com/forms/d/e/1FAIpQLSd8Tbi2zNl1i2N9COX0yavHEqTGFIPQ1_cLcy1A3JgVc1OrAQ/viewform>`__.
 
 The online form gives you the option to keep your report anonymous or request
 that we follow up with you directly. While we cannot follow up on an anonymous
