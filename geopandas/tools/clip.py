@@ -152,7 +152,11 @@ def clip(gdf, mask, keep_geom_type=False):
         ((box_mask[0] <= box_gdf[2]) and (box_gdf[0] <= box_mask[2]))
         and ((box_mask[1] <= box_gdf[3]) and (box_gdf[1] <= box_mask[3]))
     ):
-        return GeoDataFrame(columns=gdf.columns, crs=gdf.crs)
+        return (
+            GeoDataFrame(columns=gdf.columns, crs=gdf.crs)
+            if isinstance(gdf, GeoDataFrame)
+            else GeoSeries(crs=gdf.crs)
+        )
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         poly = mask.geometry.unary_union
