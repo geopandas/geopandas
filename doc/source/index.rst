@@ -51,6 +51,7 @@ such as PostGIS.
   :caption: Reference Guide
 
   Reference to All Attributes and Methods <reference>
+  Changelog <changelog>
 
 
 .. toctree::
