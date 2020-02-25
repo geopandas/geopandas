@@ -162,7 +162,7 @@ def to_file(
     mode : string, default 'w'
         The write mode, 'w' to overwrite the existing file and 'a' to append.
         Not all drivers support appending. The drivers that support appending
-        are listed in
+        are listed in fiona.supported_drivers or
         https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
 
     The *kwargs* are passed to fiona.open and can be used to write
