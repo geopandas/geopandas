@@ -635,10 +635,10 @@ def test_total_bounds():
     )
     expected = np.array(
         [
-            bounds[:, 0].min(),  # minx
-            bounds[:, 1].min(),  # miny
-            bounds[:, 2].max(),  # maxx
-            bounds[:, 3].max(),  # maxy
+            np.nanmin(bounds[:, 0]),  # minx
+            np.nanmin(bounds[:, 1]),  # miny
+            np.nanmax(bounds[:, 2]),  # maxx
+            np.nanmax(bounds[:, 3]),  # maxy
         ]
     )
     np.testing.assert_allclose(result, expected)
