@@ -111,6 +111,13 @@ The online form gives you the option to keep your report anonymous or request
 that we follow up with you directly. While we cannot follow up on an anonymous
 report, we will take appropriate action.
 
+Messages sent to the e-mail address or through the form will be sent
+only to the Code of Conduct Committee, which currently consists of:
+
+* Hannah Aizenman
+* Joris Van den Bossche
+* Martin Fleischmann
+
 
 ## Enforcement
 
