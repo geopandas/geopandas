@@ -788,12 +788,12 @@ class GeometryArray(ExtensionArray):
         b = self.bounds
         return np.array(
             (
-                b[:, 0].min(),  # minx
-                b[:, 1].min(),  # miny
-                b[:, 2].max(),  # maxx
-                b[:, 3].max(),
+                np.nanmin(b[:, 0]),  # minx
+                np.nanmin(b[:, 1]),  # miny
+                np.nanmax(b[:, 2]),  # maxx
+                np.nanmax(b[:, 3]),  # maxy
             )
-        )  # maxy
+        )
 
     # -------------------------------------------------------------------------
     # general array like compat
