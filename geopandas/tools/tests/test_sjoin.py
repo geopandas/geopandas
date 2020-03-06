@@ -205,8 +205,15 @@ class TestSpatialJoin:
         assert empty.empty
 
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    def test_join_with_empty(self, op):
-        # Check joins with empty geometry columns.
+    @pytest.mark.parametrize(
+        "empty",
+        [
+            GeoDataFrame(geometry=[GeometryCollection(), GeometryCollection()]),
+            GeoDataFrame(geometry=GeoSeries()),
+        ],
+    )
+    def test_join_with_empty(self, op, empty):
+        # Check joins with empty geometry columns/dataframes.
         polygons = geopandas.GeoDataFrame(
             {
                 "col2": [1, 2],
@@ -216,7 +223,6 @@ class TestSpatialJoin:
                 ],
             }
         )
-        empty = GeoDataFrame(geometry=[GeometryCollection(), GeometryCollection()])
         result = sjoin(empty, polygons, how="left", op=op)
         assert result.index_right.isnull().all()
         result = sjoin(empty, polygons, how="right", op=op)
