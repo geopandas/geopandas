@@ -120,8 +120,9 @@ def sjoin(
 
     r_idx = np.empty((0, 0))
     l_idx = np.empty((0, 0))
-    # get rtree spatial index
-    if tree_idx_right:
+    # get rtree spatial index. If tree_idx does not exist, it is due to a failure
+    # to generate the index (e.g., if the column is empty).
+    if tree_idx_right and tree_idx:
         idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
             lambda x: list(tree_idx.intersection(x)) if not x == () else []
         )
@@ -130,7 +131,7 @@ def sjoin(
         if idxmatch.shape[0] > 0:
             r_idx = np.concatenate(idxmatch.values)
             l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    else:
+    elif not tree_idx_right and tree_idx:
         # tree_idx_df == 'left'
         idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
             lambda x: list(tree_idx.intersection(x)) if not x == () else []
