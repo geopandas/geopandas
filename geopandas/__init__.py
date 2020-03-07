@@ -5,6 +5,7 @@ from geopandas.array import points_from_xy  # noqa
 from geopandas.io.file import read_file  # noqa
 from geopandas.io.sql import read_postgis  # noqa
 from geopandas.tools import sjoin  # noqa
+from geopandas.tools import sjoin_nearest  # noqa
 from geopandas.tools import overlay  # noqa
 from geopandas.tools._show_versions import show_versions  # noqa
 from geopandas.tools import clip  # noqa
