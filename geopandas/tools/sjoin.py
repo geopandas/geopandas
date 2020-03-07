@@ -206,7 +206,7 @@ def sjoin_nearest(
     lsuffix="left",
     rsuffix="right",
     search_radius=None,
-    max_search_neighbors=None,
+    max_search_neighbors=50,
     nearest_distances=False,
 ):
     """Spatial join of two GeoDataFrames, matching by nearest neighbor.
@@ -231,17 +231,18 @@ def sjoin_nearest(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
-    max_search_neighbors : int, default None
+    max_search_neighbors : int, default 50
         Number of nearest neighbors to check for proximity.
         Useful if you do not want to use search_radius.
-        note:: using a very small number (<5) can cause unexpected results
+        note:: using a very small number (~< 10) can cause unexpected results
           due to the implementation of the underlaying spatial index.
           Geometries are converted to bounding boxes, thus results for the
             nearest geometry may unexpected. Using a larger number mitigates
             this, but using too large of a number will provide little performance
             improvement.
-          If possible, you may want to run at least once with
-            max_search_neighbors=None to validate results for your data.
+          If it is not too slow, you may want to run at least once with
+            max_search_neighbors=None (or at least a larger number) to validate
+            results for your data.
     search_radius : int or float, default None
         Restricts search to a certain radius.
         This can significantly speed up execution.
@@ -290,6 +291,7 @@ def sjoin_nearest(
                 "results when using max_search_neighbors. Consider using a "
                 "large number or max_search_neighbors=None."
             )
+
     if search_radius is not None and search_radius < 0:
         raise ValueError("search_radius must be >= 0")
 
@@ -331,6 +333,7 @@ def sjoin_nearest(
         l_idx = []
         r_idx = []
         distances = []
+        print_nearest_warning = False
 
         # pre-buffer the bounds of right_df geometries by search radius
         # these will be used by the spatial index
@@ -371,6 +374,9 @@ def sjoin_nearest(
                 l_idx.extend([ind_in_left] * len(min_ind))
                 if nearest_distances:  # avoid memory use if unwarrented
                     distances.extend([min_dist] * len(min_ind))
+                # check for possible incorrect results
+                if min_dist == 0 and len(min_ind) == max_search_neighbors:
+                    print_nearest_warning = True
         if len(r_idx) > 0 and len(l_idx) > 0:
             # assemble resultant df
             result = pd.DataFrame(np.column_stack([l_idx, r_idx]))
@@ -378,6 +384,13 @@ def sjoin_nearest(
 
         if nearest_distances:
             result["nearest_distances"] = distances
+
+        if print_nearest_warning:
+            warn(
+                "Detected matching zero distances when using"
+                " `max_search_neighbors`. Please verify your results. See"
+                " `sjoin_nearest` documentation for more information."
+            )
 
     if tree_idx is None or len(l_idx) == 0 or len(r_idx) == 0:
         # when output from the join has no overlapping geometries
