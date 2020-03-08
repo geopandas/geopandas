@@ -46,5 +46,22 @@ def set_use_pygeos(val=None):
             if env_use_pygeos is not None:
                 USE_PYGEOS = bool(int(env_use_pygeos))
 
+    # validate the pygeos version
+    if USE_PYGEOS:
+        try:
+            import pygeos  # noqa
+
+            if not str(pygeos.__version__) >= LooseVersion("0.6"):
+                raise ImportError(
+                    "PyGEOS >= 0.6 is required, version {0} is installed".format(
+                        pygeos.__version__
+                    )
+                )
+        except ImportError:
+            raise ImportError(
+                "To use the PyGEOS speed-ups within GeoPandas, you need to install "
+                "PyGEOS: 'conda install pygeos' or 'pip install pygeos'"
+            )
+
 
 set_use_pygeos()
