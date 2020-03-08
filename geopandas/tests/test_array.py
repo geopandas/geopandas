@@ -21,7 +21,7 @@ from geopandas.array import (
     to_wkb,
     to_wkt,
 )
-from geopandas._compat import USE_PYGEOS
+import geopandas._compat as compat
 
 import pytest
 
@@ -334,7 +334,7 @@ def test_unary_geo(attr):
         A = T
 
     result = getattr(A, attr)
-    if attr == "exterior" and USE_PYGEOS:
+    if attr == "exterior" and compat.USE_PYGEOS:
         # TODO(pygeos)
         # empty Polygon() has an exterior with shapely > 1.7, which gives
         # empty LinearRing instead of None,
@@ -414,7 +414,7 @@ def test_binary_geo_scalar(attr):
 )
 def test_unary_predicates(attr):
     na_value = False
-    if attr == "is_simple" and geos_version < (3, 8) and not USE_PYGEOS:
+    if attr == "is_simple" and geos_version < (3, 8) and not compat.USE_PYGEOS:
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         with pytest.raises(Exception):
             T.is_simple
@@ -426,7 +426,7 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and (geos_version < (3, 8) or USE_PYGEOS):
+    if attr == "is_simple" and (geos_version < (3, 8) or compat.USE_PYGEOS):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         # with shapely, pygeos always returns False for all GEOS versions
         # But even for Shapely with GEOS >= 3.8, empty GeometryCollection
@@ -555,7 +555,7 @@ def test_binary_project(normalized):
 @pytest.mark.parametrize("join_style", [JOIN_STYLE.round, JOIN_STYLE.bevel])
 @pytest.mark.parametrize("resolution", [16, 25])
 def test_buffer(resolution, cap_style, join_style):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         if cap_style == 1 and join_style == 3:
             pytest.skip("failing TODO")
 

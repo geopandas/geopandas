@@ -14,8 +14,7 @@ import shapely.wkt
 
 from shapely.geometry.base import BaseGeometry
 
-
-from ._compat import USE_PYGEOS
+from . import _compat as compat
 
 try:
     import pygeos
@@ -35,7 +34,7 @@ _names = {
     "GEOMETRYCOLLECTION": "GeometryCollection",
 }
 
-if USE_PYGEOS:
+if compat.USE_PYGEOS:
     type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
 else:
     type_mapping = None
@@ -86,16 +85,16 @@ def from_shapely(data):
 
     for idx in range(n):
         geom = data[idx]
-        if USE_PYGEOS and isinstance(geom, pygeos.Geometry):
+        if compat.USE_PYGEOS and isinstance(geom, pygeos.Geometry):
             out.append(geom)
         elif isinstance(geom, BaseGeometry):
-            if USE_PYGEOS:
+            if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
         elif hasattr(geom, "__geo_interface__"):
             geom = shapely.geometry.asShape(geom)
-            if USE_PYGEOS:
+            if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
@@ -104,7 +103,7 @@ def from_shapely(data):
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
 
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return np.array(out, dtype=object)
     else:
         aout = np.empty(n, dtype=object)
@@ -113,7 +112,7 @@ def from_shapely(data):
 
 
 def to_shapely(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         out = np.empty(len(data), dtype=object)
         out[:] = [_pygeos_to_shapely(geom) for geom in data]
         return out
@@ -125,7 +124,7 @@ def from_wkb(data):
     """
     Convert a list or array of WKB objects to a np.ndarray[geoms].
     """
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.from_wkb(data)
 
     import shapely.wkb
@@ -148,7 +147,7 @@ def from_wkb(data):
 
 
 def to_wkb(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.to_wkb(data)
     else:
         out = [geom.wkb if geom is not None else None for geom in data]
@@ -159,7 +158,7 @@ def from_wkt(data):
     """
     Convert a list or array of WKT objects to a np.ndarray[geoms].
     """
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.from_wkt(data)
 
     import shapely.wkt
@@ -184,7 +183,7 @@ def from_wkt(data):
 
 
 def to_wkt(data, **kwargs):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.to_wkt(data, **kwargs)
     else:
         out = [geom.wkt if geom is not None else None for geom in data]
@@ -211,7 +210,7 @@ def points_from_xy(x, y, z=None):
     if z is not None:
         z = np.asarray(z, dtype="float64")
 
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.points(x, y, z)
     else:
         out = _points_from_xy(x, y, z)
@@ -425,28 +424,28 @@ def _unary_op(op, left, null_value=False):
 
 
 def is_valid(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.is_valid(data)
     else:
         return _unary_op("is_valid", data, null_value=False)
 
 
 def is_empty(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.is_empty(data)
     else:
         return _unary_op("is_empty", data, null_value=False)
 
 
 def is_simple(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.is_simple(data)
     else:
         return _unary_op("is_simple", data, null_value=False)
 
 
 def is_ring(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.is_ring(pygeos.get_exterior_ring(data))
     else:
         # operates on the exterior, so can't use _unary_op()
@@ -466,21 +465,21 @@ def is_ring(data):
 
 
 def is_closed(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.is_closed(data)
     else:
         return _unary_op("is_closed", data, null_value=False)
 
 
 def has_z(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.has_z(data)
     else:
         return _unary_op("has_z", data, null_value=False)
 
 
 def geom_type(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         res = pygeos.get_type_id(data)
         return np.array([type_mapping[t] for t in res], dtype=object)
     else:
@@ -488,14 +487,14 @@ def geom_type(data):
 
 
 def area(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.area(data)
     else:
         return _unary_op("area", data, null_value=np.nan)
 
 
 def length(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.length(data)
     else:
         return _unary_op("length", data, null_value=np.nan)
@@ -516,35 +515,35 @@ def _unary_geo(op, left, *args, **kwargs):
 
 
 def boundary(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.boundary(data)
     else:
         return _unary_geo("boundary", data)
 
 
 def centroid(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.centroid(data)
     else:
         return _unary_geo("centroid", data)
 
 
 def convex_hull(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.convex_hull(data)
     else:
         return _unary_geo("convex_hull", data)
 
 
 def envelope(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.envelope(data)
     else:
         return _unary_geo("envelope", data)
 
 
 def exterior(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.get_exterior_ring(data)
     else:
         return _unary_geo("exterior", data)
@@ -574,7 +573,7 @@ def interiors(data):
 
 
 def representative_point(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.point_on_surface(data)
     else:
         # method and not a property -> can't use _unary_geo
@@ -591,77 +590,77 @@ def representative_point(data):
 
 
 def covers(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("covers", data, other)
     else:
         return _binary_predicate("covers", data, other)
 
 
 def contains(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("contains", data, other)
     else:
         return _binary_predicate("contains", data, other)
 
 
 def crosses(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("crosses", data, other)
     else:
         return _binary_predicate("crosses", data, other)
 
 
 def disjoint(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("disjoint", data, other)
     else:
         return _binary_predicate("disjoint", data, other)
 
 
 def equals(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("equals", data, other)
     else:
         return _binary_predicate("equals", data, other)
 
 
 def intersects(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("intersects", data, other)
     else:
         return _binary_predicate("intersects", data, other)
 
 
 def overlaps(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("overlaps", data, other)
     else:
         return _binary_predicate("overlaps", data, other)
 
 
 def touches(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("touches", data, other)
     else:
         return _binary_predicate("touches", data, other)
 
 
 def within(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("within", data, other)
     else:
         return _binary_predicate("within", data, other)
 
 
 def equals_exact(data, other, tolerance):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("equals_exact", data, other, tolerance=tolerance)
     else:
         return _binary_predicate("equals_exact", data, other, tolerance=tolerance)
 
 
 def almost_equals(self, other, decimal):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return self.equals_exact(other, 0.5 * 10 ** (-decimal))
     else:
         return _binary_predicate("almost_equals", self, other, decimal=decimal)
@@ -673,28 +672,28 @@ def almost_equals(self, other, decimal):
 
 
 def difference(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("difference", data, other)
     else:
         return _binary_geo("difference", data, other)
 
 
 def intersection(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("intersection", data, other)
     else:
         return _binary_geo("intersection", data, other)
 
 
 def symmetric_difference(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("symmetric_difference", data, other)
     else:
         return _binary_geo("symmetric_difference", data, other)
 
 
 def union(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("union", data, other)
     else:
         return _binary_geo("union", data, other)
@@ -706,14 +705,14 @@ def union(data, other):
 
 
 def distance(data, other):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _binary_method("distance", data, other)
     else:
         return _binary_op_float("distance", data, other)
 
 
 def buffer(data, distance, resolution=16, **kwargs):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.buffer(data, distance, quadsegs=resolution, **kwargs)
     else:
         out = np.empty(len(data), dtype=object)
@@ -738,7 +737,7 @@ def buffer(data, distance, resolution=16, **kwargs):
 
 
 def interpolate(data, distance, normalized=False):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.line_interpolate_point(data, distance, normalize=normalized)
     else:
         out = np.empty(len(data), dtype=object)
@@ -759,7 +758,7 @@ def interpolate(data, distance, normalized=False):
 
 
 def simplify(data, tolerance, preserve_topology=True):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         # preserve_topology has different default as pygeos!
         return pygeos.simplify(data, tolerance, preserve_topology=preserve_topology)
     else:
@@ -773,7 +772,7 @@ def simplify(data, tolerance, preserve_topology=True):
 
 
 def project(data, other, normalized=False):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.line_locate_point(data, other, normalize=normalized)
     else:
         return _binary_op("project", data, other, normalized=normalized)
@@ -787,7 +786,7 @@ def relate(data, other):
 
 
 def unary_union(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:
         return shapely.ops.unary_union(data)
@@ -799,21 +798,21 @@ def unary_union(data):
 
 
 def get_x(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.get_x(data)
     else:
         return _unary_op("x", data, null_value=np.nan)
 
 
 def get_y(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.get_y(data)
     else:
         return _unary_op("y", data, null_value=np.nan)
 
 
 def bounds(data):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return pygeos.bounds(data)
     # ensure that for empty arrays, the result has the correct shape
     if len(data) == 0:
@@ -837,7 +836,7 @@ def bounds(data):
 
 
 def transform(data, func):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         coords = pygeos.get_coordinates(data)
         new_coords = func(coords[:, 0], coords[:, 1])
         result = pygeos.set_coordinates(data.copy(), np.array(new_coords).T)

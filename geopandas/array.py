@@ -18,7 +18,8 @@ try:
 except ImportError:
     geos = None
 
-from ._compat import PANDAS_GE_024, PANDAS_GE_10, USE_PYGEOS
+from ._compat import PANDAS_GE_024, PANDAS_GE_10
+from . import _compat as compat
 from . import _vectorized as vectorized
 
 
@@ -72,7 +73,7 @@ def _isna(value):
 
 
 def _geom_to_shapely(geom):
-    if not USE_PYGEOS:
+    if not compat.USE_PYGEOS:
         return geom
     if geom is None:
         return None
@@ -83,7 +84,7 @@ def _geom_to_shapely(geom):
 
 
 def _shapely_to_geom(geom):
-    if not USE_PYGEOS:
+    if not compat.USE_PYGEOS:
         return geom
     if geom is None:
         return None
@@ -94,7 +95,7 @@ def _shapely_to_geom(geom):
 
 
 def _is_scalar_geometry(geom):
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return isinstance(geom, pygeos.Geometry)
     else:
         return isinstance(geom, BaseGeometry)
@@ -247,7 +248,7 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
 
-    if USE_PYGEOS:
+    if compat.USE_PYGEOS:
 
         def __getstate__(self):
             return pygeos.to_wkb(self.data)
@@ -642,7 +643,7 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        if USE_PYGEOS:
+        if compat.USE_PYGEOS:
             return pygeos.is_missing(self.data)
         else:
             return np.array([g is None for g in self.data], dtype="bool")
