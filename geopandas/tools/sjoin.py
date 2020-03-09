@@ -333,7 +333,6 @@ def sjoin_nearest(
         l_idx = []
         r_idx = []
         distances = []
-        print_nearest_warning = False
 
         # pre-buffer the bounds of right_df geometries by search radius
         # these will be used by the spatial index
@@ -374,9 +373,7 @@ def sjoin_nearest(
                 l_idx.extend([ind_in_left] * len(min_ind))
                 if nearest_distances:  # avoid memory use if unwarrented
                     distances.extend([min_dist] * len(min_ind))
-                # check for possible incorrect results
-                if min_dist == 0 and len(min_ind) == max_search_neighbors:
-                    print_nearest_warning = True
+
         if len(r_idx) > 0 and len(l_idx) > 0:
             # assemble resultant df
             result = pd.DataFrame(np.column_stack([l_idx, r_idx]))
@@ -384,13 +381,6 @@ def sjoin_nearest(
 
         if nearest_distances:
             result["nearest_distances"] = distances
-
-        if print_nearest_warning:
-            warn(
-                "Detected matching zero distances when using"
-                " `max_search_neighbors`. Please verify your results. See"
-                " `sjoin_nearest` documentation for more information."
-            )
 
     if tree_idx is None or len(l_idx) == 0 or len(r_idx) == 0:
         # when output from the join has no overlapping geometries

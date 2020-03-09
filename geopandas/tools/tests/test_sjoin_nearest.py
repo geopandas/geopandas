@@ -724,12 +724,7 @@ class TestMaxSearchNeighbors:
                     nearest_distances=True,
                     max_search_neighbors=n,
                 )
-                if n > 1:
-                    assert not warnings  # no duplicates, no warning
-                elif n == 1:
-                    # should have a single warning about duplicates
-                    # this is dataset specific
-                    assert len(warnings) == 1
+                assert not warnings
                 warn("any warning")  # just to pass test
         else:
             with pytest.warns(UserWarning) as warnings:
@@ -740,10 +735,6 @@ class TestMaxSearchNeighbors:
                     nearest_distances=True,
                     max_search_neighbors=n,
                 )
-            if n > 1:
-                assert len(warnings) == 1  # only warning regarding rtree version
-            else:
-                assert len(warnings) == 2  # duplicate warning + rtree version warning
 
         # get difference between the resulsts
         diff = pd.concat([sjn_None, sjn]).drop_duplicates(
