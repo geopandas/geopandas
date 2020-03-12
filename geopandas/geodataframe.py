@@ -58,6 +58,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs = kwargs.pop("crs", None)
         geometry = kwargs.pop("geometry", None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
+        self._data = self._data.copy()
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
