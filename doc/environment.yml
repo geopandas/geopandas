@@ -28,3 +28,4 @@ dependencies:
 - pysal=2.1.0
 - nbsphinx=0.5.0
 - folium=0.10.1
+- jupyter
