@@ -52,7 +52,10 @@ class TestDataFrame:
             dataframe,
             geometry=[Point(x, y) for x, y in zip(dataframe.longitude, dataframe.latitude)],
         )
-        assert_frame_equal(dataframe, dataframe)
+        df_check = pd.DataFrame(
+             {"latitude": [35.5, 35.2, 34.89], "longitude": [-112.02, -111.09, -115.3]}
+         )
+        assert_frame_equal(df_check, dataframe)
 
     def test_different_geo_colname(self):
         data = {
