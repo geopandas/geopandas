@@ -44,6 +44,16 @@ class TestDataFrame:
         assert type(self.df2) is GeoDataFrame
         assert self.df2.crs == self.crs
 
+    def test_preserve_original_dataframe(self):
+        dataframe = pd.DataFrame(
+            {"latitude": [35.5, 35.2, 34.89], "longitude": [-112.02, -111.09, -115.3]}
+        )
+        GeoDataFrame(
+            dataframe,
+            geometry=[Point(x, y) for x, y in zip(dataframe.longitude, dataframe.latitude)],
+        )
+        assert_frame_equal(dataframe, dataframe)
+
     def test_different_geo_colname(self):
         data = {
             "A": range(5),
