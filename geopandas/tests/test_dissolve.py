@@ -31,6 +31,7 @@ def merged_shapes(nybb_polydf):
         {"myshapes": collapsed},
         geometry="myshapes",
         index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
     )
 
     return merged_shapes

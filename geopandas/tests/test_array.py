@@ -70,15 +70,19 @@ def test_points_from_xy():
     gsz = [shapely.geometry.Point(x, x, x) for x in range(10)]
     geometry1 = geopandas.points_from_xy(df["x"], df["y"])
     geometry2 = geopandas.points_from_xy(df["x"], df["y"], df["z"])
-    assert geometry1 == gs
-    assert geometry2 == gsz
+    assert isinstance(geometry1, GeometryArray)
+    assert isinstance(geometry2, GeometryArray)
+    assert list(geometry1) == gs
+    assert list(geometry2) == gsz
 
     # using Series or numpy arrays or lists
     for s in [pd.Series(range(10)), np.arange(10), list(range(10))]:
         geometry1 = geopandas.points_from_xy(s, s)
         geometry2 = geopandas.points_from_xy(s, s, s)
-        assert geometry1 == gs
-        assert geometry2 == gsz
+        assert isinstance(geometry1, GeometryArray)
+        assert isinstance(geometry2, GeometryArray)
+        assert list(geometry1) == gs
+        assert list(geometry2) == gsz
 
     # using different lengths should throw error
     arr_10 = np.arange(10)
@@ -631,10 +635,10 @@ def test_total_bounds():
     )
     expected = np.array(
         [
-            bounds[:, 0].min(),  # minx
-            bounds[:, 1].min(),  # miny
-            bounds[:, 2].max(),  # maxx
-            bounds[:, 3].max(),  # maxy
+            np.nanmin(bounds[:, 0]),  # minx
+            np.nanmin(bounds[:, 1]),  # miny
+            np.nanmax(bounds[:, 2]),  # maxx
+            np.nanmax(bounds[:, 3]),  # maxy
         ]
     )
     np.testing.assert_allclose(result, expected)
