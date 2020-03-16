@@ -18,6 +18,8 @@ matrix:
 
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
 
+  allow_failures:
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
 
 install:
   # Install conda
