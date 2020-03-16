@@ -30,7 +30,7 @@ dependencies:
 - pysal=2.1.0
 - nbsphinx=0.5.0
 - folium=0.10.1
-- jupyter
+- jupyter=1.0.0
 # specify additional dependencies to reduce solving for conda
 - gdal=3.0.4
 - libgdal=3.0.4
