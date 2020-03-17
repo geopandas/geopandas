@@ -75,14 +75,15 @@ def sjoin(
         )
 
     # Attempt to re-use spatial indexes, otherwise generate the spatial index
-    # for the longer dataframe
+    # for the longer dataframe. If we are joining to an empty dataframe,
+    # don't bother generating the index.
     if right_df._sindex_generated or (
         not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]
     ):
-        tree_idx = right_df.sindex
+        tree_idx = right_df.sindex if len(left_df) > 0 else None
         tree_idx_right = True
     else:
-        tree_idx = left_df.sindex
+        tree_idx = left_df.sindex if len(right_df) > 0 else None
         tree_idx_right = False
 
     # the rtree spatial index only allows limited (numeric) index types, but an
@@ -90,12 +91,27 @@ def sjoin(
     # and store references to the original indices, to be reaffixed later.
     # GH 352
     left_df = left_df.copy(deep=True)
-    left_index_name = left_df.index.name
-    left_df.index = left_df.index.rename(index_left)
+    try:
+        left_index_name = left_df.index.name
+        left_df.index = left_df.index.rename(index_left)
+    except TypeError:
+        index_left = [
+            "index_%s" % lsuffix + str(l) for l, ix in enumerate(left_df.index.names)
+        ]
+        left_index_name = left_df.index.names
+        left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
+
     right_df = right_df.copy(deep=True)
-    right_index_name = right_df.index.name
-    right_df.index = right_df.index.rename(index_right)
+    try:
+        right_index_name = right_df.index.name
+        right_df.index = right_df.index.rename(index_right)
+    except TypeError:
+        index_right = [
+            "index_%s" % rsuffix + str(l) for l, ix in enumerate(right_df.index.names)
+        ]
+        right_index_name = right_df.index.names
+        right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
     if op == "within":
@@ -105,8 +121,10 @@ def sjoin(
 
     r_idx = np.empty((0, 0))
     l_idx = np.empty((0, 0))
-    # get rtree spatial index
-    if tree_idx_right:
+    # get rtree spatial index. If tree_idx does not exist, it is due to either a
+    # failure to generate the index (e.g., if the column is empty), or the
+    # other dataframe is empty so it wasn't necessary to generate it.
+    if tree_idx_right and tree_idx:
         idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
             lambda x: list(tree_idx.intersection(x)) if not x == () else []
         )
@@ -115,7 +133,7 @@ def sjoin(
         if idxmatch.shape[0] > 0:
             r_idx = np.concatenate(idxmatch.values)
             l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    else:
+    elif not tree_idx_right and tree_idx:
         # tree_idx_df == 'left'
         idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
             lambda x: list(tree_idx.intersection(x)) if not x == () else []
@@ -184,7 +202,10 @@ def sjoin(
             .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
-        joined.index.name = left_index_name
+        if isinstance(index_left, list):
+            joined.index.names = left_index_name
+        else:
+            joined.index.name = left_index_name
 
     elif how == "left":
         result = result.set_index("_key_left")
@@ -200,7 +221,10 @@ def sjoin(
             .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
-        joined.index.name = left_index_name
+        if isinstance(index_left, list):
+            joined.index.names = left_index_name
+        else:
+            joined.index.name = left_index_name
 
     else:  # how == 'right':
         joined = (
@@ -216,6 +240,9 @@ def sjoin(
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
         )
-        joined.index.name = right_index_name
+        if isinstance(index_right, list):
+            joined.index.names = right_index_name
+        else:
+            joined.index.name = right_index_name
 
     return joined

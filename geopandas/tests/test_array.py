@@ -9,6 +9,7 @@ import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
+from shapely._buildcfg import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -69,15 +70,19 @@ def test_points_from_xy():
     gsz = [shapely.geometry.Point(x, x, x) for x in range(10)]
     geometry1 = geopandas.points_from_xy(df["x"], df["y"])
     geometry2 = geopandas.points_from_xy(df["x"], df["y"], df["z"])
-    assert geometry1 == gs
-    assert geometry2 == gsz
+    assert isinstance(geometry1, GeometryArray)
+    assert isinstance(geometry2, GeometryArray)
+    assert list(geometry1) == gs
+    assert list(geometry2) == gsz
 
     # using Series or numpy arrays or lists
     for s in [pd.Series(range(10)), np.arange(10), list(range(10))]:
         geometry1 = geopandas.points_from_xy(s, s)
         geometry2 = geopandas.points_from_xy(s, s, s)
-        assert geometry1 == gs
-        assert geometry2 == gsz
+        assert isinstance(geometry1, GeometryArray)
+        assert isinstance(geometry2, GeometryArray)
+        assert list(geometry1) == gs
+        assert list(geometry2) == gsz
 
     # using different lengths should throw error
     arr_10 = np.arange(10)
@@ -394,8 +399,8 @@ def test_binary_geo_scalar(attr):
 )
 def test_unary_predicates(attr):
     na_value = False
-    if attr == "is_simple":
-        # poly.is_simple raises an error for empty polygon
+    if attr == "is_simple" and geos_version < (3, 8):
+        # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         with pytest.raises(Exception):
             T.is_simple
         vals = triangle_no_missing
@@ -615,6 +620,36 @@ def test_bounds():
         assert result.ndim == 2
         assert result.dtype == "float64"
         np.testing.assert_allclose(result, np.array([[np.nan] * 4]))
+
+    # empty array (https://github.com/geopandas/geopandas/issues/1195)
+    E = from_shapely([])
+    result = E.bounds
+    assert result.shape == (0, 4)
+    assert result.dtype == "float64"
+
+
+def test_total_bounds():
+    result = T.total_bounds
+    bounds = np.array(
+        [t.bounds if not (t is None or t.is_empty) else [np.nan] * 4 for t in triangles]
+    )
+    expected = np.array(
+        [
+            np.nanmin(bounds[:, 0]),  # minx
+            np.nanmin(bounds[:, 1]),  # miny
+            np.nanmax(bounds[:, 2]),  # maxx
+            np.nanmax(bounds[:, 3]),  # maxy
+        ]
+    )
+    np.testing.assert_allclose(result, expected)
+
+    # additional check for empty array or one empty / missing
+    for geoms in [[], [None], [shapely.geometry.Polygon()]]:
+        E = from_shapely(geoms)
+        result = E.total_bounds
+        assert result.ndim == 1
+        assert result.dtype == "float64"
+        np.testing.assert_allclose(result, np.array([np.nan] * 4))
 
 
 def test_getitem():

@@ -13,7 +13,9 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 
-from ._compat import PANDAS_GE_024, Iterable
+from collections.abc import Iterable
+
+from ._compat import PANDAS_GE_024, PANDAS_GE_10
 
 
 class GeometryDtype(ExtensionDtype):
@@ -23,10 +25,16 @@ class GeometryDtype(ExtensionDtype):
 
     @classmethod
     def construct_from_string(cls, string):
-        if string == cls.name:
+        if not isinstance(string, str):
+            raise TypeError(
+                "'construct_from_string' expects a string, got {}".format(type(string))
+            )
+        elif string == cls.name:
             return cls()
         else:
-            raise TypeError("Cannot construct a '{}' from '{}'".format(cls, string))
+            raise TypeError(
+                "Cannot construct a '{}' from '{}'".format(cls.__name__, string)
+            )
 
     @classmethod
     def construct_array_type(cls):
@@ -169,14 +177,7 @@ def _points_from_xy(x, y, z=None):
 
     Parameters
     ----------
-    x, y, z : array
-
-    Examples
-    --------
-    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
-    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
-    >>> gdf = geopandas.GeoDataFrame(
-            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+    x, y, z : iterable
 
     Returns
     -------
@@ -194,7 +195,24 @@ def _points_from_xy(x, y, z=None):
 
 
 def points_from_xy(x, y, z=None):
-    """Convert arrays of x and y values to a GeometryArray of points."""
+    """
+    Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
+
+    Parameters
+    ----------
+    x, y, z : iterable
+
+    Examples
+    --------
+    >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
+    >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
+    >>> gdf = geopandas.GeoDataFrame(
+            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+
+    Returns
+    -------
+    output : GeometryArray
+    """
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")
     if z is not None:
@@ -230,7 +248,10 @@ def _binary_geo(op, left, right):
         # intersection can return empty GeometryCollections, and if the
         # result are only those, numpy will coerce it to empty 2D array
         data = np.empty(len(left), dtype=object)
-        data[:] = [getattr(s, op)(right) if s and right else None for s in left.data]
+        data[:] = [
+            getattr(s, op)(right) if s is not None and right is not None else None
+            for s in left.data
+        ]
         return GeometryArray(data)
     elif isinstance(right, GeometryArray):
         if len(left) != len(right):
@@ -240,7 +261,9 @@ def _binary_geo(op, left, right):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, op)(other_elem) if this_elem and other_elem else None
+            getattr(this_elem, op)(other_elem)
+            if this_elem is not None and other_elem is not None
+            else None
             for this_elem, other_elem in zip(left.data, right.data)
         ]
         return GeometryArray(data)
@@ -432,12 +455,21 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return self.data[idx]
-        elif isinstance(idx, (Iterable, slice)):
+        # array-like, slice
+        if PANDAS_GE_10:
+            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
+            # to numpy array, pass-through non-array-like indexers
+            idx = pd.api.indexers.check_array_indexer(self, idx)
+        if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx])
         else:
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
+        if PANDAS_GE_10:
+            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
+            # keys to numpy array, pass-through non-array-like indexers
+            key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
         if isinstance(value, (list, np.ndarray)):
@@ -451,7 +483,7 @@ class GeometryArray(ExtensionArray):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
-            if isinstance(key, (list, np.ndarray)):
+            if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
                 value_array[:] = [value]
                 self.data[key] = value_array
@@ -732,6 +764,9 @@ class GeometryArray(ExtensionArray):
 
     @property
     def bounds(self):
+        # ensure that for empty arrays, the result has the correct shape
+        if len(self) == 0:
+            return np.empty((0, 4), dtype="float64")
         # need to explicitly check for empty (in addition to missing) geometries,
         # as those return an empty tuple, not resulting in a 2D array
         bounds = np.array(
@@ -746,15 +781,19 @@ class GeometryArray(ExtensionArray):
 
     @property
     def total_bounds(self):
+        if len(self) == 0:
+            # numpy 'min' cannot handle empty arrays
+            # TODO with numpy >= 1.15, the 'initial' argument can be used
+            return np.array([np.nan, np.nan, np.nan, np.nan])
         b = self.bounds
         return np.array(
             (
-                b[:, 0].min(),  # minx
-                b[:, 1].min(),  # miny
-                b[:, 2].max(),  # maxx
-                b[:, 3].max(),
+                np.nanmin(b[:, 0]),  # minx
+                np.nanmin(b[:, 1]),  # miny
+                np.nanmax(b[:, 2]),  # maxx
+                np.nanmax(b[:, 3]),  # maxy
             )
-        )  # maxy
+        )
 
     # -------------------------------------------------------------------------
     # general array like compat
@@ -829,18 +868,17 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
-        if _isna(value):
-            value = None
-        elif not isinstance(value, BaseGeometry):
-            raise NotImplementedError(
-                "fillna currently only supports filling with a scalar geometry"
-            )
-
         mask = self.isna()
         new_values = self.copy()
 
         if mask.any():
             # fill with value
+            if _isna(value):
+                value = None
+            elif not isinstance(value, BaseGeometry):
+                raise NotImplementedError(
+                    "fillna currently only supports filling with a scalar geometry"
+                )
             new_values = new_values._fill(mask, value)
 
         return new_values

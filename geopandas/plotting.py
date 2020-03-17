@@ -1,49 +1,43 @@
-from __future__ import print_function
-
 import warnings
 
 import numpy as np
 import pandas as pd
 
+import geopandas
 
-def _flatten_multi_geoms(geoms, colors=None):
+
+def _flatten_multi_geoms(geoms, prefix="Multi"):
     """
-    Returns Series like geoms and colors, except that any Multi geometries
-    are split into their components and colors are repeated for all component
-    in the same Multi geometry.  Maintains 1:1 matching of geometry to color.
-    Passing `color` is optional, and when no `color` is passed a list of None
-    values is returned as `component_colors`.
+    Returns Series like geoms and index, except that any Multi geometries
+    are split into their components and indices are repeated for all component
+    in the same Multi geometry.  Maintains 1:1 matching of geometry to value.
 
-    "Colors" are treated opaquely and so can actually contain any values.
+    Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and similar,
+    "Geom" for GeometryCollection.
 
     Returns
     -------
 
     components : list of geometry
 
-    component_colors : list of whatever type `colors` contains
+    component_index : index array
+        indices are repeated for all components in the same Multi geometry
     """
-    if colors is None:
-        colors = [None] * len(geoms)
+    components, component_index = [], []
 
-    components, component_colors = [], []
+    if not geoms.geom_type.str.startswith(prefix).any():
+        return geoms, np.arange(len(geoms))
 
-    if not geoms.geom_type.str.startswith("Multi").any():
-        return geoms, colors
-
-    # precondition, so zip can't short-circuit
-    assert len(geoms) == len(colors)
-    for geom, color in zip(geoms, colors):
-        if geom.type.startswith("Multi"):
+    for ix, geom in enumerate(geoms):
+        if geom.type.startswith(prefix):
             for poly in geom:
                 components.append(poly)
-                # repeat same color for all components
-                component_colors.append(color)
+                component_index.append(ix)
         else:
             components.append(geom)
-            component_colors.append(color)
+            component_index.append(ix)
 
-    return components, component_colors
+    return components, np.array(component_index)
 
 
 def plot_polygon_collection(
@@ -87,28 +81,41 @@ def plot_polygon_collection(
         from descartes.patch import PolygonPatch
     except ImportError:
         raise ImportError(
-            "The descartes package is required for plotting polygons in geopandas."
+            "The descartes package is required for plotting polygons in geopandas. "
+            "You can install it using 'conda install -c conda-forge descartes' or "
+            "'pip install descartes'."
         )
     from matplotlib.collections import PatchCollection
+    from matplotlib.colors import is_color_like
 
-    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
         del kwargs["markersize"]
     if color is not None:
-        kwargs["color"] = color
-        if pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
-        else:
+        if is_color_like(color):
             kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex, axis=0)
+        else:
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
+
     else:
         for att in ["facecolor", "edgecolor"]:
             if att in kwargs:
-                if pd.api.types.is_list_like(kwargs[att]):
-                    kwargs[att] = np.take(kwargs[att], multiindex)
+                if not is_color_like(kwargs[att]):
+                    if pd.api.types.is_list_like(kwargs[att]):
+                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
+                    elif kwargs[att] is not None:
+                        raise TypeError(
+                            "Color attribute has to be a single color or sequence "
+                            "of colors."
+                        )
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -152,10 +159,11 @@ def plot_linestring_collection(
 
     """
     from matplotlib.collections import LineCollection
+    from matplotlib.colors import is_color_like
 
-    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
     if "markersize" in kwargs:
@@ -163,10 +171,14 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        if pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex)
-        else:
+        if is_color_like(color):
             kwargs["color"] = color
+        elif pd.api.types.is_list_like(color):
+            kwargs["color"] = np.take(color, multiindex, axis=0)
+        else:
+            raise TypeError(
+                "Color attribute has to be a single color or sequence of colors."
+            )
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -215,12 +227,14 @@ def plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
+    from matplotlib.colors import is_color_like
+
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, multiindex = _flatten_multi_geoms(geoms, range(len(geoms)))
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
-        values = np.take(values, multiindex)
+        values = np.take(values, multiindex, axis=0)
 
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
@@ -232,8 +246,13 @@ def plot_point_collection(
         kwargs["s"] = markersize
 
     if color is not None:
-        if pd.api.types.is_list_like(color):
-            color = np.take(color, multiindex)
+        if not is_color_like(color):
+            if pd.api.types.is_list_like(color):
+                color = np.take(color, multiindex, axis=0)
+            else:
+                raise TypeError(
+                    "Color attribute has to be a single color or sequence of colors."
+                )
 
     if "norm" not in kwargs:
         collection = ax.scatter(
@@ -296,7 +315,14 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         )
         ax = style_kwds.pop("axes")
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -319,16 +345,22 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         style_kwds["vmin"] = style_kwds.get("vmin", values.min())
         style_kwds["vmax"] = style_kwds.get("vmax", values.max())
 
-    geom_types = s.geometry.type
+    # decompose GeometryCollections
+    geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
+    values = np.take(values, multiindex, axis=0) if cmap else None
+    expl_series = geopandas.GeoSeries(geoms)
+
+    geom_types = expl_series.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
-        (geom_types == "LineString") | (geom_types == "MultiLineString")
+        (geom_types == "LineString")
+        | (geom_types == "MultiLineString")
+        | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = s.geometry[poly_idx]
-
+    polys = expl_series[poly_idx]
     if not polys.empty:
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
@@ -342,7 +374,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = s.geometry[line_idx]
+    lines = expl_series[line_idx]
     if not lines.empty:
         values_ = values[line_idx] if cmap else None
         plot_linestring_collection(
@@ -350,7 +382,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
         )
 
     # plot all Points in the same collection
-    points = s.geometry[point_idx]
+    points = expl_series[point_idx]
     if not points.empty:
         values_ = values[point_idx] if cmap else None
         plot_point_collection(ax, points, values_, color=color, cmap=cmap, **style_kwds)
@@ -376,6 +408,7 @@ def plot_dataframe(
     figsize=None,
     legend_kwds=None,
     classification_kwds=None,
+    missing_kwds=None,
     categories=None,
     **style_kwds
 ):
@@ -444,6 +477,11 @@ def plot_dataframe(
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
+    missing_kwds : dict (default None)
+        Keyword arguments specifying color options (as style_kwds)
+        to be passed on to geometries with missing values in addition to
+        or overwriting other style kwds. If None, geometries with missing
+        values are not plotted.
 
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
@@ -475,7 +513,14 @@ def plot_dataframe(
         )
         column = None
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
 
     if ax is None:
         if cax is not None:
@@ -519,13 +564,15 @@ def plot_dataframe(
     if values.dtype is np.dtype("O"):
         categorical = True
 
+    nan_idx = pd.isna(values)
+
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = "tab10"
 
         if categories is None:
-            categories = list(set(values))
+            categories = list(set(values[~nan_idx]))
             categories.sort()
         else:
             if not pd.api.types.is_list_like(categories):
@@ -536,7 +583,7 @@ def plot_dataframe(
                 )
 
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
-        values = np.array([valuemap[k] for k in values])
+        values = np.array([valuemap[k] for k in values[~nan_idx]])
         vmin = 0 if vmin is None else vmin
         vmax = max(valuemap.values()) if vmax is None else vmax
 
@@ -546,55 +593,83 @@ def plot_dataframe(
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
-        binning = _mapclassify_choro(values, scheme, **classification_kwds)
+        binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
-        binedges = [values.min()] + binning.bins.tolist()
+        binedges = [values[~nan_idx].min()] + binning.bins.tolist()
         categories = [
             "{0:.2f} - {1:.2f}".format(binedges[i], binedges[i + 1])
             for i in range(len(binedges) - 1)
         ]
         values = np.array(binning.yb)
 
+    # fill values with placeholder where were NaNs originally to map them properly
+    # (after removing them in categorical or scheme)
+    if categorical:
+        for n in np.where(nan_idx)[0]:
+            values = np.insert(values, n, values[0])
+
     mn = values[~np.isnan(values)].min() if vmin is None else vmin
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
-    geom_types = df.geometry.type
+    # decompose GeometryCollections
+    geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
+    values = np.take(values, multiindex, axis=0)
+    nan_idx = np.take(nan_idx, multiindex, axis=0)
+    expl_series = geopandas.GeoSeries(geoms)
+
+    geom_types = expl_series.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
-        (geom_types == "LineString") | (geom_types == "MultiLineString")
+        (geom_types == "LineString")
+        | (geom_types == "MultiLineString")
+        | (geom_types == "LinearRing")
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = df.geometry[poly_idx]
+    polys = expl_series[poly_idx & np.invert(nan_idx)]
+    subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
         plot_polygon_collection(
-            ax, polys, values[poly_idx], vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = df.geometry[line_idx]
+    lines = expl_series[line_idx & np.invert(nan_idx)]
+    subset = values[line_idx & np.invert(nan_idx)]
     if not lines.empty:
         plot_linestring_collection(
-            ax, lines, values[line_idx], vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
         )
 
     # plot all Points in the same collection
-    points = df.geometry[point_idx]
+    points = expl_series[point_idx & np.invert(nan_idx)]
+    subset = values[point_idx & np.invert(nan_idx)]
     if not points.empty:
         if isinstance(markersize, np.ndarray):
-            markersize = markersize[point_idx]
+            markersize = np.take(markersize, multiindex, axis=0)
+            markersize = markersize[point_idx & np.invert(nan_idx)]
         plot_point_collection(
             ax,
             points,
-            values[point_idx],
+            subset,
             vmin=mn,
             vmax=mx,
             markersize=markersize,
             cmap=cmap,
             **style_kwds
         )
+
+    if missing_kwds is not None:
+        if color:
+            if "color" not in missing_kwds:
+                missing_kwds["color"] = color
+
+        merged_kwds = style_kwds.copy()
+        merged_kwds.update(missing_kwds)
+
+        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
 
     if legend and not color:
 
@@ -624,7 +699,25 @@ def plot_dataframe(
                         markeredgewidth=0,
                     )
                 )
-
+            if missing_kwds is not None:
+                if "color" in merged_kwds:
+                    merged_kwds["facecolor"] = merged_kwds["color"]
+                patches.append(
+                    Line2D(
+                        [0],
+                        [0],
+                        linestyle="none",
+                        marker="o",
+                        alpha=merged_kwds.get("alpha", 1),
+                        markersize=10,
+                        markerfacecolor=merged_kwds.get("facecolor", None),
+                        markeredgecolor=merged_kwds.get("edgecolor", None),
+                        markeredgewidth=merged_kwds.get(
+                            "linewidth", 1 if merged_kwds.get("edgecolor", False) else 0
+                        ),
+                    )
+                )
+                categories.append(merged_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
             ax.legend(patches, categories, **legend_kwds)

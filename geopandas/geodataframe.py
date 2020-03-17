@@ -3,7 +3,6 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from six import PY3, string_types
 
 from shapely.geometry import mapping, shape
 
@@ -51,7 +50,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         column on GeoDataFrame.
     """
 
-    _metadata = ["crs", "_geometry_column_name"]
+    _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
@@ -62,6 +61,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
+        self._crs = None
         self.crs = crs
 
         # set_geometry ensures the geometry data have the proper dtype,
@@ -72,11 +72,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # TODO do we want to raise / return normal DataFrame in this case?
         if geometry is None and "geometry" in self.columns:
             # only if we have actual geometry values -> call set_geometry
+            index = self.index
             try:
                 self["geometry"] = _ensure_geometry(self["geometry"].values)
             except TypeError:
                 pass
             else:
+                if self.index is not index:
+                    # With pandas < 1.0 and an empty frame (no rows), the index
+                    # gets reset to a default RangeIndex -> set back the original
+                    # index if needed
+                    self.index = index
                 geometry = "geometry"
 
         if geometry is not None:
@@ -121,10 +127,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Delete column to be used as the new geometry
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
-        crs : str/result of fion.get_crs (optional)
-            Coordinate system to use. If passed, overrides both DataFrame and
-            col's crs. Otherwise, tries to get crs from passed col values or
-            DataFrame.
+        crs : pyproj.CRS, optional
+            Coordinate system to use. The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+            If passed, overrides both DataFrame and col's crs.
+            Otherwise, tries to get crs from passed col values or DataFrame.
 
         Examples
         --------
@@ -133,7 +141,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Returns
         -------
-        geodataframe : GeoDataFrame
+        GeoDataFrame
         """
         # Most of the code here is taken from DataFrame.set_index()
         if inplace:
@@ -173,7 +181,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level)
+        index = frame.index
         frame[geo_column_name] = level
+        if frame.index is not index and len(frame.index) == len(index):
+            # With pandas < 1.0 and an empty frame (no rows), the index gets reset
+            # to a default RangeIndex -> set back the original index if needed
+            frame.index = index
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         frame._invalidate_sindex()
@@ -473,7 +486,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
-    def to_file(self, filename, driver="ESRI Shapefile", schema=None, **kwargs):
+    def to_file(
+        self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
+    ):
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -492,24 +507,39 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
+        index : bool, default None
+            If True, write index into one or more columns (for MultiIndex).
+            Default None writes the index into one or more columns only if
+            the index is named, is a MultiIndex, or has a non-integer data
+            type. If False, no index is written.
+
+            .. versionadded:: 0.7
+                Previously the index was not written.
 
         Notes
         -----
         The extra keyword arguments ``**kwargs`` are passed to fiona.open and
         can be used to write to multi-layer data, store data within archives
         (zip files), etc.
+
+        The format drivers will attempt to detect the encoding of your data, but
+        may fail. In this case, the proper encoding can be specified explicitly
+        by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
+
+        See Also
+        --------
+        GeoSeries.to_file
         """
         from geopandas.io.file import to_file
 
-        to_file(self, filename, driver, schema, **kwargs)
+        to_file(self, filename, driver, schema, index, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
 
         Transform all geometries in a GeoSeries to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
-        be set.  Either ``crs`` in string or dictionary form or an EPSG code
-        may be specified for output.
+        be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
         or projecting entire geometries.  All segments joining points are
@@ -519,13 +549,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        crs : dict or str
-            Output projection parameters as string or in dictionary form.
-        epsg : int
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
         inplace : bool, optional, default: False
             Whether to return a new GeoDataFrame or do the transformation in
             place.
+
+        Returns
+        -------
+        GeoDataFrame
         """
         if inplace:
             df = self
@@ -545,7 +581,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
+        if isinstance(key, str) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()
@@ -563,6 +599,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     #
 
     def merge(self, *args, **kwargs):
+        r"""Merge two ``GeoDataFrame`` objects with a database-style join.
+
+        Returns a ``GeoDataFrame`` if a geometry column is present; otherwise,
+        returns a pandas ``DataFrame``.
+
+        Returns
+        -------
+        GeoDataFrame or DataFrame
+
+        Notes
+        -----
+        The extra arguments ``*args`` and keyword arguments ``**kwargs`` are
+        passed to DataFrame.merge.
+
+        Reference
+        ---------
+        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
+        .DataFrame.merge.html
+
+        """
         result = DataFrame.merge(self, *args, **kwargs)
         geo_col = self._geometry_column_name
         if isinstance(result, DataFrame) and geo_col in result:
@@ -728,9 +784,4 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 
 
-if PY3:
-    DataFrame.set_geometry = _dataframe_set_geometry
-else:
-    import types
-
-    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None, DataFrame)
+DataFrame.set_geometry = _dataframe_set_geometry

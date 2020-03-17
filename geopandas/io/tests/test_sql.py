@@ -5,8 +5,6 @@ configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
 
-from __future__ import absolute_import
-
 import geopandas
 from geopandas import read_file, read_postgis
 
@@ -79,7 +77,7 @@ class TestIO:
 
     def test_read_postgis_get_srid(self, df_nybb):
         """Tests that an SRID can be read from a geodatabase (GH #451)."""
-        crs = {"init": "epsg:4269"}
+        crs = "epsg:4269"
         df_reproj = df_nybb.to_crs(crs)
         created = create_postgis(df_reproj, srid=4269)
         con = connect("test_geopandas")
