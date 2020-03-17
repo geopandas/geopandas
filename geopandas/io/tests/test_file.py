@@ -265,6 +265,9 @@ def test_read_file_remote_geojson_url():
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
 def test_read_file_textio(file_path):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
@@ -274,6 +277,9 @@ def test_read_file_textio(file_path):
     assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
 def test_read_file_bytesio(file_path):
     file_binary_stream = open(file_path, "rb")
     file_bytesio = io.BytesIO(open(file_path, "rb").read())
@@ -283,12 +289,18 @@ def test_read_file_bytesio(file_path):
     assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
 def test_read_file_raw_stream(file_path):
     file_raw_stream = open(file_path, "rb", buffering=0)
     gdf_raw_stream = read_file(file_raw_stream)
     assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
 def test_read_file_pathlib(file_path):
     path_object = pathlib.Path(file_path)
     gdf_path_object = read_file(path_object)
