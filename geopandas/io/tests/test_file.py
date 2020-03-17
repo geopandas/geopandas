@@ -39,6 +39,11 @@ def df_null():
 
 
 @pytest.fixture
+def file_path():
+    return os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
+
+
+@pytest.fixture
 def df_points():
     N = 10
     crs = _CRS
@@ -259,27 +264,34 @@ def test_read_file_remote_geojson_url():
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
-def test_read_file_filelike_objects():
-    path = os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
 
-    file_text_stream = open(path)
-    file_stringio = io.StringIO(open(path).read())
-    path_object = pathlib.Path(path)
-    file_binary_stream = open(path, "rb")
-    file_bytesio = io.BytesIO(open(path, "rb").read())
-    file_raw_stream = open(path, "rb", buffering=0)
-    file_binary_stream = open(path, "rb")
-    gdf_binary_stream = read_file(file_binary_stream)
-    gdf_bytesio = read_file(file_bytesio)
-    gdf_raw_stream = read_file(file_raw_stream)
+def test_read_file_textio(file_path):
+    file_text_stream = open(file_path)
+    file_stringio = io.StringIO(open(file_path).read())
     gdf_text_stream = read_file(file_text_stream)
     gdf_stringio = read_file(file_stringio)
-    gdf_path_object = read_file(path_object)
-    assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
-    assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
-    assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
+
+
+def test_read_file_bytesio(file_path):
+    file_binary_stream = open(file_path, "rb")
+    file_bytesio = io.BytesIO(open(file_path, "rb").read())
+    gdf_binary_stream = read_file(file_binary_stream)
+    gdf_bytesio = read_file(file_bytesio)
+    assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
+
+
+def test_read_file_raw_stream(file_path):
+    file_raw_stream = open(file_path, "rb", buffering=0)
+    gdf_raw_stream = read_file(file_raw_stream)
+    assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
+
+
+def test_read_file_pathlib(file_path):
+    path_object = pathlib.Path(file_path)
+    gdf_path_object = read_file(path_object)
     assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
 
 
