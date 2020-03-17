@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
+import io
 import os
 import pathlib
 import sys
@@ -257,6 +258,29 @@ def test_read_file_remote_geojson_url():
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
+
+def test_read_file_filelike_objects():
+    path = os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
+
+    file_text_stream = open(path)
+    file_stringio = io.StringIO(open(path).read())
+    path_object = pathlib.Path(path)
+    file_binary_stream = open(path, "rb")
+    file_bytesio = io.BytesIO(open(path, "rb").read())
+    file_raw_stream = open(path, "rb", buffering=0)
+    file_binary_stream = open(path, "rb")
+    gdf_binary_stream = read_file(file_binary_stream)
+    gdf_bytesio = read_file(file_bytesio)
+    gdf_raw_stream = read_file(file_raw_stream)
+    gdf_text_stream = read_file(file_text_stream)
+    gdf_stringio = read_file(file_stringio)
+    gdf_path_object = read_file(path_object)
+    assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
+    assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
+    assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
 
 
 def test_read_file_filtered(df_nybb):
