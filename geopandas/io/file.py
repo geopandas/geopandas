@@ -35,7 +35,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filepath_or_buffer, bbox=None, mask=None, rows=None, **kwargs):
+def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -43,9 +43,10 @@ def read_file(filepath_or_buffer, bbox=None, mask=None, rows=None, **kwargs):
 
     Parameters
     ----------
-    filepath_or_buffer: str
+    filename: str, path object or file-like object
         Either the absolute or relative path to the file or URL to
-        be opened.
+        be opened, or any object with a read() method(such as an open file
+        or StringIO)
     bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
@@ -78,15 +79,15 @@ def read_file(filepath_or_buffer, bbox=None, mask=None, rows=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
-    if _is_url(filepath_or_buffer):
-        req = _urlopen(filepath_or_buffer)
+    if _is_url(filename):
+        req = _urlopen(filename)
         path_or_bytes = req.read()
         reader = fiona.BytesCollection
-    elif isinstance(filepath_or_buffer, io.TextIOBase):
-        path_or_bytes = filepath_or_buffer.read()
+    elif isinstance(filename, io.TextIOBase):
+        path_or_bytes = filename.read()
         reader = fiona.open
     else:
-        path_or_bytes = filepath_or_buffer
+        path_or_bytes = filename
         reader = fiona.open
 
     with fiona_env():

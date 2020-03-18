@@ -4,6 +4,7 @@ from distutils.version import LooseVersion
 import io
 import os
 import pathlib
+import tempfile
 import sys
 
 import numpy as np
@@ -305,6 +306,28 @@ def test_read_file_pathlib(file_path):
     path_object = pathlib.Path(file_path)
     gdf_path_object = read_file(path_object)
     assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_tempfile():
+    temp = tempfile.TemporaryFile()
+    temp.write(b'''
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0, 0]
+      },
+      "properties": {
+        "name": "Null Island"
+      }
+    }
+    ''')
+    temp.seek(0)
+    gdf_tempfile = geopandas.read_file(temp)
+    assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
+    temp.close()
 
 
 def test_read_file_filtered(df_nybb):
