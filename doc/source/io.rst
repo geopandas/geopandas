@@ -41,6 +41,17 @@ If there are multiple datasets in a folder in the ZIP file, you also have to spe
 
     zipfile = "zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data/gadm36_AFG_1.shp"
 
+It is also possible to read any file-like objects with a read() method, such as a file handler (e.g. via builtin open function) or StringIO::
+
+    filename = "test.geojson"
+    file = open(filename)
+    df = geopandas.read_file(file)
+
+You can also read path objects::
+
+    import pathlib
+    path_object = pathlib.path(filename)
+    df = geopandas.read_file(path_object)
 
 *geopandas* can also get data from a PostGIS database using the :func:`geopandas.read_postgis` command.
 
