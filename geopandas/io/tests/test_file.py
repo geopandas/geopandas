@@ -307,12 +307,14 @@ def test_read_file_pathlib(file_path):
     gdf_path_object = read_file(path_object)
     assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
 
+
 @pytest.mark.skipif(
     not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
 )
 def test_read_file_tempfile():
     temp = tempfile.TemporaryFile()
-    temp.write(b'''
+    temp.write(
+        b"""
     {
       "type": "Feature",
       "geometry": {
@@ -323,7 +325,8 @@ def test_read_file_tempfile():
         "name": "Null Island"
       }
     }
-    ''')
+    """
+    )
     temp.seek(0)
     gdf_tempfile = geopandas.read_file(temp)
     assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
