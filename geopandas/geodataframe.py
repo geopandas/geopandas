@@ -100,7 +100,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if self._geometry_column_name not in self:
             raise AttributeError(
                 "No geometry data set yet (expected in"
-                " column '%s'." % self._geometry_column_name
+                " column '%s'.)" % self._geometry_column_name
             )
         return self[self._geometry_column_name]
 
@@ -425,6 +425,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         if na not in ["null", "drop", "keep"]:
             raise ValueError("Unknown na method {0}".format(na))
+
+        if self._geometry_column_name not in self:
+            raise AttributeError(
+                "No geometry data set (expected in"
+                " column '%s')." % self._geometry_column_name
+            )
 
         ids = np.array(self.index, copy=False)
         geometries = np.array(self[self._geometry_column_name], copy=False)
