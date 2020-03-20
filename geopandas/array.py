@@ -537,7 +537,13 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
-        return _unary_op("area", self, null_value=np.nan)
+        if self.crs.is_geographic:
+            geod = self.crs.get_geod()
+            a_p = [geod.geometry_area_perimeter(geom) for geom in self.data]
+            a, p = zip(*a_p)
+            return np.abs(np.array(a))
+        else:
+            return _unary_op("area", self, null_value=np.nan)
 
     @property
     def length(self):
