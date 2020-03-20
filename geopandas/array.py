@@ -12,6 +12,7 @@ import shapely.geometry
 from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
+from pyproj import CRS
 
 from collections.abc import Iterable
 
@@ -67,7 +68,7 @@ def _isna(value):
 # -----------------------------------------------------------------------------
 
 
-def from_shapely(data):
+def from_shapely(data, crs=None):
     """
     Convert a list or array of shapely objects to a GeometryArray.
 
@@ -91,7 +92,7 @@ def from_shapely(data):
 
     aout = np.empty(n, dtype=object)
     aout[:] = out
-    return GeometryArray(aout)
+    return GeometryArray(aout, crs=crs)
 
 
 def to_shapely(geoms):
@@ -431,7 +432,7 @@ class GeometryArray(ExtensionArray):
 
     _dtype = GeometryDtype()
 
-    def __init__(self, data):
+    def __init__(self, data, crs=None):
         if isinstance(data, self.__class__):
             data = data.data
         elif not isinstance(data, np.ndarray):
@@ -444,6 +445,26 @@ class GeometryArray(ExtensionArray):
                 "'data' should be a 1-dimensional array of geometry objects."
             )
         self.data = data
+        self.crs = crs
+
+    @property
+    def crs(self):
+        """
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
+        object.
+
+        Returns None if the CRS is not set, and to set the value it
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+        """
+        return self._crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs"""
+        self._crs = None if not value else CRS.from_user_input(value)
 
     @property
     def dtype(self):

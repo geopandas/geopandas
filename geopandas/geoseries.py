@@ -126,6 +126,7 @@ class GeoSeries(GeoPandasBase, Series):
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values)
+                data.crs = crs
             except TypeError:
                 warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
                 return s
@@ -134,7 +135,11 @@ class GeoSeries(GeoPandasBase, Series):
 
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-        self.crs = crs
+        if data.crs:
+            # check and warn if crs and data.crs different
+            self.crs = data.crs
+        else:
+            self.crs = crs
         self._invalidate_sindex()
         return self
 

@@ -15,7 +15,7 @@ from geopandas.plotting import plot_dataframe
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _ensure_geometry(data):
+def _ensure_geometry(data, crs=None):
     """
     Ensure the data is of geometry dtype or converted to it.
 
@@ -28,10 +28,10 @@ def _ensure_geometry(data):
         return data
     else:
         if isinstance(data, Series):
-            out = from_shapely(np.asarray(data))
+            out = from_shapely(np.asarray(data), crs=crs)
             return GeoSeries(out, index=data.index, name=data.name)
         else:
-            out = from_shapely(data)
+            out = from_shapely(data, crs=crs)
             return out
 
 
@@ -59,10 +59,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry = kwargs.pop("geometry", None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
-        # need to set this before calling self['geometry'], because
-        # getitem accesses crs
-        self._crs = None
-        self.crs = crs
+        self._gdf_crs = crs  # should be pyproj.CRS
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -74,7 +71,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # only if we have actual geometry values -> call set_geometry
             index = self.index
             try:
-                self["geometry"] = _ensure_geometry(self["geometry"].values)
+                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
                 pass
             else:
@@ -86,7 +83,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 geometry = "geometry"
 
         if geometry is not None:
-            self.set_geometry(geometry, inplace=True)
+            self.set_geometry(geometry, inplace=True, crs=crs)
         self._invalidate_sindex()
 
     def __setattr__(self, attr, val):
@@ -150,7 +147,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self.copy()
 
         if not crs:
-            crs = getattr(col, "crs", self.crs)
+            crs = getattr(col, "crs", None)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -174,13 +171,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if to_remove:
             del frame[to_remove]
 
-        if isinstance(level, GeoSeries) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
+        # if isinstance(level, GeoSeries) and level.crs != crs:
+        #     # Avoids caching issues/crs sharing issues
+        #     level = level.copy()
+        #     level.crs = crs
 
         # Check that we are using a listlike of geometries
-        level = _ensure_geometry(level)
+        level = _ensure_geometry(level, crs=crs)
         index = frame.index
         frame[geo_column_name] = level
         if frame.index is not index and len(frame.index) == len(index):
@@ -589,12 +586,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_col = self._geometry_column_name
         if isinstance(key, str) and key == geo_col:
             result.__class__ = GeoSeries
-            result.crs = self.crs
+            result.crs = result.values.crs
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
-            result.crs = self.crs
             result._geometry_column_name = geo_col
+            result.crs = result.geometry.values.crs
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
