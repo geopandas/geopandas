@@ -18,7 +18,6 @@ try:
 except ImportError:
     geos = None
 
-from ._compat import PANDAS_GE_024, PANDAS_GE_10
 from . import _compat as compat
 from . import _vectorized as vectorized
 
@@ -46,7 +45,7 @@ class GeometryDtype(ExtensionDtype):
         return GeometryArray
 
 
-if PANDAS_GE_024:
+if compat.PANDAS_GE_024:
     from pandas.api.extensions import register_extension_dtype
 
     register_extension_dtype(GeometryDtype)
@@ -78,6 +77,7 @@ def _geom_to_shapely(geom):
     if geom is None:
         return None
     elif pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
+        # empty point does not roundtrip through WKB
         return shapely.wkt.loads("POINT EMPTY")
     else:
         return shapely.wkb.loads(pygeos.to_wkb(geom))
@@ -89,6 +89,7 @@ def _shapely_to_geom(geom):
     if geom is None:
         return None
     elif geom.is_empty and geom.geom_type == "Point":
+        # empty point does not roundtrip through WKB
         return pygeos.from_wkt("POINT EMPTY")
     else:
         return pygeos.from_wkb(geom.wkb)
@@ -206,7 +207,7 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return _geom_to_shapely(self.data[idx])
         # array-like, slice
-        if PANDAS_GE_10:
+        if compat.PANDAS_GE_10:
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
             # to numpy array, pass-through non-array-like indexers
             idx = pd.api.indexers.check_array_indexer(self, idx)
@@ -216,7 +217,7 @@ class GeometryArray(ExtensionArray):
             raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
-        if PANDAS_GE_10:
+        if compat.PANDAS_GE_10:
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
             # keys to numpy array, pass-through non-array-like indexers
             key = pd.api.indexers.check_array_indexer(self, key)

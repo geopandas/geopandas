@@ -60,7 +60,7 @@ class Options(object):
             else:
                 doc_text = u"No description available."
             doc_text = indent(doc_text, prefix="    ")
-            description += doc_text
+            description += doc_text + "\n"
         space = "\n  "
         description = description.replace("\n", space)
         return "{}({}{})".format(cls, space, description)

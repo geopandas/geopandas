@@ -59,6 +59,7 @@ def _pygeos_to_shapely(geom):
     if geom is None:
         return None
     elif pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
+        # empty point does not roundtrip through WKB
         return shapely.wkt.loads("POINT EMPTY")
     else:
         return shapely.wkb.loads(pygeos.to_wkb(geom))
@@ -68,6 +69,7 @@ def _shapely_to_pygeos(geom):
     if geom is None:
         return None
     elif geom.is_empty and geom.geom_type == "Point":
+        # empty point does not roundtrip through WKB
         return pygeos.from_wkt("POINT EMPTY")
     else:
         return pygeos.from_wkb(geom.wkb)
@@ -79,12 +81,9 @@ def from_shapely(data):
     array of validated geometry elements.
 
     """
-    n = len(data)
-
     out = []
 
-    for idx in range(n):
-        geom = data[idx]
+    for geom in data:
         if compat.USE_PYGEOS and isinstance(geom, pygeos.Geometry):
             out.append(geom)
         elif isinstance(geom, BaseGeometry):
@@ -106,7 +105,9 @@ def from_shapely(data):
     if compat.USE_PYGEOS:
         return np.array(out, dtype=object)
     else:
-        aout = np.empty(n, dtype=object)
+        # numpy can expand geometry collections into 2D arrays, use this
+        # two-step construction to avoid this
+        aout = np.empty(len(data), dtype=object)
         aout[:] = out
         return aout
 
@@ -129,19 +130,16 @@ def from_wkb(data):
 
     import shapely.wkb
 
-    n = len(data)
-
     out = []
 
-    for idx in range(n):
-        geom = data[idx]
+    for geom in data:
         if geom is not None and len(geom):
             geom = shapely.wkb.loads(geom)
         else:
             geom = None
         out.append(geom)
 
-    aout = np.empty(n, dtype=object)
+    aout = np.empty(len(data), dtype=object)
     aout[:] = out
     return aout
 
@@ -163,12 +161,9 @@ def from_wkt(data):
 
     import shapely.wkt
 
-    n = len(data)
-
     out = []
 
-    for idx in range(n):
-        geom = data[idx]
+    for geom in data:
         if geom is not None and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
@@ -177,7 +172,7 @@ def from_wkt(data):
             geom = None
         out.append(geom)
 
-    aout = np.empty(n, dtype=object)
+    aout = np.empty(len(data), dtype=object)
     aout[:] = out
     return aout
 

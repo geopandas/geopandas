@@ -134,11 +134,15 @@ def test_from_wkb():
     assert all(v.equals(t) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # XXX pygeos does not support empty strings
-    L_wkb.extend([None])
+    # TODO(pygeos) does not support empty strings
+    if compat.USE_PYGEOS:
+        L_wkb.extend([None])
+    else:
+        L_wkb.extend([b"", None])
     res = from_wkb(L_wkb)
     assert res[-1] is None
-    # assert res[-2] is None
+    if not compat.USE_PYGEOS:
+        assert res[-2] is None
 
     # single MultiPolygon
     multi_poly = shapely.geometry.MultiPolygon(
@@ -188,12 +192,15 @@ def test_from_wkt(string_type):
     assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # L_wkt.extend([f(""), None])
-    # XXX pygeos does not support empty strings
-    L_wkt.extend([None])
+    # TODO(pygeos) does not support empty strings
+    if compat.USE_PYGEOS:
+        L_wkt.extend([None])
+    else:
+        L_wkt.extend([f(""), None])
     res = from_wkt(L_wkt)
     assert res[-1] is None
-    # assert res[-2] is None
+    if not compat.USE_PYGEOS:
+        assert res[-2] is None
 
     # single MultiPolygon
     multi_poly = shapely.geometry.MultiPolygon(
@@ -323,9 +330,10 @@ def test_unary_geo(attr):
 
     if attr == "boundary":
         # pygeos returns None for empty geometries
-        # boundary raises for empty geometry
-        # with pytest.raises(Exception):
-        #     T.boundary
+        if not compat.USE_PYGEOS:
+            # boundary raises for empty geometry
+            with pytest.raises(Exception):
+                T.boundary
 
         values = triangle_no_missing + [None]
         A = from_shapely(values)
@@ -556,6 +564,7 @@ def test_binary_project(normalized):
 @pytest.mark.parametrize("resolution", [16, 25])
 def test_buffer(resolution, cap_style, join_style):
     if compat.USE_PYGEOS:
+        # TODO(pygeos) need to further investigate why this test fails
         if cap_style == 1 and join_style == 3:
             pytest.skip("failing TODO")
 
