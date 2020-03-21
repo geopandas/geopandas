@@ -17,6 +17,7 @@ PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
 # -----------------------------------------------------------------------------
 
 USE_PYGEOS = None
+PYGEOS_SHAPELY_COMPAT = None
 
 
 def set_use_pygeos(val=None):
@@ -30,6 +31,7 @@ def set_use_pygeos(val=None):
     Alternatively, pass a value here to force a True/False value.
     """
     global USE_PYGEOS
+    global PYGEOS_SHAPELY_COMPAT
 
     if val is not None:
         USE_PYGEOS = bool(val)
@@ -51,12 +53,34 @@ def set_use_pygeos(val=None):
         try:
             import pygeos  # noqa
 
+            # validate the pygeos version
             if not str(pygeos.__version__) >= LooseVersion("0.6"):
                 raise ImportError(
                     "PyGEOS >= 0.6 is required, version {0} is installed".format(
                         pygeos.__version__
                     )
                 )
+
+            # Check whether Shapely and PyGEOS use the same GEOS version.
+            # Based on PyGEOS from_shapely implementation.
+
+            from shapely.geos import geos_version_string as shapely_geos_version
+            from pygeos import geos_capi_version_string
+
+            # shapely has something like: "3.6.2-CAPI-1.10.2 4d2925d6"
+            # pygeos has something like: "3.6.2-CAPI-1.10.2"
+            if not shapely_geos_version.startswith(geos_capi_version_string):
+                warnings.warn(
+                    "The Shapely GEOS version ({}) is incompatible with the GEOS "
+                    "version PyGEOS was compiled with ({}). Conversions between both "
+                    "will be slow.".format(
+                        shapely_geos_version, geos_capi_version_string
+                    )
+                )
+                PYGEOS_SHAPELY_COMPAT = False
+            else:
+                PYGEOS_SHAPELY_COMPAT = True
+
         except ImportError:
             raise ImportError(
                 "To use the PyGEOS speed-ups within GeoPandas, you need to install "

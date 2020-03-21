@@ -72,27 +72,23 @@ def _isna(value):
 
 
 def _geom_to_shapely(geom):
+    """
+    Convert internal representation (PyGEOS or Shapely) to external Shapely object.
+    """
     if not compat.USE_PYGEOS:
         return geom
-    if geom is None:
-        return None
-    elif pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
-        # empty point does not roundtrip through WKB
-        return shapely.wkt.loads("POINT EMPTY")
     else:
-        return shapely.wkb.loads(pygeos.to_wkb(geom))
+        return vectorized._pygeos_to_shapely(geom)
 
 
 def _shapely_to_geom(geom):
+    """
+    Convert external Shapely object to internal representation (PyGEOS or Shapely).
+    """
     if not compat.USE_PYGEOS:
         return geom
-    if geom is None:
-        return None
-    elif geom.is_empty and geom.geom_type == "Point":
-        # empty point does not roundtrip through WKB
-        return pygeos.from_wkt("POINT EMPTY")
     else:
-        return pygeos.from_wkb(geom.wkb)
+        return vectorized._shapely_to_pygeos(geom)
 
 
 def _is_scalar_geometry(geom):

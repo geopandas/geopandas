@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 
 import shapely.geometry
+import shapely.geos
 import shapely.wkb
 import shapely.wkt
 
@@ -58,7 +59,13 @@ def _isna(value):
 def _pygeos_to_shapely(geom):
     if geom is None:
         return None
-    elif pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
+
+    if compat.PYGEOS_SHAPELY_COMPAT:
+        geom = shapely.geos.lgeos.GEOSGeom_clone(geom._ptr)
+        return shapely.geometry.base.geom_factory(geom)
+
+    # fallback going through WKB
+    if pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
         # empty point does not roundtrip through WKB
         return shapely.wkt.loads("POINT EMPTY")
     else:
@@ -68,7 +75,12 @@ def _pygeos_to_shapely(geom):
 def _shapely_to_pygeos(geom):
     if geom is None:
         return None
-    elif geom.is_empty and geom.geom_type == "Point":
+
+    if compat.PYGEOS_SHAPELY_COMPAT:
+        return pygeos.from_shapely(geom)
+
+    # fallback going through WKB
+    if geom.is_empty and geom.geom_type == "Point":
         # empty point does not roundtrip through WKB
         return pygeos.from_wkt("POINT EMPTY")
     else:
@@ -81,6 +93,20 @@ def from_shapely(data):
     array of validated geometry elements.
 
     """
+    # First try a fast path for pygeos if possible, but do this in a try-except
+    # block because pygeos.from_shapely only handles Shapely objects, while
+    # the rest of this function is more forgiving (also __geo_interface__).
+    if compat.USE_PYGEOS and compat.PYGEOS_SHAPELY_COMPAT:
+        if not isinstance(data, np.ndarray):
+            arr = np.empty(len(data), dtype=object)
+            arr[:] = data
+        else:
+            arr = data
+        try:
+            return pygeos.from_shapely(arr)
+        except TypeError:
+            pass
+
     out = []
 
     for geom in data:
@@ -93,6 +119,9 @@ def from_shapely(data):
                 out.append(geom)
         elif hasattr(geom, "__geo_interface__"):
             geom = shapely.geometry.asShape(geom)
+            # asShape returns GeometryProxy -> trigger actual materialization
+            # with one of its methods
+            geom.wkb
             if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:
