@@ -19,7 +19,7 @@ matrix:
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
   allow_failures:
-    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
 install:
   # Install conda
