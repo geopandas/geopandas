@@ -125,8 +125,7 @@ class GeoSeries(GeoPandasBase, Series):
                     return s
             # try to convert to GeometryArray, if fails return plain Series
             try:
-                data = from_shapely(s.values)
-                data.crs = crs
+                data = from_shapely(s.values, crs)
             except TypeError:
                 warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
                 return s
@@ -139,6 +138,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         if hasattr(data, "crs") and data.crs:
             # check and warn if crs and data.crs different
+            # make proper priority
             self.crs = data.crs
         elif hasattr(data, "values"):
             if hasattr(data.values, "crs") and data.values.crs:

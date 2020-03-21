@@ -445,6 +445,7 @@ class GeometryArray(ExtensionArray):
                 "'data' should be a 1-dimensional array of geometry objects."
             )
         self.data = data
+
         self.crs = crs
 
     @property
