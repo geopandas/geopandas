@@ -12,7 +12,7 @@ from shapely.geometry import Point
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file
-from geopandas.array import GeometryArray, GeometryDtype
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
@@ -76,6 +76,12 @@ class TestDataFrame:
         # good if this changed in the future
         assert not isinstance(df["geometry"], GeoSeries)
         assert isinstance(df["location"], GeoSeries)
+
+        df["buff"] = df.buffer(1)
+        assert isinstance(df["buff"], GeoSeries)
+
+        df["array"] = from_shapely([Point(x, y) for x, y in zip(range(5), range(5))])
+        assert isinstance(df["array"], GeoSeries)
 
         data["geometry"] = [Point(x + 1, y - 1) for x, y in zip(range(5), range(5))]
         df = GeoDataFrame(data, crs=self.crs)
