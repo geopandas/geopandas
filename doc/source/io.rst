@@ -114,6 +114,12 @@ GeoDataFrames can be exported to many different standard formats using the
 :meth:`geopandas.GeoDataFrame.to_file` method.
 For a full list of supported formats, type ``import fiona; fiona.supported_drivers``.
 
+.. note::
+
+    GeoDataFrame can contain more field types than supported by most of the file formats. For example tuples or lists
+    can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
+    Before saving to a file, they need to be converted to a format supported by a selected driver.
+
 **Writing to Shapefile**::
 
     countries_gdf.to_file("countries.shp")
