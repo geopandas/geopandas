@@ -84,8 +84,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     self.index = index
                 geometry = "geometry"
 
+        # note - simplify condition
         if geometry is not None:
-            self.set_geometry(geometry, inplace=True, crs=crs)
+            try:
+                if isinstance(geometry, GeometryDtype):
+                    if getattr(geometry, "crs", None):
+                        self.set_geometry(geometry, inplace=True)
+                    else:
+                        self.set_geometry(geometry, inplace=True, crs=crs)
+
+                elif type(geometry) == str and isinstance(
+                    self[geometry], GeometryDtype
+                ):
+                    if getattr(self[geometry], "crs", None):
+                        self.set_geometry(geometry, inplace=True)
+                    else:
+                        self.set_geometry(geometry, inplace=cdTrue, crs=crs)
+
+                else:
+                    self.set_geometry(geometry, inplace=True, crs=crs)
+            except KeyError:
+                raise ValueError("Unknown column %s" % geometry)
+
         else:
             self.crs = crs
         self._invalidate_sindex()
@@ -661,8 +681,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             super(GeoDataFrame, self).__setitem__(key, value)
 
     def copy(self, deep=True):
+        """
+        If the columns is GeometryDtype, we need to preserve CRS.
+
+        TODO: simplify
+        """
         copy = super(GeoDataFrame, self).copy(deep)
-        copy.crs = self.crs
+        geoms = self.dtypes == "geometry"
+        for col, g in geoms.iteritems():
+            if g:
+                copy[col].crs = self[col].crs
         return copy
 
     #
