@@ -6,6 +6,8 @@ from pandas import DataFrame, Series
 
 from shapely.geometry import mapping, shape
 
+from pyproj import CRS
+
 from geopandas.array import GeometryArray, from_shapely
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
@@ -59,7 +61,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry = kwargs.pop("geometry", None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
-        self._gdf_crs = crs  # should be pyproj.CRS
+        self._crs = None  # should be pyproj.CRS
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -84,6 +86,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if geometry is not None:
             self.set_geometry(geometry, inplace=True, crs=crs)
+        else:
+            self.crs = crs
         self._invalidate_sindex()
 
     def __setattr__(self, attr, val):
@@ -147,7 +151,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self.copy()
 
         if not crs:
-            crs = getattr(col, "crs", None)
+            if hasattr(col, "crs"):
+                crs = getattr(col, "crs", self._crs)
+            elif hasattr(col, "values"):
+                if hasattr(col.values, "crs"):
+                    crs = getattr(col.values, "crs", self._crs)
+            else:
+                crs = self._crs
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -221,6 +231,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             return self.rename(columns={geometry_col: col}).set_geometry(col, inplace)
         self.rename(columns={geometry_col: col}, inplace=inplace)
         self.set_geometry(col, inplace=inplace)
+
+    @property
+    def crs(self):
+        """
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
+        object.
+
+        Returns None if the CRS is not set, and to set the value it
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+        """
+        return self._crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs"""
+        if self._geometry_column_name not in self:
+            self._crs = None if not value else CRS.from_user_input(value)
+        else:
+            self.geometry.values.crs = None if not value else value
+            self._crs = self.geometry.values.crs
 
     @classmethod
     def from_file(cls, filename, **kwargs):

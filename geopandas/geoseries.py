@@ -135,9 +135,14 @@ class GeoSeries(GeoPandasBase, Series):
 
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-        if data.crs:
+        self._crs = None
+
+        if hasattr(data, "crs") and data.crs:
             # check and warn if crs and data.crs different
             self.crs = data.crs
+        elif hasattr(data, "values"):
+            if hasattr(data.values, "crs") and data.values.crs:
+                self.crs = getattr(data.values, "crs")
         else:
             self.crs = crs
         self._invalidate_sindex()
