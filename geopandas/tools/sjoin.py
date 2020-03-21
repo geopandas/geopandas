@@ -6,6 +6,7 @@ import pandas as pd
 from shapely import prepared
 
 from geopandas import GeoDataFrame
+from geopandas import _compat as compat
 
 
 def sjoin(
@@ -160,18 +161,17 @@ def sjoin(
 
         check_predicates = np.vectorize(predicate_d[op])
 
-        result = pd.DataFrame(
-            np.column_stack(
-                [
-                    l_idx,
-                    r_idx,
-                    check_predicates(
-                        left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
-                        right_df[right_df.geometry.name][r_idx],
-                    ),
-                ]
+        if compat.USE_PYGEOS:
+            res = check_predicates(
+                left_df.geometry[l_idx], right_df[right_df.geometry.name][r_idx]
             )
-        )
+        else:
+            res = check_predicates(
+                left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
+                right_df[right_df.geometry.name][r_idx],
+            )
+
+        result = pd.DataFrame(np.column_stack([l_idx, r_idx, res]))
 
         result.columns = ["_key_left", "_key_right", "match_bool"]
         result = pd.DataFrame(result[result["match_bool"] == 1]).drop(
