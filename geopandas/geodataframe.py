@@ -61,7 +61,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry = kwargs.pop("geometry", None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
-        self._crs = None  # should be pyproj.CRS
+        self._crs = None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -224,10 +224,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if to_remove:
             del frame[to_remove]
 
-        # if isinstance(level, GeoSeries) and level.crs != crs:
-        #     # Avoids caching issues/crs sharing issues
-        #     level = level.copy()
-        #     level.crs = crs
+        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
+            # Avoids caching issues/crs sharing issues
+            level = level.copy()
+            level.crs = crs
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
@@ -300,7 +300,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 self._crs = self.geometry.values.crs
             else:
                 # column called 'geometry' without geometry
-                self._crs = None
+                self._crs = None if not value else CRS.from_user_input(value)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -662,7 +662,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
         GeoDataFrame.
         """
-        crs = self.crs
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
@@ -671,35 +670,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
+            result.crs = self.crs
             result._geometry_column_name = geo_col
-            result.crs = crs
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
-
-    # def __setitem__(self, key, value):
-    #     """
-    #     If the value is GeometryDtype, we need to preserve CRS.
-    #     TODO: check GeoDataFrame as value
-    #     """
-    #     if hasattr(value, "dtype"):
-    #         if isinstance(value.dtype, GeometryDtype):
-    #             if getattr(value, "crs"):
-    #                 crs = getattr(value, "crs")
-    #             else:
-    #                 crs = self.crs
-    #             if isinstance(value, (GeometryArray, GeoSeries)):
-    #                 super(GeoDataFrame, self).__setitem__(key, value)
-    #                 self[key].crs = crs
-    #                 if key == self._geometry_column_name:
-    #                     self.crs = crs
-    #             else:
-    #                 super(GeoDataFrame, self).__setitem__(key, value)
-    #         else:
-    #             super(GeoDataFrame, self).__setitem__(key, value)
-    #     else:
-    #         super(GeoDataFrame, self).__setitem__(key, value)
 
     #
     # Implement pandas methods

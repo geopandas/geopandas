@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import numpy as np
+import pandas as pd
 
 from shapely.geometry import Point
 import pyproj
@@ -335,6 +336,11 @@ class TestGeometryArrayCRS:
     def test_from_wkt(self):
         L_wkt = [p.wkt for p in self.geoms]
         arr = from_wkt(L_wkt, crs=27700)
+        assert arr.crs == self.osgb
+
+    def test_points_from_xy(self):
+        df = pd.DataFrame([{"x": x, "y": x, "z": x} for x in range(10)])
+        arr = points_from_xy(df["x"], df["y"], crs=27700)
         assert arr.crs == self.osgb
 
     # setting CRS in GeoSeries should not set it in passed array without CRS
