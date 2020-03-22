@@ -81,6 +81,12 @@ class GeoSeries(GeoPandasBase, Series):
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
+
+        # make a copy to avoid setting CRS to passed data if there is none
+        if hasattr(data, "crs") and not data.crs and crs:
+            print("0")
+            data = data.copy()
+
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
                 if data.blocks[0].ndim == 2:
@@ -143,6 +149,8 @@ class GeoSeries(GeoPandasBase, Series):
         elif hasattr(data, "values"):
             if hasattr(data.values, "crs") and data.values.crs:
                 self.crs = getattr(data.values, "crs")
+            else:
+                self.crs = crs
         else:
             self.crs = crs
         self._invalidate_sindex()
@@ -285,6 +293,14 @@ class GeoSeries(GeoPandasBase, Series):
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
         return self
+
+    def copy(self, *args, **kwargs):
+        """
+        Needed to retain crs in GeometryArray during copy.
+        """
+        copy = super(GeoSeries, self).copy(*args, **kwargs)
+        copy.crs = self.crs
+        return copy
 
     def isna(self):
         """

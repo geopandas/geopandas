@@ -159,8 +159,7 @@ class TestDataFrame:
         assert_geoseries_equal(df["geometry"], new_geom)
 
         # new crs
-        # note - failing as new_geom already has CRS which is different
-        gs = GeoSeries(new_geom, crs="epsg:3857")
+        gs = new_geom.to_crs(crs="epsg:3857")
         df.geometry = gs
         assert df.crs == "epsg:3857"
 
@@ -209,7 +208,7 @@ class TestDataFrame:
 
         df2 = self.df.set_geometry(geom)
         assert self.df is not df2
-        assert_geoseries_equal(df2.geometry, geom)
+        assert_geoseries_equal(df2.geometry, geom, check_crs=False)
         assert_geoseries_equal(self.df.geometry, original_geom)
         assert_geoseries_equal(self.df["geometry"], self.df.geometry)
         # unknown column
@@ -221,7 +220,6 @@ class TestDataFrame:
             self.df.set_geometry(self.df)
 
         # new crs - setting should default to GeoSeries' crs
-        # note - now failing as it defaults to array crs
         gs = GeoSeries(geom, crs="epsg:3857")
         new_df = self.df.set_geometry(gs)
         assert new_df.crs == "epsg:3857"

@@ -5,7 +5,8 @@ import numpy as np
 from shapely.geometry import Point
 import pyproj
 
-from geopandas import GeoDataFrame, points_from_xy
+from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
+from geopandas.array import from_shapely, from_wkb, from_wkt
 
 from geopandas.testing import assert_geodataframe_equal
 import pytest
@@ -128,3 +129,217 @@ def test_skip_exact_same():
     df = df_epsg26918()
     utm = df.to_crs(df.crs)
     assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
+# Test CRS on GeometryArray level
+class TestGeometryArrayCRS:
+    def setup_method(self):
+        self.osgb = pyproj.CRS(27700)
+        self.wgs = pyproj.CRS(4326)
+
+        self.geoms = [Point(0, 0), Point(1, 1)]
+
+    def test_array(self):
+        arr = from_shapely(self.geoms)
+        arr.crs = 27700
+        assert arr.crs == self.osgb
+
+        arr = from_shapely(self.geoms, crs=27700)
+        assert arr.crs == self.osgb
+
+    def test_series(self):
+        s = GeoSeries(crs=27700)
+        assert s.crs == self.osgb
+        assert s.values.crs == self.osgb
+
+        arr = from_shapely(self.geoms)
+        s = GeoSeries(arr, crs=27700)
+        assert s.crs == self.osgb
+        assert s.values.crs == self.osgb
+
+        # manually change CRS
+        s.crs = 4326
+        assert s.crs == self.wgs
+        assert s.values.crs == self.wgs
+
+        s = GeoSeries(self.geoms, crs=27700)
+        assert s.crs == self.osgb
+        assert s.values.crs == self.osgb
+
+        arr = from_shapely(self.geoms, crs=27700)
+        s = GeoSeries(arr)
+        assert s.crs == self.osgb
+        assert s.values.crs == self.osgb
+
+    def test_dataframe(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        s = GeoSeries(arr)
+        df = GeoDataFrame(geometry=s)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # different passed CRS than array CRS is ignored
+        # TODO: raise warning?
+        df = GeoDataFrame(geometry=s, crs=4326)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # manually change CRS
+        df = GeoDataFrame(geometry=s)
+        df.crs = 4326
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+
+        df = GeoDataFrame(self.geoms, columns=["geom"], crs=27700)
+        assert df.crs == self.osgb
+        df = df.set_geometry("geom")
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+        assert df.geom.crs == self.osgb
+        assert df.geom.values.crs == self.osgb
+
+        df = GeoDataFrame(geometry=self.geoms, crs=27700)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        df = GeoDataFrame(crs=27700)
+        df = df.set_geometry(self.geoms)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # new geometry with set CRS has priority over GDF CRS
+        df = GeoDataFrame(crs=27700)
+        df = df.set_geometry(self.geoms, crs=4326)
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+
+        df = GeoDataFrame()
+        df = df.set_geometry(s)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        df = GeoDataFrame()
+        df = df.set_geometry(arr)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+    def test_read_file(self):
+        nybb_filename = datasets.get_path("nybb")
+        df = read_file(nybb_filename)
+        assert df.crs == pyproj.CRS(2263)
+        assert df.geometry.crs == pyproj.CRS(2263)
+        assert df.geometry.values.crs == pyproj.CRS(2263)
+
+    def test_multiple_geoms(self):
+        arr = from_shapely(self.geoms, crs=4326)
+        s = GeoSeries(self.geoms, crs=27700)
+        df = GeoDataFrame(arr, geometry=s, columns=["col1"])
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+        assert df.col1.crs == self.wgs
+        assert df.col1.values.crs == self.wgs
+
+        df = df.set_geometry("col1")
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+        assert df["geometry"].crs == self.osgb
+        assert df["geometry"].values.crs == self.osgb
+
+        df["geom2"] = s
+        df["geom3"] = s.values
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+        assert df.geom2.crs == self.osgb
+        assert df.geom2.values.crs == self.osgb
+        assert df.geom3.crs == self.osgb
+        assert df.geom3.values.crs == self.osgb
+
+    def test_copy(self):
+        arr = from_shapely(self.geoms, crs=4326)
+        s = GeoSeries(self.geoms, crs=27700)
+        df = GeoDataFrame(arr, geometry=s, columns=["col1"])
+
+        arr_copy = arr.copy()
+        assert arr_copy.crs == arr.crs
+
+        s_copy = s.copy()
+        assert s_copy.crs == s.crs
+        assert s_copy.values.crs == s.values.crs
+
+        df_copy = df.copy()
+        assert df_copy.crs == df.crs
+        assert df_copy.geometry.crs == df.geometry.crs
+        assert df_copy.geometry.values.crs == df.geometry.values.crs
+        assert df_copy.col1.crs == df.col1.crs
+        assert df_copy.col1.values.crs == df.col1.values.crs
+
+    def test_rename(self):
+        arr = from_shapely(self.geoms, crs=4326)
+        s = GeoSeries(self.geoms, crs=27700)
+        df = GeoDataFrame(arr, geometry=s, columns=["col1"])
+        df = df.rename(columns={"geometry": "geom"}).set_geometry("geom")
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        df = df.rename_geometry("geom2")
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        df = df.rename(columns={"col1": "column1"})
+        assert df.column1.crs == self.wgs
+        assert df.column1.values.crs == self.wgs
+
+    def test_to_crs(self):
+        s = GeoSeries(self.geoms, crs=27700)
+        s = s.to_crs(4326)
+        assert s.crs == self.wgs
+        assert s.values.crs == self.wgs
+
+        df = GeoDataFrame(geometry=s)
+        assert df.crs == self.wgs
+        df = df.to_crs(27700)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # make sure that only active geometry is transformed
+        arr = from_shapely(self.geoms, crs=4326)
+        df["col1"] = arr
+        df = df.to_crs(3857)
+        assert df.col1.crs == self.wgs
+        assert df.col1.values.crs == self.wgs
+
+    def test_from_shapely(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        assert arr.crs == self.osgb
+
+    def test_from_wkb(self):
+        L_wkb = [p.wkb for p in self.geoms]
+        arr = from_wkb(L_wkb, crs=27700)
+        assert arr.crs == self.osgb
+
+    def test_from_wkt(self):
+        L_wkt = [p.wkt for p in self.geoms]
+        arr = from_wkt(L_wkt, crs=27700)
+        assert arr.crs == self.osgb
+
+    # setting CRS in GeoSeries should not set it in passed array without CRS
+    def test_original(self):
+        arr = from_shapely(self.geoms)
+        s = GeoSeries(arr, crs=27700)
+        assert arr.crs is None
+        assert s.crs == self.osgb

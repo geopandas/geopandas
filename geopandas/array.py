@@ -446,6 +446,7 @@ class GeometryArray(ExtensionArray):
             )
         self.data = data
 
+        self._crs = None
         self.crs = crs
 
     @property
@@ -835,7 +836,7 @@ class GeometryArray(ExtensionArray):
 
     def copy(self, *args, **kwargs):
         # still taking args/kwargs for compat with pandas 0.24
-        return GeometryArray(self.data.copy())
+        return GeometryArray(self.data.copy(), crs=self._crs)
 
     def take(self, indices, allow_fill=False, fill_value=None):
         from pandas.api.extensions import take

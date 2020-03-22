@@ -177,10 +177,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not crs:
             # note priority & simplify condition
             if hasattr(col, "crs"):
-                crs = getattr(col, "crs", self._crs)
+                if col.crs:
+                    crs = getattr(col, "crs", self._crs)
+                else:
+                    crs = self._crs
             elif hasattr(col, "values"):
                 if hasattr(col.values, "crs"):
                     crs = getattr(col.values, "crs", self._crs)
+                else:
+                    crs = self._crs
             elif isinstance(col, str):
                 try:
                     if hasattr(self[col], "crs"):
@@ -188,6 +193,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     elif hasattr(self[col], "values"):
                         if hasattr(self[col].values, "crs"):
                             crs = getattr(self[col].values, "crs", self._crs)
+                        else:
+                            crs = self._crs
+                    else:
+                        crs = self._crs
                 except KeyError:
                     raise ValueError("Unknown column %s" % col)
             else:
@@ -669,42 +678,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = DataFrame
         return result
 
-    def __setitem__(self, key, value):
-        """
-        If the value is GeometryDtype, we need to preserve CRS.
-
-        TODO: check GeoDataFrame as value
-        """
-        if hasattr(value, "dtype"):
-            if isinstance(value.dtype, GeometryDtype):
-                if getattr(value, "crs"):
-                    crs = getattr(value, "crs")
-                else:
-                    crs = self.crs
-                if isinstance(value, (GeometryArray, GeoSeries)):
-                    super(GeoDataFrame, self).__setitem__(key, value)
-                    self[key].crs = crs
-                    if key == self._geometry_column_name:
-                        self.crs = crs
-                else:
-                    super(GeoDataFrame, self).__setitem__(key, value)
-            else:
-                super(GeoDataFrame, self).__setitem__(key, value)
-        else:
-            super(GeoDataFrame, self).__setitem__(key, value)
-
-    def copy(self, deep=True):
-        """
-        If the columns is GeometryDtype, we need to preserve CRS.
-
-        TODO: simplify
-        """
-        copy = super(GeoDataFrame, self).copy(deep)
-        geoms = self.dtypes == "geometry"
-        for col, g in geoms.iteritems():
-            if g:
-                copy[col].crs = self[col].crs
-        return copy
+    # def __setitem__(self, key, value):
+    #     """
+    #     If the value is GeometryDtype, we need to preserve CRS.
+    #     TODO: check GeoDataFrame as value
+    #     """
+    #     if hasattr(value, "dtype"):
+    #         if isinstance(value.dtype, GeometryDtype):
+    #             if getattr(value, "crs"):
+    #                 crs = getattr(value, "crs")
+    #             else:
+    #                 crs = self.crs
+    #             if isinstance(value, (GeometryArray, GeoSeries)):
+    #                 super(GeoDataFrame, self).__setitem__(key, value)
+    #                 self[key].crs = crs
+    #                 if key == self._geometry_column_name:
+    #                     self.crs = crs
+    #             else:
+    #                 super(GeoDataFrame, self).__setitem__(key, value)
+    #         else:
+    #             super(GeoDataFrame, self).__setitem__(key, value)
+    #     else:
+    #         super(GeoDataFrame, self).__setitem__(key, value)
 
     #
     # Implement pandas methods
