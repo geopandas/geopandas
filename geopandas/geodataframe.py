@@ -61,6 +61,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry = kwargs.pop("geometry", None)
         super(GeoDataFrame, self).__init__(*args, **kwargs)
 
+        # need to set this before calling self['geometry'], because
+        # getitem accesses crs
         self._crs = None
 
         # set_geometry ensures the geometry data have the proper dtype,
@@ -175,7 +177,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self.copy()
 
         if not crs:
-            # note priority & simplify condition
+            # note - simplify condition
             if hasattr(col, "crs"):
                 if col.crs:
                     crs = getattr(col, "crs", self._crs)

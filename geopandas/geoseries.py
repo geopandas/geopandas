@@ -143,7 +143,7 @@ class GeoSeries(GeoPandasBase, Series):
         self._crs = None
 
         if hasattr(data, "crs") and data.crs:
-            # check and warn if crs and data.crs different
+            # check and warn if crs and data.crs different?
             self.crs = data.crs
         elif hasattr(data, "values"):
             if hasattr(data.values, "crs") and data.values.crs:
