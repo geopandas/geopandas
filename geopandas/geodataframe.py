@@ -87,19 +87,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # note - simplify condition
         if geometry is not None:
             try:
-                if isinstance(geometry, GeometryDtype):
+                if hasattr(geometry, "dtype") and isinstance(
+                    geometry.dtype, GeometryDtype
+                ):
                     if getattr(geometry, "crs", None):
                         self.set_geometry(geometry, inplace=True)
                     else:
                         self.set_geometry(geometry, inplace=True, crs=crs)
 
-                elif type(geometry) == str and isinstance(
-                    self[geometry], GeometryDtype
+                elif (
+                    type(geometry) == str
+                    and hasattr(self[geometry], "dtype")
+                    and isinstance(self[geometry].dtype, GeometryDtype)
                 ):
                     if getattr(self[geometry], "crs", None):
                         self.set_geometry(geometry, inplace=True)
                     else:
-                        self.set_geometry(geometry, inplace=cdTrue, crs=crs)
+                        self.set_geometry(geometry, inplace=True, crs=crs)
 
                 else:
                     self.set_geometry(geometry, inplace=True, crs=crs)
@@ -171,12 +175,21 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self.copy()
 
         if not crs:
-            # note priority
+            # note priority & simplify condition
             if hasattr(col, "crs"):
                 crs = getattr(col, "crs", self._crs)
             elif hasattr(col, "values"):
                 if hasattr(col.values, "crs"):
                     crs = getattr(col.values, "crs", self._crs)
+            elif isinstance(col, str):
+                try:
+                    if hasattr(self[col], "crs"):
+                        crs = getattr(self[col], "crs", self._crs)
+                    elif hasattr(self[col], "values"):
+                        if hasattr(self[col].values, "crs"):
+                            crs = getattr(self[col].values, "crs", self._crs)
+                except KeyError:
+                    raise ValueError("Unknown column %s" % col)
             else:
                 crs = self._crs
 

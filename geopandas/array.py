@@ -104,7 +104,7 @@ def to_shapely(geoms):
     return geoms.data
 
 
-def from_wkb(data):
+def from_wkb(data, crs=None):
     """
     Convert a list or array of WKB objects to a GeometryArray.
     """
@@ -124,7 +124,7 @@ def from_wkb(data):
 
     aout = np.empty(n, dtype=object)
     aout[:] = out
-    return GeometryArray(aout)
+    return GeometryArray(aout, crs=crs)
 
 
 def to_wkb(geoms):
@@ -137,7 +137,7 @@ def to_wkb(geoms):
     return np.array(out, dtype=object)
 
 
-def from_wkt(data):
+def from_wkt(data, crs=None):
     """
     Convert a list or array of WKT objects to a GeometryArray.
     """
@@ -159,7 +159,7 @@ def from_wkt(data):
 
     aout = np.empty(n, dtype=object)
     aout[:] = out
-    return GeometryArray(aout)
+    return GeometryArray(aout, crs=crs)
 
 
 def to_wkt(geoms):
@@ -195,7 +195,7 @@ def _points_from_xy(x, y, z=None):
     return geom
 
 
-def points_from_xy(x, y, z=None):
+def points_from_xy(x, y, z=None, crs=None):
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
@@ -221,7 +221,7 @@ def points_from_xy(x, y, z=None):
     out = _points_from_xy(x, y, z)
     aout = np.empty(len(x), dtype=object)
     aout[:] = out
-    return GeometryArray(aout)
+    return GeometryArray(aout, crs=crs)
 
 
 # -----------------------------------------------------------------------------
