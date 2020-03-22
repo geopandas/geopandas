@@ -160,6 +160,26 @@ def test_overlay_nybb(how):
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)
 
+    if how in ("symmetric_difference", "union"):
+        # simplify multipolygon geometry comparison
+        # since the order of the constituent polygons depends on
+        # the ordering of spatial indexing results, we cannot
+        # compare symmetric_difference results directly when the
+        # resultant geometry is a multipolygon
+
+        # first, check that all bounds and areas are approx equal
+        # this is a very rough check for multipolygon equality
+        pd.testing.assert_series_equal(
+            result.geometry.area, expected.geometry.area, check_less_precise=True
+        )
+        pd.testing.assert_frame_equal(
+            result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
+        )
+
+        # now drop multipolygons
+        result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
+        expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
+
     assert_geodataframe_equal(
         result, expected, check_crs=False, check_column_type=False
     )
@@ -419,6 +439,13 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
                 "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=keep_geom_type),
             )
         )
+
+        # sort
+        assert all(expected.columns == result.columns), "Column name mismatch"
+        cols = list(set(result.columns) - set(["geometry"]))
+        expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
+        result = result.sort_values(cols, axis=0).reset_index(drop=True)
+
         assert_geodataframe_equal(
             result,
             expected,

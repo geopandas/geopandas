@@ -27,13 +27,13 @@ def _overlay_intersection(df1, df2):
     # Spatial Index to create intersections
     spatial_index = df2.sindex
     bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    sidx = bbox.apply(lambda x: sorted(list(spatial_index.intersection(x))))
     # Create pairs of geometries in both dataframes to be intersected
     nei = []
     for i, j in enumerate(sidx):
         for k in j:
             nei.append([i, k])
-    if nei != []:
+    if nei:
         pairs = pd.DataFrame(nei, columns=["__idx1", "__idx2"])
         left = df1.geometry.take(pairs["__idx1"].values)
         left.reset_index(drop=True, inplace=True)
@@ -78,7 +78,7 @@ def _overlay_difference(df1, df2):
     # Spatial Index to create intersections
     spatial_index = df2.sindex
     bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    sidx = bbox.apply(lambda x: sorted(list(spatial_index.intersection(x))))
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
