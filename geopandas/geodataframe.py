@@ -6,7 +6,7 @@ from pandas import DataFrame, Series
 
 from shapely.geometry import mapping, shape
 
-from geopandas.array import GeometryArray, from_shapely
+from geopandas.array import GeometryArray, from_shapely, GeometryDtype
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
@@ -587,7 +587,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, str) and key == geo_col:
+        if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()
