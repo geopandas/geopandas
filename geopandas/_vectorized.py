@@ -37,8 +37,10 @@ _names = {
 
 if compat.USE_PYGEOS:
     type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
+    geometry_type_ids = list(type_mapping.keys())
+    geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 else:
-    type_mapping = None
+    type_mapping, geometry_type_ids, geometry_type_values = None, None, None
 
 
 def _isna(value):
@@ -505,7 +507,7 @@ def has_z(data):
 def geom_type(data):
     if compat.USE_PYGEOS:
         res = pygeos.get_type_id(data)
-        return np.array([type_mapping[t] for t in res], dtype=object)
+        return geometry_type_values[np.searchsorted(geometry_type_ids, res)]
     else:
         return _unary_op("geom_type", data, null_value=None)
 
