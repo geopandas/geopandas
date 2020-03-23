@@ -173,8 +173,8 @@ def sjoin(
 
         if compat.USE_PYGEOS:
             res = check_predicates(
-                left_df.geometry[l_idx].array.data,
-                right_df[right_df.geometry.name][r_idx].array.data,
+                left_df.geometry[l_idx].values.data,
+                right_df[right_df.geometry.name][r_idx].values.data,
             )
         else:
             res = check_predicates(
