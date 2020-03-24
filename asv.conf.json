@@ -55,7 +55,7 @@
     "matrix": {
         "pandas": [],
         "shapely": [],
-        "cython": [],
+        "pygeos": [],
         "fiona": [],
         "pyproj": [],
         "rtree": [],

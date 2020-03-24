@@ -8,18 +8,18 @@ matrix:
     - env: ENV_FILE="ci/travis/35-minimal.yaml"
 
     # Python 3.6 test all supported Pandas versions
-    - env: ENV_FILE="ci/travis/36-pd023.yaml"
-    - env: ENV_FILE="ci/travis/36-pd024.yaml"
+    - env: ENV_FILE="ci/travis/36-pd023.yaml" PYGEOS=true
+    - env: ENV_FILE="ci/travis/36-pd024.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true
-    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
+    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
+    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml"
+    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
   allow_failures:
-    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
 install:
   # Install conda
@@ -46,7 +46,10 @@ install:
   - python -c "import geopandas; geopandas.show_versions();"
 
 script:
-  - py.test geopandas --cov geopandas -v --cov-report term-missing
+  - echo "Testing without PyGEOS"
+  - USE_PYGEOS=0 pytest geopandas --cov geopandas -v --cov-report term-missing
+  - if [ "$PYGEOS" ]; then echo "Testing with PyGEOS"; fi
+  - if [ "$PYGEOS" ]; then USE_PYGEOS=1 pytest geopandas --cov geopandas -v --cov-report term-missing; fi
   - if [ "$STYLE" ]; then black --check geopandas; fi
   - if [ "$STYLE" ]; then flake8 geopandas; fi
 
