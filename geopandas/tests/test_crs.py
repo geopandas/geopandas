@@ -180,6 +180,13 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
+        arr = from_shapely(self.geoms)
+        s = GeoSeries(arr, crs=27700)
+        df = GeoDataFrame(geometry=s)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
         # different passed CRS than array CRS is ignored
         # TODO: raise warning?
         df = GeoDataFrame(geometry=s, crs=4326)
@@ -227,11 +234,18 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
+        arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame()
         df = df.set_geometry(arr)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
+
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
 
     def test_read_file(self):
         nybb_filename = datasets.get_path("nybb")
