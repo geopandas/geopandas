@@ -72,6 +72,33 @@ def _isna(value):
 # -----------------------------------------------------------------------------
 
 
+def _geom_to_shapely(geom):
+    """
+    Convert internal representation (PyGEOS or Shapely) to external Shapely object.
+    """
+    if not compat.USE_PYGEOS:
+        return geom
+    else:
+        return vectorized._pygeos_to_shapely(geom)
+
+
+def _shapely_to_geom(geom):
+    """
+    Convert external Shapely object to internal representation (PyGEOS or Shapely).
+    """
+    if not compat.USE_PYGEOS:
+        return geom
+    else:
+        return vectorized._shapely_to_pygeos(geom)
+
+
+def _is_scalar_geometry(geom):
+    if compat.USE_PYGEOS:
+        return isinstance(geom, pygeos.Geometry)
+    else:
+        return isinstance(geom, BaseGeometry)
+
+
 def from_shapely(data, crs=None):
     """
     Convert a list or array of shapely objects to a GeometryArray.
