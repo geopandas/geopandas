@@ -9,6 +9,7 @@ dependencies:
   - shapely
   - fiona
   - pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -25,3 +26,4 @@ dependencies:
     - codecov
     - geopy
     - mapclassify
+    - git+https://github.com/pygeos/pygeos.git

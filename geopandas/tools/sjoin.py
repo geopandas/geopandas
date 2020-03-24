@@ -6,6 +6,7 @@ import pandas as pd
 from shapely import prepared
 
 from geopandas import GeoDataFrame
+from geopandas import _compat as compat
 
 
 def sjoin(
@@ -145,33 +146,43 @@ def sjoin(
             r_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
     if len(r_idx) > 0 and len(l_idx) > 0:
-        # Vectorize predicate operations
-        def find_intersects(a1, a2):
-            return a1.intersects(a2)
+        if compat.USE_PYGEOS:
+            import pygeos
 
-        def find_contains(a1, a2):
-            return a1.contains(a2)
+            predicate_d = {
+                "intersects": pygeos.intersects,
+                "contains": pygeos.contains,
+                "within": pygeos.contains,
+            }
+            check_predicates = predicate_d[op]
+        else:
+            # Vectorize predicate operations
+            def find_intersects(a1, a2):
+                return a1.intersects(a2)
 
-        predicate_d = {
-            "intersects": find_intersects,
-            "contains": find_contains,
-            "within": find_contains,
-        }
+            def find_contains(a1, a2):
+                return a1.contains(a2)
 
-        check_predicates = np.vectorize(predicate_d[op])
+            predicate_d = {
+                "intersects": find_intersects,
+                "contains": find_contains,
+                "within": find_contains,
+            }
 
-        result = pd.DataFrame(
-            np.column_stack(
-                [
-                    l_idx,
-                    r_idx,
-                    check_predicates(
-                        left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
-                        right_df[right_df.geometry.name][r_idx],
-                    ),
-                ]
+            check_predicates = np.vectorize(predicate_d[op])
+
+        if compat.USE_PYGEOS:
+            res = check_predicates(
+                left_df.geometry[l_idx].values.data,
+                right_df[right_df.geometry.name][r_idx].values.data,
             )
-        )
+        else:
+            res = check_predicates(
+                left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
+                right_df[right_df.geometry.name][r_idx],
+            )
+
+        result = pd.DataFrame(np.column_stack([l_idx, r_idx, res]))
 
         result.columns = ["_key_left", "_key_right", "match_bool"]
         result = pd.DataFrame(result[result["match_bool"] == 1]).drop(
