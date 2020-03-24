@@ -271,10 +271,11 @@ class GeometryArray(ExtensionArray):
     if compat.USE_PYGEOS:
 
         def __getstate__(self):
-            return pygeos.to_wkb(self.data)
+            return (pygeos.to_wkb(self.data), self._crs)
 
         def __setstate__(self, state):
-            geoms = pygeos.from_wkb(state)
+            geoms = pygeos.from_wkb(state[0])
+            self._crs = state[1]
             self.data = geoms
             self.base = None
 
