@@ -291,15 +291,8 @@ class GeoSeries(GeoPandasBase, Series):
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
+        self.values.crs = other.values.crs
         return self
-
-    def copy(self, *args, **kwargs):
-        """
-        Needed to retain crs in GeometryArray during copy.
-        """
-        copy = super(GeoSeries, self).copy(*args, **kwargs)
-        copy.crs = self.crs
-        return copy
 
     def isna(self):
         """
