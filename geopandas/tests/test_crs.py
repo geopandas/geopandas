@@ -1,9 +1,11 @@
 from distutils.version import LooseVersion
 
+import random
+
 import numpy as np
 import pandas as pd
 
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
@@ -139,6 +141,11 @@ class TestGeometryArrayCRS:
         self.wgs = pyproj.CRS(4326)
 
         self.geoms = [Point(0, 0), Point(1, 1)]
+        self.polys = [
+            Polygon([(random.random(), random.random()) for i in range(3)])
+            for _ in range(10)
+        ]
+        self.arr = from_shapely(self.polys, crs=27700)
 
     def test_array(self):
         arr = from_shapely(self.geoms)
@@ -371,3 +378,75 @@ class TestGeometryArrayCRS:
         s = GeoSeries(arr, crs=27700)
         assert arr.crs is None
         assert s.crs == self.osgb
+
+    def test_ops(self):
+        arr = self.arr
+        bound = arr.boundary
+        assert bound.crs == self.osgb
+
+        cent = arr.centroid
+        assert cent.crs == self.osgb
+
+        hull = arr.convex_hull
+        assert hull.crs == self.osgb
+
+        envelope = arr.envelope
+        assert envelope.crs == self.osgb
+
+        exterior = arr.exterior
+        assert exterior.crs == self.osgb
+
+        representative_point = arr.representative_point()
+        assert representative_point.crs == self.osgb
+
+    def test_binary_ops(self):
+        arr = self.arr
+        quads = []
+        while len(quads) < 10:
+            geom = Polygon([(random.random(), random.random()) for i in range(4)])
+            if geom.is_valid:
+                quads.append(geom)
+
+        arr2 = from_shapely(quads, crs=27700)
+
+        difference = arr.difference(arr2)
+        assert difference.crs == self.osgb
+
+        intersection = arr.intersection(arr2)
+        assert intersection.crs == self.osgb
+
+        symmetric_difference = arr.symmetric_difference(arr2)
+        assert symmetric_difference.crs == self.osgb
+
+        union = arr.union(arr2)
+        assert union.crs == self.osgb
+
+    def test_other(self):
+        arr = self.arr
+
+        buffer = arr.buffer(5)
+        assert buffer.crs == self.osgb
+
+        interpolate = arr.exterior.interpolate(0.1)
+        assert interpolate.crs == self.osgb
+
+        simplify = arr.simplify(5)
+        assert simplify.crs == self.osgb
+
+    @pytest.mark.parametrize(
+        "attr, arg",
+        [
+            ("affine_transform", ([0, 1, 1, 0, 0, 0],)),
+            ("translate", ()),
+            ("rotate", (10,)),
+            ("scale", ()),
+            ("skew", ()),
+        ],
+    )
+    def test_affinity_methods(self, attr, arg):
+        result = getattr(self.arr, attr)(*arg)
+
+        assert result.crs == self.osgb
+
+
+# TODO - merge, concat, slice... for both series, df
