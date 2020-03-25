@@ -325,23 +325,23 @@ class GeometryArray(ExtensionArray):
 
     @property
     def boundary(self):
-        return GeometryArray(vectorized.boundary(self.data))
+        return GeometryArray(vectorized.boundary(self.data), crs=self.crs)
 
     @property
     def centroid(self):
-        return GeometryArray(vectorized.centroid(self.data))
+        return GeometryArray(vectorized.centroid(self.data), crs=self.crs)
 
     @property
     def convex_hull(self):
-        return GeometryArray(vectorized.convex_hull(self.data))
+        return GeometryArray(vectorized.convex_hull(self.data), crs=self.crs)
 
     @property
     def envelope(self):
-        return GeometryArray(vectorized.envelope(self.data))
+        return GeometryArray(vectorized.envelope(self.data), crs=self.crs)
 
     @property
     def exterior(self):
-        return GeometryArray(vectorized.exterior(self.data))
+        return GeometryArray(vectorized.exterior(self.data), crs=self.crs)
 
     @property
     def interiors(self):
@@ -349,7 +349,7 @@ class GeometryArray(ExtensionArray):
         return vectorized.interiors(self.data)
 
     def representative_point(self):
-        return GeometryArray(vectorized.representative_point(self.data))
+        return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
     #
     # Binary predicates
@@ -406,16 +406,22 @@ class GeometryArray(ExtensionArray):
     #
 
     def difference(self, other):
-        return GeometryArray(self._binary_method("difference", self, other))
+        return GeometryArray(
+            self._binary_method("difference", self, other), crs=self.crs
+        )
 
     def intersection(self, other):
-        return GeometryArray(self._binary_method("intersection", self, other))
+        return GeometryArray(
+            self._binary_method("intersection", self, other), crs=self.crs
+        )
 
     def symmetric_difference(self, other):
-        return GeometryArray(self._binary_method("symmetric_difference", self, other))
+        return GeometryArray(
+            self._binary_method("symmetric_difference", self, other), crs=self.crs
+        )
 
     def union(self, other):
-        return GeometryArray(self._binary_method("union", self, other))
+        return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
 
     #
     # Other operations
@@ -426,19 +432,22 @@ class GeometryArray(ExtensionArray):
 
     def buffer(self, distance, resolution=16, **kwargs):
         return GeometryArray(
-            vectorized.buffer(self.data, distance, resolution=resolution, **kwargs)
+            vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
+            crs=self.crs,
         )
 
     def interpolate(self, distance, normalized=False):
         return GeometryArray(
-            vectorized.interpolate(self.data, distance, normalized=normalized)
+            vectorized.interpolate(self.data, distance, normalized=normalized),
+            crs=self.crs,
         )
 
     def simplify(self, tolerance, preserve_topology=True):
         return GeometryArray(
             vectorized.simplify(
                 self.data, tolerance, preserve_topology=preserve_topology
-            )
+            ),
+            crs=self.crs,
         )
 
     def project(self, other, normalized=False):
@@ -466,33 +475,38 @@ class GeometryArray(ExtensionArray):
 
     def affine_transform(self, matrix):
         return GeometryArray(
-            vectorized._affinity_method("affine_transform", self.data, matrix)
+            vectorized._affinity_method("affine_transform", self.data, matrix),
+            crs=self.crs,
         )
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         return GeometryArray(
-            vectorized._affinity_method("translate", self.data, xoff, yoff, zoff)
+            vectorized._affinity_method("translate", self.data, xoff, yoff, zoff),
+            crs=self.crs,
         )
 
     def rotate(self, angle, origin="center", use_radians=False):
         return GeometryArray(
             vectorized._affinity_method(
                 "rotate", self.data, angle, origin=origin, use_radians=use_radians
-            )
+            ),
+            crs=self.crs,
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
         return GeometryArray(
             vectorized._affinity_method(
                 "scale", self.data, xfact, yfact, zfact, origin=origin
-            )
+            ),
+            crs=self.crs,
         )
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
         return GeometryArray(
             vectorized._affinity_method(
                 "skew", self.data, xs, ys, origin=origin, use_radians=use_radians
-            )
+            ),
+            crs=self.crs,
         )
 
     #
@@ -571,7 +585,7 @@ class GeometryArray(ExtensionArray):
         result = take(self.data, indices, allow_fill=allow_fill, fill_value=fill_value)
         if allow_fill and fill_value is None:
             result[pd.isna(result)] = None
-        return GeometryArray(result)
+        return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
         """ Fill index locations with value
@@ -826,7 +840,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         data = np.concatenate([ga.data for ga in to_concat])
-        return GeometryArray(data)
+        return GeometryArray(data, crs=to_concat[0].crs)
 
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
