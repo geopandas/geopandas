@@ -289,9 +289,15 @@ class GeoSeries(GeoPandasBase, Series):
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
-        self.values.crs = other.values.crs
+        if method == "concat":
+            for name in self._metadata:
+                # using CRS of the first object
+                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+            self.values.crs = other.objs[0].values.crs
+        else:
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other, name, None))
+            self.values.crs = other.values.crs
         return self
 
     def isna(self):
