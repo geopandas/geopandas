@@ -45,8 +45,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     Parameters
     ----------
-    crs : str (optional)
-        Coordinate system
+    crs : value (optional)
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.

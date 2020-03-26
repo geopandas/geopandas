@@ -52,8 +52,11 @@ class GeoSeries(GeoPandasBase, Series):
         The geometries to store in the GeoSeries.
     index : array-like or Index
         The index for the GeoSeries.
-    crs : str, dict (optional)
-        Coordinate Reference System of the geometry objects.
+    crs : value (optional)
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
     kwargs
         Additional arguments passed to the Series constructor,
          e.g. ``name``.

@@ -104,6 +104,16 @@ def from_shapely(data, crs=None):
     Convert a list or array of shapely objects to a GeometryArray.
 
     Validates the elements.
+
+    Parameters
+    ----------
+    data : array-like
+        list or array of shapely objects
+    crs : value, optional
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
     """
     return GeometryArray(vectorized.from_shapely(data), crs=crs)
 
@@ -120,6 +130,16 @@ def to_shapely(geoms):
 def from_wkb(data, crs=None):
     """
     Convert a list or array of WKB objects to a GeometryArray.
+
+    Parameters
+    ----------
+    data : array-like
+        list or array of WKB objects
+    crs : value, optional
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
     """
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
@@ -136,6 +156,16 @@ def to_wkb(geoms):
 def from_wkt(data, crs=None):
     """
     Convert a list or array of WKT objects to a GeometryArray.
+
+    Parameters
+    ----------
+    data : array-like
+        list or array of WKT objects
+    crs : value, optional
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
     """
     return GeometryArray(vectorized.from_wkt(data), crs=crs)
 
@@ -156,6 +186,10 @@ def points_from_xy(x, y, z=None, crs=None):
     Parameters
     ----------
     x, y, z : iterable
+    crs : value, optional
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
 
     Examples
     --------
@@ -204,7 +238,7 @@ class GeometryArray(ExtensionArray):
 
         Returns None if the CRS is not set, and to set the value it
         :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
         """
