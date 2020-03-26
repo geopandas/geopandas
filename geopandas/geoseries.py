@@ -82,9 +82,8 @@ class GeoSeries(GeoPandasBase, Series):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
 
-        # make a copy to avoid setting CRS to passed data if GeometryArray
+        # # make a copy to avoid setting CRS to passed GeometryArray
         if hasattr(data, "crs") and not data.crs and crs:
-            print("0")
             data = data.copy()
 
         if isinstance(data, SingleBlockManager):
@@ -141,15 +140,7 @@ class GeoSeries(GeoPandasBase, Series):
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
 
-        if hasattr(data, "crs") and data.crs:
-            # check and warn if crs and data.crs different?
-            self.crs = data.crs
-        elif hasattr(data, "values"):
-            if hasattr(data.values, "crs") and data.values.crs:
-                self.crs = getattr(data.values, "crs")
-            else:
-                self.crs = crs
-        else:
+        if not self.crs:
             self.crs = crs
         self._invalidate_sindex()
         return self
