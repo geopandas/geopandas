@@ -63,7 +63,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
-        self._crs = None
+        self._crs = crs if crs is not None else None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -86,34 +86,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     self.index = index
                 geometry = "geometry"
 
-        # note - simplify condition
         if geometry is not None:
-            try:
-                if hasattr(geometry, "dtype") and isinstance(
-                    geometry.dtype, GeometryDtype
-                ):
-                    if getattr(geometry, "crs", None):
-                        self.set_geometry(geometry, inplace=True)
-                    else:
-                        self.set_geometry(geometry, inplace=True, crs=crs)
+            self.set_geometry(geometry, inplace=True)
 
-                elif (
-                    type(geometry) == str
-                    and hasattr(self[geometry], "dtype")
-                    and isinstance(self[geometry].dtype, GeometryDtype)
-                ):
-                    if getattr(self[geometry], "crs", None):
-                        self.set_geometry(geometry, inplace=True)
-                    else:
-                        self.set_geometry(geometry, inplace=True, crs=crs)
-
-                else:
-                    self.set_geometry(geometry, inplace=True, crs=crs)
-            except KeyError:
-                raise ValueError("Unknown column %s" % geometry)
-
-        else:
-            self.crs = crs
         self._invalidate_sindex()
 
     def __setattr__(self, attr, val):
@@ -176,34 +151,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             frame = self.copy()
 
-        if not crs:
-            # note - simplify condition
-            if hasattr(col, "crs"):
-                if col.crs:
-                    crs = getattr(col, "crs", self._crs)
-                else:
-                    crs = self._crs
-            elif hasattr(col, "values"):
-                if hasattr(col.values, "crs"):
-                    crs = getattr(col.values, "crs", self._crs)
-                else:
-                    crs = self._crs
-            elif isinstance(col, str):
-                try:
-                    if hasattr(self[col], "crs"):
-                        crs = getattr(self[col], "crs", self._crs)
-                    elif hasattr(self[col], "values"):
-                        if hasattr(self[col].values, "crs"):
-                            crs = getattr(self[col].values, "crs", self._crs)
-                        else:
-                            crs = self._crs
-                    else:
-                        crs = self._crs
-                except KeyError:
-                    raise ValueError("Unknown column %s" % col)
-            else:
-                crs = self._crs
-
         to_remove = None
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
@@ -225,6 +172,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if to_remove:
             del frame[to_remove]
+
+        if not crs:
+            level_crs = getattr(level, "crs", None)
+            crs = level_crs if level_crs is not None else self._crs
 
         if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
