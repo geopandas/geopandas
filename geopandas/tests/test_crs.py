@@ -457,7 +457,7 @@ class TestGeometryArrayCRS:
         s = GeoSeries(self.arr, crs=27700)
         assert s.iloc[1:].values.crs == self.osgb
 
-        df = GeoDataFrame(self.arr, geometry=s, columns=["col1"])
+        df = GeoDataFrame({"col1": self.arr}, geometry=s)
         assert df.iloc[1:].geometry.values.crs == self.osgb
         assert df.iloc[1:].col1.values.crs == self.osgb
 
@@ -465,19 +465,18 @@ class TestGeometryArrayCRS:
         s = GeoSeries(self.arr, crs=27700)
         assert pd.concat([s, s]).values.crs == self.osgb
 
-        df = GeoDataFrame(
-            from_shapely(self.geoms, crs=4326), geometry=s, columns=["col1"]
-        )
+        df = GeoDataFrame({"col1": from_shapely(self.geoms, crs=4326)}, geometry=s)
         assert pd.concat([df, df]).geometry.values.crs == self.osgb
         assert pd.concat([df, df]).col1.values.crs == self.wgs
 
     def test_merge(self):
         arr = from_shapely(self.geoms, crs=27700)
         s = GeoSeries(self.geoms, crs=4326)
-        df = GeoDataFrame(s, geometry=arr, columns=["col1"])
-        df2 = GeoDataFrame(s, geometry=arr, columns=["col2"])
-        merged = df.merge(df2)
+        df = GeoDataFrame({"col1": s}, geometry=arr)
+        df2 = GeoDataFrame({"col2": s}, geometry=arr).rename_geometry("geom")
+        merged = df.merge(df2, left_index=True, right_index=True)
         assert merged.col1.values.crs == self.wgs
         assert merged.geometry.values.crs == self.osgb
         assert merged.col2.values.crs == self.wgs
+        assert merged.geom.values.crs == self.osgb
         assert merged.crs == self.osgb
