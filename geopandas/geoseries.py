@@ -76,7 +76,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     """
 
-    _metadata = ["name", "_crs"]
+    _metadata = ["name"]
 
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
         # we need to use __new__ because we want to return Series instance
@@ -140,7 +140,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-        self._crs = None
 
         if hasattr(data, "crs") and data.crs:
             # check and warn if crs and data.crs different?

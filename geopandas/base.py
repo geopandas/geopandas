@@ -145,13 +145,12 @@ class GeoPandasBase(object):
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
         """
-        return self._crs
+        return self.geometry.values.crs
 
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
         self.geometry.values.crs = None if not value else value
-        self._crs = self.geometry.values.crs
 
     @property
     def geom_type(self):
