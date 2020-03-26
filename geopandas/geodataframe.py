@@ -88,7 +88,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
-
         self._invalidate_sindex()
 
     def __setattr__(self, attr, val):

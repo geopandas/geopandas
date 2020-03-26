@@ -254,6 +254,11 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
+        # geometry column without geometry
+        df = GeoDataFrame({"geometry": [0, 1]})
+        df.crs = 27700
+        assert df.crs == self.osgb
+
     def test_read_file(self):
         nybb_filename = datasets.get_path("nybb")
         df = read_file(nybb_filename)
@@ -448,5 +453,31 @@ class TestGeometryArrayCRS:
 
         assert result.crs == self.osgb
 
+    def test_slice(self):
+        s = GeoSeries(self.arr, crs=27700)
+        assert s.iloc[1:].values.crs == self.osgb
 
-# TODO - merge, concat, slice... for both series, df
+        df = GeoDataFrame(self.arr, geometry=s, columns=["col1"])
+        assert df.iloc[1:].geometry.values.crs == self.osgb
+        assert df.iloc[1:].col1.values.crs == self.osgb
+
+    def test_concat(self):
+        s = GeoSeries(self.arr, crs=27700)
+        assert pd.concat([s, s]).values.crs == self.osgb
+
+        df = GeoDataFrame(
+            from_shapely(self.geoms, crs=4326), geometry=s, columns=["col1"]
+        )
+        assert pd.concat([df, df]).geometry.values.crs == self.osgb
+        assert pd.concat([df, df]).col1.values.crs == self.wgs
+
+    def test_merge(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        s = GeoSeries(self.geoms, crs=4326)
+        df = GeoDataFrame(s, geometry=arr, columns=["col1"])
+        df2 = GeoDataFrame(s, geometry=arr, columns=["col2"])
+        merged = df.merge(df2)
+        assert merged.col1.values.crs == self.wgs
+        assert merged.geometry.values.crs == self.osgb
+        assert merged.col2.values.crs == self.wgs
+        assert merged.crs == self.osgb
