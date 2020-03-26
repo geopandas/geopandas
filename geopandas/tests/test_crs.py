@@ -179,6 +179,7 @@ class TestGeometryArrayCRS:
         assert s.crs == self.osgb
         assert s.values.crs == self.osgb
 
+    @pytest.mark.filterwarnings("ignore:Assigning CRS")
     def test_dataframe(self):
         arr = from_shapely(self.geoms, crs=27700)
         s = GeoSeries(arr)
@@ -480,3 +481,12 @@ class TestGeometryArrayCRS:
         assert merged.col2.values.crs == self.wgs
         assert merged.geom.values.crs == self.osgb
         assert merged.crs == self.osgb
+
+    # CRS should be assigned to geometry
+    def test_deprecation(self):
+        with pytest.warns(FutureWarning):
+            GeoDataFrame([], crs=27700)
+
+        with pytest.warns(FutureWarning):
+            df = GeoDataFrame([])
+            df.crs = 27700

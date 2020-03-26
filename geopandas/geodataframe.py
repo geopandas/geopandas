@@ -1,4 +1,5 @@
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -91,6 +92,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
+
+        if geometry is None and crs:
+            warnings.warn(
+                "Assigning CRS to a GeoDataFrame without a geometry column is now "
+                "deprecated and will not be supported in the future.",
+                FutureWarning,
+                stacklevel=2,
+            )
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -247,6 +256,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def crs(self, value):
         """Sets the value of the crs"""
         if self._geometry_column_name not in self:
+            warnings.warn(
+                "Assigning CRS to a GeoDataFrame without a geometry column is now "
+                "deprecated and will not be supported in the future.",
+                FutureWarning,
+                stacklevel=4,
+            )
             self._crs = None if not value else CRS.from_user_input(value)
         else:
             if hasattr(self.geometry.values, "crs"):
