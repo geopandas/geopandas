@@ -231,7 +231,7 @@ class GeometryArray(ExtensionArray):
             # to numpy array, pass-through non-array-like indexers
             idx = pd.api.indexers.check_array_indexer(self, idx)
         if isinstance(idx, (Iterable, slice)):
-            return GeometryArray(self.data[idx])
+            return GeometryArray(self.data[idx], crs=self.crs)
         else:
             raise TypeError("Index type not supported", idx)
 

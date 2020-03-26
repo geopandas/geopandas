@@ -86,7 +86,7 @@ def _overlay_difference(df1, df2):
             lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
         )
         new_g.append(new)
-    differences = GeoSeries(new_g, index=df1.index)
+    differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
     differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()

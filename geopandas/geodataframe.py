@@ -732,6 +732,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
+
+            # find GeometryArrays and propagate CRS to their self counterparts
+            for col, dtype in other.dtypes.iteritems():
+                if isinstance(dtype, GeometryDtype):
+                    if col in self.columns:
+                        self[col].crs = other[col].crs
+
         return self
 
     def plot(self, *args, **kwargs):
