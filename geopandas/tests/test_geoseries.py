@@ -286,6 +286,7 @@ class TestConstructor:
         for g in geoms:
             gs = GeoSeries(g)
             assert len(gs) == 1
+            # accessing elements no longer give identical objects
             assert gs.iloc[0].equals(g)
 
             gs = GeoSeries(g, index=index)

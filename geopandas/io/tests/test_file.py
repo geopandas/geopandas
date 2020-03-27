@@ -230,6 +230,36 @@ def test_to_file_schema(tmpdir, df_nybb):
     assert result_schema == schema
 
 
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
+    """ Test to_file with append mode and from_file """
+    from fiona import supported_drivers
+
+    if "a" not in supported_drivers[driver]:
+        return None
+
+    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    df_nybb.to_file(tempfilename, driver=driver)
+    df_nybb.to_file(tempfilename, mode="a", driver=driver)
+    # Read layer back in
+    df = GeoDataFrame.from_file(tempfilename)
+    assert "geometry" in df
+    assert len(df) == (5 * 2)
+    expected = pd.concat([df_nybb] * 2, ignore_index=True)
+    assert_geodataframe_equal(df, expected)
+
+    # Write layer with null geometry out to file
+    tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
+    df_null.to_file(tempfilename, driver=driver)
+    df_null.to_file(tempfilename, mode="a", driver=driver)
+    # Read layer back in
+    df = GeoDataFrame.from_file(tempfilename)
+    assert "geometry" in df
+    assert len(df) == (2 * 2)
+    expected = pd.concat([df_null] * 2, ignore_index=True)
+    assert_geodataframe_equal(df, expected)
+
+
 # -----------------------------------------------------------------------------
 # read_file tests
 # -----------------------------------------------------------------------------

@@ -9,7 +9,7 @@ from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCol
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 import pytest
 
@@ -159,7 +159,7 @@ def test_returns_series(point_gdf, single_rectangle_gdf):
 
 
 def test_non_overlapping_geoms():
-    """Test that a bounding box returns error if the extents don't overlap"""
+    """Test that a bounding box returns empty if the extents don't overlap"""
     unit_box = Polygon([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)])
     unit_gdf = GeoDataFrame([1], geometry=[unit_box], crs="EPSG:4326")
     non_overlapping_gdf = unit_gdf.copy()
@@ -170,6 +170,8 @@ def test_non_overlapping_geoms():
     assert_geodataframe_equal(
         out, GeoDataFrame(columns=unit_gdf.columns, crs=unit_gdf.crs)
     )
+    out2 = clip(unit_gdf.geometry, non_overlapping_gdf)
+    assert_geoseries_equal(out2, GeoSeries(crs=unit_gdf.crs))
 
 
 def test_clip_points(point_gdf, single_rectangle_gdf):

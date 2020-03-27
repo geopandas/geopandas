@@ -1,8 +1,10 @@
 import numpy as np
 
 from shapely.geometry import Point, Polygon
+from pandas import Series
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -20,12 +22,32 @@ s2 = GeoSeries(
     ]
 )
 
+
+s3 = Series(
+    [
+        Polygon([(0, 2), (0, 0), (2, 0), (2, 2)]),
+        Polygon([(2, 2), (4, 2), (4, 4), (2, 4)]),
+    ]
+)
+
+a = from_shapely(
+    [
+        Polygon([(0, 2), (0, 0), (2, 0), (2, 2)]),
+        Polygon([(2, 2), (4, 2), (4, 4), (2, 4)]),
+    ]
+)
+
+s4 = Series(a)
+
 df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
 df2 = GeoDataFrame({"col1": [1, 2], "geometry": s2})
 
 
 def test_geoseries():
     assert_geoseries_equal(s1, s2)
+    assert_geoseries_equal(s1, s3, check_series_type=False, check_dtype=False)
+    assert_geoseries_equal(s3, s2, check_series_type=False, check_dtype=False)
+    assert_geoseries_equal(s1, s4, check_series_type=False)
 
     with pytest.raises(AssertionError):
         assert_geoseries_equal(s1, s2, check_less_precise=True)

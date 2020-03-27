@@ -8,13 +8,13 @@ from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS, Transformer
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import transform
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
-from .array import GeometryDtype, from_shapely
+from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
+from . import _vectorized as vectorized
 
 
 _SERIES_WARNING_MSG = """\
@@ -412,10 +412,14 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         crs : pyproj.CRS, optional if `epsg` is specified
             The value can be anything accepted
-            by :meth:`pyproj.CRS.from_user_input`, such as an authority
-            string (eg "EPSG:4326") or a WKT string.
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
         epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
+
+        Returns
+        -------
+        GeoSeries
         """
         if self.crs is None:
             raise ValueError(
@@ -434,11 +438,11 @@ class GeoSeries(GeoPandasBase, Series):
             return self
 
         transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
-        result = self.apply(lambda geom: transform(transformer.transform, geom))
-        result.__class__ = GeoSeries
-        result.crs = crs
-        result._invalidate_sindex()
-        return result
+
+        new_data = vectorized.transform(self.values.data, transformer.transform)
+        return GeoSeries(
+            GeometryArray(new_data), crs=crs, index=self.index, name=self.name
+        )
 
     def to_json(self, **kwargs):
         """

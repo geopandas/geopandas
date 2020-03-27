@@ -51,6 +51,7 @@ such as PostGIS.
   :caption: Reference Guide
 
   Reference to All Attributes and Methods <reference>
+  Changelog <changelog>
 
 
 .. toctree::
@@ -58,6 +59,7 @@ such as PostGIS.
   :caption: Developer
 
   Contributing to GeoPandas <contributing>
+  Code of Conduct <code_of_conduct>
 
 
 Get in touch

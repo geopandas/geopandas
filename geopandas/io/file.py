@@ -129,7 +129,10 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     return gdf
 
 
-def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs):
+def to_file(
+    df, filename, driver="ESRI Shapefile", schema=None, index=None, mode="w", **kwargs
+):
+
     """
     Write this GeoDataFrame to an OGR data source
 
@@ -156,6 +159,11 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
 
         .. versionadded:: 0.7
             Previously the index was not written.
+    mode : string, default 'w'
+        The write mode, 'w' to overwrite the existing file and 'a' to append.
+        Not all drivers support appending. The drivers that support appending
+        are listed in fiona.supported_drivers or
+        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
@@ -188,7 +196,7 @@ def to_file(df, filename, driver="ESRI Shapefile", schema=None, index=None, **kw
         elif df.crs:
             crs_wkt = df.crs.to_wkt("WKT1_GDAL")
         with fiona.open(
-            filename, "w", driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
+            filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
             colxn.writerecords(df.iterfeatures())
 
