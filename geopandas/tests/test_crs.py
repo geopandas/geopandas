@@ -179,6 +179,9 @@ class TestGeometryArrayCRS:
         assert s.crs == self.osgb
         assert s.values.crs == self.osgb
 
+        with pytest.warns(UserWarning):
+            GeoSeries(arr, crs=4326)
+
     @pytest.mark.filterwarnings("ignore:Assigning CRS")
     def test_dataframe(self):
         arr = from_shapely(self.geoms, crs=27700)
@@ -196,11 +199,12 @@ class TestGeometryArrayCRS:
         assert df.geometry.values.crs == self.osgb
 
         # different passed CRS than array CRS is ignored
-        # TODO: raise warning?
         df = GeoDataFrame(geometry=s, crs=4326)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
+        with pytest.warns(UserWarning):
+            GeoDataFrame(geometry=s, crs=4326)
 
         # manually change CRS
         df = GeoDataFrame(geometry=s)

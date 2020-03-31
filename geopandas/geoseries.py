@@ -85,9 +85,18 @@ class GeoSeries(GeoPandasBase, Series):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
 
-        # # make a copy to avoid setting CRS to passed GeometryArray
-        if hasattr(data, "crs") and not data.crs and crs:
-            data = data.copy()
+        if hasattr(data, "crs") and crs:
+            if not data.crs:
+                # make a copy to avoid setting CRS to passed GeometryArray
+                data = data.copy()
+            else:
+                if data.crs != crs:
+                    warnings.warn(
+                        "CRS mismatch between CRS of underlying GeometryArray and "
+                        "'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS or "
+                        "'GeoSeries.to_crs()' to reproject geometries.",
+                        stacklevel=2,
+                    )  # TODO: change 'GeoSeries.crs = crs' to 'set_crs()' once done
 
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
