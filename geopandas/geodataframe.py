@@ -646,6 +646,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = DataFrame
         return result
 
+    def __setitem__(self, key, value):
+        if key == self._geometry_column_name:
+            try:
+                value = _ensure_geometry(value, crs=self.crs)
+            except TypeError:
+                warnings.warn("Geometry column does not contain geometry.")
+        super(GeoDataFrame, self).__setitem__(key, value)
+
     #
     # Implement pandas methods
     #
