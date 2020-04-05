@@ -6,7 +6,7 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import pytest
 
 
@@ -88,7 +88,7 @@ class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
-        df1.crs = {"init": "epsg:4326", "no_defs": True}
+        df1.crs = "epsg:4326"
         with pytest.warns(UserWarning):
             sjoin(df1, df2)
 
@@ -186,7 +186,7 @@ class TestSpatialJoin:
         assert_frame_equal(res, exp)
 
     def test_empty_join(self):
-        # Check empty joins
+        # Check joins resulting in empty gdfs.
         polygons = geopandas.GeoDataFrame(
             {
                 "col2": [1, 2],
@@ -203,6 +203,32 @@ class TestSpatialJoin:
         assert empty.index_left.isnull().all()
         empty = sjoin(not_in, polygons, how="inner", op="intersects")
         assert empty.empty
+
+    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize(
+        "empty",
+        [
+            GeoDataFrame(geometry=[GeometryCollection(), GeometryCollection()]),
+            GeoDataFrame(geometry=GeoSeries()),
+        ],
+    )
+    def test_join_with_empty(self, op, empty):
+        # Check joins with empty geometry columns/dataframes.
+        polygons = geopandas.GeoDataFrame(
+            {
+                "col2": [1, 2],
+                "geometry": [
+                    Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                    Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+                ],
+            }
+        )
+        result = sjoin(empty, polygons, how="left", op=op)
+        assert result.index_right.isnull().all()
+        result = sjoin(empty, polygons, how="right", op=op)
+        assert result.index_left.isnull().all()
+        result = sjoin(empty, polygons, how="inner", op=op)
+        assert result.empty
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_sjoin_invalid_args(self, dfs):
@@ -383,9 +409,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_inner = GeoDataFrame(
-            expected_inner_df, crs={"init": "epsg:4326", "no_defs": True}
-        )
+        expected_inner = GeoDataFrame(expected_inner_df, crs="epsg:4326")
 
         expected_right_df = pd.concat(
             [
@@ -402,9 +426,9 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_right = GeoDataFrame(
-            expected_right_df, crs={"init": "epsg:4326", "no_defs": True}
-        ).set_index("index_right")
+        expected_right = GeoDataFrame(expected_right_df, crs="epsg:4326").set_index(
+            "index_right"
+        )
 
         expected_left_df = pd.concat(
             [
@@ -415,9 +439,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_left = GeoDataFrame(
-            expected_left_df, crs={"init": "epsg:4326", "no_defs": True}
-        )
+        expected_left = GeoDataFrame(expected_left_df, crs="epsg:4326")
 
         assert expected_inner.equals(df_inner)
         assert expected_right.equals(df_right)

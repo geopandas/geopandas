@@ -1,6 +1,7 @@
 """
 Testing functionality for geopandas objects.
 """
+import warnings
 
 import pandas as pd
 
@@ -60,7 +61,7 @@ def geom_almost_equals(this, that):
 def assert_geoseries_equal(
     left,
     right,
-    check_dtype=False,
+    check_dtype=True,
     check_index_type=False,
     check_series_type=True,
     check_less_precise=False,
@@ -91,15 +92,13 @@ def assert_geoseries_equal(
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
-    msg = "dtype should be a GeometryDtype, got {0}"
-    assert isinstance(left.dtype, GeometryDtype), msg.format(left.dtype)
-    assert isinstance(right.dtype, GeometryDtype), msg.format(left.dtype)
+    if check_dtype:
+        msg = "dtype should be a GeometryDtype, got {0}"
+        assert isinstance(left.dtype, GeometryDtype), msg.format(left.dtype)
+        assert isinstance(right.dtype, GeometryDtype), msg.format(left.dtype)
 
     if check_index_type:
         assert isinstance(left.index, type(right.index))
-
-    if check_dtype:
-        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype, right.dtype)
 
     if check_series_type:
         assert isinstance(left, GeoSeries)
@@ -121,10 +120,18 @@ def assert_geoseries_equal(
             right.type,
         )
 
-    if check_less_precise:
-        assert geom_almost_equals(left, right)
+    if not check_crs:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "GeoSeries crs mismatch", UserWarning)
+            if check_less_precise:
+                assert geom_almost_equals(left, right)
+            else:
+                assert geom_equals(left, right)
     else:
-        assert geom_equals(left, right)
+        if check_less_precise:
+            assert geom_almost_equals(left, right)
+        else:
+            assert geom_equals(left, right)
 
 
 def assert_geodataframe_equal(

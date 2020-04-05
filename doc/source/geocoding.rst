@@ -27,7 +27,7 @@ with the detailed borough boundary file included within ``geopandas``.
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
 
-    boros.to_crs({"init": "epsg:4326"}).plot(ax=ax, color="white", edgecolor="black");
+    boros.to_crs("EPSG:4326").plot(ax=ax, color="white", edgecolor="black");
     @savefig boro_centers_over_bounds.png
     boro_locations.plot(ax=ax, color="red");
 

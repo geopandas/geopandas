@@ -69,10 +69,9 @@ def connect(dbname, user=None, password=None, host=None, port=None):
 
 def get_srid(df):
     """Return srid from `df.crs`."""
-    crs = df.crs
-    return (
-        int(crs["init"][5:]) if "init" in crs and crs["init"].startswith("epsg:") else 0
-    )
+    if df.crs is not None:
+        return df.crs.to_epsg() or 0
+    return 0
 
 
 def connect_spatialite():

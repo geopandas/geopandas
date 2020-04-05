@@ -18,11 +18,11 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries
+from geopandas import GeoSeries, GeoDataFrame
 from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.tests.util import geom_equals
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 import pytest
 
 
@@ -35,7 +35,7 @@ class TestSeries:
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = {"init": "epsg:4326", "no_defs": True}
+        self.g3.crs = "epsg:4326"
         self.g4 = GeoSeries([self.t2, self.t1])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, self.t2, None])
@@ -45,9 +45,7 @@ class TestSeries:
         self.a2.index = ["B", "C"]
         self.esb = Point(-73.9847, 40.7484)
         self.sol = Point(-74.0446, 40.6893)
-        self.landmarks = GeoSeries(
-            [self.esb, self.sol], crs={"init": "epsg:4326", "no_defs": True}
-        )
+        self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -79,17 +77,17 @@ class TestSeries:
 
     def test_align_crs(self):
         a1 = self.a1
-        a1.crs = {"init": "epsg:4326", "no_defs": True}
+        a1.crs = "epsg:4326"
         a2 = self.a2
-        a2.crs = {"init": "epsg:31370", "no_defs": True}
+        a2.crs = "epsg:31370"
 
         res1, res2 = a1.align(a2)
-        assert res1.crs == {"init": "epsg:4326", "no_defs": True}
-        assert res2.crs == {"init": "epsg:31370", "no_defs": True}
+        assert res1.crs == "epsg:4326"
+        assert res2.crs == "epsg:31370"
 
         a2.crs = None
         res1, res2 = a1.align(a2)
-        assert res1.crs == {"init": "epsg:4326", "no_defs": True}
+        assert res1.crs == "epsg:4326"
         assert res2.crs is None
 
     def test_align_mixed(self):
@@ -154,7 +152,7 @@ class TestSeries:
         assert np.all(self.landmarks.geom_almost_equals(lonlat))
         with pytest.raises(ValueError):
             self.g1.to_crs(epsg=4326)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_fillna(self):
@@ -201,7 +199,7 @@ class TestSeries:
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
-        copy.crs = "+init=epsg:4326"
+        copy.crs = "epsg:4326"
         reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
@@ -244,6 +242,12 @@ def test_missing_values():
     assert len(s.dropna()) == 3
 
 
+def test_geoseries_crs():
+    gs = GeoSeries()
+    gs.crs = "IGNF:ETRS89UTM28"
+    assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
 # -----------------------------------------------------------------------------
 # # Constructor tests
 # -----------------------------------------------------------------------------
@@ -282,6 +286,7 @@ class TestConstructor:
         for g in geoms:
             gs = GeoSeries(g)
             assert len(gs) == 1
+            # accessing elements no longer give identical objects
             assert gs.iloc[0].equals(g)
 
             gs = GeoSeries(g, index=index)
@@ -324,3 +329,12 @@ class TestConstructor:
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
         assert s.index is g.index
+
+    # GH 1216
+    def test_expanddim(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode()
+        df = s.reset_index()
+        assert type(df) == GeoDataFrame
