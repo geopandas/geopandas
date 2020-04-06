@@ -97,8 +97,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and geometry.crs != crs
             ):
                 warnings.warn(
-                    "CRS mismatch between CRS of underlying GeometryArray passed as "
-                    "geometry and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
+                    "CRS mismatch between CRS of the passed geometries "
+                    "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
                     "or 'GeoDataFrame.to_crs()' to reproject geometries.",
                     stacklevel=2,
                 )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done

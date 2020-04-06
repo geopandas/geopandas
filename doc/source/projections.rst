@@ -101,9 +101,9 @@ Re-projecting is the process of changing the representation of locations from on
 Projection for multiple geometry columns
 ----------------------------------------
 
-GeoPandas 0.8 implements the support for different projections assigned to different geometry
-columns of the same GeoDataFrame. Projection is now stored together with geometries directly
-on the GeometryArray level.
+GeoPandas 0.8 implements support for different projections assigned to different geometry
+columns of the same GeoDataFrame. The projection is now stored together with geometries per column (directly
+on the GeometryArray level).
 
 Note that if GeometryArray has assigned projection, it is preferred over the
 projection passed to GeoSeries or GeoDataFrame during the creation:
