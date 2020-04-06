@@ -80,6 +80,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # only if we have actual geometry values -> call set_geometry
             index = self.index
             try:
+                if (
+                    hasattr(self["geometry"].values, "crs")
+                    and self["geometry"].values.crs
+                    and crs
+                    and self["geometry"].values.crs != crs
+                ):
+                    warnings.warn(
+                        "CRS mismatch between CRS of the passed geometries "
+                        "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
+                        "or 'GeoDataFrame.to_crs()' to reproject geometries.",
+                        stacklevel=2,
+                    )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
                 self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
                 pass

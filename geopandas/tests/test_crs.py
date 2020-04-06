@@ -205,6 +205,10 @@ class TestGeometryArrayCRS:
         assert df.geometry.values.crs == self.osgb
         with pytest.warns(UserWarning):
             GeoDataFrame(geometry=s, crs=4326)
+        with pytest.warns(UserWarning):
+            GeoDataFrame({"data": [1, 2], "geometry": s}, crs=4326)
+        with pytest.warns(UserWarning):
+            GeoDataFrame(df, crs=27700).crs
 
         # manually change CRS
         df = GeoDataFrame(geometry=s)
