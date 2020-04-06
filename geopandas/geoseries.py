@@ -92,7 +92,7 @@ class GeoSeries(GeoPandasBase, Series):
             else:
                 if data.crs != crs:
                     warnings.warn(
-                        "CRS mismatch between CRS of underlying GeometryArray and "
+                        "CRS mismatch between CRS of the passed geometries and "
                         "'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS or "
                         "'GeoSeries.to_crs()' to reproject geometries.",
                         stacklevel=2,

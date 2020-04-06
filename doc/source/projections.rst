@@ -118,6 +118,9 @@ projection passed to GeoSeries or GeoDataFrame during the creation:
    - Lon[east]: Geodetic longitude (degree)
    ...
    >>> GeoSeries(array, crs=3395).crs  # crs=3395 is ignored as array already has CRS
+   UserWarning: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS or 'GeoSeries.to_crs()' to reproject geometries.
+       GeoSeries(array, crs=3395).crs
+
    <Geographic 2D CRS: EPSG:4326>
    Name: WGS 84
    Axis Info [ellipsoidal]:

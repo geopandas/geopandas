@@ -496,9 +496,13 @@ class TestGeometryArrayCRS:
             df.crs = 27700
 
     # make sure that geometry column from list has CRS (__setitem__)
-    def test_list_to_geometry(self):
+    def test_setitem_geometry(self):
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
 
         df["geometry"] = [g for g in df.geometry]
         assert df.geometry.values.crs == self.osgb
+
+        df2 = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
+        df2["geometry"] = from_shapely(self.geoms, crs=4326)
+        assert df2.geometry.values.crs == self.wgs

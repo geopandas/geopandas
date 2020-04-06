@@ -24,6 +24,8 @@ def _ensure_geometry(data, crs=None):
 
     If input is a (Geo)Series, output is a GeoSeries, otherwise output
     is GeometryArray.
+
+    If the input is a GeometryDtype with a set CRS, `crs` is ignored.
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
@@ -277,7 +279,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self._crs = None if not value else CRS.from_user_input(value)
         else:
             if hasattr(self.geometry.values, "crs"):
-                self.geometry.values.crs = None if not value else value
+                self.geometry.values.crs = value
                 self._crs = self.geometry.values.crs
             else:
                 # column called 'geometry' without geometry
@@ -647,11 +649,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
-            result.crs = result.values.crs
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
-            result.crs = self.crs
             result._geometry_column_name = geo_col
             result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
@@ -659,6 +659,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return result
 
     def __setitem__(self, key, value):
+        """
+        Overwritten to preserve CRS of GeometryArray in cases like
+        df['geometry'] = [geom... for geom in df.geometry]
+        """
         if key == self._geometry_column_name:
             try:
                 value = _ensure_geometry(value, crs=self.crs)
@@ -719,12 +723,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
-
-            # find GeometryArrays and propagate CRS to their self counterparts
-            for col, dtype in other.dtypes.iteritems():
-                if isinstance(dtype, GeometryDtype):
-                    if col in self.columns:
-                        self[col].crs = other[col].crs
 
         return self
 

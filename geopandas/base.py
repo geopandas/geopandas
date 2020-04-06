@@ -150,7 +150,7 @@ class GeoPandasBase(object):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self.geometry.values.crs = None if not value else value
+        self.geometry.values.crs = value
 
     @property
     def geom_type(self):
