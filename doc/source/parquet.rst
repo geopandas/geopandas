@@ -39,11 +39,23 @@ Each of the column entries in the ``"columns"`` field above has the following co
 .. code-block:: none
 
     {
-        "bounds": [<xmin>, <ymin>, <xmax>, <ymax>],  # OPTIONAL: total bounds of all geometries in column, in CRS of column
+        "bounds": [<xmin>, <ymin>, (zmin), <xmax>, <ymax>, (zmax)],  # OPTIONAL: total bounds of all geometries in column, in CRS of column
         "crs": "<WKT representation of CRS>",
         "encoding: "WKB",  # encoding identifier, see below
         "name": "<column name>",
     }
+
+
+Bounding boxes
+--------------
+
+Bounding boxes are used to help define the spatial extent of each geometry column.
+Implementations of this schema may choose to use those bounding boxes to filter
+partitions (sub-datasets) within a *parquet* dataset.
+
+These must be encoded with the minimum and maximum values of each dimension:
+- 2D: [<xmin>, <ymin>, <xmax>, <ymax>]
+- 3D: [<xmin>, <ymin>, <zmin>, <xmax>, <ymax>, <zmax>]
 
 
 CRS encoding
