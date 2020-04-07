@@ -179,7 +179,7 @@ class TestGeometryArrayCRS:
         assert s.crs == self.osgb
         assert s.values.crs == self.osgb
 
-        with pytest.warns(UserWarning):
+        with pytest.warns(FutureWarning):
             GeoSeries(arr, crs=4326)
 
     @pytest.mark.filterwarnings("ignore:Assigning CRS")
@@ -203,11 +203,11 @@ class TestGeometryArrayCRS:
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
-        with pytest.warns(UserWarning):
+        with pytest.warns(FutureWarning):
             GeoDataFrame(geometry=s, crs=4326)
-        with pytest.warns(UserWarning):
+        with pytest.warns(FutureWarning):
             GeoDataFrame({"data": [1, 2], "geometry": s}, crs=4326)
-        with pytest.warns(UserWarning):
+        with pytest.warns(FutureWarning):
             GeoDataFrame(df, crs=27700).crs
 
         # manually change CRS
