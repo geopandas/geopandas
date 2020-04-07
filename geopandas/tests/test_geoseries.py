@@ -210,6 +210,15 @@ class TestSeries:
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
 
+def test_missing_values_empty_warning():
+    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+    with pytest.warns(UserWarning):
+        s.isna()
+
+    with pytest.warns(UserWarning):
+        s.notna()
+
+
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
@@ -245,7 +254,7 @@ def test_set_crs(self):
     assert naive.set_crs(crs="EPSG:4326").crs == "EPSG:4326"
     assert naive.set_crs(epsg=4326).crs == "EPSG:4326"
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         naive.set_crs(crs=None, epsg=None)
 
 

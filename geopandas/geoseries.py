@@ -395,28 +395,33 @@ class GeoSeries(GeoPandasBase, Series):
     #
 
     def set_crs(self, crs=None, epsg=None):
-        """Returns a ``GeoSeries`` with all geometries transformed to a new
-        coordinate reference system.
+        """
+        Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
-        Set the coordinate reference system in a GeoSeries without transforming
-        geometry.  The ``crs`` attribute on the current GeoSeries does not have
-        to be set.  Either ``crs`` in string or dictionary form or an EPSG code
-        may be specified for output.
+        Set the CRS in a GeoSeries without transforming the geometries. For
+        actually transforming the geometries to a new CRS, use the ``to_crs``
+        method.
 
         Parameters
         ----------
-        crs : dict or str
-            Output projection parameters as string or in dictionary form.
-        epsg : int
-            EPSG code specifying output projection.
-        """
-        from fiona.crs import from_epsg
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying the projection.
 
-        if crs is None:
-            try:
-                crs = from_epsg(epsg)
-            except TypeError:
-                raise TypeError("Must set either crs or epsg for output.")
+        Returns
+        -------
+        GeoSeries
+        """
+        if crs is not None:
+            crs = CRS.from_user_input(crs)
+        elif epsg is not None:
+            crs = CRS.from_epsg(epsg)
+        else:
+            raise ValueError("Must pass either crs or epsg.")
+
         result = self
         result.crs = crs
         return result

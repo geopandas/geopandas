@@ -642,6 +642,8 @@ class TestDataFrame:
         naive = self.df.copy()
         naive.crs = None
         assert naive.set_crs(self.df.crs).crs == self.df.crs
+        naive = self.df.copy()
+        naive.crs = None
         naive.set_crs(self.df.crs, inplace=True)
         assert naive.crs == self.df.crs
 
