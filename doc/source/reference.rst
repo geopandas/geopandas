@@ -25,6 +25,10 @@ The following Shapely methods and attributes are available on
 
 .. autoattribute:: geopandas.GeoSeries.interiors
 
+.. autoattribute:: geopandas.GeoSeries.x
+
+.. autoattribute:: geopandas.GeoSeries.y
+
 `Unary Predicates`
 
 .. autoattribute:: geopandas.GeoSeries.is_empty
@@ -79,6 +83,8 @@ The following Shapely methods and attributes are available on
 
 `Affine transformations`
 
+.. automethod:: geopandas.GeoSeries.affine_transform
+
 .. automethod:: geopandas.GeoSeries.rotate
 
 .. automethod:: geopandas.GeoSeries.scale
@@ -91,9 +97,15 @@ The following Shapely methods and attributes are available on
 
 .. autoattribute:: geopandas.GeoSeries.unary_union
 
-Additionally, the following methods are implemented:
+Additionally, the following attributes and methods are implemented:
 
 .. automethod:: geopandas.GeoSeries.from_file
+
+.. automethod:: geopandas.GeoSeries.to_file
+
+.. automethod:: geopandas.GeoSeries.to_json
+
+.. autoattribute:: geopandas.GeoSeries.crs
 
 .. automethod:: geopandas.GeoSeries.to_crs
 
@@ -103,10 +115,17 @@ Additionally, the following methods are implemented:
 
 .. autoattribute:: geopandas.GeoSeries.__geo_interface__
 
+.. automethod:: geopandas.GeoSeries.isna
+
+.. automethod:: geopandas.GeoSeries.notna
+
+.. automethod:: geopandas.GeoSeries.fillna
+
+
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
 ``Series`` rather than a ``GeoSeries`` result.  The methods
-``copy()``, ``align()``, ``isnull()`` and ``fillna()`` have been
+``isna()`` and ``fillna()`` have been
 implemented specifically for ``GeoSeries`` and are expected to work
 correctly.
 
@@ -116,9 +135,15 @@ GeoDataFrame
 A ``GeoDataFrame`` is a tablular data structure that contains a column
 called ``geometry`` which contains a `GeoSeries``.
 
-Currently, the following methods are implemented for a ``GeoDataFrame``:
+Currently, the following methods/attributes are implemented for a ``GeoDataFrame``:
+
+.. autoattribute:: geopandas.GeoDataFrame.crs
+
+.. automethod:: geopandas.GeoDataFrame.to_crs
 
 .. automethod:: geopandas.GeoDataFrame.from_file
+
+.. automethod:: geopandas.GeoDataFrame.from_features
 
 .. automethod:: geopandas.GeoDataFrame.from_postgis
 
@@ -130,6 +155,14 @@ Currently, the following methods are implemented for a ``GeoDataFrame``:
 
 .. automethod:: geopandas.GeoDataFrame.plot
 
+.. automethod:: geopandas.GeoDataFrame.rename_geometry
+
+.. automethod:: geopandas.GeoDataFrame.set_geometry
+
+.. automethod:: geopandas.GeoDataFrame.explode
+
+.. automethod:: geopandas.GeoDataFrame.dissolve
+
 .. autoattribute:: geopandas.GeoDataFrame.__geo_interface__
 
 All pandas ``DataFrame`` methods are also available, although they may
@@ -137,8 +170,22 @@ not operate in a meaningful way on the ``geometry`` column and may not
 return a ``GeoDataFrame`` result even when it would be appropriate to
 do so.
 
-API Pages
----------
+Testing
+-------
+
+GeoPandas includes specific functions to test its objects.
+
+.. autofunction:: geopandas.testing.geom_equals
+
+.. autofunction:: geopandas.testing.geom_almost_equals
+
+.. autofunction:: geopandas.testing.assert_geoseries_equal
+
+.. autofunction:: geopandas.testing.assert_geodataframe_equal
+
+
+Top-level Functions
+-------------------
 
 .. currentmodule:: geopandas
 .. autosummary::
@@ -147,8 +194,11 @@ API Pages
 
   GeoDataFrame
   GeoSeries
-  overlay
   read_file
   sjoin
+  overlay
+  clip
   tools.geocode
+  tools.collect
+  points_from_xy
   datasets.get_path

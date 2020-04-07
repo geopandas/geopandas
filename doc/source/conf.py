@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+import warnings
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -31,7 +32,17 @@ extensions = ['IPython.sphinxext.ipython_console_highlighting',
               'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
+              'recommonmark',
               'numpydoc',
+]
+
+# continue doc build and only print warnings/errors in examples
+ipython_warning_is_error = False
+ipython_exec_lines = [
+    # ensure that dataframes are not truncated in the IPython code blocks
+    'import pandas as _pd',
+    '_pd.set_option("display.max_columns", 20)',
+    '_pd.set_option("display.width", 100)'
 ]
 
 # Fix issue with warnings from numpydoc (see discussion in PR #534)
@@ -53,14 +64,23 @@ sphinx_gallery_conf = {
     'gallery_dirs': ['gallery'],
     'doc_module': ('geopandas',),
     'reference_url': {'matplotlib': 'http://matplotlib.org',
-                      'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+                      'numpy': 'http://docs.scipy.org/doc/numpy',
                       'scipy': 'http://docs.scipy.org/doc/scipy/reference',
                       'geopandas': None},
     'backreferences_dir': 'reference'
 }
+# connect docs in other projects
+intersphinx_mapping = {'pyproj': ('http://pyproj4.github.io/pyproj/stable/', None)}
+# suppress matplotlib warning in examples
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="Matplotlib is currently using agg, which is a"
+    " non-GUI backend, so cannot show the figure.",
+)
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -70,7 +90,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013–2017, GeoPandas developers'
+copyright = u'2013–2019, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
