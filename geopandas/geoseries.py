@@ -117,7 +117,7 @@ class GeoSeries(GeoPandasBase, Series):
                     data = SingleBlockManager([block], data.axes[0], fastpath=True)
                 self = super(GeoSeries, cls).__new__(cls)
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
-                self.crs = crs
+                self.crs = getattr(self.values, "crs", crs)
                 return self
             warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
             return Series(data, index=index, **kwargs)
@@ -295,15 +295,8 @@ class GeoSeries(GeoPandasBase, Series):
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
-        if method == "concat":
-            for name in self._metadata:
-                # using CRS of the first object
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
-            self.values.crs = other.objs[0].values.crs
-        else:
-            for name in self._metadata:
-                object.__setattr__(self, name, getattr(other, name, None))
-            self.values.crs = other.values.crs
+        for name in self._metadata:
+            object.__setattr__(self, name, getattr(other, name, None))
         return self
 
     def isna(self):
