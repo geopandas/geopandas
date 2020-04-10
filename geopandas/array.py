@@ -302,6 +302,14 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
 
+        # TODO: use this once pandas-dev/pandas#33457 is fixed
+        # if hasattr(value, "crs"):
+        #     if value.crs and (value.crs != self.crs):
+        #         raise ValueError(
+        #             "CRS mismatch between CRS of the passed geometries "
+        #             "and CRS of existing geometries."
+        #         )
+
     if compat.USE_PYGEOS:
 
         def __getstate__(self):
