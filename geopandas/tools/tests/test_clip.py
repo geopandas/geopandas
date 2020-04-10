@@ -21,6 +21,7 @@ def point_gdf():
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
     return gdf
 
+
 @pytest.fixture
 def pointsoutside_nooverlap_gdf():
     """Create a point GeoDataFrame. Its points are all outside the single
@@ -29,6 +30,7 @@ def pointsoutside_nooverlap_gdf():
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
     return gdf
 
+
 @pytest.fixture
 def pointsoutside_overlap_gdf():
     """Create a point GeoDataFrame. Its points are all outside the single
@@ -36,6 +38,7 @@ def pointsoutside_overlap_gdf():
     pts = np.array([[5, 15], [15, 15], [15, 5]])
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
     return gdf
+
 
 @pytest.fixture
 def single_rectangle_gdf():
@@ -182,9 +185,7 @@ def test_non_overlapping_geoms():
         lambda x: shapely.affinity.translate(x, xoff=20)
     )
     out = clip(unit_gdf, non_overlapping_gdf)
-    assert_geodataframe_equal(
-        out, GeoDataFrame(columns=unit_gdf.columns, crs=unit_gdf.crs)
-    )
+    assert_geodataframe_equal(out, unit_gdf.iloc[:0])
     out2 = clip(unit_gdf.geometry, non_overlapping_gdf)
     assert_geoseries_equal(out2, GeoSeries(crs=unit_gdf.crs))
 
