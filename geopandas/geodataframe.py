@@ -690,6 +690,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 warnings.warn("Geometry column does not contain geometry.")
         super(GeoDataFrame, self).__setitem__(key, value)
 
+        # CRS of array may get lost during __setitem__
+        if hasattr(value, "crs"):
+            self[key].crs = value.crs
+
     #
     # Implement pandas methods
     #
