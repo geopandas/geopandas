@@ -21,6 +21,21 @@ def point_gdf():
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
     return gdf
 
+@pytest.fixture
+def pointsoutside_nooverlap_gdf():
+    """Create a point GeoDataFrame. Its points are all outside the single
+    rectangle, and its bounds are outside the single rectangle's."""
+    pts = np.array([[5, 15], [15, 15], [15, 20]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    return gdf
+
+@pytest.fixture
+def pointsoutside_overlap_gdf():
+    """Create a point GeoDataFrame. Its points are all outside the single
+    rectangle, and its bounds are overlapping the single rectangle's."""
+    pts = np.array([[5, 15], [15, 15], [15, 5]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    return gdf
 
 @pytest.fixture
 def single_rectangle_gdf():
@@ -313,6 +328,18 @@ def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
     # Assert returned data is a geometry collection given sliver geoms
     assert "Point" == clipped.geom_type[0]
     assert "LineString" == clipped.geom_type[1]
+
+
+def test_clip_no_box_overlap(pointsoutside_nooverlap_gdf, single_rectangle_gdf):
+    """Test clip when intersection is empty and boxes do not overlap."""
+    clipped = clip(pointsoutside_nooverlap_gdf, single_rectangle_gdf)
+    assert len(clipped) == 0
+
+
+def test_clip_box_overlap(pointsoutside_overlap_gdf, single_rectangle_gdf):
+    """Test clip when intersection is emtpy and boxes do overlap."""
+    clipped = clip(pointsoutside_overlap_gdf, single_rectangle_gdf)
+    assert len(clipped) == 0
 
 
 def test_warning_extra_geoms_mixed(single_rectangle_gdf, mixed_gdf):

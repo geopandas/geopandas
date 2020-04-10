@@ -245,8 +245,15 @@ def clip(gdf, mask, keep_geom_type=False):
                     concat = concat.loc[concat.geom_type.isin(polys)]
                 elif orig_type in lines:
                     concat = concat.loc[concat.geom_type.isin(lines)]
-
-    # preserve the original order of the input
+    
+    # Return empty GeoDataFrame or GeoSeries if no shapes remain
+    if len(concat) == 0:
+        return (
+            GeoDataFrame(columns=gdf.columns, crs=gdf.crs)
+            if isinstance(gdf, GeoDataFrame)
+            else GeoSeries(crs=gdf.crs)
+        )
+    # Preserve the original order of the input
     if isinstance(concat, GeoDataFrame):
         concat["_order"] = order
         return concat.sort_values(by="_order").drop(columns="_order")
