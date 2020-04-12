@@ -180,13 +180,13 @@ class TestGeometryArrayCRS:
         assert s.values.crs == self.osgb
 
         with pytest.warns(FutureWarning):
-            GeoSeries(arr, crs=4326)
+            s = GeoSeries(arr, crs=4326)
+        assert s.crs == self.osgb
 
     @pytest.mark.filterwarnings("ignore:Assigning CRS")
     def test_dataframe(self):
         arr = from_shapely(self.geoms, crs=27700)
-        s = GeoSeries(arr)
-        df = GeoDataFrame(geometry=s)
+        df = GeoDataFrame(geometry=arr)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -199,7 +199,8 @@ class TestGeometryArrayCRS:
         assert df.geometry.values.crs == self.osgb
 
         # different passed CRS than array CRS is ignored
-        df = GeoDataFrame(geometry=s, crs=4326)
+        with pytest.warns(FutureWarning):
+            df = GeoDataFrame(geometry=s, crs=4326)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -208,9 +209,11 @@ class TestGeometryArrayCRS:
         with pytest.warns(FutureWarning):
             GeoDataFrame({"data": [1, 2], "geometry": s}, crs=4326)
         with pytest.warns(FutureWarning):
-            GeoDataFrame(df, crs=27700).crs
+            GeoDataFrame(df, crs=4326).crs
 
         # manually change CRS
+        arr = from_shapely(self.geoms)
+        s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame(geometry=s)
         df.crs = 4326
         assert df.crs == self.wgs
@@ -263,6 +266,12 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
+        arr = from_shapely(self.geoms, crs=4326)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr})
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+
         # geometry column without geometry
         df = GeoDataFrame({"geometry": [0, 1]})
         df.crs = 27700
@@ -296,12 +305,13 @@ class TestGeometryArrayCRS:
         assert df["geometry"].crs == self.osgb
         assert df["geometry"].values.crs == self.osgb
 
-    def test_assing_cols(self):
+    def test_assign_cols(self):
         arr = from_shapely(self.geoms, crs=27700)
         s = GeoSeries(self.geoms, crs=4326)
         df = GeoDataFrame(s, geometry=arr, columns=["col1"])
         df["geom2"] = s
         df["geom3"] = s.values
+        df["geom4"] = from_shapely(self.geoms)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -309,6 +319,8 @@ class TestGeometryArrayCRS:
         assert df.geom2.values.crs == self.wgs
         assert df.geom3.crs == self.wgs
         assert df.geom3.values.crs == self.wgs
+        assert df.geom4.crs is None
+        assert df.geom4.values.crs is None
 
     def test_copy(self):
         arr = from_shapely(self.geoms, crs=27700)
