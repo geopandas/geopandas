@@ -683,7 +683,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Overwritten to preserve CRS of GeometryArray in cases like
         df['geometry'] = [geom... for geom in df.geometry]
         """
-        if key == self._geometry_column_name:
+        if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
             try:
                 value = _ensure_geometry(value, crs=self.crs)
             except TypeError:
