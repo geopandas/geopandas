@@ -1,4 +1,5 @@
 from distutils.version import LooseVersion
+import os
 
 import random
 
@@ -111,6 +112,10 @@ def epsg26918(request):
 
 @pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
 def test_transform2(epsg4326, epsg26918):
+    # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
+    # slightly different due to use of grid files or not -> turn off network
+    # to not use grid files at all for this test
+    os.environ["PROJ_NETWORK"] = "OFF"
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
     utm = lonlat.to_crs(**epsg26918)

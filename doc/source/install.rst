@@ -62,7 +62,7 @@ Creating a new environment
 Creating a new environment is not strictly necessary, but given that installing
 other geospatial packages from different channels may cause dependency conflicts
 (as mentioned in the note above), it can be good practice to install the geospatial
-stack in a clean environment starting fresh. 
+stack in a clean environment starting fresh.
 
 The following commands create a new environment with the name ``geo_env``,
 configures it to install packages always from conda-forge, and installs
@@ -98,7 +98,7 @@ as well::
       for Mac, Linux, and Windows.
     - `rtree`_ does not provide wheels.
     - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
-      can be found at `Christopher Gohlke's website 
+      can be found at `Christopher Gohlke's website
       <https://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
 
     So depending on your platform, you might need to compile and install their
@@ -143,7 +143,6 @@ Required dependencies:
 - `shapely`_ (interface to `GEOS`_)
 - `fiona`_ (interface to `GDAL`_)
 - `pyproj`_ (interface to `PROJ`_; version 2.2.0 or later)
-- `six`_
 
 Further, optional dependencies are:
 
@@ -216,8 +215,6 @@ More specifically, whether the speedups are used or not is determined by:
 .. _matplotlib: http://matplotlib.org
 
 .. _geopy: https://github.com/geopy/geopy
-
-.. _six: https://pythonhosted.org/six
 
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 
