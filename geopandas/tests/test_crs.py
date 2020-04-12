@@ -522,3 +522,9 @@ class TestGeometryArrayCRS:
         df2 = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
         df2["geometry"] = from_shapely(self.geoms, crs=4326)
         assert df2.geometry.values.crs == self.wgs
+
+    def test_astype(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
+        df2 = df.astype({"col1": str})
+        assert df2.crs == self.osgb
