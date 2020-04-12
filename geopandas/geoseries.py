@@ -90,7 +90,7 @@ class GeoSeries(GeoPandasBase, Series):
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
-                if data.crs != CRS.from_user_input(crs):
+                if not data.crs == crs:
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
                         "and 'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS "
