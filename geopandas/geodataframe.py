@@ -623,13 +623,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
 
-        Transform all geometries in a GeoSeries to a different coordinate
+        Transform all geometries in an active geometry column to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
-        This method will transform all points in all objects.  It has no notion
+        This method will transform all points in all objects. It has no notion
         or projecting entire geometries.  All segments joining points are
-        assumed to be lines in the current projection, not geodesics.  Objects
+        assumed to be lines in the current projection, not geodesics. Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
 
