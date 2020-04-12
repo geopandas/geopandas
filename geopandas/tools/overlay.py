@@ -141,8 +141,8 @@ def _overlay_union(df1, df2):
 def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     """Perform spatial overlay between two GeoDataFrames.
 
-    Currently only supports data GeoDataFrames with uniform geometry types, 
-    i.e. containing only (Multi)Polygons, or only (Multi)Points, or a 
+    Currently only supports data GeoDataFrames with uniform geometry types,
+    i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
     combination of (Multi)LineString and LinearRing shapes.
     Implements several methods that are all effectively subsets of the union.
 
