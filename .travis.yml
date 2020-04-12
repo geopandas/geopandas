@@ -46,7 +46,6 @@ install:
   - python -c "import geopandas; geopandas.show_versions();"
 
 script:
-  - unset PROJ_NETWORK
   - echo "Testing without PyGEOS"
   - USE_PYGEOS=0 pytest geopandas --cov geopandas -v --cov-report term-missing
   - if [ "$PYGEOS" ]; then echo "Testing with PyGEOS"; fi
