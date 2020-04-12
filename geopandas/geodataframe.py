@@ -84,7 +84,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     hasattr(self["geometry"].values, "crs")
                     and self["geometry"].values.crs
                     and crs
-                    and self["geometry"].values.crs != crs
+                    and self["geometry"].values.crs != CRS.from_user_input(crs)
                 ):
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
@@ -112,7 +112,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 hasattr(geometry, "crs")
                 and geometry.crs
                 and crs
-                and geometry.crs != crs
+                and geometry.crs != CRS.from_user_input(crs)
             ):
                 warnings.warn(
                     "CRS mismatch between CRS of the passed geometries "
