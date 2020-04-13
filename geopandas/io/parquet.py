@@ -4,8 +4,8 @@ from pandas.compat._optional import import_optional_dependency
 from pandas.io.common import get_filepath_or_buffer
 from pandas import DataFrame
 
-from geopandas.array import from_wkb, to_wkb
-from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import from_wkb, to_wkb, GeometryArray
+from geopandas import GeoDataFrame
 import geopandas
 
 
@@ -278,12 +278,8 @@ def read_parquet(path, columns=None, **kwargs):
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        df[col] = from_wkb(df[col].values)
+        df[col] = GeometryArray(
+            from_wkb(df[col].values), crs=column_metadata[col]["crs"]
+        )
 
-    df = GeoDataFrame(df, geometry=geometry, crs=column_metadata[geometry]["crs"])
-
-    for col in geometry_columns:
-        crs = column_metadata[col]["crs"]
-        df[col].crs = crs
-
-    return df
+    return GeoDataFrame(df, geometry=geometry)
