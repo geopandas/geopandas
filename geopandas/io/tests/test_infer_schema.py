@@ -9,8 +9,12 @@ from shapely.geometry import (
     Polygon,
 )
 
+import pandas as pd
+import numpy as np
+import pytest
 from geopandas import GeoDataFrame
 from geopandas.io.file import _FIONA18, infer_schema
+from geopandas._compat import PANDAS_GE_024
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
@@ -313,3 +317,15 @@ def test_infer_schema_null_geometry_all():
     # None geometry type in then replaced by 'Unknown'
     # (default geometry type supported by Fiona)
     assert infer_schema(df) == {"geometry": "Unknown", "properties": OrderedDict()}
+
+
+@pytest.mark.skipif(not PANDAS_GE_024, reason="pandas >= 0.24 needed")
+def test_infer_schema_int64():
+    int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
+    df = GeoDataFrame(geometry=[city_hall_entrance, city_hall_balcony])
+    df["int64"] = int64col
+
+    assert infer_schema(df) == {
+        "geometry": "Point",
+        "properties": OrderedDict([("int64", "int")]),
+    }

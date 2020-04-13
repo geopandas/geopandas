@@ -8,6 +8,7 @@ dependencies:
   - shapely
   - fiona
   - pyproj
+  - pygeos
   # testing
   - pytest
   - pytest-cov
@@ -22,5 +23,3 @@ dependencies:
   - psycopg2
   - libspatialite
   - pyarrow
-  # TEMP: workaround until conda-forge fixes the issues with gdal
-  - zstd

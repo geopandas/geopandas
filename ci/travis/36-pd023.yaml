@@ -10,7 +10,8 @@ dependencies:
   - shapely
   - gdal=2.3
   - fiona
-  - pyproj
+  #- pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -26,5 +27,7 @@ dependencies:
   - libspatialite
   - pyarrow
   - pip:
+    - pyproj==2.3.1
     - geopy
     - codecov
+    - git+https://github.com/pygeos/pygeos.git

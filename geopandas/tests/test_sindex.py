@@ -11,7 +11,8 @@ import pytest
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSeriesSindex:
-    def test_empty_index(self):
+    def test_empty_geoseries(self):
+
         assert GeoSeries().sindex is None
 
     def test_point(self):
@@ -24,11 +25,9 @@ class TestSeriesSindex:
 
     def test_empty_point(self):
         s = GeoSeries([Point()])
+
         assert s.sindex is None
         assert s._sindex_generated is True
-
-    def test_empty_geo_series(self):
-        assert GeoSeries().sindex is None
 
     def test_polygons(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
@@ -66,7 +65,7 @@ class TestFrameSindex:
         self.df = GeoDataFrame(data, geometry="location")
 
     def test_sindex(self):
-        self.df.crs = {"init": "epsg:4326"}
+        self.df.crs = "epsg:4326"
         assert self.df.sindex.size == 5
         hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4), objects=True))
         assert len(hits) == 2

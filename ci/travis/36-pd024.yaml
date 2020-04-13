@@ -7,7 +7,8 @@ dependencies:
   - pandas=0.24
   - shapely
   - fiona=1.7
-  - pyproj
+  #- pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -22,6 +23,8 @@ dependencies:
   - libspatialite
   - pyarrow
   - pip:
+    - pyproj
     - codecov
     - geopy
     - mapclassify
+    - git+https://github.com/pygeos/pygeos.git
