@@ -282,6 +282,13 @@ class TestGeometryArrayCRS:
         df.crs = 27700
         assert df.crs == self.osgb
 
+        df = GeoDataFrame()
+        df.crs = 4326
+        df["geometry"] = None
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+
     def test_read_file(self):
         nybb_filename = datasets.get_path("nybb")
         df = read_file(nybb_filename)

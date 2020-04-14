@@ -684,10 +684,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df['geometry'] = [geom... for geom in df.geometry]
         """
         if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
-            try:
-                value = _ensure_geometry(value, crs=self.crs)
-            except TypeError:
-                warnings.warn("Geometry column does not contain geometry.")
+            if value is None:
+                value = GeometryArray(np.full(self.shape[0], None), crs=self.crs)
+            else:
+                try:
+                    value = _ensure_geometry(value, crs=self.crs)
+                except TypeError:
+                    warnings.warn("Geometry column does not contain geometry.")
         super(GeoDataFrame, self).__setitem__(key, value)
 
     #
