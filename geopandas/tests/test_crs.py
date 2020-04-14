@@ -6,7 +6,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString
 import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
@@ -282,9 +282,14 @@ class TestGeometryArrayCRS:
         df.crs = 27700
         assert df.crs == self.osgb
 
-        df = GeoDataFrame()
-        df.crs = 4326
-        df["geometry"] = None
+    @pytest.mark.parametrize(
+        "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
+    )
+    def test_scalar(self, scalar):
+        with pytest.warns(FutureWarning):
+            df = GeoDataFrame()
+            df.crs = 4326
+        df["geometry"] = scalar
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
