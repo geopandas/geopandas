@@ -6,6 +6,8 @@ import pandas as pd
 from pandas import DataFrame, Series
 
 from shapely.geometry import mapping, shape
+from shapely.geometry.base import BaseGeometry
+
 
 from pyproj import CRS
 
@@ -684,6 +686,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         df['geometry'] = [geom... for geom in df.geometry]
         """
         if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
+            if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
+                value = [value] * self.shape[0]
             try:
                 value = _ensure_geometry(value, crs=self.crs)
             except TypeError:
