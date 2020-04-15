@@ -512,18 +512,31 @@ def geom_type(data):
         return _unary_op("geom_type", data, null_value=None)
 
 
-def area(data):
-    if compat.USE_PYGEOS:
-        return pygeos.area(data)
+def area(data, crs=None):
+    if crs and crs.is_geographic:
+        geod = crs.get_geod()
+        a_p = [geod.geometry_area_perimeter(geom) for geom in to_shapely(data)]
+        a, p = zip(*a_p)
+        # abs needed for clockwise polygons.
+        # TODO: normalize once pygeos #71 is in GeoPandas
+        return np.abs(np.array(a))
     else:
-        return _unary_op("area", data, null_value=np.nan)
+        if compat.USE_PYGEOS:
+            return pygeos.area(data)
+        else:
+            return _unary_op("area", data, null_value=np.nan)
 
 
-def length(data):
-    if compat.USE_PYGEOS:
-        return pygeos.length(data)
+def length(data, crs=None):
+    if crs and crs.is_geographic:
+        geod = crs.get_geod()
+        results = [geod.geometry_length(geom) for geom in to_shapely(data)]
+        return np.array(results)
     else:
-        return _unary_op("length", data, null_value=np.nan)
+        if compat.USE_PYGEOS:
+            return pygeos.length(data)
+        else:
+            return _unary_op("length", data, null_value=np.nan)
 
 
 #

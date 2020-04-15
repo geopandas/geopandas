@@ -55,7 +55,7 @@ in :doc:`geometric manipulations <geometric_manipulations>`.
 
 Attributes
 ^^^^^^^^^^^^^^^
-* :attr:`~GeoSeries.area`: shape area (units of projection -- see :doc:`projections <projections>`)
+* :attr:`~GeoSeries.area`: shape area (units of projection or squared meters for geographic projections -- see :doc:`projections <projections>`)
 * :attr:`~GeoSeries.bounds`: tuple of max and min coordinates on each axis for each shape
 * :attr:`~GeoSeries.total_bounds`: tuple of max and min coordinates on each axis for entire GeoSeries
 * :attr:`~GeoSeries.geom_type`: type of geometry.
@@ -157,7 +157,7 @@ option to control:
     geopandas.options
 
 The ``geopandas.options.display_precision`` option can control the number of
-decimals to show in the display of coordinates in the geometry column. 
+decimals to show in the display of coordinates in the geometry column.
 In the ``world`` example of above, the default is to show 5 decimals for
 geographic coordinates:
 

@@ -74,7 +74,7 @@ def _binary_op(op, this, other, *args, **kwargs):
 
 def _delegate_property(op, this):
     # type: (str, GeoSeries) -> GeoSeries/Series
-    a_this = GeometryArray(this.geometry.values)
+    a_this = GeometryArray(this.geometry.values, crs=this.crs)
     data = getattr(a_this, op)
     if isinstance(data, GeometryArray):
         from .geoseries import GeoSeries
@@ -130,7 +130,7 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
-        ``GeoSeries``."""
+        ``GeoSeries``. Returns the geodesic area for geographic projections."""
         return _delegate_property("area", self)
 
     @property
@@ -165,7 +165,8 @@ class GeoPandasBase(object):
 
     @property
     def length(self):
-        """Returns a ``Series`` containing the length of each geometry."""
+        """Returns a ``Series`` containing the length of each geometry.
+        Returns the geodesic length for geographic projections."""
         return _delegate_property("length", self)
 
     @property

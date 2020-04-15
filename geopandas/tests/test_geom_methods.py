@@ -677,3 +677,15 @@ class TestGeomMethods:
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+
+    # Test geodesic methods
+    def test_geod_area(self):
+        geod = self.g3.crs.get_geod()
+        a_p = [geod.geometry_area_perimeter(geom) for geom in [self.t1, self.t2]]
+        expected, _ = zip(*a_p)
+        assert_array_equal(expected, self.g3.area)
+
+    def test_geod_length(self):
+        geod = self.g3.crs.get_geod()
+        expected = [geod.geometry_length(geom) for geom in [self.t1, self.t2]]
+        assert_array_equal(expected, self.g3.length)
