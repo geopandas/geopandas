@@ -11,6 +11,7 @@ dependencies:
   - gdal=2.3
   - fiona
   #- pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -28,3 +29,4 @@ dependencies:
     - pyproj==2.3.1
     - geopy
     - codecov
+    - git+https://github.com/pygeos/pygeos.git

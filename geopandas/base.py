@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series
 
-from pyproj import CRS
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
@@ -146,12 +145,12 @@ class GeoPandasBase(object):
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
         """
-        return self._crs
+        return self.geometry.values.crs
 
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self._crs = None if not value else CRS.from_user_input(value)
+        self.geometry.values.crs = value
 
     @property
     def geom_type(self):
