@@ -417,7 +417,7 @@ class GeoSeries(GeoPandasBase, Series):
     # Additional methods
     #
 
-    def set_crs(self, crs=None, epsg=None):
+    def set_crs(self, crs=None, epsg=None, copy=True, allow_override=False):
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
@@ -433,6 +433,13 @@ class GeoSeries(GeoPandasBase, Series):
             such as an authority string (eg "EPSG:4326") or a WKT string.
         epsg : int, optional if `crs` is specified
             EPSG code specifying the projection.
+        copy : bool, default True
+            If set to False, the CRS of the GeoSeries will be changed in place
+            (while still returning the result) instead of making a copy of
+            the GeoSeries.
+        allow_override : bool, default False
+            If the the GeoSeries already has a CRS, allow to replace the
+            existing CRS, even when both are not equal.
 
         Returns
         -------
@@ -445,7 +452,17 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             raise ValueError("Must pass either crs or epsg.")
 
-        result = self
+        if not allow_override and self.crs is not None and not self.crs == crs:
+            raise ValueError(
+                "The GeoSeries already has a CRS which is not equal to the passed "
+                "CRS. Specify 'allow_override=True' to allow replacing the existing "
+                "CRS without doing any transformation. If you actually want to "
+                "transform the geometries, use 'GeoSeries.to_crs' instead."
+            )
+        if copy:
+            result = self.copy()
+        else:
+            result = self
         result.crs = crs
         return result
 

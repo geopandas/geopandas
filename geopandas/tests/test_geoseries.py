@@ -248,16 +248,6 @@ def test_geoseries_crs():
     assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
 
 
-def test_set_crs(self):
-    naive = GeoSeries([Point(0, 0), Point(1, 1)])
-    assert naive.crs is None
-    assert naive.set_crs(crs="EPSG:4326").crs == "EPSG:4326"
-    assert naive.set_crs(epsg=4326).crs == "EPSG:4326"
-
-    with pytest.raises(ValueError):
-        naive.set_crs(crs=None, epsg=None)
-
-
 # -----------------------------------------------------------------------------
 # # Constructor tests
 # -----------------------------------------------------------------------------
