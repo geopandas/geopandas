@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 import numbers
 import operator
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -67,6 +68,11 @@ def _isna(value):
         return False
 
 
+geographic_crs_msg = (
+    "Geometry is in geographic projection ({0}). The results will "
+    "likely be incorrect. Use 'GeoSeries.to_crs()' to re-project "
+    "geometries to projected CRS before using '{1}'."
+)
 # -----------------------------------------------------------------------------
 # Constructors / converters to other formats
 # -----------------------------------------------------------------------------
@@ -215,6 +221,8 @@ class GeometryArray(ExtensionArray):
 
     def __init__(self, data, crs=None):
         if isinstance(data, self.__class__):
+            if not crs:
+                crs = data.crs
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -470,15 +478,21 @@ class GeometryArray(ExtensionArray):
     #
 
     def distance(self, other):
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(geographic_crs_msg.format(self.crs, "distance"))
         return self._binary_method("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(geographic_crs_msg.format(self.crs, "buffer"))
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
             crs=self.crs,
         )
 
     def interpolate(self, distance, normalized=False):
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(geographic_crs_msg.format(self.crs, "interpolate"))
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
             crs=self.crs,

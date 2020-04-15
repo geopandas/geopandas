@@ -362,6 +362,9 @@ class TestGeomMethods:
         expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
+        with pytest.warns(UserWarning):
+            self.g4.distance(self.p0)
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
@@ -488,6 +491,12 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
 
+    def test_interpolate_crs_warning(self):
+        g5_crs = self.g5.copy()
+        g5_crs.crs = 4326
+        with pytest.warns(UserWarning):
+            g5_crs.interpolate(1)
+
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
         p = Point(1.0, 0.5)
@@ -605,6 +614,10 @@ class TestGeomMethods:
 
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
+
+    def test_buffer_crs_warn(self):
+        with pytest.warns(UserWarning):
+            self.g4.buffer(1)
 
     def test_envelope(self):
         e = self.g3.envelope
