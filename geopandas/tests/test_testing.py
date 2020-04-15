@@ -42,6 +42,19 @@ s4 = Series(a)
 df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
 df2 = GeoDataFrame({"col1": [1, 2], "geometry": s2})
 
+s4 = s1.copy()
+s4.crs = 4326
+s5 = s2.copy()
+s5.crs = 27700
+df4 = GeoDataFrame(
+    {"col1": [1, 2], "geometry": s1.copy(), "geom2": s4.copy(), "geom3": s5.copy()},
+    crs=3857,
+)
+df5 = GeoDataFrame(
+    {"col1": [1, 2], "geometry": s1.copy(), "geom3": s5.copy(), "geom2": s4.copy()},
+    crs=3857,
+)
+
 
 def test_geoseries():
     assert_geoseries_equal(s1, s2)
@@ -69,6 +82,11 @@ def test_geodataframe():
     with pytest.raises(AssertionError):
         assert_geodataframe_equal(df1, df3)
 
+    assert_geodataframe_equal(df5, df4, check_like=True)
+    df5.geom2.crs = 3857
+    with pytest.raises(AssertionError):
+        assert_geodataframe_equal(df5, df4, check_like=True)
+
 
 def test_equal_nans():
     s = GeoSeries([Point(0, 0), np.nan])
@@ -83,7 +101,7 @@ def test_no_crs():
 
 
 def test_ignore_crs_mismatch():
-    df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1}, crs="EPSG:4326")
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1.copy()}, crs="EPSG:4326")
     df2 = GeoDataFrame({"col1": [1, 2], "geometry": s1}, crs="EPSG:31370")
 
     with pytest.raises(AssertionError):
