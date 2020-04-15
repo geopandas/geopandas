@@ -638,15 +638,6 @@ class TestDataFrame:
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
 
-    def test_set_crs(self):
-        naive = self.df.copy()
-        naive.crs = None
-        assert naive.set_crs(self.df.crs).crs == self.df.crs
-        naive = self.df.copy()
-        naive.crs = None
-        naive.set_crs(self.df.crs, inplace=True)
-        assert naive.crs == self.df.crs
-
 
 def check_geodataframe(df, geometry_column="geometry"):
     assert isinstance(df, GeoDataFrame)

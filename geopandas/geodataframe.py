@@ -90,13 +90,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 ):
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
-                        "or 'GeoDataFrame.to_crs()' to reproject geometries. "
+                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "allow_override=True)' to overwrite CRS or "
+                        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
                         "CRS mismatch will raise an error in the future versions "
                         "of GeoPandas.",
                         FutureWarning,
                         stacklevel=2,
-                    )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
+                    )
                     # TODO: raise error in 0.9 or 0.10.
                 self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
@@ -118,13 +119,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 warnings.warn(
                     "CRS mismatch between CRS of the passed geometries "
-                    "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
-                    "or 'GeoDataFrame.to_crs()' to reproject geometries. "
+                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                    "allow_override=True)' to overwrite CRS or "
+                    "'GeoDataFrame.to_crs()' to reproject geometries. "
                     "CRS mismatch will raise an error in the future versions "
                     "of GeoPandas.",
                     FutureWarning,
                     stacklevel=2,
-                )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
+                )
                 # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
