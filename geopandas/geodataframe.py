@@ -121,7 +121,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "CRS mismatch between CRS of the passed geometries "
                     "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
                     "allow_override=True)' to overwrite CRS or "
-                    "'GeoDataFrame.to_crs()' to reproject geometries. "
+                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
                     "CRS mismatch will raise an error in the future versions "
                     "of GeoPandas.",
                     FutureWarning,
