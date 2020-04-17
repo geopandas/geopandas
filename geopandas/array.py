@@ -427,7 +427,9 @@ class GeometryArray(ExtensionArray):
                     "CRS mismatch between the CRS of left geometries ({0}) "
                     "and the CRS of right geoemtries ({1}). "
                     "Use `GeoSeries.to_crs()` to reproject one of "
-                    "the passed geometry arrays.".format(left.crs, right.crs)
+                    "the passed geometry arrays.".format(
+                        left.crs.to_string(), right.crs.to_string()
+                    )
                 )
             right = right.data
 
