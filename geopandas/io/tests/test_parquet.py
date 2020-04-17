@@ -23,7 +23,7 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 try:
     import pyarrow  # noqa
 
-    HAS_PYARROW = False
+    HAS_PYARROW = True
 
 except ImportError:
     HAS_PYARROW = False
@@ -192,6 +192,22 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
 
     # make sure that we can roundtrip the data frame
     pq_df = read_parquet(filename)
+
+    assert isinstance(pq_df, GeoDataFrame)
+    assert_geodataframe_equal(df, pq_df)
+
+
+def test_classmethod(tmpdir):
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename)
+
+    assert os.path.exists(filename)
+
+    # make sure that we can roundtrip the data frame
+    pq_df = GeoDataFrame.from_parquet(filename)
 
     assert isinstance(pq_df, GeoDataFrame)
     assert_geodataframe_equal(df, pq_df)
