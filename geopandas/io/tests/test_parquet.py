@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import os
 import pytest
-from pandas import DataFrame
+from pandas import DataFrame, read_parquet as pd_read_parquet
+from pandas.testing import assert_frame_equal
 import numpy as np
 
 import geopandas
@@ -169,6 +170,36 @@ def test_encode_wkb():
         encoded.geometry.iloc[0][:16]
         == b"\x01\x06\x00\x00\x00\x03\x00\x00\x00\x01\x03\x00\x00\x00\x01\x00"
     )
+
+
+# TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data
+# without geometries
+def test_pandas_parquet_roundtrip1(tmpdir):
+    df = DataFrame({
+        'a': [1,2,3],
+        'b': ['a', 'b', 'c']
+    })
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename)
+
+    pq_df = pd_read_parquet(filename)
+
+    assert_frame_equal(df, pq_df)
+
+@pytest.mark.parametrize(
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
+)
+def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
+    test_dataset = "naturalearth_lowres"
+    df = DataFrame(read_file(get_path(test_dataset)).drop(columns=['geometry']))
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename)
+
+    pq_df = pd_read_parquet(filename)
+
+    assert_frame_equal(df, pq_df)
 
 
 @pytest.mark.parametrize(
