@@ -111,13 +111,15 @@ def import_optional_dependency(name: str, extra: str = ""):
     -------
     module
     """
-    msg = (
-        f"Missing optional dependency '{name}'. {extra} "
-        f"Use pip or conda to install {name}."
+    msg = """Missing optional dependency '{name}'. {extra}  "
+        "Use pip or conda to install {name}.""".format(
+        name=name, extra=extra
     )
 
     if not isinstance(name, str):
-        raise ValueError("Invalid module name: '{name}'; must be a string")
+        raise ValueError(
+            "Invalid module name: '{name}'; must be a string".format(name=name)
+        )
 
     try:
         module = importlib.import_module(name)
