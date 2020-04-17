@@ -1,15 +1,17 @@
 import json
 
-from pandas.compat._optional import import_optional_dependency
+
 from pandas.io.common import get_filepath_or_buffer
 from pandas import DataFrame
 
+from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb, to_wkb, GeometryArray
 from geopandas import GeoDataFrame
 import geopandas
 
 
-METADATA_VERSION = "1.0.0"
+METADATA_VERSION = "0.1.0"
+# reference: https://github.com/geopandas/geo-arrow-spec
 
 # Metadata structure:
 # {
@@ -17,7 +19,7 @@ METADATA_VERSION = "1.0.0"
 #         "primary_column": "<str: REQUIRED>",
 #         "columns": {
 #             "<name>": {
-#                 "crs": "<WKT: REQUIRED>",
+#                 "crs": "<WKT or None: REQUIRED>",
 #                 "encoding": "WKB"
 #             }
 #         }
@@ -100,11 +102,13 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
     index : bool, default None
-        If ``True``, include the dataframe's index(es) in the file output. If
-        ``False``, they will not be written to the file. If ``None``, the
-        engine's default behavior will be used.
+        If ``True``, always include the dataframe's index(es) as columns
+        in the file output.
+        If ``False``, the index(es) will not be written to the file.
+        If ``None``, the index(ex) will be included as columns in the file
+        output except `RangeIndex` which is stored as metadata only.
     kwargs
-        Additional keyword arguments passed to the engine
+        Additional keyword arguments passed to parquet.write_table().
     """
 
     import_optional_dependency(
@@ -196,7 +200,7 @@ def read_parquet(path, columns=None, **kwargs):
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
     **kwargs
-        Any additional kwargs are passed to the engine.
+        Any additional kwargs passed to parquet.read_table().
 
     Returns
     -------
@@ -226,13 +230,16 @@ def read_parquet(path, columns=None, **kwargs):
     try:
         metadata = table.schema.metadata
         if metadata is not None:
+            if b"geo" not in metadata:
+                raise ValueError("Missing or malformed geo metadata in parquet file")
+
             metadata = _decode_metadata(metadata.get(b"geo", b""))
 
     except (TypeError, json.decoder.JSONDecodeError):
         raise ValueError("Missing or malformed geo metadata in parquet file")
 
-    if metadata is None:
-        raise ValueError("Parquet file is missing required metadata 'geo' entry")
+    if not metadata:
+        raise ValueError("Missing or malformed geo metadata in parquet file")
 
     # Validate that required keys are present
     required_keys = ("primary_column", "columns")

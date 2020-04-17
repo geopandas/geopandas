@@ -24,6 +24,7 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - pyarrow
+  # test older version of pyarrow
+  - pyarrow==0.15.0
   - pip:
     - pyproj==2.2.2

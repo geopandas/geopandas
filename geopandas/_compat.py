@@ -1,4 +1,5 @@
 from distutils.version import LooseVersion
+import importlib
 import os
 import warnings
 
@@ -90,3 +91,38 @@ def set_use_pygeos(val=None):
 
 
 set_use_pygeos()
+
+
+def import_optional_dependency(name: str, extra: str = ""):
+    """
+    Import an optional dependency.
+
+    Adapted from pandas.compat._optional::import_optional_dependency
+
+    Raises a formatted ImportError if the module is not present.
+
+    Parameters
+    ----------
+    name : str
+        The module name.
+    extra : str
+        Additional text to include in the ImportError message.
+    Returns
+    -------
+    module
+    """
+    msg = (
+        f"Missing optional dependency '{name}'. {extra} "
+        f"Use pip or conda to install {name}."
+    )
+
+    if not isinstance(name, str):
+        raise ValueError("Invalid module name: '{name}'; must be a string")
+
+    try:
+        module = importlib.import_module(name)
+
+    except ImportError:
+        raise ImportError(msg) from None
+
+    return module
