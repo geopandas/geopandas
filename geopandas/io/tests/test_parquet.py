@@ -2,14 +2,20 @@ from __future__ import absolute_import
 import os
 import pytest
 from pandas import DataFrame
+import numpy as np
 
+import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
 from geopandas.io.parquet import (
-    _encode_metadata,
+    _create_metadata,
     _decode_metadata,
+    _encode_metadata,
+    _encode_wkb,
     _validate_dataframe,
+    _validate_metadata,
+    METADATA_VERSION,
 )
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
@@ -17,10 +23,33 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 try:
     import pyarrow  # noqa
 
-    HAS_PYARROW = True
+    HAS_PYARROW = False
 
 except ImportError:
     HAS_PYARROW = False
+
+
+# Skip all tests in this module if pyarrow is not available
+pytestmark = pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
+
+
+def test_create_metadata():
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+    metadata = _create_metadata(df)
+
+    assert isinstance(metadata, dict)
+    assert metadata["schema_version"] == METADATA_VERSION
+    assert metadata["creator"]["library"] == "geopandas"
+    assert metadata["creator"]["version"] == geopandas.__version__
+    assert metadata["primary_column"] == "geometry"
+    assert "geometry" in metadata["columns"]
+    assert metadata["columns"]["geometry"]["crs"] == df.geometry.crs.to_wkt()
+    assert metadata["columns"]["geometry"]["encoding"] == "WKB"
+
+    assert np.array_equal(
+        metadata["columns"]["geometry"]["bounds"], df.geometry.total_bounds
+    )
 
 
 def test_encode_metadata():
@@ -60,7 +89,88 @@ def test_validate_dataframe():
         _validate_dataframe("not a dataframe")
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
+def test_validate_metadata_valid():
+    _validate_metadata(
+        {
+            "primary_column": "geometry",
+            "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
+        }
+    )
+
+    _validate_metadata(
+        {
+            "primary_column": "geometry",
+            "columns": {"geometry": {"crs": "WKT goes here", "encoding": "WKB"}},
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "metadata,error",
+    [
+        ({}, "Missing or malformed geo metadata in Parquet file"),
+        (
+            {"primary_column": "foo"},
+            "'geo' metadata in Parquet file is missing required key:",
+        ),
+        (
+            {"primary_column": "foo", "columns": None},
+            "'geo' metadata in Parquet file is missing required key",
+        ),
+        (
+            {"primary_column": "foo", "columns": []},
+            "'columns' in 'geo' metadata must be a dict",
+        ),
+        (
+            {"primary_column": "foo", "columns": {"foo": {}}},
+            (
+                "'geo' metadata in Parquet file is missing required key 'crs' "
+                "for column 'foo'"
+            ),
+        ),
+        (
+            {"primary_column": "foo", "columns": {"foo": {"crs": None}}},
+            "'geo' metadata in Parquet file is missing required key",
+        ),
+        (
+            {"primary_column": "foo", "columns": {"foo": {"encoding": None}}},
+            "'geo' metadata in Parquet file is missing required key",
+        ),
+        (
+            {
+                "primary_column": "foo",
+                "columns": {"foo": {"crs": None, "encoding": None}},
+            },
+            "Only WKB geometry encoding is supported",
+        ),
+        (
+            {
+                "primary_column": "foo",
+                "columns": {"foo": {"crs": None, "encoding": "BKW"}},
+            },
+            "Only WKB geometry encoding is supported",
+        ),
+    ],
+)
+def test_validate_metadata_invalid(metadata, error):
+    with pytest.raises(ValueError, match=error):
+        _validate_metadata(metadata)
+
+
+def test_encode_wkb():
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    encoded = _encode_wkb(df)
+
+    # make sure original is not modified
+    assert isinstance(df, GeoDataFrame)
+    assert (
+        encoded.geometry.iloc[0][:16]
+        == b"\x01\x06\x00\x00\x00\x03\x00\x00\x00\x01\x03\x00\x00\x00\x01\x00"
+    )
+
+
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
@@ -87,7 +197,6 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
     assert_geodataframe_equal(df, pq_df)
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 def test_parquet_index(tmpdir):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.
@@ -107,7 +216,6 @@ def test_parquet_index(tmpdir):
     assert_geodataframe_equal(df.reset_index(drop=True), pq_df)
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 @pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
 def test_parquet_compression(compression, tmpdir):
     """Using compression options should not raise errors, and should
@@ -125,7 +233,6 @@ def test_parquet_compression(compression, tmpdir):
     assert_geodataframe_equal(df, pq_df)
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 def test_parquet_multiple_geom_cols(tmpdir):
     """If multiple geometry columns are present when written to parquet,
     they should all be returned as such when read from parquet.
@@ -148,7 +255,6 @@ def test_parquet_multiple_geom_cols(tmpdir):
     assert_geoseries_equal(df.geom2, pq_df.geom2, check_geom_type=True)
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 def test_parquet_missing_metadata(tmpdir):
     """Missing geo metadata, such as from a parquet file created
     from a pandas DataFrame, will raise a ValueError.
@@ -169,24 +275,21 @@ def test_parquet_missing_metadata(tmpdir):
     df.to_parquet(filename)
 
     # missing metadata will raise ValueError
-    with pytest.raises(
-        ValueError, match="Missing or malformed geo metadata in parquet file"
-    ):
+    with pytest.raises(ValueError, match="Missing geo metadata in Parquet file."):
         read_parquet(filename)
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 @pytest.mark.parametrize(
     "geo_meta,error",
     [
-        ({"geo": b""}, "Missing or malformed geo metadata in parquet file"),
+        ({"geo": b""}, "Missing or malformed geo metadata in Parquet file"),
         (
             {"geo": _encode_metadata({})},
-            "Missing or malformed geo metadata in parquet file",
+            "Missing or malformed geo metadata in Parquet file",
         ),
         (
             {"geo": _encode_metadata({"foo": "bar"})},
-            "'geo' metadata in parquet file is missing required key",
+            "'geo' metadata in Parquet file is missing required key",
         ),
     ],
 )
@@ -218,7 +321,6 @@ def test_parquet_invalid_metadata(tmpdir, geo_meta, error):
         read_parquet(filename)
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 def test_parquet_subset_columns(tmpdir):
     """Reading a subset of columns should correctly decode selected geometry
     columns.
@@ -239,7 +341,6 @@ def test_parquet_subset_columns(tmpdir):
         read_parquet(filename, columns=[])
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 def test_parquet_promote_secondary_geometry(tmpdir):
     """Reading a subset of columns that does not include the primary geometry
     column should promote the first geometry column present.
@@ -255,8 +356,20 @@ def test_parquet_promote_secondary_geometry(tmpdir):
 
     assert_geodataframe_equal(df.set_geometry("geom2")[["name", "geom2"]], pq_df)
 
+    df["geom3"] = df.geometry.copy()
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
+    df.to_parquet(filename)
+    with pytest.warns(
+        UserWarning,
+        match="Multiple non-primary geometry columns read from Parquet file.",
+    ):
+        pq_df = read_parquet(filename, columns=["name", "geom2", "geom3"])
+
+    assert_geodataframe_equal(
+        df.set_geometry("geom2")[["name", "geom2", "geom3"]], pq_df
+    )
+
+
 def test_parquet_columns_no_geometry(tmpdir):
     """Reading a parquet file that is missing all of the geometry columns
     should raise a ValueError"""
@@ -271,7 +384,6 @@ def test_parquet_columns_no_geometry(tmpdir):
         read_parquet(filename, columns=["name"])
 
 
-@pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
 def test_parquet_missing_crs(tmpdir):
     """If CRS is `None`, it should be properly handled
     and remain `None` when read from parquet`.

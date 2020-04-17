@@ -1,11 +1,10 @@
 import json
+import warnings
 
-
-from pandas.io.common import get_filepath_or_buffer
 from pandas import DataFrame
 
 from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb, to_wkb, GeometryArray
+from geopandas.array import from_wkb, to_wkb
 from geopandas import GeoDataFrame
 import geopandas
 
@@ -15,7 +14,7 @@ METADATA_VERSION = "0.1.0"
 
 # Metadata structure:
 # {
-#     "crs": {
+#     "geo": {
 #         "primary_column": "<str: REQUIRED>",
 #         "columns": {
 #             "<name>": {
@@ -25,6 +24,36 @@ METADATA_VERSION = "0.1.0"
 #         }
 #     }
 # }
+
+
+def _create_metadata(df):
+    """Create and encode geo metadata dict.
+
+    Parameters
+    ----------
+    df : GeoDataFrame
+
+    Returns
+    -------
+    dict
+    """
+
+    # Construct metadata for each geometry
+    column_metadata = {}
+    for col in df.columns[df.dtypes == "geometry"]:
+        series = df[col]
+        column_metadata[col] = {
+            "crs": series.crs.to_wkt() if series.crs else None,
+            "encoding": "WKB",
+            "bounds": series.total_bounds.tolist(),
+        }
+
+    return {
+        "primary_column": df._geometry_column_name,
+        "columns": column_metadata,
+        "schema_version": METADATA_VERSION,
+        "creator": {"library": "geopandas", "version": geopandas.__version__},
+    }
 
 
 def _encode_metadata(metadata):
@@ -39,6 +68,28 @@ def _encode_metadata(metadata):
     UTF-8 encoded JSON string
     """
     return json.dumps(metadata).encode("utf-8")
+
+
+def _encode_wkb(df):
+    """Encode all geometry columns in the GeoDataFrame to WKB.
+
+    Parameters
+    ----------
+    df : GeoDataFrame
+
+    Returns
+    -------
+    DataFrame
+        geometry columns are encoded to WKB
+    """
+
+    df = DataFrame(df.copy())
+
+    # Encode all geometry columns to WKB
+    for col in df.columns[df.dtypes == "geometry"]:
+        df[col] = to_wkb(df[col].values)
+
+    return df
 
 
 def _decode_metadata(metadata_str):
@@ -60,7 +111,7 @@ def _decode_metadata(metadata_str):
 
 def _validate_dataframe(df):
     """Validate that the GeoDataFrame conforms to requirements for writing
-    to parquet format.
+    to Parquet format.
 
     Raises `ValueError` if the GeoDataFrame is not valid.
 
@@ -86,9 +137,48 @@ def _validate_dataframe(df):
         raise ValueError("Index level names must be strings")
 
 
+def _validate_metadata(metadata):
+    """Validate geo metadata.
+    Must not be empty, and must contain the structure specified above.
+
+    Raises ValueError if metadata is not valid.
+
+    Parameters
+    ----------
+    metadata : dict
+    """
+
+    if not metadata:
+        raise ValueError("Missing or malformed geo metadata in Parquet file")
+
+    required_keys = ("primary_column", "columns")
+    for key in required_keys:
+        if metadata.get(key, None) is None:
+            raise ValueError(
+                "'geo' metadata in Parquet file is missing required key: "
+                "'{key}'".format(key=key)
+            )
+
+    if not isinstance(metadata["columns"], dict):
+        raise ValueError("'columns' in 'geo' metadata must be a dict")
+
+    # Validate that geometry columns have required metadata and values
+    required_col_keys = ("crs", "encoding")
+    for col, column_metadata in metadata["columns"].items():
+        for key in required_col_keys:
+            if key not in column_metadata:
+                raise ValueError(
+                    "'geo' metadata in Parquet file is missing required key "
+                    "'{key}' for column '{col}'".format(key=key, col=col)
+                )
+
+        if column_metadata["encoding"] != "WKB":
+            raise ValueError("Only WKB geometry encoding is supported")
+
+
 def to_parquet(df, path, compression="snappy", index=None, **kwargs):
     """
-    Write a GeoDataFrame to the parquet format.
+    Write a GeoDataFrame to the Parquet format.
 
     Any geometry columns present are serialized to WKB format in the file.
 
@@ -96,9 +186,7 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
 
     Parameters
     ----------
-    path : str
-        File path or Root Directory path. Will be used as Root Directory path
-        while writing a partitioned dataset.
+    path : str, path object
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
     index : bool, default None
@@ -108,57 +196,27 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
         If ``None``, the index(ex) will be included as columns in the file
         output except `RangeIndex` which is stored as metadata only.
     kwargs
-        Additional keyword arguments passed to parquet.write_table().
+        Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
 
     import_optional_dependency(
-        "pyarrow.parquet", extra="pyarrow is required for parquet support."
+        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
     from pyarrow import parquet, Table
 
     _validate_dataframe(df)
 
-    geometry_column = df._geometry_column_name
-    geometry_columns = df.columns[df.dtypes == "geometry"]
+    # create geo metadata before altering incoming data frame
+    geo_metadata = _create_metadata(df)
 
-    # Construct metadata for each geometry
-    column_metadata = {}
-    for col in geometry_columns:
-        series = df[col]
-        column_metadata[col] = {
-            "crs": series.crs.to_wkt() if series.crs else None,
-            "encoding": "WKB",
-            "bounds": series.total_bounds.tolist(),
-        }
-
-    # Convert to a DataFrame so we can convert geometries to WKB while
-    # retaining original column names.
-    df = DataFrame(df.copy())
-
-    # Encode all geometry columns to WKB
-    for col in geometry_columns:
-        df[col] = to_wkb(df[col].values)
+    df = _encode_wkb(df)
 
     table = Table.from_pandas(df, preserve_index=index)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
-    metadata.update(
-        {
-            "geo": _encode_metadata(
-                {
-                    "primary_column": geometry_column,
-                    "columns": column_metadata,
-                    "schema_version": METADATA_VERSION,
-                    "creator": {
-                        "library": "geopandas",
-                        "version": geopandas.__version__,
-                    },
-                }
-            )
-        }
-    )
+    metadata.update({b"geo": _encode_metadata(geo_metadata)})
 
     table = table.replace_schema_metadata(metadata)
     parquet.write_table(table, path, compression=compression, **kwargs)
@@ -166,11 +224,12 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
 
 def read_parquet(path, columns=None, **kwargs):
     """
-    Load a parquet object from the file path, returning a GeoDataFrame.
+    Load a Parquet object from the file path, returning a GeoDataFrame.
 
     You can read a subset of columns in the file using the ``columns`` parameter.
     However, the structure of the returned GeoDataFrame will depend on which
     columns you read:
+
     * if no geometry columns are read, this will raise a ``ValueError`` - you
       should use the pandas `read_parquet` method instead.
     * if the primary geometry column saved to this file is not included in
@@ -181,18 +240,7 @@ def read_parquet(path, columns=None, **kwargs):
 
     Parameters
     ----------
-    path : str, path object or file-like object
-        Any valid string path is acceptable. The string could be a URL. Valid
-        URL schemes include http, ftp, s3, and file. For file URLs, a host is
-        expected. A local file could be:
-        ``file://localhost/path/to/table.parquet``.
-
-        If you want to pass in a path object, geopandas accepts any
-        ``os.PathLike``.
-
-        By file-like object, we refer to objects with a ``read()`` method,
-        such as a file handler (e.g. via builtin ``open`` function)
-        or ``StringIO``.
+    path : str, path object
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -200,7 +248,7 @@ def read_parquet(path, columns=None, **kwargs):
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
     **kwargs
-        Any additional kwargs passed to parquet.read_table().
+        Any additional kwargs passed to pyarrow.parquet.read_table().
 
     Returns
     -------
@@ -208,47 +256,29 @@ def read_parquet(path, columns=None, **kwargs):
     """
 
     import_optional_dependency(
-        "pyarrow", extra="pyarrow is required for parquet support."
+        "pyarrow", extra="pyarrow is required for Parquet support."
     )
     from pyarrow import parquet
-
-    path, _, _, should_close = get_filepath_or_buffer(path)
 
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, **kwargs)
 
     df = table.to_pandas()
 
-    if should_close:
-        try:
-            path.close()
-        except:  # noqa: flake8
-            pass
-
-    metadata = None
+    metadata = table.schema.metadata
+    if b"geo" not in metadata:
+        raise ValueError(
+            """Missing geo metadata in Parquet file.
+            Use pandas.read_parquet() instead."""
+        )
 
     try:
-        metadata = table.schema.metadata
-        if metadata is not None:
-            if b"geo" not in metadata:
-                raise ValueError("Missing or malformed geo metadata in parquet file")
-
-            metadata = _decode_metadata(metadata.get(b"geo", b""))
+        metadata = _decode_metadata(metadata.get(b"geo", b""))
 
     except (TypeError, json.decoder.JSONDecodeError):
-        raise ValueError("Missing or malformed geo metadata in parquet file")
+        raise ValueError("Missing or malformed geo metadata in Parquet file")
 
-    if not metadata:
-        raise ValueError("Missing or malformed geo metadata in parquet file")
-
-    # Validate that required keys are present
-    required_keys = ("primary_column", "columns")
-    for key in required_keys:
-        if key not in metadata:
-            raise ValueError(
-                f"""'geo' metadata in parquet file is missing required key:
-                '{key}'"""
-            )
+    _validate_metadata(metadata)
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
@@ -257,24 +287,9 @@ def read_parquet(path, columns=None, **kwargs):
     if not len(geometry_columns):
         raise ValueError(
             """No geometry columns are included in the columns read from
-            the parquet file.  To read this file without geometry columns,
+            the Parquet file.  To read this file without geometry columns,
             use pandas.read_parquet() instead."""
         )
-
-    column_metadata = metadata["columns"]
-
-    # Validate that geometry columns have required metadata and values
-    required_col_keys = ("crs", "encoding")
-    for col in geometry_columns:
-        for key in required_col_keys:
-            if key not in column_metadata[col]:
-                raise ValueError(
-                    f"""'geo' metadata in parquet file is missing required key
-                    {key} for column '{col}'"""
-                )
-
-        if column_metadata[col]["encoding"] != "WKB":
-            raise ValueError("Only WKB geometry encoding is supported")
 
     geometry = metadata["primary_column"]
 
@@ -283,10 +298,15 @@ def read_parquet(path, columns=None, **kwargs):
     if len(geometry_columns) and geometry not in geometry_columns:
         geometry = geometry_columns[0]
 
+        # if there are multiple non-primary geometry columns, raise a warning
+        if len(geometry_columns) > 1:
+            warnings.warn(
+                "Multiple non-primary geometry columns read from Parquet file.  "
+                "The first column read was promoted to the primary geometry."
+            )
+
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        df[col] = GeometryArray(
-            from_wkb(df[col].values), crs=column_metadata[col]["crs"]
-        )
+        df[col] = from_wkb(df[col].values, crs=metadata["columns"][col]["crs"])
 
     return GeoDataFrame(df, geometry=geometry)

@@ -573,7 +573,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geo
 
     def to_parquet(self, filename, compression="snappy", index=None, **kwargs):
-        """Write a GeoDataFrame to the parquet format.
+        """Write a GeoDataFrame to the Parquet format.
 
         Any geometry columns present are serialized to WKB format in the file.
 
@@ -583,9 +583,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        path : str
-            File path or Root Directory path. Will be used as Root Directory path
-            while writing a partitioned dataset.
+        path : str, path object
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         index : bool, default None
@@ -595,7 +593,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             If ``None``, the index(ex) will be included as columns in the file
             output except `RangeIndex` which is stored as metadata only.
         kwargs
-            Additional keyword arguments passed to to parquet.write_table().
+            Additional keyword arguments passed to to pyarrow.parquet.write_table().
         """
 
         from geopandas.io.parquet import to_parquet
