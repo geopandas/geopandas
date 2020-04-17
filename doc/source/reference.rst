@@ -132,7 +132,7 @@ correctly.
 GeoDataFrame
 ------------
 
-A ``GeoDataFrame`` is a tablular data structure that contains a column
+A ``GeoDataFrame`` is a tabular data structure that contains a column
 called ``geometry`` which contains a `GeoSeries``.
 
 Currently, the following methods/attributes are implemented for a ``GeoDataFrame``:
