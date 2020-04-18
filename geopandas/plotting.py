@@ -261,10 +261,10 @@ def plot_point_collection(
 
     if "norm" not in kwargs:
         collection = ax.scatter(
-            x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
+            x, y, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
         )
     else:
-        collection = ax.scatter(x, y, color=color, cmap=cmap, marker=marker, **kwargs)
+        collection = ax.scatter(x, y, cmap=cmap, marker=marker, **kwargs)
 
     return collection
 
