@@ -36,7 +36,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def read_file(filename, bbox=None, mask=None, rows=None, columns=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -60,6 +60,8 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     rows: int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
+    columns : list, optional
+        Optionally specify the column names to load.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -128,9 +130,14 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
-
-            columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            columns = (
+                list(features.meta["schema"]["properties"])
+                if columns is None
+                else list(columns)
+            )
+            gdf = GeoDataFrame.from_features(
+                f_filt, crs=crs, columns=columns + ["geometry"]
+            )
 
     return gdf
 

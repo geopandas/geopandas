@@ -414,9 +414,24 @@ def test_read_file_filtered__rows_bbox__polygon(df_nybb):
     assert filtered_df_shape == (1, 5)
 
 
-def read_file_filtered_rows_invalid():
+def test_read_file_filtered_rows_invalid():
     with pytest.raises(TypeError):
         read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
+
+
+def test_read_file__columns():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        columns=["continent", "name"],
+    )
+    assert sorted(gdf.columns) == ["continent", "geometry", "name"]
+
+
+def test_read_file__columns__geometry():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"), columns=(),
+    )
+    assert gdf.columns.tolist() == ["geometry"]
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
