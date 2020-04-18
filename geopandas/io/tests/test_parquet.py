@@ -388,6 +388,22 @@ def test_parquet_subset_columns(tmpdir):
         read_parquet(filename, columns=[])
 
 
+def test_parquet_repeat_columns(tmpdir):
+    """Reading repeated columns should return first value of each repeated column
+    """
+
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename)
+
+    columns = ["name", "name", "iso_a3", "name", "geometry"]
+    pq_df = read_parquet(filename, columns=columns)
+
+    assert pq_df.columns.tolist() == ["name", "iso_a3", "geometry"]
+
+
 def test_parquet_promote_secondary_geometry(tmpdir):
     """Reading a subset of columns that does not include the primary geometry
     column should promote the first geometry column present.
