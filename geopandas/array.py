@@ -428,11 +428,8 @@ class GeometryArray(ExtensionArray):
                     "and the CRS of right geoemtries. "
                     "Use `GeoSeries.to_crs()` to reproject one of "
                     "the passed geometry arrays.\n"
-                    "Left CRS: {0}\n"
-                    "Right CRS: {1}".format(
-                        left.crs.to_string() if left.crs else None,
-                        right.crs.to_string() if right.crs else None,
-                    )
+                    "Left CRS:\n {0}\n"
+                    "Right CRS:\n {1}".format(left.crs.__repr__(), right.crs.__repr__())
                 )
             right = right.data
 
