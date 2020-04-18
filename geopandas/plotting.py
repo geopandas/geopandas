@@ -187,10 +187,8 @@ def plot_linestring_collection(
         kwargs["color"] = color
         _check_and_expand(kwargs, "color", multiindex, is_color_like)
 
-    if "linewidths" in kwargs:
-        _check_and_expand(kwargs, "linewidths", multiindex)
-    if "alpha" in kwargs:
-        _check_and_expand(kwargs, "alpha", multiindex)
+    if "linewidth" in kwargs:
+        _check_and_expand(kwargs, "linewidth", multiindex)
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
