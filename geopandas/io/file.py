@@ -36,7 +36,15 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, mask=None, rows=None, columns=None, **kwargs):
+def read_file(
+    filename,
+    bbox=None,
+    mask=None,
+    rows=None,
+    columns=None,
+    ignore_geometry=False,
+    **kwargs
+):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -61,7 +69,10 @@ def read_file(filename, bbox=None, mask=None, rows=None, columns=None, **kwargs)
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
     columns : list, optional
-        Optionally specify the column names to load.
+        Optionally specify the column names to load. The default is to load
+        all columns.
+    ignore_geometry: bool, optional
+        If True, it will skip loading the geometry. Default is False.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -130,14 +141,17 @@ def read_file(filename, bbox=None, mask=None, rows=None, columns=None, **kwargs)
                 f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
-            columns = (
-                list(features.meta["schema"]["properties"])
-                if columns is None
-                else list(columns)
-            )
-            gdf = GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
-            )
+
+            original_columns = list(features.meta["schema"]["properties"])
+            if columns is not None:
+                columns = [column for column in original_columns if column in columns]
+            else:
+                columns = original_columns
+
+            if not ignore_geometry:
+                columns += ["geometry"]
+
+            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
     return gdf
 

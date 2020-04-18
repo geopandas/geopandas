@@ -424,7 +424,15 @@ def test_read_file__columns():
         geopandas.datasets.get_path("naturalearth_lowres"),
         columns=["continent", "name"],
     )
-    assert sorted(gdf.columns) == ["continent", "geometry", "name"]
+    assert gdf.columns.tolist() == ["continent", "name", "geometry"]
+
+
+def test_read_file__columns_duplicate():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        columns=["continent", "name", "name"],
+    )
+    assert gdf.columns.tolist() == ["continent", "name", "geometry"]
 
 
 def test_read_file__columns__geometry():
@@ -432,6 +440,16 @@ def test_read_file__columns__geometry():
         geopandas.datasets.get_path("naturalearth_lowres"), columns=(),
     )
     assert gdf.columns.tolist() == ["geometry"]
+
+
+def test_read_file__columns__ignore_geometry():
+    pdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        columns=["continent", "name"],
+        ignore_geometry=True,
+    )
+    assert pdf.columns.tolist() == ["continent", "name"]
+    assert isinstance(pdf, pd.DataFrame)
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
