@@ -40,6 +40,29 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     return components, np.array(component_index)
 
 
+def _check_and_expand(kwargs, att, multiindex, check=pd.api.types.is_number):
+    """
+    Most arguments to the plot functions must be a (single) value of a correct
+    type, or a sequence of values. Here, it is checked if the value to key
+    'att' of dictionary 'kwargs' passes typecheck function 'check'. If not, and
+    the value is list-like, expands it (in place) to the correct length/formats
+    with help of 'multiindex'. If not, raises a TypeError.
+
+    Returns
+    -------
+    None.
+
+    """
+    if check(kwargs[att]):
+        return
+    if pd.api.types.is_list_like(kwargs[att]):
+        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
+        return
+    raise TypeError(
+        att.title() + " attribute has to be a single value or sequence of values."
+    )
+
+
 def plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -95,27 +118,17 @@ def plot_polygon_collection(
     # PatchCollection does not accept some kwargs.
     if "markersize" in kwargs:
         del kwargs["markersize"]
-    if color is not None:
-        if is_color_like(color):
-            kwargs["color"] = color
-        elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex, axis=0)
-        else:
-            raise TypeError(
-                "Color attribute has to be a single color or sequence of colors."
-            )
 
+    if color is not None:
+        kwargs["color"] = color
+        _check_and_expand(kwargs, "color", multiindex, is_color_like)
     else:
         for att in ["facecolor", "edgecolor"]:
             if att in kwargs:
-                if not is_color_like(kwargs[att]):
-                    if pd.api.types.is_list_like(kwargs[att]):
-                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
-                    elif kwargs[att] is not None:
-                        raise TypeError(
-                            "Color attribute has to be a single color or sequence "
-                            "of colors."
-                        )
+                _check_and_expand(kwargs, att, multiindex, is_color_like)
+
+    if "linewidth" in kwargs:
+        _check_and_expand(kwargs, "linewidth", multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -171,14 +184,13 @@ def plot_linestring_collection(
 
     # color=None gives black instead of default color cycle
     if color is not None:
-        if is_color_like(color):
-            kwargs["color"] = color
-        elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex, axis=0)
-        else:
-            raise TypeError(
-                "Color attribute has to be a single color or sequence of colors."
-            )
+        kwargs["color"] = color
+        _check_and_expand(kwargs, "color", multiindex, is_color_like)
+
+    if "linewidths" in kwargs:
+        _check_and_expand(kwargs, "linewidths", multiindex)
+    if "alpha" in kwargs:
+        _check_and_expand(kwargs, "alpha", multiindex)
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -246,13 +258,8 @@ def plot_point_collection(
         kwargs["s"] = markersize
 
     if color is not None:
-        if not is_color_like(color):
-            if pd.api.types.is_list_like(color):
-                color = np.take(color, multiindex, axis=0)
-            else:
-                raise TypeError(
-                    "Color attribute has to be a single color or sequence of colors."
-                )
+        kwargs["color"] = color
+        _check_and_expand(kwargs, "color", multiindex, is_color_like)
 
     if "norm" not in kwargs:
         collection = ax.scatter(
@@ -481,7 +488,7 @@ def plot_dataframe(
         values are not plotted.
 
     **style_kwds : dict
-        Color options to be passed on to the actual plot function, such
+        Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
         ``alpha``.
 
