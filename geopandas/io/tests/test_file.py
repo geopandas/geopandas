@@ -432,7 +432,7 @@ def test_read_file__columns_duplicate():
         geopandas.datasets.get_path("naturalearth_lowres"),
         columns=["continent", "name", "name"],
     )
-    assert gdf.columns.tolist() == ["continent", "name", "geometry"]
+    assert gdf.columns.tolist() == ["continent", "name", "name", "geometry"]
 
 
 def test_read_file__columns__geometry():

@@ -142,11 +142,11 @@ def read_file(
             else:
                 f_filt = features
 
-            original_columns = list(features.meta["schema"]["properties"])
-            if columns is not None:
-                columns = [column for column in original_columns if column in columns]
-            else:
-                columns = original_columns
+            columns = (
+                list(features.meta["schema"]["properties"])
+                if columns is None
+                else list(columns)
+            )
 
             if not ignore_geometry:
                 columns += ["geometry"]
