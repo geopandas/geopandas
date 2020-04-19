@@ -93,6 +93,6 @@ def read_postgis(
             srid = shapely.geos.lgeos.GEOSGetSRID(geoms.iat[0]._geom)
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-                crs = {"init": "epsg:{}".format(srid)}
+                crs = "epsg:{}".format(srid)
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)

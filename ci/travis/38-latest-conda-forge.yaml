@@ -1,29 +1,24 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=2.7
-  - six
-  - cython
+  - python=3.8
   # required
-  - pandas=0.23
+  - pandas
   - shapely
-  - fiona=1.7
+  - fiona
   - pyproj
+  - pygeos
   # testing
   - pytest
   - pytest-cov
-  #- codecov
-  - mock
+  - codecov
   # optional
   - rtree
-  - matplotlib==2.0.2
+  - matplotlib
   - descartes
-  #- geopy
+  - pysal
+  - geopy
   - SQLalchemy
   - psycopg2
   - libspatialite
-  - pip:
-    - codecov
-    - geopy
-    - mapclassify==1.0.1

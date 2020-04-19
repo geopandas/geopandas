@@ -6,6 +6,7 @@ import pandas as pd
 from shapely import prepared
 
 from geopandas import GeoDataFrame
+from geopandas import _compat as compat
 
 
 def sjoin(
@@ -75,14 +76,15 @@ def sjoin(
         )
 
     # Attempt to re-use spatial indexes, otherwise generate the spatial index
-    # for the longer dataframe
+    # for the longer dataframe. If we are joining to an empty dataframe,
+    # don't bother generating the index.
     if right_df._sindex_generated or (
         not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]
     ):
-        tree_idx = right_df.sindex
+        tree_idx = right_df.sindex if len(left_df) > 0 else None
         tree_idx_right = True
     else:
-        tree_idx = left_df.sindex
+        tree_idx = left_df.sindex if len(right_df) > 0 else None
         tree_idx_right = False
 
     # the rtree spatial index only allows limited (numeric) index types, but an
@@ -90,10 +92,27 @@ def sjoin(
     # and store references to the original indices, to be reaffixed later.
     # GH 352
     left_df = left_df.copy(deep=True)
-    left_df.index = left_df.index.rename(index_left)
+    try:
+        left_index_name = left_df.index.name
+        left_df.index = left_df.index.rename(index_left)
+    except TypeError:
+        index_left = [
+            "index_%s" % lsuffix + str(l) for l, ix in enumerate(left_df.index.names)
+        ]
+        left_index_name = left_df.index.names
+        left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
+
     right_df = right_df.copy(deep=True)
-    right_df.index = right_df.index.rename(index_right)
+    try:
+        right_index_name = right_df.index.name
+        right_df.index = right_df.index.rename(index_right)
+    except TypeError:
+        index_right = [
+            "index_%s" % rsuffix + str(l) for l, ix in enumerate(right_df.index.names)
+        ]
+        right_index_name = right_df.index.names
+        right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
     if op == "within":
@@ -103,8 +122,10 @@ def sjoin(
 
     r_idx = np.empty((0, 0))
     l_idx = np.empty((0, 0))
-    # get rtree spatial index
-    if tree_idx_right:
+    # get rtree spatial index. If tree_idx does not exist, it is due to either a
+    # failure to generate the index (e.g., if the column is empty), or the
+    # other dataframe is empty so it wasn't necessary to generate it.
+    if tree_idx_right and tree_idx:
         idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
             lambda x: list(tree_idx.intersection(x)) if not x == () else []
         )
@@ -113,7 +134,7 @@ def sjoin(
         if idxmatch.shape[0] > 0:
             r_idx = np.concatenate(idxmatch.values)
             l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    else:
+    elif not tree_idx_right and tree_idx:
         # tree_idx_df == 'left'
         idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
             lambda x: list(tree_idx.intersection(x)) if not x == () else []
@@ -125,33 +146,43 @@ def sjoin(
             r_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
 
     if len(r_idx) > 0 and len(l_idx) > 0:
-        # Vectorize predicate operations
-        def find_intersects(a1, a2):
-            return a1.intersects(a2)
+        if compat.USE_PYGEOS:
+            import pygeos
 
-        def find_contains(a1, a2):
-            return a1.contains(a2)
+            predicate_d = {
+                "intersects": pygeos.intersects,
+                "contains": pygeos.contains,
+                "within": pygeos.contains,
+            }
+            check_predicates = predicate_d[op]
+        else:
+            # Vectorize predicate operations
+            def find_intersects(a1, a2):
+                return a1.intersects(a2)
 
-        predicate_d = {
-            "intersects": find_intersects,
-            "contains": find_contains,
-            "within": find_contains,
-        }
+            def find_contains(a1, a2):
+                return a1.contains(a2)
 
-        check_predicates = np.vectorize(predicate_d[op])
+            predicate_d = {
+                "intersects": find_intersects,
+                "contains": find_contains,
+                "within": find_contains,
+            }
 
-        result = pd.DataFrame(
-            np.column_stack(
-                [
-                    l_idx,
-                    r_idx,
-                    check_predicates(
-                        left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
-                        right_df[right_df.geometry.name][r_idx],
-                    ),
-                ]
+            check_predicates = np.vectorize(predicate_d[op])
+
+        if compat.USE_PYGEOS:
+            res = check_predicates(
+                left_df.geometry[l_idx].values.data,
+                right_df[right_df.geometry.name][r_idx].values.data,
             )
-        )
+        else:
+            res = check_predicates(
+                left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
+                right_df[right_df.geometry.name][r_idx],
+            )
+
+        result = pd.DataFrame(np.column_stack([l_idx, r_idx, res]))
 
         result.columns = ["_key_left", "_key_right", "match_bool"]
         result = pd.DataFrame(result[result["match_bool"] == 1]).drop(
@@ -171,27 +202,41 @@ def sjoin(
 
     if how == "inner":
         result = result.set_index("_key_left")
-        joined = left_df.merge(result, left_index=True, right_index=True).merge(
-            right_df.drop(right_df.geometry.name, axis=1),
-            left_on="_key_right",
-            right_index=True,
-            suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+        joined = (
+            left_df.merge(result, left_index=True, right_index=True)
+            .merge(
+                right_df.drop(right_df.geometry.name, axis=1),
+                left_on="_key_right",
+                right_index=True,
+                suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+            )
+            .set_index(index_left)
+            .drop(["_key_right"], axis=1)
         )
-        joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
-        joined.index.name = None
+        if isinstance(index_left, list):
+            joined.index.names = left_index_name
+        else:
+            joined.index.name = left_index_name
+
     elif how == "left":
         result = result.set_index("_key_left")
-        joined = left_df.merge(
-            result, left_index=True, right_index=True, how="left"
-        ).merge(
-            right_df.drop(right_df.geometry.name, axis=1),
-            how="left",
-            left_on="_key_right",
-            right_index=True,
-            suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+        joined = (
+            left_df.merge(result, left_index=True, right_index=True, how="left")
+            .merge(
+                right_df.drop(right_df.geometry.name, axis=1),
+                how="left",
+                left_on="_key_right",
+                right_index=True,
+                suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+            )
+            .set_index(index_left)
+            .drop(["_key_right"], axis=1)
         )
-        joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
-        joined.index.name = None
+        if isinstance(index_left, list):
+            joined.index.names = left_index_name
+        else:
+            joined.index.name = left_index_name
+
     else:  # how == 'right':
         joined = (
             left_df.drop(left_df.geometry.name, axis=1)
@@ -204,7 +249,11 @@ def sjoin(
                 how="right",
             )
             .set_index(index_right)
+            .drop(["_key_left", "_key_right"], axis=1)
         )
-        joined = joined.drop(["_key_left", "_key_right"], axis=1)
+        if isinstance(index_right, list):
+            joined.index.names = right_index_name
+        else:
+            joined.index.name = right_index_name
 
     return joined

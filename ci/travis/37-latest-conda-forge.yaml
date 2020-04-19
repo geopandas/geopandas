@@ -3,12 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - python=3.7
-  - six
   # required
   - pandas
   - shapely
   - fiona
   - pyproj
+  - pygeos
   # testing
   - pytest
   - pytest-cov
@@ -22,5 +22,3 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
-  # TEMP: workaround until conda-forge fixes the issues with gdal
-  - zstd
