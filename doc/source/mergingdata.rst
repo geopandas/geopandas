@@ -31,6 +31,22 @@ In the following examples, we use these datasets:
    countries = countries.rename(columns={'name':'country'})
 
 
+Appending
+---------
+
+Appending GeoDataFrames and GeoSeries uses pandas ``append`` methods. Keep in mind, that appended geometry columns needs to have the same CRS.
+
+.. ipython:: python
+
+    # Appending GeoSeries
+    joined = world.geometry.append(cities.geometry)
+
+    # Appending GeoDataFrames
+    europe = world[world.continent == 'Europe']
+    asia = world[world.continent == 'Asia']
+    eurasia = europe.append(asia)
+
+
 Attribute Joins
 ----------------
 
