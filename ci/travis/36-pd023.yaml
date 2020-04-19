@@ -4,14 +4,14 @@ channels:
 dependencies:
   - python=3.6
   - pip
-  - six
   # required
   - pandas==0.23.4
   - nomkl
   - shapely
   - gdal=2.3
   - fiona
-  - pyproj
+  #- pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -26,5 +26,7 @@ dependencies:
   - psycopg2
   - libspatialite
   - pip:
+    - pyproj==2.3.1
     - geopy
     - codecov
+    - git+https://github.com/pygeos/pygeos.git

@@ -37,15 +37,22 @@ coverage.xml
 
 # Sphinx documentation
 doc/_build/
+.buildinfo
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# pytest
+.pytest_cache
+
+.mypy_cache
 
 # projects
 .spyderproject
 .spyproject
 .idea
 .ropeproject
+.vscode
 
 *.py~
 .DS_Store

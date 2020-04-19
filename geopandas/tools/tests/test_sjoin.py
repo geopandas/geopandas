@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import numpy as np
 import pandas as pd
 
@@ -8,12 +6,8 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 import pytest
-
-pandas_0_18_problem = (
-    "fails under pandas < 0.19 due to pandas issue 15692, not problem with sjoin."
-)
 
 
 @pytest.fixture()
@@ -36,9 +30,28 @@ def dfs(request):
 
     df1 = GeoDataFrame({"geometry": polys1, "df1": [0, 1, 2]})
     df2 = GeoDataFrame({"geometry": polys2, "df2": [3, 4, 5]})
+
     if request.param == "string-index":
         df1.index = ["a", "b", "c"]
         df2.index = ["d", "e", "f"]
+
+    if request.param == "named-index":
+        df1.index.name = "df1_ix"
+        df2.index.name = "df2_ix"
+
+    if request.param == "multi-index":
+        i1 = ["a", "b", "c"]
+        i2 = ["d", "e", "f"]
+        df1 = df1.set_index([i1, i2])
+        df2 = df2.set_index([i2, i1])
+
+    if request.param == "named-multi-index":
+        i1 = ["a", "b", "c"]
+        i2 = ["d", "e", "f"]
+        df1 = df1.set_index([i1, i2])
+        df2 = df2.set_index([i2, i1])
+        df1.index.names = ["df1_ix1", "df1_ix2"]
+        df2.index.names = ["df2_ix1", "df2_ix2"]
 
     # construction expected frames
     expected = {}
@@ -75,11 +88,21 @@ class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
-        df1.crs = {"init": "epsg:4326", "no_defs": True}
+        df1.crs = "epsg:4326"
         with pytest.warns(UserWarning):
             sjoin(df1, df2)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize(
+        "dfs",
+        [
+            "default-index",
+            "string-index",
+            "named-index",
+            "multi-index",
+            "named-multi-index",
+        ],
+        indirect=True,
+    )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_inner(self, op, dfs):
         index, df1, df2, expected = dfs
@@ -93,32 +116,77 @@ class TestSpatialJoin:
             exp[["index_left", "index_right"]] = exp[
                 ["index_left", "index_right"]
             ].astype("int64")
-        exp = exp.set_index("index_left")
-        exp.index.name = None
+        if index == "named-index":
+            exp[["df1_ix", "df2_ix"]] = exp[["df1_ix", "df2_ix"]].astype("int64")
+            exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
+        if index in ["default-index", "string-index"]:
+            exp = exp.set_index("index_left")
+            exp.index.name = None
+        if index == "multi-index":
+            exp = exp.set_index(["level_0_x", "level_1_x"]).rename(
+                columns={"level_0_y": "index_right0", "level_1_y": "index_right1"}
+            )
+            exp.index.names = df1.index.names
+        if index == "named-multi-index":
+            exp = exp.set_index(["df1_ix1", "df1_ix2"]).rename(
+                columns={"df2_ix1": "index_right0", "df2_ix2": "index_right1"}
+            )
+            exp.index.names = df1.index.names
 
         assert_frame_equal(res, exp)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize(
+        "dfs",
+        [
+            "default-index",
+            "string-index",
+            "named-index",
+            "multi-index",
+            "named-multi-index",
+        ],
+        indirect=True,
+    )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_left(self, op, dfs):
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how="left", op=op)
 
-        exp = expected[op].dropna(subset=["index_left"]).copy()
+        if index in ["default-index", "string-index"]:
+            exp = expected[op].dropna(subset=["index_left"]).copy()
+        elif index == "named-index":
+            exp = expected[op].dropna(subset=["df1_ix"]).copy()
+        elif index == "multi-index":
+            exp = expected[op].dropna(subset=["level_0_x"]).copy()
+        elif index == "named-multi-index":
+            exp = expected[op].dropna(subset=["df1_ix1"]).copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
         exp["df1"] = exp["df1"].astype("int64")
         if index == "default-index":
             exp["index_left"] = exp["index_left"].astype("int64")
             # TODO: in result the dtype is object
             res["index_right"] = res["index_right"].astype(float)
-        exp = exp.set_index("index_left")
-        exp.index.name = None
+        elif index == "named-index":
+            exp[["df1_ix"]] = exp[["df1_ix"]].astype("int64")
+            exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
+        if index in ["default-index", "string-index"]:
+            exp = exp.set_index("index_left")
+            exp.index.name = None
+        if index == "multi-index":
+            exp = exp.set_index(["level_0_x", "level_1_x"]).rename(
+                columns={"level_0_y": "index_right0", "level_1_y": "index_right1"}
+            )
+            exp.index.names = df1.index.names
+        if index == "named-multi-index":
+            exp = exp.set_index(["df1_ix1", "df1_ix2"]).rename(
+                columns={"df2_ix1": "index_right0", "df2_ix2": "index_right1"}
+            )
+            exp.index.names = df1.index.names
 
         assert_frame_equal(res, exp)
 
     def test_empty_join(self):
-        # Check empty joins
+        # Check joins resulting in empty gdfs.
         polygons = geopandas.GeoDataFrame(
             {
                 "col2": [1, 2],
@@ -136,6 +204,32 @@ class TestSpatialJoin:
         empty = sjoin(not_in, polygons, how="inner", op="intersects")
         assert empty.empty
 
+    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize(
+        "empty",
+        [
+            GeoDataFrame(geometry=[GeometryCollection(), GeometryCollection()]),
+            GeoDataFrame(geometry=GeoSeries()),
+        ],
+    )
+    def test_join_with_empty(self, op, empty):
+        # Check joins with empty geometry columns/dataframes.
+        polygons = geopandas.GeoDataFrame(
+            {
+                "col2": [1, 2],
+                "geometry": [
+                    Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                    Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+                ],
+            }
+        )
+        result = sjoin(empty, polygons, how="left", op=op)
+        assert result.index_right.isnull().all()
+        result = sjoin(empty, polygons, how="right", op=op)
+        assert result.index_left.isnull().all()
+        result = sjoin(empty, polygons, how="inner", op=op)
+        assert result.empty
+
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_sjoin_invalid_args(self, dfs):
         index, df1, df2, expected = dfs
@@ -146,21 +240,53 @@ class TestSpatialJoin:
         with pytest.raises(ValueError, match="'right_df' should be GeoDataFrame"):
             sjoin(df1, df2.geometry)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize(
+        "dfs",
+        [
+            "default-index",
+            "string-index",
+            "named-index",
+            "multi-index",
+            "named-multi-index",
+        ],
+        indirect=True,
+    )
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_right(self, op, dfs):
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how="right", op=op)
 
-        exp = expected[op].dropna(subset=["index_right"]).copy()
+        if index in ["default-index", "string-index"]:
+            exp = expected[op].dropna(subset=["index_right"]).copy()
+        elif index == "named-index":
+            exp = expected[op].dropna(subset=["df2_ix"]).copy()
+        elif index == "multi-index":
+            exp = expected[op].dropna(subset=["level_0_y"]).copy()
+        elif index == "named-multi-index":
+            exp = expected[op].dropna(subset=["df2_ix1"]).copy()
         exp = exp.drop("geometry_x", axis=1).rename(columns={"geometry_y": "geometry"})
         exp["df2"] = exp["df2"].astype("int64")
         if index == "default-index":
             exp["index_right"] = exp["index_right"].astype("int64")
             res["index_left"] = res["index_left"].astype(float)
-        exp = exp.set_index("index_right")
-        exp = exp.reindex(columns=res.columns)
+        elif index == "named-index":
+            exp[["df2_ix"]] = exp[["df2_ix"]].astype("int64")
+            exp = exp.set_index("df2_ix").rename(columns={"df1_ix": "index_left"})
+        if index in ["default-index", "string-index"]:
+            exp = exp.set_index("index_right")
+            exp = exp.reindex(columns=res.columns)
+            exp.index.name = None
+        if index == "multi-index":
+            exp = exp.set_index(["level_0_y", "level_1_y"]).rename(
+                columns={"level_0_x": "index_left0", "level_1_x": "index_left1"}
+            )
+            exp.index.names = df2.index.names
+        if index == "named-multi-index":
+            exp = exp.set_index(["df2_ix1", "df2_ix2"]).rename(
+                columns={"df1_ix1": "index_left0", "df1_ix2": "index_left1"}
+            )
+            exp.index.names = df2.index.names
 
         assert_frame_equal(res, exp, check_index_type=False)
 
@@ -244,9 +370,18 @@ class TestSpatialJoinNYBB:
         # original index names should be unchanged
         pointdf2 = self.pointdf.copy()
         pointdf2.index.name = "pointid"
-        sjoin(pointdf2, self.polydf, how=how)
+        polydf = self.polydf.copy()
+        polydf.index.name = "polyid"
+
+        res = sjoin(pointdf2, polydf, how=how)
         assert pointdf2.index.name == "pointid"
-        assert self.polydf.index.name is None
+        assert polydf.index.name == "polyid"
+
+        # original index name should pass through to result
+        if how == "right":
+            assert res.index.name == "polyid"
+        else:  # how == "left", how == "inner"
+            assert res.index.name == "pointid"
 
     def test_sjoin_values(self):
         # GH190
@@ -274,9 +409,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_inner = GeoDataFrame(
-            expected_inner_df, crs={"init": "epsg:4326", "no_defs": True}
-        )
+        expected_inner = GeoDataFrame(expected_inner_df, crs="epsg:4326")
 
         expected_right_df = pd.concat(
             [
@@ -293,9 +426,9 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_right = GeoDataFrame(
-            expected_right_df, crs={"init": "epsg:4326", "no_defs": True}
-        ).set_index("index_right")
+        expected_right = GeoDataFrame(expected_right_df, crs="epsg:4326").set_index(
+            "index_right"
+        )
 
         expected_left_df = pd.concat(
             [
@@ -306,9 +439,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_left = GeoDataFrame(
-            expected_left_df, crs={"init": "epsg:4326", "no_defs": True}
-        )
+        expected_left = GeoDataFrame(expected_left_df, crs="epsg:4326")
 
         assert expected_inner.equals(df_inner)
         assert expected_right.equals(df_right)

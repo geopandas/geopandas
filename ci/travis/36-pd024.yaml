@@ -3,12 +3,12 @@ channels:
   - defaults
 dependencies:
   - python=3.6
-  - six
   # required
   - pandas=0.24
   - shapely
   - fiona=1.7
-  - pyproj
+  #- pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -22,6 +22,8 @@ dependencies:
   - psycopg2
   - libspatialite
   - pip:
+    - pyproj
     - codecov
     - geopy
     - mapclassify
+    - git+https://github.com/pygeos/pygeos.git
