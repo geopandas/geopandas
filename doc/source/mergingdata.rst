@@ -30,24 +30,22 @@ In the following examples, we use these datasets:
    countries = world[['geometry', 'name']]
    countries = countries.rename(columns={'name':'country'})
 
-Appending DataFrames
----------------------
 
-To simply append ('paste') two datasets together, use the ``append`` method.
+Appending
+---------
+
+Appending GeoDataFrames and GeoSeries uses pandas ``append`` methods. Keep in mind, that appended geometry columns needs to have the same CRS.
 
 .. ipython:: python
 
-    # First check the sizes of the previously loaded datasets
-    # For the world dataframe:
-    world.shape
+    # Appending GeoSeries
+    joined = world.geometry.append(cities.geometry)
 
-    # For the cities dataframe:
-    cities.shape
+    # Appending GeoDataFrames
+    europe = world[world.continent == 'Europe']
+    asia = world[world.continent == 'Asia']
+    eurasia = europe.append(asia)
 
-    # Then simpy append the geometries to each other and check that size
-    # of the dataframe is now the total of the previous two DataFrames.
-    merged = world['geometry'].append(cities['geometry'])
-    merged.shape
 
 Attribute Joins
 ----------------
@@ -134,5 +132,3 @@ Existing spatial indexes on either `left_df` or `right_df` will be reused when p
     # sindex for df1 is reused
     sjoin(df1, df3, ...)
     # sindex for df1 is reused again
-
-
