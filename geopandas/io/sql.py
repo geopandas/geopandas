@@ -9,8 +9,9 @@ from geopandas import GeoDataFrame
 
 def _df_to_geodf(df, geom_col="geom", crs=None):
     """
-    Transfoms a pandas DataFrame into a GeoDataFrame.
-    The column geo_col must be a geometry column in WKB representation.
+    Transforms a pandas DataFrame into a GeoDataFrame.
+    The column 'geom_col' must be a geometry column in WKB representation.
+    To be used to convert df based on pd.read_sql to gdf.
 
     Parameters
     ----------
@@ -94,7 +95,8 @@ def read_postgis(
         determine CRS from the SRID associated with the first geometry in
         the database, and assigns that to all geometries.
     chunksize : int, default None
-        If specified, return an iterator where chunksize is the number of rows to include in each chunk.
+        If specified, return an iterator where chunksize is the number of rows to
+        include in each chunk.
 
     See the documentation for pandas.read_sql for further explanation
     of the following parameters:
