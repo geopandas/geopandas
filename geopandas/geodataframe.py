@@ -450,7 +450,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, to_wgs84=False, **kwargs):
+    def to_json(self, na="null", show_bbox=False, to_wgs84=None, **kwargs):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -461,10 +461,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             See below.
         show_bbox : bool, optional, default: False
             Include bbox (bounds) in the geojson
-        to_wgs84: bool, optional, default: True
+        to_wgs84: bool, optional, default: None
             If the CRS is set on the active geometry column it is exported as
             WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
-            <https://tools.ietf.org/html/rfc7946>`_. True by default.
+            <https://tools.ietf.org/html/rfc7946>`_. None by default.
+            Default value will change to True in future versions of GeoPandas.
 
         Notes
         -----
@@ -478,18 +479,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
         """
-        if self.crs and not to_wgs84 and not self.crs == 4326:
+        if to_wgs84 is None:
+            if self.crs and not to_wgs84 and not self.crs == 4326:
+                warnings.warn(
+                    "GeoJSON specification requires WGS84 CRS. Geometry will "
+                    "be automatically re-projected in future versions of GeoPandas. "
+                    "To keep exsting behaviour use 'to_wgs84=False'. "
+                    "Default value will change to 'to_wgs84=True'. "
+                    "GeoDataFrame's CRS:\n"
+                    "{}".format(self.crs.__repr__()),
+                    FutureWarning,
+                    stacklevel=2,
+                )  # TODO: remove warning and set default to_wgs84=True in 0.9 or 0.10
+        if self.crs and to_wgs84 and not self.crs == 4326:
             warnings.warn(
-                "GeoJSON specification requires WGS84 CRS. Geometry will "
-                "be automatically re-projected in future versions of GeoPandas. "
-                "To keep exsting behaviour use 'to_wgs84=False'. "
-                "Default value will change to 'to_wgs84=True'. "
-                "GeoDataFrame's CRS:\n"
-                "{}".format(self.crs.__repr__()),
-                FutureWarning,
-                stacklevel=2,
+                "GeoJSON specification requires WGS84 CRS. "
+                "Active geometry column has been automatically re-projected to WGS84"
+                "(EPSG:4326)."
             )
-        if self.crs and to_wgs84:
             df = self.to_crs(epsg=4326)
         else:
             df = self

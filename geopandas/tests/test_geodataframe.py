@@ -346,7 +346,8 @@ class TestDataFrame:
         assert_frame_equal(res2, exp2_nogeom)
 
     def test_to_json(self):
-        text = self.df.to_json(to_wgs84=True)
+        with pytest.warns(UserWarning):
+            text = self.df.to_json(to_wgs84=True)
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
@@ -356,7 +357,14 @@ class TestDataFrame:
 
     def test_to_json_no_wgs84(self):
         with pytest.warns(FutureWarning):
-            text = self.df.to_json(to_wgs84=False)
+            text = self.df.to_json(to_wgs84=None)
+        data = json.loads(text)
+        # check it doesn't converts to WGS84
+        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
+        assert coord == [970217.0223999023, 145643.33221435547]
+
+    def test_to_json_false_wgs84(self):
+        text = self.df.to_json(to_wgs84=False)
         data = json.loads(text)
         # check it doesn't converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
@@ -370,6 +378,7 @@ class TestDataFrame:
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         assert coord == [970217.0223999023, 145643.33221435547]
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_geom_col(self):
         df = self.df.copy()
         df["geom"] = df["geometry"]
@@ -381,6 +390,7 @@ class TestDataFrame:
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
@@ -394,11 +404,13 @@ class TestDataFrame:
             if props["BoroName"] == "Queens":
                 assert props["Shape_Area"] is None
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_bad_na(self):
         # Check that a bad na argument raises error
         with pytest.raises(ValueError):
             self.df.to_json(na="garbage")
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_dropna(self):
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
         self.df.loc[self.df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
@@ -421,6 +433,7 @@ class TestDataFrame:
             else:
                 assert len(props) == 4
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_keepna(self):
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
         self.df.loc[self.df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
