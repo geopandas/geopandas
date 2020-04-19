@@ -661,27 +661,39 @@ class TestGeomMethods:
     # Test '&', '|', '^', and '-'
     #
     def test_intersection_operator(self):
-        self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
-        self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
-        self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
