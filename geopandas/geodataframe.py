@@ -462,9 +462,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         show_bbox : bool, optional, default: False
             Include bbox (bounds) in the geojson
         to_wgs84: bool, optional, default: True
-            if the CRS is set on the geometry it's exported as WGS84
-            to meet the `2016 geojson specification
+            if the CRS is set on the active geometry column it is exported as
+            WGS84 (EPSG:4326) to meet the `2016 geojson specification
             <https://tools.ietf.org/html/rfc7946>`_. True by default.
+
+        Notes
+        -----
 
         The remaining *kwargs* are passed to json.dumps().
 
