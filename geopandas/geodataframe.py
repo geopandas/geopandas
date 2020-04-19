@@ -450,7 +450,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, to_wgs84=True, **kwargs):
+    def to_json(self, na="null", show_bbox=False, to_wgs84=False, **kwargs):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -478,6 +478,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
         """
+        if self.crs and not to_wgs84 and not self.crs == 4326:
+            warnings.warn(
+                "GeoJSON specification requires WGS84 CRS. Geometry will "
+                "be automatically re-projected in future versions of GeoPandas. "
+                "To keep exsting behaviour use 'to_wgs84=False'. "
+                "Default value will change to 'to_wgs84=True'. "
+                "GeoDataFrame's CRS:\n"
+                "{}".format(self.crs.__repr__()),
+                FutureWarning,
+                stacklevel=2,
+            )
         if self.crs and to_wgs84:
             df = self.to_crs(epsg=4326)
         else:

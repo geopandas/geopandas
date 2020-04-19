@@ -346,7 +346,7 @@ class TestDataFrame:
         assert_frame_equal(res2, exp2_nogeom)
 
     def test_to_json(self):
-        text = self.df.to_json()
+        text = self.df.to_json(to_wgs84=True)
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
@@ -355,7 +355,8 @@ class TestDataFrame:
         np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
 
     def test_to_json_no_wgs84(self):
-        text = self.df.to_json(to_wgs84=False)
+        with pytest.warns(FutureWarning):
+            text = self.df.to_json(to_wgs84=False)
         data = json.loads(text)
         # check it doesn't converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
