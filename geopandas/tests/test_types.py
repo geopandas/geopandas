@@ -1,18 +1,12 @@
-from __future__ import absolute_import
+from pandas import DataFrame, Series
 
-import numpy as np
 from shapely.geometry import Point
-from pandas import Series, DataFrame
 
-from geopandas import GeoSeries, GeoDataFrame
-from geopandas.tests.util import unittest
-
-OLD_PANDAS = issubclass(Series, np.ndarray)
+from geopandas import GeoDataFrame, GeoSeries
 
 
-class TestSeries(unittest.TestCase):
-
-    def setUp(self):
+class TestSeries:
+    def setup_method(self):
         N = self.N = 10
         r = 0.5
         self.pts = GeoSeries([Point(x, y) for x, y in zip(range(N), range(N))])
@@ -45,40 +39,42 @@ class TestSeries(unittest.TestCase):
     def test_take(self):
         assert type(self.pts.take(list(range(0, self.N, 2)))) is GeoSeries
 
-    def test_select(self):
-        assert type(self.pts.select(lambda x: x % 2 == 0)) is GeoSeries
-
-    @unittest.skipIf(OLD_PANDAS, 'Groupby not supported on pandas <= 0.12')
     def test_groupby(self):
         for f, s in self.pts.groupby(lambda x: x % 2):
             assert type(s) is GeoSeries
 
 
-class TestDataFrame(unittest.TestCase):
-
-    def setUp(self):
+class TestDataFrame:
+    def setup_method(self):
         N = 10
-        self.df = GeoDataFrame([
-            {'geometry' : Point(x, y), 'value1': x + y, 'value2': x*y}
-            for x, y in zip(range(N), range(N))])
+        self.df = GeoDataFrame(
+            [
+                {"geometry": Point(x, y), "value1": x + y, "value2": x * y}
+                for x, y in zip(range(N), range(N))
+            ]
+        )
 
     def test_geometry(self):
         assert type(self.df.geometry) is GeoSeries
         # still GeoSeries if different name
-        df2 = GeoDataFrame({"coords": [Point(x,y) for x, y in zip(range(5),
-                                                                  range(5))],
-                            "nums": range(5)}, geometry="coords")
+        df2 = GeoDataFrame(
+            {
+                "coords": [Point(x, y) for x, y in zip(range(5), range(5))],
+                "nums": range(5),
+            },
+            geometry="coords",
+        )
         assert type(df2.geometry) is GeoSeries
-        assert type(df2['coords']) is GeoSeries
+        assert type(df2["coords"]) is GeoSeries
 
     def test_nongeometry(self):
-        assert type(self.df['value1']) is Series
+        assert type(self.df["value1"]) is Series
 
     def test_geometry_multiple(self):
-        assert type(self.df[['geometry', 'value1']]) is GeoDataFrame
+        assert type(self.df[["geometry", "value1"]]) is GeoDataFrame
 
     def test_nongeometry_multiple(self):
-        assert type(self.df[['value1', 'value2']]) is DataFrame
+        assert type(self.df[["value1", "value2"]]) is DataFrame
 
     def test_slice(self):
         assert type(self.df[:2]) is GeoDataFrame

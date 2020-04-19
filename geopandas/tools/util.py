@@ -1,20 +1,14 @@
 import pandas as pd
-import geopandas as gpd
-from shapely.geometry import (
-    Point,
-    LineString,
-    Polygon,
-    MultiPoint,
-    MultiLineString,
-    MultiPolygon
-)
+
+from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 
 _multi_type_map = {
-    'Point': MultiPoint,
-    'LineString': MultiLineString,
-    'Polygon': MultiPolygon
+    "Point": MultiPoint,
+    "LineString": MultiLineString,
+    "Polygon": MultiPolygon,
 }
+
 
 def collect(x, multi=False):
     """
@@ -23,7 +17,7 @@ def collect(x, multi=False):
     Parameters
     ----------
     x : an iterable or Series of Shapely geometries, a GeoSeries, or
-        a single Shapely geometry        
+        a single Shapely geometry
     multi : boolean, default False
         if True, force returned geometries to be Multi* even if they
         only have one component.
@@ -40,12 +34,11 @@ def collect(x, multi=False):
     # Point and MultiPoint... or even just MultiPoint
     t = x[0].type
     if not all(g.type == t for g in x):
-        raise ValueError('Geometry type must be homogenous')
-    if len(x) > 1 and t.startswith('Multi'):
-        raise ValueError(
-            'Cannot collect {0}. Must have single geometries'.format(t))
+        raise ValueError("Geometry type must be homogenous")
+    if len(x) > 1 and t.startswith("Multi"):
+        raise ValueError("Cannot collect {0}. Must have single geometries".format(t))
 
-    if len(x) == 1 and (t.startswith('Multi') or not multi):
+    if len(x) == 1 and (t.startswith("Multi") or not multi):
         # If there's only one single part geom and we're not forcing to
         # multi, then just return it
         return x[0]

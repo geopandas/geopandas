@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+import warnings
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -26,14 +27,60 @@ import sys, os
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['IPython.sphinxext.ipython_console_highlighting',
-              'IPython.sphinxext.ipython_directive']
+              'IPython.sphinxext.ipython_directive',
+              'sphinx_gallery.gen_gallery',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.autodoc',
+              'recommonmark',
+              'numpydoc',
+]
+
+# continue doc build and only print warnings/errors in examples
+ipython_warning_is_error = False
+ipython_exec_lines = [
+    # ensure that dataframes are not truncated in the IPython code blocks
+    'import pandas as _pd',
+    '_pd.set_option("display.max_columns", 20)',
+    '_pd.set_option("display.width", 100)'
+]
+
+# Fix issue with warnings from numpydoc (see discussion in PR #534)
+numpydoc_show_class_members = False
+
+def setup(app):
+    app.add_stylesheet('custom.css')  # may also be an URL
 
 # Add any paths that contain templates here, relative to this directory.
 
 templates_path = ['_templates']
 
+autosummary_generate = True
+
+# Sphinx gallery configuration
+sphinx_gallery_conf = {
+    'examples_dirs': ['../../examples'],
+    'filename_pattern': '^((?!sgskip).)*$',
+    'gallery_dirs': ['gallery'],
+    'doc_module': ('geopandas',),
+    'reference_url': {'matplotlib': 'http://matplotlib.org',
+                      'numpy': 'http://docs.scipy.org/doc/numpy',
+                      'scipy': 'http://docs.scipy.org/doc/scipy/reference',
+                      'geopandas': None},
+    'backreferences_dir': 'reference'
+}
+# connect docs in other projects
+intersphinx_mapping = {'pyproj': ('http://pyproj4.github.io/pyproj/stable/', None)}
+# suppress matplotlib warning in examples
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="Matplotlib is currently using agg, which is a"
+    " non-GUI backend, so cannot show the figure.",
+)
+
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -43,7 +90,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GeoPandas'
-copyright = u'2013-2016, GeoPandas developers'
+copyright = u'2013–2019, GeoPandas developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

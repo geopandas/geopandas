@@ -1,7 +1,9 @@
 .. ipython:: python
    :suppress:
 
-   import geopandas as gpd
+   import geopandas
+   import matplotlib.pyplot as plt
+   plt.close('all')
 
 
 Set-Operations with Overlay
@@ -38,13 +40,13 @@ First, we create some example data:
 .. ipython:: python
 
     from shapely.geometry import Polygon
-    polys1 = gpd.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
-                            Polygon([(2,2), (4,2), (4,4), (2,4)])])
-    polys2 = gpd.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
-                            Polygon([(3,3), (5,3), (5,5), (3,5)])])
+    polys1 = geopandas.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
+                                  Polygon([(2,2), (4,2), (4,4), (2,4)])])
+    polys2 = geopandas.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
+                                  Polygon([(3,3), (5,3), (5,5), (3,5)])])
 
-    df1 = gpd.GeoDataFrame({'geometry': polys1, 'df1':[1,2]})
-    df2 = gpd.GeoDataFrame({'geometry': polys2, 'df2':[1,2]})
+    df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1':[1,2]})
+    df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2':[1,2]})
 
 These two GeoDataFrames have some overlapping areas:
 
@@ -52,7 +54,7 @@ These two GeoDataFrames have some overlapping areas:
 
     ax = df1.plot(color='red');
     @savefig overlay_example.png width=5in
-    df2.plot(ax=ax, color='green');
+    df2.plot(ax=ax, color='green', alpha=0.5);
 
 We illustrate the different overlay modes with the above example.
 The ``overlay`` function will determine the set of all individual geometries
@@ -64,13 +66,13 @@ When using ``how='union'``, all those possible geometries are returned:
 
 .. ipython:: python
 
-    res_union = gpd.overlay(df1, df2, how='union')
+    res_union = geopandas.overlay(df1, df2, how='union')
     res_union
 
-    ax = res_union.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_union.plot(alpha=0.5, cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_union.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 The other ``how`` operations will return different subsets of those geometries.
 With ``how='intersection'``, it returns only those geometries that are contained
@@ -78,52 +80,52 @@ by both GeoDataFrames:
 
 .. ipython:: python
 
-    res_intersection = gpd.overlay(df1, df2, how='intersection')
+    res_intersection = geopandas.overlay(df1, df2, how='intersection')
     res_intersection
 
-    ax = res_intersection.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_intersection.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_intersection.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 ``how='symmetric_difference'`` is the opposite of ``'intersection'`` and returns
 the geometries that are only part of one of the GeoDataFrames but not of both:
 
 .. ipython:: python
 
-    res_symdiff = gpd.overlay(df1, df2, how='symmetric_difference')
+    res_symdiff = geopandas.overlay(df1, df2, how='symmetric_difference')
     res_symdiff
 
-    ax = res_symdiff.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_symdiff.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_symdiff.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 To obtain the geometries that are part of ``df1`` but are not contained in
 ``df2``, you can use ``how='difference'``:
 
 .. ipython:: python
 
-    res_difference = gpd.overlay(df1, df2, how='difference')
+    res_difference = geopandas.overlay(df1, df2, how='difference')
     res_difference
 
-    ax = res_difference.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_difference.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_difference.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 Finally, with ``how='identity'``, the result consists of the surface of ``df1``,
 but with the geometries obtained from overlaying ``df1`` with ``df2``:
 
 .. ipython:: python
 
-    res_identity = gpd.overlay(df1, df2, how='identity')
+    res_identity = geopandas.overlay(df1, df2, how='identity')
     res_identity
 
-    ax = res_identity.plot()
-    df1.plot(ax=ax, facecolor='none');
+    ax = res_identity.plot(cmap='tab10')
+    df1.plot(ax=ax, facecolor='none', edgecolor='k');
     @savefig overlay_example_identity.png width=5in
-    df2.plot(ax=ax, facecolor='none');
+    df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 
 Overlay Countries Example
@@ -133,16 +135,16 @@ First, we load the countries and cities example datasets and select :
 
 .. ipython:: python
 
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-    capitals = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    capitals = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
     # Select South Amarica and some columns
     countries = world[world['continent'] == "South America"]
     countries = countries[['geometry', 'name']]
 
     # Project to crs that uses meters as distance measure
-    countries = countries.to_crs('+init=epsg:3395')
-    capitals = capitals.to_crs('+init=epsg:3395')
+    countries = countries.to_crs('epsg:3395')
+    capitals = capitals.to_crs('epsg:3395')
 
 To illustrate the ``overlay`` function, consider the following case in which one
 wishes to identify the "core" portion of each country -- defined as areas within
@@ -169,19 +171,35 @@ To select only the portion of countries within 500km of a capital, we specify th
 
 .. ipython:: python
 
-   country_cores = gpd.overlay(countries, capitals, how='intersection')
+   country_cores = geopandas.overlay(countries, capitals, how='intersection')
    @savefig country_cores.png width=5in
-   country_cores.plot();
+   country_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 Changing the "how" option allows for different types of overlay operations. For example, if we were interested in the portions of countries *far* from capitals (the peripheries), we would compute the difference of the two.
 
 .. ipython:: python
 
-   country_peripheries = gpd.overlay(countries, capitals, how='difference')
+   country_peripheries = geopandas.overlay(countries, capitals, how='difference')
    @savefig country_peripheries.png width=5in
-   country_peripheries.plot();
+   country_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 
+.. ipython:: python
+    :suppress:
+
+    import matplotlib.pyplot as plt
+    plt.close('all')
+
+
+keep_geom_type keyword
+----------------------
+
+In default settings, ``overlay`` returns only geometries of the same geometry type as df1
+(left one) has, where Polygon and MultiPolygon is considered as a same type (other types likewise).
+You can control this behavior using ``keep_geom_type`` option, which is set to
+True by default. Once set to False, ``overlay`` will return all geometry types resulting from
+selected set-operation. Different types can result for example from intersection of touching geometries,
+where two polygons intersects in a line or a point.
 
 
 More Examples

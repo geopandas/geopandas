@@ -1,95 +1,156 @@
-import io
 import os.path
-import sys
-import zipfile
+import sqlite3
 
-from six.moves.urllib.request import urlopen
-from pandas.util.testing import assert_isinstance
+from pandas import Series
 
-from geopandas import GeoDataFrame, GeoSeries
+from geopandas import GeoDataFrame
+
+from geopandas.testing import (  # noqa
+    assert_geoseries_equal,
+    geom_almost_equals,
+    geom_equals,
+)
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
 
-# Compatibility layer for Python 2.6: try loading unittest2
-if sys.version_info[:2] == (2, 6):
-    try:
-        import unittest2 as unittest
-    except ImportError:
-        import unittest
-else:
-    import unittest
 
 try:
     import psycopg2
     from psycopg2 import OperationalError
 except ImportError:
+
     class OperationalError(Exception):
         pass
 
+
+# mock not used here, but the import from here is used in other modules
 try:
-    import unittest.mock as mock
+    import unittest.mock as mock  # noqa
 except ImportError:
-    import mock
-
-try:
-    from pandas import read_sql_table
-except ImportError:
-    PANDAS_NEW_SQL_API = False
-else:
-    PANDAS_NEW_SQL_API = True
+    import mock  # noqa
 
 
-def download_nybb():
-    """ Returns the path to the NYC boroughs file. Downloads if necessary.
-
-    returns tuple (zip file name, shapefile's name and path within zip file)"""
-    # Data from http://www.nyc.gov/html/dcp/download/bytes/nybb_14aav.zip
-    # saved as geopandas/examples/nybb_14aav.zip.
-    filename = 'nybb_16a.zip'
-    full_path_name = os.path.join(PACKAGE_DIR, 'examples', filename)
-    if not os.path.exists(full_path_name):
-        with io.open(full_path_name, 'wb') as f:
-            response = urlopen('https://github.com/geopandas/geopandas/files/555970/{0}'.format(filename))
-            f.write(response.read())
-
-    shp_zip_path = None
-    zf = zipfile.ZipFile(full_path_name, 'r')
-    # finds path name in zip file
-    for zip_filename_path in zf.namelist():
-        if zip_filename_path.endswith('nybb.shp'):
-            break
-
-    return full_path_name, ('/' + zip_filename_path)
-
-
-def validate_boro_df(test, df):
-    """ Tests a GeoDataFrame that has been read in from the nybb dataset."""
-    test.assertTrue(isinstance(df, GeoDataFrame))
+def validate_boro_df(df, case_sensitive=False):
+    """Tests a GeoDataFrame that has been read in from the nybb dataset."""
+    assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
     # were properly loaded as MultiPolygons
-    test.assertEqual(len(df), 5)
-    columns = ('borocode', 'boroname', 'shape_leng', 'shape_area')
-    for col in columns:
-        test.assertTrue(col in df.columns, 'Column {0} missing'.format(col))
-    test.assertTrue(all(df.geometry.type == 'MultiPolygon'))
+    assert len(df) == 5
+    columns = ("BoroCode", "BoroName", "Shape_Leng", "Shape_Area")
+    if case_sensitive:
+        for col in columns:
+            assert col in df.columns
+    else:
+        for col in columns:
+            assert col.lower() in (dfcol.lower() for dfcol in df.columns)
+    assert Series(df.geometry.type).dropna().eq("MultiPolygon").all()
 
 
-def connect(dbname):
+def connect(dbname, user=None, password=None, host=None, port=None):
+    """
+    Initiaties a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+
+    user = user or os.environ.get("PGUSER")
+    password = password or os.environ.get("PGPASSWORD")
+    host = host or os.environ.get("PGHOST")
+    port = port or os.environ.get("PGPORT")
     try:
-        con = psycopg2.connect(dbname=dbname)
+        con = psycopg2.connect(
+            dbname=dbname, user=user, password=password, host=host, port=port
+        )
     except (NameError, OperationalError):
         return None
 
     return con
 
 
-def create_db(df):
+def get_srid(df):
+    """Return srid from `df.crs`."""
+    if df.crs is not None:
+        return df.crs.to_epsg() or 0
+    return 0
+
+
+def connect_spatialite():
+    """
+    Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
+
+    `The sqlite3 module must be built with loadable extension support
+    <https://docs.python.org/3/library/sqlite3.html#f1>`_ and
+    `SpatiaLite <https://www.gaia-gis.it/fossil/libspatialite/index>`_
+    must be available on the system as a SQLite module.
+    Packages available on Anaconda meet requirements.
+
+    Exceptions
+    ----------
+    ``AttributeError`` on missing support for loadable SQLite extensions
+    ``sqlite3.OperationalError`` on missing SpatiaLite
+    """
+    try:
+        with sqlite3.connect(":memory:") as con:
+            con.enable_load_extension(True)
+            con.load_extension("mod_spatialite")
+            con.execute("SELECT InitSpatialMetaData(TRUE)")
+    except Exception:
+        con.close()
+        raise
+    return con
+
+
+def create_spatialite(con, df):
+    """
+    Return a SpatiaLite connection containing the nybb table.
+
+    Parameters
+    ----------
+    `con`: ``sqlite3.Connection``
+    `df`: ``GeoDataFrame``
+    """
+
+    with con:
+        geom_col = df.geometry.name
+        srid = get_srid(df)
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS nybb "
+            "( ogc_fid INTEGER PRIMARY KEY"
+            ", borocode INTEGER"
+            ", boroname TEXT"
+            ", shape_leng REAL"
+            ", shape_area REAL"
+            ")"
+        )
+        con.execute(
+            "SELECT AddGeometryColumn(?, ?, ?, ?)",
+            ("nybb", geom_col, srid, df.geom_type.dropna().iat[0].upper()),
+        )
+        con.execute("SELECT CreateSpatialIndex(?, ?)", ("nybb", geom_col))
+        sql_row = "INSERT INTO nybb VALUES(?, ?, ?, ?, ?, GeomFromText(?, ?))"
+        con.executemany(
+            sql_row,
+            (
+                (
+                    None,
+                    row.BoroCode,
+                    row.BoroName,
+                    row.Shape_Leng,
+                    row.Shape_Area,
+                    row.geometry.wkt if row.geometry else None,
+                    srid,
+                )
+                for row in df.itertuples(index=False)
+            ),
+        )
+    return con
+
+
+def create_postgis(df, srid=None, geom_col="geom"):
     """
     Create a nybb table in the test_geopandas PostGIS database.
     Returns a boolean indicating whether the database table was successfully
     created
-
     """
     # Try to create the database, skip the db tests if something goes
     # wrong
@@ -97,130 +158,49 @@ def create_db(df):
     # 'test_geopandas' and enable postgis in it:
     # > createdb test_geopandas
     # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
-    con = connect('test_geopandas')
+    con = connect("test_geopandas")
     if con is None:
         return False
 
+    if srid is not None:
+        geom_schema = "geometry(MULTIPOLYGON, {})".format(srid)
+        geom_insert = "ST_SetSRID(ST_GeometryFromText(%s), {})".format(srid)
+    else:
+        geom_schema = "geometry"
+        geom_insert = "ST_GeometryFromText(%s)"
     try:
         cursor = con.cursor()
         cursor.execute("DROP TABLE IF EXISTS nybb;")
 
         sql = """CREATE TABLE nybb (
-            geom        geometry,
-            borocode    integer,
-            boroname    varchar(40),
-            shape_leng  float,
-            shape_area  float
-        );"""
+            {geom_col}   {geom_schema},
+            borocode     integer,
+            boroname     varchar(40),
+            shape_leng   float,
+            shape_area   float
+            );""".format(
+            geom_col=geom_col, geom_schema=geom_schema
+        )
         cursor.execute(sql)
 
         for i, row in df.iterrows():
-            sql = """INSERT INTO nybb VALUES (
-                ST_GeometryFromText(%s), %s, %s, %s, %s
-            );"""
-            cursor.execute(sql, (row['geometry'].wkt,
-                                 row['BoroCode'],
-                                 row['BoroName'],
-                                 row['Shape_Leng'],
-                                 row['Shape_Area']))
+            sql = """INSERT INTO nybb VALUES ({}, %s, %s, %s, %s
+            );""".format(
+                geom_insert
+            )
+            cursor.execute(
+                sql,
+                (
+                    row["geometry"].wkt,
+                    row["BoroCode"],
+                    row["BoroName"],
+                    row["Shape_Leng"],
+                    row["Shape_Area"],
+                ),
+            )
     finally:
         cursor.close()
         con.commit()
         con.close()
 
     return True
-
-
-def assert_seq_equal(left, right):
-    """Poor man's version of assert_almost_equal which isn't working with Shapely
-    objects right now"""
-    assert len(left) == len(right), "Mismatched lengths: %d != %d" % (len(left), len(right))
-
-    for elem_left, elem_right in zip(left, right):
-        assert elem_left == elem_right, "%r != %r" % (left, right)
-
-
-def geom_equals(this, that):
-    """Test for geometric equality. Empty geometries are considered equal.
-
-    Parameters
-    ----------
-    this, that : arrays of Geo objects (or anything that has an `is_empty`
-                 attribute)
-    """
-
-    return (this.geom_equals(that) | (this.is_empty & that.is_empty)).all()
-
-
-def geom_almost_equals(this, that):
-    """Test for 'almost' geometric equality. Empty geometries considered equal.
-
-    Parameters
-    ----------
-    this, that : arrays of Geo objects (or anything that has an `is_empty`
-                 property)
-    """
-
-    return (this.geom_almost_equals(that) |
-            (this.is_empty & that.is_empty)).all()
-
-
-def assert_geoseries_equal(left, right, check_dtype=False,
-                           check_index_type=False,
-                           check_series_type=True,
-                           check_less_precise=False,
-                           check_geom_type=False,
-                           check_crs=True):
-    """Test util for checking that two GeoSeries are equal.
-
-    Parameters
-    ----------
-    left, right : two GeoSeries
-    check_dtype : bool, default False
-        if True, check geo dtype [only included so it's a drop-in replacement
-        for assert_series_equal]
-    check_index_type : bool, default False
-        check that index types are equal
-    check_series_type : bool, default True
-        check that both are same type (*and* are GeoSeries). If False,
-        will attempt to convert both into GeoSeries.
-    check_less_precise : bool, default False
-        if True, use geom_almost_equals. if False, use geom_equals.
-    check_geom_type : bool, default False
-        if True, check that all the geom types are equal.
-    check_crs: bool, default True
-        if check_series_type is True, then also check that the
-        crs matches
-    """
-    assert len(left) == len(right), "%d != %d" % (len(left), len(right))
-
-    if check_index_type:
-        assert_isinstance(left.index, type(right.index))
-
-    if check_dtype:
-        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype,
-                                                               right.dtype)
-
-    if check_series_type:
-        assert isinstance(left, GeoSeries)
-        assert_isinstance(left, type(right))
-
-        if check_crs:
-            assert(left.crs == right.crs)
-    else:
-        if not isinstance(left, GeoSeries):
-            left = GeoSeries(left)
-        if not isinstance(right, GeoSeries):
-            right = GeoSeries(right, index=left.index)
-
-    assert left.index.equals(right.index), "index: %s != %s" % (left.index,
-                                                                right.index)
-
-    if check_geom_type:
-        assert (left.type == right.type).all(), "type: %s != %s" % (left.type,
-                                                                    right.type)
-
-    if check_less_precise:
-        assert geom_almost_equals(left, right)
-    else:
-        assert geom_equals(left, right)

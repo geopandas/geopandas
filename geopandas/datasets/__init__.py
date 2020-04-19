@@ -1,11 +1,11 @@
 import os
 
+__all__ = ["available", "get_path"]
 
-__all__ = ['available', 'get_path']
-
-module_path = os.path.dirname(__file__)
-available = [p for p in next(os.walk(module_path))[1]
-             if not p.startswith('__')]
+_module_path = os.path.dirname(__file__)
+_available_dir = [p for p in next(os.walk(_module_path))[1] if not p.startswith("__")]
+_available_zip = {"nybb": "nybb_16a.zip"}
+available = _available_dir + list(_available_zip.keys())
 
 
 def get_path(dataset):
@@ -19,9 +19,12 @@ def get_path(dataset):
         all options.
 
     """
-    if dataset in available:
-        return os.path.abspath(
-            os.path.join(module_path, dataset, dataset + '.shp'))
+    if dataset in _available_dir:
+        return os.path.abspath(os.path.join(_module_path, dataset, dataset + ".shp"))
+    elif dataset in _available_zip:
+        fpath = os.path.abspath(os.path.join(_module_path, _available_zip[dataset]))
+        return "zip://" + fpath
     else:
-        msg = "The dataset '{data}' is not available".format(data=dataset)
+        msg = "The dataset '{data}' is not available. ".format(data=dataset)
+        msg += "Available datasets are {}".format(", ".join(available))
         raise ValueError(msg)
