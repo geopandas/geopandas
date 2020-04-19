@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 import numbers
 import operator
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -65,6 +66,20 @@ def _isna(value):
         return True
     else:
         return False
+
+
+def _check_crs(left, right, allow_none=False):
+    """
+    Check if the projection of both arrays is the same.
+
+    If allow_none is True, empty CRS is treated as the same.
+    """
+    if allow_none:
+        if not left.crs or not right.crs:
+            return True
+    if not left.crs == right.crs:
+        return False
+    return True
 
 
 # -----------------------------------------------------------------------------
@@ -215,6 +230,8 @@ class GeometryArray(ExtensionArray):
 
     def __init__(self, data, crs=None):
         if isinstance(data, self.__class__):
+            if not crs:
+                crs = data.crs
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -405,6 +422,19 @@ class GeometryArray(ExtensionArray):
                     len(left), len(right)
                 )
                 raise ValueError(msg)
+            if not _check_crs(left, right):
+                warnings.warn(
+                    "CRS mismatch between the CRS of left geometries "
+                    "and the CRS of right geoemtries. "
+                    "Use `GeoSeries.to_crs()` to reproject one of "
+                    "the passed geometry arrays.\n"
+                    "Left CRS:\n {0}\n"
+                    "Right CRS:\n {1}\n".format(
+                        left.crs.__repr__(), right.crs.__repr__()
+                    ),
+                    UserWarning,
+                    stacklevel=6,
+                )
             right = right.data
 
         return getattr(vectorized, op)(left.data, right, **kwargs)

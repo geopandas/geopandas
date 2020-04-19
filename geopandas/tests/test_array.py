@@ -20,6 +20,7 @@ from geopandas.array import (
     points_from_xy,
     to_wkb,
     to_wkt,
+    _check_crs,
 )
 import geopandas._compat as compat
 
@@ -791,3 +792,11 @@ def test_astype_multipolygon():
     result = arr.astype(np.dtype("U10"))
     assert result.dtype == np.dtype("U10")
     assert result[0] == multi_poly.wkt[:10]
+
+
+def test_check_crs():
+    t1 = T.copy()
+    t1.crs = 4326
+    assert _check_crs(t1, T) is False
+    assert _check_crs(t1, t1) is True
+    assert _check_crs(t1, T, allow_none=True) is True
