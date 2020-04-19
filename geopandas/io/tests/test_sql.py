@@ -151,7 +151,7 @@ class TestIO:
 
     def test_read_postgis_chunksize(self, df_nybb):
         chunksize = 10
-        con = connect('test_geopandas')
+        con = connect("test_geopandas")
         if con is None or not create_postgis(df_nybb):
             raise pytest.skip()
 
