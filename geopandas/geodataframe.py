@@ -874,6 +874,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
+        #
+        # Implement standard operators for GeoSeries
+        #
+
+    def __xor__(self, other):
+        """Implement ^ operator as for builtin set type"""
+        return self.geometry.symmetric_difference(other)
+
+    def __or__(self, other):
+        """Implement | operator as for builtin set type"""
+        return self.geometry.union(other)
+
+    def __and__(self, other):
+        """Implement & operator as for builtin set type"""
+        return self.geometry.intersection(other)
+
+    def __sub__(self, other):
+        """Implement - operator as for builtin set type"""
+        return self.geometry.difference(other)
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
