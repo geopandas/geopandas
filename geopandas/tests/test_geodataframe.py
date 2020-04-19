@@ -353,7 +353,6 @@ class TestDataFrame:
         # check it converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
-        assert data.crs == 4326
 
     def test_to_json_no_wgs84(self):
         text = self.df.to_json(to_wgs84=False)
@@ -361,7 +360,6 @@ class TestDataFrame:
         # check it doesn't converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         assert coord == [970217.0223999023, 145643.33221435547]
-        assert data.crs == self.df.crs
 
     def test_to_json_no_crs(self):
         self.df.crs = None
@@ -370,7 +368,6 @@ class TestDataFrame:
         # check it doesn't converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         assert coord == [970217.0223999023, 145643.33221435547]
-        assert data.crs == self.df.crs
 
     def test_to_json_geom_col(self):
         df = self.df.copy()
