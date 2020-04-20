@@ -83,6 +83,9 @@ class TestGeomMethods:
         self.gdf2 = GeoDataFrame(
             {"geometry": self.g1, "col3": [4, 5], "col4": ["rand", "string"]}
         )
+        self.gdf3 = GeoDataFrame(
+            {"geometry": self.g3, "col3": [4, 5], "col4": ["rand", "string"]}
+        )
 
     def _test_unary_real(self, op, expected, a):
         """ Tests for 'area', 'length', 'is_valid', etc. """
@@ -123,6 +126,7 @@ class TestGeomMethods:
         """
         The operators only have GeoSeries on the left, but can have
         GeoSeries or GeoDataFrame on the right.
+        If GeoDataFrame is on the left, geometry column is used.
 
         """
         if isinstance(expected, GeoPandasBase):
@@ -655,25 +659,29 @@ class TestGeomMethods:
 
     #
     # Test '&', '|', '^', and '-'
-    # The left can only be a GeoSeries. The right hand side can be a
-    # GeoSeries, GeoDataFrame or Shapely geometry
     #
     def test_intersection_operator(self):
         self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
+        self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
         self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
+        self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
         self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
+        self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
         self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
+        self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_operator("__sub__", expected, self.g1, self.g2)
+        self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+        self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
