@@ -426,6 +426,29 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
+    def test_to_file_crs(self):
+        """
+        Ensure that the file is written according to the crs
+        if it is specified
+
+        """
+        tempfilename = os.path.join(self.tempdir, "crs.shp")
+        # save correct CRS
+        self.df.to_file(tempfilename)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == self.df.crs
+        # overwrite CRS
+        self.df.to_file(tempfilename, crs=3857)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == "epsg:3857"
+
+        # specify CRS for gdf without one
+        df2 = self.df.copy()
+        df2.crs = None
+        df2.to_file(tempfilename, crs=2263)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == "epsg:2263"
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]

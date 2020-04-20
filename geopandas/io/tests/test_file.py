@@ -1,8 +1,10 @@
 from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
+import io
 import os
 import pathlib
+import tempfile
 import sys
 
 import numpy as np
@@ -35,6 +37,11 @@ def df_nybb():
 @pytest.fixture
 def df_null():
     return read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+
+
+@pytest.fixture
+def file_path():
+    return os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
 
 
 @pytest.fixture
@@ -287,6 +294,73 @@ def test_read_file_remote_geojson_url():
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_textio(file_path):
+    file_text_stream = open(file_path)
+    file_stringio = io.StringIO(open(file_path).read())
+    gdf_text_stream = read_file(file_text_stream)
+    gdf_stringio = read_file(file_stringio)
+    assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_bytesio(file_path):
+    file_binary_stream = open(file_path, "rb")
+    file_bytesio = io.BytesIO(open(file_path, "rb").read())
+    gdf_binary_stream = read_file(file_binary_stream)
+    gdf_bytesio = read_file(file_bytesio)
+    assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_raw_stream(file_path):
+    file_raw_stream = open(file_path, "rb", buffering=0)
+    gdf_raw_stream = read_file(file_raw_stream)
+    assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_pathlib(file_path):
+    path_object = pathlib.Path(file_path)
+    gdf_path_object = read_file(path_object)
+    assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_tempfile():
+    temp = tempfile.TemporaryFile()
+    temp.write(
+        b"""
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0, 0]
+      },
+      "properties": {
+        "name": "Null Island"
+      }
+    }
+    """
+    )
+    temp.seek(0)
+    gdf_tempfile = geopandas.read_file(temp)
+    assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
+    temp.close()
 
 
 def test_read_file_filtered(df_nybb):

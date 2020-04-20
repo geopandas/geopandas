@@ -10,7 +10,7 @@ from shapely.geometry import Point, Polygon, LineString
 import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
-from geopandas.array import from_shapely, from_wkb, from_wkt
+from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
 
 from geopandas.testing import assert_geodataframe_equal
 import pytest
@@ -159,6 +159,12 @@ class TestGeometryArrayCRS:
 
         arr = from_shapely(self.geoms, crs=27700)
         assert arr.crs == self.osgb
+
+        arr = GeometryArray(arr)
+        assert arr.crs == self.osgb
+
+        arr = GeometryArray(arr, crs=4326)
+        assert arr.crs == self.wgs
 
     def test_series(self):
         s = GeoSeries(crs=27700)
