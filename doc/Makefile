@@ -41,6 +41,7 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 	-rm -rf source/reference/*
+	-rm -rf source/gallery/*
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
@@ -152,3 +153,8 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+dash: html
+	rm -rf geopandas.docset
+	doc2dash --name=geopandas _build/html
+

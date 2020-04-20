@@ -3,17 +3,15 @@
 # https://packaging.python.org/en/latest/appveyor/
 # https://github.com/rmcgibbo/python-appveyor-conda-example
 
-
-matrix:
-  fast_finish: true     # immediately finish build once one of the jobs fails.
-
 environment:
   matrix:
-    - PYTHON_VERSION: "2.7"
-      MINICONDA: C:\Miniconda-x64
+    - PYTHON_VERSION: "3.7"
+      MINICONDA: C:\Miniconda37-x64
+      ENV_FILE: "ci/travis/37-latest-conda-forge.yaml"
 
-    - PYTHON_VERSION: "3.5"
-      MINICONDA: C:\Miniconda35-x64
+    - PYTHON_VERSION: "3.8"
+      MINICONDA: C:\Miniconda37-x64
+      ENV_FILE: "ci/travis/38-latest-conda-forge.yaml"
 
 # all our python builds have to happen in tests_script...
 build: false
@@ -29,14 +27,21 @@ install:
         throw "There are newer queued builds for this pull request, failing early." }
 
   # set up environment
-  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - CALL "%MINICONDA%\\Scripts\\activate.bat"
   - conda config --set always_yes yes --set show_channel_urls true --set changeps1 no
-  - conda update -q conda
-  - conda config --add channels conda-forge
+  - conda update conda
+  # this is basically equivalent to what conda init does.  It changes the "conda" to
+  #    be a .bat script that sets appropriate PATH entries before conda hits problems.
+  #  This PATH modification only works with conda 4.6+, but it won't hurt other versions.
+  - set "PATH=%MINICONDA%\condabin:%PATH%"
   - conda info -a
-  - "conda create --quiet --name test-environment python=%PYTHON_VERSION% pandas --file requirements.txt --file requirements.test.txt"
+  # free channel needed for older envs (< py37), see
+  # https://github.com/conda/conda/issues/8849
+  - conda config --set restore_free_channel true
+  - conda env create --file="${ENV_FILE}"
 
 test_script:
-  - activate test-environment
+  # this uses condabin/conda.bat because of our PATH modification above
+  - conda activate test
   - conda list
   - pytest geopandas -v

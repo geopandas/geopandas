@@ -55,10 +55,9 @@
     "matrix": {
         "pandas": [],
         "shapely": [],
-        "cython": [],
+        "pygeos": [],
         "fiona": [],
         "pyproj": [],
-        "six": [],
         "rtree": [],
         "matplotlib": [],
         "descartes": []
