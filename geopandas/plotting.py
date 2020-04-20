@@ -6,6 +6,21 @@ import pandas as pd
 import geopandas
 
 
+def deprecated(new):
+    """Helper to provide deprecation warning."""
+
+    def old(*args, **kwargs):
+        warnings.warn(
+            "{} is intended for internal ".format(new.__name__[1:])
+            + "use only, and will be deprecated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        new(*args, **kwargs)
+
+    return old
+
+
 def _flatten_multi_geoms(geoms, prefix="Multi"):
     """
     Returns Series like geoms and index, except that any Multi geometries
@@ -17,7 +32,6 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
 
     Returns
     -------
-
     components : list of geometry
 
     component_index : index array
@@ -40,7 +54,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     return components, np.array(component_index)
 
 
-def plot_polygon_collection(
+def _plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
     """
@@ -48,32 +62,25 @@ def plot_polygon_collection(
 
     Parameters
     ----------
-
     ax : matplotlib.axes.Axes
         where shapes will be plotted
-
     geoms : a sequence of `N` Polygons and/or MultiPolygons (can be mixed)
 
     values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
         Otherwise follows `color` / `facecolor` kwargs.
-
     edgecolor : single color or sequence of `N` colors
         Color for the edge of the polygons
-
     facecolor : single color or sequence of `N` colors
         Color to fill the polygons. Cannot be used together with `values`.
-
     color : single color or sequence of `N` colors
         Sets both `edgecolor` and `facecolor`
-
     **kwargs
         Additional keyword arguments passed to the collection
 
     Returns
     -------
-
     collection : matplotlib.collections.Collection that was plotted
     """
 
@@ -130,7 +137,10 @@ def plot_polygon_collection(
     return collection
 
 
-def plot_linestring_collection(
+plot_polygon_collection = deprecated(_plot_polygon_collection)
+
+
+def _plot_linestring_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
     """
@@ -138,25 +148,19 @@ def plot_linestring_collection(
 
     Parameters
     ----------
-
     ax : matplotlib.axes.Axes
         where shapes will be plotted
-
     geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be
             mixed)
-
     values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
-
     color : single color or sequence of `N` colors
         Cannot be used together with `values`.
 
     Returns
     -------
-
     collection : matplotlib.collections.Collection that was plotted
-
     """
     from matplotlib.collections import LineCollection
     from matplotlib.colors import is_color_like
@@ -194,7 +198,10 @@ def plot_linestring_collection(
     return collection
 
 
-def plot_point_collection(
+plot_linestring_collection = deprecated(_plot_linestring_collection)
+
+
+def _plot_point_collection(
     ax,
     geoms,
     values=None,
@@ -262,6 +269,9 @@ def plot_point_collection(
         collection = ax.scatter(x, y, color=color, cmap=cmap, marker=marker, **kwargs)
 
     return collection
+
+
+plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
@@ -369,7 +379,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
             facecolor = color
 
         values_ = values[poly_idx] if cmap else None
-        plot_polygon_collection(
+        _plot_polygon_collection(
             ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
         )
 
@@ -377,7 +387,7 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     lines = expl_series[line_idx]
     if not lines.empty:
         values_ = values[line_idx] if cmap else None
-        plot_linestring_collection(
+        _plot_linestring_collection(
             ax, lines, values_, color=color, cmap=cmap, **style_kwds
         )
 
@@ -385,7 +395,9 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     points = expl_series[point_idx]
     if not points.empty:
         values_ = values[point_idx] if cmap else None
-        plot_point_collection(ax, points, values_, color=color, cmap=cmap, **style_kwds)
+        _plot_point_collection(
+            ax, points, values_, color=color, cmap=cmap, **style_kwds
+        )
 
     plt.draw()
     return ax
@@ -616,7 +628,7 @@ def plot_dataframe(
     polys = expl_series[poly_idx & np.invert(nan_idx)]
     subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
-        plot_polygon_collection(
+        _plot_polygon_collection(
             ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
         )
 
@@ -624,7 +636,7 @@ def plot_dataframe(
     lines = expl_series[line_idx & np.invert(nan_idx)]
     subset = values[line_idx & np.invert(nan_idx)]
     if not lines.empty:
-        plot_linestring_collection(
+        _plot_linestring_collection(
             ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
         )
 
@@ -635,7 +647,7 @@ def plot_dataframe(
         if isinstance(markersize, np.ndarray):
             markersize = np.take(markersize, multiindex, axis=0)
             markersize = markersize[point_idx & np.invert(nan_idx)]
-        plot_point_collection(
+        _plot_point_collection(
             ax,
             points,
             subset,
@@ -746,7 +758,6 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
     binning
         Binning objects that holds the Series with values replaced with
         class identifier and the bins.
-
     """
     try:
         import mapclassify.classifiers as classifiers
