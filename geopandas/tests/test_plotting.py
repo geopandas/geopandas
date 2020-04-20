@@ -1,12 +1,20 @@
-from __future__ import absolute_import, division
-
 import itertools
 import warnings
 
 import numpy as np
 
 from shapely.affinity import rotate
-from shapely.geometry import LineString, MultiPoint, MultiPolygon, Point, Polygon
+from shapely.geometry import (
+    MultiPolygon,
+    Polygon,
+    LineString,
+    LinearRing,
+    Point,
+    MultiPoint,
+    MultiLineString,
+    GeometryCollection,
+)
+
 
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
@@ -37,7 +45,9 @@ class TestPointPlotting:
         self.points = GeoSeries(Point(i, i) for i in range(self.N))
 
         values = np.arange(self.N)
+
         self.df = GeoDataFrame({"geometry": self.points, "values": values})
+        self.df["exp"] = (values * 10) ** 3
 
         multipoint1 = MultiPoint(self.points)
         multipoint2 = rotate(multipoint1, 90)
@@ -109,6 +119,18 @@ class TestPointPlotting:
         ax = self.df.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_facecolors(), ["green"] * self.N)
 
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * self.N
+        )
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
+        )
+        with pytest.raises(TypeError):
+            self.df.plot(color="not color")
+
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
             ax = self.df.plot(column="values", color="green")
@@ -168,6 +190,34 @@ class TestPointPlotting:
         # last point == top of colorbar
         np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
 
+        # # Normalized legend
+        # the colorbar matches the Point colors
+        norm = matplotlib.colors.LogNorm(
+            vmin=self.df[1:].exp.min(), vmax=self.df[1:].exp.max()
+        )
+        ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
+        point_colors = ax.collections[0].get_facecolors()
+        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        # first point == bottom of colorbar
+        np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
+        # last point == top of colorbar
+        np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
+        # colorbar generated proper long transition
+        assert cbar_colors.shape == (256, 4)
+
+    def test_subplots_norm(self):
+        # colors of subplots are the same as for plot (norm is applied)
+        cmap = matplotlib.cm.viridis_r
+        norm = matplotlib.colors.Normalize(vmin=0, vmax=20)
+        ax = self.df.plot(column="values", cmap=cmap, norm=norm)
+        actual_colors_orig = ax.collections[0].get_facecolors()
+        exp_colors = cmap(np.arange(10) / (20))
+        np.testing.assert_array_equal(exp_colors, actual_colors_orig)
+        fig, ax = plt.subplots()
+        self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
+        actual_colors_sub = ax.collections[0].get_facecolors()
+        np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
+
     def test_empty_plot(self):
         s = GeoSeries([])
         with pytest.warns(UserWarning):
@@ -188,6 +238,34 @@ class TestPointPlotting:
         cmap = plt.get_cmap()
         expected_colors = [cmap(0)] * self.N + [cmap(1)] * self.N
         _check_colors(2, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df2.plot(color=["r", "b"])
+        # colors are repeated for all components within a MultiPolygon
+        _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
+
+    def test_misssing(self):
+        self.df.loc[0, "values"] = np.nan
+        ax = self.df.plot("values")
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N - 1) / (self.N - 2))
+        _check_colors(self.N - 1, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df.plot("values", missing_kwds={"color": "r"})
+        cmap = plt.get_cmap()
+        expected_colors = cmap(np.arange(self.N - 1) / (self.N - 2))
+        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        _check_colors(self.N - 1, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df.plot(
+            "values", missing_kwds={"color": "r"}, categorical=True, legend=True
+        )
+        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        point_colors = ax.collections[0].get_facecolors()
+        nan_color = ax.collections[1].get_facecolors()
+        leg_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
+        np.testing.assert_array_equal(point_colors[0], leg_colors[0])
+        np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
 
 
 class TestPointZPlotting:
@@ -212,6 +290,18 @@ class TestLineStringPlotting:
         )
         self.df = GeoDataFrame({"geometry": self.lines, "values": values})
 
+        multiline1 = MultiLineString(self.lines.loc["A":"B"].values)
+        multiline2 = MultiLineString(self.lines.loc["C":"D"].values)
+        self.df2 = GeoDataFrame(
+            {"geometry": [multiline1, multiline2], "values": [0, 1]}
+        )
+
+        self.linearrings = GeoSeries(
+            [LinearRing([(0, i), (4, i + 0.5), (9, i)]) for i in range(self.N)],
+            index=list("ABCDEFGHIJ"),
+        )
+        self.df3 = GeoDataFrame({"geometry": self.linearrings, "values": values})
+
     def test_single_color(self):
 
         ax = self.lines.plot(color="green")
@@ -219,6 +309,24 @@ class TestLineStringPlotting:
 
         ax = self.df.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
+
+        ax = self.linearrings.plot(color="green")
+        _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
+
+        ax = self.df3.plot(color="green")
+        _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
+
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
+        )
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(
+            self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
+        )
+        with pytest.raises(TypeError):
+            self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'column'
@@ -245,6 +353,36 @@ class TestLineStringPlotting:
         for ls in ax.collections[0].get_linestyles():
             assert ls[0] == exp_ls[0]
             assert ls[1] == exp_ls[1]
+
+    def test_subplots_norm(self):
+        # colors of subplots are the same as for plot (norm is applied)
+        cmap = matplotlib.cm.viridis_r
+        norm = matplotlib.colors.Normalize(vmin=0, vmax=20)
+        ax = self.df.plot(column="values", cmap=cmap, norm=norm)
+        actual_colors_orig = ax.collections[0].get_edgecolors()
+        exp_colors = cmap(np.arange(10) / (20))
+        np.testing.assert_array_equal(exp_colors, actual_colors_orig)
+        fig, ax = plt.subplots()
+        self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
+        actual_colors_sub = ax.collections[0].get_edgecolors()
+        np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
+
+    def test_multilinestrings(self):
+
+        # MultiLineStrings
+        ax = self.df2.plot()
+        assert len(ax.collections[0].get_paths()) == 4
+        _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
+
+        ax = self.df2.plot("values")
+        cmap = plt.get_cmap(lut=2)
+        # colors are repeated for all components within a MultiLineString
+        expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
+        _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
+
+        ax = self.df2.plot(color=["r", "b"])
+        # colors are repeated for all components within a MultiLineString
+        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
 
 
 class TestPolygonPlotting:
@@ -275,6 +413,14 @@ class TestPolygonPlotting:
         ax = self.df.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
+
+        # check rgba tuple GH1178
+        ax = self.df.plot(color=(0.5, 0.5, 0.5))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
+        ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
+        with pytest.raises(TypeError):
+            self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # 'color' overrides 'values'
@@ -326,6 +472,17 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), ["g"] * 2, alpha=0.4)
         _check_colors(2, ax.collections[0].get_edgecolors(), ["r"] * 2, alpha=0.4)
 
+        # check rgba tuple GH1178 for face and edge
+        ax = self.df.plot(facecolor=(0.5, 0.5, 0.5), edgecolor=(0.4, 0.5, 0.6))
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6)] * 2)
+
+        ax = self.df.plot(
+            facecolor=(0.5, 0.5, 0.5, 0.5), edgecolor=(0.4, 0.5, 0.6, 0.5)
+        )
+        _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
+        _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
+
     def test_legend_kwargs(self):
 
         ax = self.df.plot(
@@ -372,6 +529,23 @@ class TestPolygonPlotting:
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
         _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
 
+        ax = self.df2.plot(color=["r", "b"])
+        # colors are repeated for all components within a MultiPolygon
+        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
+
+    def test_subplots_norm(self):
+        # colors of subplots are the same as for plot (norm is applied)
+        cmap = matplotlib.cm.viridis_r
+        norm = matplotlib.colors.Normalize(vmin=0, vmax=10)
+        ax = self.df.plot(column="values", cmap=cmap, norm=norm)
+        actual_colors_orig = ax.collections[0].get_facecolors()
+        exp_colors = cmap(np.arange(2) / (10))
+        np.testing.assert_array_equal(exp_colors, actual_colors_orig)
+        fig, ax = plt.subplots()
+        self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
+        actual_colors_sub = ax.collections[0].get_facecolors()
+        np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
+
 
 class TestPolygonZPlotting:
     def setup_method(self):
@@ -390,6 +564,37 @@ class TestPolygonZPlotting:
     def test_plot(self):
         # basic test that points with z coords don't break plotting
         self.df.plot()
+
+
+class TestGeometryCollectionPlotting:
+    def setup_method(self):
+        coll1 = GeometryCollection(
+            [
+                Polygon([(1, 0), (2, 0), (2, 1)]),
+                MultiLineString([((0.5, 0.5), (1, 1)), ((1, 0.5), (1.5, 1))]),
+            ]
+        )
+        coll2 = GeometryCollection(
+            [Point(0.75, 0.25), Polygon([(2, 2), (3, 2), (2, 3)])]
+        )
+
+        self.series = GeoSeries([coll1, coll2])
+        self.df = GeoDataFrame({"geometry": self.series, "values": [1, 2]})
+
+    def test_colors(self):
+        # default uniform color
+        ax = self.series.plot()
+        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])  # poly
+        _check_colors(2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])  # line
+        _check_colors(2, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
+
+    def test_values(self):
+        ax = self.df.plot("values")
+        cmap = plt.get_cmap()
+        exp_colors = cmap(np.arange(2) / 1)
+        _check_colors(1, ax.collections[0].get_facecolors(), exp_colors)  # poly
+        _check_colors(2, ax.collections[1].get_edgecolors(), [exp_colors[0]])  # line
+        _check_colors(2, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
 
 
 class TestNonuniformGeometryPlotting:
@@ -539,45 +744,70 @@ class TestPlotCollections:
         # failing with matplotlib 1.4.3 (edge stays black even when specified)
         pytest.importorskip("matplotlib", "1.5.0")
 
-        from geopandas.plotting import plot_point_collection
+        from geopandas.plotting import _plot_point_collection, plot_point_collection
         from matplotlib.collections import PathCollection
 
         fig, ax = plt.subplots()
-        coll = plot_point_collection(ax, self.points)
+        coll = _plot_point_collection(ax, self.points)
         assert isinstance(coll, PathCollection)
         ax.cla()
 
         # default: single default matplotlib color
-        coll = plot_point_collection(ax, self.points)
+        coll = _plot_point_collection(ax, self.points)
         _check_colors(self.N, coll.get_facecolors(), [MPL_DFT_COLOR] * self.N)
         # edgecolor depends on matplotlib version
         # _check_colors(self.N, coll.get_edgecolors(), [MPL_DFT_COLOR]*self.N)
         ax.cla()
 
         # specify single other color
-        coll = plot_point_collection(ax, self.points, color="g")
+        coll = _plot_point_collection(ax, self.points, color="g")
         _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolors(), ["g"] * self.N)
         ax.cla()
 
         # specify edgecolor/facecolor
-        coll = plot_point_collection(ax, self.points, facecolor="g", edgecolor="r")
+        coll = _plot_point_collection(ax, self.points, facecolor="g", edgecolor="r")
         _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolors(), ["r"] * self.N)
         ax.cla()
 
         # list of colors
-        coll = plot_point_collection(ax, self.points, color=["r", "g", "b"])
+        coll = _plot_point_collection(ax, self.points, color=["r", "g", "b"])
         _check_colors(self.N, coll.get_facecolors(), ["r", "g", "b"])
         _check_colors(self.N, coll.get_edgecolors(), ["r", "g", "b"])
         ax.cla()
 
+        coll = _plot_point_collection(
+            ax,
+            self.points,
+            color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_facecolors(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_edgecolors(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        ax.cla()
+
+        # not a color
+        with pytest.raises(TypeError):
+            _plot_point_collection(ax, self.points, color="not color")
+
+        # check DeprecationWarning
+        with pytest.warns(DeprecationWarning):
+            plot_point_collection(ax, self.points)
+
     def test_points_values(self):
-        from geopandas.plotting import plot_point_collection
+        from geopandas.plotting import _plot_point_collection
 
         # default colormap
         fig, ax = plt.subplots()
-        coll = plot_point_collection(ax, self.points, self.values)
+        coll = _plot_point_collection(ax, self.points, self.values)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -586,50 +816,73 @@ class TestPlotCollections:
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
     def test_linestrings(self):
-        from geopandas.plotting import plot_linestring_collection
+        from geopandas.plotting import (
+            _plot_linestring_collection,
+            plot_linestring_collection,
+        )
         from matplotlib.collections import LineCollection
 
         fig, ax = plt.subplots()
-        coll = plot_linestring_collection(ax, self.lines)
+        coll = _plot_linestring_collection(ax, self.lines)
         assert isinstance(coll, LineCollection)
         ax.cla()
 
         # default: single default matplotlib color
-        coll = plot_linestring_collection(ax, self.lines)
+        coll = _plot_linestring_collection(ax, self.lines)
         _check_colors(self.N, coll.get_color(), [MPL_DFT_COLOR] * self.N)
         ax.cla()
 
         # specify single other color
-        coll = plot_linestring_collection(ax, self.lines, color="g")
+        coll = _plot_linestring_collection(ax, self.lines, color="g")
         _check_colors(self.N, coll.get_colors(), ["g"] * self.N)
         ax.cla()
 
         # specify edgecolor / facecolor
-        coll = plot_linestring_collection(ax, self.lines, facecolor="g", edgecolor="r")
+        coll = _plot_linestring_collection(ax, self.lines, facecolor="g", edgecolor="r")
         _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolors(), ["r"] * self.N)
         ax.cla()
 
         # list of colors
-        coll = plot_linestring_collection(ax, self.lines, color=["r", "g", "b"])
+        coll = _plot_linestring_collection(ax, self.lines, color=["r", "g", "b"])
         _check_colors(self.N, coll.get_colors(), ["r", "g", "b"])
         ax.cla()
 
+        coll = _plot_linestring_collection(
+            ax,
+            self.lines,
+            color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_colors(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        ax.cla()
+
         # pass through of kwargs
-        coll = plot_linestring_collection(ax, self.lines, linestyle="--", linewidth=1)
+        coll = _plot_linestring_collection(ax, self.lines, linestyle="--", linewidth=1)
         exp_ls = _style_to_linestring_onoffseq("dashed", 1)
         res_ls = coll.get_linestyle()[0]
         assert res_ls[0] == exp_ls[0]
         assert res_ls[1] == exp_ls[1]
         ax.cla()
 
+        # not a color
+        with pytest.raises(TypeError):
+            _plot_linestring_collection(ax, self.lines, color="not color")
+
+        # check DeprecationWarning
+        with pytest.warns(DeprecationWarning):
+            plot_linestring_collection(ax, self.lines)
+
     def test_linestrings_values(self):
-        from geopandas.plotting import plot_linestring_collection
+        from geopandas.plotting import _plot_linestring_collection
 
         fig, ax = plt.subplots()
 
         # default colormap
-        coll = plot_linestring_collection(ax, self.lines, self.values)
+        coll = _plot_linestring_collection(ax, self.lines, self.values)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -637,7 +890,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify colormap
-        coll = plot_linestring_collection(ax, self.lines, self.values, cmap="RdBu")
+        coll = _plot_linestring_collection(ax, self.lines, self.values, cmap="RdBu")
         fig.canvas.draw_idle()
         cmap = plt.get_cmap("RdBu")
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -645,7 +898,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify vmin/vmax
-        coll = plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
+        coll = _plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap([0])
@@ -653,45 +906,75 @@ class TestPlotCollections:
         ax.cla()
 
     def test_polygons(self):
-        from geopandas.plotting import plot_polygon_collection
+        from geopandas.plotting import _plot_polygon_collection, plot_polygon_collection
         from matplotlib.collections import PatchCollection
 
         fig, ax = plt.subplots()
-        coll = plot_polygon_collection(ax, self.polygons)
+        coll = _plot_polygon_collection(ax, self.polygons)
         assert isinstance(coll, PatchCollection)
         ax.cla()
 
         # default: single default matplotlib color
-        coll = plot_polygon_collection(ax, self.polygons)
+        coll = _plot_polygon_collection(ax, self.polygons)
         _check_colors(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
         ax.cla()
 
         # default: color sets both facecolor and edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, color="g")
+        coll = _plot_polygon_collection(ax, self.polygons, color="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
         ax.cla()
 
+        # default: color can be passed as a list
+        coll = _plot_polygon_collection(ax, self.polygons, color=["g", "b", "r"])
+        _check_colors(self.N, coll.get_facecolor(), ["g", "b", "r"])
+        _check_colors(self.N, coll.get_edgecolor(), ["g", "b", "r"])
+        ax.cla()
+
+        coll = _plot_polygon_collection(
+            ax,
+            self.polygons,
+            color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_facecolor(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        _check_colors(
+            self.N,
+            coll.get_edgecolor(),
+            [(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
+        )
+        ax.cla()
+
         # only setting facecolor keeps default for edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, facecolor="g")
+        coll = _plot_polygon_collection(ax, self.polygons, facecolor="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
         ax.cla()
 
         # custom facecolor and edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, facecolor="g", edgecolor="r")
+        coll = _plot_polygon_collection(ax, self.polygons, facecolor="g", edgecolor="r")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["r"] * self.N)
         ax.cla()
 
+        # not a color
+        with pytest.raises(TypeError):
+            _plot_polygon_collection(ax, self.polygons, color="not color")
+        # check DeprecationWarning
+        with pytest.warns(DeprecationWarning):
+            plot_polygon_collection(ax, self.polygons)
+
     def test_polygons_values(self):
-        from geopandas.plotting import plot_polygon_collection
+        from geopandas.plotting import _plot_polygon_collection
 
         fig, ax = plt.subplots()
 
         # default colormap, edge is still black by default
-        coll = plot_polygon_collection(ax, self.polygons, self.values)
+        coll = _plot_polygon_collection(ax, self.polygons, self.values)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -701,7 +984,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify colormap
-        coll = plot_polygon_collection(ax, self.polygons, self.values, cmap="RdBu")
+        coll = _plot_polygon_collection(ax, self.polygons, self.values, cmap="RdBu")
         fig.canvas.draw_idle()
         cmap = plt.get_cmap("RdBu")
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -709,7 +992,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify vmin/vmax
-        coll = plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
+        coll = _plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap([0])
@@ -717,7 +1000,7 @@ class TestPlotCollections:
         ax.cla()
 
         # override edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, self.values, edgecolor="g")
+        coll = _plot_polygon_collection(ax, self.polygons, self.values, edgecolor="g")
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))

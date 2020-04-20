@@ -6,7 +6,7 @@ from pandas import DataFrame, MultiIndex, Series
 
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union, unary_union
+from shapely.ops import cascaded_union
 
 import geopandas as gpd
 
@@ -47,10 +47,6 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
         else:
             other = other.geometry
 
-        # TODO reenable for all operations once we use pyproj > 2
-        # if this.crs != other.crs:
-        #     warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-        #                                                       other.crs))
         a_this = GeometryArray(this.values)
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
@@ -138,6 +134,25 @@ class GeoPandasBase(object):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
         return _delegate_property("area", self)
+
+    @property
+    def crs(self):
+        """
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
+        object.
+
+        Returns None if the CRS is not set, and to set the value it
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+        """
+        return self.geometry.values.crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs"""
+        self.geometry.values.crs = value
 
     @property
     def geom_type(self):
@@ -262,13 +277,13 @@ class GeoPandasBase(object):
     @property
     def cascaded_union(self):
         """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(self.geometry.values)
+        return cascaded_union(np.asarray(self.geometry.values))
 
     @property
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``."""
-        return unary_union(self.geometry.values)
+        return self.geometry.values.unary_union()
 
     #
     # Binary operations that return a pandas Series

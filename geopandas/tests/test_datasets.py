@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from geopandas import GeoDataFrame, read_file
 from geopandas.datasets import get_path
 

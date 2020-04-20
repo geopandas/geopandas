@@ -1,6 +1,7 @@
 """
 Testing functionality for geopandas objects.
 """
+import warnings
 
 import pandas as pd
 
@@ -60,7 +61,7 @@ def geom_almost_equals(this, that):
 def assert_geoseries_equal(
     left,
     right,
-    check_dtype=False,
+    check_dtype=True,
     check_index_type=False,
     check_series_type=True,
     check_less_precise=False,
@@ -91,15 +92,13 @@ def assert_geoseries_equal(
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
-    msg = "dtype should be a GeometryDtype, got {0}"
-    assert isinstance(left.dtype, GeometryDtype), msg.format(left.dtype)
-    assert isinstance(right.dtype, GeometryDtype), msg.format(left.dtype)
+    if check_dtype:
+        msg = "dtype should be a GeometryDtype, got {0}"
+        assert isinstance(left.dtype, GeometryDtype), msg.format(left.dtype)
+        assert isinstance(right.dtype, GeometryDtype), msg.format(left.dtype)
 
     if check_index_type:
         assert isinstance(left.index, type(right.index))
-
-    if check_dtype:
-        assert left.dtype == right.dtype, "dtype: %s != %s" % (left.dtype, right.dtype)
 
     if check_series_type:
         assert isinstance(left, GeoSeries)
@@ -121,10 +120,18 @@ def assert_geoseries_equal(
             right.type,
         )
 
-    if check_less_precise:
-        assert geom_almost_equals(left, right)
+    if not check_crs:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "CRS mismatch", UserWarning)
+            if check_less_precise:
+                assert geom_almost_equals(left, right)
+            else:
+                assert geom_equals(left, right)
     else:
-        assert geom_equals(left, right)
+        if check_less_precise:
+            assert geom_almost_equals(left, right)
+        else:
+            assert geom_equals(left, right)
 
 
 def assert_geodataframe_equal(
@@ -205,14 +212,16 @@ def assert_geodataframe_equal(
     )
 
     # geometry comparison
-    assert_geoseries_equal(
-        left.geometry,
-        right.geometry,
-        check_dtype=check_dtype,
-        check_less_precise=check_less_precise,
-        check_geom_type=check_geom_type,
-        check_crs=False,
-    )
+    for col, dtype in left.dtypes.iteritems():
+        if isinstance(dtype, GeometryDtype):
+            assert_geoseries_equal(
+                left[col],
+                right[col],
+                check_dtype=check_dtype,
+                check_less_precise=check_less_precise,
+                check_geom_type=check_geom_type,
+                check_crs=check_crs,
+            )
 
     # drop geometries and check remaining columns
     left2 = left.drop([left._geometry_column_name], axis=1)
