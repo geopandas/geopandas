@@ -433,16 +433,21 @@ class TestDataFrame:
 
         """
         tempfilename = os.path.join(self.tempdir, "crs.shp")
-        self.df.to_file(tempfilename, crs=self.df.crs)
-        # Read layer back in
+        # save correct CRS
+        self.df.to_file(tempfilename)
         df = GeoDataFrame.from_file(tempfilename)
-        assert "geometry" in df
-        assert len(df) == 5
-        assert np.alltrue(df["BoroName"].values == self.boros)
-        # add oherwise failed
-        df.crs["x_0"] = int(df.crs["x_0"])
-        df.crs["wktext"] = True
-        assert self.df.crs == df.crs
+        assert df.crs == self.df.crs
+        # overwrite CRS
+        self.df.to_file(tempfilename, crs=3857)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == "epsg:3857"
+
+        # specify CRS for gdf without one
+        df2 = self.df.copy()
+        df2.crs = None
+        df2.to_file(tempfilename, crs=2263)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == "epsg:2263"
 
     def test_bool_index(self):
         # Find boros with 'B' in their name

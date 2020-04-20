@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 import fiona
+import pyproj
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
@@ -170,10 +171,13 @@ def to_file(
         Not all drivers support appending. The drivers that support appending
         are listed in fiona.supported_drivers or
         https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
-    crs : dict, default None
-        If specified, the crs dictionary is passed to Fiona to
+    crs : pyproj.CRS, default None
+        If specified, the CRS is passed to Fiona to
         better control how the file is written. If None, GeoPandas
-        will determine the crs based on crs df attribute
+        will determine the crs based on crs df attribute.
+        The value can be anything accepted
+        by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
@@ -195,16 +199,20 @@ def to_file(
         df = df.reset_index(drop=False)
     if schema is None:
         schema = infer_schema(df)
+    if crs:
+        crs = pyproj.CRS.from_user_input(crs)
+    else:
+        crs = df.crs
     with fiona_env():
         crs_wkt = None
         try:
             gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and df.crs:
-            crs_wkt = df.crs.to_wkt()
-        elif df.crs:
-            crs_wkt = df.crs.to_wkt("WKT1_GDAL")
+        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+            crs_wkt = crs.to_wkt()
+        elif crs:
+            crs_wkt = crs.to_wkt("WKT1_GDAL")
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
