@@ -224,9 +224,10 @@ class TestGeomMethods:
 
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
-        self._test_binary_topological(
-            "intersection", self.all_none, self.g1, self.empty
-        )
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self._test_binary_topological(
+                "intersection", self.all_none, self.g1, self.empty
+            )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
