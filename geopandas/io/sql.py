@@ -34,7 +34,7 @@ def read_postgis(
           CRS to use for the returned GeoDataFrame. The value can be anything accepted
           by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
           such as an authority string (eg "EPSG:4326") or a WKT string.
-          If not set, tries to determine CRS from the SRID associated with the 
+          If not set, tries to determine CRS from the SRID associated with the
           first geometry in the database, and assigns that to all geometries.
 
     See the documentation for pandas.read_sql for further explanation
