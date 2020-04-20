@@ -1,5 +1,6 @@
 from distutils.version import LooseVersion
 
+import io
 import numpy as np
 import pandas as pd
 
@@ -42,9 +43,10 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Parameters
     ----------
-    filename: str
+    filename: str, path object or file-like object
         Either the absolute or relative path to the file or URL to
-        be opened.
+        be opened, or any object with a read() method (such as an open file
+        or StringIO)
     bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
@@ -81,6 +83,9 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         req = _urlopen(filename)
         path_or_bytes = req.read()
         reader = fiona.BytesCollection
+    elif isinstance(filename, io.TextIOBase):
+        path_or_bytes = filename.read()
+        reader = fiona.open
     else:
         path_or_bytes = filename
         reader = fiona.open
