@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 import os
+import sys
+
 import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
@@ -21,17 +23,15 @@ from geopandas.io.parquet import (
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 
-try:
-    import pyarrow  # noqa
-
-    HAS_PYARROW = True
-
-except ImportError:
-    HAS_PYARROW = False
-
-
 # Skip all tests in this module if pyarrow is not available
-pytestmark = pytest.mark.skipif(not HAS_PYARROW, reason="requires pyarrow")
+pyarrow_skip = pytest.importorskip("pyarrow", reason="requires pyarrow")
+
+
+# TEMPORARY: Skip all tests on Windows
+# https://github.com/conda-forge/pyarrow-feedstock/issues/104
+windows_skip = pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="pyarrow segfaults on windows"
+)
 
 
 def test_create_metadata():
@@ -175,10 +175,7 @@ def test_encode_wkb():
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data
 # without geometries
 def test_pandas_parquet_roundtrip1(tmpdir):
-    df = DataFrame({
-        'a': [1,2,3],
-        'b': ['a', 'b', 'c']
-    })
+    df = DataFrame({"a": [1, 2, 3], "b": ["a", "b", "c"]})
 
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
@@ -187,12 +184,13 @@ def test_pandas_parquet_roundtrip1(tmpdir):
 
     assert_frame_equal(df, pq_df)
 
+
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
 def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
     test_dataset = "naturalearth_lowres"
-    df = DataFrame(read_file(get_path(test_dataset)).drop(columns=['geometry']))
+    df = DataFrame(read_file(get_path(test_dataset)).drop(columns=["geometry"]))
 
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
