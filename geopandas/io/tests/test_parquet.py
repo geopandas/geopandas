@@ -24,12 +24,12 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 
 # Skip all tests in this module if pyarrow is not available
-pyarrow_skip = pytest.importorskip("pyarrow", reason="requires pyarrow")
+pyarrow_skip = pytest.importorskip("pyarrow")
 
 
 # TEMPORARY: Skip all tests on Windows
 # https://github.com/conda-forge/pyarrow-feedstock/issues/104
-windows_skip = pytest.mark.skipif(
+pytestmark = pytest.mark.skipif(
     sys.platform.startswith("win"), reason="pyarrow segfaults on windows"
 )
 
