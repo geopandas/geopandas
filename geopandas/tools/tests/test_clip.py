@@ -9,7 +9,7 @@ from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCol
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 import pytest
 
@@ -18,6 +18,24 @@ import pytest
 def point_gdf():
     """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    return gdf
+
+
+@pytest.fixture
+def pointsoutside_nooverlap_gdf():
+    """Create a point GeoDataFrame. Its points are all outside the single
+    rectangle, and its bounds are outside the single rectangle's."""
+    pts = np.array([[5, 15], [15, 15], [15, 20]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    return gdf
+
+
+@pytest.fixture
+def pointsoutside_overlap_gdf():
+    """Create a point GeoDataFrame. Its points are all outside the single
+    rectangle, and its bounds are overlapping the single rectangle's."""
+    pts = np.array([[5, 15], [15, 15], [15, 5]])
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
     return gdf
 
@@ -159,7 +177,7 @@ def test_returns_series(point_gdf, single_rectangle_gdf):
 
 
 def test_non_overlapping_geoms():
-    """Test that a bounding box returns error if the extents don't overlap"""
+    """Test that a bounding box returns empty if the extents don't overlap"""
     unit_box = Polygon([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)])
     unit_gdf = GeoDataFrame([1], geometry=[unit_box], crs="EPSG:4326")
     non_overlapping_gdf = unit_gdf.copy()
@@ -167,9 +185,9 @@ def test_non_overlapping_geoms():
         lambda x: shapely.affinity.translate(x, xoff=20)
     )
     out = clip(unit_gdf, non_overlapping_gdf)
-    assert_geodataframe_equal(
-        out, GeoDataFrame(columns=unit_gdf.columns, crs=unit_gdf.crs)
-    )
+    assert_geodataframe_equal(out, unit_gdf.iloc[:0])
+    out2 = clip(unit_gdf.geometry, non_overlapping_gdf)
+    assert_geoseries_equal(out2, GeoSeries(crs=unit_gdf.crs))
 
 
 def test_clip_points(point_gdf, single_rectangle_gdf):
@@ -311,6 +329,18 @@ def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
     # Assert returned data is a geometry collection given sliver geoms
     assert "Point" == clipped.geom_type[0]
     assert "LineString" == clipped.geom_type[1]
+
+
+def test_clip_no_box_overlap(pointsoutside_nooverlap_gdf, single_rectangle_gdf):
+    """Test clip when intersection is empty and boxes do not overlap."""
+    clipped = clip(pointsoutside_nooverlap_gdf, single_rectangle_gdf)
+    assert len(clipped) == 0
+
+
+def test_clip_box_overlap(pointsoutside_overlap_gdf, single_rectangle_gdf):
+    """Test clip when intersection is emtpy and boxes do overlap."""
+    clipped = clip(pointsoutside_overlap_gdf, single_rectangle_gdf)
+    assert len(clipped) == 0
 
 
 def test_warning_extra_geoms_mixed(single_rectangle_gdf, mixed_gdf):
