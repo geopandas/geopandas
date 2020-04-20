@@ -41,12 +41,12 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
     this = this.geometry
     if isinstance(other, GeoPandasBase):
-        this, other = this.align(other.geometry)
+        if not this.index.equals(other.index):
+            warn("The indices of the two GeoSeries are different.")
+            this, other = this.align(other.geometry)
+        else:
+            other = other.geometry
 
-        # TODO reenable for all operations once we use pyproj > 2
-        # if this.crs != other.crs:
-        #     warn('GeoSeries crs mismatch: {0} and {1}'.format(this.crs,
-        #                                                       other.crs))
         a_this = GeometryArray(this.values)
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
@@ -134,6 +134,25 @@ class GeoPandasBase(object):
         """Returns a ``Series`` containing the area of each geometry in the
         ``GeoSeries``."""
         return _delegate_property("area", self)
+
+    @property
+    def crs(self):
+        """
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
+        object.
+
+        Returns None if the CRS is not set, and to set the value it
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+        """
+        return self.geometry.values.crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs"""
+        self.geometry.values.crs = value
 
     @property
     def geom_type(self):

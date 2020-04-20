@@ -1,5 +1,3 @@
-from distutils.version import LooseVersion
-from functools import partial
 import json
 import warnings
 
@@ -8,18 +6,15 @@ import pandas as pd
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
-import pyproj
+from pyproj import CRS, Transformer
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import transform
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
-from .array import GeometryDtype, from_shapely
+from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
-
-
-_PYPROJ_VERSION = LooseVersion(pyproj.__version__)
+from . import _vectorized as vectorized
 
 
 _SERIES_WARNING_MSG = """\
@@ -57,8 +52,11 @@ class GeoSeries(GeoPandasBase, Series):
         The geometries to store in the GeoSeries.
     index : array-like or Index
         The index for the GeoSeries.
-    crs : str, dict (optional)
-        Coordinate Reference System of the geometry objects.
+    crs : value (optional)
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
     kwargs
         Additional arguments passed to the Series constructor,
          e.g. ``name``.
@@ -81,11 +79,29 @@ class GeoSeries(GeoPandasBase, Series):
 
     """
 
-    _metadata = ["name", "crs"]
+    _metadata = ["name"]
 
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
+
+        if hasattr(data, "crs") and crs:
+            if not data.crs:
+                # make a copy to avoid setting CRS to passed GeometryArray
+                data = data.copy()
+            else:
+                if not data.crs == crs:
+                    warnings.warn(
+                        "CRS mismatch between CRS of the passed geometries "
+                        "and 'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS "
+                        "or 'GeoSeries.to_crs()' to reproject geometries. "
+                        "CRS mismatch will raise an error in the future versions "
+                        "of GeoPandas.",
+                        FutureWarning,
+                        stacklevel=2,
+                    )  # TODO: change 'GeoSeries.crs = crs' to 'set_crs()' once done
+                    # TODO: raise error in 0.9 or 0.10.
+
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
                 if data.blocks[0].ndim == 2:
@@ -101,7 +117,7 @@ class GeoSeries(GeoPandasBase, Series):
                     data = SingleBlockManager([block], data.axes[0], fastpath=True)
                 self = super(GeoSeries, cls).__new__(cls)
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
-                self.crs = crs
+                self.crs = getattr(self.values, "crs", crs)
                 return self
             warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
             return Series(data, index=index, **kwargs)
@@ -130,7 +146,7 @@ class GeoSeries(GeoPandasBase, Series):
                     return s
             # try to convert to GeometryArray, if fails return plain Series
             try:
-                data = from_shapely(s.values)
+                data = from_shapely(s.values, crs)
             except TypeError:
                 warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
                 return s
@@ -139,7 +155,9 @@ class GeoSeries(GeoPandasBase, Series):
 
         self = super(GeoSeries, cls).__new__(cls)
         super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-        self.crs = crs
+
+        if not self.crs:
+            self.crs = crs
         self._invalidate_sindex()
         return self
 
@@ -183,7 +201,6 @@ class GeoSeries(GeoPandasBase, Series):
             access multi-layer data, data stored within archives (zip files),
             etc.
         """
-
         from geopandas import GeoDataFrame
 
         df = GeoDataFrame.from_file(filename, **kwargs)
@@ -203,14 +220,42 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
-    def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
+    def to_file(self, filename, driver="ESRI Shapefile", index=None, **kwargs):
+        """Write the ``GeoSeries`` to a file.
+
+        By default, an ESRI shapefile is written, but any OGR data source
+        supported by Fiona can be written.
+
+        Parameters
+        ----------
+        filename : string
+            File path or file handle to write to.
+        driver : string, default: 'ESRI Shapefile'
+            The OGR format driver used to write the vector file.
+        index : bool, default None
+            If True, write index into one or more columns (for MultiIndex).
+            Default None writes the index into one or more columns only if
+            the index is named, is a MultiIndex, or has a non-integer data
+            type. If False, no index is written.
+
+            .. versionadded:: 0.7
+                Previously the index was not written.
+
+        Notes
+        -----
+        The extra keyword arguments ``**kwargs`` are passed to fiona.open and
+        can be used to write to multi-layer data, store data within archives
+        (zip files), etc.
+
+        See Also
+        --------
+        GeoDataFrame.to_file
+        """
         from geopandas import GeoDataFrame
 
-        data = GeoDataFrame(
-            {"geometry": self, "id": self.index.values}, index=self.index
-        )
+        data = GeoDataFrame({"geometry": self}, index=self.index)
         data.crs = self.crs
-        data.to_file(filename, driver, **kwargs)
+        data.to_file(filename, driver, index=index, **kwargs)
 
     #
     # Implement pandas methods
@@ -219,6 +264,12 @@ class GeoSeries(GeoPandasBase, Series):
     @property
     def _constructor(self):
         return _geoseries_constructor_with_fallback
+
+    @property
+    def _constructor_expanddim(self):
+        from geopandas import GeoDataFrame
+
+        return GeoDataFrame
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -372,8 +423,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         Transform all geometries in a GeoSeries to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
-        be set.  Either ``crs`` in string or dictionary form or an EPSG code
-        may be specified for output.
+        be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
         or projecting entire geometries.  All segments joining points are
@@ -383,51 +433,39 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        crs : dict or str
-            Output projection parameters as string or in dictionary form.
-        epsg : int
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
             EPSG code specifying output projection.
+
+        Returns
+        -------
+        GeoSeries
         """
-        from fiona.crs import from_epsg
-
-        if crs is None and epsg is None:
-            raise TypeError("Must set either crs or epsg for output.")
-
         if self.crs is None:
             raise ValueError(
                 "Cannot transform naive geometries.  "
                 "Please set a crs on the object first."
             )
+        if crs is not None:
+            crs = CRS.from_user_input(crs)
+        elif epsg is not None:
+            crs = CRS.from_epsg(epsg)
+        else:
+            raise ValueError("Must pass either crs or epsg.")
 
-        if crs is None:
-            try:
-                crs = from_epsg(epsg)
-            except (TypeError, ValueError):
-                raise ValueError("Invalid epsg: {}".format(epsg))
-
-        # skip transformation if the input CRS and output CRS are the exact same
-        if _PYPROJ_VERSION >= LooseVersion("2.1.2") and pyproj.CRS.from_user_input(
-            self.crs
-        ).is_exact_same(pyproj.CRS.from_user_input(crs)):
+        # skip if the input CRS and output CRS are the exact same
+        if self.crs.is_exact_same(crs):
             return self
 
-        if _PYPROJ_VERSION >= LooseVersion("2.2.0"):
-            # if availale, use always_xy=True to preserve GIS axis order
-            transformer = pyproj.Transformer.from_crs(self.crs, crs, always_xy=True)
-            project = transformer.transform
-        elif _PYPROJ_VERSION >= LooseVersion("2.1.0"):
-            # use transformer for repeated transformations
-            transformer = pyproj.Transformer.from_crs(self.crs, crs)
-            project = transformer.transform
-        else:
-            proj_in = pyproj.Proj(self.crs, preserve_units=True)
-            proj_out = pyproj.Proj(crs, preserve_units=True)
-            project = partial(pyproj.transform, proj_in, proj_out)
-        result = self.apply(lambda geom: transform(project, geom))
-        result.__class__ = GeoSeries
-        result.crs = crs
-        result._invalidate_sindex()
-        return result
+        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
+
+        new_data = vectorized.transform(self.values.data, transformer.transform)
+        return GeoSeries(
+            GeometryArray(new_data), crs=crs, index=self.index, name=self.name
+        )
 
     def to_json(self, **kwargs):
         """
@@ -445,16 +483,37 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __xor__(self, other):
         """Implement ^ operator as for builtin set type"""
+        warnings.warn(
+            "'^' operator will be deprecated. Use the 'symmetric_difference' "
+            "method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.symmetric_difference(other)
 
     def __or__(self, other):
         """Implement | operator as for builtin set type"""
+        warnings.warn(
+            "'|' operator will be deprecated. Use the 'union' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.union(other)
 
     def __and__(self, other):
         """Implement & operator as for builtin set type"""
+        warnings.warn(
+            "'&' operator will be deprecated. Use the 'intersection' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.intersection(other)
 
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
+        warnings.warn(
+            "'-' operator will be deprecated. Use the 'difference' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.difference(other)

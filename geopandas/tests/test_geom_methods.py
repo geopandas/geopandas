@@ -12,7 +12,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 
@@ -49,9 +49,9 @@ class TestGeomMethods:
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = {"init": "epsg:4326", "no_defs": True}
+        self.g3.crs = "epsg:4326"
         self.g4 = GeoSeries([self.t2, self.t1])
-        self.g4.crs = {"init": "epsg:4326", "no_defs": True}
+        self.g4.crs = "epsg:4326"
         self.g_3d = GeoSeries([self.p0, self.p3d])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, None])
@@ -61,9 +61,7 @@ class TestGeomMethods:
         self.a2.index = ["B", "C"]
         self.esb = Point(-73.9847, 40.7484)
         self.sol = Point(-74.0446, 40.6893)
-        self.landmarks = GeoSeries(
-            [self.esb, self.sol], crs={"init": "epsg:4326", "no_defs": True}
-        )
+        self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -84,6 +82,9 @@ class TestGeomMethods:
         )
         self.gdf2 = GeoDataFrame(
             {"geometry": self.g1, "col3": [4, 5], "col4": ["rand", "string"]}
+        )
+        self.gdf3 = GeoDataFrame(
+            {"geometry": self.g3, "col3": [4, 5], "col4": ["rand", "string"]}
         )
 
     def _test_unary_real(self, op, expected, a):
@@ -125,6 +126,7 @@ class TestGeomMethods:
         """
         The operators only have GeoSeries on the left, but can have
         GeoSeries or GeoDataFrame on the right.
+        If GeoDataFrame is on the left, geometry column is used.
 
         """
         if isinstance(expected, GeoPandasBase):
@@ -222,9 +224,10 @@ class TestGeomMethods:
 
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
-        self._test_binary_topological(
-            "intersection", self.all_none, self.g1, self.empty
-        )
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self._test_binary_topological(
+                "intersection", self.all_none, self.g1, self.empty
+            )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
@@ -657,25 +660,41 @@ class TestGeomMethods:
 
     #
     # Test '&', '|', '^', and '-'
-    # The left can only be a GeoSeries. The right hand side can be a
-    # GeoSeries, GeoDataFrame or Shapely geometry
     #
     def test_intersection_operator(self):
-        self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
-        self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
-        self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        self._test_binary_operator("__sub__", expected, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)

@@ -100,6 +100,7 @@ ax.add_geometries(new_geometries, crs=crs_new)
 
 # Calculate centroids and plot
 df_aea_centroids = df_aea.geometry.centroid
-df_aea_centroids.plot(ax=ax, markersize=5, color='r')
+# Need to provide "zorder" to ensure the points are plotted above the polygons
+df_aea_centroids.plot(ax=ax, markersize=5, color='r', zorder=10)
 
 plt.show()
