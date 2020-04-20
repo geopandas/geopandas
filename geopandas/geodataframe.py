@@ -880,18 +880,39 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __xor__(self, other):
         """Implement ^ operator as for builtin set type"""
+        warnings.warn(
+            "'^' operator will be deprecated. Use the 'symmetric_difference' "
+            "method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.geometry.symmetric_difference(other)
 
     def __or__(self, other):
         """Implement | operator as for builtin set type"""
+        warnings.warn(
+            "'|' operator will be deprecated. Use the 'union' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.geometry.union(other)
 
     def __and__(self, other):
         """Implement & operator as for builtin set type"""
+        warnings.warn(
+            "'&' operator will be deprecated. Use the 'intersection' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.geometry.intersection(other)
 
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
+        warnings.warn(
+            "'-' operator will be deprecated. Use the 'difference' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.geometry.difference(other)
 
 
