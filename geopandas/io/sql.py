@@ -30,27 +30,12 @@ def read_postgis(
         Active connection to the database to query.
     geom_col : string, default 'geom'
         column name to convert to shapely geometries
-    crs : multiple types allowed, optional
-        Coordinate Reference System to use for the returned GeoDataFrame;
-        can accept anything accepted by pyproj.CRS.from_user_input()
-        
-            The following types are accepted:
-            CRS WKT string
-            An authority string (i.e. "epsg:4326")
-            An EPSG integer code (i.e. 4326)
-            A pyproj.CRS
-            An object with a to_wkt method.
-            PROJ string
-            Dictionary of PROJ parameters
-            PROJ keyword arguments for parameters
-            JSON string with PROJ parameters
-            
-            For reference, a few very common projections and their EPSG codes:
-            WGS84 Latitude/Longitude: "EPSG:4326"
-            UTM Zones (North): "EPSG:32633"
-            UTM Zones (South): "EPSG:32733"
-            
-            See geopandas/doc/source/projections.rst for more info on CRS
+    crs : pyproj.CRS, optional
+          CRS to use for the returned GeoDataFrame. The value can be anything accepted
+          by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+          such as an authority string (eg "EPSG:4326") or a WKT string.
+          If not set, tries to determine CRS from the SRID associated with the 
+          first geometry in the database, and assigns that to all geometries.
 
     See the documentation for pandas.read_sql for further explanation
     of the following parameters:
