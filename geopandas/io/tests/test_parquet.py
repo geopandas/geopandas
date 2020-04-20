@@ -226,22 +226,6 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
     assert_geodataframe_equal(df, pq_df)
 
 
-def test_classmethod(tmpdir):
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
-
-    filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
-
-    assert os.path.exists(filename)
-
-    # make sure that we can roundtrip the data frame
-    pq_df = GeoDataFrame.from_parquet(filename)
-
-    assert isinstance(pq_df, GeoDataFrame)
-    assert_geodataframe_equal(df, pq_df)
-
-
 def test_parquet_index(tmpdir):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.

@@ -387,45 +387,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     @classmethod
-    def from_parquet(cls, path, columns=None, **kwargs):
-        """
-        Alternate constructor to create a ``GeoDataFrame`` from a Parquet file.
-
-        You can read a subset of columns in the file using the ``columns`` parameter.
-        However, the structure of the returned GeoDataFrame will depend on which
-        columns you read:
-
-        * if no geometry columns are read, this will raise a ``ValueError`` - you
-        should use the pandas `read_parquet` method instead.
-        * if the primary geometry column saved to this file is not included in
-        columns, the first available geometry column will be set as the geometry
-        column of the returned GeoDataFrame.
-
-        Requires 'pyarrow'.
-
-        .. versionadded:: 0.8
-
-        Parameters
-        ----------
-        path : str, path object
-        columns : list-like of strings, default=None
-            If not None, only these columns will be read from the file.  If
-            the primary geometry column is not included, the first secondary
-            geometry read from the file will be set as the geometry column
-            of the returned GeoDataFrame.  If no geometry columns are present,
-            a ``ValueError`` will be raised.
-        **kwargs
-            Any additional kwargs passed to pyarrow.parquet.read_table().
-
-        Returns
-        -------
-        GeoDataFrame
-        """
-
-        df = geopandas.io.parquet.read_parquet(path, columns=columns, **kwargs)
-        return df
-
-    @classmethod
     def from_postgis(
         cls,
         sql,
