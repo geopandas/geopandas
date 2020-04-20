@@ -346,8 +346,7 @@ class TestDataFrame:
         assert_frame_equal(res2, exp2_nogeom)
 
     def test_to_json(self):
-        with pytest.warns(UserWarning):
-            text = self.df.to_json(to_wgs84=True)
+        text = self.df.to_json(to_wgs84=True)
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5

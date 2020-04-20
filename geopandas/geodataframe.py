@@ -464,12 +464,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         to_wgs84: bool, optional, default: None
             If the CRS is set on the active geometry column it is exported as
             WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
-            <https://tools.ietf.org/html/rfc7946>`_. None by default.
-            Default value will change to True in future versions of GeoPandas.
+            <https://tools.ietf.org/html/rfc7946>`_. None will automatically
+            detect CRS and re-project geometries to WGS84 in the future.
+            Set to True to force re-projection, False to ignore CRS.
+            None by default.
 
         Notes
         -----
-
         The remaining *kwargs* are passed to json.dumps().
 
         Missing (NaN) values in the GeoDataFrame can be represented as follows:
@@ -484,19 +485,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 warnings.warn(
                     "GeoJSON specification requires WGS84 CRS. Geometry will "
                     "be automatically re-projected in future versions of GeoPandas. "
-                    "To keep exsting behaviour use 'to_wgs84=False'. "
-                    "Default value will change to 'to_wgs84=True'. "
+                    "To keep existing behavior use 'to_wgs84=False'. "
                     "GeoDataFrame's CRS:\n"
                     "{}".format(self.crs.__repr__()),
                     FutureWarning,
                     stacklevel=2,
-                )  # TODO: remove warning and set default to_wgs84=True in 0.9 or 0.10
+                )  # TODO: use warning below and default to re-projection in 0.9 or 0.10
+                # warnings.warn(
+                #  "GeoJSON specification requires WGS84 CRS. "
+                #  "Active geometry column has been automatically re-projected to WGS84"
+                #   "(EPSG:4326)."
+                # )
         if self.crs and to_wgs84 and not self.crs == 4326:
-            warnings.warn(
-                "GeoJSON specification requires WGS84 CRS. "
-                "Active geometry column has been automatically re-projected to WGS84"
-                "(EPSG:4326)."
-            )
             df = self.to_crs(epsg=4326)
         else:
             df = self
