@@ -2,6 +2,15 @@ language: python
 
 sudo: false
 
+services:
+  - postgresql
+
+addons:
+  postgresql: 9.6
+  apt:
+    packages:
+    - postgresql-9.6-postgis-2.3
+
 matrix:
   include:
     # Only one test for these Python versions
@@ -42,8 +51,14 @@ install:
   - if [ "$DEV" ]; then pip install git+https://github.com/Toblerity/Shapely.git; fi
   - if [ "$STYLE" ]; then pip install black flake8; fi
   - pip install -e .
+
+  # List environment
   - conda list
   - python -c "import geopandas; geopandas.show_versions();"
+
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
+  - psql -U postgres -c "create extension postgis"
 
 script:
   - echo "Testing without PyGEOS"
