@@ -17,7 +17,7 @@ while [ ! -e /tmp/.s.PGSQL.5432 ]; do
 done
 
 createuser -U travis -s postgres
-createdb --owner=postgres geopandas_test
-psql -d geopandas_test -q -c "CREATE EXTENSION postgis"
+createdb --owner=postgres test_geopandas
+psql -d test_geopandas -q -c "CREATE EXTENSION postgis"
 
 echo "Done setting up Postgresql"
