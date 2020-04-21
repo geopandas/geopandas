@@ -2,9 +2,11 @@ import os.path
 
 from pandas import Series
 
+import geopandas
 from geopandas import GeoDataFrame
 
 from geopandas.testing import (  # noqa
+    assert_geodataframe_equal,
     assert_geoseries_equal,
     geom_almost_equals,
     geom_equals,
@@ -21,7 +23,7 @@ except ImportError:
     import mock  # noqa
 
 
-def validate_boro_df(df, case_sensitive=False):
+def validate_boro_df(df, case_sensitive=False, expected=None):
     """Tests a GeoDataFrame that has been read in from the nybb dataset."""
     assert isinstance(df, GeoDataFrame)
     # Make sure all the columns are there and the geometries
@@ -35,6 +37,25 @@ def validate_boro_df(df, case_sensitive=False):
         for col in columns:
             assert col.lower() in (dfcol.lower() for dfcol in df.columns)
     assert Series(df.geometry.type).dropna().eq("MultiPolygon").all()
+
+    # create expected geodataframe
+    if expected is None:
+        nybb_path = geopandas.datasets.get_path("nybb")
+        expected = geopandas.read_file(nybb_path)
+    # database table have lower case column names
+    expected.columns = expected.columns.str.lower()
+    if df.crs:
+        expected = expected.to_crs(df.crs)
+    # database table might have different active geometry column name
+    expected = expected.rename_geometry(df._geometry_column_name)
+    # spatialite table creation also includes ogc_field (TODO cleanup)
+    df = df.drop(columns=["ogc_fid"], errors="ignore")
+    # TODO crs check should be made to pass
+    # TODO change column order in postgis create table
+    # check_less_precise is needed because roundtrip gives floating point differences
+    assert_geodataframe_equal(
+        df, expected, check_crs=False, check_like=True, check_less_precise=True
+    )
 
 
 def get_srid(df):
