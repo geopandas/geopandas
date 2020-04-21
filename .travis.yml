@@ -14,7 +14,7 @@ matrix:
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true POSTGIS=true
+    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true POSTGIS=true PGUSER=postgres PGPASSWORD=postgres
 
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
@@ -53,8 +53,8 @@ install:
   # Set-up database
   - if [ "$POSTGIS" ]; then
       ci/travis/start_postgres.sh;
-      psql -c "create database pandas_nosetest;" -U postgres;
-      psql -d postgres -q -c "CREATE EXTENSION $extension";
+      psql -c "create database geopandas_test;" -U postgres;
+      psql -d geopandas_test -q -c "CREATE EXTENSION postgis";
     fi
 
 script:

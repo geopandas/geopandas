@@ -15,3 +15,5 @@ while [ ! -e /tmp/.s.PGSQL.5432 ]; do
     sleep 1
     echo -n '.'
 done
+
+createuser
