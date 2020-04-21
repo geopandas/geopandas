@@ -4,22 +4,22 @@ sudo: False
 
 matrix:
   include:
-    # Only one test for these Python versions
-    - env: ENV_FILE="ci/travis/35-minimal.yaml"
+    # # Only one test for these Python versions
+    # - env: ENV_FILE="ci/travis/35-minimal.yaml"
 
-    # Python 3.6 test all supported Pandas versions
-    - env: ENV_FILE="ci/travis/36-pd023.yaml" PYGEOS=true
-    - env: ENV_FILE="ci/travis/36-pd024.yaml" PYGEOS=true
+    # # Python 3.6 test all supported Pandas versions
+    # - env: ENV_FILE="ci/travis/36-pd023.yaml" PYGEOS=true
+    # - env: ENV_FILE="ci/travis/36-pd024.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
-    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
+    # - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
+    # - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
 
     - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true POSTGIS=true PGUSER=postgres PGPASSWORD=postgres
 
-    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
+  #   - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
-  allow_failures:
-    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
+  # allow_failures:
+  #   - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
 before_install:
   - chmod +x ci/travis/start_postgres.sh
