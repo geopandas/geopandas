@@ -7,7 +7,7 @@ see geopandas.tests.util for more information.
 import os
 
 import geopandas
-from geopandas import read_file, read_postgis
+from geopandas import GeoDataFrame, read_file, read_postgis
 
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
@@ -81,7 +81,7 @@ class TestIO:
         create_postgis(con, df_nybb)
 
         sql = "SELECT * FROM nybb;"
-        df = read_postgis(sql, con, geom_col="geometry")
+        df = read_postgis(sql, con)
 
         validate_boro_df(df)
         # no crs defined on the created geodatabase, and none specified
@@ -150,7 +150,7 @@ class TestIO:
     def test_from_postgis_custom_geom_col(self, connection_postgis, df_nybb):
         con = connection_postgis
         geom_col = "the_geom"
-        create_postgis(con, df_nybb, geom_col=geom_co)
+        create_postgis(con, df_nybb, geom_col=geom_col)
 
         sql = "SELECT * FROM nybb;"
         df = GeoDataFrame.from_postgis(sql, con, geom_col=geom_col)
