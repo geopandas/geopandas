@@ -168,7 +168,7 @@ class TestIO:
             'AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
         )
         df = read_postgis(sql, con, geom_col=geom_col)
-        validate_boro_df(df, expected=df_nybb)
+        validate_boro_df(df)
 
     def test_read_postgis_binary(self, connection_spatialite, df_nybb):
         """Tests that geometry read as binary is accepted."""
