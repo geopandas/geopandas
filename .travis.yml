@@ -44,6 +44,7 @@ install:
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/Toblerity/Shapely.git; fi
   - if [ "$STYLE" ]; then pip install black flake8; fi
+  - if [ "$POSTGIS" ]; then conda install postgis -c conda-forge; fi
   - pip install -e .
 
   # List environment
@@ -51,7 +52,6 @@ install:
   - python -c "import geopandas; geopandas.show_versions();"
 
   # Set-up database
-  - if [ "$POSTGIS" ]; then conda install postgis -c conda-forge; fi
   - if [ "$POSTGIS" ]; then ci/travis/setup_postgres.sh; fi
 
 script:
