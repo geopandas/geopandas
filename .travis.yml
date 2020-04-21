@@ -8,6 +8,10 @@ addons:
     packages:
     - postgresql-9.6-postgis-2.3
 
+env:
+  global:
+    - PGPORT=5433
+
 matrix:
   include:
     # Only one test for these Python versions
