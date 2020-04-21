@@ -21,6 +21,9 @@ matrix:
   allow_failures:
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
+before_install:
+  - chmod +x ci/travis/start_postgres.sh
+
 install:
   # Install conda
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
