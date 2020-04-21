@@ -50,11 +50,11 @@ install:
   - conda list
   - python -c "import geopandas; geopandas.show_versions();"
 
+  # psql -c "create database geopandas_test;" -U postgres;
+  # psql -d geopandas_test -q -c "CREATE EXTENSION postgis";
   # Set-up database
   - if [ "$POSTGIS" ]; then
       ci/travis/start_postgres.sh;
-      # psql -c "create database geopandas_test;" -U postgres;
-      psql -d geopandas_test -q -c "CREATE EXTENSION postgis";
     fi
 
 script:
