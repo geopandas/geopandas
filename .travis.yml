@@ -2,9 +2,6 @@ language: python
 
 sudo: false
 
-services:
-  - postgresql
-
 addons:
   postgresql: 9.6
   apt:
