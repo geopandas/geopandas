@@ -2,11 +2,11 @@
 
 echo "Setting up Postgresql"
 
-mkdir -p ${PREFIX}/var
-rm -rf ${PREFIX}/var/db
+mkdir -p ${HOME}/var
+rm -rf ${HOME}/var/db
 
-pg_ctl initdb -D ${PREFIX}/var/db
-pg_ctl start -D ${PREFIX}/var/db
+pg_ctl initdb -D ${HOME}/var/db
+pg_ctl start -D ${HOME}/var/db
 trap "stop_db; exit 0" HUP TERM TSTP
 trap "stop_db; exit 130" INT
 
