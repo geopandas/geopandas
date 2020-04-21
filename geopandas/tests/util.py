@@ -38,6 +38,10 @@ def validate_boro_df(df, case_sensitive=False, expected=None):
             assert col.lower() in (dfcol.lower() for dfcol in df.columns)
     assert Series(df.geometry.type).dropna().eq("MultiPolygon").all()
 
+    if expected is False:
+        # TODO(cleanup) test_geodataframe.py::TestDataFrame::test_from_features
+        # -> don't check frame, since it has different constraints as for sql testing
+        return
     # create expected geodataframe
     if expected is None:
         nybb_path = geopandas.datasets.get_path("nybb")
