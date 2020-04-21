@@ -51,6 +51,7 @@ install:
   - python -c "import geopandas; geopandas.show_versions();"
 
   # Set-up database
+  - if [ "$POSTGIS" ]; then conda install postgis -c conda-forge; fi
   - if [ "$POSTGIS" ]; then ci/travis/setup_postgres.sh; fi
 
 script:
