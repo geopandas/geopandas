@@ -20,4 +20,6 @@ psql --help
 
 createuser -s postgres
 
+createdb --owner=postgres geopandas_test
+
 echo "Done setting up Postgresql"

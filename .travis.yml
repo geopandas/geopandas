@@ -53,7 +53,7 @@ install:
   # Set-up database
   - if [ "$POSTGIS" ]; then
       ci/travis/start_postgres.sh;
-      psql -c "create database geopandas_test;" -U postgres;
+      # psql -c "create database geopandas_test;" -U postgres;
       psql -d geopandas_test -q -c "CREATE EXTENSION postgis";
     fi
 
