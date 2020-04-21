@@ -22,7 +22,7 @@ matrix:
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
 before_install:
-  - chmod +x ci/travis/start_postgres.sh
+  - chmod +x ci/travis/setup_postgres.sh
 
 install:
   # Install conda
@@ -51,7 +51,7 @@ install:
   - python -c "import geopandas; geopandas.show_versions();"
 
   # Set-up database
-  - if [ "$POSTGIS" ]; then ci/travis/start_postgres.sh; fi
+  - if [ "$POSTGIS" ]; then ci/travis/setup_postgres.sh; fi
 
 script:
   - echo "Testing without PyGEOS"
