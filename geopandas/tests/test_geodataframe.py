@@ -472,7 +472,7 @@ class TestDataFrame:
             crs = f.crs_wkt
 
         df = GeoDataFrame.from_features(features, crs=crs)
-        validate_boro_df(df, case_sensitive=True, expected=False)
+        validate_boro_df(df, case_sensitive=True)
         assert df.crs == crs
 
     def test_from_features_unaligned_properties(self):
