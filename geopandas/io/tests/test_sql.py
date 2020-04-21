@@ -29,6 +29,7 @@ def connection_postgis():
     psycopg2 = pytest.importorskip("psycopg2")
     from psycopg2 import OperationalError
 
+    dbname = "test_geopandas"
     user = os.environ.get("PGUSER")
     password = os.environ.get("PGPASSWORD")
     host = os.environ.get("PGHOST")
