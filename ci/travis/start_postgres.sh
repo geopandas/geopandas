@@ -16,6 +16,8 @@ while [ ! -e /tmp/.s.PGSQL.5432 ]; do
     echo -n '.'
 done
 
+psql --help
+
 createuser -s postgres
 
 echo "Done setting up Postgresql"
