@@ -1,16 +1,6 @@
 language: python
 
-sudo: true
-
-addons:
-  postgresql: 9.6
-  apt:
-    packages:
-    - postgresql-9.6-postgis-2.3
-
-env:
-  global:
-    - PGPORT=5433
+sudo: False
 
 matrix:
   include:
@@ -24,7 +14,7 @@ matrix:
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true
+    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true POSTGIS=true
 
     - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
@@ -57,9 +47,12 @@ install:
   - conda list
   - python -c "import geopandas; geopandas.show_versions();"
 
-before_script:
-  - psql -c 'create database travis_ci_test;' -U postgres
-  - psql -U postgres -c "create extension postgis"
+  # Set-up database
+  - if [ "$POSTGIS" ]; then
+      ci/travis/start_postgres.sh;
+      psql -c "create database pandas_nosetest;" -U postgres;
+      psql -d postgres -q -c "CREATE EXTENSION $extension";
+    fi
 
 script:
   - echo "Testing without PyGEOS"

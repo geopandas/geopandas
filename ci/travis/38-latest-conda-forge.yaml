@@ -19,6 +19,7 @@ dependencies:
   - descartes
   - pysal
   - geopy
+  - postgis
   - SQLalchemy
   - psycopg2
   - libspatialite
