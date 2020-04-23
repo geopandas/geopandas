@@ -121,6 +121,8 @@ Field Filter
 
 Load in a subset of fields from the file.
 
+.. note:: Requires Fiona 1.8+
+
 .. code-block:: python
 
     gdf = geopandas.read_file(

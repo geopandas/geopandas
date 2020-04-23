@@ -419,6 +419,10 @@ def test_read_file_filtered_rows_invalid():
         read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
 
 
+@pytest.mark.skipif(
+    LooseVersion(fiona.__version__) < LooseVersion("1.8"),
+    reason="Ignore geometry only available in Fiona 1.8",
+)
 def test_read_file__ignore_geometry():
     pdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True,
@@ -427,6 +431,10 @@ def test_read_file__ignore_geometry():
     assert isinstance(pdf, pd.DataFrame)
 
 
+@pytest.mark.skipif(
+    LooseVersion(fiona.__version__) < LooseVersion("1.8"),
+    reason="Ignore fields only available in Fiona 1.8",
+)
 def test_read_file__ignore_all_fields():
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
