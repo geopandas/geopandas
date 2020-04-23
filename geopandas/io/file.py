@@ -36,15 +36,7 @@ def _is_url(url):
         return False
 
 
-def read_file(
-    filename,
-    bbox=None,
-    mask=None,
-    rows=None,
-    columns=None,
-    ignore_geometry=False,
-    **kwargs
-):
+def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -68,11 +60,6 @@ def read_file(
     rows: int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
-    columns : list, optional
-        Optionally specify the column names to load. The default is to load
-        all columns.
-    ignore_geometry: bool, optional
-        If True, it will skip loading the geometry. Default is False.
     **kwargs:
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -104,56 +91,46 @@ def read_file(
         path_or_bytes = filename
         reader = fiona.open
 
-    with fiona_env():
-        with reader(path_or_bytes, **kwargs) as features:
-
-            # In a future Fiona release the crs attribute of features will
-            # no longer be a dict, but will behave like a dict. So this should
-            # be forwards compatible
-            crs = (
-                features.crs["init"]
-                if features.crs and "init" in features.crs
-                else features.crs_wkt
+    with fiona_env(), reader(path_or_bytes, **kwargs) as features:
+        # In a future Fiona release the crs attribute of features will
+        # no longer be a dict, but will behave like a dict. So this should
+        # be forwards compatible
+        crs = (
+            features.crs["init"]
+            if features.crs and "init" in features.crs
+            else features.crs_wkt
+        )
+        # handle loading the bounding box
+        if bbox is not None:
+            if isinstance(bbox, (GeoDataFrame, GeoSeries)):
+                bbox = tuple(bbox.to_crs(crs).total_bounds)
+            elif isinstance(bbox, BaseGeometry):
+                bbox = bbox.bounds
+            assert len(bbox) == 4
+        # handle loading the mask
+        elif isinstance(mask, (GeoDataFrame, GeoSeries)):
+            mask = mapping(mask.to_crs(crs).unary_union)
+        elif isinstance(mask, BaseGeometry):
+            mask = mapping(mask)
+        # setup the data loading filter
+        if rows is not None:
+            if isinstance(rows, int):
+                rows = slice(rows)
+            elif not isinstance(rows, slice):
+                raise TypeError("'rows' must be an integer or a slice.")
+            f_filt = features.filter(
+                rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
             )
+        elif any((bbox, mask)):
+            f_filt = features.filter(bbox=bbox, mask=mask)
+        else:
+            f_filt = features
+        # get list of columns
+        columns = list(features.schema["properties"])
+        if not kwargs.get("ignore_geometry", False):
+            columns += ["geometry"]
 
-            # handle loading the bounding box
-            if bbox is not None:
-                if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-                    bbox = tuple(bbox.to_crs(crs).total_bounds)
-                elif isinstance(bbox, BaseGeometry):
-                    bbox = bbox.bounds
-                assert len(bbox) == 4
-            # handle loading the mask
-            elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-                mask = mapping(mask.to_crs(crs).unary_union)
-            elif isinstance(mask, BaseGeometry):
-                mask = mapping(mask)
-            # setup the data loading filter
-            if rows is not None:
-                if isinstance(rows, int):
-                    rows = slice(rows)
-                elif not isinstance(rows, slice):
-                    raise TypeError("'rows' must be an integer or a slice.")
-                f_filt = features.filter(
-                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
-                )
-            elif any((bbox, mask)):
-                f_filt = features.filter(bbox=bbox, mask=mask)
-            else:
-                f_filt = features
-
-            columns = (
-                list(features.meta["schema"]["properties"])
-                if columns is None
-                else list(columns)
-            )
-
-            if not ignore_geometry:
-                columns += ["geometry"]
-
-            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
-
-    return gdf
+        return GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
 
 
 def to_file(

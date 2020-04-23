@@ -116,18 +116,16 @@ or a slice object.
         rows=slice(10, 20),
     )
 
-Column Filter
+Field Filter
 ^^^^^^^^^^^^^^
 
-.. versionadded:: 0.8.0
-
-Load in a subset of columns from the file.
+Load in a subset of fields from the file.
 
 .. code-block:: python
 
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
-        columns=["continent", "name"],
+        ignore_fields=["iso_a3", "gdp_md_est"],
     )
 
 

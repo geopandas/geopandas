@@ -391,12 +391,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 row = {}
             # load properties
             properties = feature.get("properties", {})
-            if columns is not None:
-                row.update(
-                    {col: val for col, val in properties.items() if col in columns}
-                )
-            else:
-                row.update(properties)
+            row.update(properties)
             rows.append(row)
         if geometry_loaded:
             return GeoDataFrame(rows, columns=columns, crs=crs)

@@ -419,36 +419,11 @@ def test_read_file_filtered_rows_invalid():
         read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
 
 
-def test_read_file__columns():
-    gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        columns=["continent", "name"],
-    )
-    assert gdf.columns.tolist() == ["continent", "name", "geometry"]
-
-
-def test_read_file__columns_duplicate():
-    gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        columns=["continent", "name", "name"],
-    )
-    assert gdf.columns.tolist() == ["continent", "name", "name", "geometry"]
-
-
-def test_read_file__columns__geometry():
-    gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"), columns=(),
-    )
-    assert gdf.columns.tolist() == ["geometry"]
-
-
-def test_read_file__columns__ignore_geometry():
+def test_read_file__ignore_geometry():
     pdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        columns=["continent", "name"],
-        ignore_geometry=True,
+        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True,
     )
-    assert pdf.columns.tolist() == ["continent", "name"]
+    assert "geometry" not in pdf.columns
     assert isinstance(pdf, pd.DataFrame)
 
 
