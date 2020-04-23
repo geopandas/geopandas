@@ -6,6 +6,8 @@ see geopandas.tests.util for more information.
 """
 import os
 
+import pandas as pd
+
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
