@@ -390,8 +390,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 row = {}
             # load properties
-            properties = feature.get("properties", {})
-            row.update(properties)
+            row.update(feature["properties"])
             rows.append(row)
         if geometry_loaded:
             return GeoDataFrame(rows, columns=columns, crs=crs)

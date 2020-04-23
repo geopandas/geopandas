@@ -427,6 +427,14 @@ def test_read_file__ignore_geometry():
     assert isinstance(pdf, pd.DataFrame)
 
 
+def test_read_file__ignore_all_fields():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
+    )
+    assert gdf.columns.tolist() == ["geometry"]
+
+
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
