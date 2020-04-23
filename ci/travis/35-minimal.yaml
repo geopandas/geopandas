@@ -22,8 +22,6 @@ dependencies:
   - mapclassify
   - geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
-  - geoalchemy2
   - pip:
     - pyproj==2.2.2

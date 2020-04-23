@@ -15,7 +15,7 @@ from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
+from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
@@ -529,33 +529,6 @@ class TestDataFrame:
         # test __geo_interface__ attribute (a GeoDataFrame has one)
         res = GeoDataFrame.from_features(gdf)
         assert_frame_equal(res, expected)
-
-    def test_from_postgis_default(self):
-        con = connect("test_geopandas")
-        if con is None or not create_postgis(self.df):
-            raise pytest.skip()
-
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = GeoDataFrame.from_postgis(sql, con)
-        finally:
-            con.close()
-
-        validate_boro_df(df, case_sensitive=False)
-
-    def test_from_postgis_custom_geom_col(self):
-        con = connect("test_geopandas")
-        geom_col = "the_geom"
-        if con is None or not create_postgis(self.df, geom_col=geom_col):
-            raise pytest.skip()
-
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = GeoDataFrame.from_postgis(sql, con, geom_col=geom_col)
-        finally:
-            con.close()
-
-        validate_boro_df(df, case_sensitive=False)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(

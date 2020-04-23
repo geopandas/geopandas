@@ -20,11 +20,9 @@ dependencies:
   - descartes
   #- geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
   - pip:
     - codecov
     - geopy
     - mapclassify
-    - GeoAlchemy2
     - git+https://github.com/pygeos/pygeos.git

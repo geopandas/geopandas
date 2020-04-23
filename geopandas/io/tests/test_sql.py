@@ -4,20 +4,13 @@ The spatial database tests may not work without additional system
 configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
+import os
 
 import geopandas
-from geopandas import read_file, read_postgis
-from geopandas.io.sql import write_postgis
+from geopandas import GeoDataFrame, read_file, read_postgis
 
-from geopandas.tests.util import (
-    connect,
-    connect_engine,
-    connect_spatialite,
-    create_postgis,
-    create_spatialite,
-    validate_boro_df,
-    drop_table_if_exists,
-)
+from geopandas.io.sql import write_postgis
+from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
 
@@ -26,6 +19,104 @@ def df_nybb():
     nybb_path = geopandas.datasets.get_path("nybb")
     df = read_file(nybb_path)
     return df
+
+
+@pytest.fixture()
+def connection_postgis():
+    """
+    Initiaties a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    psycopg2 = pytest.importorskip("psycopg2")
+    from psycopg2 import OperationalError
+
+    dbname = "test_geopandas"
+    user = os.environ.get("PGUSER")
+    password = os.environ.get("PGPASSWORD")
+    host = os.environ.get("PGHOST")
+    port = os.environ.get("PGPORT")
+    try:
+        con = psycopg2.connect(
+            dbname=dbname, user=user, password=password, host=host, port=port
+        )
+    except OperationalError:
+        pytest.skip("Cannot connect with postgresql database")
+
+    yield con
+    con.close()
+
+
+@pytest.fixture()
+def connection_spatialite():
+    """
+    Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
+
+    `The sqlite3 module must be built with loadable extension support
+    <https://docs.python.org/3/library/sqlite3.html#f1>`_ and
+    `SpatiaLite <https://www.gaia-gis.it/fossil/libspatialite/index>`_
+    must be available on the system as a SQLite module.
+    Packages available on Anaconda meet requirements.
+
+    Exceptions
+    ----------
+    ``AttributeError`` on missing support for loadable SQLite extensions
+    ``sqlite3.OperationalError`` on missing SpatiaLite
+    """
+    sqlite3 = pytest.importorskip("sqlite3")
+    try:
+        with sqlite3.connect(":memory:") as con:
+            con.enable_load_extension(True)
+            con.load_extension("mod_spatialite")
+            con.execute("SELECT InitSpatialMetaData(TRUE)")
+    except Exception:
+        con.close()
+        pytest.skip("Cannot setup spatialite database")
+
+    yield con
+    con.close()
+
+
+def connect_engine(dbname, user=None, password=None, host=None, port=None):
+    """
+    Initiaties a connection (engine) to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    from sqlalchemy.engine.url import URL
+
+    user = user or os.environ.get("PGUSER")
+    password = password or os.environ.get("PGPASSWORD")
+    host = host or os.environ.get("PGHOST")
+    port = port or os.environ.get("PGPORT")
+    try:
+        con = sqlalchemy.create_engine(
+            URL(
+                drivername="postgresql+psycopg2",
+                username=user,
+                database=dbname,
+                password=password,
+                host=host,
+                port=port,
+            )
+        )
+        con.begin()
+    except Exception:
+        return None
+
+    return con
+
+
+def drop_table_if_exists(engine, table):
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    from sqlalchemy.ext.declarative import declarative_base
+
+    if engine.has_table(table):
+        base = declarative_base()
+        metadata = sqlalchemy.MetaData(engine)
+        metadata.reflect()
+        table = metadata.tables.get(table)
+        if table is not None:
+            base.metadata.drop_all(engine, [table], checkfirst=True)
 
 
 @pytest.fixture
@@ -39,7 +130,7 @@ def df_mixed_single_and_multi():
                 MultiLineString([[(0, 0), (1, 1)], [(2, 2), (3, 3)]]),
                 Point(0, 1),
             ]
-        },
+        }
     )
     return df
 
@@ -59,7 +150,7 @@ def df_geom_collection():
                     ]
                 )
             ]
-        },
+        }
     )
     return df
 
@@ -69,134 +160,117 @@ def df_linear_ring():
     from shapely.geometry import LinearRing
 
     df = geopandas.GeoDataFrame(
-        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]},
+        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]}
     )
     return df
 
 
 class TestIO:
-    def test_read_postgis_default(self, df_nybb):
-        con = connect("test_geopandas")
-        if con is None or not create_postgis(df_nybb):
-            raise pytest.skip()
+    def test_read_postgis_default(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        create_postgis(con, df_nybb)
 
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, con)
-        finally:
-            con.close()
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
 
         validate_boro_df(df)
         # no crs defined on the created geodatabase, and none specified
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    def test_read_postgis_custom_geom_col(self, df_nybb):
-        con = connect("test_geopandas")
+    def test_read_postgis_custom_geom_col(self, connection_postgis, df_nybb):
+        con = connection_postgis
         geom_col = "the_geom"
-        if con is None or not create_postgis(df_nybb, geom_col=geom_col):
-            raise pytest.skip()
+        create_postgis(con, df_nybb, geom_col=geom_col)
 
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, con, geom_col=geom_col)
-        finally:
-            con.close()
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con, geom_col=geom_col)
 
         validate_boro_df(df)
 
-    def test_read_postgis_select_geom_as(self, df_nybb):
+    def test_read_postgis_select_geom_as(self, connection_postgis, df_nybb):
         """Tests that a SELECT {geom} AS {some_other_geom} works."""
-        con = connect("test_geopandas")
+        con = connection_postgis
         orig_geom = "geom"
         out_geom = "the_geom"
-        if con is None or not create_postgis(df_nybb, geom_col=orig_geom):
-            raise pytest.skip()
+        create_postgis(con, df_nybb, geom_col=orig_geom)
 
-        try:
-            sql = """SELECT borocode, boroname, shape_leng, shape_area,
-                     {} as {} FROM nybb;""".format(
-                orig_geom, out_geom
-            )
-            df = read_postgis(sql, con, geom_col=out_geom)
-        finally:
-            con.close()
+        sql = """SELECT borocode, boroname, shape_leng, shape_area,
+                    {} as {} FROM nybb;""".format(
+            orig_geom, out_geom
+        )
+        df = read_postgis(sql, con, geom_col=out_geom)
 
         validate_boro_df(df)
 
-    def test_read_postgis_get_srid(self, df_nybb):
+    def test_read_postgis_get_srid(self, connection_postgis, df_nybb):
         """Tests that an SRID can be read from a geodatabase (GH #451)."""
+        con = connection_postgis
         crs = "epsg:4269"
         df_reproj = df_nybb.to_crs(crs)
-        created = create_postgis(df_reproj, srid=4269)
-        con = connect("test_geopandas")
-        if con is None or not created:
-            raise pytest.skip()
+        create_postgis(con, df_reproj, srid=4269)
 
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, con)
-        finally:
-            con.close()
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
 
         validate_boro_df(df)
         assert df.crs == crs
 
-    def test_read_postgis_override_srid(self, df_nybb):
+    def test_read_postgis_override_srid(self, connection_postgis, df_nybb):
         """Tests that a user specified CRS overrides the geodatabase SRID."""
+        con = connection_postgis
         orig_crs = df_nybb.crs
-        created = create_postgis(df_nybb, srid=4269)
-        con = connect("test_geopandas")
-        if con is None or not created:
-            raise pytest.skip()
+        create_postgis(con, df_nybb, srid=4269)
 
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = read_postgis(sql, con, crs=orig_crs)
-        finally:
-            con.close()
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con, crs=orig_crs)
 
         validate_boro_df(df)
         assert df.crs == orig_crs
 
-    def test_read_postgis_null_geom(self, df_nybb):
-        """Tests that geometry with NULL is accepted."""
-        try:
-            con = connect_spatialite()
-        except Exception:
-            raise pytest.skip()
-        else:
-            geom_col = df_nybb.geometry.name
-            df_nybb.geometry.iat[0] = None
-            create_spatialite(con, df_nybb)
-            sql = (
-                "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
-                'AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
-            )
-            df = read_postgis(sql, con, geom_col=geom_col)
-            validate_boro_df(df)
-        finally:
-            if "con" in locals():
-                con.close()
+    def test_from_postgis_default(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        create_postgis(con, df_nybb)
 
-    def test_read_postgis_binary(self, df_nybb):
+        sql = "SELECT * FROM nybb;"
+        df = GeoDataFrame.from_postgis(sql, con)
+
+        validate_boro_df(df, case_sensitive=False)
+
+    def test_from_postgis_custom_geom_col(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        geom_col = "the_geom"
+        create_postgis(con, df_nybb, geom_col=geom_col)
+
+        sql = "SELECT * FROM nybb;"
+        df = GeoDataFrame.from_postgis(sql, con, geom_col=geom_col)
+
+        validate_boro_df(df, case_sensitive=False)
+
+    def test_read_postgis_null_geom(self, connection_spatialite, df_nybb):
+        """Tests that geometry with NULL is accepted."""
+        con = connection_spatialite
+        geom_col = df_nybb.geometry.name
+        df_nybb.geometry.iat[0] = None
+        create_spatialite(con, df_nybb)
+        sql = (
+            "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
+            'AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
+        )
+        df = read_postgis(sql, con, geom_col=geom_col)
+        validate_boro_df(df)
+
+    def test_read_postgis_binary(self, connection_spatialite, df_nybb):
         """Tests that geometry read as binary is accepted."""
-        try:
-            con = connect_spatialite()
-        except Exception:
-            raise pytest.skip()
-        else:
-            geom_col = df_nybb.geometry.name
-            create_spatialite(con, df_nybb)
-            sql = (
-                "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
-                'ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
-            )
-            df = read_postgis(sql, con, geom_col=geom_col)
-            validate_boro_df(df)
-        finally:
-            if "con" in locals():
-                con.close()
+        con = connection_spatialite
+        geom_col = df_nybb.geometry.name
+        create_spatialite(con, df_nybb)
+        sql = (
+            "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
+            'ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
+        )
+        df = read_postgis(sql, con, geom_col=geom_col)
+        validate_boro_df(df)
 
     def test_write_postgis_default(self, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
