@@ -519,7 +519,7 @@ class TestDataFrame:
         p2 = Point(3, 3)
         f2 = Placemark(p2, 0)
         df = GeoDataFrame.from_features([f1, f2])
-        assert df.columns.tolist() == ["geometry", "a"]
+        assert sorted(df.columns) == ["a", "geometry"]
         assert df.geometry.tolist() == [p1, p2]
 
     def test_from_feature_collection(self):
