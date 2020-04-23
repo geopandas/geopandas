@@ -30,6 +30,7 @@
     // determined by looking for tools on the PATH environment
     // variable.
     "environment_type": "conda",
+    "conda_channels": ["conda-forge", "defaults"],
 
     // timeout in seconds for installing any dependencies in environment
     // defaults to 10 min
