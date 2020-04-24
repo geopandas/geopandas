@@ -3,6 +3,8 @@
 # https://packaging.python.org/en/latest/appveyor/
 # https://github.com/rmcgibbo/python-appveyor-conda-example
 
+image: Visual Studio 2017
+
 environment:
   matrix:
     - PYTHON_VERSION: "3.7"
