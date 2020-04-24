@@ -528,8 +528,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(
-            schema=schema_to_use)
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
         engine.execute(sql)
 
         try:
@@ -562,8 +561,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(
-            schema=schema_to_use)
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
         engine.execute(sql)
 
         try:
