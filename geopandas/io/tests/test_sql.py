@@ -527,9 +527,12 @@ class TestIO:
             raise pytest.skip()
 
         table = "nybb"
+        schema_to_use = "test"
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(
+            schema=schema_to_use)
+        engine.execute(sql)
 
         try:
-            schema_to_use = "test"
             write_postgis(
                 df_nybb,
                 con=engine,
@@ -559,6 +562,9 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(
+            schema=schema_to_use)
+        engine.execute(sql)
 
         try:
 
