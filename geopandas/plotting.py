@@ -40,27 +40,43 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     return components, np.array(component_index)
 
 
-def _check_and_expand(kwargs, att, multiindex, check=pd.api.types.is_number):
+def _expand_kwargs(kwargs, multiindex):
     """
-    Most arguments to the plot functions must be a (single) value of a correct
-    type, or a sequence of values. Here, it is checked if the value to key
-    'att' of dictionary 'kwargs' passes typecheck function 'check'. If not, and
-    the value is list-like, expands it (in place) to the correct length/formats
-    with help of 'multiindex'. If not, raises a TypeError.
-
-    Returns
-    -------
-    None.
-
+    Most arguments to the plot functions must be a (single) value, or a sequence
+    of values. This function checks each key-value pair in 'kwargs' and expands
+    it (in place) to the correct length/formats with help of 'multiindex', unless
+    the value appears to already be a valid (single) value for the key.
     """
-    if check(kwargs[att]):
-        return
-    if pd.api.types.is_list_like(kwargs[att]):
-        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
-        return
-    raise TypeError(
-        att.title() + " attribute has to be a single value or sequence of values."
-    )
+    from matplotlib.colors import is_color_like
+    from typing import Iterable
+
+    for att, value in kwargs.items():
+        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+            if is_color_like(value):
+                continue
+        elif att == "offsets":
+            # A single offset is 2-array of numbers.
+            if (
+                isinstance(value, Iterable)
+                and len(value) == 2
+                and pd.api.types.is_number(value[0])
+                and pd.api.types.is_number(value[1])
+            ):
+                continue
+        elif "linestyle" in att:  # linestyle(s)
+            # A single linestyle can be 2-tuple of a number and an iterable.
+            if (
+                isinstance(value, tuple)
+                and len(value) == 2
+                and isinstance(value[1], Iterable)
+            ):
+                continue
+        elif att in ["marker", "alpha"]:
+            # For these values, only a single value is allowed, so never expand.
+            continue
+
+        if pd.api.types.is_list_like(value):
+            kwargs[att] = np.take(value, multiindex, axis=0)
 
 
 def plot_polygon_collection(
@@ -109,7 +125,6 @@ def plot_polygon_collection(
             "'pip install descartes'."
         )
     from matplotlib.collections import PatchCollection
-    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
@@ -119,16 +134,11 @@ def plot_polygon_collection(
     if "markersize" in kwargs:
         del kwargs["markersize"]
 
+    # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
-        _check_and_expand(kwargs, "color", multiindex, is_color_like)
-    else:
-        for att in ["facecolor", "edgecolor"]:
-            if att in kwargs:
-                _check_and_expand(kwargs, att, multiindex, is_color_like)
 
-    if "linewidth" in kwargs:
-        _check_and_expand(kwargs, "linewidth", multiindex)
+    _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -172,7 +182,6 @@ def plot_linestring_collection(
 
     """
     from matplotlib.collections import LineCollection
-    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
@@ -182,13 +191,11 @@ def plot_linestring_collection(
     if "markersize" in kwargs:
         del kwargs["markersize"]
 
-    # color=None gives black instead of default color cycle
+    # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
-        _check_and_expand(kwargs, "color", multiindex, is_color_like)
 
-    if "linewidth" in kwargs:
-        _check_and_expand(kwargs, "linewidth", multiindex)
+    _expand_kwargs(kwargs, multiindex)
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -237,8 +244,6 @@ def plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    from matplotlib.colors import is_color_like
-
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
@@ -255,16 +260,17 @@ def plot_point_collection(
     if markersize is not None:
         kwargs["s"] = markersize
 
+    # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
-        _check_and_expand(kwargs, "color", multiindex, is_color_like)
+    if marker is not None:
+        kwargs["marker"] = marker
+    _expand_kwargs(kwargs, multiindex)
 
     if "norm" not in kwargs:
-        collection = ax.scatter(
-            x, y, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
-        )
+        collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
     else:
-        collection = ax.scatter(x, y, cmap=cmap, marker=marker, **kwargs)
+        collection = ax.scatter(x, y, cmap=cmap, **kwargs)
 
     return collection
 
