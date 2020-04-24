@@ -428,7 +428,7 @@ def test_read_file__ignore_geometry():
         geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True,
     )
     assert "geometry" not in pdf.columns
-    assert isinstance(pdf, pd.DataFrame)
+    assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
 
 
 @pytest.mark.skipif(
