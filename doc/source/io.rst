@@ -116,10 +116,10 @@ or a slice object.
         rows=slice(10, 20),
     )
 
-Field Filter
-^^^^^^^^^^^^^^
+Field/Column Filters
+^^^^^^^^^^^^^^^^^^^^
 
-Load in a subset of fields from the file.
+Load in a subset of fields from the file:
 
 .. note:: Requires Fiona 1.8+
 
@@ -128,6 +128,17 @@ Load in a subset of fields from the file.
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
         ignore_fields=["iso_a3", "gdp_md_est"],
+    )
+
+Skip loading geometry from the file:
+
+.. note:: Requires Fiona 1.8+
+
+.. code-block:: python
+
+    pdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_geometry=True,
     )
 
 
