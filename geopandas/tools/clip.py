@@ -152,11 +152,7 @@ def clip(gdf, mask, keep_geom_type=False):
         ((box_mask[0] <= box_gdf[2]) and (box_gdf[0] <= box_mask[2]))
         and ((box_mask[1] <= box_gdf[3]) and (box_gdf[1] <= box_mask[3]))
     ):
-        return (
-            GeoDataFrame(columns=gdf.columns, crs=gdf.crs)
-            if isinstance(gdf, GeoDataFrame)
-            else GeoSeries(crs=gdf.crs)
-        )
+        return gdf.iloc[:0]
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         poly = mask.geometry.unary_union
@@ -246,7 +242,11 @@ def clip(gdf, mask, keep_geom_type=False):
                 elif orig_type in lines:
                     concat = concat.loc[concat.geom_type.isin(lines)]
 
-    # preserve the original order of the input
+    # Return empty GeoDataFrame or GeoSeries if no shapes remain
+    if len(concat) == 0:
+        return gdf.iloc[:0]
+
+    # Preserve the original order of the input
     if isinstance(concat, GeoDataFrame):
         concat["_order"] = order
         return concat.sort_values(by="_order").drop(columns="_order")

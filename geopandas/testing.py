@@ -122,7 +122,7 @@ def assert_geoseries_equal(
 
     if not check_crs:
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "GeoSeries crs mismatch", UserWarning)
+            warnings.filterwarnings("ignore", "CRS mismatch", UserWarning)
             if check_less_precise:
                 assert geom_almost_equals(left, right)
             else:
@@ -212,14 +212,16 @@ def assert_geodataframe_equal(
     )
 
     # geometry comparison
-    assert_geoseries_equal(
-        left.geometry,
-        right.geometry,
-        check_dtype=check_dtype,
-        check_less_precise=check_less_precise,
-        check_geom_type=check_geom_type,
-        check_crs=False,
-    )
+    for col, dtype in left.dtypes.iteritems():
+        if isinstance(dtype, GeometryDtype):
+            assert_geoseries_equal(
+                left[col],
+                right[col],
+                check_dtype=check_dtype,
+                check_less_precise=check_less_precise,
+                check_geom_type=check_geom_type,
+                check_crs=check_crs,
+            )
 
     # drop geometries and check remaining columns
     left2 = left.drop([left._geometry_column_name], axis=1)

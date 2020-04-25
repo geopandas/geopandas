@@ -86,7 +86,7 @@ def _overlay_difference(df1, df2):
             lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
         )
         new_g.append(new)
-    differences = GeoSeries(new_g, index=df1.index)
+    differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
     differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()
@@ -139,16 +139,17 @@ def _overlay_union(df1, df2):
 
 
 def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
-    """Perform spatial overlay between two polygons.
+    """Perform spatial overlay between two GeoDataFrames.
 
-    Currently only supports data GeoDataFrames with polygons.
-    Implements several methods that are all effectively subsets of
-    the union.
+    Currently only supports data GeoDataFrames with uniform geometry types,
+    i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
+    combination of (Multi)LineString and LinearRing shapes.
+    Implements several methods that are all effectively subsets of the union.
 
     Parameters
     ----------
-    df1 : GeoDataFrame with MultiPolygon or Polygon geometry column
-    df2 : GeoDataFrame with MultiPolygon or Polygon geometry column
+    df1 : GeoDataFrame
+    df2 : GeoDataFrame
     how : string
         Method of spatial overlay: 'intersection', 'union',
         'identity', 'symmetric_difference' or 'difference'.
