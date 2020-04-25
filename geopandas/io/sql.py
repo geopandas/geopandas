@@ -183,84 +183,21 @@ def _convert_to_wkb(gdf, geom_name):
     return gdf
 
 
-def _populate_db(gdf, conn, cur, index, tbl):
+def _psql_insert_copy(tbl, conn, keys, data_iter):
     import io
     import csv
-
-    # Convert columns to lists and make a generator
-    args = [list(gdf[i]) for i in gdf.columns]
-    if index:
-        args.insert(0, list(gdf.index))
-
-    data_iter = zip(*args)
-
-    # get list of columns using pandas
-    keys = tbl.insert_data()[0]
-    columns = ", ".join('"{}"'.format(k) for k in list(keys))
 
     s_buf = io.StringIO()
     writer = csv.writer(s_buf)
     writer.writerows(data_iter)
     s_buf.seek(0)
 
-    try:
+    columns = ", ".join('"{}"'.format(k) for k in keys)
 
+    dbapi_conn = conn.connection
+    with dbapi_conn.cursor() as cur:
         sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
         cur.copy_expert(sql=sql, file=s_buf)
-        conn.commit()
-
-    except Exception as e:
-        raise e
-
-
-def _get_chunks(gdf, chunksize):
-    assert isinstance(
-        chunksize, int
-    ), "'chunksize' should be passed as an integer number."
-    import numpy as np
-
-    chunk_cnt = np.ceil(len(gdf) / chunksize)
-    chunks = np.array_split(gdf, chunk_cnt)
-    return chunks
-
-
-def _write_to_db(gdf, engine, index, tbl, srid, geom_name, if_exists, chunksize):
-
-    conn = engine.raw_connection()
-    cur = conn.cursor()
-
-    try:
-        # If appending to an existing table, temporarily change
-        # the srid to 0, and update the SRID afterwards
-        if if_exists == "append":
-            sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{crs})".format(
-                schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, crs=0
-            )
-            cur.execute(sql)
-
-        if chunksize is None:
-            _populate_db(gdf, conn, cur, index, tbl)
-        else:
-            # Insert in chunks
-            chunks = _get_chunks(gdf, chunksize)
-
-            for chunk in chunks:
-                _populate_db(chunk, conn, cur, index, tbl)
-
-        # SRID needs to be updated afterwards as Shapely does not support
-        # EWKT/EWKB geometries, see:
-        # https://community.gispython.narkive.com/qTVQCl3f/ewkt-ewkb-support-in-shapely
-        sql = "SELECT UpdateGeometrySRID('{schema}','{tbl}','{geom}',{srid})".format(
-            schema=tbl.table.schema, tbl=tbl.table.name, geom=geom_name, srid=srid
-        )
-        cur.execute(sql)
-        conn.commit()
-
-    except Exception as e:
-        conn.connection.rollback()
-        raise e
-    finally:
-        conn.close()
 
 
 def write_postgis(
@@ -326,30 +263,17 @@ def write_postgis(
     else:
         dtype = {geom_name: Geometry(geometry_type=geometry_type)}
 
-    # Get Pandas SQLTable object (ignore 'geometry')
-    # If dtypes is used, update table schema accordingly.
-    pandas_sql = pd.io.sql.SQLDatabase(con)
-    tbl = pd.io.sql.SQLTable(
-        name=name,
-        pandas_sql_engine=pandas_sql,
-        frame=gdf,
-        dtype=dtype,
-        index=index,
-        index_label=index_label,
-        schema=schema_name,
-    )
+    # Convert LinearRing geometries to LineString
+    if has_curve:
+        gdf = _convert_linearring_to_linestring(gdf, geom_name)
 
-    # Check if table exists
-    if tbl.exists():
-        # If it exists, check if should overwrite
-        if if_exists == "replace":
-            pandas_sql.drop_table(name, schema_name)
-            tbl.create()
-        elif if_exists == "fail":
-            raise ValueError("Table '{table}' already exists.".format(table=name))
-        elif if_exists == "append":
+    # Convert geometries to WKB
+    gdf = _convert_to_wkb(gdf, geom_name)
+
+    with con.begin() as connection:
+        if if_exists == "append":
             # Check that the geometry srid matches with the current GeoDataFrame
-            target_srid = con.execute(
+            target_srid = connection.execute(
                 "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                     schema=schema_name, table=name, geom_col=geom_name
                 )
@@ -359,17 +283,34 @@ def write_postgis(
                 "The CRS of the target table differs",
                 "from the CRS of current GeoDataFrame.",
             )
-    else:
-        tbl.create()
 
-    # Convert LinearRing geometries to LineString
-    if has_curve:
-        gdf = _convert_linearring_to_linestring(gdf, geom_name)
+    with con.begin() as connection:
+        # If appending to an existing table, temporarily change
+        # the srid to 0, and update the SRID afterwards
+        if if_exists == "append":
+            sql = (
+                "SELECT UpdateGeometrySRID('{schema}','{table}','{geom}',{srid})"
+            ).format(schema=schema_name, table=name, geom=geom_name, srid=0)
+            connection.execute(sql)
 
-    # Convert geometries to WKB
-    gdf = _convert_to_wkb(gdf, geom_name)
+        gdf.to_sql(
+            name,
+            connection,
+            schema=schema,
+            if_exists=if_exists,
+            index=index,
+            index_label=index_label,
+            chunksize=chunksize,
+            dtype=dtype,
+            method=_psql_insert_copy,
+        )
 
-    # Write to database
-    _write_to_db(gdf, con, index, tbl, srid, geom_name, if_exists, chunksize)
+        # SRID needs to be updated afterwards as Shapely does not support
+        # EWKT/EWKB geometries, see:
+        # https://community.gispython.narkive.com/qTVQCl3f/ewkt-ewkb-support-in-shapely
+        sql = "SELECT UpdateGeometrySRID('{schema}','{table}','{geom}',{srid})".format(
+            schema=schema_name, table=name, geom=geom_name, srid=srid
+        )
+        connection.execute(sql)
 
     return
