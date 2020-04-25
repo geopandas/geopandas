@@ -375,26 +375,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
-        geometry_loaded = "geometry" in columns if columns is not None else False
         for feature in features_lst:
             # load geometry
             if hasattr(feature, "__geo_interface__"):
                 feature = feature.__geo_interface__
-            if "geometry" in feature:
-                geometry_loaded = True
-                row = {
-                    "geometry": shape(feature["geometry"])
-                    if feature["geometry"]
-                    else None
-                }
-            else:
-                row = {}
+            row = {
+                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+            }
             # load properties
             row.update(feature["properties"])
             rows.append(row)
-        if geometry_loaded:
-            return GeoDataFrame(rows, columns=columns, crs=crs)
-        return DataFrame(rows)
+        return GeoDataFrame(rows, columns=columns, crs=crs)
 
     @classmethod
     def from_postgis(
