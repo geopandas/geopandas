@@ -133,6 +133,7 @@ Load in a subset of fields from the file:
 Skip loading geometry from the file:
 
 .. note:: Requires Fiona 1.8+
+.. note:: Returns :obj:`pandas.DataFrame`
 
 .. code-block:: python
 
