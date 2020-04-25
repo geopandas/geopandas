@@ -122,7 +122,7 @@ def assert_geoseries_equal(
 
     if not check_crs:
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "GeoSeries crs mismatch", UserWarning)
+            warnings.filterwarnings("ignore", "CRS mismatch", UserWarning)
             if check_less_precise:
                 assert geom_almost_equals(left, right)
             else:
