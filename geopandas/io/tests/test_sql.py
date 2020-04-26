@@ -14,7 +14,6 @@ from geopandas.tests.util import (
     create_postgis,
     create_spatialite,
     validate_boro_df,
-    connect_engine,
 )
 import pytest
 
@@ -54,8 +53,7 @@ def connection_postgis():
 @pytest.fixture()
 def engine_postgis():
     """
-    Initiaties a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
+    Initiaties a connection engine to a postGIS database that must already exist.
     """
     from sqlalchemy.engine.url import URL
     from sqlalchemy import create_engine
