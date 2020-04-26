@@ -131,7 +131,7 @@ def df_mixed_single_and_multi():
                 Point(0, 1),
             ]
         },
-        crs="epsg:4326"
+        crs="epsg:4326",
     )
     return df
 
@@ -152,7 +152,7 @@ def df_geom_collection():
                 )
             ]
         },
-        crs="epsg:4326"
+        crs="epsg:4326",
     )
     return df
 
@@ -162,8 +162,7 @@ def df_linear_ring():
     from shapely.geometry import LinearRing
 
     df = geopandas.GeoDataFrame(
-        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]},
-        crs="epsg:4326"
+        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]}, crs="epsg:4326"
     )
     return df
 
@@ -457,8 +456,8 @@ class TestIO:
                 "found: {gt}".format(gt=geom_type_1),
             )
             assert geom_type_2.upper() == "LINESTRING", (
-                 "Geometry type should be 'LINESTRING',",
-                 "found: {gt}".format(gt=geom_type_2),
+                "Geometry type should be 'LINESTRING',",
+                "found: {gt}".format(gt=geom_type_2),
             )
 
         except AssertionError as e:

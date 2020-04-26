@@ -11,14 +11,14 @@ from .. import _compat as compat
 
 
 def read_postgis(
-        sql,
-        con,
-        geom_col="geom",
-        crs=None,
-        index_col=None,
-        coerce_float=True,
-        parse_dates=None,
-        params=None,
+    sql,
+    con,
+    geom_col="geom",
+    crs=None,
+    index_col=None,
+    coerce_float=True,
+    parse_dates=None,
+    params=None,
 ):
     """
     Returns a GeoDataFrame corresponding to the result of the query
@@ -151,23 +151,19 @@ def _get_srid_from_crs(gdf):
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
     srid = -1
-    warning_msg = "Could not parse CRS from the GeoDataFrame. " + \
-                  "Inserting data without defined CRS.",
+    warning_msg = (
+        "Could not parse CRS from the GeoDataFrame. "
+        + "Inserting data without defined CRS.",
+    )
     if gdf.crs is not None:
         try:
             srid = gdf.crs.to_epsg(min_confidence=25)
             if srid is None:
                 srid = -1
-                warnings.warn(
-                    warning_msg,
-                    UserWarning,
-                    stacklevel=2
-                )
+                warnings.warn(warning_msg, UserWarning, stacklevel=2)
         except Exception:
             warnings.warn(
-                warning_msg,
-                UserWarning,
-                stacklevel=2,
+                warning_msg, UserWarning, stacklevel=2,
             )
     return srid
 
@@ -189,14 +185,16 @@ def _convert_to_ewkb(gdf, geom_name, srid):
     """Convert geometries to ewkb. """
     if compat.USE_PYGEOS:
         from pygeos import from_shapely, set_srid, to_wkb
+
         geoms = to_wkb(
             set_srid(from_shapely(gdf[geom_name].values), srid=srid),
             hex=True,
-            include_srid=True
+            include_srid=True,
         )
 
     else:
         from shapely.wkb import dumps
+
         geoms = [dumps(geom, srid=srid) for geom in gdf[geom_name]]
 
     gdf[geom_name] = geoms
@@ -221,15 +219,15 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
 
 
 def write_postgis(
-        gdf,
-        name,
-        con,
-        schema=None,
-        if_exists="fail",
-        index=False,
-        index_label=None,
-        chunksize=None,
-        dtype=None,
+    gdf,
+    name,
+    con,
+    schema=None,
+    if_exists="fail",
+    index=False,
+    index_label=None,
+    chunksize=None,
+    dtype=None,
 ):
     """
     Upload GeoDataFrame into PostGIS database.
@@ -304,9 +302,12 @@ def write_postgis(
             ).fetchone()[0]
 
             if target_srid != srid:
-                msg = "The CRS of the target table (EPSG:{epsg_t}) differs from the " \
-                      "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                    epsg_t=target_srid, epsg_src=srid)
+                msg = (
+                    "The CRS of the target table (EPSG:{epsg_t}) differs from the "
+                    "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                        epsg_t=target_srid, epsg_src=srid
+                    )
+                )
                 raise ValueError(msg)
 
     with con.begin() as connection:
