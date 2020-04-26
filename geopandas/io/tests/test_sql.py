@@ -305,6 +305,9 @@ class TestIO:
 
         table = "nybb"
 
+        # Ensure table exists
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
         try:
             write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         except ValueError as e:
@@ -324,8 +327,10 @@ class TestIO:
             raise pytest.skip()
 
         table = "nybb"
-
         try:
+            # Ensure table exists
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+            # Overwrite
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
             # Validate
             sql = "SELECT * FROM {table};".format(table=table)
