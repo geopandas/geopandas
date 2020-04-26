@@ -10,7 +10,8 @@ import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
 from geopandas.io.sql import write_postgis
-from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
+from geopandas.tests.util import create_postgis, create_spatialite, \
+    validate_boro_df, connect_engine
 import pytest
 
 
@@ -47,6 +48,40 @@ def connection_postgis():
 
 
 @pytest.fixture()
+def engine_postgis():
+    """
+    Initiaties a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    from sqlalchemy.engine.url import URL
+    from sqlalchemy import create_engine
+
+    user = os.environ.get("PGUSER")
+    password = os.environ.get("PGPASSWORD")
+    host = os.environ.get("PGHOST")
+    port = os.environ.get("PGPORT")
+    dbname = "test_geopandas"
+
+    try:
+        con = create_engine(
+            URL(
+                drivername="postgresql+psycopg2",
+                username=user,
+                database=dbname,
+                password=password,
+                host=host,
+                port=port,
+            )
+        )
+        con.begin()
+    except Exception:
+        pytest.skip("Cannot connect with postgresql database")
+
+    yield con
+    con.dispose()
+
+
+@pytest.fixture()
 def connection_spatialite():
     """
     Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
@@ -76,47 +111,15 @@ def connection_spatialite():
     con.close()
 
 
-def connect_engine(dbname, user=None, password=None, host=None, port=None):
-    """
-    Initiaties a connection (engine) to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    sqlalchemy = pytest.importorskip("sqlalchemy")
-    from sqlalchemy.engine.url import URL
-
-    user = user or os.environ.get("PGUSER")
-    password = password or os.environ.get("PGPASSWORD")
-    host = host or os.environ.get("PGHOST")
-    port = port or os.environ.get("PGPORT")
-    try:
-        con = sqlalchemy.create_engine(
-            URL(
-                drivername="postgresql+psycopg2",
-                username=user,
-                database=dbname,
-                password=password,
-                host=host,
-                port=port,
-            )
-        )
-        con.begin()
-    except Exception:
-        return None
-
-    return con
-
-
 def drop_table_if_exists(engine, table):
     sqlalchemy = pytest.importorskip("sqlalchemy")
-    from sqlalchemy.ext.declarative import declarative_base
 
     if engine.has_table(table):
-        base = declarative_base()
         metadata = sqlalchemy.MetaData(engine)
         metadata.reflect()
         table = metadata.tables.get(table)
         if table is not None:
-            base.metadata.drop_all(engine, [table], checkfirst=True)
+            table.drop(checkfirst=True)
 
 
 @pytest.fixture
@@ -274,12 +277,9 @@ class TestIO:
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
 
-    def test_write_postgis_default(self, df_nybb):
+    def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
-
+        engine = engine_postgis
         table = "nybb"
 
         # If table exists, delete it before trying to write with defaults
@@ -295,13 +295,11 @@ class TestIO:
         finally:
             engine.dispose()
 
-    def test_write_postgis_fail_when_table_exists(self, df_nybb):
+    def test_write_postgis_fail_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that uploading the same table raises error when: if_replace='fail'.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "nybb"
 
@@ -315,16 +313,12 @@ class TestIO:
                 pass
             else:
                 raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_replace_when_table_exists(self, df_nybb):
+    def test_write_postgis_replace_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that replacing a table is possible when: if_replace='replace'.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "nybb"
         try:
@@ -338,17 +332,13 @@ class TestIO:
             validate_boro_df(df)
         except ValueError as e:
             raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_append_when_table_exists(self, df_nybb):
+    def test_write_postgis_append_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that appending to existing table produces correct results when:
         if_replace='append'.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "nybb"
         try:
@@ -372,16 +362,12 @@ class TestIO:
 
         except AssertionError as e:
             raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_without_crs(self, df_nybb):
+    def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS without CRS information.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "nybb"
 
@@ -400,13 +386,11 @@ class TestIO:
         finally:
             engine.dispose()
 
-    def test_write_postgis_geometry_collection(self, df_geom_collection):
+    def test_write_postgis_geometry_collection(self, engine_postgis, df_geom_collection):
         """
         Tests that writing a mix of different geometry types is possible.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "geomtype_tests"
         try:
@@ -427,16 +411,12 @@ class TestIO:
 
         except AssertionError as e:
             raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_mixed_geometry_types(self, df_mixed_single_and_multi):
+    def test_write_postgis_mixed_geometry_types(self, engine_postgis, df_mixed_single_and_multi):
         """
         Tests that writing a mix of single and MultiGeometries is possible.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "geomtype_tests"
         try:
@@ -467,16 +447,12 @@ class TestIO:
 
         except AssertionError as e:
             raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_linear_ring(self, df_linear_ring):
+    def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
         Tests that writing a LinearRing.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "geomtype_tests"
         try:
@@ -495,13 +471,11 @@ class TestIO:
         finally:
             engine.dispose()
 
-    def test_write_postgis_in_chunks(self, df_mixed_single_and_multi):
+    def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
         """
         Tests that writing a LinearRing.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "geomtype_tests"
         try:
@@ -541,16 +515,12 @@ class TestIO:
 
         except AssertionError as e:
             raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_to_different_schema(self, df_nybb):
+    def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
         Tests writing data to alternative schema.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "nybb"
         schema_to_use = "test"
@@ -574,16 +544,12 @@ class TestIO:
             validate_boro_df(df)
         except ValueError as e:
             raise e
-        finally:
-            engine.dispose()
 
-    def test_write_postgis_to_different_schema_when_table_exists(self, df_nybb):
+    def test_write_postgis_to_different_schema_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests writing data to alternative schema.
         """
-        engine = connect_engine("test_geopandas")
-        if engine is None:
-            raise pytest.skip()
+        engine = engine_postgis
 
         table = "nybb"
         schema_to_use = "test"
@@ -591,7 +557,6 @@ class TestIO:
         engine.execute(sql)
 
         try:
-
             write_postgis(
                 df_nybb, con=engine, name=table, if_exists="fail", schema=schema_to_use
             )
@@ -625,5 +590,3 @@ class TestIO:
 
         except ValueError as e:
             raise e
-        finally:
-            engine.dispose()
