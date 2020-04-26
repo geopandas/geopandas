@@ -130,7 +130,8 @@ def df_mixed_single_and_multi():
                 MultiLineString([[(0, 0), (1, 1)], [(2, 2), (3, 3)]]),
                 Point(0, 1),
             ]
-        }
+        },
+        crs="epsg:4326"
     )
     return df
 
@@ -150,7 +151,8 @@ def df_geom_collection():
                     ]
                 )
             ]
-        }
+        },
+        crs="epsg:4326"
     )
     return df
 
@@ -160,7 +162,8 @@ def df_linear_ring():
     from shapely.geometry import LinearRing
 
     df = geopandas.GeoDataFrame(
-        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]}
+        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]},
+        crs="epsg:4326"
     )
     return df
 
@@ -442,15 +445,20 @@ class TestIO:
                 table=table
             )
             res = engine.execute(sql).fetchall()
-            geom_type_1 = res[0][0]
-            geom_type_2 = res[1][0]
-            assert geom_type_1.upper() == "LINESTRING", (
-                "Geometry type should be 'LINESTRING',",
+            geom_type_0 = res[0][0]
+            geom_type_1 = res[1][0]
+            geom_type_2 = res[2][0]
+            assert geom_type_0.upper() == "MULTILINESTRING", (
+                "Geometry type should be 'MULTILINESTRING',",
+                "found: {gt}".format(gt=geom_type_0),
+            )
+            assert geom_type_1.upper() == "POINT", (
+                "Geometry type should be 'POINT',",
                 "found: {gt}".format(gt=geom_type_1),
             )
-            assert geom_type_2.upper() == "MULTILINESTRING", (
-                "Geometry type should be 'MULTILINESTRING',",
-                "found: {gt}".format(gt=geom_type_1),
+            assert geom_type_2.upper() == "LINESTRING", (
+                 "Geometry type should be 'LINESTRING',",
+                 "found: {gt}".format(gt=geom_type_2),
             )
 
         except AssertionError as e:
@@ -508,10 +516,24 @@ class TestIO:
             sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
                 table=table
             )
-            geom_type = engine.execute(sql).fetchone()[0]
-
             assert row_cnt == 3
-            assert geom_type.upper() == "LINESTRING"
+
+            res = engine.execute(sql).fetchall()
+            geom_type_0 = res[0][0]
+            geom_type_1 = res[1][0]
+            geom_type_2 = res[2][0]
+            assert geom_type_0.upper() == "MULTILINESTRING", (
+                "Geometry type should be 'MULTILINESTRING',",
+                "found: {gt}".format(gt=geom_type_0),
+            )
+            assert geom_type_1.upper() == "POINT", (
+                "Geometry type should be 'POINT',",
+                "found: {gt}".format(gt=geom_type_1),
+            )
+            assert geom_type_2.upper() == "LINESTRING", (
+                "Geometry type should be 'LINESTRING',",
+                "found: {gt}".format(gt=geom_type_2),
+            )
 
         except AssertionError as e:
             raise e
