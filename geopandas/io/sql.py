@@ -7,16 +7,18 @@ import shapely.wkb
 from geopandas import GeoDataFrame
 import warnings
 
+from .. import _compat as compat
+
 
 def read_postgis(
-    sql,
-    con,
-    geom_col="geom",
-    crs=None,
-    index_col=None,
-    coerce_float=True,
-    parse_dates=None,
-    params=None,
+        sql,
+        con,
+        geom_col="geom",
+        crs=None,
+        index_col=None,
+        coerce_float=True,
+        parse_dates=None,
+        params=None,
 ):
     """
     Returns a GeoDataFrame corresponding to the result of the query
@@ -149,15 +151,21 @@ def _get_srid_from_crs(gdf):
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
     srid = -1
+    warning_msg = "Could not parse CRS from the GeoDataFrame. " + \
+                  "Inserting data without defined CRS.",
     if gdf.crs is not None:
         try:
             srid = gdf.crs.to_epsg(min_confidence=25)
             if srid is None:
                 srid = -1
+                warnings.warn(
+                    warning_msg,
+                    UserWarning,
+                    stacklevel=2
+                )
         except Exception:
             warnings.warn(
-                "Warning: Could not parse CRS from the GeoDataFrame.",
-                "Inserting data without defined CRS.",
+                warning_msg,
                 UserWarning,
                 stacklevel=2,
             )
@@ -167,6 +175,9 @@ def _get_srid_from_crs(gdf):
 def _convert_linearring_to_linestring(gdf, geom_name):
     from shapely.geometry import LineString
 
+    # Todo: Use Pygeos function once it's implemented:
+    #  https://github.com/pygeos/pygeos/issues/76
+
     mask = gdf.geom_type == "LinearRing"
     gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
         lambda geom: LineString(geom)
@@ -174,12 +185,21 @@ def _convert_linearring_to_linestring(gdf, geom_name):
     return gdf
 
 
-def _convert_to_wkb(gdf, geom_name):
-    """Convert geometries to wkb. """
-    from geopandas.array import from_shapely, to_wkb
+def _convert_to_ewkb(gdf, geom_name, srid):
+    """Convert geometries to ewkb. """
+    if compat.USE_PYGEOS:
+        from pygeos import from_shapely, set_srid, to_wkb
+        geoms = to_wkb(
+            set_srid(from_shapely(gdf[geom_name].values), srid=srid),
+            hex=True,
+            include_srid=True
+        )
 
-    geom_array = from_shapely(gdf[geom_name])
-    gdf[geom_name] = to_wkb(geom_array, hex=True)
+    else:
+        from shapely.wkb import dumps
+        geoms = [dumps(geom, srid=srid) for geom in gdf[geom_name]]
+
+    gdf[geom_name] = geoms
     return gdf
 
 
@@ -201,15 +221,15 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
 
 
 def write_postgis(
-    gdf,
-    name,
-    con,
-    schema=None,
-    if_exists="fail",
-    index=False,
-    index_label=None,
-    chunksize=None,
-    dtype=None,
+        gdf,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
 ):
     """
     Upload GeoDataFrame into PostGIS database.
@@ -260,18 +280,18 @@ def write_postgis(
     # Get geometry type and info whether data contains LinearRing
     geometry_type, has_curve = _get_geometry_type(gdf)
 
-    # Build dtype with Geometry (srid is updated afterwards)
+    # Build dtype with Geometry
     if dtype is not None:
-        dtype[geom_name] = Geometry(geometry_type=geometry_type)
+        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
     else:
-        dtype = {geom_name: Geometry(geometry_type=geometry_type)}
+        dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
 
     # Convert LinearRing geometries to LineString
     if has_curve:
         gdf = _convert_linearring_to_linestring(gdf, geom_name)
 
-    # Convert geometries to WKB
-    gdf = _convert_to_wkb(gdf, geom_name)
+    # Convert geometries to EWKB
+    gdf = _convert_to_ewkb(gdf, geom_name, srid)
 
     with con.begin() as connection:
         if if_exists == "append":
@@ -282,19 +302,13 @@ def write_postgis(
                 )
             ).fetchone()[0]
 
-            assert target_srid == srid, (
-                "The CRS of the target table differs",
-                "from the CRS of current GeoDataFrame.",
-            )
+            if target_srid != srid:
+                msg = "The CRS of the target table (EPSG:{epsg_t}) differs from the " \
+                      "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                    epsg_t=target_srid, epsg_src=srid)
+                raise ValueError(msg)
 
     with con.begin() as connection:
-        # If appending to an existing table, temporarily change
-        # the srid to 0, and update the SRID afterwards
-        if if_exists == "append":
-            sql = (
-                "SELECT UpdateGeometrySRID('{schema}','{table}','{geom}',{srid})"
-            ).format(schema=schema_name, table=name, geom=geom_name, srid=0)
-            connection.execute(sql)
 
         gdf.to_sql(
             name,
@@ -307,13 +321,5 @@ def write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
-
-        # SRID needs to be updated afterwards as Shapely does not support
-        # EWKT/EWKB geometries, see:
-        # https://community.gispython.narkive.com/qTVQCl3f/ewkt-ewkb-support-in-shapely
-        sql = "SELECT UpdateGeometrySRID('{schema}','{table}','{geom}',{srid})".format(
-            schema=schema_name, table=name, geom=geom_name, srid=srid
-        )
-        connection.execute(sql)
 
     return
