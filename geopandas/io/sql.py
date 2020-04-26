@@ -269,10 +269,6 @@ def write_postgis(
 
     gdf = gdf.copy()
     geom_name = gdf.geometry.name
-    if schema is not None:
-        schema_name = schema
-    else:
-        schema_name = "public"
 
     # Get srid
     srid = _get_srid_from_crs(gdf)
@@ -296,6 +292,11 @@ def write_postgis(
     with con.begin() as connection:
         if if_exists == "append":
             # Check that the geometry srid matches with the current GeoDataFrame
+            if schema is not None:
+                schema_name = schema
+            else:
+                schema_name = "public"
+
             target_srid = connection.execute(
                 "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                     schema=schema_name, table=name, geom_col=geom_name
