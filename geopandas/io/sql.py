@@ -242,7 +242,10 @@ def write_postgis(
         The keys should be the column names and the values
         should be the SQLAlchemy types.
     """
-    from geoalchemy2 import Geometry
+    try:
+        from geoalchemy2 import Geometry
+    except ImportError:
+        raise ImportError("to_postgis() requires geoalchemy2 package. ")
 
     gdf = gdf.copy()
     geom_name = gdf.geometry.name
