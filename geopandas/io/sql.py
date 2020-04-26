@@ -195,7 +195,7 @@ def _convert_to_ewkb(gdf, geom_name, srid):
     else:
         from shapely.wkb import dumps
 
-        geoms = [dumps(geom, srid=srid) for geom in gdf[geom_name]]
+        geoms = [dumps(geom, srid=srid, hex=True) for geom in gdf[geom_name]]
 
     gdf[geom_name] = geoms
     return gdf
