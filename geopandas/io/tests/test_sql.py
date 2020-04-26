@@ -10,8 +10,12 @@ import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
 from geopandas.io.sql import write_postgis
-from geopandas.tests.util import create_postgis, create_spatialite, \
-    validate_boro_df, connect_engine
+from geopandas.tests.util import (
+    create_postgis,
+    create_spatialite,
+    validate_boro_df,
+    connect_engine,
+)
 import pytest
 
 
@@ -386,7 +390,9 @@ class TestIO:
         finally:
             engine.dispose()
 
-    def test_write_postgis_geometry_collection(self, engine_postgis, df_geom_collection):
+    def test_write_postgis_geometry_collection(
+        self, engine_postgis, df_geom_collection
+    ):
         """
         Tests that writing a mix of different geometry types is possible.
         """
@@ -412,7 +418,9 @@ class TestIO:
         except AssertionError as e:
             raise e
 
-    def test_write_postgis_mixed_geometry_types(self, engine_postgis, df_mixed_single_and_multi):
+    def test_write_postgis_mixed_geometry_types(
+        self, engine_postgis, df_mixed_single_and_multi
+    ):
         """
         Tests that writing a mix of single and MultiGeometries is possible.
         """
@@ -545,7 +553,9 @@ class TestIO:
         except ValueError as e:
             raise e
 
-    def test_write_postgis_to_different_schema_when_table_exists(self, engine_postgis, df_nybb):
+    def test_write_postgis_to_different_schema_when_table_exists(
+        self, engine_postgis, df_nybb
+    ):
         """
         Tests writing data to alternative schema.
         """
