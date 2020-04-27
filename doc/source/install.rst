@@ -149,7 +149,9 @@ Further, optional dependencies are:
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
+- `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
+
 
 For plotting, these additional packages may be used:
 
@@ -217,6 +219,8 @@ More specifically, whether the speedups are used or not is determined by:
 .. _geopy: https://github.com/geopy/geopy
 
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
+
+.. _GeoAlchemy2: https://geoalchemy-2.readthedocs.io/
 
 .. _mapclassify: http://pysal.org/mapclassify
 

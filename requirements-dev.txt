@@ -28,3 +28,6 @@ rtree>=0.8
 # styling
 black
 pre-commit
+
+# PostGIS writing
+GeoAlchemy2
