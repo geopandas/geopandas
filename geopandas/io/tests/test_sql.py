@@ -287,15 +287,12 @@ class TestIO:
         # If table exists, delete it before trying to write with defaults
         drop_table_if_exists(engine, table)
 
-        try:
-            # Write to db
-            write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
-            # Validate
-            sql = "SELECT * FROM {table};".format(table=table)
-            df = read_postgis(sql, engine, geom_col="geometry")
-            validate_boro_df(df)
-        finally:
-            engine.dispose()
+        # Write to db
+        write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        # Validate
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
 
     def test_write_postgis_fail_when_table_exists(self, engine_postgis, df_nybb):
         """
@@ -323,17 +320,15 @@ class TestIO:
         engine = engine_postgis
 
         table = "nybb"
-        try:
-            # Ensure table exists
-            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
-            # Overwrite
-            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
-            # Validate
-            sql = "SELECT * FROM {table};".format(table=table)
-            df = read_postgis(sql, engine, geom_col="geometry")
-            validate_boro_df(df)
-        except ValueError as e:
-            raise e
+
+        # Ensure table exists
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # Overwrite
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # Validate
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
 
     def test_write_postgis_append_when_table_exists(self, engine_postgis, df_nybb):
         """
@@ -343,27 +338,27 @@ class TestIO:
         engine = engine_postgis
 
         table = "nybb"
-        try:
-            orig_rows, orig_cols = df_nybb.shape
-            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
-            write_postgis(df_nybb, con=engine, name=table, if_exists="append")
-            # Validate
-            sql = "SELECT * FROM {table};".format(table=table)
-            df = read_postgis(sql, engine, geom_col="geometry")
-            new_rows, new_cols = df.shape
-            # There should be twice as many rows in the new table
-            assert new_rows == orig_rows * 2, (
-                "There should be {target} rows,",
-                "found: {current}".format(target=orig_rows * 2, current=new_rows),
-            )
-            # Number of columns should stay the same
-            assert new_cols == orig_cols, (
-                "There should be {target} columns,",
-                "found: {current}".format(target=orig_cols, current=new_cols),
-            )
 
-        except AssertionError as e:
-            raise e
+        orig_rows, orig_cols = df_nybb.shape
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+        # Validate
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        new_rows, new_cols = df.shape
+
+        # There should be twice as many rows in the new table
+        assert new_rows == orig_rows * 2, (
+            "There should be {target} rows,",
+            "found: {current}".format(target=orig_rows * 2, current=new_rows),
+        )
+        # Number of columns should stay the same
+        assert new_cols == orig_cols, (
+            "There should be {target} columns,",
+            "found: {current}".format(target=orig_cols, current=new_cols),
+        )
+
+
 
     def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
         """
@@ -373,20 +368,17 @@ class TestIO:
 
         table = "nybb"
 
-        try:
-            # Write to db
-            df_nybb = df_nybb
-            df_nybb.crs = None
-            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
-            # Validate that srid is -1
-            target_srid = engine.execute(
-                "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema="public", table=table, geom_col="geometry"
-                )
-            ).fetchone()[0]
-            assert target_srid == 0, "SRID should be 0, found %s" % target_srid
-        finally:
-            engine.dispose()
+        # Write to db
+        df_nybb = df_nybb
+        df_nybb.crs = None
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # Validate that srid is -1
+        target_srid = engine.execute(
+            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                schema="public", table=table, geom_col="geometry"
+            )
+        ).fetchone()[0]
+        assert target_srid == 0, "SRID should be 0, found %s" % target_srid
 
     def test_write_postgis_geometry_collection(
         self, engine_postgis, df_geom_collection
@@ -397,24 +389,22 @@ class TestIO:
         engine = engine_postgis
 
         table = "geomtype_tests"
-        try:
-            write_postgis(
-                df_geom_collection, con=engine, name=table, if_exists="replace"
-            )
 
-            # Validate geometry type
-            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
-                table=table
-            )
-            geom_type = engine.execute(sql).fetchone()[0]
-            sql = "SELECT * FROM {table};".format(table=table)
-            df = read_postgis(sql, engine, geom_col="geometry")
+        write_postgis(
+            df_geom_collection, con=engine, name=table, if_exists="replace"
+        )
 
-            assert geom_type.upper() == "GEOMETRYCOLLECTION"
-            assert df.geom_type.unique()[0] == "GeometryCollection"
+        # Validate geometry type
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+            table=table
+        )
+        geom_type = engine.execute(sql).fetchone()[0]
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
 
-        except AssertionError as e:
-            raise e
+        assert geom_type.upper() == "GEOMETRYCOLLECTION"
+        assert df.geom_type.unique()[0] == "GeometryCollection"
+
 
     def test_write_postgis_mixed_geometry_types(
         self, engine_postgis, df_mixed_single_and_multi
@@ -425,34 +415,32 @@ class TestIO:
         engine = engine_postgis
 
         table = "geomtype_tests"
-        try:
-            write_postgis(
-                df_mixed_single_and_multi, con=engine, name=table, if_exists="replace"
-            )
 
-            # Validate geometry type
-            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
-                table=table
-            )
-            res = engine.execute(sql).fetchall()
-            geom_type_0 = res[0][0]
-            geom_type_1 = res[1][0]
-            geom_type_2 = res[2][0]
-            assert geom_type_0.upper() == "MULTILINESTRING", (
-                "Geometry type should be 'MULTILINESTRING',",
-                "found: {gt}".format(gt=geom_type_0),
-            )
-            assert geom_type_1.upper() == "POINT", (
-                "Geometry type should be 'POINT',",
-                "found: {gt}".format(gt=geom_type_1),
-            )
-            assert geom_type_2.upper() == "LINESTRING", (
-                "Geometry type should be 'LINESTRING',",
-                "found: {gt}".format(gt=geom_type_2),
-            )
+        write_postgis(
+            df_mixed_single_and_multi, con=engine, name=table, if_exists="replace"
+        )
 
-        except AssertionError as e:
-            raise e
+        # Validate geometry type
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+            table=table
+        )
+        res = engine.execute(sql).fetchall()
+        geom_type_0 = res[0][0]
+        geom_type_1 = res[1][0]
+        geom_type_2 = res[2][0]
+        assert geom_type_0.upper() == "MULTILINESTRING", (
+            "Geometry type should be 'MULTILINESTRING',",
+            "found: {gt}".format(gt=geom_type_0),
+        )
+        assert geom_type_1.upper() == "POINT", (
+            "Geometry type should be 'POINT',",
+            "found: {gt}".format(gt=geom_type_1),
+        )
+        assert geom_type_2.upper() == "LINESTRING", (
+            "Geometry type should be 'LINESTRING',",
+            "found: {gt}".format(gt=geom_type_2),
+        )
+
 
     def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
@@ -461,21 +449,17 @@ class TestIO:
         engine = engine_postgis
 
         table = "geomtype_tests"
-        try:
-            write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
 
-            # Validate geometry type
-            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
-                table=table
-            )
-            geom_type = engine.execute(sql).fetchone()[0]
+        write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
 
-            assert geom_type.upper() == "LINESTRING"
+        # Validate geometry type
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+            table=table
+        )
+        geom_type = engine.execute(sql).fetchone()[0]
 
-        except AssertionError as e:
-            raise e
-        finally:
-            engine.dispose()
+        assert geom_type.upper() == "LINESTRING"
+
 
     def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
         """
@@ -484,43 +468,41 @@ class TestIO:
         engine = engine_postgis
 
         table = "geomtype_tests"
-        try:
-            write_postgis(
-                df_mixed_single_and_multi,
-                con=engine,
-                name=table,
-                if_exists="replace",
-                chunksize=1,
-            )
-            # Validate row count
-            sql = "SELECT COUNT(geometry) FROM {table};".format(table=table)
-            row_cnt = engine.execute(sql).fetchone()[0]
 
-            # Validate geometry type
-            sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
-                table=table
-            )
-            assert row_cnt == 3
+        write_postgis(
+            df_mixed_single_and_multi,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            chunksize=1,
+        )
+        # Validate row count
+        sql = "SELECT COUNT(geometry) FROM {table};".format(table=table)
+        row_cnt = engine.execute(sql).fetchone()[0]
 
-            res = engine.execute(sql).fetchall()
-            geom_type_0 = res[0][0]
-            geom_type_1 = res[1][0]
-            geom_type_2 = res[2][0]
-            assert geom_type_0.upper() == "MULTILINESTRING", (
-                "Geometry type should be 'MULTILINESTRING',",
-                "found: {gt}".format(gt=geom_type_0),
-            )
-            assert geom_type_1.upper() == "POINT", (
-                "Geometry type should be 'POINT',",
-                "found: {gt}".format(gt=geom_type_1),
-            )
-            assert geom_type_2.upper() == "LINESTRING", (
-                "Geometry type should be 'LINESTRING',",
-                "found: {gt}".format(gt=geom_type_2),
-            )
+        # Validate geometry type
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+            table=table
+        )
+        assert row_cnt == 3
 
-        except AssertionError as e:
-            raise e
+        res = engine.execute(sql).fetchall()
+        geom_type_0 = res[0][0]
+        geom_type_1 = res[1][0]
+        geom_type_2 = res[2][0]
+        assert geom_type_0.upper() == "MULTILINESTRING", (
+            "Geometry type should be 'MULTILINESTRING',",
+            "found: {gt}".format(gt=geom_type_0),
+        )
+        assert geom_type_1.upper() == "POINT", (
+            "Geometry type should be 'POINT',",
+            "found: {gt}".format(gt=geom_type_1),
+        )
+        assert geom_type_2.upper() == "LINESTRING", (
+            "Geometry type should be 'LINESTRING',",
+            "found: {gt}".format(gt=geom_type_2),
+        )
+
 
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
@@ -533,23 +515,21 @@ class TestIO:
         sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
         engine.execute(sql)
 
-        try:
-            write_postgis(
-                df_nybb,
-                con=engine,
-                name=table,
-                if_exists="replace",
-                schema=schema_to_use,
-            )
-            # Validate
-            sql = "SELECT * FROM {schema}.{table};".format(
-                schema=schema_to_use, table=table
-            )
+        write_postgis(
+            df_nybb,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            schema=schema_to_use,
+        )
+        # Validate
+        sql = "SELECT * FROM {schema}.{table};".format(
+            schema=schema_to_use, table=table
+        )
 
-            df = read_postgis(sql, engine, geom_col="geometry")
-            validate_boro_df(df)
-        except ValueError as e:
-            raise e
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
 
     def test_write_postgis_to_different_schema_when_table_exists(
         self, engine_postgis, df_nybb
@@ -575,26 +555,23 @@ class TestIO:
 
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
+
         # Should raise a ValueError when table exists
         except ValueError:
             pass
 
         # Try with replace flag on
-        try:
-            write_postgis(
-                df_nybb,
-                con=engine,
-                name=table,
-                if_exists="replace",
-                schema=schema_to_use,
-            )
-            # Validate
-            sql = "SELECT * FROM {schema}.{table};".format(
-                schema=schema_to_use, table=table
-            )
+        write_postgis(
+            df_nybb,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            schema=schema_to_use,
+        )
+        # Validate
+        sql = "SELECT * FROM {schema}.{table};".format(
+            schema=schema_to_use, table=table
+        )
 
-            df = read_postgis(sql, engine, geom_col="geometry")
-            validate_boro_df(df)
-
-        except ValueError as e:
-            raise e
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
