@@ -359,8 +359,6 @@ class TestIO:
             "found: {current}".format(target=orig_cols, current=new_cols),
         )
 
-
-
     def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS without CRS information.
@@ -391,9 +389,7 @@ class TestIO:
 
         table = "geomtype_tests"
 
-        write_postgis(
-            df_geom_collection, con=engine, name=table, if_exists="replace"
-        )
+        write_postgis(df_geom_collection, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
         sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
@@ -405,7 +401,6 @@ class TestIO:
 
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
         assert df.geom_type.unique()[0] == "GeometryCollection"
-
 
     def test_write_postgis_mixed_geometry_types(
         self, engine_postgis, df_mixed_single_and_multi
@@ -442,7 +437,6 @@ class TestIO:
             "found: {gt}".format(gt=geom_type_2),
         )
 
-
     def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
         Tests that writing a LinearRing.
@@ -460,7 +454,6 @@ class TestIO:
         geom_type = engine.execute(sql).fetchone()[0]
 
         assert geom_type.upper() == "LINESTRING"
-
 
     def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
         """
@@ -504,7 +497,6 @@ class TestIO:
             "found: {gt}".format(gt=geom_type_2),
         )
 
-
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
         Tests writing data to alternative schema.
@@ -517,11 +509,7 @@ class TestIO:
         engine.execute(sql)
 
         write_postgis(
-            df_nybb,
-            con=engine,
-            name=table,
-            if_exists="replace",
-            schema=schema_to_use,
+            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use,
         )
         # Validate
         sql = "SELECT * FROM {schema}.{table};".format(
@@ -530,7 +518,6 @@ class TestIO:
 
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
-
 
     def test_write_postgis_to_different_schema_when_table_exists(
         self, engine_postgis, df_nybb
@@ -563,11 +550,7 @@ class TestIO:
 
         # Try with replace flag on
         write_postgis(
-            df_nybb,
-            con=engine,
-            name=table,
-            if_exists="replace",
-            schema=schema_to_use,
+            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use,
         )
         # Validate
         sql = "SELECT * FROM {schema}.{table};".format(
