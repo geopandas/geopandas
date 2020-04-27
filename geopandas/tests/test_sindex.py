@@ -162,6 +162,7 @@ class TestPygeosInterface:
         ),
     )
     def test_query(self, predicate, test_geom, expected):
+        """Tests the `query` method with valid inputs and valid predicates."""
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
         test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
@@ -180,6 +181,7 @@ class TestPygeosInterface:
         ),
     )
     def test_intersection_bounds_tuple(self, test_geom, expected):
+        """Tests the `intersection` method with valid inputs."""
         res = list(self.df.sindex.intersection(test_geom))
         assert_array_equal(res, expected)
 
@@ -187,6 +189,7 @@ class TestPygeosInterface:
         "test_geom", ((-1, -1, -0.5), -0.5, None, Point(0, 0),),
     )
     def test_intersection_invalid_bounds_tuple(self, test_geom):
+        """Tests the `intersection` method with invalid inputs."""
         if compat.USE_PYGEOS:
             with pytest.raises(TypeError):
                 # we raise a useful TypeError
@@ -196,6 +199,30 @@ class TestPygeosInterface:
                 # catch a general exception
                 # rtree raises an RTreeError which we need to catch
                 self.df.sindex.intersection(test_geom)
+
+    @pytest.mark.parametrize(
+        "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
+    )
+    def test_query_invalid_predicate(self, predicate, test_geom, expected):
+        """Tests the `query` method with invalid predicates.
+        """
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
+        with pytest.raises(ValueError):
+            self.df.sindex.query(test_geom.geometry.values.data[0], predicate=predicate)
+
+    @pytest.mark.parametrize(
+        "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
+    )
+    def test_query_bulk_invalid_predicate(self, predicate, test_geom, expected):
+        """Tests the `query_bulk` method with invalid predicates.
+        """
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
+        with pytest.raises(ValueError):
+            self.df.sindex.query_bulk(test_geom, predicate=predicate)
 
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
@@ -214,6 +241,9 @@ class TestPygeosInterface:
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):
+        """Tests the `query_bulk` method with valid
+        inputs and valid predicates.
+        """
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
         test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
@@ -221,28 +251,30 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
-        "predicate, test_geom, expected",
-        (
-            (None, (-1, -1, -0.5, -0.5), [[], []]),
-            (None, (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
-            (None, (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
-            ("intersects", (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
-            ("intersects", (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("within", (0, 0, 1, 1), [[], []]),
-            ("within", (11, 11, 12, 12), [[0], [5]]),
-            ("contains", (0, 0, 1, 1), [[], []]),
-            ("contains", (0.5, 0.5, 1.5, 1.5), [[0], [1]]),
-            ("contains", (-1, -1, 2, 2), [[0, 0], [0, 1]]),
-        ),
+        "predicate, test_geom, expected", ((None, (-1, -1, -0.5, -0.5), [[], []]),),
     )
-    def test_query_bulk_array(self, predicate, test_geom, expected):
+    def test_query_bulk_input_type(self, predicate, test_geom, expected):
+        """Tests that query_bulk can accept a GeoSeries, GeometryArray or
+        numpy array.
+        """
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
         test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
-        # extract underlaying numpy array
-        test_geom = test_geom.geometry.values.data
+
+        # test GeoSeries
         res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
+        assert_array_equal(res, expected)
+
+        # test GeometryArray
+        res = self.df.sindex.query_bulk(test_geom.geometry, predicate=predicate)
+        assert_array_equal(res, expected)
+        res = self.df.sindex.query_bulk(test_geom.geometry.values, predicate=predicate)
+        assert_array_equal(res, expected)
+
+        # test numpy array
+        res = self.df.sindex.query_bulk(
+            test_geom.geometry.values.data, predicate=predicate
+        )
         assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
@@ -254,7 +286,9 @@ class TestPygeosInterface:
         ),
     )
     def test_query_sorting(self, sort, expected):
-        """Check that results don't depend on the order of geometries."""
+        """Check that results from `query` don't depend on the
+        order of geometries.
+        """
         # these geometries come from a reported issue:
         # https://github.com/geopandas/geopandas/issues/1337
         # there is no theoretical reason they were chosen
@@ -294,7 +328,9 @@ class TestPygeosInterface:
         ),
     )
     def test_query_bulk_sorting(self, sort, expected):
-        """Check that results don't depend on the order of geometries."""
+        """Check that results from `query_bulk` don't depend
+        on the order of geometries.
+        """
         # these geometries come from a reported issue:
         # https://github.com/geopandas/geopandas/issues/1337
         # there is no theoretical reason they were chosen
@@ -324,9 +360,11 @@ class TestPygeosInterface:
             raise e
 
     def test_size(self):
+        """Tests the `size` property."""
         assert self.df.sindex.size == self.expected_size
 
     def test_is_empty(self):
+        """Tests the `is_empty` property."""
         # create empty tree
         cls_ = sindex.get_sindex_class()
         empty = geopandas.GeoSeries([])
