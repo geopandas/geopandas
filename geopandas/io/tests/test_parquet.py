@@ -49,7 +49,7 @@ def test_create_metadata():
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
     assert np.array_equal(
-        metadata["columns"]["geometry"]["bounds"], df.geometry.total_bounds
+        metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds
     )
 
 

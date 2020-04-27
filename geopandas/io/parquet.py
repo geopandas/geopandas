@@ -45,7 +45,7 @@ def _create_metadata(df):
         column_metadata[col] = {
             "crs": series.crs.to_wkt() if series.crs else None,
             "encoding": "WKB",
-            "bounds": series.total_bounds.tolist(),
+            "bbox": series.total_bounds.tolist(),
         }
 
     return {
