@@ -128,7 +128,7 @@ class TestPointPlotting:
         _check_colors(
             self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
         )
-        with pytest.raises(TypeError):
+        with pytest.raises((ValueError, TypeError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -325,7 +325,7 @@ class TestLineStringPlotting:
         _check_colors(
             self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
         )
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -419,7 +419,7 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
         ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -795,7 +795,7 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             plot_point_collection(ax, self.points, color="not color")
 
     def test_points_values(self):
@@ -862,7 +862,7 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             plot_linestring_collection(ax, self.lines, color="not color")
 
     def test_linestrings_values(self):
@@ -951,7 +951,7 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             plot_polygon_collection(ax, self.polygons, color="not color")
 
     def test_polygons_values(self):

@@ -131,8 +131,11 @@ def plot_polygon_collection(
         values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
-    if "markersize" in kwargs:
-        del kwargs["markersize"]
+    kwargs = {
+        att: value
+        for att, value in kwargs.items()
+        if att not in ["markersize", "marker"]
+    }
 
     # Add to kwargs for easier checking below.
     if color is not None:
@@ -188,8 +191,11 @@ def plot_linestring_collection(
         values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
-    if "markersize" in kwargs:
-        del kwargs["markersize"]
+    kwargs = {
+        att: value
+        for att, value in kwargs.items()
+        if att not in ["markersize", "marker"]
+    }
 
     # Add to kwargs for easier checking below.
     if color is not None:
