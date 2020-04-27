@@ -55,6 +55,7 @@ def engine_postgis():
     """
     Initiaties a connection engine to a postGIS database that must already exist.
     """
+    sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
     from sqlalchemy import create_engine
 
