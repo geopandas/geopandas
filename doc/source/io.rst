@@ -125,6 +125,9 @@ GeoDataFrames can be exported to many different standard formats using the
 :meth:`geopandas.GeoDataFrame.to_file` method.
 For a full list of supported formats, type ``import fiona; fiona.supported_drivers``.
 
+In addition, GeoDataFrames can be uploaded to `PostGIS <https://postgis.net/>`__ database (starting with GeoPandas 0.8)
+by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
+
 .. note::
 
     GeoDataFrame can contain more field types than supported by most of the file formats. For example tuples or lists
@@ -143,3 +146,10 @@ For a full list of supported formats, type ``import fiona; fiona.supported_drive
 
     countries_gdf.to_file("package.gpkg", layer='countries', driver="GPKG")
     cities_gdf.to_file("package.gpkg", layer='cities', driver="GPKG")
+
+**Writing to PostGIS**::
+
+    from sqlalchemy import create_engine
+    db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydatabase";
+    engine = create_engine(db_connection_url)
+    countries_gdf.to_postgis(name="countries_table", con=engine)
