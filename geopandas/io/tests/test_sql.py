@@ -379,7 +379,7 @@ class TestIO:
         assert target_srid == 0, "SRID should be 0, found %s" % target_srid
 
     def test_write_postgis_geometry_collection(
-            self, engine_postgis, df_geom_collection
+        self, engine_postgis, df_geom_collection
     ):
         """
         Tests that writing a mix of different geometry types is possible.
@@ -402,7 +402,7 @@ class TestIO:
         assert df.geom_type.unique()[0] == "GeometryCollection"
 
     def test_write_postgis_mixed_geometry_types(
-            self, engine_postgis, df_mixed_single_and_multi
+        self, engine_postgis, df_mixed_single_and_multi
     ):
         """
         Tests that writing a mix of single and MultiGeometries is possible.
@@ -519,7 +519,7 @@ class TestIO:
         validate_boro_df(df)
 
     def test_write_postgis_to_different_schema_when_table_exists(
-            self, engine_postgis, df_nybb
+        self, engine_postgis, df_nybb
     ):
         """
         Tests writing data to alternative schema.
