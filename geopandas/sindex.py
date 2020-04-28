@@ -223,7 +223,8 @@ if compat.HAS_RTREE:
 
 if compat.HAS_PYGEOS:
 
-    import geopandas
+    from . import geoseries  # noqa
+    from .array import GeometryArray  # noqa
     from pygeos import STRtree, box, points, Geometry  # noqa
 
     class PyGEOSSTRTreeIndex(STRtree):
@@ -277,9 +278,9 @@ if compat.HAS_PYGEOS:
                     + "`predicate` must be one of %s" % self.valid_query_predicates
                 )
 
-            if isinstance(geometry, geopandas.GeoSeries):
+            if isinstance(geometry, geoseries.GeoSeries):
                 geometry = geometry.values.data
-            elif isinstance(geometry, geopandas.array.GeometryArray):
+            elif isinstance(geometry, GeometryArray):
                 geometry = geometry.data
             elif not isinstance(geometry, np.ndarray):
                 try:
