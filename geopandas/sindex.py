@@ -44,6 +44,7 @@ if compat.HAS_RTREE:
     import rtree.index  # noqa
     from rtree.core import RTreeError  # noqa
     from shapely.geometry import box  # noqa
+    from shapely.geometry.base import BaseGeometry  # noqa
     from shapely.prepared import prep  # noqa
 
     class SpatialIndex(rtree.index.Index):
@@ -113,17 +114,25 @@ if compat.HAS_RTREE:
             matches : ndarray of shape (n_results, )
                 Integer indices for matching geometries from the spatial index.
             """  # noqa: E501
+            # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
                     "`predicate` must be one of %s" % self.valid_query_predicates
                 )
-            if not geometry or geometry.is_empty:
-                return np.array([])
+            # handle empty / invalid geometries
+            if not geometry:
+                return np.array([], dtype="int64")
+            if not isinstance(geometry, BaseGeometry):
+                raise TypeError("`geometry` must be a shapely geometry")
+            if geometry.is_empty:
+                return np.array([], dtype="int64")
+
+            # get bounds
             bounds = geometry.bounds  # rtree operates on bounds
             tree_query = list(self.intersection(bounds, objects=False))
 
             if not tree_query:
-                return np.array([])
+                return np.array([], dtype="int64")
 
             # check predicate
             if predicate in ("intersects", "within"):
@@ -267,7 +276,7 @@ if compat.HAS_PYGEOS:
             elif isinstance(geometry, geopandas.array.GeometryArray):
                 geometry = geometry.data
             elif not isinstance(geometry, np.ndarray):
-                raise ValueError(
+                raise TypeError(
                     "`geometry` must be a GeoSeries, GeometryArray or numpy.ndarray"
                 )
 

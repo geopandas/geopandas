@@ -1,6 +1,6 @@
 import sys
 
-from shapely.geometry import Point, Polygon, box
+from shapely.geometry import Point, Polygon, box, GeometryCollection
 from numpy.testing import assert_array_equal
 
 import geopandas
@@ -8,6 +8,7 @@ from geopandas import _compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex
 
 import pytest
+import numpy as np
 
 
 @pytest.mark.skipif(sindex.has_sindex(), reason="Spatial index present, skipping")
@@ -213,6 +214,70 @@ class TestPygeosInterface:
             self.df.sindex.query(test_geom.geometry.values.data[0], predicate=predicate)
 
     @pytest.mark.parametrize(
+        "test_geom, expected_error", (("notavalidgeom", TypeError),),
+    )
+    def test_query_invalid_geometry(self, test_geom, expected_error):
+        """Tests the `query` method with invalid geometry.
+        """
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        with pytest.raises(expected_error):
+            self.df.sindex.query(test_geom)
+
+    @pytest.mark.parametrize(
+        "test_geom, expected_error, expected_value",
+        ((GeometryCollection(), None, []), (None, None, []),),
+    )
+    def test_query_empty_geometry(self, test_geom, expected_error, expected_value):
+        """Tests the `query` method with empty or None geometry.
+        """
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        test_geom = geopandas.GeoSeries([test_geom], index=["0"])
+        if expected_error is not None:
+            with pytest.raises(expected_error):
+                self.df.sindex.query(test_geom.geometry.values.data[0])
+        else:
+            # no error expected
+            res = self.df.sindex.query(test_geom.geometry.values.data[0])
+            assert_array_equal(res, expected_value)
+
+    @pytest.mark.parametrize(
+        "test_geom, expected_error, expected_value",
+        ((GeometryCollection(), None, [[], []]),),
+    )
+    def test_query_bulk_empty_geometry(self, test_geom, expected_error, expected_value):
+        """Tests the `query_bulk` method with an empty geometry.
+        """
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        test_geom = geopandas.GeoSeries([test_geom], index=["0"])
+        if expected_error is not None:
+            with pytest.raises(expected_error):
+                self.df.sindex.query_bulk(test_geom.geometry.values.data)
+        else:
+            # no error expected
+            res = self.df.sindex.query_bulk(test_geom.geometry.values.data)
+            assert_array_equal(res, expected_value)
+
+    @pytest.mark.parametrize(
+        "test_array, expected_error, expected_value",
+        ((np.array([], dtype=object), None, [[], []]),),
+    )
+    def test_query_bulk_empty_input_array(
+        self, test_array, expected_error, expected_value
+    ):
+        """Tests the `query_bulk` method with an empty input array.
+        """
+        if expected_error is not None:
+            with pytest.raises(expected_error):
+                self.df.sindex.query_bulk(test_array)
+        else:
+            # no error expected
+            res = self.df.sindex.query_bulk(test_array)
+            assert_array_equal(res, expected_value)
+
+    @pytest.mark.parametrize(
         "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
     )
     def test_query_bulk_invalid_predicate(self, predicate, test_geom, expected):
@@ -272,6 +337,10 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
         # test numpy array
+        res = self.df.sindex.query_bulk(
+            test_geom.geometry.values.data, predicate=predicate
+        )
+        assert_array_equal(res, expected)
         res = self.df.sindex.query_bulk(
             test_geom.geometry.values.data, predicate=predicate
         )
