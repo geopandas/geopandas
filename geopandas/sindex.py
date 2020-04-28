@@ -117,14 +117,18 @@ if compat.HAS_RTREE:
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "`predicate` must be one of %s" % self.valid_query_predicates
+                    "Got `predicate` = `%s`; " % predicate
+                    + "`predicate` must be one of %s" % self.valid_query_predicates
                 )
             # handle empty / invalid geometries
             if geometry is None:
                 # this is the behavior in pygeos.strtree.query, we mimic it here
                 return np.array([], dtype=np.intp)
             if not isinstance(geometry, BaseGeometry):
-                raise TypeError("`geometry` must be a shapely geometry")
+                raise TypeError(
+                    "Got `geometry` of type `%s`, " % type(geometry)
+                    + "`geometry` must be a shapely geometry."
+                )
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
 
@@ -269,7 +273,8 @@ if compat.HAS_PYGEOS:
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "`predicate` must be one of %s" % self.valid_query_predicates
+                    "Got `predicate` = `%s`; " % predicate
+                    + "`predicate` must be one of %s" % self.valid_query_predicates
                 )
 
             if isinstance(geometry, geopandas.GeoSeries):
@@ -277,9 +282,15 @@ if compat.HAS_PYGEOS:
             elif isinstance(geometry, geopandas.array.GeometryArray):
                 geometry = geometry.data
             elif not isinstance(geometry, np.ndarray):
-                raise TypeError(
-                    "`geometry` must be a GeoSeries, GeometryArray or numpy.ndarray"
-                )
+                try:
+                    # accept other iterables, ex list, tuple or generator
+                    iter(geometry)
+                except TypeError:
+                    raise TypeError(
+                        "Got `geometry` of type `%s`, " % type(geometry)
+                        + "`geometry` must be a GeoSeries, GeometryArray, "
+                        "numpy.ndarray or other iterable."
+                    )
 
             res = super().query_bulk(geometry, predicate)
 
@@ -314,7 +325,8 @@ if compat.HAS_PYGEOS:
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "`predicate` must be one of %s" % self.valid_query_predicates
+                    "Got `predicate` = `%s`; " % predicate
+                    + "`predicate` must be one of %s" % self.valid_query_predicates
                 )
 
             matches = super().query(geometry=geometry, predicate=predicate)
@@ -346,7 +358,8 @@ if compat.HAS_PYGEOS:
                 # to ensure a useful failure message
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "
-                    "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points)."
+                    "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points). "
+                    "Got `coordinates` = %s." % coordinates
                 )
 
             # need to convert tuple of bounds to a geometry object
@@ -357,7 +370,8 @@ if compat.HAS_PYGEOS:
             else:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "
-                    "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points)."
+                    "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points). "
+                    "Got `coordinates` = %s." % coordinates
                 )
 
             if objects:
