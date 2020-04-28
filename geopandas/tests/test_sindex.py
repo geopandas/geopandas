@@ -214,7 +214,7 @@ class TestPygeosInterface:
             self.df.sindex.query(test_geom.geometry.values.data[0], predicate=predicate)
 
     @pytest.mark.parametrize(
-        "test_geom, expected_error", (("notavalidgeom", TypeError),),
+        "test_geom, expected_error", [("notavalidgeom", TypeError)],
     )
     def test_query_invalid_geometry(self, test_geom, expected_error):
         """Tests the `query` method with invalid geometry.
@@ -226,10 +226,10 @@ class TestPygeosInterface:
 
     @pytest.mark.parametrize(
         "test_geom, expected_error, expected_value",
-        ((GeometryCollection(), None, []), (None, None, []),),
+        [(GeometryCollection(), None, []), (None, None, [])],
     )
     def test_query_empty_geometry(self, test_geom, expected_error, expected_value):
-        """Tests the `query` method with empty or None geometry.
+        """Tests the `query` method with empty geometry.
         """
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
@@ -244,7 +244,7 @@ class TestPygeosInterface:
 
     @pytest.mark.parametrize(
         "test_geom, expected_error, expected_value",
-        ((GeometryCollection(), None, [[], []]),),
+        [(GeometryCollection(), None, [[], []])],
     )
     def test_query_bulk_empty_geometry(self, test_geom, expected_error, expected_value):
         """Tests the `query_bulk` method with an empty geometry.

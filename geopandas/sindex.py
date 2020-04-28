@@ -120,19 +120,20 @@ if compat.HAS_RTREE:
                     "`predicate` must be one of %s" % self.valid_query_predicates
                 )
             # handle empty / invalid geometries
-            if not geometry:
-                return np.array([], dtype="int64")
+            if geometry is None:
+                # this is the behavior in pygeos.strtree.query, we mimic it here
+                return np.array([], dtype=np.intp)
             if not isinstance(geometry, BaseGeometry):
                 raise TypeError("`geometry` must be a shapely geometry")
             if geometry.is_empty:
-                return np.array([], dtype="int64")
+                return np.array([], dtype=np.intp)
 
             # get bounds
             bounds = geometry.bounds  # rtree operates on bounds
             tree_query = list(self.intersection(bounds, objects=False))
 
             if not tree_query:
-                return np.array([], dtype="int64")
+                return np.array([], dtype=np.intp)
 
             # check predicate
             if predicate in ("intersects", "within"):
