@@ -1,6 +1,7 @@
 from warnings import warn
 from collections import namedtuple
 
+from shapely.geometry.base import BaseGeometry
 import pandas as pd
 import numpy as np
 
@@ -19,17 +20,16 @@ VALID_QUERY_PREDICATES = {
 
 
 def has_sindex():
-    """
-    Dynamically checks for ability to generate spatial index.
+    """Dynamically checks for ability to generate spatial index.
     """
     return get_sindex_class() is not None
 
 
 def get_sindex_class():
-    """
-    Dynamically chooses a spatial indexing backend.
+    """Dynamically chooses a spatial indexing backend.
+
     Required to comply with _compat.USE_PYGEOS.
-    The order of preference goes PyGeos > RTree > None.
+    The selection order goes PyGEOS > RTree > None.
     """
     if compat.USE_PYGEOS:
         return PyGEOSSTRTreeIndex
@@ -44,12 +44,10 @@ if compat.HAS_RTREE:
     import rtree.index  # noqa
     from rtree.core import RTreeError  # noqa
     from shapely.geometry import box  # noqa
-    from shapely.geometry.base import BaseGeometry  # noqa
     from shapely.prepared import prep  # noqa
 
     class SpatialIndex(rtree.index.Index):
-        """
-        Original rtree wrapper, kept for backwards compatibility.
+        """Original rtree wrapper, kept for backwards compatibility.
         """
 
         def __init__(self, *args):
@@ -66,8 +64,12 @@ if compat.HAS_RTREE:
             return self.size < 1
 
     class RTreeIndex(rtree.index.Index):
-        """
-        A simple wrapper around rtree's RTree Index
+        """A simple wrapper around rtree's RTree Index
+
+        Parameters
+        ----------
+        geometry : GeoSeries
+            GeoSeries from which to build the spatial index.
         """
 
         # set of valid predicates for this spatial index
@@ -92,12 +94,16 @@ if compat.HAS_RTREE:
             # store reference to geometries for predicate queries
             self._geometries = geometry.geometry.values
             # create a prepared geometry cache
-            self._prepared_geometries = np.array([None] * self._geometries.size)
+            self._prepared_geometries = np.array(
+                [None] * self._geometries.size, dtype=np.intp
+            )
 
         def query(self, geometry, predicate=None, sort=False):
             """Compatibility layer for pygeos.query.
-            This is not an optimized function, if speed is important,
-            you are probably better off using PyGEOS.
+
+            This is not a vectorized function, if speed is important,
+            please use PyGEOS.
+
             Parameters
             ----------
             geometry : shapely geometry
@@ -109,6 +115,7 @@ if compat.HAS_RTREE:
             sort : bool, default False
                 If True, the results will be sorted in ascending order. If False, results are
                 often sorted but there is no guarantee.
+
             Returns
             -------
             matches : ndarray of shape (n_results, )
@@ -117,8 +124,9 @@ if compat.HAS_RTREE:
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "Got `predicate` = `%s`; " % predicate
-                    + "`predicate` must be one of %s" % self.valid_query_predicates
+                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                        predicate, self.valid_query_predicates
+                    )
                 )
             # handle empty / invalid geometries
             if geometry is None:
@@ -126,8 +134,8 @@ if compat.HAS_RTREE:
                 return np.array([], dtype=np.intp)
             if not isinstance(geometry, BaseGeometry):
                 raise TypeError(
-                    "Got `geometry` of type `%s`, " % type(geometry)
-                    + "`geometry` must be a shapely geometry."
+                    "Got `geometry` of type `{}`, `geometry` must be "
+                    + "a shapely geometry.".format(type(geometry))
                 )
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
@@ -171,16 +179,19 @@ if compat.HAS_RTREE:
                 ]
 
             if not sort:
-                return np.array(tree_query)  # unsorted
+                # unsorted
+                return np.array(tree_query, dtype=np.intp)
 
-            # sort
-            return np.sort(np.array(tree_query))
+            # sorted
+            return np.sort(np.array(tree_query, dtype=np.intp))
 
         def query_bulk(self, geometry, predicate=None, sort=False):
             """Compatibility layer for pygeos.query_bulk.
+
             Iterates over `geometry` and queries index.
             This operation is not vectorized and may be slow.
             Use PyGEOS with `query_bulk` for speed.
+
             Parameters
             ----------
             geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
@@ -194,6 +205,7 @@ if compat.HAS_RTREE:
                 If True, results sorted lexicographically using
                 geometry's indexes as the primary key and the sindex's indexes as the
                 secondary key. If False, no additional sorting is applied.
+
             Returns
             -------
             ndarray with shape (2, n)
@@ -225,11 +237,16 @@ if compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
     from .array import GeometryArray  # noqa
-    from pygeos import STRtree, box, points, Geometry  # noqa
+    from pygeos import STRtree, box, points, Geometry, from_shapely, from_wkb  # noqa
 
     class PyGEOSSTRTreeIndex(STRtree):
-        """
-        A simple wrapper around pygeos's STRTree
+        """A simple wrapper around pygeos's STRTree.
+
+
+        Parameters
+        ----------
+        geometry : GeoSeries
+            GeoSeries from which to build the spatial index.
         """
 
         # helper for loc/label based indexing in `intersection` method
@@ -248,7 +265,10 @@ if compat.HAS_PYGEOS:
 
         def query_bulk(self, geometry, predicate=None, sort=False):
             """Wrapper to expose underlaying pygeos objects to pygeos.query_bulk.
+
             This also allows a deterministic (sorted) order for the results.
+
+
             Parameters
             ----------
             geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
@@ -262,6 +282,7 @@ if compat.HAS_PYGEOS:
                 If True, results sorted lexicographically using
                 geometry's indexes as the primary key and the sindex's indexes as the
                 secondary key. If False, no additional sorting is applied.
+
             Returns
             -------
             ndarray with shape (2, n)
@@ -274,24 +295,16 @@ if compat.HAS_PYGEOS:
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "Got `predicate` = `%s`; " % predicate
-                    + "`predicate` must be one of %s" % self.valid_query_predicates
+                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                        predicate, self.valid_query_predicates
+                    )
                 )
-
             if isinstance(geometry, geoseries.GeoSeries):
                 geometry = geometry.values.data
             elif isinstance(geometry, GeometryArray):
                 geometry = geometry.data
             elif not isinstance(geometry, np.ndarray):
-                try:
-                    # accept other iterables, ex list, tuple or generator
-                    iter(geometry)
-                except TypeError:
-                    raise TypeError(
-                        "Got `geometry` of type `%s`, " % type(geometry)
-                        + "`geometry` must be a GeoSeries, GeometryArray, "
-                        "numpy.ndarray or other iterable."
-                    )
+                geometry = np.asarray(geometry)
 
             res = super().query_bulk(geometry, predicate)
 
@@ -304,7 +317,9 @@ if compat.HAS_PYGEOS:
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
+
             This also ensures a deterministic (sorted) order for the results.
+
             Parameters
             ----------
             geometry : single PyGEOS geometry
@@ -315,6 +330,7 @@ if compat.HAS_PYGEOS:
             sort : bool, default False
                 If True, the results will be sorted in ascending order. If False, results are
                 often sorted but there is no guarantee.
+
             Returns
             -------
             matches : ndarray of shape (n_results, )
@@ -326,9 +342,23 @@ if compat.HAS_PYGEOS:
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "Got `predicate` = `%s`; " % predicate
-                    + "`predicate` must be one of %s" % self.valid_query_predicates
+                    "Got `predicate` = `{}`; "
+                    + "`predicate` must be one of {}".format(
+                        predicate, self.valid_query_predicates
+                    )
                 )
+
+            if isinstance(geometry, BaseGeometry):
+                # handle shapely geometries
+                if compat.PYGEOS_SHAPELY_COMPAT:
+                    geometry = from_shapely(geometry)
+
+                # fallback going through WKB
+                if geometry.is_empty and geometry.geom_type == "Point":
+                    # empty point does not roundtrip through WKB
+                    geometry = from_wkt("POINT EMPTY")
+                else:
+                    geometry = from_wkb(geometry.wkb)
 
             matches = super().query(geometry=geometry, predicate=predicate)
 
@@ -360,7 +390,7 @@ if compat.HAS_PYGEOS:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "
                     "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points). "
-                    "Got `coordinates` = %s." % coordinates
+                    "Got `coordinates` = {}.".format(coordinates)
                 )
 
             # need to convert tuple of bounds to a geometry object
@@ -372,7 +402,7 @@ if compat.HAS_PYGEOS:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "
                     "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points). "
-                    "Got `coordinates` = %s." % coordinates
+                    "Got `coordinates` = {}.".format(coordinates)
                 )
 
             if objects:

@@ -4,7 +4,6 @@ from shapely.geometry import Point, Polygon, box, GeometryCollection
 from numpy.testing import assert_array_equal
 
 import geopandas
-from geopandas.array import _shapely_to_geom as shapely_to_geom
 from geopandas import _compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex
 
@@ -165,7 +164,7 @@ class TestPygeosInterface:
     )
     def test_query(self, predicate, test_geom, expected):
         """Tests the `query` method with valid inputs and valid predicates."""
-        test_geom = shapely_to_geom(box(*test_geom))
+        test_geom = box(*test_geom)
         res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
@@ -204,7 +203,7 @@ class TestPygeosInterface:
     def test_query_invalid_predicate(self, predicate, test_geom, expected):
         """Tests the `query` method with invalid predicates.
         """
-        test_geom = shapely_to_geom(box(*test_geom))
+        test_geom = box(*test_geom)
         with pytest.raises(ValueError):
             self.df.sindex.query(test_geom, predicate=predicate)
 
@@ -224,7 +223,6 @@ class TestPygeosInterface:
     def test_query_empty_geometry(self, test_geom, expected_error, expected_value):
         """Tests the `query` method with empty geometry.
         """
-        test_geom = shapely_to_geom(test_geom)
         if expected_error is not None:
             with pytest.raises(expected_error):
                 self.df.sindex.query(test_geom)
