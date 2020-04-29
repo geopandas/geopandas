@@ -95,7 +95,7 @@ if compat.HAS_RTREE:
             self._geometries = geometry.geometry.values
             # create a prepared geometry cache
             self._prepared_geometries = np.array(
-                [None] * self._geometries.size, dtype=np.intp
+                [None] * self._geometries.size, dtype=object
             )
 
         def query(self, geometry, predicate=None, sort=False):
