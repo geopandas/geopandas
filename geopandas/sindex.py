@@ -238,8 +238,9 @@ if compat.HAS_RTREE:
 if compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
-    from .array import GeometryArray  # noqa
-    from pygeos import STRtree, box, points, Geometry, from_shapely, from_wkb  # noqa
+    from .array import GeometryArray, _shapely_to_geom  # noqa
+    import pygeos  # noqa
+    from pygeos import STRtree, box, points, Geometry  # noqa
 
     class PyGEOSSTRTreeIndex(STRtree):
         """A simple wrapper around pygeos's STRTree.
@@ -261,7 +262,7 @@ if compat.HAS_PYGEOS:
         def __init__(self, geometry):
             # for compatibility with old RTree implementation, store ids/indexes
             original_indexes = geometry.index
-            non_empty = geometry[~geometry.values.is_empty]
+            non_empty = geometry[~geometry.valcues.is_empty]
             self.objects = self.ids = original_indexes[~geometry.values.is_empty]
             super().__init__(non_empty.values.data)
 
@@ -277,7 +278,7 @@ if compat.HAS_PYGEOS:
                 Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
                 or a numpy array of PyGEOS geometries.
             predicate : {None, 'intersects', 'within', 'contains', 'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, a prepared version of the input geometry is tested using
+                If predicate is provided, the input geometry is tested using
                 the predicate function against each item in the index whose extent intersects the
                 envelope of the input geometry: predicate(geometry, tree_geometry).
             sort : bool, default False
@@ -326,7 +327,7 @@ if compat.HAS_PYGEOS:
             ----------
             geometry : single PyGEOS geometry
             predicate : {None, 'intersects', 'within', 'contains', 'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, a prepared version of the input geometry is tested using
+                If predicate is provided, the input geometry is tested using
                 the predicate function against each item in the index whose extent intersects the
                 envelope of the input geometry: predicate(geometry, tree_geometry).
             sort : bool, default False
@@ -351,15 +352,7 @@ if compat.HAS_PYGEOS:
                 )
 
             if isinstance(geometry, BaseGeometry):
-                # handle shapely geometries
-                if compat.PYGEOS_SHAPELY_COMPAT:
-                    geometry = from_shapely(geometry)
-                # fallback going through WKB
-                elif geometry.is_empty and geometry.geom_type == "Point":
-                    # empty point does not roundtrip through WKB
-                    geometry = from_wkb("POINT EMPTY")
-                else:
-                    geometry = from_wkb(geometry.wkb)
+                geometry = _shapely_to_geom(geometry)
 
             matches = super().query(geometry=geometry, predicate=predicate)
 
