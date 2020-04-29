@@ -138,8 +138,6 @@ class TestJoinSindex:
 class TestPygeosInterface:
     def setup_method(self):
         data = {
-            "A": range(6),
-            "B": range(-6, 0),
             "location": [Point(x, y) for x, y in zip(range(5), range(5))]
             + [box(10, 10, 20, 20)],  # include a box geometry
         }
@@ -186,11 +184,13 @@ class TestPygeosInterface:
             ("intersects", (-1, -1, -0.5, -0.5), []),
             ("intersects", (-0.5, -0.5, 0.5, 0.5), [0]),
             ("intersects", (0, 0, 1, 1), [0, 1]),
-            ("within", (0, 0, 1, 1), []),
-            ("within", (11, 11, 12, 12), [5]),
-            ("contains", (0, 0, 1, 1), []),
-            ("contains", (0.5, 0.5, 1.5, 1.5), [1]),
-            ("contains", (-1, -1, 2, 2), [0, 1]),
+            ("within", (0.25, 0.28, 0.75, 0.75), []),  # does not intersect
+            ("within", (0, 0, 10, 10), []),  # intersects but is not within
+            ("within", (11, 11, 12, 12), [5]),  # intersects and is within
+            ("contains", (0, 0, 1, 1), []),  # intersects but does not contain
+            ("contains", (0, 0, 1.001, 1.001), [1]),  # intersects and contains
+            ("contains", (0.5, 0.5, 1.5, 1.5), [1]),  # intersects and contains
+            ("contains", (-1, -1, 2, 2), [0, 1]),  # intersects and contains multiple
         ),
     )
     def test_query(self, predicate, test_geom, expected):
@@ -291,11 +291,26 @@ class TestPygeosInterface:
             ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
             ("intersects", (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
             ("intersects", (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("within", (0, 0, 1, 1), [[], []]),
-            ("within", (11, 11, 12, 12), [[0], [5]]),
-            ("contains", (0, 0, 1, 1), [[], []]),
-            ("contains", (0.5, 0.5, 1.5, 1.5), [[0], [1]]),
-            ("contains", (-1, -1, 2, 2), [[0, 0], [0, 1]]),
+            ("within", (0.25, 0.28, 0.75, 0.75), [[], []]),  # does not intersect
+            ("within", (0, 0, 10, 10), [[], []]),  # intersects but is not within
+            ("within", (11, 11, 12, 12), [[0], [5]]),  # intersects and is within
+            ("contains", (0, 0, 1, 1), [[], []]),  # intersects but does not contain
+            (
+                "contains",
+                (0, 0, 1.001, 1.001),
+                [[0], [1]],
+            ),  # intersects 2 and contains 1
+            (
+                "contains",
+                (0.5, 0.5, 1.001, 1.001),
+                [[0], [1]],
+            ),  # intersects 1 and contains 1
+            ("contains", (0.5, 0.5, 1.5, 1.5), [[0], [1]]),  # intersects and contains
+            (
+                "contains",
+                (-1, -1, 2, 2),
+                [[0, 0], [0, 1]],
+            ),  # intersects and contains multiple
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):
