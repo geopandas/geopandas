@@ -354,9 +354,8 @@ if compat.HAS_PYGEOS:
                 # handle shapely geometries
                 if compat.PYGEOS_SHAPELY_COMPAT:
                     geometry = from_shapely(geometry)
-
                 # fallback going through WKB
-                if geometry.is_empty and geometry.geom_type == "Point":
+                elif geometry.is_empty and geometry.geom_type == "Point":
                     # empty point does not roundtrip through WKB
                     geometry = from_wkb("POINT EMPTY")
                 else:
