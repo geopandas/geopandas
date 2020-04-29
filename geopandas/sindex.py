@@ -134,8 +134,10 @@ if compat.HAS_RTREE:
                 return np.array([], dtype=np.intp)
             if not isinstance(geometry, BaseGeometry):
                 raise TypeError(
-                    "Got `geometry` of type `{}`, `geometry` must be "
-                    + "a shapely geometry.".format(type(geometry))
+                    "Got `geometry` of type `{}`, `geometry` must be ".format(
+                        type(geometry)
+                    )
+                    + "a shapely geometry."
                 )
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
@@ -342,9 +344,9 @@ if compat.HAS_PYGEOS:
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
-                    "Got `predicate` = `{}`; "
+                    "Got `predicate` = `{}`; ".format(predicate)
                     + "`predicate` must be one of {}".format(
-                        predicate, self.valid_query_predicates
+                        self.valid_query_predicates
                     )
                 )
 
@@ -356,7 +358,7 @@ if compat.HAS_PYGEOS:
                 # fallback going through WKB
                 if geometry.is_empty and geometry.geom_type == "Point":
                     # empty point does not roundtrip through WKB
-                    geometry = from_wkt("POINT EMPTY")
+                    geometry = from_wkb("POINT EMPTY")
                 else:
                     geometry = from_wkb(geometry.wkb)
 

@@ -1,6 +1,6 @@
 import sys
 
-from shapely.geometry import Point, Polygon, box, GeometryCollection
+from shapely.geometry import Point, Polygon, MultiPolygon, box, GeometryCollection
 from numpy.testing import assert_array_equal
 
 import geopandas
@@ -146,28 +146,7 @@ class TestPygeosInterface:
         self.df = GeoDataFrame(data, geometry="location")
         self.expected_size = len(data["location"])
 
-    @pytest.mark.parametrize(
-        "predicate, test_geom, expected",
-        (
-            (None, (-1, -1, -0.5, -0.5), []),
-            (None, (-0.5, -0.5, 0.5, 0.5), [0]),
-            (None, (0, 0, 1, 1), [0, 1]),
-            ("intersects", (-1, -1, -0.5, -0.5), []),
-            ("intersects", (-0.5, -0.5, 0.5, 0.5), [0]),
-            ("intersects", (0, 0, 1, 1), [0, 1]),
-            ("within", (0, 0, 1, 1), []),
-            ("within", (11, 11, 12, 12), [5]),
-            ("contains", (0, 0, 1, 1), []),
-            ("contains", (0.5, 0.5, 1.5, 1.5), [1]),
-            ("contains", (-1, -1, 2, 2), [0, 1]),
-        ),
-    )
-    def test_query(self, predicate, test_geom, expected):
-        """Tests the `query` method with valid inputs and valid predicates."""
-        test_geom = box(*test_geom)
-        res = self.df.sindex.query(test_geom, predicate=predicate)
-        assert_array_equal(res, expected)
-
+    # --------------------------- `intersection` tests -------------------------- #
     @pytest.mark.parametrize(
         "test_geom, expected",
         (
@@ -197,15 +176,28 @@ class TestPygeosInterface:
                 # rtree raises an RTreeError which we need to catch
                 self.df.sindex.intersection(test_geom)
 
+    # ------------------------------ `query` tests ------------------------------ #
     @pytest.mark.parametrize(
-        "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
+        "predicate, test_geom, expected",
+        (
+            (None, (-1, -1, -0.5, -0.5), []),
+            (None, (-0.5, -0.5, 0.5, 0.5), [0]),
+            (None, (0, 0, 1, 1), [0, 1]),
+            ("intersects", (-1, -1, -0.5, -0.5), []),
+            ("intersects", (-0.5, -0.5, 0.5, 0.5), [0]),
+            ("intersects", (0, 0, 1, 1), [0, 1]),
+            ("within", (0, 0, 1, 1), []),
+            ("within", (11, 11, 12, 12), [5]),
+            ("contains", (0, 0, 1, 1), []),
+            ("contains", (0.5, 0.5, 1.5, 1.5), [1]),
+            ("contains", (-1, -1, 2, 2), [0, 1]),
+        ),
     )
-    def test_query_invalid_predicate(self, predicate, test_geom, expected):
-        """Tests the `query` method with invalid predicates.
-        """
+    def test_query(self, predicate, test_geom, expected):
+        """Tests the `query` method with valid inputs and valid predicates."""
         test_geom = box(*test_geom)
-        with pytest.raises(ValueError):
-            self.df.sindex.query(test_geom, predicate=predicate)
+        res = self.df.sindex.query(test_geom, predicate=predicate)
+        assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
         "test_geom, expected_error", [("notavalidgeom", TypeError)],
@@ -218,7 +210,13 @@ class TestPygeosInterface:
 
     @pytest.mark.parametrize(
         "test_geom, expected_error, expected_value",
-        [(GeometryCollection(), None, []), (None, None, [])],
+        [
+            (None, None, []),
+            (GeometryCollection(), None, []),
+            (Point(), None, []),
+            (MultiPolygon(), None, []),
+            (Polygon(), None, []),
+        ],
     )
     def test_query_empty_geometry(self, test_geom, expected_error, expected_value):
         """Tests the `query` method with empty geometry.
@@ -230,6 +228,86 @@ class TestPygeosInterface:
             # no error expected
             res = self.df.sindex.query(test_geom)
             assert_array_equal(res, expected_value)
+
+    @pytest.mark.parametrize(
+        "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
+    )
+    def test_query_invalid_predicate(self, predicate, test_geom, expected):
+        """Tests the `query` method with invalid predicates.
+        """
+        test_geom = box(*test_geom)
+        with pytest.raises(ValueError):
+            self.df.sindex.query(test_geom, predicate=predicate)
+
+    @pytest.mark.parametrize(
+        "sort, expected",
+        (
+            (True, [[0, 0, 0], [0, 1, 2]]),
+            # False could be anything, at least we'll know if it changes
+            (False, [[0, 0, 0], [0, 1, 2]]),
+        ),
+    )
+    def test_query_sorting(self, sort, expected):
+        """Check that results from `query` don't depend on the
+        order of geometries.
+        """
+        # these geometries come from a reported issue:
+        # https://github.com/geopandas/geopandas/issues/1337
+        # there is no theoretical reason they were chosen
+        test_polys = GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)])])
+        tree_polys = GeoSeries(
+            [
+                Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+                Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+            ]
+        )
+        expected = [0, 1, 2]
+
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
+        test_df = geopandas.GeoDataFrame(geometry=test_polys)
+
+        test_geo = test_df.geometry.values.data[0]
+        res = tree_df.sindex.query(test_geo, sort=sort)
+        try:
+            assert_array_equal(res, expected)
+        except AssertionError as e:
+            if not compat.USE_PYGEOS and sort is False:
+                pytest.xfail(
+                    "rtree results are known to be unordered, see "
+                    "https://github.com/geopandas/geopandas/issues/1337"
+                )
+            raise e
+
+    # ------------------------- `query_bulk` tests -------------------------- #
+    @pytest.mark.parametrize(
+        "predicate, test_geom, expected",
+        (
+            (None, (-1, -1, -0.5, -0.5), [[], []]),
+            (None, (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
+            (None, (0, 0, 1, 1), [[0, 0], [0, 1]]),
+            ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
+            ("intersects", (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
+            ("intersects", (0, 0, 1, 1), [[0, 0], [0, 1]]),
+            ("within", (0, 0, 1, 1), [[], []]),
+            ("within", (11, 11, 12, 12), [[0], [5]]),
+            ("contains", (0, 0, 1, 1), [[], []]),
+            ("contains", (0.5, 0.5, 1.5, 1.5), [[0], [1]]),
+            ("contains", (-1, -1, 2, 2), [[0, 0], [0, 1]]),
+        ),
+    )
+    def test_query_bulk(self, predicate, test_geom, expected):
+        """Tests the `query_bulk` method with valid
+        inputs and valid predicates.
+        """
+        # pass through GeoSeries to have GeoPandas
+        # determine if it should use shapely or pygeos geometry objects
+        test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
+
+        res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
+        assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
         "test_geoms, expected_error, expected_value",
@@ -306,33 +384,6 @@ class TestPygeosInterface:
             self.df.sindex.query_bulk(test_geom.geometry, predicate=predicate)
 
     @pytest.mark.parametrize(
-        "predicate, test_geom, expected",
-        (
-            (None, (-1, -1, -0.5, -0.5), [[], []]),
-            (None, (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
-            (None, (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
-            ("intersects", (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
-            ("intersects", (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("within", (0, 0, 1, 1), [[], []]),
-            ("within", (11, 11, 12, 12), [[0], [5]]),
-            ("contains", (0, 0, 1, 1), [[], []]),
-            ("contains", (0.5, 0.5, 1.5, 1.5), [[0], [1]]),
-            ("contains", (-1, -1, 2, 2), [[0, 0], [0, 1]]),
-        ),
-    )
-    def test_query_bulk(self, predicate, test_geom, expected):
-        """Tests the `query_bulk` method with valid
-        inputs and valid predicates.
-        """
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
-
-        res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
-        assert_array_equal(res, expected)
-
-    @pytest.mark.parametrize(
         "predicate, test_geom, expected", ((None, (-1, -1, -0.5, -0.5), [[], []]),),
     )
     def test_query_bulk_input_type(self, predicate, test_geom, expected):
@@ -362,48 +413,6 @@ class TestPygeosInterface:
             test_geom.geometry.values.data, predicate=predicate
         )
         assert_array_equal(res, expected)
-
-    @pytest.mark.parametrize(
-        "sort, expected",
-        (
-            (True, [[0, 0, 0], [0, 1, 2]]),
-            # False could be anything, at least we'll know if it changes
-            (False, [[0, 0, 0], [0, 1, 2]]),
-        ),
-    )
-    def test_query_sorting(self, sort, expected):
-        """Check that results from `query` don't depend on the
-        order of geometries.
-        """
-        # these geometries come from a reported issue:
-        # https://github.com/geopandas/geopandas/issues/1337
-        # there is no theoretical reason they were chosen
-        test_polys = GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)])])
-        tree_polys = GeoSeries(
-            [
-                Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
-                Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
-                Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
-            ]
-        )
-        expected = [0, 1, 2]
-
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
-        test_df = geopandas.GeoDataFrame(geometry=test_polys)
-
-        test_geo = test_df.geometry.values.data[0]
-        res = tree_df.sindex.query(test_geo, sort=sort)
-        try:
-            assert_array_equal(res, expected)
-        except AssertionError as e:
-            if not compat.USE_PYGEOS and sort is False:
-                pytest.xfail(
-                    "rtree results are known to be unordered, see "
-                    "https://github.com/geopandas/geopandas/issues/1337"
-                )
-            raise e
 
     @pytest.mark.parametrize(
         "sort, expected",
@@ -444,6 +453,8 @@ class TestPygeosInterface:
                     "https://github.com/geopandas/geopandas/issues/1337"
                 )
             raise e
+
+    # --------------------------- misc tests ---------------------------- #
 
     def test_size(self):
         """Tests the `size` property."""
