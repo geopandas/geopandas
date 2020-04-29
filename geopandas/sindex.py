@@ -157,16 +157,18 @@ if compat.HAS_RTREE:
             # Check predicate
             # When possible, we want to use cached prepared geometries
             # from the tree to compare tree_geom.predicate(input_geom)
-            # If this is not possible, we prep the input geometry
+            # If this is not possible, try prep the input geometry
             # and compare that against results from the tree.
+            # Since only certain predicates support prepared geometries,
+            # the fallback is to check non-prepared geometries.
             if predicate in ("intersects", "within"):
-                # only contains and intersects are supported by
-                # prepared geometries, see note below regarding within
+                # For these two predicates, we compare tree_geom.predicate(input_geom)
                 res = []
                 if predicate == "within":
-                    # since these are inverse, we can flip the operation
-                    # and test with prepared predicates from tree
-                    # i.e., tree_geometry.predicate(input_geometry)
+                    # The user asked for input_geom.within(tree_geom)
+                    # but since within and contains are inverse,
+                    # we can do the same test as tree_geometry.contains(input_geometry)
+                    # to use cached prepared tree geometry
                     predicate = "contains"
                 for i in tree_idx:
                     if self._prepared_geometries[i] is None:
@@ -176,8 +178,10 @@ if compat.HAS_RTREE:
                         res.append(i)
                 tree_idx = res
             elif predicate is not None:
+                # For the remaining predicates,
+                # we compare input_geom.predicate(tree_geom)
                 if len(tree_idx) > 1 and predicate == "contains":
-                    # prepare this geometry
+                    # prepare this input geometry
                     geometry = prep(geometry)
                 tree_idx = [
                     i
