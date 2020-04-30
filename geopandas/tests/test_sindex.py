@@ -209,25 +209,20 @@ class TestPygeosInterface:
             self.df.sindex.query(test_geom)
 
     @pytest.mark.parametrize(
-        "test_geom, expected_error, expected_value",
+        "test_geom, expected_value",
         [
-            (None, None, []),
-            (GeometryCollection(), None, []),
-            (Point(), None, []),
-            (MultiPolygon(), None, []),
-            (Polygon(), None, []),
+            (None, []),
+            (GeometryCollection(), []),
+            (Point(), []),
+            (MultiPolygon(), []),
+            (Polygon(), []),
         ],
     )
-    def test_query_empty_geometry(self, test_geom, expected_error, expected_value):
+    def test_query_empty_geometry(self, test_geom, expected_value):
         """Tests the `query` method with empty geometry.
         """
-        if expected_error is not None:
-            with pytest.raises(expected_error):
-                self.df.sindex.query(test_geom)
-        else:
-            # no error expected
-            res = self.df.sindex.query(test_geom)
-            assert_array_equal(res, expected_value)
+        res = self.df.sindex.query(test_geom)
+        assert_array_equal(res, expected_value)
 
     @pytest.mark.parametrize(
         "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
@@ -325,49 +320,34 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
-        "test_geoms, expected_error, expected_value",
+        "test_geoms, expected_value",
         [
             # single empty geometry
-            ([GeometryCollection()], None, [[], []]),
+            ([GeometryCollection()], [[], []]),
             # None should be skipped
-            ([GeometryCollection(), None], None, [[], []]),
-            ([None], None, [[], []]),
-            ([None, box(-0.5, -0.5, 0.5, 0.5), None], None, [[1], [0]]),
+            ([GeometryCollection(), None], [[], []]),
+            ([None], [[], []]),
+            ([None, box(-0.5, -0.5, 0.5, 0.5), None], [[1], [0]]),
         ],
     )
-    def test_query_bulk_empty_geometry(
-        self, test_geoms, expected_error, expected_value
-    ):
+    def test_query_bulk_empty_geometry(self, test_geoms, expected_value):
         """Tests the `query_bulk` method with an empty geometry.
         """
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
         # note: for this test, test_geoms (note plural) is a list already
         test_geoms = geopandas.GeoSeries(test_geoms, index=range(len(test_geoms)))
-        if expected_error is not None:
-            with pytest.raises(expected_error):
-                self.df.sindex.query_bulk(test_geoms)
-        else:
-            # no error expected
-            res = self.df.sindex.query_bulk(test_geoms)
-            assert_array_equal(res, expected_value)
+        res = self.df.sindex.query_bulk(test_geoms)
+        assert_array_equal(res, expected_value)
 
     @pytest.mark.parametrize(
-        "test_array, expected_error, expected_value",
-        ((np.array([], dtype=object), None, [[], []]),),
+        "test_array, expected_value", ((np.array([], dtype=object), [[], []]),),
     )
-    def test_query_bulk_empty_input_array(
-        self, test_array, expected_error, expected_value
-    ):
+    def test_query_bulk_empty_input_array(self, test_array, expected_value):
         """Tests the `query_bulk` method with an empty input array.
         """
-        if expected_error is not None:
-            with pytest.raises(expected_error):
-                self.df.sindex.query_bulk(test_array)
-        else:
-            # no error expected
-            res = self.df.sindex.query_bulk(test_array)
-            assert_array_equal(res, expected_value)
+        res = self.df.sindex.query_bulk(test_array)
+        assert_array_equal(res, expected_value)
 
     @pytest.mark.parametrize(
         "test_array, expected_error, expected_value",
@@ -378,13 +358,8 @@ class TestPygeosInterface:
     ):
         """Tests the `query_bulk` method with invalid input for the `geometry` parameter.
         """
-        if expected_error is not None:
-            with pytest.raises(expected_error):
-                self.df.sindex.query_bulk(test_array)
-        else:
-            # no error expected
-            res = self.df.sindex.query_bulk(test_array)
-            assert_array_equal(res, expected_value)
+        with pytest.raises(expected_error):
+            self.df.sindex.query_bulk(test_array)
 
     @pytest.mark.parametrize(
         "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),

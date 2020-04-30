@@ -108,20 +108,23 @@ if compat.HAS_RTREE:
             ----------
             geometry : shapely geometry
                 A single shapely geometry to query against the spatial index.
-            predicate : {None, 'intersects', 'within', 'contains', 'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is tested using the predicate function against each
-                item in the tree whose extent intersects the envelope of the input geometry:
-                predicate(input_geometry, tree_geometry).  If possible, prepared geometries are used to help
+            predicate : {None, 'intersects', 'within', 'contains', \
+                'overlaps', 'crosses', 'touches'}, optional
+                If predicate is provided, the input geometry is
+                tested using the predicate function against each item
+                in the tree whose extent intersects the envelope of the
+                input geometry: predicate(input_geometry, tree_geometry).
+                If possible, prepared geometries are used to help
                 speed up the predicate operation.
             sort : bool, default False
-                If True, the results will be sorted in ascending order. If False, results are
-                often sorted but there is no guarantee.
+                If True, the results will be sorted in ascending order.
+                If False, results are often sorted but there is no guarantee.
 
             Returns
             -------
             matches : ndarray of shape (n_results, )
                 Integer indices for matching geometries from the spatial index.
-            """  # noqa: E501
+            """
 
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
@@ -155,38 +158,37 @@ if compat.HAS_RTREE:
                 return np.array([], dtype=np.intp)
 
             # Check predicate
-            # When possible, we want to use cached prepared geometries
-            # from the tree to compare tree_geom.predicate(input_geom)
-            # If this is not possible, try prep the input geometry
-            # and compare that against results from the tree.
-            # Since only certain predicates support prepared geometries,
-            # the fallback is to check non-prepared geometries.
-            if predicate in ("intersects", "within"):
-                # For these two predicates, we compare tree_geom.predicate(input_geom)
+            # This is checked as input_geometry.predicate(tree_geometry)
+            # When possible, we use prepared geometries.
+            # Prepared geometries only support "intersects" and "contains"
+            # For the special case of "within", we are able to flip the
+            # comparison and check if tree_geometry.contains(input_geometry)
+            # to still take advantage of prepared geometries.
+            if predicate == "within":
+                # To use prepared geometries for within,
+                # we compare tree_geom.contains(input_geom)
+                # Since we are preping the tree geometries,
+                # we cache them for multiple comparisons.
                 res = []
-                if predicate == "within":
-                    # The user asked for input_geom.within(tree_geom)
-                    # but since within and contains are inverse,
-                    # we can do the same test as tree_geometry.contains(input_geometry)
-                    # to use cached prepared tree geometry
-                    predicate = "contains"
-                for i in tree_idx:
-                    if self._prepared_geometries[i] is None:
+                for index_in_tree in tree_idx:
+                    if self._prepared_geometries[index_in_tree] is None:
                         # if not already prepared, prepare and cache
-                        self._prepared_geometries[i] = prep(self._geometries[i])
-                    if getattr(self._prepared_geometries[i], predicate)(geometry):
-                        res.append(i)
+                        self._prepared_geometries[index_in_tree] = prep(
+                            self._geometries[index_in_tree]
+                        )
+                    if self._prepared_geometries[index_in_tree].contains(geometry):
+                        res.append(index_in_tree)
                 tree_idx = res
             elif predicate is not None:
                 # For the remaining predicates,
                 # we compare input_geom.predicate(tree_geom)
-                if len(tree_idx) > 1 and predicate == "contains":
+                if predicate in ("contains", "intersects"):
                     # prepare this input geometry
                     geometry = prep(geometry)
                 tree_idx = [
-                    i
-                    for i in tree_idx
-                    if getattr(geometry, predicate)(self._geometries[i])
+                    index_in_tree
+                    for index_in_tree in tree_idx
+                    if getattr(geometry, predicate)(self._geometries[index_in_tree])
                 ]
 
             # sort if requested
@@ -209,11 +211,13 @@ if compat.HAS_RTREE:
             geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
                 Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
                 or a numpy array of PyGEOS geometries.
-            predicate : {None, 'intersects', 'within', 'contains', 'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometries are tested using the predicate function against each
-                item in the tree whose extent intersects the envelope of the each input geometry:
-                predicate(input_geometry, tree_geometry).  If possible, prepared geometries are used to help
-                speed up the predicate operation.
+            predicate : {None, 'intersects', 'within', 'contains', 'overlaps', \
+                'crosses', 'touches'}, optional
+                If predicate is provided, the input geometries are tested using
+                the predicate function against each item in the tree whose extent
+                intersects the envelope of the each input geometry:
+                predicate(input_geometry, tree_geometry).  If possible, prepared
+                geometries are used to help speed up the predicate operation.
             sort : bool, default False
                 If True, results sorted lexicographically using
                 geometry's indexes as the primary key and the sindex's indexes as the
@@ -224,7 +228,7 @@ if compat.HAS_RTREE:
             ndarray with shape (2, n)
                 The first subarray contains input geometry integer indexes.
                 The second subarray contains tree geometry integer indexes.
-            """  # noqa: E501
+            """
             # Iterates over geometry, applying func.
             tree_index = []
             input_geometry_index = []
@@ -286,9 +290,11 @@ if compat.HAS_PYGEOS:
             geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
                 Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
                 or a numpy array of PyGEOS geometries.
-            predicate : {None, 'intersects', 'within', 'contains', 'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is tested using the predicate function against each
-                item in the index whose extent intersects the envelope of the input geometry:
+            predicate : {None, 'intersects', 'within', 'contains', \
+                'overlaps', 'crosses', 'touches'}, optional
+                If predicate is provided, the input geometry is tested
+                using the predicate function against each item in the
+                index whose extent intersects the envelope of the input geometry:
                 predicate(input_geometry, tree_geometry).
             sort : bool, default False
                 If True, results sorted lexicographically using
@@ -303,7 +309,7 @@ if compat.HAS_PYGEOS:
             See also
             --------
             See PyGEOS.strtree documentation for more information.
-            """  # noqa: E501
+            """
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -336,13 +342,15 @@ if compat.HAS_PYGEOS:
             Parameters
             ----------
             geometry : single PyGEOS geometry
-            predicate : {None, 'intersects', 'within', 'contains', 'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is tested using the predicate function against each
-                item in the tree whose extent intersects the envelope of the input geometry:
-                predicate(input_geometry, tree_geometry).
+            predicate : {None, 'intersects', 'within', 'contains', \
+                'overlaps', 'crosses', 'touches'}, optional
+                If predicate is provided, the input geometry is tested
+                using the predicate function against each item in the
+                tree whose extent intersects the envelope of the input
+                geometry: predicate(input_geometry, tree_geometry).
             sort : bool, default False
-                If True, the results will be sorted in ascending order. If False, results are
-                often sorted but there is no guarantee.
+                If True, the results will be sorted in ascending order.
+                If False, results are often sorted but there is no guarantee.
 
             Returns
             -------
@@ -351,7 +359,7 @@ if compat.HAS_PYGEOS:
             See also
             --------
             See PyGEOS.strtree documentation for more information.
-            """  # noqa: E501
+            """
 
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
