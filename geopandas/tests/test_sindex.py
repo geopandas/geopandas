@@ -1,6 +1,13 @@
 import sys
 
-from shapely.geometry import Point, Polygon, MultiPolygon, box, GeometryCollection
+from shapely.geometry import (
+    Point,
+    Polygon,
+    MultiPolygon,
+    box,
+    GeometryCollection,
+    LineString,
+)
 from numpy.testing import assert_array_equal
 
 import geopandas
@@ -178,35 +185,41 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
-            (None, (-1, -1, -0.5, -0.5), []),
-            (None, (-0.5, -0.5, 0.5, 0.5), [0]),
-            (None, (0, 0, 1, 1), [0, 1]),
-            ("intersects", (-1, -1, -0.5, -0.5), []),
-            ("intersects", (-0.5, -0.5, 0.5, 0.5), [0]),
-            ("intersects", (0, 0, 1, 1), [0, 1]),
-            ("within", (0.25, 0.28, 0.75, 0.75), []),  # does not intersect
-            ("within", (0, 0, 10, 10), []),  # intersects but is not within
-            ("within", (11, 11, 12, 12), [5]),  # intersects and is within
-            ("contains", (0, 0, 1, 1), []),  # intersects but does not contain
-            ("contains", (0, 0, 1.001, 1.001), [1]),  # intersects and contains
-            ("contains", (0.5, 0.5, 1.5, 1.5), [1]),  # intersects and contains
-            ("contains", (-1, -1, 2, 2), [0, 1]),  # intersects and contains multiple
+            (None, box(-1, -1, -0.5, -0.5), []),
+            (None, box(-0.5, -0.5, 0.5, 0.5), [0]),
+            (None, box(0, 0, 1, 1), [0, 1]),
+            # bbox intersects but not geometry
+            (None, LineString([(0, 1), (1, 0)]), [0, 1]),
+            ("intersects", box(-1, -1, -0.5, -0.5), []),
+            ("intersects", box(-0.5, -0.5, 0.5, 0.5), [0]),
+            ("intersects", box(0, 0, 1, 1), [0, 1]),
+            # bbox intersects but not geometry
+            ("intersects", LineString([(0, 1), (1, 0)]), []),
+            ("within", box(0.25, 0.28, 0.75, 0.75), []),  # does not intersect
+            ("within", box(0, 0, 10, 10), []),  # intersects but is not within
+            ("within", box(11, 11, 12, 12), [5]),  # intersects and is within
+            ("within", LineString([(0, 1), (1, 0)]), []),  # intersects but not within
+            ("contains", box(0, 0, 1, 1), []),  # intersects but does not contain
+            ("contains", box(0, 0, 1.001, 1.001), [1]),  # intersects and contains
+            ("contains", box(0.5, 0.5, 1.5, 1.5), [1]),  # intersects and contains
+            ("contains", box(-1, -1, 2, 2), [0, 1]),  # intersects and contains multiple
+            (
+                "contains",
+                LineString([(0, 1), (1, 0)]),
+                [],
+            ),  # intersects but not contained
         ),
     )
     def test_query(self, predicate, test_geom, expected):
         """Tests the `query` method with valid inputs and valid predicates."""
-        test_geom = box(*test_geom)
         res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
-    @pytest.mark.parametrize(
-        "test_geom, expected_error", [("notavalidgeom", TypeError)],
-    )
-    def test_query_invalid_geometry(self, test_geom, expected_error):
+    def test_query_invalid_geometry(self):
         """Tests the `query` method with invalid geometry.
         """
-        with pytest.raises(expected_error):
-            self.df.sindex.query(test_geom)
+        with pytest.raises(TypeError):
+            self.df.sindex.query("notavalidgeom")
 
     @pytest.mark.parametrize(
         "test_geom, expected_value",
@@ -224,15 +237,12 @@ class TestPygeosInterface:
         res = self.df.sindex.query(test_geom)
         assert_array_equal(res, expected_value)
 
-    @pytest.mark.parametrize(
-        "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
-    )
-    def test_query_invalid_predicate(self, predicate, test_geom, expected):
+    def test_query_invalid_predicate(self):
         """Tests the `query` method with invalid predicates.
         """
-        test_geom = box(*test_geom)
+        test_geom = box(-1, -1, -0.5, -0.5)
         with pytest.raises(ValueError):
-            self.df.sindex.query(test_geom, predicate=predicate)
+            self.df.sindex.query(test_geom, predicate="test")
 
     @pytest.mark.parametrize(
         "sort, expected",
@@ -280,30 +290,38 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
-            (None, (-1, -1, -0.5, -0.5), [[], []]),
-            (None, (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
-            (None, (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
-            ("intersects", (-0.5, -0.5, 0.5, 0.5), [[0], [0]]),
-            ("intersects", (0, 0, 1, 1), [[0, 0], [0, 1]]),
-            ("within", (0.25, 0.28, 0.75, 0.75), [[], []]),  # does not intersect
-            ("within", (0, 0, 10, 10), [[], []]),  # intersects but is not within
-            ("within", (11, 11, 12, 12), [[0], [5]]),  # intersects and is within
-            ("contains", (0, 0, 1, 1), [[], []]),  # intersects but does not contain
+            (None, [(-1, -1, -0.5, -0.5)], [[], []]),
+            (None, [(-0.5, -0.5, 0.5, 0.5)], [[0], [0]]),
+            (None, [(0, 0, 1, 1)], [[0, 0], [0, 1]]),
+            ("intersects", [(-1, -1, -0.5, -0.5)], [[], []]),
+            ("intersects", [(-0.5, -0.5, 0.5, 0.5)], [[0], [0]]),
+            ("intersects", [(0, 0, 1, 1)], [[0, 0], [0, 1]]),
+            # only second geom intersects
+            ("intersects", [(-1, -1, -0.5, -0.5), (-0.5, -0.5, 0.5, 0.5)], [[1], [0]]),
+            # both geoms intersect
+            (
+                "intersects",
+                [(-1, -1, 1, 1), (-0.5, -0.5, 0.5, 0.5)],
+                [[0, 0, 1], [0, 1, 0]],
+            ),
+            ("within", [(0.25, 0.28, 0.75, 0.75)], [[], []]),  # does not intersect
+            ("within", [(0, 0, 10, 10)], [[], []]),  # intersects but is not within
+            ("within", [(11, 11, 12, 12)], [[0], [5]]),  # intersects and is within
+            ("contains", [(0, 0, 1, 1)], [[], []]),  # intersects but does not contain
             (
                 "contains",
-                (0, 0, 1.001, 1.001),
+                [(0, 0, 1.001, 1.001)],
                 [[0], [1]],
             ),  # intersects 2 and contains 1
             (
                 "contains",
-                (0.5, 0.5, 1.001, 1.001),
+                [(0.5, 0.5, 1.001, 1.001)],
                 [[0], [1]],
             ),  # intersects 1 and contains 1
-            ("contains", (0.5, 0.5, 1.5, 1.5), [[0], [1]]),  # intersects and contains
+            ("contains", [(0.5, 0.5, 1.5, 1.5)], [[0], [1]]),  # intersects and contains
             (
                 "contains",
-                (-1, -1, 2, 2),
+                [(-1, -1, 2, 2)],
                 [[0, 0], [0, 1]],
             ),  # intersects and contains multiple
         ),
@@ -314,8 +332,9 @@ class TestPygeosInterface:
         """
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
-
+        test_geom = geopandas.GeoSeries(
+            [box(*geom) for geom in test_geom], index=range(len(test_geom))
+        )
         res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
@@ -340,41 +359,40 @@ class TestPygeosInterface:
         res = self.df.sindex.query_bulk(test_geoms)
         assert_array_equal(res, expected_value)
 
-    @pytest.mark.parametrize(
-        "test_array, expected_value", ((np.array([], dtype=object), [[], []]),),
-    )
-    def test_query_bulk_empty_input_array(self, test_array, expected_value):
+    def test_query_bulk_empty_input_array(self):
         """Tests the `query_bulk` method with an empty input array.
         """
+        test_array = np.array([], dtype=object)
+        expected_value = [[], []]
         res = self.df.sindex.query_bulk(test_array)
         assert_array_equal(res, expected_value)
 
-    @pytest.mark.parametrize(
-        "test_array, expected_error, expected_value",
-        (("notanarray", TypeError, None),),
-    )
-    def test_query_bulk_invalid_input_geometry(
-        self, test_array, expected_error, expected_value
-    ):
+    def test_query_bulk_invalid_input_geometry(self):
         """Tests the `query_bulk` method with invalid input for the `geometry` parameter.
         """
-        with pytest.raises(expected_error):
+        test_array = "notanarray"
+        with pytest.raises(TypeError):
             self.df.sindex.query_bulk(test_array)
 
-    @pytest.mark.parametrize(
-        "predicate, test_geom, expected", (("test", (-1, -1, -0.5, -0.5), [[], []]),),
-    )
-    def test_query_bulk_invalid_predicate(self, predicate, test_geom, expected):
+    def test_query_bulk_invalid_predicate(self):
         """Tests the `query_bulk` method with invalid predicates.
         """
+        test_geom_bounds = (-1, -1, -0.5, -0.5)
+        test_predicate = "test"
+
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
+        test_geom = geopandas.GeoSeries([box(*test_geom_bounds)], index=["0"])
+
         with pytest.raises(ValueError):
-            self.df.sindex.query_bulk(test_geom.geometry, predicate=predicate)
+            self.df.sindex.query_bulk(test_geom.geometry, predicate=test_predicate)
 
     @pytest.mark.parametrize(
-        "predicate, test_geom, expected", ((None, (-1, -1, -0.5, -0.5), [[], []]),),
+        "predicate, test_geom, expected",
+        (
+            (None, (-1, -1, -0.5, -0.5), [[], []]),
+            ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
+        ),
     )
     def test_query_bulk_input_type(self, predicate, test_geom, expected):
         """Tests that query_bulk can accept a GeoSeries, GeometryArray or
