@@ -172,6 +172,23 @@ def df_linear_ring():
     return df
 
 
+@pytest.fixture
+def df_3D_geoms():
+    from shapely.geometry import Point, LineString, Polygon
+
+    df = geopandas.GeoDataFrame(
+        {
+            "geometry": [
+                LineString([(0, 0, 0), (1, 1, 1)]),
+                Polygon([(0, 0, 0), (1, 1, 1), (0, 1, 1)]),
+                Point(0, 1, 2),
+            ]
+        },
+        crs="epsg:4326",
+    )
+    return df
+
+
 class TestIO:
     def test_read_postgis_default(self, connection_postgis, df_nybb):
         con = connection_postgis
@@ -456,7 +473,7 @@ class TestIO:
 
     def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
         """
-        Tests that writing a LinearRing.
+        Tests writing a LinearRing works.
         """
         engine = engine_postgis
 
@@ -558,3 +575,18 @@ class TestIO:
 
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
+
+    def test_write_postgis_3D_geometries(self, engine_postgis, df_3D_geoms):
+        """
+        Tests writing a geometries with 3 dimensions works.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(df_3D_geoms, con=engine, name=table, if_exists="replace")
+
+        # Check that all geometries have 3 dimensions
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        assert list(df.geometry.has_z) == [True, True, True]

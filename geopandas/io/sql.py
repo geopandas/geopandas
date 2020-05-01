@@ -119,9 +119,18 @@ def _get_geometry_type(gdf):
         - a mix of Points and LineStrings in GeoSeries
         - geometry is of type GeometryCollection,
           such as GeometryCollection([Point, LineStrings])
+     - if any of the geometries has Z-coordinate, all records will
+       be written with dimension=3.
      """
     geom_types = list(gdf.geometry.geom_type.unique())
     has_curve = False
+
+    # Check for 3D-coordinates
+    dimension = 2
+    management = False
+    if any(gdf.geometry.has_z):
+        dimension = 3
+        management = True
 
     for gt in geom_types:
         if gt is None:
@@ -140,7 +149,7 @@ def _get_geometry_type(gdf):
     else:
         target_geom_type = "GEOMETRY"
 
-    return target_geom_type, has_curve
+    return target_geom_type, has_curve, dimension, management
 
 
 def _get_srid_from_crs(gdf):
@@ -279,14 +288,27 @@ def write_postgis(
     # Get srid
     srid = _get_srid_from_crs(gdf)
 
-    # Get geometry type and info whether data contains LinearRing
-    geometry_type, has_curve = _get_geometry_type(gdf)
+    # Get geometry type and info whether data contains LinearRing.
+    # Also check for possible 3D geometries.
+    geometry_type, has_curve, dimension, management = _get_geometry_type(gdf)
 
     # Build dtype with Geometry
     if dtype is not None:
-        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+        dtype[geom_name] = Geometry(
+            geometry_type=geometry_type,
+            srid=srid,
+            dimension=dimension,
+            management=management,
+        )
     else:
-        dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
+        dtype = {
+            geom_name: Geometry(
+                geometry_type=geometry_type,
+                srid=srid,
+                dimension=dimension,
+                management=management,
+            )
+        }
 
     # Convert LinearRing geometries to LineString
     if has_curve:
