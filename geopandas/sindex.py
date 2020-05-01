@@ -166,7 +166,7 @@ if compat.HAS_RTREE:
             if predicate == "within":
                 # To use prepared geometries for within,
                 # we compare tree_geom.contains(input_geom)
-                # Since we are preping the tree geometries,
+                # Since we are preparing the tree geometries,
                 # we cache them for multiple comparisons.
                 res = []
                 for index_in_tree in tree_idx:
