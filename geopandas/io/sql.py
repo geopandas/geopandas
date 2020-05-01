@@ -263,7 +263,15 @@ def write_postgis(
     try:
         from geoalchemy2 import Geometry
     except ImportError:
-        raise ImportError("to_postgis() requires geoalchemy2 package. ")
+        raise ImportError("'to_postgis()' requires geoalchemy2 package. ")
+
+    if not compat.SHAPELY_GE_17:
+        raise ImportError(
+            "'to_postgis()' requires newer version of Shapely "
+            "(>= '1.7.0').\nYou can update the library using "
+            "'pip install shapely --upgrade' or using "
+            "'conda update shapely' if using conda package manager."
+        )
 
     gdf = gdf.copy()
     geom_name = gdf.geometry.name
