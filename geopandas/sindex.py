@@ -43,7 +43,6 @@ if compat.HAS_RTREE:
 
     import rtree.index  # noqa
     from rtree.core import RTreeError  # noqa
-    from shapely.geometry import box  # noqa
     from shapely.prepared import prep  # noqa
 
     class SpatialIndex(rtree.index.Index):
@@ -109,7 +108,7 @@ if compat.HAS_RTREE:
             geometry : shapely geometry
                 A single shapely geometry to query against the spatial index.
             predicate : {None, 'intersects', 'within', 'contains', \
-                'overlaps', 'crosses', 'touches'}, optional
+'overlaps', 'crosses', 'touches'}, optional
                 If predicate is provided, the input geometry is
                 tested using the predicate function against each item
                 in the tree whose extent intersects the envelope of the
@@ -212,7 +211,7 @@ if compat.HAS_RTREE:
                 Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
                 or a numpy array of PyGEOS geometries.
             predicate : {None, 'intersects', 'within', 'contains', 'overlaps', \
-                'crosses', 'touches'}, optional
+'crosses', 'touches'}, optional
                 If predicate is provided, the input geometries are tested using
                 the predicate function against each item in the tree whose extent
                 intersects the envelope of the each input geometry:
@@ -253,9 +252,8 @@ if compat.HAS_PYGEOS:
     from . import geoseries  # noqa
     from .array import GeometryArray, _shapely_to_geom  # noqa
     import pygeos  # noqa
-    from pygeos import STRtree, box, points, Geometry  # noqa
 
-    class PyGEOSSTRTreeIndex(STRtree):
+    class PyGEOSSTRTreeIndex(pygeos.STRtree):
         """A simple wrapper around pygeos's STRTree.
 
 
@@ -279,6 +277,52 @@ if compat.HAS_PYGEOS:
             self.objects = self.ids = original_indexes[~geometry.values.is_empty]
             super().__init__(non_empty.values.data)
 
+        def query(self, geometry, predicate=None, sort=False):
+            """Wrapper for pygeos.query.
+
+            This also ensures a deterministic (sorted) order for the results.
+
+            Parameters
+            ----------
+            geometry : single PyGEOS geometry
+            predicate : {None, 'intersects', 'within', 'contains', \
+'overlaps', 'crosses', 'touches'}, optional
+                If predicate is provided, the input geometry is tested
+                using the predicate function against each item in the
+                tree whose extent intersects the envelope of the input
+                geometry: predicate(input_geometry, tree_geometry).
+            sort : bool, default False
+                If True, the results will be sorted in ascending order.
+                If False, results are often sorted but there is no guarantee.
+
+            Returns
+            -------
+            matches : ndarray of shape (n_results, )
+                Integer indices for matching geometries from the spatial index.
+
+            See also
+            --------
+            See PyGEOS.strtree documentation for more information.
+            """
+
+            if predicate not in self.valid_query_predicates:
+                raise ValueError(
+                    "Got `predicate` = `{}`; ".format(predicate)
+                    + "`predicate` must be one of {}".format(
+                        self.valid_query_predicates
+                    )
+                )
+
+            if isinstance(geometry, BaseGeometry):
+                geometry = _shapely_to_geom(geometry)
+
+            matches = super().query(geometry=geometry, predicate=predicate)
+
+            if sort:
+                return np.sort(matches)
+
+            return matches
+
         def query_bulk(self, geometry, predicate=None, sort=False):
             """Wrapper to expose underlaying pygeos objects to pygeos.query_bulk.
 
@@ -291,7 +335,7 @@ if compat.HAS_PYGEOS:
                 Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
                 or a numpy array of PyGEOS geometries.
             predicate : {None, 'intersects', 'within', 'contains', \
-                'overlaps', 'crosses', 'touches'}, optional
+'overlaps', 'crosses', 'touches'}, optional
                 If predicate is provided, the input geometry is tested
                 using the predicate function against each item in the
                 index whose extent intersects the envelope of the input geometry:
@@ -306,6 +350,7 @@ if compat.HAS_PYGEOS:
             ndarray with shape (2, n)
                 The first subarray contains input geometry integer indexes.
                 The second subarray contains tree geometry integer indexes.
+
             See also
             --------
             See PyGEOS.strtree documentation for more information.
@@ -333,51 +378,6 @@ if compat.HAS_PYGEOS:
                 return np.vstack((geo_res[indexing], tree_res[indexing]))
 
             return res
-
-        def query(self, geometry, predicate=None, sort=False):
-            """Wrapper for pygeos.query.
-
-            This also ensures a deterministic (sorted) order for the results.
-
-            Parameters
-            ----------
-            geometry : single PyGEOS geometry
-            predicate : {None, 'intersects', 'within', 'contains', \
-                'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is tested
-                using the predicate function against each item in the
-                tree whose extent intersects the envelope of the input
-                geometry: predicate(input_geometry, tree_geometry).
-            sort : bool, default False
-                If True, the results will be sorted in ascending order.
-                If False, results are often sorted but there is no guarantee.
-
-            Returns
-            -------
-            matches : ndarray of shape (n_results, )
-                Integer indices for matching geometries from the spatial index.
-            See also
-            --------
-            See PyGEOS.strtree documentation for more information.
-            """
-
-            if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`; ".format(predicate)
-                    + "`predicate` must be one of {}".format(
-                        self.valid_query_predicates
-                    )
-                )
-
-            if isinstance(geometry, BaseGeometry):
-                geometry = _shapely_to_geom(geometry)
-
-            matches = super().query(geometry=geometry, predicate=predicate)
-
-            if sort:
-                return np.sort(matches)
-
-            return matches
 
         def intersection(self, coordinates, objects=False):
             """Wrapper for pygeos.query that uses the RTree API.
@@ -407,9 +407,9 @@ if compat.HAS_PYGEOS:
 
             # need to convert tuple of bounds to a geometry object
             if len(coordinates) == 4:
-                indexes = super().query(box(*coordinates))
+                indexes = super().query(pygeos.box(*coordinates))
             elif len(coordinates) == 2:
-                indexes = super().query(points(*coordinates))
+                indexes = super().query(pygeos.points(*coordinates))
             else:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "

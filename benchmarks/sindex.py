@@ -1,38 +1,24 @@
-import random
-
-from geopandas import GeoDataFrame, GeoSeries
+from geopandas import read_file, datasets
 from geopandas.sindex import VALID_QUERY_PREDICATES
-from shapely.geometry import Point, Polygon
-import numpy as np
 
 
 class Bench:
     def setup(self, *args):
-        triangles = GeoSeries(
-            [
-                Polygon([(random.random(), random.random()) for _ in range(3)])
-                for _ in range(100)
-            ]
-        )
-
-        points = GeoSeries(
-            [
-                Point(x, y)
-                for x, y in zip(
-                    np.random.random_sample(1000), np.random.random_sample(1000)
-                )
-            ]
-        )
-
-        df1 = GeoDataFrame(
-            {"val1": np.random.randn(len(triangles)), "geometry": triangles}
-        )
-        df2 = GeoDataFrame({"val1": np.random.randn(len(points)), "geometry": points})
+        world = read_file(datasets.get_path("naturalearth_lowres"))
+        capitals = read_file(datasets.get_path("naturalearth_cities"))
+        countries = world.to_crs("epsg:3395")[["geometry"]]
+        capitals = capitals.to_crs("epsg:3395")[["geometry"]]
 
         # save dfs
-        self.df, self.df2, self.data = df1, df2, df2.geometry.values.data
+        self.df, self.df2, self.data = (
+            capitals,
+            countries,
+            countries.geometry.values.data,
+        )
         # cache bounds so that bound creation is not counted in benchmarks
-        self.bounds = [point.bounds for point in points]
+        self.bounds = [c.bounds for c in capitals.geometry] + [
+            c.bounds for c in countries.geometry
+        ]
 
     def time_sindex_index_creation(self, *args):
         """Time creation of spatial index.
@@ -58,34 +44,28 @@ class BenchQuery:
     params = [*VALID_QUERY_PREDICATES]
 
     def setup(self, *args):
-        triangles = GeoSeries(
-            [
-                Polygon([(random.random(), random.random()) for _ in range(3)])
-                for _ in range(100)
-            ]
+        world = read_file(datasets.get_path("naturalearth_lowres"))
+        capitals = read_file(datasets.get_path("naturalearth_cities"))
+        countries = world.to_crs("epsg:3395")
+        countries = countries[["geometry"]]
+        capitals = capitals.to_crs("epsg:3395")
+        capitals = capitals[["geometry"]]
+
+        # save dfs
+        self.df, self.df2, self.data = (
+            countries,
+            capitals,
+            capitals.geometry.values.data,
         )
+        # cache bounds so that bound creation is not counted in benchmarks
+        self.bounds = [c.bounds for c in capitals.geometry] + [
+            c.bounds for c in countries.geometry
+        ]
 
-        points = GeoSeries(
-            [
-                Point(x, y)
-                for x, y in zip(
-                    np.random.random_sample(1000), np.random.random_sample(1000)
-                )
-            ]
-        )
-
-        df1 = GeoDataFrame(
-            {"val1": np.random.randn(len(triangles)), "geometry": triangles}
-        )
-        df2 = GeoDataFrame({"val1": np.random.randn(len(points)), "geometry": points})
-
-        self.df, self.df2, self.data = df1, df2, df2.geometry.values.data
-        self.bounds = [point.bounds for point in points]
-
-    def time_bulk_query_data(self, predicate):
+    def time_query_bulk_data(self, predicate):
         self.df.sindex.query_bulk(self.data, predicate=predicate)
 
-    def time_bulk_query(self, predicate):
+    def time_query_bulk(self, predicate):
         self.df.sindex.query_bulk(self.df2.geometry, predicate=predicate)
 
     def time_query(self, predicate):
