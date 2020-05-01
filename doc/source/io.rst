@@ -116,6 +116,31 @@ or a slice object.
         rows=slice(10, 20),
     )
 
+Field/Column Filters
+^^^^^^^^^^^^^^^^^^^^
+
+Load in a subset of fields from the file:
+
+.. note:: Requires Fiona 1.8+
+
+.. code-block:: python
+
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_fields=["iso_a3", "gdp_md_est"],
+    )
+
+Skip loading geometry from the file:
+
+.. note:: Requires Fiona 1.8+
+.. note:: Returns :obj:`pandas.DataFrame`
+
+.. code-block:: python
+
+    pdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_geometry=True,
+    )
 
 
 Writing Spatial Data

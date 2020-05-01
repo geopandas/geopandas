@@ -11,17 +11,11 @@ from shapely.ops import cascaded_union
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
+from .sindex import get_sindex_class, has_sindex
 
-try:
-    from rtree.core import RTreeError
-
-    HAS_SINDEX = True
-except ImportError:
-
-    class RTreeError(Exception):
-        pass
-
-    HAS_SINDEX = False
+# for backwards compat
+# this will be static (will NOT follow USE_PYGEOS changes)
+HAS_SINDEX = has_sindex()
 
 
 def is_geometry_type(data):
@@ -101,23 +95,11 @@ class GeoPandasBase(object):
     _sindex_generated = False
 
     def _generate_sindex(self):
-        if not HAS_SINDEX:
-            warn("Cannot generate spatial index: Missing package `rtree`.")
-        else:
-            from geopandas.sindex import SpatialIndex
-
-            stream = (
-                (i, item.bounds, idx)
-                for i, (idx, item) in enumerate(self.geometry.iteritems())
-                if pd.notnull(item) and not item.is_empty
-            )
-            try:
-                self._sindex = SpatialIndex(stream)
-            # What we really want here is an empty generator error, or
-            # for the bulk loader to log that the generator was empty
-            # and move on. See https://github.com/Toblerity/rtree/issues/20.
-            except RTreeError:
-                pass
+        sindex_cls = get_sindex_class()
+        if sindex_cls is not None:
+            _sindex = sindex_cls(self.geometry)
+            if not _sindex.is_empty:
+                self._sindex = _sindex
         self._sindex_generated = True
 
     def _invalidate_sindex(self):

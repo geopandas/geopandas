@@ -92,9 +92,9 @@ as well::
     When using pip to install GeoPandas, you need to make sure that all dependencies are
     installed correctly.
 
-    - `shapely`_ and `fiona`_ provide binary wheels with the
-      dependencies included for Mac and Linux, but not for Windows.
-    - `pyproj`_ provides binary wheels with depencies included
+    - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
+      but not for Windows.
+    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
     - `rtree`_ does not provide wheels.
     - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`

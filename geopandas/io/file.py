@@ -44,23 +44,23 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Parameters
     ----------
-    filename: str, path object or file-like object
+    filename : str, path object or file-like object
         Either the absolute or relative path to the file or URL to
         be opened, or any object with a read() method (such as an open file
         or StringIO)
-    bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
+    bbox : tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
         or GeoDataFrame. Cannot be used with mask.
-    mask: dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
+    mask : dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox.
-    rows: int or slice, default None
+    rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
-    **kwargs:
+    **kwargs :
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
         possible keywords, type:
@@ -72,7 +72,8 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Returns
     -------
-    :obj:`geopandas.GeoDataFrame`
+    :obj:`geopandas.GeoDataFrame` or :obj:`pandas.DataFrame` :
+        If `ignore_geometry=True` a :obj:`pandas.DataFrame` will be returned.
 
     Notes
     -----
@@ -128,11 +129,16 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
+            # get list of columns
+            columns = list(features.schema["properties"])
+            if kwargs.get("ignore_geometry", False):
+                return pd.DataFrame(
+                    [record["properties"] for record in f_filt], columns=columns
+                )
 
-            columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
-
-    return gdf
+            return GeoDataFrame.from_features(
+                f_filt, crs=crs, columns=columns + ["geometry"]
+            )
 
 
 def to_file(

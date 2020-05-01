@@ -18,10 +18,19 @@ PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
 # Shapely / PyGEOS compat
 # -----------------------------------------------------------------------------
 
+
 SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
 
+HAS_PYGEOS = None
 USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
+
+try:
+    import pygeos  # noqa
+
+    HAS_PYGEOS = True
+except ImportError:
+    HAS_PYGEOS = False
 
 
 def set_use_pygeos(val=None):
@@ -41,12 +50,8 @@ def set_use_pygeos(val=None):
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-            try:
-                import pygeos  # noqa
 
-                USE_PYGEOS = True
-            except ImportError:
-                USE_PYGEOS = False
+            USE_PYGEOS = HAS_PYGEOS
 
             env_use_pygeos = os.getenv("USE_PYGEOS", None)
             if env_use_pygeos is not None:
@@ -93,3 +98,16 @@ def set_use_pygeos(val=None):
 
 
 set_use_pygeos()
+
+# -----------------------------------------------------------------------------
+# RTree compat
+# -----------------------------------------------------------------------------
+
+HAS_RTREE = None
+RTREE_GE_094 = False
+try:
+    import rtree  # noqa
+
+    HAS_RTREE = True
+except ImportError:
+    HAS_RTREE = False

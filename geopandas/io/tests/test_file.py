@@ -414,9 +414,33 @@ def test_read_file_filtered__rows_bbox__polygon(df_nybb):
     assert filtered_df_shape == (1, 5)
 
 
-def read_file_filtered_rows_invalid():
+def test_read_file_filtered_rows_invalid():
     with pytest.raises(TypeError):
         read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
+
+
+@pytest.mark.skipif(
+    LooseVersion(fiona.__version__) < LooseVersion("1.8"),
+    reason="Ignore geometry only available in Fiona 1.8",
+)
+def test_read_file__ignore_geometry():
+    pdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True,
+    )
+    assert "geometry" not in pdf.columns
+    assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    LooseVersion(fiona.__version__) < LooseVersion("1.8"),
+    reason="Ignore fields only available in Fiona 1.8",
+)
+def test_read_file__ignore_all_fields():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
+    )
+    assert gdf.columns.tolist() == ["geometry"]
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
