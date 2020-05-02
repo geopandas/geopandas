@@ -282,7 +282,9 @@ class TestPygeosInterface:
             if not compat.USE_PYGEOS and sort is False:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
-                    "https://github.com/geopandas/geopandas/issues/1337"
+                    "https://github.com/geopandas/geopandas/issues/1337\n"
+                    "Expected:\n {}\n".format(expected)
+                    + "Got:\n {}\n".format(res.tolist())
                 )
             raise e
 
@@ -458,7 +460,9 @@ class TestPygeosInterface:
             if not compat.USE_PYGEOS and sort is False:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
-                    "https://github.com/geopandas/geopandas/issues/1337"
+                    "https://github.com/geopandas/geopandas/issues/1337\n"
+                    "Expected:\n {}\n".format(expected)
+                    + "Got:\n {}\n".format(res.tolist())
                 )
             raise e
 

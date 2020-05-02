@@ -273,9 +273,10 @@ if compat.HAS_PYGEOS:
         def __init__(self, geometry):
             # for compatibility with old RTree implementation, store ids/indexes
             original_indexes = geometry.index
-            non_empty = geometry[~geometry.values.is_empty]
-            self.objects = self.ids = original_indexes[~geometry.values.is_empty]
-            super().__init__(non_empty.values.data)
+            non_empty = ~geometry.values.is_empty
+            self._geometries = geometry[non_empty]
+            self.objects = self.ids = original_indexes[non_empty]
+            super().__init__(self._geometries.values.data)
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
