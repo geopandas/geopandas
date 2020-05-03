@@ -24,41 +24,31 @@ operations in python that would otherwise require a spatial database
 such as PostGIS.
 
 .. toctree::
-  :maxdepth: 1
+   :hidden:
+
+   Home <self>
+
+.. toctree::
+  :maxdepth: 2
   :caption: Getting Started
 
   Installation <install>
   Examples Gallery <gallery/index>
+  User Guide <user_guide>
 
 .. toctree::
-  :maxdepth: 1
-  :caption: User Guide
-
-  Data Structures <data_structures>
-  Reading and Writing Files <io>
-  Indexing and Selecting Data <indexing>
-  Making Maps <mapping>
-  Managing Projections <projections>
-  Geometric Manipulations <geometric_manipulations>
-  Set Operations with overlay <set_operations>
-  Aggregation with dissolve <aggregation_with_dissolve>
-  Merging Data <mergingdata>
-  Geocoding <geocoding>
-  missing_empty
-
-.. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
   :caption: Reference Guide
 
-  Reference to All Attributes and Methods <reference>
+  API reference <reference>
   Changelog <changelog>
 
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
   :caption: Developer
 
-  Contributing to GeoPandas <contributing>
+  Development <contributing>
   Code of Conduct <code_of_conduct>
 
 
