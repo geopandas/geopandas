@@ -408,7 +408,7 @@ class TestIO:
         write_postgis(df_geom_collection, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
-        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
             table=table
         )
         geom_type = engine.execute(sql).fetchone()[0]
@@ -433,25 +433,17 @@ class TestIO:
         )
 
         # Validate geometry type
-        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
             table=table
         )
         res = engine.execute(sql).fetchall()
         geom_type_0 = res[0][0]
         geom_type_1 = res[1][0]
         geom_type_2 = res[2][0]
-        assert geom_type_0.upper() == "MULTILINESTRING", (
-            "Geometry type should be 'MULTILINESTRING',",
-            "found: {gt}".format(gt=geom_type_0),
-        )
-        assert geom_type_1.upper() == "POINT", (
-            "Geometry type should be 'POINT',",
-            "found: {gt}".format(gt=geom_type_1),
-        )
-        assert geom_type_2.upper() == "LINESTRING", (
-            "Geometry type should be 'LINESTRING',",
-            "found: {gt}".format(gt=geom_type_2),
-        )
+
+        assert geom_type_0.upper() == "LINESTRING"
+        assert geom_type_1.upper() == "MULTILINESTRING"
+        assert geom_type_2.upper() == "POINT"
 
     def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
@@ -464,7 +456,7 @@ class TestIO:
         write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
-        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
             table=table
         )
         geom_type = engine.execute(sql).fetchone()[0]
@@ -491,7 +483,7 @@ class TestIO:
         row_cnt = engine.execute(sql).fetchone()[0]
 
         # Validate geometry type
-        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table};".format(
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
             table=table
         )
         assert row_cnt == 3
@@ -500,18 +492,10 @@ class TestIO:
         geom_type_0 = res[0][0]
         geom_type_1 = res[1][0]
         geom_type_2 = res[2][0]
-        assert geom_type_0.upper() == "MULTILINESTRING", (
-            "Geometry type should be 'MULTILINESTRING',",
-            "found: {gt}".format(gt=geom_type_0),
-        )
-        assert geom_type_1.upper() == "POINT", (
-            "Geometry type should be 'POINT',",
-            "found: {gt}".format(gt=geom_type_1),
-        )
-        assert geom_type_2.upper() == "LINESTRING", (
-            "Geometry type should be 'LINESTRING',",
-            "found: {gt}".format(gt=geom_type_2),
-        )
+        assert geom_type_0.upper() == "LINESTRING"
+        assert geom_type_1.upper() == "MULTILINESTRING"
+        assert geom_type_2.upper() == "POINT"
+
 
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
@@ -590,3 +574,19 @@ class TestIO:
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
         assert list(df.geometry.has_z) == [True, True, True]
+
+    def test_row_order(self, engine_postgis, df_nybb):
+        """
+        Tests that the row order in db table follows the order of the original frame.
+        """
+        engine = engine_postgis
+
+        table = "row_order_test"
+        correct_order = df_nybb["BoroCode"].tolist()
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        # Check that the row order matches
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        assert df["BoroCode"].tolist() == correct_order
