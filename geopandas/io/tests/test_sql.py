@@ -492,7 +492,6 @@ class TestIO:
         assert geom_type_1.upper() == "MULTILINESTRING"
         assert geom_type_2.upper() == "POINT"
 
-
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
         Tests writing data to alternative schema.
