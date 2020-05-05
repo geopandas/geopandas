@@ -125,13 +125,6 @@ def _get_geometry_type(gdf):
     geom_types = list(gdf.geometry.geom_type.unique())
     has_curve = False
 
-    # Check for 3D-coordinates
-    dimension = 2
-    management = False
-    if any(gdf.geometry.has_z):
-        dimension = 3
-        management = True
-
     for gt in geom_types:
         if gt is None:
             continue
@@ -149,7 +142,11 @@ def _get_geometry_type(gdf):
     else:
         target_geom_type = "GEOMETRY"
 
-    return target_geom_type, has_curve, dimension, management
+    # Check for 3D-coordinates
+    if any(gdf.geometry.has_z):
+        target_geom_type = target_geom_type + "Z"
+
+    return target_geom_type, has_curve
 
 
 def _get_srid_from_crs(gdf):
@@ -171,9 +168,7 @@ def _get_srid_from_crs(gdf):
                 srid = -1
                 warnings.warn(warning_msg, UserWarning, stacklevel=2)
         except Exception:
-            warnings.warn(
-                warning_msg, UserWarning, stacklevel=2,
-            )
+            warnings.warn(warning_msg, UserWarning, stacklevel=2)
     return srid
 
 
@@ -196,9 +191,7 @@ def _convert_to_ewkb(gdf, geom_name, srid):
         from pygeos import set_srid, to_wkb
 
         geoms = to_wkb(
-            set_srid(gdf[geom_name].values.data, srid=srid),
-            hex=True,
-            include_srid=True,
+            set_srid(gdf[geom_name].values.data, srid=srid), hex=True, include_srid=True
         )
 
     else:
@@ -290,25 +283,13 @@ def write_postgis(
 
     # Get geometry type and info whether data contains LinearRing.
     # Also check for possible 3D geometries.
-    geometry_type, has_curve, dimension, management = _get_geometry_type(gdf)
+    geometry_type, has_curve = _get_geometry_type(gdf)
 
     # Build dtype with Geometry
     if dtype is not None:
-        dtype[geom_name] = Geometry(
-            geometry_type=geometry_type,
-            srid=srid,
-            dimension=dimension,
-            management=management,
-        )
+        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
     else:
-        dtype = {
-            geom_name: Geometry(
-                geometry_type=geometry_type,
-                srid=srid,
-                dimension=dimension,
-                management=management,
-            )
-        }
+        dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
 
     # Convert LinearRing geometries to LineString
     if has_curve:
