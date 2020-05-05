@@ -309,9 +309,9 @@ def write_postgis(
     # Convert geometries to EWKB
     gdf = _convert_to_ewkb(gdf, geom_name, srid)
 
-    with con.begin() as connection:
-        if if_exists == "append":
-            # Check that the geometry srid matches with the current GeoDataFrame
+    if if_exists == "append":
+        # Check that the geometry srid matches with the current GeoDataFrame
+        with con.begin() as connection:
             if schema is not None:
                 schema_name = schema
             else:
