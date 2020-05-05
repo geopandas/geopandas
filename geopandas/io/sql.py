@@ -1,11 +1,11 @@
 import sys
+import warnings
 
 import pandas as pd
 
 import shapely.wkb
 
 from geopandas import GeoDataFrame
-import warnings
 
 from .. import _compat as compat
 
@@ -234,17 +234,21 @@ def write_postgis(
     """
     Upload GeoDataFrame into PostGIS database.
 
+    This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+    Python driver (e.g. psycopg2) to be installed.
+
     Parameters
     ----------
     name : str
         Name of the target table.
     con : sqlalchemy.engine.Engine
         Active connection to the PostGIS database.
-    if_exists : {‘fail’, ‘replace’, ‘append’}, default ‘fail’
-        How to behave if the table already exists.
-          - fail: Raise a ValueError.
-          - replace: Drop the table before inserting new values.
-          - append: Insert new values to the existing table.
+    if_exists : {'fail', 'replace', 'append'}, default 'fail'
+        How to behave if the table already exists:
+
+        - fail: Raise a ValueError.
+        - replace: Drop the table before inserting new values.
+        - append: Insert new values to the existing table.
     schema : string, optional
         Specify the schema. If None, use default schema: 'public'.
     index : bool, default True
@@ -261,6 +265,14 @@ def write_postgis(
         Specifying the datatype for columns.
         The keys should be the column names and the values
         should be the SQLAlchemy types.
+
+    Examples
+    --------
+
+    >>> from sqlalchemy import create_engine
+    >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase";)
+    >>> gdf.to_postgis("my_table", engine)
     """
     try:
         from geoalchemy2 import Geometry

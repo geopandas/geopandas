@@ -433,13 +433,9 @@ class TestIO:
             table=table
         )
         res = engine.execute(sql).fetchall()
-        geom_type_0 = res[0][0]
-        geom_type_1 = res[1][0]
-        geom_type_2 = res[2][0]
-
-        assert geom_type_0.upper() == "LINESTRING"
-        assert geom_type_1.upper() == "MULTILINESTRING"
-        assert geom_type_2.upper() == "POINT"
+        assert res[0][0].upper() == "LINESTRING"
+        assert res[1][0].upper() == "MULTILINESTRING"
+        assert res[2][0].upper() == "POINT"
 
     def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
@@ -477,20 +473,16 @@ class TestIO:
         # Validate row count
         sql = "SELECT COUNT(geometry) FROM {table};".format(table=table)
         row_cnt = engine.execute(sql).fetchone()[0]
+        assert row_cnt == 3
 
         # Validate geometry type
         sql = "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
             table=table
         )
-        assert row_cnt == 3
-
         res = engine.execute(sql).fetchall()
-        geom_type_0 = res[0][0]
-        geom_type_1 = res[1][0]
-        geom_type_2 = res[2][0]
-        assert geom_type_0.upper() == "LINESTRING"
-        assert geom_type_1.upper() == "MULTILINESTRING"
-        assert geom_type_2.upper() == "POINT"
+        assert res[0][0].upper() == "LINESTRING"
+        assert res[1][0].upper() == "MULTILINESTRING"
+        assert res[2][0].upper() == "POINT"
 
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """

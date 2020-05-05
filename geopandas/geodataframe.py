@@ -17,6 +17,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
+
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
@@ -888,17 +889,21 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         Upload GeoDataFrame into PostGIS database.
 
+        This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+        Python driver (e.g. psycopg2) to be installed.
+
         Parameters
         ----------
         name : str
             Name of the target table.
         con : sqlalchemy.engine.Engine
             Active connection to the PostGIS database.
-        if_exists : {‘fail’, ‘replace’, ‘append’}, default ‘fail’
-            How to behave if the table already exists.
-              - fail: Raise a ValueError.
-              - replace: Drop the table before inserting new values.
-              - append: Insert new values to the existing table.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            How to behave if the table already exists:
+
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
         schema : string, optional
             Specify the schema. If None, use default schema: 'public'.
         index : bool, default True
@@ -915,6 +920,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Specifying the datatype for columns.
             The keys should be the column names and the values
             should be the SQLAlchemy types.
+
+        Examples
+        --------
+
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase";)
+        >>> gdf.to_postgis("my_table", engine)
         """
         geopandas.io.sql.write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
