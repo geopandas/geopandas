@@ -10,11 +10,7 @@ import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
 from geopandas.io.sql import write_postgis
-from geopandas.tests.util import (
-    create_postgis,
-    create_spatialite,
-    validate_boro_df,
-)
+from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
 
@@ -433,7 +429,7 @@ class TestIO:
         )
 
         # Validate geometry type
-        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
+        sql = "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
             table=table
         )
         res = engine.execute(sql).fetchall()
@@ -483,7 +479,7 @@ class TestIO:
         row_cnt = engine.execute(sql).fetchone()[0]
 
         # Validate geometry type
-        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
+        sql = "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
             table=table
         )
         assert row_cnt == 3
@@ -509,7 +505,7 @@ class TestIO:
         engine.execute(sql)
 
         write_postgis(
-            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use,
+            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
         )
         # Validate
         sql = "SELECT * FROM {schema}.{table};".format(
@@ -550,7 +546,7 @@ class TestIO:
 
         # Try with replace flag on
         write_postgis(
-            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use,
+            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
         )
         # Validate
         sql = "SELECT * FROM {schema}.{table};".format(

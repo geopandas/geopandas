@@ -142,6 +142,7 @@ def _get_geometry_type(gdf):
     else:
         target_geom_type = "GEOMETRY"
 
+    # Check for 3D-coordinates
     if any(gdf.geometry.has_z):
         target_geom_type = target_geom_type + "Z"
 
@@ -167,9 +168,7 @@ def _get_srid_from_crs(gdf):
                 srid = -1
                 warnings.warn(warning_msg, UserWarning, stacklevel=2)
         except Exception:
-            warnings.warn(
-                warning_msg, UserWarning, stacklevel=2,
-            )
+            warnings.warn(warning_msg, UserWarning, stacklevel=2)
     return srid
 
 
@@ -192,9 +191,7 @@ def _convert_to_ewkb(gdf, geom_name, srid):
         from pygeos import set_srid, to_wkb
 
         geoms = to_wkb(
-            set_srid(gdf[geom_name].values.data, srid=srid),
-            hex=True,
-            include_srid=True,
+            set_srid(gdf[geom_name].values.data, srid=srid), hex=True, include_srid=True
         )
 
     else:
@@ -289,17 +286,9 @@ def write_postgis(
 
     # Build dtype with Geometry
     if dtype is not None:
-        dtype[geom_name] = Geometry(
-            geometry_type=geometry_type,
-            srid=srid
-        )
+        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
     else:
-        dtype = {
-            geom_name: Geometry(
-                geometry_type=geometry_type,
-                srid=srid
-            )
-        }
+        dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
 
     # Convert LinearRing geometries to LineString
     if has_curve:
