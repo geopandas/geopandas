@@ -159,13 +159,13 @@ def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms):
+def to_wkb(geoms, hex=False):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms.data)
+    return vectorized.to_wkb(geoms.data, hex=hex)
 
 
 def from_wkt(data, crs=None):

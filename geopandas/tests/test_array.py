@@ -160,6 +160,11 @@ def test_to_wkb():
     assert isinstance(res, np.ndarray)
     np.testing.assert_array_equal(res, exp)
 
+    res = to_wkb(P, hex=True)
+    exp = np.array([p.wkb_hex for p in points_no_missing], dtype=object)
+    assert isinstance(res, np.ndarray)
+    np.testing.assert_array_equal(res, exp)
+
     # missing values
     a = from_shapely([None, points_no_missing[0]])
     res = to_wkb(a)

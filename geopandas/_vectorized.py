@@ -175,11 +175,14 @@ def from_wkb(data):
     return aout
 
 
-def to_wkb(data):
+def to_wkb(data, hex=False):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data)
+        return pygeos.to_wkb(data, hex=hex)
     else:
-        out = [geom.wkb if geom is not None else None for geom in data]
+        if hex:
+            out = [geom.wkb_hex if geom is not None else None for geom in data]
+        else:
+            out = [geom.wkb if geom is not None else None for geom in data]
         return np.array(out, dtype=object)
 
 

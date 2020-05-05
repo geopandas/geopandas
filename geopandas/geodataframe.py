@@ -17,6 +17,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
+
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
@@ -872,6 +873,65 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def to_postgis(
+        self,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
+    ):
+
+        """
+        Upload GeoDataFrame into PostGIS database.
+
+        This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+        Python driver (e.g. psycopg2) to be installed.
+
+        Parameters
+        ----------
+        name : str
+            Name of the target table.
+        con : sqlalchemy.engine.Engine
+            Active connection to the PostGIS database.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            How to behave if the table already exists:
+
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
+        schema : string, optional
+            Specify the schema. If None, use default schema: 'public'.
+        index : bool, default True
+            Write DataFrame index as a column.
+            Uses *index_label* as the column name in the table.
+        index_label : string or sequence, default None
+            Column label for index column(s).
+            If None is given (default) and index is True,
+            then the index names are used.
+        chunksize : int, optional
+            Rows will be written in batches of this size at a time.
+            By default, all rows will be written at once.
+        dtype : dict of column name to SQL type, default None
+            Specifying the datatype for columns.
+            The keys should be the column names and the values
+            should be the SQLAlchemy types.
+
+        Examples
+        --------
+
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase";)
+        >>> gdf.to_postgis("my_table", engine)
+        """
+        geopandas.io.sql.write_postgis(
+            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
 
         #
         # Implement standard operators for GeoSeries
