@@ -211,6 +211,12 @@ def test_to_file_empty(tmpdir):
         input_empty_df.to_file(tempfilename)
 
 
+def test_to_file_privacy(tmpdir, df_nybb):
+    tempfilename = os.path.join(str(tmpdir), "test.shp")
+    with pytest.warns(DeprecationWarning):
+        geopandas.io.file.to_file(df_nybb, tempfilename)
+
+
 def test_to_file_schema(tmpdir, df_nybb):
     """
     Ensure that the file is written according to the schema
