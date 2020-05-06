@@ -12,7 +12,7 @@ from numpy.testing import assert_array_equal
 
 import geopandas
 from geopandas import _compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file, sindex
+from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, datasets
 
 import pytest
 import numpy as np
@@ -504,3 +504,30 @@ class TestPygeosInterface:
         non_empty = geopandas.GeoSeries([Point(0, 0)])
         tree = cls_(non_empty)
         assert not tree.is_empty
+
+    @pytest.mark.parametrize(
+        "predicate, expected_shape",
+        [
+            (None, (2, 396)),
+            ("intersects", (2, 172)),
+            ("within", (2, 172)),
+            ("contains", (2, 0)),
+            ("overlaps", (2, 0)),
+            ("crosses", (2, 0)),
+            ("touches", (2, 0)),
+        ],
+    )
+    def test_integration_natural_earth(self, predicate, expected_shape):
+        """Tests output sizes for the naturalearth datasets."""
+        world = read_file(datasets.get_path("naturalearth_lowres"))
+        capitals = read_file(datasets.get_path("naturalearth_cities"))
+        # Reproject to Mercator (after dropping Antartica)
+        world = world[
+            (world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")
+        ]
+        countries = world.to_crs("epsg:3395")[["geometry"]]
+        capitals = capitals.to_crs("epsg:3395")[["geometry"]]
+
+        res = countries.sindex.query_bulk(capitals.geometry, predicate)
+        print(res.shape)
+        assert res.shape == expected_shape
