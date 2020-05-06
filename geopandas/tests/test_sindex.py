@@ -185,16 +185,30 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
-            (None, box(-1, -1, -0.5, -0.5), []),
-            (None, box(-0.5, -0.5, 0.5, 0.5), [0]),
-            (None, box(0, 0, 1, 1), [0, 1]),
-            # bbox intersects but not geometry
-            (None, LineString([(0, 1), (1, 0)]), [0, 1]),
-            ("intersects", box(-1, -1, -0.5, -0.5), []),
-            ("intersects", box(-0.5, -0.5, 0.5, 0.5), [0]),
-            ("intersects", box(0, 0, 1, 1), [0, 1]),
-            # bbox intersects but not geometry
-            ("intersects", LineString([(0, 1), (1, 0)]), []),
+            (None, box(-1, -1, -0.5, -0.5), []),  # bbox does not intersect
+            (None, box(-0.5, -0.5, 0.5, 0.5), [0]),  # bbox intersects
+            (None, box(0, 0, 1, 1), [0, 1]),  # bbox intersects multiple
+            (
+                None,
+                LineString([(0, 1), (1, 0)]),
+                [0, 1],
+            ),  # bbox intersects but not geometry
+            ("intersects", box(-1, -1, -0.5, -0.5), []),  # bbox does not intersect
+            (
+                "intersects",
+                box(-0.5, -0.5, 0.5, 0.5),
+                [0],
+            ),  # bbox and geometry intersect
+            (
+                "intersects",
+                box(0, 0, 1, 1),
+                [0, 1],
+            ),  # bbox and geometry intersect multiple
+            (
+                "intersects",
+                LineString([(0, 1), (1, 0)]),
+                [],
+            ),  # bbox intersects but not geometry
             ("within", box(0.25, 0.28, 0.75, 0.75), []),  # does not intersect
             ("within", box(0, 0, 10, 10), []),  # intersects but is not within
             ("within", box(11, 11, 12, 12), [5]),  # intersects and is within
@@ -207,7 +221,13 @@ class TestPygeosInterface:
                 "contains",
                 LineString([(0, 1), (1, 0)]),
                 [],
-            ),  # intersects but not contained
+            ),  # intersects but not contains
+            ("touches", box(-1, -1, 0, 0), [0]),  # bbox intersects and touches
+            (
+                "touches",
+                box(-0.5, -0.5, 1.5, 1.5),
+                [],
+            ),  # bbox intersects but geom does not touch
         ),
     )
     def test_query(self, predicate, test_geom, expected):
@@ -394,6 +414,7 @@ class TestPygeosInterface:
         (
             (None, (-1, -1, -0.5, -0.5), [[], []]),
             ("intersects", (-1, -1, -0.5, -0.5), [[], []]),
+            ("contains", (-1, -1, 1, 1), [[0], [0]]),
         ),
     )
     def test_query_bulk_input_type(self, predicate, test_geom, expected):
