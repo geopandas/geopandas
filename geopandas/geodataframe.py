@@ -618,9 +618,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         GeoSeries.to_file
         """
-        from geopandas.io.file import to_file
+        from geopandas.io.file import _to_file
 
-        to_file(self, filename, driver, schema, index, **kwargs)
+        _to_file(self, filename, driver, schema, index, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
