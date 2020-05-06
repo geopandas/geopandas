@@ -220,7 +220,7 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
         cur.copy_expert(sql=sql, file=s_buf)
 
 
-def write_postgis(
+def _write_postgis(
     gdf,
     name,
     con,

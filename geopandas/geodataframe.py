@@ -929,7 +929,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 /mydatabase";)
         >>> gdf.to_postgis("my_table", engine)
         """
-        geopandas.io.sql.write_postgis(
+        geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 

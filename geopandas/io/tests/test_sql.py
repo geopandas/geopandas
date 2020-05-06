@@ -9,7 +9,7 @@ import os
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
-from geopandas.io.sql import write_postgis
+from geopandas.io.sql import _write_postgis as write_postgis
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
