@@ -521,13 +521,6 @@ class TestPygeosInterface:
         """Tests output sizes for the naturalearth datasets."""
         world = read_file(datasets.get_path("naturalearth_lowres"))
         capitals = read_file(datasets.get_path("naturalearth_cities"))
-        # Reproject to Mercator (after dropping Antartica)
-        world = world[
-            (world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")
-        ]
-        countries = world.to_crs("epsg:3395")[["geometry"]]
-        capitals = capitals.to_crs("epsg:3395")[["geometry"]]
 
-        res = countries.sindex.query_bulk(capitals.geometry, predicate)
-        print(res.shape)
+        res = world.sindex.query_bulk(capitals.geometry, predicate)
         assert res.shape == expected_shape
