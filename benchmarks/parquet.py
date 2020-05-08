@@ -8,6 +8,7 @@ import numpy as np
 from shapely.geometry import Point
 
 
+# TEMP: hide warning from to_parquet
 warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
 
 
