@@ -607,9 +607,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Additional keyword arguments passed to to pyarrow.parquet.write_table().
         """
 
-        from geopandas.io.parquet import to_parquet
+        from geopandas.io.parquet import _to_parquet
 
-        to_parquet(self, filename, compression=compression, index=index, **kwargs)
+        _to_parquet(self, filename, compression=compression, index=index, **kwargs)
 
     def to_file(
         self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs

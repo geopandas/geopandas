@@ -15,13 +15,18 @@ METADATA_VERSION = "0.1.0"
 # Metadata structure:
 # {
 #     "geo": {
-#         "primary_column": "<str: REQUIRED>",
 #         "columns": {
 #             "<name>": {
 #                 "crs": "<WKT or None: REQUIRED>",
 #                 "encoding": "WKB"
 #             }
+#         },
+#         "creator": {
+#             "library": "geopandas",
+#             "version": "<geopandas.__version__>"
 #         }
+#         "primary_column": "<str: REQUIRED>",
+#         "schema_version": "<METADATA_VERSION>"
 #     }
 # }
 
@@ -176,7 +181,7 @@ def _validate_metadata(metadata):
             raise ValueError("Only WKB geometry encoding is supported")
 
 
-def to_parquet(df, path, compression="snappy", index=None, **kwargs):
+def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -234,7 +239,7 @@ def to_parquet(df, path, compression="snappy", index=None, **kwargs):
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def read_parquet(path, columns=None, **kwargs):
+def _read_parquet(path, columns=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
