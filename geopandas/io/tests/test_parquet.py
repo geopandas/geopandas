@@ -212,7 +212,10 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
     orig = df.copy()
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
+
+    # TEMP: Initial implementation should raise a UserWarning
+    with pytest.warns(UserWarning, match="initial implementation"):
+        df.to_parquet(filename)
 
     assert os.path.exists(filename)
 

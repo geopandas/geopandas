@@ -221,6 +221,21 @@ def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
     )
     from pyarrow import parquet, Table
 
+    warnings.warn(
+        "this is an initial implementation of Parquet file support and "
+        "associated metadata.  This is tracking version 0.1.0 of the metadata "
+        "specification at "
+        "https://github.com/geopandas/geo-arrow-spec\n\n"
+        "This metadata specification does not yet make stability promises.  "
+        "We do not yet recommend using this in a production setting unless you "
+        "are able to rewrite your Parquet files.\n\n"
+        "To further ignore this warning, you can do: \n"
+        "import warnings; warnings.filterwarnings('ignore', "
+        "message='.*initial implementation of Parquet.*')",
+        UserWarning,
+        stacklevel=2,
+    )
+
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
