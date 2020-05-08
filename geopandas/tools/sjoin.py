@@ -24,7 +24,7 @@ def sjoin(
         * 'right': use keys from right_df; retain only right_df geometry column
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
-    op : string, default 'intersection'
+    op : string, default 'intersects'
         Binary predicate, one of {'intersects', 'contains', 'within'}.
         See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
     lsuffix : string, default 'left'

@@ -1,15 +1,25 @@
 import sys
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, box
+from numpy.testing import assert_array_equal
 
 import geopandas
-from geopandas import GeoDataFrame, GeoSeries, base, read_file
+from geopandas import _compat as compat
+from geopandas import GeoDataFrame, GeoSeries, read_file, sindex
 
 import pytest
 
 
+@pytest.mark.skipif(sindex.has_sindex(), reason="Spatial index present, skipping")
+class TestNoSindex:
+    def test_no_sindex(self):
+        """Checks that a warning is given when no spatial index is present."""
+        with pytest.warns():
+            sindex.get_sindex_class()
+
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
+@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSeriesSindex:
     def test_empty_geoseries(self):
 
@@ -54,7 +64,7 @@ class TestSeriesSindex:
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
+@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestFrameSindex:
     def setup_method(self):
         data = {
@@ -121,3 +131,57 @@ class TestJoinSindex:
         hits = tree.intersection((1012821.80, 229228.26), objects=True)
         res = [merged.loc[hit.object]["BoroName"] for hit in hits]
         assert res == ["Bronx", "Queens"]
+
+
+@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
+class TestPygeosInterface:
+    def setup_method(self):
+        data = {
+            "A": range(6),
+            "B": range(-6, 0),
+            "location": [Point(x, y) for x, y in zip(range(5), range(5))]
+            + [box(10, 10, 20, 20)],  # include a box geometry
+        }
+        self.df = GeoDataFrame(data, geometry="location")
+        self.expected_size = len(data["location"])
+
+    @pytest.mark.parametrize(
+        "test_geom, expected",
+        (
+            ((-1, -1, -0.5, -0.5), []),
+            ((-0.5, -0.5, 0.5, 0.5), [0]),
+            ((0, 0, 1, 1), [0, 1]),
+            ((0, 0), [0]),
+        ),
+    )
+    def test_intersection_bounds_tuple(self, test_geom, expected):
+        res = list(self.df.sindex.intersection(test_geom))
+        assert_array_equal(res, expected)
+
+    @pytest.mark.parametrize(
+        "test_geom", ((-1, -1, -0.5), -0.5, None, Point(0, 0),),
+    )
+    def test_intersection_invalid_bounds_tuple(self, test_geom):
+        if compat.USE_PYGEOS:
+            with pytest.raises(TypeError):
+                # we raise a useful TypeError
+                self.df.sindex.intersection(test_geom)
+        else:
+            with pytest.raises((TypeError, Exception)):
+                # catch a general exception
+                # rtree raises an RTreeError which we need to catch
+                self.df.sindex.intersection(test_geom)
+
+    def test_size(self):
+        assert self.df.sindex.size == self.expected_size
+
+    def test_is_empty(self):
+        # create empty tree
+        cls_ = sindex.get_sindex_class()
+        empty = geopandas.GeoSeries([])
+        tree = cls_(empty)
+        assert tree.is_empty
+        # create a non-empty tree
+        non_empty = geopandas.GeoSeries([Point(0, 0)])
+        tree = cls_(non_empty)
+        assert not tree.is_empty

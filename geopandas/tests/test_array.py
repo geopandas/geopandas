@@ -20,6 +20,7 @@ from geopandas.array import (
     points_from_xy,
     to_wkb,
     to_wkt,
+    _check_crs,
 )
 import geopandas._compat as compat
 
@@ -156,6 +157,11 @@ def test_to_wkb():
     P = from_shapely(points_no_missing)
     res = to_wkb(P)
     exp = np.array([p.wkb for p in points_no_missing], dtype=object)
+    assert isinstance(res, np.ndarray)
+    np.testing.assert_array_equal(res, exp)
+
+    res = to_wkb(P, hex=True)
+    exp = np.array([p.wkb_hex for p in points_no_missing], dtype=object)
     assert isinstance(res, np.ndarray)
     np.testing.assert_array_equal(res, exp)
 
@@ -791,3 +797,11 @@ def test_astype_multipolygon():
     result = arr.astype(np.dtype("U10"))
     assert result.dtype == np.dtype("U10")
     assert result[0] == multi_poly.wkt[:10]
+
+
+def test_check_crs():
+    t1 = T.copy()
+    t1.crs = 4326
+    assert _check_crs(t1, T) is False
+    assert _check_crs(t1, t1) is True
+    assert _check_crs(t1, T, allow_none=True) is True

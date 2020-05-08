@@ -20,7 +20,6 @@ dependencies:
   - descartes
   #- geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
   - pyarrow
   - pip:

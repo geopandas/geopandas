@@ -6,11 +6,11 @@ import random
 import numpy as np
 import pandas as pd
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString
 import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
-from geopandas.array import from_shapely, from_wkb, from_wkt
+from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
 
 from geopandas.testing import assert_geodataframe_equal
 import pytest
@@ -160,6 +160,12 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms, crs=27700)
         assert arr.crs == self.osgb
 
+        arr = GeometryArray(arr)
+        assert arr.crs == self.osgb
+
+        arr = GeometryArray(arr, crs=4326)
+        assert arr.crs == self.wgs
+
     def test_series(self):
         s = GeoSeries(crs=27700)
         assert s.crs == self.osgb
@@ -281,6 +287,18 @@ class TestGeometryArrayCRS:
         df = GeoDataFrame({"geometry": [0, 1]})
         df.crs = 27700
         assert df.crs == self.osgb
+
+    @pytest.mark.parametrize(
+        "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
+    )
+    def test_scalar(self, scalar):
+        with pytest.warns(FutureWarning):
+            df = GeoDataFrame()
+            df.crs = 4326
+        df["geometry"] = scalar
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
 
     def test_read_file(self):
         nybb_filename = datasets.get_path("nybb")
