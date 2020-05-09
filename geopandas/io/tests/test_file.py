@@ -557,6 +557,11 @@ def test_read_file_empty_shapefile(tmpdir):
     assert all(empty.columns == ["A", "Z", "geometry"])
 
 
+def test_read_file_privacy(tmpdir, df_nybb):
+    with pytest.warns(DeprecationWarning):
+        geopandas.io.file.read_file(geopandas.datasets.get_path("nybb"))
+
+
 class FileNumber(object):
     def __init__(self, tmpdir, base, ext):
         self.tmpdir = str(tmpdir)
