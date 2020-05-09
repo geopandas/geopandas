@@ -330,7 +330,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
-        return geopandas.io.file.read_file(filename, **kwargs)
+        return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
     def from_features(cls, features, crs=None, columns=None):
@@ -437,7 +437,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
 
-        df = geopandas.io.sql.read_postgis(
+        df = geopandas.io.sql._read_postgis(
             sql,
             con,
             geom_col=geom_col,
@@ -618,9 +618,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         GeoSeries.to_file
         """
-        from geopandas.io.file import to_file
+        from geopandas.io.file import _to_file
 
-        to_file(self, filename, driver, schema, index, **kwargs)
+        _to_file(self, filename, driver, schema, index, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
@@ -929,7 +929,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 /mydatabase";)
         >>> gdf.to_postgis("my_table", engine)
         """
-        geopandas.io.sql.write_postgis(
+        geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
