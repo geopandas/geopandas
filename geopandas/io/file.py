@@ -36,7 +36,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -139,6 +139,19 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             return GeoDataFrame.from_features(
                 f_filt, crs=crs, columns=columns + ["geometry"]
             )
+
+
+def read_file(*args, **kwargs):
+    import warnings
+
+    warnings.warn(
+        "geopandas.io.file.read_file() is intended for internal "
+        "use only, and will be deprecated. Use geopandas.read_file() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    return _read_file(*args, **kwargs)
 
 
 def to_file(*args, **kwargs):

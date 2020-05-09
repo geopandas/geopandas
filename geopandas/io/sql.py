@@ -1,4 +1,3 @@
-import sys
 import warnings
 
 import pandas as pd
@@ -10,7 +9,7 @@ from geopandas import GeoDataFrame
 from .. import _compat as compat
 
 
-def read_postgis(
+def _read_postgis(
     sql,
     con,
     geom_col="geom",
@@ -83,12 +82,7 @@ def read_postgis(
             """Load from binary encoded as text."""
             return shapely.wkb.loads(str(x), hex=True)
 
-        if sys.version_info.major < 3:
-            if isinstance(geoms.iat[0], buffer):
-                load_geom = load_geom_buffer
-            else:
-                load_geom = load_geom_text
-        elif isinstance(geoms.iat[0], bytes):
+        if isinstance(geoms.iat[0], bytes):
             load_geom = load_geom_bytes
         else:
             load_geom = load_geom_text
@@ -101,6 +95,19 @@ def read_postgis(
                 crs = "epsg:{}".format(srid)
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
+
+
+def read_postgis(*args, **kwargs):
+    import warnings
+
+    warnings.warn(
+        "geopandas.io.sql.read_postgis() is intended for internal "
+        "use only, and will be deprecated. Use geopandas.read_postgis() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    return _read_postgis(*args, **kwargs)
 
 
 def _get_geometry_type(gdf):
