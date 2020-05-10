@@ -451,7 +451,7 @@ class GeometryArray(ExtensionArray):
     def disjoint(self, other):
         return self._binary_method("disjoint", self, other)
 
-    def equals(self, other):
+    def geom_equals(self, other):
         return self._binary_method("equals", self, other)
 
     def intersects(self, other):
@@ -466,11 +466,11 @@ class GeometryArray(ExtensionArray):
     def within(self, other):
         return self._binary_method("within", self, other)
 
-    def equals_exact(self, other, tolerance):
+    def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
-    def almost_equals(self, other, decimal):
-        return self.equals_exact(other, 0.5 * 10 ** (-decimal))
+    def geom_almost_equals(self, other, decimal):
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
         # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 
     #
