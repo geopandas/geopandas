@@ -478,7 +478,8 @@ class GeometryArray(ExtensionArray):
         if compat.PANDAS_GE_11:
             warnings.warn(
                 "GeometryArray.equals() is now GeometryArray.geom_equals(). "
-                "GeometryArray.equals() returns ExtensionArray.equals() instead.",
+                "For geometry equality check use GeometryArray.geom_equals() instead."
+                "GeometryArray.equals() returns ExtensionArray.equals().",
                 UserWarning,
             )
             return super(GeometryArray, self).equals(other)
