@@ -9,7 +9,7 @@ import os
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
-from geopandas.io.sql import write_postgis
+from geopandas.io.sql import _write_postgis as write_postgis
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
@@ -291,6 +291,14 @@ class TestIO:
         )
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
+
+    def test_read_postgis_privacy(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.warns(DeprecationWarning):
+            geopandas.io.sql.read_postgis(sql, con)
 
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
