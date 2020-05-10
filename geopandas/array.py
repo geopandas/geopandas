@@ -481,7 +481,7 @@ class GeometryArray(ExtensionArray):
                 "GeometryArray.equals() returns ExtensionArray.equals() instead.",
                 UserWarning,
             )
-            super(self.equals(other))
+            return super(GeometryArray, self).equals(other)
         else:
             raise NameError(
                 "Pandas >= 1.1 is required to use .equals. "
