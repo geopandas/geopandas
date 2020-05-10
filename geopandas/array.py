@@ -473,6 +473,37 @@ class GeometryArray(ExtensionArray):
         return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
         # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 
+    # compatibility with pandas 1.1
+    def equals(self, other):
+        if compat.PANDAS_GE_11:
+            warnings.warn(
+                "GeometryArray.equals() is now GeometryArray.geom_equals(). "
+                "GeometryArray.equals() returns ExtensionArray.equals() instead.",
+                UserWarning,
+            )
+            super(self.equals(other))
+        else:
+            raise NameError(
+                "Pandas >= 1.1 is required to use .equals. "
+                "For geometry equality check use GeometryArray.geom_equals() instead."
+            )
+
+    def equals_exact(self, other, tolerance):
+        warnings.warn(
+            "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
+            "GeometryArray.equals_exact() will be deprecated in the future.",
+            FutureWarning,
+        )
+        return self._binary_method("equals_exact", self, other, tolerance=tolerance)
+
+    def almost_equals(self, other, decimal):
+        warnings.warn(
+            "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
+            "GeometryArray.almost_equals() will be deprecated in the future.",
+            FutureWarning,
+        )
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
+
     #
     # Binary operations that return new geometries
     #

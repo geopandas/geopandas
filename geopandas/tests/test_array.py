@@ -325,6 +325,29 @@ def test_predicates_vector_vector(attr, args):
 
 
 @pytest.mark.parametrize(
+    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))],
+)
+def test_equals_deprecation(attr, args):
+    point = points[0]
+    tri = triangles[0]
+
+    for other in [point, tri, shapely.geometry.Polygon()]:
+        with pytest.warns(FutureWarning):
+            result = getattr(T, attr)(other, *args)
+        assert result.tolist() == getattr(T, "geom_" + attr)(other, *args).tolist()
+
+
+# compatibility with pandas 1.1
+def test_equals():
+    if compat.PANDAS_GE_11:
+        with pytest.warns(UserWarning):
+            T.equals(T.copy())
+    else:
+        with pytest.raises(NameError):
+            T.equals(T.copy())
+
+
+@pytest.mark.parametrize(
     "attr",
     [
         "boundary",
