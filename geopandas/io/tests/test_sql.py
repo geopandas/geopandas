@@ -585,3 +585,38 @@ class TestIO:
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
+
+    def test_append_before_table_exists(self, engine_postgis, df_nybb):
+        """
+        Tests that insert works with if_exists='append' when table does not exist yet.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+
+    def test_append_with_different_crs(self, engine_postgis, df_nybb):
+        """
+        Tests that the warning is raised if table CRS differs from frame.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        # Reproject
+        df_nybb2 = df_nybb.to_crs(epsg=4326)
+
+        # Should raise error when appending
+        try:
+            write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+        except ValueError as e:
+            if "CRS of the target table" in str(e):
+                pass
+            else:
+                raise e
+        except Exception as e:
+            raise e
