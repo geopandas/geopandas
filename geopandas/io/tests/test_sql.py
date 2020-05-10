@@ -598,6 +598,11 @@ class TestIO:
 
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
 
+        # Check that the row order matches
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
     def test_append_with_different_crs(self, engine_postgis, df_nybb):
         """
         Tests that the warning is raised if table CRS differs from frame.
@@ -611,12 +616,5 @@ class TestIO:
         df_nybb2 = df_nybb.to_crs(epsg=4326)
 
         # Should raise error when appending
-        try:
+        with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
-        except ValueError as e:
-            if "CRS of the target table" in str(e):
-                pass
-            else:
-                raise e
-        except Exception as e:
-            raise e
