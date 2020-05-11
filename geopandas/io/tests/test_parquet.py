@@ -27,11 +27,15 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 pyarrow_skip = pytest.importorskip("pyarrow")
 
 
-# TEMPORARY: Skip all tests on Windows
-# https://github.com/conda-forge/pyarrow-feedstock/issues/104
-pytestmark = pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="pyarrow segfaults on windows"
-)
+pytestmark = [
+    # TEMPORARY: Skip all tests on Windows
+    # https://github.com/conda-forge/pyarrow-feedstock/issues/104
+    pytest.mark.skipif(
+        sys.platform.startswith("win"), reason="pyarrow segfaults on windows"
+    ),
+    # TEMPORARY: hide warning from to_parquet
+    pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*"),
+]
 
 
 def test_create_metadata():

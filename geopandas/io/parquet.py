@@ -233,7 +233,7 @@ def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
         "import warnings; warnings.filterwarnings('ignore', "
         "message='.*initial implementation of Parquet.*')",
         UserWarning,
-        stacklevel=2,
+        stacklevel=3,
     )
 
     _validate_dataframe(df)
