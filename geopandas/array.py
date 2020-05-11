@@ -451,7 +451,7 @@ class GeometryArray(ExtensionArray):
     def disjoint(self, other):
         return self._binary_method("disjoint", self, other)
 
-    def equals(self, other):
+    def geom_equals(self, other):
         return self._binary_method("equals", self, other)
 
     def intersects(self, other):
@@ -466,12 +466,30 @@ class GeometryArray(ExtensionArray):
     def within(self, other):
         return self._binary_method("within", self, other)
 
+    def geom_equals_exact(self, other, tolerance):
+        return self._binary_method("equals_exact", self, other, tolerance=tolerance)
+
+    def geom_almost_equals(self, other, decimal):
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
+        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
+
     def equals_exact(self, other, tolerance):
+        warnings.warn(
+            "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
+            "GeometryArray.equals_exact() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
     def almost_equals(self, other, decimal):
-        return self.equals_exact(other, 0.5 * 10 ** (-decimal))
-        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
+        warnings.warn(
+            "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
+            "GeometryArray.almost_equals() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
 
     #
     # Binary operations that return new geometries
@@ -958,7 +976,7 @@ class GeometryArray(ExtensionArray):
         # a TypeError should be raised
         res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
 
-        res = np.asarray(res)
+        res = np.asarray(res, dtype=bool)
         return res
 
     def __eq__(self, other):

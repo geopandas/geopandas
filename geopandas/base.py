@@ -304,14 +304,14 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test for
             equality.
         """
-        return _binary_op("equals", self, other)
+        return _binary_op("geom_equals", self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each geometry is approximately equal to `other`.
 
         Approximate equality is tested at all points to the specified `decimal`
-        place precision.  See also :meth:`equals`.
+        place precision.  See also :meth:`geom_equals`.
 
         Parameters
         ----------
@@ -320,12 +320,12 @@ class GeoPandasBase(object):
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        return _binary_op("almost_equals", self, other, decimal=decimal)
+        return _binary_op("geom_almost_equals", self, other, decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        return _binary_op("equals_exact", self, other, tolerance=tolerance)
+        return _binary_op("geom_equals_exact", self, other, tolerance=tolerance)
 
     def crosses(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for

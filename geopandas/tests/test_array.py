@@ -236,13 +236,13 @@ def test_to_wkt():
         ("covers", ()),
         ("crosses", ()),
         ("disjoint", ()),
-        ("equals", ()),
+        ("geom_equals", ()),
         ("intersects", ()),
         ("overlaps", ()),
         ("touches", ()),
         ("within", ()),
-        ("equals_exact", (0.1,)),
-        ("almost_equals", (3,)),
+        ("geom_equals_exact", (0.1,)),
+        ("geom_almost_equals", (3,)),
     ],
 )
 def test_predicates_vector_scalar(attr, args):
@@ -257,7 +257,9 @@ def test_predicates_vector_scalar(attr, args):
         assert result.dtype == bool
 
         expected = [
-            getattr(tri, attr)(other, *args) if tri is not None else na_value
+            getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
+            if tri is not None
+            else na_value
             for tri in triangles
         ]
 
@@ -273,13 +275,13 @@ def test_predicates_vector_scalar(attr, args):
         ("covers", ()),
         ("crosses", ()),
         ("disjoint", ()),
-        ("equals", ()),
+        ("geom_equals", ()),
         ("intersects", ()),
         ("overlaps", ()),
         ("touches", ()),
         ("within", ()),
-        ("equals_exact", (0.1,)),
-        ("almost_equals", (3,)),
+        ("geom_equals_exact", (0.1,)),
+        ("geom_almost_equals", (3,)),
     ],
 )
 def test_predicates_vector_vector(attr, args):
@@ -315,9 +317,24 @@ def test_predicates_vector_vector(attr, args):
         elif a.is_empty or b.is_empty:
             expected.append(empty_value)
         else:
-            expected.append(getattr(a, attr)(b, *args))
+            expected.append(
+                getattr(a, attr if "geom" not in attr else attr[5:])(b, *args)
+            )
 
     assert result.tolist() == expected
+
+
+@pytest.mark.parametrize(
+    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))],
+)
+def test_equals_deprecation(attr, args):
+    point = points[0]
+    tri = triangles[0]
+
+    for other in [point, tri, shapely.geometry.Polygon()]:
+        with pytest.warns(FutureWarning):
+            result = getattr(T, attr)(other, *args)
+        assert result.tolist() == getattr(T, "geom_" + attr)(other, *args).tolist()
 
 
 @pytest.mark.parametrize(
@@ -754,7 +771,7 @@ def test_pickle():
     # assert (T.data != T2.data).all()
     assert T2[-1] is None
     assert T2[-2].is_empty
-    assert T[:-2].equals(T2[:-2]).all()
+    assert T[:-2].geom_equals(T2[:-2]).all()
 
 
 def test_raise_on_bad_sizes():
