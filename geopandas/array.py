@@ -477,7 +477,7 @@ class GeometryArray(ExtensionArray):
         warnings.warn(
             "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
             "GeometryArray.equals_exact() will be deprecated in the future.",
-            FutureWarning,
+            FutureWarning, stacklevel=2,
         )
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
@@ -485,7 +485,7 @@ class GeometryArray(ExtensionArray):
         warnings.warn(
             "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
             "GeometryArray.almost_equals() will be deprecated in the future.",
-            FutureWarning,
+            FutureWarning, stacklevel=2
         )
         return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
 
