@@ -795,6 +795,9 @@ class GeometryArray(ExtensionArray):
         -------
         ExtensionArray
         """
+        # GH 1413
+        if not pd.api.types.is_list_like(scalars):
+            scalars = [scalars]
         return from_shapely(scalars)
 
     def _values_for_factorize(self):
