@@ -493,10 +493,6 @@ class TestMethods(extension_tests.BaseMethodsTests):
     def test_argsort_missing_array(self):
         pass
 
-    @not_yet_implemented
-    def test_equals(self):
-        pass
-
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass

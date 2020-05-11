@@ -337,16 +337,6 @@ def test_equals_deprecation(attr, args):
         assert result.tolist() == getattr(T, "geom_" + attr)(other, *args).tolist()
 
 
-# compatibility with pandas 1.1
-def test_equals():
-    if compat.PANDAS_GE_11:
-        with pytest.warns(UserWarning):
-            T.equals(T.copy())
-    else:
-        with pytest.raises(NameError):
-            T.equals(T.copy())
-
-
 @pytest.mark.parametrize(
     "attr",
     [
