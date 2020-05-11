@@ -325,8 +325,7 @@ def _write_postgis(
                 schema_name = "public"
 
             # Only check SRID if table exists
-            if pd.io.sql.has_table(name, connection, schema):
-
+            if connection.run_callable(connection.dialect.has_table, name, schema):
                 target_srid = connection.execute(
                     "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                         schema=schema_name, table=name, geom_col=geom_name
