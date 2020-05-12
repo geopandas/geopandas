@@ -796,7 +796,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         # GH 1413
-        if not pd.api.types.is_list_like(scalars):
+        if isinstance(scalars, BaseGeometry):
             scalars = [scalars]
         return from_shapely(scalars)
 
