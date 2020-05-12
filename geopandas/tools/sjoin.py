@@ -97,7 +97,8 @@ def sjoin(
         left_df.index = left_df.index.rename(index_left)
     except TypeError:
         index_left = [
-            "index_%s" % lsuffix + str(l) for l, ix in enumerate(left_df.index.names)
+            "index_%s" % lsuffix + str(pos)
+            for pos, ix in enumerate(left_df.index.names)
         ]
         left_index_name = left_df.index.names
         left_df.index = left_df.index.rename(index_left)
@@ -109,7 +110,8 @@ def sjoin(
         right_df.index = right_df.index.rename(index_right)
     except TypeError:
         index_right = [
-            "index_%s" % rsuffix + str(l) for l, ix in enumerate(right_df.index.names)
+            "index_%s" % rsuffix + str(pos)
+            for pos, ix in enumerate(right_df.index.names)
         ]
         right_index_name = right_df.index.names
         right_df.index = right_df.index.rename(index_right)

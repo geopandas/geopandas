@@ -370,12 +370,12 @@ class TestIO:
 
         # There should be twice as many rows in the new table
         assert new_rows == orig_rows * 2, (
-            "There should be {target} rows,",
+            "There should be {target} rows,"
             "found: {current}".format(target=orig_rows * 2, current=new_rows),
         )
         # Number of columns should stay the same
         assert new_cols == orig_cols, (
-            "There should be {target} columns,",
+            "There should be {target} columns,"
             "found: {current}".format(target=orig_cols, current=new_cols),
         )
 
@@ -585,3 +585,36 @@ class TestIO:
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
+
+    def test_append_before_table_exists(self, engine_postgis, df_nybb):
+        """
+        Tests that insert works with if_exists='append' when table does not exist yet.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+
+        # Check that the row order matches
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_append_with_different_crs(self, engine_postgis, df_nybb):
+        """
+        Tests that the warning is raised if table CRS differs from frame.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        # Reproject
+        df_nybb2 = df_nybb.to_crs(epsg=4326)
+
+        # Should raise error when appending
+        with pytest.raises(ValueError, match="CRS of the target table"):
+            write_postgis(df_nybb2, con=engine, name=table, if_exists="append")

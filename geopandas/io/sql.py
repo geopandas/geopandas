@@ -324,20 +324,22 @@ def _write_postgis(
             else:
                 schema_name = "public"
 
-            target_srid = connection.execute(
-                "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema=schema_name, table=name, geom_col=geom_name
-                )
-            ).fetchone()[0]
-
-            if target_srid != srid:
-                msg = (
-                    "The CRS of the target table (EPSG:{epsg_t}) differs from the "
-                    "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                        epsg_t=target_srid, epsg_src=srid
+            # Only check SRID if table exists
+            if connection.run_callable(connection.dialect.has_table, name, schema):
+                target_srid = connection.execute(
+                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                        schema=schema_name, table=name, geom_col=geom_name
                     )
-                )
-                raise ValueError(msg)
+                ).fetchone()[0]
+
+                if target_srid != srid:
+                    msg = (
+                        "The CRS of the target table (EPSG:{epsg_t}) differs from the "
+                        "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                            epsg_t=target_srid, epsg_src=srid
+                        )
+                    )
+                    raise ValueError(msg)
 
     with con.begin() as connection:
 
