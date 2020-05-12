@@ -370,12 +370,12 @@ class TestIO:
 
         # There should be twice as many rows in the new table
         assert new_rows == orig_rows * 2, (
-            "There should be {target} rows,",
+            "There should be {target} rows,"
             "found: {current}".format(target=orig_rows * 2, current=new_rows),
         )
         # Number of columns should stay the same
         assert new_cols == orig_cols, (
-            "There should be {target} columns,",
+            "There should be {target} columns,"
             "found: {current}".format(target=orig_cols, current=new_cols),
         )
 
