@@ -813,6 +813,9 @@ class GeometryArray(ExtensionArray):
         -------
         ExtensionArray
         """
+        # GH 1413
+        if isinstance(scalars, BaseGeometry):
+            scalars = [scalars]
         return from_shapely(scalars)
 
     def _values_for_factorize(self):
