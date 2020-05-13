@@ -53,6 +53,8 @@ The following Shapely methods and attributes are available on
 
 .. automethod:: geopandas.GeoSeries.intersects
 
+.. automethod:: geopandas.GeoSeries.overlaps
+
 .. automethod:: geopandas.GeoSeries.touches
 
 .. automethod:: geopandas.GeoSeries.within
