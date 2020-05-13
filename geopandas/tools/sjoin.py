@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 from geopandas import GeoDataFrame
 from geopandas._compat import HAS_RTREE
 
@@ -20,7 +21,7 @@ def sjoin(
         * 'right': use keys from right_df; retain only right_df geometry column
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
-    op : string, default 'intersection'
+    op : string, default 'intersects'
         Binary predicate, one of {'intersects', 'contains', 'within'}.
         See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
     lsuffix : string, default 'left'
@@ -88,7 +89,8 @@ def sjoin(
         left_df.index = left_df.index.rename(index_left)
     except TypeError:
         index_left = [
-            "index_%s" % lsuffix + str(l) for l, ix in enumerate(left_df.index.names)
+            "index_%s" % lsuffix + str(pos)
+            for pos, ix in enumerate(left_df.index.names)
         ]
         left_index_name = left_df.index.names
         left_df.index = left_df.index.rename(index_left)
@@ -100,7 +102,8 @@ def sjoin(
         right_df.index = right_df.index.rename(index_right)
     except TypeError:
         index_right = [
-            "index_%s" % rsuffix + str(l) for l, ix in enumerate(right_df.index.names)
+            "index_%s" % rsuffix + str(pos)
+            for pos, ix in enumerate(right_df.index.names)
         ]
         right_index_name = right_df.index.names
         right_df.index = right_df.index.rename(index_right)
