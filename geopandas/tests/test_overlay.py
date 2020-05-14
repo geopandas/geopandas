@@ -15,7 +15,9 @@ import pytest
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
 
 
-pytestmark = pytest.mark.skipif(not compat.HAS_RTREE, reason="overlay requires rtree")
+pytestmark = pytest.mark.skipif(
+    not geopandas.sindex.has_sindex(), reason="overlay requires spatial index"
+)
 
 
 @pytest.fixture

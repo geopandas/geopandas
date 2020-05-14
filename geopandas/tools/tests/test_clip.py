@@ -9,13 +9,14 @@ from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCol
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas import _compat as compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
 
 
-pytestmark = pytest.mark.skipif(not compat.HAS_RTREE, reason="clip requires rtree")
+pytestmark = pytest.mark.skipif(
+    not geopandas.sindex.has_sindex(), reason="clip requires spatial index"
+)
 
 
 @pytest.fixture
