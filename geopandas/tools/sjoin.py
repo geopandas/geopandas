@@ -66,18 +66,13 @@ def sjoin(
             "'{0}' and '{1}' cannot be names in the frames being"
             " joined".format(index_left, index_right)
         )
-
-    # Attempt to re-use spatial indexes, otherwise generate the spatial index
-    # for the longer dataframe. If we are joining to an empty dataframe,
-    # don't bother generating the index.
-    if right_df._sindex_generated or (
-        not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]
-    ):
-        tree_idx = right_df.sindex if len(left_df) > 0 else None
-        tree_idx_right = True
-    else:
-        tree_idx = left_df.sindex if len(right_df) > 0 else None
-        tree_idx_right = False
+    
+    # Check if rtree is installed...
+    if not HAS_RTREE:
+        raise ImportError(
+            "Rtree must be installed to use sjoin\n\n"
+            "See installation instructions at https://geopandas.org/install.html"
+        )
 
     # the rtree spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
@@ -109,29 +104,22 @@ def sjoin(
         right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
-    # for historical reasons, this logic is flipped in sjoin vs. pygeos query_bulk
-    if op == "contains":
-        op = "within"
-    elif op == "within":
-        op = "contains"
-
+    # query index
     r_idx = np.empty((0, 0))
     l_idx = np.empty((0, 0))
-    # get rtree spatial index. If tree_idx does not exist, it is due to either a
-    # failure to generate the index (e.g., if the column is empty), or the
-    # other dataframe is empty so it wasn't necessary to generate it.
-    if tree_idx_right and tree_idx:
-        l_idx, r_idx = tree_idx.query_bulk(left_df.geometry, predicate=op, sort=False)
-    elif not tree_idx_right and tree_idx:
-        # tree_idx_df == 'left'
-        r_idx, l_idx = tree_idx.query_bulk(right_df.geometry, predicate=op, sort=False)
+    if right_df.sindex:
+        l_idx, r_idx = right_df.sindex.query_bulk(
+            left_df.geometry, predicate=op, sort=False
+        )
 
+    # build result dataframe if any matches were found
     if r_idx.size > 0 and l_idx.size > 0:
         result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when output from the join has no overlapping geometries
         result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
 
+    # perform join on the dataframes
     if how == "inner":
         result = result.set_index("_key_left")
         joined = (
