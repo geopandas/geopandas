@@ -94,8 +94,6 @@ def test_raises_error_if_rtree_not_install(dfs):
 
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoin:
-
-
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
