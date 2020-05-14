@@ -22,7 +22,7 @@ import numpy as np
 class TestNoSindex:
     def test_no_sindex(self):
         """Checks that a warning is given when no spatial index is present."""
-        with pytest.warns():
+        with pytest.warns(UserWarning):
             sindex.get_sindex_class()
 
 
@@ -146,7 +146,7 @@ class TestPygeosInterface:
     def setup_method(self):
         data = {
             "location": [Point(x, y) for x, y in zip(range(5), range(5))]
-            + [box(10, 10, 20, 20)],  # include a box geometry
+            + [box(10, 10, 20, 20)]  # include a box geometry
         }
         self.df = GeoDataFrame(data, geometry="location")
         self.expected_size = len(data["location"])
@@ -166,9 +166,7 @@ class TestPygeosInterface:
         res = list(self.df.sindex.intersection(test_geom))
         assert_array_equal(res, expected)
 
-    @pytest.mark.parametrize(
-        "test_geom", ((-1, -1, -0.5), -0.5, None, Point(0, 0),),
-    )
+    @pytest.mark.parametrize("test_geom", ((-1, -1, -0.5), -0.5, None, Point(0, 0)))
     def test_intersection_invalid_bounds_tuple(self, test_geom):
         """Tests the `intersection` method with invalid inputs."""
         if compat.USE_PYGEOS:
