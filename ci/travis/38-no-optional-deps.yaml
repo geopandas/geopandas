@@ -8,7 +8,6 @@ dependencies:
   - shapely
   - fiona
   - pyproj
-  - pygeos
   # testing
   - pytest
   - pytest-cov
