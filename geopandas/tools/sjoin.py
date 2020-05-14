@@ -1,6 +1,6 @@
-import numpy as np
-import pandas as pd
+from warnings import warn
 
+import pandas as pd
 
 from geopandas import GeoDataFrame
 from geopandas._compat import HAS_RTREE
@@ -105,18 +105,14 @@ def sjoin(
     right_df = right_df.reset_index()
 
     # query index
-    r_idx = np.empty((0, 0))
-    l_idx = np.empty((0, 0))
     if right_df.sindex:
         l_idx, r_idx = right_df.sindex.query_bulk(
             left_df.geometry, predicate=op, sort=False
         )
-
-    # build result dataframe if any matches were found
-    if r_idx.size > 0 and l_idx.size > 0:
         result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when output from the join has no overlapping geometries
+        # or right_df is empty / has no valid geometries
         result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
 
     # perform join on the dataframes
