@@ -7,8 +7,7 @@ from shapely import prepared
 
 from geopandas import GeoDataFrame
 from geopandas import _compat as compat
-
-from importlib.util import find_spec
+from geopandas._compat import HAS_RTREE
 
 def sjoin(
     left_df, right_df, how="inner", op="intersects", lsuffix="left", rsuffix="right"
@@ -77,12 +76,10 @@ def sjoin(
         )
 
     # Check if rtree is installed...
-    package='rtree'
-    if find_spec(package) is None:
+    if not HAS_RTREE:
         raise ImportError(
-            f"{package} must be installed to use sjoin\n\n"
+            f"Rtree must be installed to use sjoin\n\n"
             "See installation instructions at https://geopandas.org/install.html"
-            
         )
 
     # Attempt to re-use spatial indexes, otherwise generate the spatial index
