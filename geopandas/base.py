@@ -374,7 +374,14 @@ class GeoPandasBase(object):
         return _binary_op("intersects", self, other)
 
     def overlaps(self, other):
-        """Return True for all geometries that overlap *other*, else False"""
+        """Returns True for all geometries that overlap *other*, else False.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if
+            overlaps.
+        """
         return _binary_op("overlaps", self, other)
 
     def touches(self, other):
