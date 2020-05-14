@@ -7,6 +7,7 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, sjoin
+from geopandas._compat import HAS_RTREE
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -84,9 +85,17 @@ def dfs(request):
 
     return [request.param, df1, df2, expected]
 
+@pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+def test_raises_error_if_rtree_not_install(dfs): 
+    _, df1, df2, _ = dfs
+    HAS_RTREE=False
+    with pytest.raises(ImportError):
+        geopandas.sjoin(df1, df2)
 
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoin:
+
+
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
