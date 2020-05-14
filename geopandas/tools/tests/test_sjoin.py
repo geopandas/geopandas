@@ -12,6 +12,9 @@ from geopandas._compat import HAS_RTREE
 from pandas.testing import assert_frame_equal
 import pytest
 
+@pytest.fixture()
+def has_rtree():
+    return HAS_RTREE
 
 @pytest.fixture()
 def dfs(request):
@@ -86,9 +89,9 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
-def test_raises_error_if_rtree_not_install(dfs): 
+def test_raises_error_if_rtree_not_install(has_rtree, dfs): 
     _, df1, df2, _ = dfs
-    HAS_RTREE=False
+    has_rtree=False
     with pytest.raises(ImportError):
         geopandas.sjoin(df1, df2)
 
