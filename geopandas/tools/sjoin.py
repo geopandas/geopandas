@@ -78,7 +78,7 @@ def sjoin(
     # Check if rtree is installed...
     if not HAS_RTREE:
         raise ImportError(
-            f"Rtree must be installed to use sjoin\n\n"
+            "Rtree must be installed to use sjoin\n\n"
             "See installation instructions at https://geopandas.org/install.html"
         )
 
