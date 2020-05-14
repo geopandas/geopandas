@@ -111,8 +111,7 @@ def sjoin(
         )
         result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
-        # when output from the join has no overlapping geometries
-        # or right_df is empty / has no valid geometries
+        # when right_df is empty / has no valid geometries
         result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
 
     # perform join on the dataframes
