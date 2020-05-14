@@ -15,6 +15,9 @@ import pytest
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
 
 
+pytestmark = pytest.mark.skipif(not compat.HAS_RTREE, reason="overlay requires rtree")
+
+
 @pytest.fixture
 def dfs(request):
     s1 = GeoSeries(
