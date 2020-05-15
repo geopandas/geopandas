@@ -72,16 +72,16 @@ def _overlay_difference(df1, df2):
     df1_idx, df2_idx = df2.sindex.query_bulk(
         df1.geometry, predicate="intersects", sort=True
     )
-    sidx = [
-        df2_idx[df1_idx == idx] if idx in np.unique(df1_idx) else []
+    df2_geoms = (
+        df2.geometry.values[df2_idx[df1_idx == idx]]
+        if idx in np.unique(df1_idx)
+        else []
         for idx in range(df1.geometry.size)
-    ]
+    )
     # Create differences
     new_g = []
-    for geom, neighbours in zip(df1.geometry, sidx):
-        new = reduce(
-            lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
-        )
+    for geom, neighbours in zip(df1.geometry, df2_geoms):
+        new = reduce(lambda x, y: x.difference(y), [geom] + list(neighbours))
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
