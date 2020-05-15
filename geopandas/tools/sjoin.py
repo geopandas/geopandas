@@ -74,6 +74,16 @@ def sjoin(
             "See installation instructions at https://geopandas.org/install.html"
         )
 
+    # query index
+    if right_df.sindex:
+        l_idx, r_idx = right_df.sindex.query_bulk(
+            left_df.geometry, predicate=op, sort=False
+        )
+        result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+    else:
+        # when right_df is empty / has no valid geometries
+        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+
     # the rtree spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
@@ -103,16 +113,6 @@ def sjoin(
         right_index_name = right_df.index.names
         right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
-
-    # query index
-    if right_df.sindex:
-        l_idx, r_idx = right_df.sindex.query_bulk(
-            left_df.geometry, predicate=op, sort=False
-        )
-        result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
-    else:
-        # when right_df is empty / has no valid geometries
-        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
 
     # perform join on the dataframes
     if how == "inner":
