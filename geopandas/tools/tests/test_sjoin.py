@@ -12,12 +12,6 @@ from geopandas._compat import HAS_RTREE
 from pandas.testing import assert_frame_equal
 import pytest
 
-
-@pytest.fixture()
-def has_rtree():
-    return HAS_RTREE
-
-
 @pytest.fixture()
 def dfs(request):
     polys1 = GeoSeries(
