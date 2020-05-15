@@ -66,13 +66,11 @@ def _clip_line_poly(gdf, poly):
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
         clipped["geometry"] = gdf_sub.intersection(poly)
-
-        # Return the clipped layer with no null geometry values or empty geometries
-        return clipped
     else:
         # GeoSeries
         clipped = gdf_sub.intersection(poly)
-        return clipped
+
+    return clipped
 
 
 def clip(gdf, mask, keep_geom_type=False):
