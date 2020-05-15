@@ -117,18 +117,186 @@ Note more complicated spatial relationships can be studied by combining geometri
 Sjoin Performance
 ~~~~~~~~~~~~~~~~~~
 
-Existing spatial indexes on either `left_df` or `right_df` will be reused when performing an ``sjoin``. If neither df has a spatial index, a spatial index will be generated for the longer df. If both have a spatial index, the `right_df`'s index will be used preferentially. Performance of multiple sjoins in a row involving a common GeoDataFrame may be improved by pre-generating the spatial index of the common GeoDataFrame prior to performing sjoins using ``df1.sindex``.
+Most of the computation is done within the spatial index queries. The spatial index is always queried as follows:
 
 .. code-block:: python
 
-    df1 = # a GeoDataFrame with data
-    df2 = # a second GeoDataFrame
-    df3 = # a third GeoDataFrame
+   right_df.sindex.query_bulk(left_df.geometry, op)
 
-    # pre-generate sindex on df1 if it doesn't already exist
-    df1.sindex
+This translates to:
 
-    sjoin(df1, df2, ...)
-    # sindex for df1 is reused
-    sjoin(df1, df3, ...)
-    # sindex for df1 is reused again
+.. code-block:: python
+
+   geom_in_left_df.op(geom_in_right_df)
+
+For ``sjoin``, there are two concrete choices which can be made:
+
+**Order of left_df and right_df**
+
+For predicates where the order does not matter (ex: ``intersects``) simply flipping the GeoDataFrames and the ``how`` parameter can yield great performance improvements.
+
+.. code-block:: python
+
+   # changing
+   sjoin(left_df=df1, right_df=df2, how="left", op='intersects')
+   # to
+   sjoin(left_df=df2, right_df=df1, how="right", op='intersects')
+   # yields the same result but possibly different performance
+
+There are many factors that may influence the performance of the query, some of which are:
+* Complexity of geometries. Some operations may handle complex geometries better than others. For example, ``polygon.intersects(point)`` will perform differently than ``point.intersects(polygon)``. Swapping ``left_df`` and ``right_df`` will change which way the comparison is made.
+* Partitioning of the data by the spatial index. Before doing predicate comparisons, the query uses a leaf-based spatial index to find geometries with intersecting bounds in logarithmic time. Since ``right_df`` is always the GeoDataFrame used as the spatial index, making ``right_df`` the longer GeoDataFrame may improve the performance of the query.
+
+**Choice of op**
+
+Since some operations have inverses (ex: ``within`` is the inverse of ``contains``), you can try flipping these operations along with the GeoDataFrames to speed up your spatial join.
+
+.. code-block:: python
+
+   # changing
+   sjoin(left_df=df1, right_df=df2, how="left", op='within')
+   # to
+   sjoin(left_df=df2, right_df=df1, how="right", op='contains')
+   # yields the same result but possibly different performance
+
+For a more in-depth discussion, see the section below regarding spatial index performance in general.
+
+Spatial Index Performance
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The performance of several ``GeoPandas`` functions (namely ``sjoin``, ``overlay`` and ``clip``) is largely determined by the spatial index query.
+As discussed above, many factors may influence the performance of the query.
+To offer some guidance, we have benchmarked queries across different spatial index implementations (``pygeos`` and ``rtree``) as well as different geometry types and predicates.
+Keep in mind that these benchmarks are highly variable and may behave differently than your data. It is highly recommended that you do your own testing for best performance.
+
+
++--------------------------------------------------------+--------------+---------------+
+| test(predicate, input\_geom\_type, tree\_geom\_type)   | rtree        | pygeos        |
++========================================================+==============+===============+
+| query\_bulk('contains', 'mixed', 'mixed')              | 130±9ms      | 68.1±0.7ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'mixed', 'points')             | 43.1±0.7ms   | 557±20μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'mixed', 'polygons')           | 112±2ms      | 69.4±3ms      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'points', 'mixed')             | 41.5±6ms     | 21.3±0.5ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'points', 'points')            | 23.4±0.5ms   | 408±4μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'points', 'polygons')          | 27.0±2ms     | 20.9±0.5ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'polygons', 'mixed')           | 110±2ms      | 48.2±0.8ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'polygons', 'points')          | 30.2±2ms     | 150±7μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('contains', 'polygons', 'polygons')        | 96.6±2ms     | 49.5±1ms      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'mixed', 'mixed')               | 122±4ms      | 159±3ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'mixed', 'points')              | 42.2±4ms     | 19.7±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'mixed', 'polygons')            | 106±2ms      | 140±9ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'points', 'mixed')              | 39.1±0.8ms   | 21.2±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'points', 'points')             | 22.7±1ms     | 388±7μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'points', 'polygons')           | 30.3±2ms     | 20.6±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'polygons', 'mixed')            | 103±3ms      | 137±2ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'polygons', 'points')           | 25.2±0.5ms   | 19.2±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('crosses', 'polygons', 'polygons')         | 94.4±2ms     | 119±4ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'mixed', 'mixed')            | 49.3±1ms     | 59.1±3ms      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'mixed', 'points')           | 35.8±1ms     | 1.72±0.02ms   |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'mixed', 'polygons')         | 39.9±1ms     | 55.8±0.7ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'points', 'mixed')           | 32.0±1ms     | 664±20μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'points', 'points')          | 18.1±0.8ms   | 407±3μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'points', 'polygons')        | 24.9±0.8ms   | 200±20μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'polygons', 'mixed')         | 39.2±4ms     | 56.8±1ms      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'polygons', 'points')        | 22.3±0.2ms   | 1.32±0.04ms   |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('intersects', 'polygons', 'polygons')      | 27.9±0.8ms   | 55.4±0.5ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'mixed', 'mixed')              | 246±10ms     | 160±3ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'mixed', 'points')             | 59.9±1ms     | 20.8±1ms      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'mixed', 'polygons')           | 209±5ms      | 141±2ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'points', 'mixed')             | 66.2±5ms     | 21.1±0.2ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'points', 'points')            | 21.6±0.4ms   | 394±8μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'points', 'polygons')          | 52.6±2ms     | 20.5±0.6ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'polygons', 'mixed')           | 202±7ms      | 137±0.9ms     |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'polygons', 'points')          | 50.6±3ms     | 19.2±0.4ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('overlaps', 'polygons', 'polygons')        | 165±3ms      | 122±3ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'mixed', 'mixed')               | 249±8ms      | 157±2ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'mixed', 'points')              | 62.3±3ms     | 19.4±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'mixed', 'polygons')            | 212±4ms      | 139±2ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'points', 'mixed')              | 61.9±2ms     | 21.0±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'points', 'points')             | 22.1±0.3ms   | 397±20μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'points', 'polygons')           | 51.3±1ms     | 20.6±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'polygons', 'mixed')            | 199±4ms      | 137±2ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'polygons', 'points')           | 54.6±4ms     | 19.4±0.7ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('touches', 'polygons', 'polygons')         | 169±6ms      | 120±1ms       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'mixed', 'mixed')                | 78.1±1ms     | 12.6±0.2ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'mixed', 'points')               | 42.6±1ms     | 1.44±0.02ms   |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'mixed', 'polygons')             | 66.8±2ms     | 12.3±0.09ms   |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'points', 'mixed')               | 37.5±0.8ms   | 948±80μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'points', 'points')              | 22.3±0.7ms   | 114±1μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'points', 'polygons')            | 28.3±0.6ms   | 791±20μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'polygons', 'mixed')             | 61.6±3ms     | 11.7±0.3ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'polygons', 'points')            | 28.2±0.5ms   | 1.33±0.03ms   |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk('within', 'polygons', 'polygons')          | 48.6±0.5ms   | 11.4±0.7ms    |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'mixed', 'mixed')                    | 249±10ms     | 634±30μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'mixed', 'points')                   | 61.7±2ms     | 193±8μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'mixed', 'polygons')                 | 207±4ms      | 393±20μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'points', 'mixed')                   | 64.2±3ms     | 286±10μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'points', 'points')                  | 21.5±0.3ms   | 81.1±4μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'points', 'polygons')                | 50.9±0.6ms   | 177±10μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'polygons', 'mixed')                 | 197±4ms      | 392±2μs       |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'polygons', 'points')                | 48.6±4ms     | 133±10μs      |
++--------------------------------------------------------+--------------+---------------+
+| query\_bulk(None, 'polygons', 'polygons')              | 165±2ms      | 238±20μs      |
++--------------------------------------------------------+--------------+---------------+
+
