@@ -9,6 +9,7 @@ from geopandas import GeoDataFrame
 from geopandas import _compat as compat
 from geopandas._compat import HAS_RTREE
 
+
 def sjoin(
     left_df, right_df, how="inner", op="intersects", lsuffix="left", rsuffix="right"
 ):
