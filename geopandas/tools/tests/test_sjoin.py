@@ -91,9 +91,9 @@ def dfs(request):
 @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
 def test_raises_error_if_rtree_not_install(has_rtree, dfs): 
     _, df1, df2, _ = dfs
-    has_rtree=False
-    with pytest.raises(ImportError):
-        geopandas.sjoin(df1, df2)
+    if not HAS_RTREE:
+        with pytest.raises(ImportError):
+            geopandas.sjoin(df1, df2)
 
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoin:
