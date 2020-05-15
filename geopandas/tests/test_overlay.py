@@ -7,7 +7,6 @@ from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas import _compat as compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -166,33 +165,32 @@ def test_overlay_nybb(how):
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)
 
-    if compat.USE_PYGEOS and how in ("symmetric_difference", "union"):
-        # the ordering of the spatial index results causes slight deviations
-        # in the resultant geometries for multipolygons
-        # for more details on the discussion, see:
-        # https://github.com/geopandas/geopandas/pull/1338
-        # https://github.com/geopandas/geopandas/issues/1337
+    # the ordering of the spatial index results causes slight deviations
+    # in the resultant geometries for multipolygons
+    # for more details on the discussion, see:
+    # https://github.com/geopandas/geopandas/pull/1338
+    # https://github.com/geopandas/geopandas/issues/1337
 
-        # Temporary workaround below:
+    # Temporary workaround below:
 
-        # simplify multipolygon geometry comparison
-        # since the order of the constituent polygons depends on
-        # the ordering of spatial indexing results, we cannot
-        # compare symmetric_difference results directly when the
-        # resultant geometry is a multipolygon
+    # simplify multipolygon geometry comparison
+    # since the order of the constituent polygons depends on
+    # the ordering of spatial indexing results, we cannot
+    # compare symmetric_difference results directly when the
+    # resultant geometry is a multipolygon
 
-        # first, check that all bounds and areas are approx equal
-        # this is a very rough check for multipolygon equality
-        pd.testing.assert_series_equal(
-            result.geometry.area, expected.geometry.area, check_less_precise=True
-        )
-        pd.testing.assert_frame_equal(
-            result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
-        )
+    # first, check that all bounds and areas are approx equal
+    # this is a very rough check for multipolygon equality
+    pd.testing.assert_series_equal(
+        result.geometry.area, expected.geometry.area, check_less_precise=True
+    )
+    pd.testing.assert_frame_equal(
+        result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
+    )
 
-        # now drop multipolygons
-        result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
-        expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
+    # now drop multipolygons
+    result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
+    expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
 
     assert_geodataframe_equal(
         result, expected, check_crs=False, check_column_type=False
