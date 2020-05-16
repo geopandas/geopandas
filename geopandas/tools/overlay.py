@@ -76,42 +76,26 @@ def _overlay_difference(df1, df2):
     """
     # spatial index query to find intersections
     idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
-    idx1_unique, idx1_unique_idxs = np.unique(idx1, return_index=True)
-    df2_neighbors = (
-        df2.geometry.values.data[idxs] for idxs in np.split(idx2, idx1_unique_idxs[1:])
-    )
-    # copy the input dataframe
-    dfdiff = df1.copy()
-    if compat.USE_PYGEOS:
-        # create differences
-        for df1_idx, df2_nei in zip(idx1_unique, df2_neighbors):
-            dfdiff.geometry.values.data[df1_idx] = pygeos.lib.difference.reduce(
-                (df1.geometry.values.data[df1_idx], *df2_nei)
-            )
-        # buffer polygons
-        geom_types = pygeos.geometry.get_type_id(
-            dfdiff.geometry.values.data[idx1_unique]
+    idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
+    idx1_unique = set(idx1_unique)
+    idx2_split = iter(np.split(idx2, idx1_unique_indices[1:]))
+    sidx = [
+        next(idx2_split) if idx in idx1_unique else []
+        for idx in range(df1.geometry.size)
+    ]
+    # Create differences
+    new_g = []
+    for geom, neighbours in zip(df1.geometry, sidx):
+        new = reduce(
+            lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
         )
-        polys = (geom_types == 3) | (geom_types == 6)  # polygon or multipolygon
-        dfdiff.geometry.values.data[idx1_unique][polys] = pygeos.constructive.buffer(
-            dfdiff.geometry.values.data[idx1_unique][polys], 0,
-        )
-        # remove empty
-        dfdiff = dfdiff[~pygeos.is_empty(dfdiff.geometry.values.data)]
-    else:
-        # create differences
-        for df1_idx, df2_nei in zip(idx1_unique, df2_neighbors):
-            dfdiff.geometry.values[df1_idx] = reduce(
-                lambda x, y: x.difference(y),
-                (df1.geometry.values.data[df1_idx], *df2_nei),
-            )
-        # buffer polygons
-        polys = dfdiff.geometry.iloc[idx1_unique].type.isin(("Polygon", "MultiPolygon"))
-        dfdiff.geometry.values[idx1_unique][polys] = dfdiff.geometry.values[
-            idx1_unique
-        ][polys].buffer(0)
-        # remove empty
-        dfdiff = dfdiff[~dfdiff.geometry.is_empty]
+        new_g.append(new)
+    differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
+    poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
+    differences.loc[poly_ix] = differences[poly_ix].buffer(0)
+    geom_diff = differences[~differences.is_empty].copy()
+    dfdiff = df1[~differences.is_empty].copy()
+    dfdiff[dfdiff._geometry_column_name] = geom_diff
     return dfdiff
 
 
