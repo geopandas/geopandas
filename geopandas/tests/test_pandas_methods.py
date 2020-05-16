@@ -458,6 +458,12 @@ def test_groupby(df):
         )
     assert_series_equal(res, exp)
 
+    # apply on geometry column not resulting in new geometry
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union.area)
+    exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry",)
+
+    assert_series_equal(res, exp)
+
 
 def test_groupby_groups(df):
     g = df.groupby("value2")
