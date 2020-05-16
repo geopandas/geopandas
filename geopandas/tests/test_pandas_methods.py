@@ -9,7 +9,7 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
+from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025, PANDAS_GE_11
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -444,11 +444,18 @@ def test_groupby(df):
 
     # applying on the geometry column
     res = df.groupby("value2")["geometry"].apply(lambda x: x.cascaded_union)
-    exp = pd.Series(
-        [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-        index=pd.Index([1, 2], name="value2"),
-        name="geometry",
-    )
+    if PANDAS_GE_11:
+        exp = GeoSeries(
+            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+            index=pd.Index([1, 2], name="value2"),
+            name="geometry",
+        )
+    else:
+        exp = pd.Series(
+            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+            index=pd.Index([1, 2], name="value2"),
+            name="geometry",
+        )
     assert_series_equal(res, exp)
 
 
