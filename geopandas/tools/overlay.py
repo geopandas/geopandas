@@ -71,10 +71,9 @@ def _overlay_difference(df1, df2):
     # spatial index query to find intersections
     idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
     idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
-    idx1_unique = set(idx1_unique)
-    idx2_split = iter(np.split(idx2, idx1_unique_indices[1:]))
+    idx2_split = np.split(idx2, idx1_unique_indices[1:])
     sidx = [
-        next(idx2_split) if idx in idx1_unique else []
+        idx2_split.pop(0) if idx in idx1_unique else []
         for idx in range(df1.geometry.size)
     ]
     # Create differences
