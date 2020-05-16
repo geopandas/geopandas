@@ -4,12 +4,6 @@ import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas import _compat as compat
-
-if compat.USE_PYGEOS:
-    import pygeos  # noqa
-else:
-    pygeos = None
 
 
 def _ensure_geometry_column(df):
