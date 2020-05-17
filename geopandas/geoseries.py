@@ -177,7 +177,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         if not self.crs:
             self.crs = crs
-        self._invalidate_sindex()
         return self
 
     def __init__(self, *args, **kwargs):
@@ -296,7 +295,6 @@ class GeoSeries(GeoPandasBase, Series):
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
-            val._invalidate_sindex()
         return val
 
     def __getitem__(self, key):

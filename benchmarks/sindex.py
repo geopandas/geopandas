@@ -35,8 +35,8 @@ class Bench:
         Note: pygeos will only create the index once; this benchmark
         is not intended to be used to compare rtree and pygeos.
         """
-        self.data[tree_geom_type]._invalidate_sindex()
-        self.data[tree_geom_type]._generate_sindex()
+        self.data[tree_geom_type].geometry.values._sindex = None
+        self.data[tree_geom_type].sindex
 
     def time_intersects(self, tree_geom_type):
         for bounds in self.bounds:

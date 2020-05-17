@@ -89,46 +89,14 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
             " joined".format(index_left, index_right)
         )
 
-
-def _geom_predicate_query(left_df, right_df, op):
-    """Compute geometric comparisons and get matching indices.
-
-    Parameters
-    ----------
-    left_df : GeoDataFrame
-    right_df : GeoDataFrame
-    op : string
-        Binary predicate to query.
-
-    Returns
-    -------
-    DataFrame
-        DataFrame with matching indices in
-        columns named `_key_left` and `_key_right`.
-    """
-    with warnings.catch_warnings():
-        # We don't need to show our own warning here
-        # TODO remove this once the deprecation has been enforced
-        warnings.filterwarnings(
-            "ignore", "Generated spatial index is empty", FutureWarning
-        )
-        if op == "within":
-            # within is implemented as the inverse of contains
-            # contains is a faster predicate
-            # see discussion at https://github.com/geopandas/geopandas/pull/1421
-            predicate = "contains"
-            sindex = left_df.sindex
-            input_geoms = right_df.geometry
-        else:
-            # all other predicates are symmetric
-            # keep them the same
-            predicate = op
-            sindex = right_df.sindex
-            input_geoms = left_df.geometry
-
-    if sindex:
-        l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
-        indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+    # Attempt to re-use spatial indexes, otherwise generate the spatial index
+    # for the longer dataframe. If we are joining to an empty dataframe,
+    # don't bother generating the index.
+    if right_df.geometry.values._sindex or (
+        not left_df.geometry.values._sindex and right_df.shape[0] > left_df.shape[0]
+    ):
+        tree_idx = right_df.sindex if len(left_df) > 0 else None
+        tree_idx_right = True
     else:
         # when sindex is empty / has no valid geometries
         indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)

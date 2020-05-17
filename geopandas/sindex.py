@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from collections import namedtuple
+=======
 from warnings import warn
+>>>>>>> move sindex to geometryarrya
 
 from shapely.geometry.base import BaseGeometry
 import pandas as pd
@@ -83,8 +86,8 @@ if compat.HAS_RTREE:
 
         def __init__(self, geometry):
             stream = (
-                (i, item.bounds, idx)
-                for i, (idx, item) in enumerate(geometry.iteritems())
+                (i, item.bounds, None)
+                for i, item in enumerate(geometry)
                 if pd.notnull(item) and not item.is_empty
             )
             try:
@@ -97,7 +100,11 @@ if compat.HAS_RTREE:
                 super().__init__()
 
             # store reference to geometries for predicate queries
+<<<<<<< HEAD
             self.geometries = geometry.geometry.values
+=======
+            self._geometries = geometry
+>>>>>>> move sindex to geometryarrya
             # create a prepared geometry cache
             self._prepared_geometries = np.array(
                 [None] * self.geometries.size, dtype=object
@@ -157,7 +164,7 @@ if compat.HAS_RTREE:
 
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds
-            tree_idx = list(self.intersection(bounds, objects=False))
+            tree_idx = list(self.intersection(bounds))
 
             if not tree_idx:
                 return np.array([], dtype=np.intp)
@@ -280,7 +287,7 @@ if compat.HAS_RTREE:
 if compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
-    from .array import GeometryArray, _shapely_to_geom  # noqa
+    from . import array  # noqa
     import pygeos  # noqa
 
     class PyGEOSSTRTreeIndex(pygeos.STRtree):
@@ -293,27 +300,21 @@ if compat.HAS_PYGEOS:
             GeoSeries from which to build the spatial index.
         """
 
-        # helper for loc/label based indexing in `intersection` method
-        with_objects = namedtuple("with_objects", "object id")
-
         # set of valid predicates for this spatial index
         # by default, the global set
         valid_query_predicates = VALID_QUERY_PREDICATES
 
         def __init__(self, geometry):
-            # for compatibility with old RTree implementation, store ids/indexes
-            original_indexes = geometry.index
             # set empty geometries to None to avoid segfault on GEOS <= 3.6
             # see:
             # https://github.com/pygeos/pygeos/issues/146
             # https://github.com/pygeos/pygeos/issues/147
-            non_empty = geometry.values.data.copy()
+            non_empty = geometry.copy()
             non_empty[pygeos.is_empty(non_empty)] = None
             # set empty geometries to None to mantain indexing
-            self.objects = self.ids = original_indexes
             super().__init__(non_empty)
             # store geometries, including empty geometries for user access
-            self.geometries = geometry.values.data.copy()
+            self.geometries = geometry.copy()
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
@@ -352,7 +353,7 @@ if compat.HAS_PYGEOS:
                 )
 
             if isinstance(geometry, BaseGeometry):
-                geometry = _shapely_to_geom(geometry)
+                geometry = array._shapely_to_geom(geometry)
 
             matches = super().query(geometry=geometry, predicate=predicate)
 
@@ -402,7 +403,7 @@ if compat.HAS_PYGEOS:
                 )
             if isinstance(geometry, geoseries.GeoSeries):
                 geometry = geometry.values.data
-            elif isinstance(geometry, GeometryArray):
+            elif isinstance(geometry, array.GeometryArray):
                 geometry = geometry.data
             elif not isinstance(geometry, np.ndarray):
                 geometry = np.asarray(geometry)
@@ -417,7 +418,7 @@ if compat.HAS_PYGEOS:
 
             return res
 
-        def intersection(self, coordinates, objects=False):
+        def intersection(self, coordinates):
             """Wrapper for pygeos.query that uses the RTree API.
 
             Parameters
@@ -425,9 +426,6 @@ if compat.HAS_PYGEOS:
             coordinates : sequence or array
                 Sequence of the form (min_x, min_y, max_x, max_y)
                 to query a rectangle or (x, y) to query a point.
-            objects : boolean, default False
-                If True, return the label based indexes. If False, integer indexes
-                are returned.
             """
             if objects:
                 warn(
@@ -463,14 +461,7 @@ if compat.HAS_PYGEOS:
                     "Got `coordinates` = {}.".format(coordinates)
                 )
 
-            if objects:
-                objs = self.objects[indexes].values
-                ids = self.ids[indexes]
-                return [
-                    self.with_objects(id=id, object=obj) for id, obj in zip(ids, objs)
-                ]
-            else:
-                return indexes
+            return indexes
 
         @property
         def size(self):
