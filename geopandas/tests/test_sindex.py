@@ -86,6 +86,18 @@ class TestSeriesSindex:
         assert s.sindex.size == 1
         assert s.values._sindex is not None
 
+    def test_rebuild_on_item_change(self):
+        s = GeoSeries([Point(0, 0)])
+        original_index = s.sindex
+        s.iloc[0] = Point(0, 0)
+        assert s.sindex is not original_index
+
+    def test_rebuild_on_slice(self):
+        s = GeoSeries([Point(0, 0), Point(0, 0)])
+        original_index = s.sindex
+        sliced = s.iloc[:1]
+        assert sliced.sindex is not original_index
+
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")

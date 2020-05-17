@@ -268,7 +268,7 @@ class GeometryArray(ExtensionArray):
             if not crs:
                 crs = data.crs
             if not sindex:
-                sindex = data.sindex
+                sindex = data.sindex.__class__
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -289,11 +289,9 @@ class GeometryArray(ExtensionArray):
 
     @property
     def sindex(self):
-        # check for existing spatial index
-        if self._sindex is not None:
+        if self._sindex is not None:  # check for existing
             pass
-        # build it
-        if self._sindex_cls is not None:
+        elif self._sindex_cls is not None:  # build it
             _sindex = self._sindex_cls(self.data)
             if not _sindex.is_empty:
                 self._sindex = _sindex
@@ -391,6 +389,9 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
 
+        # invalidate spatial index
+        self._sindex = None
+
         # TODO: use this once pandas-dev/pandas#33457 is fixed
         # if hasattr(value, "crs"):
         #     if value.crs and (value.crs != self.crs):
@@ -402,13 +403,19 @@ class GeometryArray(ExtensionArray):
     if compat.USE_PYGEOS:
 
         def __getstate__(self):
-            return (pygeos.to_wkb(self.data), self._crs)
+            return (
+                pygeos.to_wkb(self.data),
+                self._crs,
+                self._sindex_cls,
+            )
 
         def __setstate__(self, state):
             geoms = pygeos.from_wkb(state[0])
             self._crs = state[1]
             self.data = geoms
             self.base = None
+            self._sindex_cls = state[2]
+            self._sindex = None  # invalidate, don't allow setting
 
     else:
 
