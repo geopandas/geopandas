@@ -91,10 +91,10 @@ if compat.HAS_RTREE:
                 super().__init__()
 
             # store reference to geometries for predicate queries
-            self._geometries = geometry.geometry.values
+            self.geometries = geometry.geometry.values
             # create a prepared geometry cache
             self._prepared_geometries = np.array(
-                [None] * self._geometries.size, dtype=object
+                [None] * self.geometries.size, dtype=object
             )
 
         def query(self, geometry, predicate=None, sort=False):
@@ -173,7 +173,7 @@ if compat.HAS_RTREE:
                     if self._prepared_geometries[index_in_tree] is None:
                         # if not already prepared, prepare and cache
                         self._prepared_geometries[index_in_tree] = prep(
-                            self._geometries[index_in_tree]
+                            self.geometries[index_in_tree]
                         )
                     if self._prepared_geometries[index_in_tree].contains(geometry):
                         res.append(index_in_tree)
@@ -187,7 +187,7 @@ if compat.HAS_RTREE:
                 tree_idx = [
                     index_in_tree
                     for index_in_tree in tree_idx
-                    if getattr(geometry, predicate)(self._geometries[index_in_tree])
+                    if getattr(geometry, predicate)(self.geometries[index_in_tree])
                 ]
 
             # sort if requested
@@ -273,10 +273,11 @@ if compat.HAS_PYGEOS:
         def __init__(self, geometry):
             # for compatibility with old RTree implementation, store ids/indexes
             original_indexes = geometry.index
-            non_empty = ~geometry.values.is_empty
-            self._geometries = geometry[non_empty]
-            self.objects = self.ids = original_indexes[non_empty]
-            super().__init__(self._geometries.values.data)
+            geometry = geometry.values.data.copy()
+            # set empty geometries to None to mantain indexing
+            geometry[pygeos.is_empty(geometry)] = None
+            self.objects = self.ids = original_indexes
+            super().__init__(geometry)
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
