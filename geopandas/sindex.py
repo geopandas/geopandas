@@ -240,10 +240,7 @@ if compat.HAS_RTREE:
 
         @property
         def size(self):
-            # use size of geometries
-            # empty geometries are not counted by rtree
-            # but we want to count them for the size attribute
-            return self.geometries.size
+            return len(self.leaves()[0][1])
 
         @property
         def is_empty(self):
