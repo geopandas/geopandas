@@ -91,10 +91,10 @@ if compat.HAS_RTREE:
                 super().__init__()
 
             # store reference to geometries for predicate queries
-            self.geometries = geometry.geometry.values
+            self._geometries = geometry.geometry.values
             # create a prepared geometry cache
             self._prepared_geometries = np.array(
-                [None] * self.geometries.size, dtype=object
+                [None] * self._geometries.size, dtype=object
             )
 
         def query(self, geometry, predicate=None, sort=False):
@@ -173,7 +173,7 @@ if compat.HAS_RTREE:
                     if self._prepared_geometries[index_in_tree] is None:
                         # if not already prepared, prepare and cache
                         self._prepared_geometries[index_in_tree] = prep(
-                            self.geometries[index_in_tree]
+                            self._geometries[index_in_tree]
                         )
                     if self._prepared_geometries[index_in_tree].contains(geometry):
                         res.append(index_in_tree)
@@ -187,7 +187,7 @@ if compat.HAS_RTREE:
                 tree_idx = [
                     index_in_tree
                     for index_in_tree in tree_idx
-                    if getattr(geometry, predicate)(self.geometries[index_in_tree])
+                    if getattr(geometry, predicate)(self._geometries[index_in_tree])
                 ]
 
             # sort if requested
