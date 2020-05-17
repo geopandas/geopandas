@@ -44,8 +44,7 @@ class TestSeriesSindex:
     def test_empty_point(self):
         s = GeoSeries([Point()])
 
-        assert s.sindex is None
-        assert s._sindex_generated is True
+        assert s.sindex.size == 1
 
     def test_polygons(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
