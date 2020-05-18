@@ -862,7 +862,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         GeoDataFrame or DataFrame
         """
-        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super(GeoDataFrame, self).astype(
+            dtype, copy=copy, errors=errors, crs=self.crs, **kwargs
+        )
 
         try:
             geoms = df[self._geometry_column_name]
