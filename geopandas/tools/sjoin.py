@@ -66,7 +66,7 @@ def sjoin(
             "'{0}' and '{1}' cannot be names in the frames being"
             " joined".format(index_left, index_right)
         )
-    
+
     # Check if rtree is installed...
     if not HAS_RTREE:
         raise ImportError(
