@@ -17,6 +17,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
+
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
@@ -329,7 +330,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
-        return geopandas.io.file.read_file(filename, **kwargs)
+        return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
     def from_features(cls, features, crs=None, columns=None):
@@ -375,18 +376,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
-        for f in features_lst:
-            if hasattr(f, "__geo_interface__"):
-                f = f.__geo_interface__
-            else:
-                f = f
-
-            d = {"geometry": shape(f["geometry"]) if f["geometry"] else None}
-            d.update(f["properties"])
-            rows.append(d)
-        df = GeoDataFrame(rows, columns=columns)
-        df.crs = crs
-        return df
+        for feature in features_lst:
+            # load geometry
+            if hasattr(feature, "__geo_interface__"):
+                feature = feature.__geo_interface__
+            row = {
+                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+            }
+            # load properties
+            row.update(feature["properties"])
+            rows.append(row)
+        return GeoDataFrame(rows, columns=columns, crs=crs)
 
     @classmethod
     def from_postgis(
@@ -441,7 +441,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
 
-        df = geopandas.io.sql.read_postgis(
+        df = geopandas.io.sql._read_postgis(
             sql,
             con,
             geom_col=geom_col,
@@ -623,9 +623,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         GeoSeries.to_file
         """
-        from geopandas.io.file import to_file
+        from geopandas.io.file import _to_file
 
-        to_file(self, filename, driver, schema, index, **kwargs)
+        _to_file(self, filename, driver, schema, index, **kwargs)
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
@@ -878,6 +878,65 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def to_postgis(
+        self,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
+    ):
+
+        """
+        Upload GeoDataFrame into PostGIS database.
+
+        This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+        Python driver (e.g. psycopg2) to be installed.
+
+        Parameters
+        ----------
+        name : str
+            Name of the target table.
+        con : sqlalchemy.engine.Engine
+            Active connection to the PostGIS database.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            How to behave if the table already exists:
+
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
+        schema : string, optional
+            Specify the schema. If None, use default schema: 'public'.
+        index : bool, default True
+            Write DataFrame index as a column.
+            Uses *index_label* as the column name in the table.
+        index_label : string or sequence, default None
+            Column label for index column(s).
+            If None is given (default) and index is True,
+            then the index names are used.
+        chunksize : int, optional
+            Rows will be written in batches of this size at a time.
+            By default, all rows will be written at once.
+        dtype : dict of column name to SQL type, default None
+            Specifying the datatype for columns.
+            The keys should be the column names and the values
+            should be the SQLAlchemy types.
+
+        Examples
+        --------
+
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase";)
+        >>> gdf.to_postgis("my_table", engine)
+        """
+        geopandas.io.sql._write_postgis(
+            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
 
         #
         # Implement standard operators for GeoSeries

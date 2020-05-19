@@ -11,6 +11,7 @@ import pandas as pd
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
+from geopandas.io.sql import _write_postgis as write_postgis
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
@@ -48,6 +49,39 @@ def connection_postgis():
 
 
 @pytest.fixture()
+def engine_postgis():
+    """
+    Initiaties a connection engine to a postGIS database that must already exist.
+    """
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    from sqlalchemy.engine.url import URL
+
+    user = os.environ.get("PGUSER")
+    password = os.environ.get("PGPASSWORD")
+    host = os.environ.get("PGHOST")
+    port = os.environ.get("PGPORT")
+    dbname = "test_geopandas"
+
+    try:
+        con = sqlalchemy.create_engine(
+            URL(
+                drivername="postgresql+psycopg2",
+                username=user,
+                database=dbname,
+                password=password,
+                host=host,
+                port=port,
+            )
+        )
+        con.begin()
+    except Exception:
+        pytest.skip("Cannot connect with postgresql database")
+
+    yield con
+    con.dispose()
+
+
+@pytest.fixture()
 def connection_spatialite():
     """
     Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
@@ -75,6 +109,82 @@ def connection_spatialite():
 
     yield con
     con.close()
+
+
+def drop_table_if_exists(engine, table):
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+
+    if engine.has_table(table):
+        metadata = sqlalchemy.MetaData(engine)
+        metadata.reflect()
+        table = metadata.tables.get(table)
+        if table is not None:
+            table.drop(checkfirst=True)
+
+
+@pytest.fixture
+def df_mixed_single_and_multi():
+    from shapely.geometry import Point, LineString, MultiLineString
+
+    df = geopandas.GeoDataFrame(
+        {
+            "geometry": [
+                LineString([(0, 0), (1, 1)]),
+                MultiLineString([[(0, 0), (1, 1)], [(2, 2), (3, 3)]]),
+                Point(0, 1),
+            ]
+        },
+        crs="epsg:4326",
+    )
+    return df
+
+
+@pytest.fixture
+def df_geom_collection():
+    from shapely.geometry import Point, LineString, Polygon, GeometryCollection
+
+    df = geopandas.GeoDataFrame(
+        {
+            "geometry": [
+                GeometryCollection(
+                    [
+                        Polygon([(0, 0), (1, 1), (0, 1)]),
+                        LineString([(0, 0), (1, 1)]),
+                        Point(0, 0),
+                    ]
+                )
+            ]
+        },
+        crs="epsg:4326",
+    )
+    return df
+
+
+@pytest.fixture
+def df_linear_ring():
+    from shapely.geometry import LinearRing
+
+    df = geopandas.GeoDataFrame(
+        {"geometry": [LinearRing(((0, 0), (0, 1), (1, 1), (1, 0)))]}, crs="epsg:4326"
+    )
+    return df
+
+
+@pytest.fixture
+def df_3D_geoms():
+    from shapely.geometry import Point, LineString, Polygon
+
+    df = geopandas.GeoDataFrame(
+        {
+            "geometry": [
+                LineString([(0, 0, 0), (1, 1, 1)]),
+                Polygon([(0, 0, 0), (1, 1, 1), (0, 1, 1)]),
+                Point(0, 1, 2),
+            ]
+        },
+        crs="epsg:4326",
+    )
+    return df
 
 
 class TestIO:
@@ -197,3 +307,330 @@ class TestIO:
         # no crs defined on the created geodatabase, and none specified
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
+
+    def test_read_postgis_privacy(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.warns(DeprecationWarning):
+            geopandas.io.sql.read_postgis(sql, con)
+
+    def test_write_postgis_default(self, engine_postgis, df_nybb):
+        """Tests that GeoDataFrame can be written to PostGIS with defaults."""
+        engine = engine_postgis
+        table = "nybb"
+
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        # Write to db
+        write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        # Validate
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_fail_when_table_exists(self, engine_postgis, df_nybb):
+        """
+        Tests that uploading the same table raises error when: if_replace='fail'.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+
+        # Ensure table exists
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        try:
+            write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        except ValueError as e:
+            if "already exists" in str(e):
+                pass
+            else:
+                raise e
+
+    def test_write_postgis_replace_when_table_exists(self, engine_postgis, df_nybb):
+        """
+        Tests that replacing a table is possible when: if_replace='replace'.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+
+        # Ensure table exists
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # Overwrite
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # Validate
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_append_when_table_exists(self, engine_postgis, df_nybb):
+        """
+        Tests that appending to existing table produces correct results when:
+        if_replace='append'.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+
+        orig_rows, orig_cols = df_nybb.shape
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+        # Validate
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        new_rows, new_cols = df.shape
+
+        # There should be twice as many rows in the new table
+        assert new_rows == orig_rows * 2, (
+            "There should be {target} rows,"
+            "found: {current}".format(target=orig_rows * 2, current=new_rows),
+        )
+        # Number of columns should stay the same
+        assert new_cols == orig_cols, (
+            "There should be {target} columns,"
+            "found: {current}".format(target=orig_cols, current=new_cols),
+        )
+
+    def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
+        """
+        Tests that GeoDataFrame can be written to PostGIS without CRS information.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+
+        # Write to db
+        df_nybb = df_nybb
+        df_nybb.crs = None
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # Validate that srid is -1
+        target_srid = engine.execute(
+            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                schema="public", table=table, geom_col="geometry"
+            )
+        ).fetchone()[0]
+        assert target_srid == 0, "SRID should be 0, found %s" % target_srid
+
+    def test_write_postgis_geometry_collection(
+        self, engine_postgis, df_geom_collection
+    ):
+        """
+        Tests that writing a mix of different geometry types is possible.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(df_geom_collection, con=engine, name=table, if_exists="replace")
+
+        # Validate geometry type
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
+            table=table
+        )
+        geom_type = engine.execute(sql).fetchone()[0]
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+
+        assert geom_type.upper() == "GEOMETRYCOLLECTION"
+        assert df.geom_type.unique()[0] == "GeometryCollection"
+
+    def test_write_postgis_mixed_geometry_types(
+        self, engine_postgis, df_mixed_single_and_multi
+    ):
+        """
+        Tests that writing a mix of single and MultiGeometries is possible.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(
+            df_mixed_single_and_multi, con=engine, name=table, if_exists="replace"
+        )
+
+        # Validate geometry type
+        sql = "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
+            table=table
+        )
+        res = engine.execute(sql).fetchall()
+        assert res[0][0].upper() == "LINESTRING"
+        assert res[1][0].upper() == "MULTILINESTRING"
+        assert res[2][0].upper() == "POINT"
+
+    def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
+        """
+        Tests that writing a LinearRing.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
+
+        # Validate geometry type
+        sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
+            table=table
+        )
+        geom_type = engine.execute(sql).fetchone()[0]
+
+        assert geom_type.upper() == "LINESTRING"
+
+    def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
+        """
+        Tests writing a LinearRing works.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(
+            df_mixed_single_and_multi,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            chunksize=1,
+        )
+        # Validate row count
+        sql = "SELECT COUNT(geometry) FROM {table};".format(table=table)
+        row_cnt = engine.execute(sql).fetchone()[0]
+        assert row_cnt == 3
+
+        # Validate geometry type
+        sql = "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
+            table=table
+        )
+        res = engine.execute(sql).fetchall()
+        assert res[0][0].upper() == "LINESTRING"
+        assert res[1][0].upper() == "MULTILINESTRING"
+        assert res[2][0].upper() == "POINT"
+
+    def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
+        """
+        Tests writing data to alternative schema.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        schema_to_use = "test"
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
+        engine.execute(sql)
+
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
+        )
+        # Validate
+        sql = "SELECT * FROM {schema}.{table};".format(
+            schema=schema_to_use, table=table
+        )
+
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_to_different_schema_when_table_exists(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests writing data to alternative schema.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        schema_to_use = "test"
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
+        engine.execute(sql)
+
+        try:
+            write_postgis(
+                df_nybb, con=engine, name=table, if_exists="fail", schema=schema_to_use
+            )
+            # Validate
+            sql = "SELECT * FROM {schema}.{table};".format(
+                schema=schema_to_use, table=table
+            )
+
+            df = read_postgis(sql, engine, geom_col="geometry")
+            validate_boro_df(df)
+
+        # Should raise a ValueError when table exists
+        except ValueError:
+            pass
+
+        # Try with replace flag on
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
+        )
+        # Validate
+        sql = "SELECT * FROM {schema}.{table};".format(
+            schema=schema_to_use, table=table
+        )
+
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_3D_geometries(self, engine_postgis, df_3D_geoms):
+        """
+        Tests writing a geometries with 3 dimensions works.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(df_3D_geoms, con=engine, name=table, if_exists="replace")
+
+        # Check that all geometries have 3 dimensions
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        assert list(df.geometry.has_z) == [True, True, True]
+
+    def test_row_order(self, engine_postgis, df_nybb):
+        """
+        Tests that the row order in db table follows the order of the original frame.
+        """
+        engine = engine_postgis
+
+        table = "row_order_test"
+        correct_order = df_nybb["BoroCode"].tolist()
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        # Check that the row order matches
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        assert df["BoroCode"].tolist() == correct_order
+
+    def test_append_before_table_exists(self, engine_postgis, df_nybb):
+        """
+        Tests that insert works with if_exists='append' when table does not exist yet.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+
+        # Check that the row order matches
+        sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_append_with_different_crs(self, engine_postgis, df_nybb):
+        """
+        Tests that the warning is raised if table CRS differs from frame.
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        # Reproject
+        df_nybb2 = df_nybb.to_crs(epsg=4326)
+
+        # Should raise error when appending
+        with pytest.raises(ValueError, match="CRS of the target table"):
+            write_postgis(df_nybb2, con=engine, name=table, if_exists="append")

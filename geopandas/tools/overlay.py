@@ -175,7 +175,7 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     # Error Messages
     if how not in allowed_hows:
         raise ValueError(
-            "`how` was '{0}' but is expected to be in %s".format(how, allowed_hows)
+            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
         )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
