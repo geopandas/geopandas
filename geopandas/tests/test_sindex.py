@@ -151,14 +151,6 @@ class TestPygeosInterface:
         self.df = GeoDataFrame(data, geometry="location")
         self.expected_size = len(data["location"])
 
-    #
-    def test_scattered_empty(self):
-        """Tests building sindex with interlived empty geometries.
-        """
-        geoms = [Point(0, 0), None, Point(), Point(1, 1), Point()]
-        df = geopandas.GeoDataFrame(geometry=geoms)
-        assert df.sindex.query(Point(1, 1))[0] == 3
-
     # --------------------------- `intersection` tests -------------------------- #
     @pytest.mark.parametrize(
         "test_geom, expected",
@@ -494,6 +486,13 @@ class TestPygeosInterface:
             raise e
 
     # --------------------------- misc tests ---------------------------- #
+
+    def test_empty_tree_geometries(self):
+        """Tests building sindex with interleaved empty geometries.
+        """
+        geoms = [Point(0, 0), None, Point(), Point(1, 1), Point()]
+        df = geopandas.GeoDataFrame(geometry=geoms)
+        assert df.sindex.query(Point(1, 1))[0] == 3
 
     def test_size(self):
         """Tests the `size` property."""
