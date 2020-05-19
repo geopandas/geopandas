@@ -296,7 +296,7 @@ class TestIO:
 
     def test_read_postgis_chunksize(self, connection_postgis, df_nybb):
         """Test chunksize argument"""
-        chunksize = 10
+        chunksize = 2
         con = connection_postgis
         create_postgis(con, df_nybb)
 
