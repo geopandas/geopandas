@@ -53,6 +53,8 @@ The following Shapely methods and attributes are available on
 
 .. automethod:: geopandas.GeoSeries.intersects
 
+.. automethod:: geopandas.GeoSeries.overlaps
+
 .. automethod:: geopandas.GeoSeries.touches
 
 .. automethod:: geopandas.GeoSeries.within
@@ -153,6 +155,8 @@ Currently, the following methods/attributes are implemented for a ``GeoDataFrame
 
 .. automethod:: geopandas.GeoDataFrame.to_json
 
+.. automethod:: geopandas.GeoDataFrame.to_postgis
+
 .. automethod:: geopandas.GeoDataFrame.plot
 
 .. automethod:: geopandas.GeoDataFrame.rename_geometry
@@ -195,6 +199,7 @@ Top-level Functions
   GeoDataFrame
   GeoSeries
   read_file
+  read_postgis
   sjoin
   overlay
   clip

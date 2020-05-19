@@ -2,22 +2,13 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.8
   # required
   - pandas
   - shapely
   - fiona
   - pyproj
-  - pygeos
   # testing
   - pytest
   - pytest-cov
   - codecov
-  # optional
-  - rtree
-  - matplotlib
-  - descartes
-  - pysal
-  - geopy
-  - SQLalchemy
-  - libspatialite
