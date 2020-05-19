@@ -274,6 +274,8 @@ if compat.HAS_PYGEOS:
             # for compatibility with old RTree implementation, store ids/indexes
             original_indexes = geometry.index
             geometry = geometry.values.data.copy()
+            # set empty geometries to None to avoid an intermittent segfault
+            # see https://github.com/pygeos/pygeos/issues/146
             geometry[pygeos.is_empty(geometry)] = None
             # set empty geometries to None to mantain indexing
             self.objects = self.ids = original_indexes
