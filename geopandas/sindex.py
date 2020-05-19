@@ -273,13 +273,17 @@ if compat.HAS_PYGEOS:
         def __init__(self, geometry):
             # for compatibility with old RTree implementation, store ids/indexes
             original_indexes = geometry.index
-            geometry = geometry.values.data.copy()
-            # set empty geometries to None to avoid an intermittent segfault
-            # see https://github.com/pygeos/pygeos/issues/146
-            geometry[pygeos.is_empty(geometry)] = None
+            # set empty geometries to None to avoid segfault on GEOS <= 3.6
+            # see:
+            # https://github.com/pygeos/pygeos/issues/146
+            # https://github.com/pygeos/pygeos/issues/147
+            non_empty = geometry.values.data.copy()
+            non_empty[pygeos.is_empty(non_empty)] = None
             # set empty geometries to None to mantain indexing
             self.objects = self.ids = original_indexes
-            super().__init__(geometry)
+            super().__init__(non_empty)
+            # store geometries, including empty geometries for user access
+            self.geometries = geometry.values.data.copy()
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
