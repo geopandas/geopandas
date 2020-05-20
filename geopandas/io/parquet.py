@@ -181,6 +181,45 @@ def _validate_metadata(metadata):
             raise ValueError("Only WKB geometry encoding is supported")
 
 
+def _geopandas_to_arrow(df, index=None):
+    """
+    Helper function with main, shared logic for to_parquet/to_feather.
+    """
+    from pyarrow import Table
+
+    warnings.warn(
+        "this is an initial implementation of Parquet file support and "
+        "associated metadata.  This is tracking version 0.1.0 of the metadata "
+        "specification at "
+        "https://github.com/geopandas/geo-arrow-spec\n\n"
+        "This metadata specification does not yet make stability promises.  "
+        "We do not yet recommend using this in a production setting unless you "
+        "are able to rewrite your Parquet files.\n\n"
+        "To further ignore this warning, you can do: \n"
+        "import warnings; warnings.filterwarnings('ignore', "
+        "message='.*initial implementation of Parquet.*')",
+        UserWarning,
+        stacklevel=4,
+    )
+
+    _validate_dataframe(df)
+
+    # create geo metadata before altering incoming data frame
+    geo_metadata = _create_metadata(df)
+
+    df = _encode_wkb(df)
+
+    table = Table.from_pandas(df, preserve_index=index)
+
+    # Store geopandas specific file-level metadata
+    # This must be done AFTER creating the table or it is not persisted
+    metadata = table.schema.metadata
+    metadata.update({b"geo": _encode_metadata(geo_metadata)})
+
+    table = table.replace_schema_metadata(metadata)
+    return table
+
+
 def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
     """
     Write a GeoDataFrame to the Parquet format.
@@ -215,88 +254,64 @@ def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
     kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
-
-    import_optional_dependency(
+    parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
-    from pyarrow import parquet, Table
 
-    warnings.warn(
-        "this is an initial implementation of Parquet file support and "
-        "associated metadata.  This is tracking version 0.1.0 of the metadata "
-        "specification at "
-        "https://github.com/geopandas/geo-arrow-spec\n\n"
-        "This metadata specification does not yet make stability promises.  "
-        "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet files.\n\n"
-        "To further ignore this warning, you can do: \n"
-        "import warnings; warnings.filterwarnings('ignore', "
-        "message='.*initial implementation of Parquet.*')",
-        UserWarning,
-        stacklevel=3,
-    )
-
-    _validate_dataframe(df)
-
-    # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df)
-
-    df = _encode_wkb(df)
-
-    table = Table.from_pandas(df, preserve_index=index)
-
-    # Store geopandas specific file-level metadata
-    # This must be done AFTER creating the table or it is not persisted
-    metadata = table.schema.metadata
-    metadata.update({b"geo": _encode_metadata(geo_metadata)})
-
-    table = table.replace_schema_metadata(metadata)
+    table = _geopandas_to_arrow(df, index=index)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _read_parquet(path, columns=None, **kwargs):
+def _to_feather(df, path, index=None, **kwargs):
     """
-    Load a Parquet object from the file path, returning a GeoDataFrame.
+    Write a GeoDataFrame to the Feather format.
 
-    You can read a subset of columns in the file using the ``columns`` parameter.
-    However, the structure of the returned GeoDataFrame will depend on which
-    columns you read:
+    Any geometry columns present are serialized to WKB format in the file.
 
-    * if no geometry columns are read, this will raise a ``ValueError`` - you
-      should use the pandas `read_parquet` method instead.
-    * if the primary geometry column saved to this file is not included in
-      columns, the first available geometry column will be set as the geometry
-      column of the returned GeoDataFrame.
+    Requires 'pyarrow' >= 0.17.
 
-    Requires 'pyarrow'.
+    WARNING: this is an initial implementation of Feather file support and
+    associated metadata.  This is tracking version 0.1.0 of the metadata
+    specification at:
+    https://github.com/geopandas/geo-arrow-spec
+
+    This metadata specification does not yet make stability promises.  As such,
+    we do not yet recommend using this in a production setting unless you are
+    able to rewrite your Feather files.
 
     .. versionadded:: 0.8
 
     Parameters
     ----------
     path : str, path object
-    columns : list-like of strings, default=None
-        If not None, only these columns will be read from the file.  If
-        the primary geometry column is not included, the first secondary
-        geometry read from the file will be set as the geometry column
-        of the returned GeoDataFrame.  If no geometry columns are present,
-        a ``ValueError`` will be raised.
-    **kwargs
-        Any additional kwargs passed to pyarrow.parquet.read_table().
-
-    Returns
-    -------
-    GeoDataFrame
+    index : bool, default None
+        If ``True``, always include the dataframe's index(es) as columns
+        in the file output.
+        If ``False``, the index(es) will not be written to the file.
+        If ``None``, the index(ex) will be included as columns in the file
+        output except `RangeIndex` which is stored as metadata only.
+    compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+        Name of the compression to use. Use ``None`` for no compression.
+    kwargs
+        Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
-
-    import_optional_dependency(
-        "pyarrow", extra="pyarrow is required for Parquet support."
+    feather = import_optional_dependency(
+        "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    from pyarrow import parquet
+    # TODO move this into `import_optional_dependency`
+    import pyarrow
 
-    kwargs["use_pandas_metadata"] = True
-    table = parquet.read_table(path, columns=columns, **kwargs)
+    if pyarrow.__version__ < "0.17":
+        raise ImportError("pyarrow >= 0.17 required")
 
+    table = _geopandas_to_arrow(df, index=index)
+    feather.write_feather(table, path, **kwargs)
+
+
+def _arrow_to_geopandas(table):
+    """
+    Helper function with main, shared logic for read_parquet/read_feather.
+    """
     df = table.to_pandas()
 
     metadata = table.schema.metadata
@@ -344,3 +359,97 @@ def _read_parquet(path, columns=None, **kwargs):
         df[col] = from_wkb(df[col].values, crs=metadata["columns"][col]["crs"])
 
     return GeoDataFrame(df, geometry=geometry)
+
+
+def _read_parquet(path, columns=None, **kwargs):
+    """
+    Load a Parquet object from the file path, returning a GeoDataFrame.
+
+    You can read a subset of columns in the file using the ``columns`` parameter.
+    However, the structure of the returned GeoDataFrame will depend on which
+    columns you read:
+
+    * if no geometry columns are read, this will raise a ``ValueError`` - you
+      should use the pandas `read_parquet` method instead.
+    * if the primary geometry column saved to this file is not included in
+      columns, the first available geometry column will be set as the geometry
+      column of the returned GeoDataFrame.
+
+    Requires 'pyarrow'.
+
+    .. versionadded:: 0.8
+
+    Parameters
+    ----------
+    path : str, path object
+    columns : list-like of strings, default=None
+        If not None, only these columns will be read from the file.  If
+        the primary geometry column is not included, the first secondary
+        geometry read from the file will be set as the geometry column
+        of the returned GeoDataFrame.  If no geometry columns are present,
+        a ``ValueError`` will be raised.
+    **kwargs
+        Any additional kwargs passed to pyarrow.parquet.read_table().
+
+    Returns
+    -------
+    GeoDataFrame
+    """
+
+    import_optional_dependency(
+        "pyarrow", extra="pyarrow is required for Parquet support."
+    )
+    from pyarrow import parquet
+
+    kwargs["use_pandas_metadata"] = True
+    table = parquet.read_table(path, columns=columns, **kwargs)
+
+    return _arrow_to_geopandas(table)
+
+
+def _read_feather(path, columns=None, **kwargs):
+    """
+    Load a Feather object from the file path, returning a GeoDataFrame.
+
+    You can read a subset of columns in the file using the ``columns`` parameter.
+    However, the structure of the returned GeoDataFrame will depend on which
+    columns you read:
+
+    * if no geometry columns are read, this will raise a ``ValueError`` - you
+      should use the pandas `read_feather` method instead.
+    * if the primary geometry column saved to this file is not included in
+      columns, the first available geometry column will be set as the geometry
+      column of the returned GeoDataFrame.
+
+    Requires 'pyarrow' >= 0.17.
+
+    .. versionadded:: 0.8
+
+    Parameters
+    ----------
+    path : str, path object
+    columns : list-like of strings, default=None
+        If not None, only these columns will be read from the file.  If
+        the primary geometry column is not included, the first secondary
+        geometry read from the file will be set as the geometry column
+        of the returned GeoDataFrame.  If no geometry columns are present,
+        a ``ValueError`` will be raised.
+    **kwargs
+        Any additional kwargs passed to pyarrow.parquet.read_table().
+
+    Returns
+    -------
+    GeoDataFrame
+    """
+
+    feather = import_optional_dependency(
+        "pyarrow.feather", extra="pyarrow is required for Parquet support."
+    )
+    # TODO move this into `import_optional_dependency`
+    import pyarrow
+
+    if pyarrow.__version__ < "0.17":
+        raise ImportError("pyarrow >= 0.17 required")
+
+    table = feather.read_table(path, columns=columns, **kwargs)
+    return _arrow_to_geopandas(table)

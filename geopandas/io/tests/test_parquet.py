@@ -8,7 +8,7 @@ from pandas.testing import assert_frame_equal
 import numpy as np
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, read_parquet
+from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
 from geopandas.io.parquet import (
@@ -36,6 +36,14 @@ pytestmark = [
     # TEMPORARY: hide warning from to_parquet
     pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*"),
 ]
+
+
+@pytest.fixture(params=["parquet", "feather"])
+def file_format(request):
+    if request.param == "parquet":
+        return read_parquet, GeoDataFrame.to_parquet
+    elif request.param == "feather":
+        return read_feather, GeoDataFrame.to_feather
 
 
 def test_create_metadata():
@@ -207,10 +215,11 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
-def test_parquet_roundtrip(test_dataset, tmpdir):
+def test_parquet_roundtrip(file_format, test_dataset, tmpdir):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
+    reader, writer = file_format
 
     df = read_file(get_path(test_dataset))
     orig = df.copy()
@@ -219,7 +228,7 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
 
     # TEMP: Initial implementation should raise a UserWarning
     with pytest.warns(UserWarning, match="initial implementation"):
-        df.to_parquet(filename)
+        writer(df, filename)
 
     assert os.path.exists(filename)
 
@@ -227,7 +236,7 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
     assert_geodataframe_equal(df, orig)
 
     # make sure that we can roundtrip the data frame
-    pq_df = read_parquet(filename)
+    pq_df = reader(filename)
 
     assert isinstance(pq_df, GeoDataFrame)
     assert_geodataframe_equal(df, pq_df)
