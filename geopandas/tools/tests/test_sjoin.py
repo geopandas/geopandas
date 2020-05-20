@@ -7,7 +7,6 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, sjoin
-from geopandas._compat import HAS_RTREE
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -87,10 +86,10 @@ def dfs(request):
 
 
 @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-def test_raises_error_if_rtree_not_install(dfs):
+def test_raises_error_if_sindex_not_install(dfs):
     _, df1, df2, _ = dfs
-    if not HAS_RTREE:
-        with pytest.raises(ImportError):
+    if not sindex.has_sindex():
+        with pytest.raises(RuntimeError):
             geopandas.sjoin(df1, df2)
 
 

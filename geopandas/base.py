@@ -100,6 +100,14 @@ class GeoPandasBase(object):
             _sindex = sindex_cls(self.geometry)
             if not _sindex.is_empty:
                 self._sindex = _sindex
+            else:
+                warn(
+                    "Future versions of GeoPandas will allow empty spatial indexes. "
+                    "Please use `len(gdf.sindex) > 0` or `if gdf.sindex` instead of "
+                    "`if gd.sindex is not None` to check for empty spatial indexes.",
+                    FutureWarning,
+                )
+                self._sindex = None
         self._sindex_generated = True
 
     def _invalidate_sindex(self):

@@ -1,4 +1,3 @@
-from warnings import warn
 from collections import namedtuple
 
 from shapely.geometry.base import BaseGeometry
@@ -22,21 +21,27 @@ VALID_QUERY_PREDICATES = {
 def has_sindex():
     """Dynamically checks for ability to generate spatial index.
     """
-    return get_sindex_class() is not None
+    try:
+        get_sindex_class()
+        return True
+    except RuntimeError:
+        return False
 
 
 def get_sindex_class():
     """Dynamically chooses a spatial indexing backend.
 
     Required to comply with _compat.USE_PYGEOS.
-    The selection order goes PyGEOS > RTree > None.
+    The selection order goes PyGEOS > RTree > Error.
     """
     if compat.USE_PYGEOS:
         return PyGEOSSTRTreeIndex
     if compat.HAS_RTREE:
         return RTreeIndex
-    warn("Spatial indexes require either `rtree` or `pygeos`.")
-    return None
+    raise RuntimeError(
+        "Spatial indexes require either `rtree` or `pygeos`. "
+        "See installation instructions at https://geopandas.org/install.html"
+    )
 
 
 if compat.HAS_RTREE:
@@ -245,6 +250,9 @@ if compat.HAS_RTREE:
         @property
         def is_empty(self):
             return self.size == 0
+
+        def __len__(self):
+            return self.size
 
 
 if compat.HAS_PYGEOS:

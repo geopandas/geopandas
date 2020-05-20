@@ -22,7 +22,7 @@ import numpy as np
 class TestNoSindex:
     def test_no_sindex(self):
         """Checks that a warning is given when no spatial index is present."""
-        with pytest.warns(UserWarning):
+        with pytest.raises(RuntimeError):
             sindex.get_sindex_class()
 
 
@@ -30,8 +30,8 @@ class TestNoSindex:
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSeriesSindex:
     def test_empty_geoseries(self):
-
-        assert GeoSeries().sindex is None
+        with pytest.warns(FutureWarning):  # TODO: remove once deprecated
+            assert not GeoSeries().sindex
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -43,8 +43,8 @@ class TestSeriesSindex:
 
     def test_empty_point(self):
         s = GeoSeries([Point()])
-
-        assert s.sindex is None
+        with pytest.warns(FutureWarning):  # TODO: remove once deprecated
+            assert not s.sindex
         assert s._sindex_generated is True
 
     def test_polygons(self):
