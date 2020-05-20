@@ -280,6 +280,10 @@ class TestGeomMethods:
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real("area", expected, self.na_none)
 
+    def test_area_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.area
+
     def test_bounds(self):
         # Set columns to get the order right
         expected = DataFrame(
@@ -329,6 +333,10 @@ class TestGeomMethods:
         expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
         self._test_unary_real("length", expected, self.na_none)
 
+    def test_length_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.length
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))
@@ -367,7 +375,8 @@ class TestGeomMethods:
         expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
-        with pytest.warns(UserWarning):
+    def test_distance_crs_warning(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
     def test_intersects(self):
@@ -499,7 +508,7 @@ class TestGeomMethods:
     def test_interpolate_crs_warning(self):
         g5_crs = self.g5.copy()
         g5_crs.crs = 4326
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             g5_crs.interpolate(1)
 
     def test_project(self):
@@ -621,7 +630,7 @@ class TestGeomMethods:
         assert_geoseries_equal(result, s)
 
     def test_buffer_crs_warn(self):
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
 
     def test_envelope(self):

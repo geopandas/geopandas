@@ -62,6 +62,7 @@ class TestDataFrame:
         with pytest.raises(CRSError):
             df.set_geometry(geom2, crs="dummy_crs")
 
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
     def test_geo_getitem(self):
         data = {
             "A": range(5),

@@ -69,11 +69,9 @@ def _isna(value):
 
 
 geographic_crs_msg = (
-    "Geometry is in geographic projection. The results will "
-    "likely be incorrect. Use 'GeoSeries.to_crs()' to re-project "
-    "geometries to projected CRS before using '{1}'.\n"
-    "\n"
-    "{0}"
+    "Geometry is in a geographic CRS. Results from '{}' are likely incorrect.\n"
+    "Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before\n"
+    "this operation.\n"
 )
 
 
@@ -381,10 +379,18 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(
+                geographic_crs_msg.format("area"), UserWarning, stacklevel=4,
+            )
         return vectorized.area(self.data)
 
     @property
     def length(self):
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(
+                geographic_crs_msg.format("length"), UserWarning, stacklevel=4,
+            )
         return vectorized.length(self.data)
 
     #
@@ -511,18 +517,14 @@ class GeometryArray(ExtensionArray):
     def distance(self, other):
         if self.crs and self.crs.is_geographic:
             warnings.warn(
-                geographic_crs_msg.format(self.crs.__repr__(), "distance"),
-                UserWarning,
-                stacklevel=5,
+                geographic_crs_msg.format("distance"), UserWarning, stacklevel=5,
             )
         return self._binary_method("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if self.crs and self.crs.is_geographic:
             warnings.warn(
-                geographic_crs_msg.format(self.crs.__repr__(), "buffer"),
-                UserWarning,
-                stacklevel=4,
+                geographic_crs_msg.format("buffer"), UserWarning, stacklevel=4,
             )
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
@@ -532,9 +534,7 @@ class GeometryArray(ExtensionArray):
     def interpolate(self, distance, normalized=False):
         if self.crs and self.crs.is_geographic:
             warnings.warn(
-                geographic_crs_msg.format(self.crs.__repr__(), "interpolate"),
-                UserWarning,
-                stacklevel=4,
+                geographic_crs_msg.format("interpolate"), UserWarning, stacklevel=4,
             )
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
