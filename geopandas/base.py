@@ -108,6 +108,7 @@ class GeoPandasBase(object):
                     "or `if gdf.sindex` instead of `if gd.sindex is not None` "
                     "to check for empty spatial indexes.",
                     FutureWarning,
+                    stacklevel=3,
                 )
                 self._sindex = None
         self._sindex_generated = True
