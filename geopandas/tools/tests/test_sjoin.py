@@ -85,14 +85,6 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
-@pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-def test_raises_error_if_sindex_not_install(dfs):
-    _, df1, df2, _ = dfs
-    if not sindex.has_sindex():
-        with pytest.raises(RuntimeError):
-            geopandas.sjoin(df1, df2)
-
-
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)

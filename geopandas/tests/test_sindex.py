@@ -498,6 +498,10 @@ class TestPygeosInterface:
         """Tests the `size` property."""
         assert self.df.sindex.size == self.expected_size
 
+    def test_len(self):
+        """Tests the `__len__` method of spatial indexes."""
+        assert len(self.df.sindex) == self.expected_size
+
     def test_is_empty(self):
         """Tests the `is_empty` property."""
         # create empty tree
