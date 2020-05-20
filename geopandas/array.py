@@ -541,9 +541,12 @@ class GeometryArray(ExtensionArray):
 
     def buffer(self, distance, resolution=16, **kwargs):
         if self.crs and self.crs.is_geographic:
-            warnings.warn(
-                geographic_crs_msg.format("buffer"), UserWarning, stacklevel=4,
-            )
+            if isinstance(distance, (int, float)) and distance == 0:
+                pass
+            else:
+                warnings.warn(
+                    geographic_crs_msg.format("buffer"), UserWarning, stacklevel=4,
+                )
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
             crs=self.crs,
