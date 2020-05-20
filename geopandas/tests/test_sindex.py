@@ -45,13 +45,9 @@ class TestNoSindex:
 class TestSeriesSindex:
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
-        with pytest.warns(FutureWarning) as record:
+        with pytest.warns(FutureWarning, match="Generated spatial index is empty"):
             # TODO: add checking len(GeoSeries().sindex) == 0 once deprecated
             assert not GeoSeries(dtype=object).sindex
-        # check that the message matches
-        assert "Generated spatial index is empty" in str(
-            record.pop(FutureWarning).message
-        )
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -65,13 +61,9 @@ class TestSeriesSindex:
         """Tests that a single empty Point results in an empty tree."""
         s = GeoSeries([Point()])
 
-        with pytest.warns(FutureWarning) as record:
+        with pytest.warns(FutureWarning, match="Generated spatial index is empty"):
             # TODO: add checking len(s) == 0 once deprecated
             assert not s.sindex
-        # check that the message matches
-        assert "Generated spatial index is empty" in str(
-            record.pop(FutureWarning).message
-        )
 
         assert s._sindex_generated is True
 
