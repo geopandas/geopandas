@@ -20,6 +20,7 @@ dependencies:
   #- geopy
   - SQLalchemy
   - libspatialite
+  - pyarrow
   - pip:
     - codecov
     - geopy

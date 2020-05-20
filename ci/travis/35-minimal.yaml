@@ -23,5 +23,6 @@ dependencies:
   - geopy
   - SQLalchemy
   - libspatialite
+  - pyarrow
   - pip:
     - pyproj==2.2.2

@@ -98,6 +98,7 @@ def _get_deps_info():
         "geopy",
         "psycopg2",
         "geoalchemy2",
+        "pyarrow",
     ]
 
     def get_version(module):

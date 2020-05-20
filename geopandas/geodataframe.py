@@ -574,6 +574,43 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
+    def to_parquet(self, filename, compression="snappy", index=None, **kwargs):
+        """Write a GeoDataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+        .. versionadded:: 0.8
+
+        Parameters
+        ----------
+        path : str, path object
+        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+            Name of the compression to use. Use ``None`` for no compression.
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        kwargs
+            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+        """
+
+        from geopandas.io.parquet import _to_parquet
+
+        _to_parquet(self, filename, compression=compression, index=index, **kwargs)
+
     def to_file(
         self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
     ):

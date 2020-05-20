@@ -25,3 +25,4 @@ dependencies:
   - psycopg2
   - libspatialite
   - geoalchemy2
+  - pyarrow
