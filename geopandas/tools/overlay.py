@@ -25,27 +25,20 @@ def _overlay_intersection(df1, df2):
     Overlay Intersection operation used in overlay function
     """
     # Spatial Index to create intersections
-    spatial_index = df2.sindex
-    bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
-    nei = []
-    for i, j in enumerate(sidx):
-        for k in j:
-            nei.append([i, k])
-    if nei != []:
-        pairs = pd.DataFrame(nei, columns=["__idx1", "__idx2"])
-        left = df1.geometry.take(pairs["__idx1"].values)
+    if idx1.size > 0 and idx2.size > 0:
+        left = df1.geometry.take(idx1)
         left.reset_index(drop=True, inplace=True)
-        right = df2.geometry.take(pairs["__idx2"].values)
+        right = df2.geometry.take(idx2)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         poly_ix = intersections.type.isin(["Polygon", "MultiPolygon"])
         intersections.loc[poly_ix] = intersections[poly_ix].buffer(0)
 
         # only keep actual intersecting geometries
-        pairs_intersect = pairs[~intersections.is_empty]
-        geom_intersect = intersections[~intersections.is_empty]
+        pairs_intersect = pd.DataFrame({"__idx1": idx1, "__idx2": idx2})
+        geom_intersect = intersections
 
         # merge data for intersecting geometries
         df1 = df1.reset_index(drop=True)
@@ -75,10 +68,14 @@ def _overlay_difference(df1, df2):
     """
     Overlay Difference operation used in overlay function
     """
-    # Spatial Index to create intersections
-    spatial_index = df2.sindex
-    bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    # spatial index query to find intersections
+    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
+    idx2_split = np.split(idx2, idx1_unique_indices[1:])
+    sidx = [
+        idx2_split.pop(0) if idx in idx1_unique else []
+        for idx in range(df1.geometry.size)
+    ]
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
