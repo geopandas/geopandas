@@ -506,6 +506,23 @@ class TestDataFrame:
         )
         assert_frame_equal(expected, result)
 
+    def test_from_features_geom_interface_feature(self):
+        class Placemark(object):
+            def __init__(self, geom, val):
+                self.__geo_interface__ = {
+                    "type": "Feature",
+                    "properties": {"a": val},
+                    "geometry": geom.__geo_interface__,
+                }
+
+        p1 = Point(1, 1)
+        f1 = Placemark(p1, 0)
+        p2 = Point(3, 3)
+        f2 = Placemark(p2, 0)
+        df = GeoDataFrame.from_features([f1, f2])
+        assert sorted(df.columns) == ["a", "geometry"]
+        assert df.geometry.tolist() == [p1, p2]
+
     def test_from_feature_collection(self):
         data = {
             "name": ["a", "b", "c"],

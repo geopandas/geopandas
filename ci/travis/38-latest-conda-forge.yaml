@@ -24,3 +24,5 @@ dependencies:
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - geoalchemy2
+  - pyarrow
