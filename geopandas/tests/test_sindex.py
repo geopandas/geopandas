@@ -487,6 +487,13 @@ class TestPygeosInterface:
 
     # --------------------------- misc tests ---------------------------- #
 
+    def test_empty_tree_geometries(self):
+        """Tests building sindex with interleaved empty geometries.
+        """
+        geoms = [Point(0, 0), None, Point(), Point(1, 1), Point()]
+        df = geopandas.GeoDataFrame(geometry=geoms)
+        assert df.sindex.query(Point(1, 1))[0] == 3
+
     def test_size(self):
         """Tests the `size` property."""
         assert self.df.sindex.size == self.expected_size
