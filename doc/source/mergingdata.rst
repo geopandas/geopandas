@@ -91,7 +91,7 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 Sjoin Arguments
 ~~~~~~~~~~~~~~~~
 
-``sjoin()`` has two core arguments: ``how`` and ``op``.
+``sjoin.()`` has two core arguments: ``how`` and ``op``.
 
 **op**
 
@@ -117,28 +117,18 @@ Note more complicated spatial relationships can be studied by combining geometri
 Sjoin Performance
 ~~~~~~~~~~~~~~~~~~
 
-Most of the computation is done within the spatial index queries. Sjoin always uses ``right_df`` as the spatial index.
-
-**Order of left_df and right_df**
-
-For predicates where the order does not matter (ex: ``intersects``) simply flipping the GeoDataFrames and the ``how`` parameter can speed up the join.
+Existing spatial indexes on either `left_df` or `right_df` will be reused when performing an ``sjoin``. If neither df has a spatial index, a spatial index will be generated for the longer df. If both have a spatial index, the `right_df`'s index will be used preferentially. Performance of multiple sjoins in a row involving a common GeoDataFrame may be improved by pre-generating the spatial index of the common GeoDataFrame prior to performing sjoins using ``df1.sindex``.
 
 .. code-block:: python
 
-   # changing
-   sjoin(left_df=df1, right_df=df2, how="left", op='intersects')
-   # to
-   sjoin(left_df=df2, right_df=df1, how="right", op='intersects')
-   # yields the same result but possibly different performance
+    df1 = # a GeoDataFrame with data
+    df2 = # a second GeoDataFrame
+    df3 = # a third GeoDataFrame
 
-**Choice of op**
+    # pre-generate sindex on df1 if it doesn't already exist
+    df1.sindex
 
-Since some operations have inverses (ex: ``within`` is the inverse of ``contains``), you can try flipping these operations along with the GeoDataFrames to speed up your spatial join.
-
-.. code-block:: python
-
-   # changing
-   sjoin(left_df=df1, right_df=df2, how="left", op='within')
-   # to
-   sjoin(left_df=df2, right_df=df1, how="right", op='contains')
-   # yields the same result but possibly different performance
+    sjoin(df1, df2, ...)
+    # sindex for df1 is reused
+    sjoin(df1, df3, ...)
+    # sindex for df1 is reused again

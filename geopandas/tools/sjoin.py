@@ -75,16 +75,33 @@ def sjoin(
         )
 
     # query index
-    if right_df.sindex:
-        l_idx, r_idx = right_df.sindex.query_bulk(
-            left_df.geometry, predicate=op, sort=False
-        )
+    if op == "within":
+        # within is implemented as the inverse of contains
+        # contains is a faster predicate
+        # see discussion at https://github.com/geopandas/geopandas/pull/1421
+        predicate = "contains"
+        sindex = left_df.sindex
+        input_geoms = right_df.geometry
+    else:
+        # all other predicates are symmetric
+        # keep them the same
+        predicate = op
+        sindex = right_df.sindex
+        input_geoms = left_df.geometry
+    if sindex:
+        l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
         result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
-        # when right_df is empty / has no valid geometries
+        # when sindex is empty / has no valid geometries
         result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+    if op == "within":
+        # within is implemented as the inverse of contains
+        # flip back the results
+        result = result.rename(
+            columns={"_key_left": "_key_right", "_key_right": "_key_left"}
+        )
 
-    # the rtree spatial index only allows limited (numeric) index types, but an
+    # the spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
