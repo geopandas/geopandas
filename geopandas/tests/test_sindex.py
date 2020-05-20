@@ -22,7 +22,7 @@ class TestNoSindex:
     @pytest.mark.skipif(sindex.has_sindex(), reason="Spatial index present, skipping")
     def test_no_sindex_installed(self):
         """Checks that an error is raised when no spatial index is present."""
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ImportError):
             sindex.get_sindex_class()
 
     @pytest.mark.skipif(
@@ -35,7 +35,7 @@ class TestNoSindex:
         """
         state = compat.USE_PYGEOS  # try to save state
         compat.set_use_pygeos(False)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ImportError):
             sindex.get_sindex_class()
         compat.set_use_pygeos(state)  # try to restore state
 
@@ -44,8 +44,14 @@ class TestNoSindex:
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSeriesSindex:
     def test_empty_geoseries(self):
-        with pytest.warns(FutureWarning):  # TODO: remove once deprecated
-            assert not GeoSeries().sindex
+        """Tests creating a spatial index from an empty GeoSeries."""
+        with pytest.warns(FutureWarning) as record:
+            # TODO: add checking len(GeoSeries().sindex) == 0 once deprecated
+            assert not GeoSeries(dtype=object).sindex
+        # check that the message matches
+        assert "Generated spatial index is empty" in str(
+            record.pop(FutureWarning).message
+        )
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -56,9 +62,17 @@ class TestSeriesSindex:
         assert len(list(hits)) == 0
 
     def test_empty_point(self):
+        """Tests that a single empty Point results in an empty tree."""
         s = GeoSeries([Point()])
-        with pytest.warns(FutureWarning):  # TODO: remove once deprecated
+
+        with pytest.warns(FutureWarning) as record:
+            # TODO: add checking len(s) == 0 once deprecated
             assert not s.sindex
+        # check that the message matches
+        assert "Generated spatial index is empty" in str(
+            record.pop(FutureWarning).message
+        )
+
         assert s._sindex_generated is True
 
     def test_polygons(self):
@@ -520,7 +534,7 @@ class TestPygeosInterface:
         """Tests the `is_empty` property."""
         # create empty tree
         cls_ = sindex.get_sindex_class()
-        empty = geopandas.GeoSeries([])
+        empty = geopandas.GeoSeries(dtype=object)
         tree = cls_(empty)
         assert tree.is_empty
         # create a non-empty tree

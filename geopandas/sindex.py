@@ -24,7 +24,7 @@ def has_sindex():
     try:
         get_sindex_class()
         return True
-    except RuntimeError:
+    except ImportError:
         return False
 
 
@@ -38,7 +38,7 @@ def get_sindex_class():
         return PyGEOSSTRTreeIndex
     if compat.HAS_RTREE:
         return RTreeIndex
-    raise RuntimeError(
+    raise ImportError(
         "Spatial indexes require either `rtree` or `pygeos`. "
         "See installation instructions at https://geopandas.org/install.html"
     )
