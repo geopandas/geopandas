@@ -272,8 +272,8 @@ class GeometryArray(ExtensionArray):
         if self.crs and self.crs.is_geographic:
             warnings.warn(
                 "Geometry is in a geographic CRS. Results from '{}' are likely "
-                " incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a "
-                " projected CRS before this operation.\n".format(
+                "incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                "projected CRS before this operation.\n".format(
                     inspect.stack()[1].function
                 ),
                 UserWarning,
