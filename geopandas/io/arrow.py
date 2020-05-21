@@ -128,11 +128,11 @@ def _validate_dataframe(df):
     """
 
     if not isinstance(df, DataFrame):
-        raise ValueError("to_parquet only supports IO with DataFrames")
+        raise ValueError("Writing to Parquet/Feather only supports IO with DataFrames")
 
     # must have value column names (strings only)
     if df.columns.inferred_type not in {"string", "unicode", "empty"}:
-        raise ValueError("parquet must have string column names")
+        raise ValueError("Writing to Parquet/Feather requires string column names")
 
     # index level names must be strings
     valid_names = all(
@@ -154,13 +154,13 @@ def _validate_metadata(metadata):
     """
 
     if not metadata:
-        raise ValueError("Missing or malformed geo metadata in Parquet file")
+        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
     required_keys = ("primary_column", "columns")
     for key in required_keys:
         if metadata.get(key, None) is None:
             raise ValueError(
-                "'geo' metadata in Parquet file is missing required key: "
+                "'geo' metadata in Parquet/Feather file is missing required key: "
                 "'{key}'".format(key=key)
             )
 
@@ -173,7 +173,7 @@ def _validate_metadata(metadata):
         for key in required_col_keys:
             if key not in column_metadata:
                 raise ValueError(
-                    "'geo' metadata in Parquet file is missing required key "
+                    "'geo' metadata in Parquet/Feather file is missing required key "
                     "'{key}' for column '{col}'".format(key=key, col=col)
                 )
 
@@ -188,13 +188,13 @@ def _geopandas_to_arrow(df, index=None):
     from pyarrow import Table
 
     warnings.warn(
-        "this is an initial implementation of Parquet file support and "
+        "this is an initial implementation of Parquet/Feather file support and "
         "associated metadata.  This is tracking version 0.1.0 of the metadata "
         "specification at "
         "https://github.com/geopandas/geo-arrow-spec\n\n"
         "This metadata specification does not yet make stability promises.  "
         "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet files.\n\n"
+        "are able to rewrite your Parquet/Feather files.\n\n"
         "To further ignore this warning, you can do: \n"
         "import warnings; warnings.filterwarnings('ignore', "
         "message='.*initial implementation of Parquet.*')",
@@ -215,9 +215,7 @@ def _geopandas_to_arrow(df, index=None):
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
-
-    table = table.replace_schema_metadata(metadata)
-    return table
+    return table.replace_schema_metadata(metadata)
 
 
 def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
@@ -290,8 +288,9 @@ def _to_feather(df, path, index=None, **kwargs):
         If ``False``, the index(es) will not be written to the file.
         If ``None``, the index(ex) will be included as columns in the file
         output except `RangeIndex` which is stored as metadata only.
-    compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
-        Name of the compression to use. Use ``None`` for no compression.
+    compression : {'zstd', 'lz4', 'uncompressed'}, optional
+        Name of the compression to use. Use ``"uncompressed"`` for no
+        compression. By default uses LZ4 if available, otherwise uncompressed.
     kwargs
         Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
@@ -317,15 +316,15 @@ def _arrow_to_geopandas(table):
     metadata = table.schema.metadata
     if b"geo" not in metadata:
         raise ValueError(
-            """Missing geo metadata in Parquet file.
-            Use pandas.read_parquet() instead."""
+            """Missing geo metadata in Parquet/Feather file.
+            Use pandas.read_parquet/read_feather() instead."""
         )
 
     try:
         metadata = _decode_metadata(metadata.get(b"geo", b""))
 
     except (TypeError, json.decoder.JSONDecodeError):
-        raise ValueError("Missing or malformed geo metadata in Parquet file")
+        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
     _validate_metadata(metadata)
 
@@ -336,8 +335,8 @@ def _arrow_to_geopandas(table):
     if not len(geometry_columns):
         raise ValueError(
             """No geometry columns are included in the columns read from
-            the Parquet file.  To read this file without geometry columns,
-            use pandas.read_parquet() instead."""
+            the Parquet/Feather file.  To read this file without geometry columns,
+            use pandas.read_parquet/read_feather() instead."""
         )
 
     geometry = metadata["primary_column"]
@@ -350,8 +349,8 @@ def _arrow_to_geopandas(table):
         # if there are multiple non-primary geometry columns, raise a warning
         if len(geometry_columns) > 1:
             warnings.warn(
-                "Multiple non-primary geometry columns read from Parquet file.  "
-                "The first column read was promoted to the primary geometry."
+                "Multiple non-primary geometry columns read from Parquet/Feather "
+                "file. The first column read was promoted to the primary geometry."
             )
 
     # Convert the WKB columns that are present back to geometry.
@@ -396,10 +395,9 @@ def _read_parquet(path, columns=None, **kwargs):
     GeoDataFrame
     """
 
-    import_optional_dependency(
-        "pyarrow", extra="pyarrow is required for Parquet support."
+    parquet = import_optional_dependency(
+        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
-    from pyarrow import parquet
 
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, **kwargs)
@@ -435,7 +433,7 @@ def _read_feather(path, columns=None, **kwargs):
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
     **kwargs
-        Any additional kwargs passed to pyarrow.parquet.read_table().
+        Any additional kwargs passed to pyarrow.feather.read_table().
 
     Returns
     -------
@@ -443,7 +441,7 @@ def _read_feather(path, columns=None, **kwargs):
     """
 
     feather = import_optional_dependency(
-        "pyarrow.feather", extra="pyarrow is required for Parquet support."
+        "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
     # TODO move this into `import_optional_dependency`
     import pyarrow
