@@ -1,4 +1,5 @@
 from collections import namedtuple
+from warnings import warn
 
 from shapely.geometry.base import BaseGeometry
 import pandas as pd
@@ -243,6 +244,28 @@ if compat.HAS_RTREE:
                 input_geometry_index.extend([i] * len(res))
             return np.vstack([input_geometry_index, tree_index])
 
+        def intersection(self, coordinates, objects=False):
+            """Find tree geometries that intersect the input coordinates.
+
+            Parameters
+            ----------
+            coordinates : sequence or array
+                Sequence of the form (min_x, min_y, max_x, max_y)
+                to query a rectangle or (x, y) to query a point.
+            objects : True or False
+                If True, return the label based indexes. If False, integer indexes
+                are returned.
+            """
+            if objects:
+                warn(
+                    "A future version of GeoPandas will deprecate the `objects`"
+                    " parameter. If you use this option and would like it preserved,"
+                    " please open an issue at https://github.com/geopandas/geopandas"
+                    " and help us understand you use case.",
+                    FutureWarning,
+                )
+            return super().intersection(coordinates, objects)
+
         @property
         def size(self):
             return len(self.leaves()[0][1])
@@ -407,6 +430,15 @@ if compat.HAS_PYGEOS:
                 If True, return the label based indexes. If False, integer indexes
                 are returned.
             """
+            if objects:
+                warn(
+                    "A future version of GeoPandas will deprecate the `objects` "
+                    " parameter. If you use this option and would like it preserved, "
+                    " please open an issue at https://github.com/geopandas/geopandas"
+                    " and help us understand you use case.",
+                    FutureWarning,
+                )
+
             # convert bounds to geometry
             # the old API uses tuples of bound, but pygeos uses geometries
             try:
