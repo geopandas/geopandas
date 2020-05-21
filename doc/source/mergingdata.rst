@@ -91,11 +91,11 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 Sjoin Arguments
 ~~~~~~~~~~~~~~~~
 
-``sjoin.()`` has two core arguments: ``how`` and ``op``.
+``sjoin()`` has two core arguments: ``how`` and ``op``.
 
 **op**
 
-The ```op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
+The ``op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
 
 * `intersects`: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.
 * `within`: The attributes will be joined if the object’s boundary and interior intersect *only* with the interior of the other object (not its boundary or exterior).
