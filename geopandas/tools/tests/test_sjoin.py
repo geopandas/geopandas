@@ -7,10 +7,14 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, sjoin
-from geopandas._compat import HAS_RTREE
 
 from pandas.testing import assert_frame_equal
 import pytest
+
+
+pytestmark = pytest.mark.skipif(
+    not sindex.has_sindex(), reason="sjoin requires spatial index"
+)
 
 
 @pytest.fixture()
@@ -86,15 +90,6 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
-@pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-def test_raises_error_if_rtree_not_install(dfs):
-    _, df1, df2, _ = dfs
-    if not HAS_RTREE:
-        with pytest.raises(ImportError):
-            geopandas.sjoin(df1, df2)
-
-
-@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
@@ -306,7 +301,6 @@ class TestSpatialJoin:
         assert_frame_equal(res, exp, check_index_type=False)
 
 
-@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoinNYBB:
     def setup_method(self):
         nybb_filename = geopandas.datasets.get_path("nybb")
@@ -474,7 +468,6 @@ class TestSpatialJoinNYBB:
         assert df2.shape == (21, 8)
 
 
-@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSpatialJoinNaturalEarth:
     def setup_method(self):
         world_path = geopandas.datasets.get_path("naturalearth_lowres")
