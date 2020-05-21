@@ -2,6 +2,7 @@ from collections.abc import Iterable
 import numbers
 import operator
 import warnings
+import inspect
 
 import numpy as np
 import pandas as pd
@@ -66,13 +67,6 @@ def _isna(value):
         return True
     else:
         return False
-
-
-geographic_crs_msg = (
-    "Geometry is in a geographic CRS. Results from '{}' are likely incorrect.\n"
-    "Use 'GeoSeries.to_crs()' to re-project geometries to a projected CRS before\n"
-    "this operation.\n"
-)
 
 
 def _check_crs(left, right, allow_none=False):
@@ -273,6 +267,19 @@ class GeometryArray(ExtensionArray):
         """Sets the value of the crs"""
         self._crs = None if not value else CRS.from_user_input(value)
 
+    def check_geographic_crs(self, stacklevel):
+        """Check CRS and warn if the planar operation is done in a geographic CRS"""
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(
+                "Geometry is in a geographic CRS. Results from '{}' are likely "
+                " incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                " projected CRS before this operation.\n".format(
+                    inspect.stack()[1].function
+                ),
+                UserWarning,
+                stacklevel=stacklevel,
+            )
+
     @property
     def dtype(self):
         return self._dtype
@@ -379,18 +386,12 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
-        if self.crs and self.crs.is_geographic:
-            warnings.warn(
-                geographic_crs_msg.format("area"), UserWarning, stacklevel=4,
-            )
+        self.check_geographic_crs(stacklevel=5)
         return vectorized.area(self.data)
 
     @property
     def length(self):
-        if self.crs and self.crs.is_geographic:
-            warnings.warn(
-                geographic_crs_msg.format("length"), UserWarning, stacklevel=4,
-            )
+        self.check_geographic_crs(stacklevel=5)
         return vectorized.length(self.data)
 
     #
@@ -533,30 +534,19 @@ class GeometryArray(ExtensionArray):
     #
 
     def distance(self, other):
-        if self.crs and self.crs.is_geographic:
-            warnings.warn(
-                geographic_crs_msg.format("distance"), UserWarning, stacklevel=5,
-            )
+        self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
-        if self.crs and self.crs.is_geographic:
-            if isinstance(distance, (int, float)) and distance == 0:
-                pass
-            else:
-                warnings.warn(
-                    geographic_crs_msg.format("buffer"), UserWarning, stacklevel=4,
-                )
+        if not (isinstance(distance, (int, float)) and distance == 0):
+            self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
             crs=self.crs,
         )
 
     def interpolate(self, distance, normalized=False):
-        if self.crs and self.crs.is_geographic:
-            warnings.warn(
-                geographic_crs_msg.format("interpolate"), UserWarning, stacklevel=4,
-            )
+        self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
             crs=self.crs,

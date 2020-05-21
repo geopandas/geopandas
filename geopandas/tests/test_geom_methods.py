@@ -633,6 +633,12 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
 
+        with pytest.warns(None) as record:
+            # do not warn for 0
+            self.g4.buffer(0)
+
+        assert len(record) == 0
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))
