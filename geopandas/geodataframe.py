@@ -607,7 +607,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Additional keyword arguments passed to to pyarrow.parquet.write_table().
         """
 
-        from geopandas.io.parquet import _to_parquet
+        from geopandas.io.arrow import _to_parquet
 
         _to_parquet(self, path, compression=compression, index=index, **kwargs)
 
@@ -644,7 +644,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Additional keyword arguments passed to to pyarrow.feather.write_feather().
         """
 
-        from geopandas.io.parquet import _to_feather
+        from geopandas.io.arrow import _to_feather
 
         _to_feather(self, path, index=index, **kwargs)
 

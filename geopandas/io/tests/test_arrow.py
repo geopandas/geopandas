@@ -11,7 +11,7 @@ import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
-from geopandas.io.parquet import (
+from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
