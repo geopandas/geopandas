@@ -105,7 +105,11 @@ class TestFrameSindex:
     def test_sindex(self):
         self.df.crs = "epsg:4326"
         assert self.df.sindex.size == 5
-        hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4), objects=True))
+        with pytest.warns(
+            FutureWarning, match="A future version of GeoPandas will deprecate"
+        ):
+            # TODO: remove warning check once deprecated
+            hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4), objects=True))
         assert len(hits) == 2
         assert hits[0].object == 3
 
@@ -133,21 +137,33 @@ class TestJoinSindex:
     def test_merge_geo(self):
         # First check that we gets hits from the boros frame.
         tree = self.boros.sindex
-        hits = tree.intersection((1012821.80, 229228.26), objects=True)
+        with pytest.warns(
+            FutureWarning, match="A future version of GeoPandas will deprecate"
+        ):
+            # TODO: remove warning check once deprecated
+            hits = tree.intersection((1012821.80, 229228.26), objects=True)
         res = [self.boros.loc[hit.object]["BoroName"] for hit in hits]
         assert res == ["Bronx", "Queens"]
 
         # Check that we only get the Bronx from this view.
         first = self.boros[self.boros["BoroCode"] < 3]
         tree = first.sindex
-        hits = tree.intersection((1012821.80, 229228.26), objects=True)
+        with pytest.warns(
+            FutureWarning, match="A future version of GeoPandas will deprecate"
+        ):
+            # TODO: remove warning check once deprecated
+            hits = tree.intersection((1012821.80, 229228.26), objects=True)
         res = [first.loc[hit.object]["BoroName"] for hit in hits]
         assert res == ["Bronx"]
 
         # Check that we only get Queens from this view.
         second = self.boros[self.boros["BoroCode"] >= 3]
         tree = second.sindex
-        hits = tree.intersection((1012821.80, 229228.26), objects=True)
+        with pytest.warns(
+            FutureWarning, match="A future version of GeoPandas will deprecate"
+        ):
+            # TODO: remove warning check once deprecated
+            hits = tree.intersection((1012821.80, 229228.26), objects=True)
         res = ([second.loc[hit.object]["BoroName"] for hit in hits],)
         assert res == ["Queens"]
 
@@ -156,7 +172,11 @@ class TestJoinSindex:
         assert len(merged) == 5
         assert merged.sindex.size == 5
         tree = merged.sindex
-        hits = tree.intersection((1012821.80, 229228.26), objects=True)
+        with pytest.warns(
+            FutureWarning, match="A future version of GeoPandas will deprecate"
+        ):
+            # TODO: remove warning check once deprecated
+            hits = tree.intersection((1012821.80, 229228.26), objects=True)
         res = [merged.loc[hit.object]["BoroName"] for hit in hits]
         assert res == ["Bronx", "Queens"]
 
