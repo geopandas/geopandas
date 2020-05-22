@@ -252,16 +252,15 @@ if compat.HAS_RTREE:
             coordinates : sequence or array
                 Sequence of the form (min_x, min_y, max_x, max_y)
                 to query a rectangle or (x, y) to query a point.
-            objects : True or False
+            objects : boolean, default False
                 If True, return the label based indexes. If False, integer indexes
                 are returned.
             """
             if objects:
                 warn(
-                    "A future version of GeoPandas will deprecate the `objects`"
-                    " parameter. If you use this option and would like it preserved,"
-                    " please open an issue at https://github.com/geopandas/geopandas"
-                    " and help us understand you use case.",
+                    "`objects` is deprecated and will be removed in a future version. "
+                    "Instead, use `iloc` to index your GeoSeries/GeoDataFrame using "
+                    "integer indexes returned by `intersection`.",
                     FutureWarning,
                 )
             return super().intersection(coordinates, objects)
@@ -426,16 +425,15 @@ if compat.HAS_PYGEOS:
             coordinates : sequence or array
                 Sequence of the form (min_x, min_y, max_x, max_y)
                 to query a rectangle or (x, y) to query a point.
-            objects : True or False
+            objects : boolean, default False
                 If True, return the label based indexes. If False, integer indexes
                 are returned.
             """
             if objects:
                 warn(
-                    "A future version of GeoPandas will deprecate the `objects` "
-                    " parameter. If you use this option and would like it preserved, "
-                    " please open an issue at https://github.com/geopandas/geopandas"
-                    " and help us understand you use case.",
+                    "`objects` is deprecated and will be removed in a future version. "
+                    "Instead, use `iloc` to index your GeoSeries/GeoDataFrame using "
+                    "integer indexes returned by `intersection`.",
                     FutureWarning,
                 )
 
