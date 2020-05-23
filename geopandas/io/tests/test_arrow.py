@@ -424,7 +424,7 @@ def test_parquet_repeat_columns(tmpdir):
     df = read_file(get_path(test_dataset))
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(df, filename)
+    df.to_parquet(filename)
 
     columns = ["name", "name", "iso_a3", "name", "geometry"]
     pq_df = read_parquet(filename, columns=columns)
