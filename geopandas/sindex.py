@@ -241,26 +241,16 @@ if compat.HAS_RTREE:
                 input_geometry_index.extend([i] * len(res))
             return np.vstack([input_geometry_index, tree_index])
 
-        def intersection(self, coordinates, objects=False):
-            """Find tree geometries that intersect the input coordinates.
+        def intersection(self, coordinates):
+            """Wrapper for rtree.index.Index.intersection.
 
             Parameters
             ----------
             coordinates : sequence or array
                 Sequence of the form (min_x, min_y, max_x, max_y)
                 to query a rectangle or (x, y) to query a point.
-            objects : boolean, default False
-                If True, return the label based indexes. If False, integer indexes
-                are returned.
             """
-            if objects:
-                warn(
-                    "`objects` is deprecated and will be removed in a future version. "
-                    "Instead, use `iloc` to index your GeoSeries/GeoDataFrame using "
-                    "integer indexes returned by `intersection`.",
-                    FutureWarning,
-                )
-            return super().intersection(coordinates, objects)
+            return super().intersection(coordinates, objects=False)
 
         @property
         def size(self):
