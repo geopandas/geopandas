@@ -399,6 +399,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float=True,
         parse_dates=None,
         params=None,
+        chunksize=None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -428,6 +429,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               without native Datetime support, such as SQLite.
         params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
+        chunksize : int, default None
+            If specified, return an iterator where chunksize is the number
+            of rows to include in each chunk.
 
         Examples
         --------
@@ -446,6 +450,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             coerce_float=coerce_float,
             parse_dates=parse_dates,
             params=params,
+            chunksize=chunksize,
         )
 
         return df

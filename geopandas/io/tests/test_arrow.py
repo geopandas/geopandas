@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from distutils.version import LooseVersion
 import os
-import sys
 
 import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
@@ -28,16 +27,8 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
 
-
-pytestmark = [
-    # TEMPORARY: Skip all tests on Windows
-    # https://github.com/conda-forge/pyarrow-feedstock/issues/104
-    pytest.mark.skipif(
-        sys.platform.startswith("win"), reason="pyarrow segfaults on windows"
-    ),
-    # TEMPORARY: hide warning from to_parquet
-    pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*"),
-]
+# TEMPORARY: hide warning from to_parquet
+pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*")
 
 
 @pytest.fixture(
