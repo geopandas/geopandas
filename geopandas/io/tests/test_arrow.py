@@ -283,6 +283,10 @@ def test_parquet_compression(compression, tmpdir):
     assert_geodataframe_equal(df, pq_df)
 
 
+@pytest.mark.skipif(
+    pyarrow.__version__ < LooseVersion("0.17.0"),
+    reason="Feather only supported for pyarrow >= 0.17",
+)
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
 def test_feather_compression(compression, tmpdir):
     """Using compression options should not raise errors, and should
@@ -412,19 +416,18 @@ def test_subset_columns(tmpdir, file_format):
         reader(filename, columns=["name"])
 
 
-def test_repeat_columns(tmpdir, file_format):
+def test_parquet_repeat_columns(tmpdir):
     """Reading repeated columns should return first value of each repeated column
     """
-    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset))
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    writer(df, filename)
+    df.to_parquet(df, filename)
 
     columns = ["name", "name", "iso_a3", "name", "geometry"]
-    pq_df = reader(filename, columns=columns)
+    pq_df = read_parquet(filename, columns=columns)
 
     assert pq_df.columns.tolist() == ["name", "iso_a3", "geometry"]
 
