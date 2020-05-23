@@ -6,6 +6,8 @@ see geopandas.tests.util for more information.
 """
 import os
 
+import pandas as pd
+
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
@@ -291,6 +293,20 @@ class TestIO:
         )
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
+
+    def test_read_postgis_chunksize(self, connection_postgis, df_nybb):
+        """Test chunksize argument"""
+        chunksize = 2
+        con = connection_postgis
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        df = pd.concat(read_postgis(sql, con, chunksize=chunksize))
+
+        validate_boro_df(df)
+        # no crs defined on the created geodatabase, and none specified
+        # by user; should not be set to 0, as from get_srid failure
+        assert df.crs is None
 
     def test_read_postgis_privacy(self, connection_postgis, df_nybb):
         con = connection_postgis
