@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+
+from distutils.version import LooseVersion
 import os
 import sys
 
@@ -24,7 +26,7 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 
 # Skip all tests in this module if pyarrow is not available
-pyarrow_skip = pytest.importorskip("pyarrow")
+pyarrow = pytest.importorskip("pyarrow")
 
 
 pytestmark = [
@@ -38,7 +40,18 @@ pytestmark = [
 ]
 
 
-@pytest.fixture(params=["parquet", "feather"])
+@pytest.fixture(
+    params=[
+        "parquet",
+        pytest.param(
+            "feather",
+            marks=pytest.mark.skipif(
+                pyarrow.__version__ < LooseVersion("0.17.0"),
+                reason="needs pyarrow >= 0.17",
+            ),
+        ),
+    ]
+)
 def file_format(request):
     if request.param == "parquet":
         return read_parquet, GeoDataFrame.to_parquet
@@ -488,3 +501,17 @@ def test_missing_crs(tmpdir, file_format):
     assert pq_df.crs is None
 
     assert_geodataframe_equal(df, pq_df, check_crs=True)
+
+
+@pytest.mark.skipif(
+    pyarrow.__version__ >= LooseVersion("0.17.0"),
+    reason="Feather only supported for pyarrow >= 0.17",
+)
+def test_feather_arrow_version(tmpdir):
+    df = read_file(get_path("naturalearth_lowres"))
+    filename = os.path.join(str(tmpdir), "test.feather")
+
+    with pytest.raises(
+        ImportError, match="pyarrow >= 0.17 required for Feather support"
+    ):
+        df.to_feather(filename)
