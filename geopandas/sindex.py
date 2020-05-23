@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-from collections import namedtuple
-=======
-from warnings import warn
->>>>>>> move sindex to geometryarrya
-
 from shapely.geometry.base import BaseGeometry
 import pandas as pd
 import numpy as np
@@ -100,11 +94,7 @@ if compat.HAS_RTREE:
                 super().__init__()
 
             # store reference to geometries for predicate queries
-<<<<<<< HEAD
-            self.geometries = geometry.geometry.values
-=======
-            self._geometries = geometry
->>>>>>> move sindex to geometryarrya
+            self.geometries = geometry
             # create a prepared geometry cache
             self._prepared_geometries = np.array(
                 [None] * self.geometries.size, dtype=object

@@ -263,12 +263,12 @@ class GeometryArray(ExtensionArray):
 
     _dtype = GeometryDtype()
 
-    def __init__(self, data, crs=None, sindex=None):
+    def __init__(self, data, crs=None, sindex_backend=None):
         if isinstance(data, self.__class__):
             if not crs:
                 crs = data.crs
-            if not sindex:
-                sindex = data.sindex.__class__
+            if not sindex_backend:
+                sindex_backend = data.sindex_backend
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -284,17 +284,15 @@ class GeometryArray(ExtensionArray):
         self._crs = None
         self.crs = crs
 
-        self._sindex_cls = sindex or get_sindex_class()
+        self.sindex_backend = sindex_backend or get_sindex_class()
         self._sindex = None
 
     @property
     def sindex(self):
         if self._sindex is not None:  # check for existing
             pass
-        elif self._sindex_cls is not None:  # build it
-            _sindex = self._sindex_cls(self.data)
-            if not _sindex.is_empty:
-                self._sindex = _sindex
+        elif self.sindex_backend is not None:  # build it
+            self._sindex = self.sindex_backend(self.data)
         else:
             raise RuntimeError(
                 "No spatial index backend found."
@@ -403,19 +401,18 @@ class GeometryArray(ExtensionArray):
     if compat.USE_PYGEOS:
 
         def __getstate__(self):
-            return (
-                pygeos.to_wkb(self.data),
-                self._crs,
-                self._sindex_cls,
-            )
+            return {
+                "wkb_data": pygeos.to_wkb(self.data),
+                "_crs": self._crs,
+                "sindex_backend": self.sindex_backend,
+            }
 
         def __setstate__(self, state):
-            geoms = pygeos.from_wkb(state[0])
-            self._crs = state[1]
-            self.data = geoms
+            self.data = pygeos.from_wkb(state["wkb_data"])
+            self._crs = state["_crs"]
+            self.sindex_backend = state["sindex_backend"]
+            self._sindex = None  # invalidate
             self.base = None
-            self._sindex_cls = state[2]
-            self._sindex = None  # invalidate, don't allow setting
 
     else:
 

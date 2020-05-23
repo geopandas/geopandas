@@ -45,9 +45,7 @@ class TestNoSindex:
 class TestSeriesSindex:
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
-        with pytest.warns(FutureWarning, match="Generated spatial index is empty"):
-            # TODO: add checking len(GeoSeries().sindex) == 0 once deprecated
-            assert not GeoSeries(dtype=object).sindex
+        assert not GeoSeries(dtype=object).sindex
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -534,15 +532,12 @@ class TestPygeosInterface:
     def test_is_empty(self):
         """Tests the `is_empty` property."""
         # create empty tree
-<<<<<<< HEAD
-        cls_ = sindex.get_sindex_class()
-        empty = geopandas.GeoSeries(dtype=object)
-        tree = cls_(empty)
-        assert tree.is_empty
-=======
         empty = geopandas.GeoSeries([])
-        assert empty.sindex is None
->>>>>>> move sindex to geometryarrya
+        assert empty.sindex.is_empty
+        empty = geopandas.GeoSeries([None])
+        assert empty.sindex.is_empty
+        empty = geopandas.GeoSeries([Point()])
+        assert empty.sindex.is_empty
         # create a non-empty tree
         non_empty = geopandas.GeoSeries([Point(0, 0)])
         assert not non_empty.sindex.is_empty
