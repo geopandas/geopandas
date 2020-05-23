@@ -250,7 +250,9 @@ if compat.HAS_RTREE:
                 Sequence of the form (min_x, min_y, max_x, max_y)
                 to query a rectangle or (x, y) to query a point.
             """
-            return super().intersection(coordinates, objects=False)
+            return np.array(
+                list(super().intersection(coordinates, objects=False)), dtype=np.intp,
+            )
 
         @property
         def size(self):
