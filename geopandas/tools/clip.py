@@ -131,7 +131,7 @@ def clip(gdf, mask, keep_geom_type=False):
         )
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
-        if not _check_crs(gdf, mask, allow_none=True):
+        if not _check_crs(gdf, mask):
             warnings.warn(
                 "CRS mismatch between the CRS of gdf geometries "
                 "and the CRS of mask geometries. "
