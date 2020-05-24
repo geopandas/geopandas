@@ -404,6 +404,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def centroid(self):
+        self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self.data), crs=self.crs)
 
     @property

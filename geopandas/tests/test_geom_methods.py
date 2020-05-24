@@ -455,6 +455,10 @@ class TestGeomMethods:
         points = GeoSeries([point for i in range(3)])
         assert_geoseries_equal(polygons.centroid, points)
 
+    def test_centroid_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.centroid
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
