@@ -12,6 +12,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas._compat import PANDAS_GE_024
 from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
@@ -675,6 +676,8 @@ class TestGeomMethods:
             names=[index_name, None],
         )
         expected_df = expected_df.set_index(expected_index)
+        if not PANDAS_GE_024:
+            expected_df = expected_df[["level_1", "geometry"]]
         assert_frame_equal(test_df, expected_df)
 
     #
