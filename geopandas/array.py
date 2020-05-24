@@ -64,6 +64,8 @@ def _isna(value):
         return True
     elif isinstance(value, float) and np.isnan(value):
         return True
+    elif compat.PANDAS_GE_10 and isinstance(value, type(pd.NA)):
+        return True
     else:
         return False
 
