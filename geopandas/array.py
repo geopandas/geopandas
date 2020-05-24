@@ -27,7 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
-from .sindex import get_sindex_class, has_sindex
+from .sindex import get_sindex_class
 
 
 class GeometryDtype(ExtensionDtype):
@@ -263,12 +263,10 @@ class GeometryArray(ExtensionArray):
 
     _dtype = GeometryDtype()
 
-    def __init__(self, data, crs=None, sindex_backend=None):
+    def __init__(self, data, crs=None):
         if isinstance(data, self.__class__):
             if not crs:
                 crs = data.crs
-            if not sindex_backend:
-                sindex_backend = data.sindex_backend
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -283,26 +281,14 @@ class GeometryArray(ExtensionArray):
 
         self._crs = None
         self.crs = crs
-        if sindex_backend:
-            self.sindex_backend = sindex_backend
-        elif has_sindex():
-            self.sindex_backend = get_sindex_class()
-        else:
-            self.sindex_backend = None
         self._sindex = None
 
     @property
     def sindex(self):
         if self._sindex is not None:  # check for existing
             pass
-        elif self.sindex_backend is not None:  # build it
-            self._sindex = self.sindex_backend(self.data)
-        else:
-            raise RuntimeError(
-                "No spatial index backend found."
-                "Please install `pygeos` or `rtree` or "
-                "provide a spatial index via the `sindex` parameter."
-            )
+        else:  # build it
+            self._sindex = get_sindex_class()(self.data)
 
         return self._sindex
 
