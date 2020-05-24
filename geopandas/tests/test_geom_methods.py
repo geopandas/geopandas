@@ -658,6 +658,23 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    def test_explode_geodataframe_level_1(self):
+        # GH1393
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], "geometry": s, "level_1": [0, 1]})
+
+        test_df = df.explode()
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame(
+            {"col": [1, 1, 2], "level_1": [0, 0, 1], "geometry": expected_s}
+        )
+        expected_index = MultiIndex(
+            [[0, 1], [0, 1]], [[0, 0, 1], [0, 1, 0]],  # levels  # labels/codes
+        )
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
     #
     # Test '&', '|', '^', and '-'
     #

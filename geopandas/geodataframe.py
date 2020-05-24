@@ -877,6 +877,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         df_copy = self.copy()
 
+        if "level_1" in df_copy.columns:  # GH1393
+            df_copy = df_copy.rename(columns={"level_1": "__level_1"})
+
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
@@ -887,6 +890,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
         df.index.names = list(self.index.names) + [None]
+
+        if "__level_1" in df.columns:
+            df = df.rename(columns={"__level_1": "level_1"})
+
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
