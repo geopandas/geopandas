@@ -360,3 +360,8 @@ def test_warning_geomcoll(single_rectangle_gdf, geomcol_gdf):
     called on a GDF with GeometryCollection"""
     with pytest.warns(UserWarning):
         clip(geomcol_gdf, single_rectangle_gdf, keep_geom_type=True)
+
+
+def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        clip(point_gdf, single_rectangle_gdf.to_crs(3857))
