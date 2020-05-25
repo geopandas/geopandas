@@ -134,11 +134,10 @@ def clip(gdf, mask, keep_geom_type=False):
         if not _check_crs(gdf, mask):
             warnings.warn(
                 "CRS mismatch between the CRS of 'gdf' geometries "
-                "and the CRS of 'mask' geometries. "
+                "and the CRS of 'mask' geometries.\n"
                 "Use `GeoSeries.to_crs()` to reproject one of "
-                "the passed geometry arrays.\n"
-                "CRS of gdf:\n {0}\n"
-                "CRS of mask:\n {1}\n".format(gdf.crs.__repr__(), mask.crs.__repr__()),
+                "the input geometry arrays to match the CRS of the other.\n"
+                "Use GeoSeries.crs to check the assigned CRS.\n",
                 UserWarning,
                 stacklevel=2,
             )

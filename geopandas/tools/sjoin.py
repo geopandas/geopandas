@@ -59,13 +59,10 @@ def sjoin(
     if not _check_crs(left_df, right_df):
         warn(
             "CRS mismatch between the CRS of 'left_df' geometries "
-            "and the CRS of 'right_df' geometries. "
-            "Use `GeoSeries.to_crs()` to reproject one of "
-            "the passed geometry arrays.\n"
-            "CRS of left_df:\n {0}\n"
-            "CRS of right_df:\n {1}\n".format(
-                left_df.crs.__repr__(), right_df.crs.__repr__()
-            ),
+            "and the CRS of 'right_df' geometries.\n"
+            "Use `GeoDataFrame.to_crs()` to reproject one of "
+            "the input geometry arrays to match the CRS of the other.\n"
+            "Use GeoDataFrame.crs to check the assigned CRS.\n",
             UserWarning,
             stacklevel=2,
         )

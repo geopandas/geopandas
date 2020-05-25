@@ -425,13 +425,10 @@ class GeometryArray(ExtensionArray):
             if not _check_crs(left, right):
                 warnings.warn(
                     "CRS mismatch between the CRS of left geometries "
-                    "and the CRS of right geoemtries. "
+                    "and the CRS of right geometries.\n"
                     "Use `GeoSeries.to_crs()` to reproject one of "
-                    "the passed geometry arrays.\n"
-                    "Left CRS:\n {0}\n"
-                    "Right CRS:\n {1}\n".format(
-                        left.crs.__repr__(), right.crs.__repr__()
-                    ),
+                    "the input geometry arrays to match the CRS of the other.\n"
+                    "Use GeoSeries.crs to check the assigned CRS.\n",
                     UserWarning,
                     stacklevel=6,
                 )

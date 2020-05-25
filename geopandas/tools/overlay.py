@@ -185,11 +185,10 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     if not _check_crs(df1, df2):
         warnings.warn(
             "CRS mismatch between the CRS of 'df1' geometries "
-            "and the CRS of 'df2' geometries. "
-            "Use `GeoSeries.to_crs()` to reproject one of "
-            "the passed geometry arrays.\n"
-            "CRS of df1:\n {0}\n"
-            "CRS of df2:\n {1}\n".format(df1.crs.__repr__(), df2.crs.__repr__()),
+            "and the CRS of 'df2' geometries.\n"
+            "Use `GeoDataFrame.to_crs()` to reproject one of "
+            "the input geometry arrays to match the CRS of the other.\n"
+            "Use GeoDataFrame.crs to check the assigned CRS.\n",
             UserWarning,
             stacklevel=2,
         )
