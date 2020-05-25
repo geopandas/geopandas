@@ -1,9 +1,11 @@
+import warnings
 from functools import reduce
 
 import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import _check_crs
 
 
 def _ensure_geometry_column(df):
@@ -179,6 +181,19 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
         raise NotImplementedError(
             "overlay currently only implemented for " "GeoDataFrames"
         )
+
+    if not _check_crs(df1, df2):
+        warnings.warn(
+            "CRS mismatch between the CRS of 'df1' geometries "
+            "and the CRS of 'df2' geometries. "
+            "Use `GeoSeries.to_crs()` to reproject one of "
+            "the passed geometry arrays.\n"
+            "CRS of df1:\n {0}\n"
+            "CRS of df2:\n {1}\n".format(df1.crs.__repr__(), df2.crs.__repr__()),
+            UserWarning,
+            stacklevel=2,
+        )
+
     polys = ["Polygon", "MultiPolygon"]
     lines = ["LineString", "MultiLineString", "LinearRing"]
     points = ["Point", "MultiPoint"]
