@@ -214,17 +214,19 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     if df2.geom_type.isin(polys).all():
         df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
-    if how == "difference":
-        return _overlay_difference(df1, df2)
-    elif how == "intersection":
-        result = _overlay_intersection(df1, df2)
-    elif how == "symmetric_difference":
-        result = _overlay_symmetric_diff(df1, df2)
-    elif how == "union":
-        result = _overlay_union(df1, df2)
-    elif how == "identity":
-        dfunion = _overlay_union(df1, df2)
-        result = dfunion[dfunion["__idx1"].notnull()].copy()
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
+        if how == "difference":
+            return _overlay_difference(df1, df2)
+        elif how == "intersection":
+            result = _overlay_intersection(df1, df2)
+        elif how == "symmetric_difference":
+            result = _overlay_symmetric_diff(df1, df2)
+        elif how == "union":
+            result = _overlay_union(df1, df2)
+        elif how == "identity":
+            dfunion = _overlay_union(df1, df2)
+            result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if keep_geom_type:
         type = df1.geom_type.iloc[0]
