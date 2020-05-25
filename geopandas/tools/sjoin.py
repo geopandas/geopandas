@@ -7,6 +7,7 @@ from shapely import prepared
 
 from geopandas import GeoDataFrame
 from geopandas import _compat as compat
+from geopandas.array import _check_crs
 
 
 def sjoin(
@@ -55,12 +56,18 @@ def sjoin(
             '`op` was "%s" but is expected to be in %s' % (op, allowed_ops)
         )
 
-    if left_df.crs != right_df.crs:
+    if not _check_crs(left_df, right_df):
         warn(
-            (
-                "CRS of frames being joined does not match!"
-                "(%s != %s)" % (left_df.crs, right_df.crs)
-            )
+            "CRS mismatch between the CRS of 'left_df' geometries "
+            "and the CRS of 'right_df' geometries. "
+            "Use `GeoSeries.to_crs()` to reproject one of "
+            "the passed geometry arrays.\n"
+            "CRS of left_df:\n {0}\n"
+            "CRS of right_df:\n {1}\n".format(
+                left_df.crs.__repr__(), right_df.crs.__repr__()
+            ),
+            UserWarning,
+            stacklevel=2,
         )
 
     index_left = "index_%s" % lsuffix

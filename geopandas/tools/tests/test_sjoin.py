@@ -95,7 +95,7 @@ class TestSpatialJoin:
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
         df1.crs = "epsg:4326"
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
             sjoin(df1, df2)
 
     @pytest.mark.parametrize(
