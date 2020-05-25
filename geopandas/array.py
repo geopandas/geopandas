@@ -55,7 +55,7 @@ if compat.PANDAS_GE_024:
 
 def _isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -63,6 +63,8 @@ def _isna(value):
     if value is None:
         return True
     elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
         return True
     else:
         return False

@@ -822,3 +822,17 @@ def test_check_crs():
     assert _check_crs(t1, T) is False
     assert _check_crs(t1, t1) is True
     assert _check_crs(t1, T, allow_none=True) is True
+
+
+@pytest.mark.parametrize("NA", [None, np.nan])
+def test_isna(NA):
+    t1 = T.copy()
+    t1[0] = NA
+    assert t1[0] is None
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="pd.NA introduced in pandas 1.0")
+def test_isna_pdNA():
+    t1 = T.copy()
+    t1[0] = pd.NA
+    assert t1[0] is None
