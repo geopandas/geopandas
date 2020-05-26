@@ -84,6 +84,36 @@ def _check_crs(left, right, allow_none=False):
     return True
 
 
+def _crs_mismatch_warn(left, right, stacklevel=3):
+    """
+    Raise a CRS mismatch warning with the information on the assigned CRS.
+    """
+    if left.crs:
+        left_srs = left.crs.to_string()
+        left_srs = left_srs if len(left_srs) <= 50 else " ".join([left_srs[:50], "..."])
+    else:
+        left_srs = None
+
+    if right.crs:
+        right_srs = right.crs.to_string()
+        right_srs = (
+            right_srs if len(right_srs) <= 50 else " ".join([right_srs[:50], "..."])
+        )
+    else:
+        right_srs = None
+
+    warnings.warn(
+        "CRS mismatch between the CRS of left geometries "
+        "and the CRS of right geometries.\n"
+        "Use `to_crs()` to reproject one of "
+        "the input geometries to match the CRS of the other.\n\n"
+        "Left CRS: {0}\n"
+        "Right CRS: {1}\n".format(left_srs, right_srs),
+        UserWarning,
+        stacklevel=stacklevel,
+    )
+
+
 # -----------------------------------------------------------------------------
 # Constructors / converters to other formats
 # -----------------------------------------------------------------------------
@@ -425,18 +455,7 @@ class GeometryArray(ExtensionArray):
                 )
                 raise ValueError(msg)
             if not _check_crs(left, right):
-                warnings.warn(
-                    "CRS mismatch between the CRS of left geometries "
-                    "and the CRS of right geometries. "
-                    "Use `GeoSeries.to_crs()` to reproject one of "
-                    "the passed geometry arrays.\n"
-                    "Left CRS:\n {0}\n"
-                    "Right CRS:\n {1}\n".format(
-                        left.crs.__repr__(), right.crs.__repr__()
-                    ),
-                    UserWarning,
-                    stacklevel=6,
-                )
+                _crs_mismatch_warn(left, right, stacklevel=7)
             right = right.data
 
         return getattr(vectorized, op)(left.data, right, **kwargs)

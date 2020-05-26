@@ -13,6 +13,7 @@ import pandas as pd
 from shapely.geometry import Polygon, MultiPolygon
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _clip_points(gdf, poly):
@@ -128,6 +129,10 @@ def clip(gdf, mask, keep_geom_type=False):
             "'mask' should be GeoDataFrame, GeoSeries or"
             "(Multi)Polygon, got {}".format(type(gdf))
         )
+
+    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+        if not _check_crs(gdf, mask):
+            _crs_mismatch_warn(gdf, mask, stacklevel=3)
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         box_mask = mask.total_bounds

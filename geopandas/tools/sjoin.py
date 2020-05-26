@@ -1,5 +1,3 @@
-from warnings import warn
-
 import numpy as np
 import pandas as pd
 
@@ -7,6 +5,7 @@ from shapely import prepared
 
 from geopandas import GeoDataFrame
 from geopandas import _compat as compat
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def sjoin(
@@ -55,13 +54,8 @@ def sjoin(
             '`op` was "%s" but is expected to be in %s' % (op, allowed_ops)
         )
 
-    if left_df.crs != right_df.crs:
-        warn(
-            (
-                "CRS of frames being joined does not match!"
-                "(%s != %s)" % (left_df.crs, right_df.crs)
-            )
-        )
+    if not _check_crs(left_df, right_df):
+        _crs_mismatch_warn(left_df, right_df, stacklevel=3)
 
     index_left = "index_%s" % lsuffix
     index_right = "index_%s" % rsuffix

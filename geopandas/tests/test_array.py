@@ -21,6 +21,7 @@ from geopandas.array import (
     to_wkb,
     to_wkt,
     _check_crs,
+    _crs_mismatch_warn,
 )
 import geopandas._compat as compat
 
@@ -822,6 +823,25 @@ def test_check_crs():
     assert _check_crs(t1, T) is False
     assert _check_crs(t1, t1) is True
     assert _check_crs(t1, T, allow_none=True) is True
+
+
+def test_crs_mismatch_warn():
+    t1 = T.copy()
+    t2 = T.copy()
+    t1.crs = 4326
+    t2.crs = 3857
+
+    # two different CRS
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        _crs_mismatch_warn(t1, t2)
+
+    # left None
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        _crs_mismatch_warn(T, t2)
+
+    # right None
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        _crs_mismatch_warn(t1, T)
 
 
 @pytest.mark.parametrize("NA", [None, np.nan])

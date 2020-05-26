@@ -1,9 +1,11 @@
+import warnings
 from functools import reduce
 
 import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _ensure_geometry_column(df):
@@ -179,6 +181,10 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
         raise NotImplementedError(
             "overlay currently only implemented for " "GeoDataFrames"
         )
+
+    if not _check_crs(df1, df2):
+        _crs_mismatch_warn(df1, df2, stacklevel=3)
+
     polys = ["Polygon", "MultiPolygon"]
     lines = ["LineString", "MultiLineString", "LinearRing"]
     points = ["Point", "MultiPoint"]
@@ -199,17 +205,19 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     if df2.geom_type.isin(polys).all():
         df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
-    if how == "difference":
-        return _overlay_difference(df1, df2)
-    elif how == "intersection":
-        result = _overlay_intersection(df1, df2)
-    elif how == "symmetric_difference":
-        result = _overlay_symmetric_diff(df1, df2)
-    elif how == "union":
-        result = _overlay_union(df1, df2)
-    elif how == "identity":
-        dfunion = _overlay_union(df1, df2)
-        result = dfunion[dfunion["__idx1"].notnull()].copy()
+    with warnings.catch_warnings():  # CRS checked above, supress array-level warning
+        warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
+        if how == "difference":
+            return _overlay_difference(df1, df2)
+        elif how == "intersection":
+            result = _overlay_intersection(df1, df2)
+        elif how == "symmetric_difference":
+            result = _overlay_symmetric_diff(df1, df2)
+        elif how == "union":
+            result = _overlay_union(df1, df2)
+        elif how == "identity":
+            dfunion = _overlay_union(df1, df2)
+            result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if keep_geom_type:
         type = df1.geom_type.iloc[0]
