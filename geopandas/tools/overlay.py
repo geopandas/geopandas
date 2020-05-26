@@ -213,7 +213,7 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     if df2.geom_type.isin(polys).all():
         df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
-    with warnings.catch_warnings():
+    with warnings.catch_warnings():  # CRS checked above, supress array-level warning
         warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
         if how == "difference":
             return _overlay_difference(df1, df2)
