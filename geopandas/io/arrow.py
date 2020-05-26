@@ -219,7 +219,7 @@ def _geopandas_to_arrow(df, index=None):
     return table.replace_schema_metadata(metadata)
 
 
-def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
+def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -242,14 +242,14 @@ def _to_parquet(df, path, compression="snappy", index=None, **kwargs):
     Parameters
     ----------
     path : str, path object
-    compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
-        Name of the compression to use. Use ``None`` for no compression.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
         If ``False``, the index(es) will not be written to the file.
         If ``None``, the index(ex) will be included as columns in the file
         output except `RangeIndex` which is stored as metadata only.
+    compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+        Name of the compression to use. Use ``None`` for no compression.
     kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """

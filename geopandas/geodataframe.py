@@ -579,7 +579,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
-    def to_parquet(self, path, compression="snappy", index=None, **kwargs):
+    def to_parquet(self, path, index=None, compression="snappy", **kwargs):
         """Write a GeoDataFrame to the Parquet format.
 
         Any geometry columns present are serialized to WKB format in the file.
@@ -600,14 +600,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         path : str, path object
-        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
-            Name of the compression to use. Use ``None`` for no compression.
         index : bool, default None
             If ``True``, always include the dataframe's index(es) as columns
             in the file output.
             If ``False``, the index(es) will not be written to the file.
             If ``None``, the index(ex) will be included as columns in the file
             output except `RangeIndex` which is stored as metadata only.
+        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+            Name of the compression to use. Use ``None`` for no compression.
         kwargs
             Additional keyword arguments passed to to pyarrow.parquet.write_table().
         """
@@ -637,14 +637,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         path : str, path object
-        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
-            Name of the compression to use. Use ``None`` for no compression.
         index : bool, default None
             If ``True``, always include the dataframe's index(es) as columns
             in the file output.
             If ``False``, the index(es) will not be written to the file.
             If ``None``, the index(ex) will be included as columns in the file
             output except `RangeIndex` which is stored as metadata only.
+        compression : {'zstd', 'lz4', 'uncompressed'}, optional
+            Name of the compression to use. Use ``"uncompressed"`` for no
+            compression. By default uses LZ4 if available, otherwise uncompressed.
         kwargs
             Additional keyword arguments passed to to pyarrow.feather.write_feather().
         """
