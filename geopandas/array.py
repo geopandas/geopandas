@@ -84,7 +84,7 @@ def _check_crs(left, right, allow_none=False):
     return True
 
 
-def _crs_mismatch_warn(left, right, stacklevel=1):
+def _crs_mismatch_warn(left, right, stacklevel=3):
     """
     Raise a CRS mismatch warning with the information on the assigned CRS.
     """
@@ -105,8 +105,8 @@ def _crs_mismatch_warn(left, right, stacklevel=1):
     warnings.warn(
         "CRS mismatch between the CRS of left geometries "
         "and the CRS of right geometries.\n"
-        "Use `GeoSeries.to_crs()` to reproject one of "
-        "the input geometry arrays to match the CRS of the other.\n\n"
+        "Use `to_crs()` to reproject one of "
+        "the input geometries to match the CRS of the other.\n\n"
         "Left CRS: {0}\n"
         "Right CRS: {1}\n".format(left_srs, right_srs),
         UserWarning,
