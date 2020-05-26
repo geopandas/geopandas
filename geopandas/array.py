@@ -85,11 +85,15 @@ def _check_crs(left, right, allow_none=False):
 
 
 def _crs_mismatch_warn(left, right, stacklevel=1):
+    """
+    Raise a CRS mismatch warning with the information on the assigned CRS.
+    """
     if left.crs:
         left_srs = left.crs.to_string()
         left_srs = left_srs if len(left_srs) <= 50 else " ".join([left_srs[:50], "..."])
     else:
         left_srs = None
+
     if right.crs:
         right_srs = right.crs.to_string()
         right_srs = (
@@ -97,6 +101,7 @@ def _crs_mismatch_warn(left, right, stacklevel=1):
         )
     else:
         right_srs = None
+
     warnings.warn(
         "CRS mismatch between the CRS of left geometries "
         "and the CRS of right geometries.\n"
