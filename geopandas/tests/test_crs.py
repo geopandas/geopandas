@@ -576,8 +576,8 @@ class TestSetCRS:
         assert result.crs == "EPSG:4326"
         assert naive.crs is None
 
-        # with copy=False
-        result = naive.set_crs(crs="EPSG:4326", copy=False)
+        # with inplace=True
+        result = naive.set_crs(crs="EPSG:4326", inplace=True)
         assert result is naive
         assert result.crs == naive.crs == "EPSG:4326"
 
@@ -596,7 +596,7 @@ class TestSetCRS:
         assert non_naive.crs == "EPSG:4326"
         assert result.crs == "EPSG:3857"
 
-        result = non_naive.set_crs("EPSG:3857", allow_override=True, copy=False)
+        result = non_naive.set_crs("EPSG:3857", allow_override=True, inplace=True)
         assert non_naive.crs == "EPSG:3857"
         assert result.crs == "EPSG:3857"
 

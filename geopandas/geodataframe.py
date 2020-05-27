@@ -666,7 +666,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         _to_file(self, filename, driver, schema, index, **kwargs)
 
-    def set_crs(self, crs=None, epsg=None, copy=True, allow_override=False):
+    def set_crs(self, crs=None, epsg=None, inplace=False, allow_override=False):
         """
         Set the Coordinate Reference System (CRS) of the ``GeoDataFrame``.
 
@@ -682,20 +682,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             such as an authority string (eg "EPSG:4326") or a WKT string.
         epsg : int, optional if `crs` is specified
             EPSG code specifying the projection.
-        copy : bool, default True
-            If set to False, the CRS of the GeoDataFrame will be changed in place
+        inplace : bool, default False
+            If set to True, the CRS of the GeoDataFrame will be changed in place
             (while still returning the result) instead of making a copy of
             the GeoDataFrame.
         allow_override : bool, default False
             If the the GeoDataFrame already has a CRS, allow to replace the
             existing CRS, even when both are not equal.
         """
-        if copy:
+        if not inplace:
             df = self.copy()
         else:
             df = self
         df.geometry = df.geometry.set_crs(
-            crs=crs, epsg=epsg, allow_override=allow_override, copy=False
+            crs=crs, epsg=epsg, allow_override=allow_override, inplace=True
         )
         return df
 
