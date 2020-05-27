@@ -790,6 +790,41 @@ class GeoPandasBase(object):
         """
         return _CoordinateIndexer(self)
 
+    def equals(self, other):
+        """
+        Test whether two objects contain the same elements.
+
+        This function allows two GeoSeries or GeoDataFrames to be compared
+        against each other to see if they have the same shape and elements.
+        Missing values in the same location are considered equal. The column
+        headers do not need to have the same type, but the elements within the
+        columns must be the same dtype.
+
+        Parameters
+        ----------
+        other : GeoSeries or GeoDataFrame
+            The other GeoSeries or GeoDataFrame to be compared with the first.
+
+        Returns
+        -------
+        bool
+            True if all elements are the same in both objects, False
+            otherwise.
+
+        Notes
+        -----
+        This function requires that the elements have the same dtype as their
+        respective elements in the other Series or DataFrame. However, the
+        column labels do not need to have the same type, as long as they are
+        still considered equal.
+
+        """
+        # we override this because pandas is using `self._constructor` in the
+        # isinstance check (https://github.com/geopandas/geopandas/issues/1420)
+        if not isinstance(other, type(self)):
+            return False
+        return self._data.equals(other._data)
+
 
 class _CoordinateIndexer(object):
     # see docstring GeoPandasBase.cx property above

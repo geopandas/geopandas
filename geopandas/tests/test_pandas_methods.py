@@ -314,6 +314,22 @@ def test_select_dtypes(df):
     assert_frame_equal(res, exp)
 
 
+def test_equals(s, df):
+    # https://github.com/geopandas/geopandas/issues/1420
+    s2 = s.copy()
+    assert s.equals(s2) is True
+    s2.iloc[0] = None
+    assert s.equals(s2) is False
+
+    df2 = df.copy()
+    assert df.equals(df2) is True
+    df2.loc[0, "geometry"] = Point(10, 10)
+    assert df.equals(df2) is False
+    df2 = df.copy()
+    df2.loc[0, "value1"] = 10
+    assert df.equals(df2) is False
+
+
 # Missing values
 
 
@@ -460,7 +476,7 @@ def test_groupby(df):
 
     # apply on geometry column not resulting in new geometry
     res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union.area)
-    exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry",)
+    exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry")
 
     assert_series_equal(res, exp)
 
