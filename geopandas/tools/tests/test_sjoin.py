@@ -1,13 +1,20 @@
+from distutils.version import LooseVersion
+
 import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
-from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
+from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, sjoin
 
 from pandas.testing import assert_frame_equal
 import pytest
+
+
+pytestmark = pytest.mark.skipif(
+    not sindex.has_sindex(), reason="sjoin requires spatial index"
+)
 
 
 @pytest.fixture()
@@ -83,13 +90,12 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
         df1.crs = "epsg:4326"
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
             sjoin(df1, df2)
 
     @pytest.mark.parametrize(
@@ -288,10 +294,13 @@ class TestSpatialJoin:
             )
             exp.index.names = df2.index.names
 
+        # GH 1364 fix of behaviour was done in pandas 1.1.0
+        if op == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
+            exp = exp.sort_index()
+
         assert_frame_equal(res, exp, check_index_type=False)
 
 
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSpatialJoinNYBB:
     def setup_method(self):
         nybb_filename = geopandas.datasets.get_path("nybb")
@@ -459,7 +468,6 @@ class TestSpatialJoinNYBB:
         assert df2.shape == (21, 8)
 
 
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSpatialJoinNaturalEarth:
     def setup_method(self):
         world_path = geopandas.datasets.get_path("naturalearth_lowres")

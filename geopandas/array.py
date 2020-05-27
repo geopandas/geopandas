@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 import numbers
 import operator
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -54,7 +55,7 @@ if compat.PANDAS_GE_024:
 
 def _isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -63,8 +64,54 @@ def _isna(value):
         return True
     elif isinstance(value, float) and np.isnan(value):
         return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
+        return True
     else:
         return False
+
+
+def _check_crs(left, right, allow_none=False):
+    """
+    Check if the projection of both arrays is the same.
+
+    If allow_none is True, empty CRS is treated as the same.
+    """
+    if allow_none:
+        if not left.crs or not right.crs:
+            return True
+    if not left.crs == right.crs:
+        return False
+    return True
+
+
+def _crs_mismatch_warn(left, right, stacklevel=3):
+    """
+    Raise a CRS mismatch warning with the information on the assigned CRS.
+    """
+    if left.crs:
+        left_srs = left.crs.to_string()
+        left_srs = left_srs if len(left_srs) <= 50 else " ".join([left_srs[:50], "..."])
+    else:
+        left_srs = None
+
+    if right.crs:
+        right_srs = right.crs.to_string()
+        right_srs = (
+            right_srs if len(right_srs) <= 50 else " ".join([right_srs[:50], "..."])
+        )
+    else:
+        right_srs = None
+
+    warnings.warn(
+        "CRS mismatch between the CRS of left geometries "
+        "and the CRS of right geometries.\n"
+        "Use `to_crs()` to reproject one of "
+        "the input geometries to match the CRS of the other.\n\n"
+        "Left CRS: {0}\n"
+        "Right CRS: {1}\n".format(left_srs, right_srs),
+        UserWarning,
+        stacklevel=stacklevel,
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -144,13 +191,13 @@ def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms):
+def to_wkb(geoms, hex=False):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms.data)
+    return vectorized.to_wkb(geoms.data, hex=hex)
 
 
 def from_wkt(data, crs=None):
@@ -215,6 +262,8 @@ class GeometryArray(ExtensionArray):
 
     def __init__(self, data, crs=None):
         if isinstance(data, self.__class__):
+            if not crs:
+                crs = data.crs
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -405,6 +454,8 @@ class GeometryArray(ExtensionArray):
                     len(left), len(right)
                 )
                 raise ValueError(msg)
+            if not _check_crs(left, right):
+                _crs_mismatch_warn(left, right, stacklevel=7)
             right = right.data
 
         return getattr(vectorized, op)(left.data, right, **kwargs)
@@ -421,7 +472,7 @@ class GeometryArray(ExtensionArray):
     def disjoint(self, other):
         return self._binary_method("disjoint", self, other)
 
-    def equals(self, other):
+    def geom_equals(self, other):
         return self._binary_method("equals", self, other)
 
     def intersects(self, other):
@@ -436,12 +487,30 @@ class GeometryArray(ExtensionArray):
     def within(self, other):
         return self._binary_method("within", self, other)
 
+    def geom_equals_exact(self, other, tolerance):
+        return self._binary_method("equals_exact", self, other, tolerance=tolerance)
+
+    def geom_almost_equals(self, other, decimal):
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
+        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
+
     def equals_exact(self, other, tolerance):
+        warnings.warn(
+            "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
+            "GeometryArray.equals_exact() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
     def almost_equals(self, other, decimal):
-        return self.equals_exact(other, 0.5 * 10 ** (-decimal))
-        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
+        warnings.warn(
+            "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
+            "GeometryArray.almost_equals() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
 
     #
     # Binary operations that return new geometries
@@ -765,6 +834,9 @@ class GeometryArray(ExtensionArray):
         -------
         ExtensionArray
         """
+        # GH 1413
+        if isinstance(scalars, BaseGeometry):
+            scalars = [scalars]
         return from_shapely(scalars)
 
     def _values_for_factorize(self):
@@ -928,7 +1000,7 @@ class GeometryArray(ExtensionArray):
         # a TypeError should be raised
         res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
 
-        res = np.asarray(res)
+        res = np.asarray(res, dtype=bool)
         return res
 
     def __eq__(self, other):

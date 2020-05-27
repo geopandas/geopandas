@@ -13,6 +13,7 @@ import pandas as pd
 from shapely.geometry import Polygon, MultiPolygon
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _clip_points(gdf, poly):
@@ -36,12 +37,7 @@ def _clip_points(gdf, poly):
         The returned GeoDataFrame is a subset of gdf that intersects
         with poly.
     """
-    spatial_index = gdf.sindex
-    bbox = poly.bounds
-    sidx = list(spatial_index.intersection(bbox))
-    gdf_sub = gdf.iloc[sidx]
-
-    return gdf_sub[gdf_sub.geometry.intersects(poly)]
+    return gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
 
 
 def _clip_line_poly(gdf, poly):
@@ -65,26 +61,17 @@ def _clip_line_poly(gdf, poly):
         The returned GeoDataFrame is a clipped subset of gdf
         that intersects with poly.
     """
-    spatial_index = gdf.sindex
-
-    # Create a box for the initial intersection
-    bbox = poly.bounds
-    # Get a list of id's for each object that overlaps the bounding box and
-    # subset the data to just those lines
-    sidx = list(spatial_index.intersection(bbox))
-    gdf_sub = gdf.iloc[sidx]
+    gdf_sub = gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
 
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
         clipped["geometry"] = gdf_sub.intersection(poly)
-
-        # Return the clipped layer with no null geometry values or empty geometries
-        return clipped[~clipped.geometry.is_empty & clipped.geometry.notnull()]
     else:
         # GeoSeries
         clipped = gdf_sub.intersection(poly)
-        return clipped[~clipped.is_empty & clipped.notnull()]
+
+    return clipped
 
 
 def clip(gdf, mask, keep_geom_type=False):
@@ -142,6 +129,10 @@ def clip(gdf, mask, keep_geom_type=False):
             "'mask' should be GeoDataFrame, GeoSeries or"
             "(Multi)Polygon, got {}".format(type(gdf))
         )
+
+    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+        if not _check_crs(gdf, mask):
+            _crs_mismatch_warn(gdf, mask, stacklevel=3)
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         box_mask = mask.total_bounds

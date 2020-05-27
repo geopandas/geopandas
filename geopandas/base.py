@@ -11,17 +11,11 @@ from shapely.ops import cascaded_union
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
+from .sindex import get_sindex_class, has_sindex
 
-try:
-    from rtree.core import RTreeError
-
-    HAS_SINDEX = True
-except ImportError:
-
-    class RTreeError(Exception):
-        pass
-
-    HAS_SINDEX = False
+# for backwards compat
+# this will be static (will NOT follow USE_PYGEOS changes)
+HAS_SINDEX = has_sindex()
 
 
 def is_geometry_type(data):
@@ -41,10 +35,12 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
     this = this.geometry
     if isinstance(other, GeoPandasBase):
-        this, other = this.align(other.geometry)
+        if not this.index.equals(other.index):
+            warn("The indices of the two GeoSeries are different.")
+            this, other = this.align(other.geometry)
+        else:
+            other = other.geometry
 
-        if this.crs != other.crs:
-            warn("GeoSeries crs mismatch: {0} and {1}".format(this.crs, other.crs))
         a_this = GeometryArray(this.values)
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
@@ -99,23 +95,22 @@ class GeoPandasBase(object):
     _sindex_generated = False
 
     def _generate_sindex(self):
-        if not HAS_SINDEX:
-            warn("Cannot generate spatial index: Missing package `rtree`.")
-        else:
-            from geopandas.sindex import SpatialIndex
-
-            stream = (
-                (i, item.bounds, idx)
-                for i, (idx, item) in enumerate(self.geometry.iteritems())
-                if pd.notnull(item) and not item.is_empty
-            )
-            try:
-                self._sindex = SpatialIndex(stream)
-            # What we really want here is an empty generator error, or
-            # for the bulk loader to log that the generator was empty
-            # and move on. See https://github.com/Toblerity/rtree/issues/20.
-            except RTreeError:
-                pass
+        sindex_cls = get_sindex_class()
+        if sindex_cls is not None:
+            _sindex = sindex_cls(self.geometry)
+            if not _sindex.is_empty:
+                self._sindex = _sindex
+            else:
+                warn(
+                    "Generated spatial index is empty and returned `None`. "
+                    "Future versions of GeoPandas will return zero-length spatial "
+                    "index instead of `None`. Use `len(gdf.sindex) > 0` "
+                    "or `if gdf.sindex` instead of `if gd.sindex is not None` "
+                    "to check for empty spatial indexes.",
+                    FutureWarning,
+                    stacklevel=3,
+                )
+                self._sindex = None
         self._sindex_generated = True
 
     def _invalidate_sindex(self):
@@ -320,14 +315,14 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test for
             equality.
         """
-        return _binary_op("equals", self, other)
+        return _binary_op("geom_equals", self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each geometry is approximately equal to `other`.
 
         Approximate equality is tested at all points to the specified `decimal`
-        place precision.  See also :meth:`equals`.
+        place precision.  See also :meth:`geom_equals`.
 
         Parameters
         ----------
@@ -336,12 +331,12 @@ class GeoPandasBase(object):
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        return _binary_op("almost_equals", self, other, decimal=decimal)
+        return _binary_op("geom_almost_equals", self, other, decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        return _binary_op("equals_exact", self, other, tolerance=tolerance)
+        return _binary_op("geom_equals_exact", self, other, tolerance=tolerance)
 
     def crosses(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -390,7 +385,14 @@ class GeoPandasBase(object):
         return _binary_op("intersects", self, other)
 
     def overlaps(self, other):
-        """Return True for all geometries that overlap *other*, else False"""
+        """Returns True for all geometries that overlap *other*, else False.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if
+            overlaps.
+        """
         return _binary_op("overlaps", self, other)
 
     def touches(self, other):

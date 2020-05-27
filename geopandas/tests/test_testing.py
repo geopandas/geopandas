@@ -56,6 +56,7 @@ df5 = GeoDataFrame(
 )
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_geoseries():
     assert_geoseries_equal(s1, s2)
     assert_geoseries_equal(s1, s3, check_series_type=False, check_dtype=False)

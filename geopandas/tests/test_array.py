@@ -20,6 +20,8 @@ from geopandas.array import (
     points_from_xy,
     to_wkb,
     to_wkt,
+    _check_crs,
+    _crs_mismatch_warn,
 )
 import geopandas._compat as compat
 
@@ -159,6 +161,11 @@ def test_to_wkb():
     assert isinstance(res, np.ndarray)
     np.testing.assert_array_equal(res, exp)
 
+    res = to_wkb(P, hex=True)
+    exp = np.array([p.wkb_hex for p in points_no_missing], dtype=object)
+    assert isinstance(res, np.ndarray)
+    np.testing.assert_array_equal(res, exp)
+
     # missing values
     a = from_shapely([None, points_no_missing[0]])
     res = to_wkb(a)
@@ -230,13 +237,13 @@ def test_to_wkt():
         ("covers", ()),
         ("crosses", ()),
         ("disjoint", ()),
-        ("equals", ()),
+        ("geom_equals", ()),
         ("intersects", ()),
         ("overlaps", ()),
         ("touches", ()),
         ("within", ()),
-        ("equals_exact", (0.1,)),
-        ("almost_equals", (3,)),
+        ("geom_equals_exact", (0.1,)),
+        ("geom_almost_equals", (3,)),
     ],
 )
 def test_predicates_vector_scalar(attr, args):
@@ -251,7 +258,9 @@ def test_predicates_vector_scalar(attr, args):
         assert result.dtype == bool
 
         expected = [
-            getattr(tri, attr)(other, *args) if tri is not None else na_value
+            getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
+            if tri is not None
+            else na_value
             for tri in triangles
         ]
 
@@ -267,13 +276,13 @@ def test_predicates_vector_scalar(attr, args):
         ("covers", ()),
         ("crosses", ()),
         ("disjoint", ()),
-        ("equals", ()),
+        ("geom_equals", ()),
         ("intersects", ()),
         ("overlaps", ()),
         ("touches", ()),
         ("within", ()),
-        ("equals_exact", (0.1,)),
-        ("almost_equals", (3,)),
+        ("geom_equals_exact", (0.1,)),
+        ("geom_almost_equals", (3,)),
     ],
 )
 def test_predicates_vector_vector(attr, args):
@@ -309,9 +318,24 @@ def test_predicates_vector_vector(attr, args):
         elif a.is_empty or b.is_empty:
             expected.append(empty_value)
         else:
-            expected.append(getattr(a, attr)(b, *args))
+            expected.append(
+                getattr(a, attr if "geom" not in attr else attr[5:])(b, *args)
+            )
 
     assert result.tolist() == expected
+
+
+@pytest.mark.parametrize(
+    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))],
+)
+def test_equals_deprecation(attr, args):
+    point = points[0]
+    tri = triangles[0]
+
+    for other in [point, tri, shapely.geometry.Polygon()]:
+        with pytest.warns(FutureWarning):
+            result = getattr(T, attr)(other, *args)
+        assert result.tolist() == getattr(T, "geom_" + attr)(other, *args).tolist()
 
 
 @pytest.mark.parametrize(
@@ -748,7 +772,7 @@ def test_pickle():
     # assert (T.data != T2.data).all()
     assert T2[-1] is None
     assert T2[-2].is_empty
-    assert T[:-2].equals(T2[:-2]).all()
+    assert T[:-2].geom_equals(T2[:-2]).all()
 
 
 def test_raise_on_bad_sizes():
@@ -791,3 +815,44 @@ def test_astype_multipolygon():
     result = arr.astype(np.dtype("U10"))
     assert result.dtype == np.dtype("U10")
     assert result[0] == multi_poly.wkt[:10]
+
+
+def test_check_crs():
+    t1 = T.copy()
+    t1.crs = 4326
+    assert _check_crs(t1, T) is False
+    assert _check_crs(t1, t1) is True
+    assert _check_crs(t1, T, allow_none=True) is True
+
+
+def test_crs_mismatch_warn():
+    t1 = T.copy()
+    t2 = T.copy()
+    t1.crs = 4326
+    t2.crs = 3857
+
+    # two different CRS
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        _crs_mismatch_warn(t1, t2)
+
+    # left None
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        _crs_mismatch_warn(T, t2)
+
+    # right None
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        _crs_mismatch_warn(t1, T)
+
+
+@pytest.mark.parametrize("NA", [None, np.nan])
+def test_isna(NA):
+    t1 = T.copy()
+    t1[0] = NA
+    assert t1[0] is None
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="pd.NA introduced in pandas 1.0")
+def test_isna_pdNA():
+    t1 = T.copy()
+    t1[0] = pd.NA
+    assert t1[0] is None

@@ -92,9 +92,9 @@ as well::
     When using pip to install GeoPandas, you need to make sure that all dependencies are
     installed correctly.
 
-    - `shapely`_ and `fiona`_ provide binary wheels with the
-      dependencies included for Mac and Linux, but not for Windows.
-    - `pyproj`_ provides binary wheels with depencies included
+    - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
+      but not for Windows.
+    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
     - `rtree`_ does not provide wheels.
     - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
@@ -149,7 +149,9 @@ Further, optional dependencies are:
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
+- `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
+
 
 For plotting, these additional packages may be used:
 
@@ -217,6 +219,8 @@ More specifically, whether the speedups are used or not is determined by:
 .. _geopy: https://github.com/geopy/geopy
 
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
+
+.. _GeoAlchemy2: https://geoalchemy-2.readthedocs.io/
 
 .. _mapclassify: http://pysal.org/mapclassify
 

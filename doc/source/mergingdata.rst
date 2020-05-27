@@ -13,7 +13,7 @@ There are two ways to combine datasets in *geopandas* -- attribute joins and spa
 
 In an attribute join, a ``GeoSeries`` or ``GeoDataFrame`` is combined with a regular *pandas* ``Series`` or ``DataFrame`` based on a common variable. This is analogous to normal merging or joining in *pandas*.
 
-In a Spatial Join, observations from to ``GeoSeries`` or ``GeoDataFrames`` are combined based on their spatial relationship to one another.
+In a Spatial Join, observations from two ``GeoSeries`` or ``GeoDataFrames`` are combined based on their spatial relationship to one another.
 
 In the following examples, we use these datasets:
 
@@ -29,6 +29,22 @@ In the following examples, we use these datasets:
    # For spatial join
    countries = world[['geometry', 'name']]
    countries = countries.rename(columns={'name':'country'})
+
+
+Appending
+---------
+
+Appending GeoDataFrames and GeoSeries uses pandas ``append`` methods. Keep in mind, that appended geometry columns needs to have the same CRS.
+
+.. ipython:: python
+
+    # Appending GeoSeries
+    joined = world.geometry.append(cities.geometry)
+
+    # Appending GeoDataFrames
+    europe = world[world.continent == 'Europe']
+    asia = world[world.continent == 'Asia']
+    eurasia = europe.append(asia)
 
 
 Attribute Joins
@@ -75,11 +91,11 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 Sjoin Arguments
 ~~~~~~~~~~~~~~~~
 
-``sjoin.()`` has two core arguments: ``how`` and ``op``.
+``sjoin()`` has two core arguments: ``how`` and ``op``.
 
 **op**
 
-The ```op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
+The ``op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
 
 * `intersects`: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.
 * `within`: The attributes will be joined if the object’s boundary and interior intersect *only* with the interior of the other object (not its boundary or exterior).
@@ -116,5 +132,3 @@ Existing spatial indexes on either `left_df` or `right_df` will be reused when p
     # sindex for df1 is reused
     sjoin(df1, df3, ...)
     # sindex for df1 is reused again
-
-

@@ -17,6 +17,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
+
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
@@ -331,7 +332,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
-        return geopandas.io.file.read_file(filename, **kwargs)
+        return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
     def from_features(cls, features, crs=None, columns=None):
@@ -377,18 +378,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
-        for f in features_lst:
-            if hasattr(f, "__geo_interface__"):
-                f = f.__geo_interface__
-            else:
-                f = f
-
-            d = {"geometry": shape(f["geometry"]) if f["geometry"] else None}
-            d.update(f["properties"])
-            rows.append(d)
-        df = GeoDataFrame(rows, columns=columns)
-        df.crs = crs
-        return df
+        for feature in features_lst:
+            # load geometry
+            if hasattr(feature, "__geo_interface__"):
+                feature = feature.__geo_interface__
+            row = {
+                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+            }
+            # load properties
+            row.update(feature["properties"])
+            rows.append(row)
+        return GeoDataFrame(rows, columns=columns, crs=crs)
 
     @classmethod
     def from_postgis(
@@ -401,6 +401,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float=True,
         parse_dates=None,
         params=None,
+        chunksize=None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -430,6 +431,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               without native Datetime support, such as SQLite.
         params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
+        chunksize : int, default None
+            If specified, return an iterator where chunksize is the number
+            of rows to include in each chunk.
 
         Examples
         --------
@@ -439,7 +443,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
 
-        df = geopandas.io.sql.read_postgis(
+        df = geopandas.io.sql._read_postgis(
             sql,
             con,
             geom_col=geom_col,
@@ -448,6 +452,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             coerce_float=coerce_float,
             parse_dates=parse_dates,
             params=params,
+            chunksize=chunksize,
         )
 
         return df
@@ -576,6 +581,43 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
+    def to_parquet(self, filename, compression="snappy", index=None, **kwargs):
+        """Write a GeoDataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+        .. versionadded:: 0.8
+
+        Parameters
+        ----------
+        path : str, path object
+        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+            Name of the compression to use. Use ``None`` for no compression.
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        kwargs
+            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+        """
+
+        from geopandas.io.parquet import _to_parquet
+
+        _to_parquet(self, filename, compression=compression, index=index, **kwargs)
+
     def to_file(
         self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
     ):
@@ -620,9 +662,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         GeoSeries.to_file
         """
-        from geopandas.io.file import to_file
+        from geopandas.io.file import _to_file
 
-        to_file(self, filename, driver, schema, index, **kwargs)
+        _to_file(self, filename, driver, schema, index, **kwargs)
 
     def set_crs(self, crs=None, epsg=None, copy=True, allow_override=False):
         """
@@ -908,6 +950,106 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def to_postgis(
+        self,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
+    ):
+
+        """
+        Upload GeoDataFrame into PostGIS database.
+
+        This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+        Python driver (e.g. psycopg2) to be installed.
+
+        Parameters
+        ----------
+        name : str
+            Name of the target table.
+        con : sqlalchemy.engine.Engine
+            Active connection to the PostGIS database.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            How to behave if the table already exists:
+
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
+        schema : string, optional
+            Specify the schema. If None, use default schema: 'public'.
+        index : bool, default True
+            Write DataFrame index as a column.
+            Uses *index_label* as the column name in the table.
+        index_label : string or sequence, default None
+            Column label for index column(s).
+            If None is given (default) and index is True,
+            then the index names are used.
+        chunksize : int, optional
+            Rows will be written in batches of this size at a time.
+            By default, all rows will be written at once.
+        dtype : dict of column name to SQL type, default None
+            Specifying the datatype for columns.
+            The keys should be the column names and the values
+            should be the SQLAlchemy types.
+
+        Examples
+        --------
+
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase";)
+        >>> gdf.to_postgis("my_table", engine)
+        """
+        geopandas.io.sql._write_postgis(
+            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
+
+        #
+        # Implement standard operators for GeoSeries
+        #
+
+    def __xor__(self, other):
+        """Implement ^ operator as for builtin set type"""
+        warnings.warn(
+            "'^' operator will be deprecated. Use the 'symmetric_difference' "
+            "method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.symmetric_difference(other)
+
+    def __or__(self, other):
+        """Implement | operator as for builtin set type"""
+        warnings.warn(
+            "'|' operator will be deprecated. Use the 'union' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.union(other)
+
+    def __and__(self, other):
+        """Implement & operator as for builtin set type"""
+        warnings.warn(
+            "'&' operator will be deprecated. Use the 'intersection' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.intersection(other)
+
+    def __sub__(self, other):
+        """Implement - operator as for builtin set type"""
+        warnings.warn(
+            "'-' operator will be deprecated. Use the 'difference' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.difference(other)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
