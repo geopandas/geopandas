@@ -261,7 +261,7 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _to_feather(df, path, index=None, **kwargs):
+def _to_feather(df, path, index=None, compression=None, **kwargs):
     """
     Write a GeoDataFrame to the Feather format.
 
@@ -305,7 +305,7 @@ def _to_feather(df, path, index=None, **kwargs):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     table = _geopandas_to_arrow(df, index=index)
-    feather.write_feather(table, path, **kwargs)
+    feather.write_feather(table, path, compression=compression, **kwargs)
 
 
 def _arrow_to_geopandas(table):

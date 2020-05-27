@@ -616,7 +616,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         _to_parquet(self, path, compression=compression, index=index, **kwargs)
 
-    def to_feather(self, path, index=None, **kwargs):
+    def to_feather(self, path, index=None, compression=None, **kwargs):
         """Write a GeoDataFrame to the Feather format.
 
         Any geometry columns present are serialized to WKB format in the file.
@@ -652,7 +652,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         from geopandas.io.arrow import _to_feather
 
-        _to_feather(self, path, index=index, **kwargs)
+        _to_feather(self, path, index=index, compression=compression, **kwargs)
 
     def to_file(
         self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
