@@ -157,6 +157,8 @@ Currently, the following methods/attributes are implemented for a ``GeoDataFrame
 
 .. automethod:: geopandas.GeoDataFrame.to_parquet
 
+.. automethod:: geopandas.GeoDataFrame.to_feather
+
 .. automethod:: geopandas.GeoDataFrame.to_postgis
 
 .. automethod:: geopandas.GeoDataFrame.plot
@@ -202,6 +204,7 @@ Top-level Functions
   GeoSeries
   read_file
   read_parquet
+  read_feather
   read_postgis
   sjoin
   overlay
