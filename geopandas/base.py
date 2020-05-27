@@ -796,10 +796,10 @@ class GeoPandasBase(object):
 
         This function allows two GeoSeries or GeoDataFrames to be compared
         against each other to see if they have the same shape and elements.
-        Missing values in the same location are considered equal. The column
-        headers do not need to have the same type (as long as they are
-        still considered equal), but the dtypes of the respective columns
-        must be the same.
+        Missing values in the same location are considered equal. The
+        row/column index do not need to have the same type (as long as the
+        values are still considered equal), but the dtypes of the respective
+        columns must be the same.
 
         Parameters
         ----------
