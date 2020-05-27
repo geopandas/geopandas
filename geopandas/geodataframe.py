@@ -91,13 +91,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 ):
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
-                        "or 'GeoDataFrame.to_crs()' to reproject geometries. "
+                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "allow_override=True)' to overwrite CRS or "
+                        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
                         "CRS mismatch will raise an error in the future versions "
                         "of GeoPandas.",
                         FutureWarning,
                         stacklevel=2,
-                    )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
+                    )
                     # TODO: raise error in 0.9 or 0.10.
                 self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
@@ -119,13 +120,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 warnings.warn(
                     "CRS mismatch between CRS of the passed geometries "
-                    "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
-                    "or 'GeoDataFrame.to_crs()' to reproject geometries. "
+                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                    "allow_override=True)' to overwrite CRS or "
+                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
                     "CRS mismatch will raise an error in the future versions "
                     "of GeoPandas.",
                     FutureWarning,
                     stacklevel=2,
-                )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
+                )
                 # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
@@ -701,6 +703,41 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         from geopandas.io.file import _to_file
 
         _to_file(self, filename, driver, schema, index, **kwargs)
+
+    def set_crs(self, crs=None, epsg=None, inplace=False, allow_override=False):
+        """
+        Set the Coordinate Reference System (CRS) of the ``GeoDataFrame``.
+
+        If there are multiple geometry columns within the GeoDataFrame, only
+        the CRS of the active geometry column is set.
+
+        NOTE: The underlying geometries are not transformed to this CRS. To
+        transform the geometries to a new CRS, use the ``to_crs`` method.
+
+        Parameters
+        ----------
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying the projection.
+        inplace : bool, default False
+            If True, the CRS of the GeoDataFrame will be changed in place
+            (while still returning the result) instead of making a copy of
+            the GeoDataFrame.
+        allow_override : bool, default False
+            If the the GeoDataFrame already has a CRS, allow to replace the
+            existing CRS, even when both are not equal.
+        """
+        if not inplace:
+            df = self.copy()
+        else:
+            df = self
+        df.geometry = df.geometry.set_crs(
+            crs=crs, epsg=epsg, allow_override=allow_override, inplace=True
+        )
+        return df
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
