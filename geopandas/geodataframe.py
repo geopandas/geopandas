@@ -670,9 +670,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         Set the Coordinate Reference System (CRS) of the ``GeoDataFrame``.
 
-        Set the CRS of the active geometry column of the GeoDataFrame, without
-        transforming the geometries. For actually transforming the geometries to
-        a new CRS, use the ``to_crs`` method.
+        If there are multiple geometry columns within the GeoDataFrame, only
+        the CRS of the active geometry column is set.
+
+        NOTE: The underlying geometries are not transformed to this CRS. To
+        transform the geometries to a new CRS, use the ``to_crs`` method.
 
         Parameters
         ----------
@@ -683,7 +685,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         epsg : int, optional if `crs` is specified
             EPSG code specifying the projection.
         inplace : bool, default False
-            If set to True, the CRS of the GeoDataFrame will be changed in place
+            If True, the CRS of the GeoDataFrame will be changed in place
             (while still returning the result) instead of making a copy of
             the GeoDataFrame.
         allow_override : bool, default False

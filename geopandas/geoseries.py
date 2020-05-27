@@ -422,9 +422,8 @@ class GeoSeries(GeoPandasBase, Series):
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
-        Set the CRS in a GeoSeries without transforming the geometries. For
-        actually transforming the geometries to a new CRS, use the ``to_crs``
-        method.
+        NOTE: The underlying geometries are not transformed to this CRS. To
+        transform the geometries to a new CRS, use the ``to_crs`` method.
 
         Parameters
         ----------
@@ -435,7 +434,7 @@ class GeoSeries(GeoPandasBase, Series):
         epsg : int, optional if `crs` is specified
             EPSG code specifying the projection.
         inplace : bool, default False
-            If set to True, the CRS of the GeoSeries will be changed in place
+            If True, the CRS of the GeoSeries will be changed in place
             (while still returning the result) instead of making a copy of
             the GeoSeries.
         allow_override : bool, default False
