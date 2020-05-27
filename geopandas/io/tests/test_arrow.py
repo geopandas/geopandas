@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+
+from distutils.version import LooseVersion
 import os
 
 import pytest
@@ -7,10 +9,10 @@ from pandas.testing import assert_frame_equal
 import numpy as np
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, read_parquet
+from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
-from geopandas.io.parquet import (
+from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
@@ -23,10 +25,29 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 
 # Skip all tests in this module if pyarrow is not available
-pyarrow_skip = pytest.importorskip("pyarrow")
+pyarrow = pytest.importorskip("pyarrow")
 
 # TEMPORARY: hide warning from to_parquet
 pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*")
+
+
+@pytest.fixture(
+    params=[
+        "parquet",
+        pytest.param(
+            "feather",
+            marks=pytest.mark.skipif(
+                pyarrow.__version__ < LooseVersion("0.17.0"),
+                reason="needs pyarrow >= 0.17",
+            ),
+        ),
+    ]
+)
+def file_format(request):
+    if request.param == "parquet":
+        return read_parquet, GeoDataFrame.to_parquet
+    elif request.param == "feather":
+        return read_feather, GeoDataFrame.to_feather
 
 
 def test_create_metadata():
@@ -104,14 +125,14 @@ def test_validate_metadata_valid():
 @pytest.mark.parametrize(
     "metadata,error",
     [
-        ({}, "Missing or malformed geo metadata in Parquet file"),
+        ({}, "Missing or malformed geo metadata in Parquet/Feather file"),
         (
             {"primary_column": "foo"},
-            "'geo' metadata in Parquet file is missing required key:",
+            "'geo' metadata in Parquet/Feather file is missing required key:",
         ),
         (
             {"primary_column": "foo", "columns": None},
-            "'geo' metadata in Parquet file is missing required key",
+            "'geo' metadata in Parquet/Feather file is missing required key",
         ),
         (
             {"primary_column": "foo", "columns": []},
@@ -120,17 +141,17 @@ def test_validate_metadata_valid():
         (
             {"primary_column": "foo", "columns": {"foo": {}}},
             (
-                "'geo' metadata in Parquet file is missing required key 'crs' "
+                "'geo' metadata in Parquet/Feather file is missing required key 'crs' "
                 "for column 'foo'"
             ),
         ),
         (
             {"primary_column": "foo", "columns": {"foo": {"crs": None}}},
-            "'geo' metadata in Parquet file is missing required key",
+            "'geo' metadata in Parquet/Feather file is missing required key",
         ),
         (
             {"primary_column": "foo", "columns": {"foo": {"encoding": None}}},
-            "'geo' metadata in Parquet file is missing required key",
+            "'geo' metadata in Parquet/Feather file is missing required key",
         ),
         (
             {
@@ -198,10 +219,11 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
 @pytest.mark.parametrize(
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
-def test_parquet_roundtrip(test_dataset, tmpdir):
+def test_roundtrip(tmpdir, file_format, test_dataset):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
+    reader, writer = file_format
 
     df = read_file(get_path(test_dataset))
     orig = df.copy()
@@ -210,7 +232,7 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
 
     # TEMP: Initial implementation should raise a UserWarning
     with pytest.warns(UserWarning, match="initial implementation"):
-        df.to_parquet(filename)
+        writer(df, filename)
 
     assert os.path.exists(filename)
 
@@ -218,28 +240,29 @@ def test_parquet_roundtrip(test_dataset, tmpdir):
     assert_geodataframe_equal(df, orig)
 
     # make sure that we can roundtrip the data frame
-    pq_df = read_parquet(filename)
+    pq_df = reader(filename)
 
     assert isinstance(pq_df, GeoDataFrame)
     assert_geodataframe_equal(df, pq_df)
 
 
-def test_parquet_index(tmpdir):
+def test_index(tmpdir, file_format):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.
     """
+    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset)).set_index("iso_a3")
 
     filename = os.path.join(str(tmpdir), "test_with_index.pq")
-    df.to_parquet(filename, index=True)
-    pq_df = read_parquet(filename)
+    writer(df, filename, index=True)
+    pq_df = reader(filename)
     assert_geodataframe_equal(df, pq_df)
 
     filename = os.path.join(str(tmpdir), "drop_index.pq")
-    df.to_parquet(filename, index=False)
-    pq_df = read_parquet(filename)
+    writer(df, filename, index=False)
+    pq_df = reader(filename)
     assert_geodataframe_equal(df.reset_index(drop=True), pq_df)
 
 
@@ -260,21 +283,43 @@ def test_parquet_compression(compression, tmpdir):
     assert_geodataframe_equal(df, pq_df)
 
 
-def test_parquet_multiple_geom_cols(tmpdir):
+@pytest.mark.skipif(
+    pyarrow.__version__ < LooseVersion("0.17.0"),
+    reason="Feather only supported for pyarrow >= 0.17",
+)
+@pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
+def test_feather_compression(compression, tmpdir):
+    """Using compression options should not raise errors, and should
+    return identical GeoDataFrame.
+    """
+
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    filename = os.path.join(str(tmpdir), "test.feather")
+    df.to_feather(filename, compression=compression)
+    pq_df = read_feather(filename)
+
+    assert isinstance(pq_df, GeoDataFrame)
+    assert_geodataframe_equal(df, pq_df)
+
+
+def test_parquet_multiple_geom_cols(tmpdir, file_format):
     """If multiple geometry columns are present when written to parquet,
     they should all be returned as such when read from parquet.
     """
+    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset))
     df["geom2"] = df.geometry.copy()
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
+    writer(df, filename)
 
     assert os.path.exists(filename)
 
-    pq_df = read_parquet(filename)
+    pq_df = reader(filename)
 
     assert isinstance(pq_df, GeoDataFrame)
     assert_geodataframe_equal(df, pq_df)
@@ -302,21 +347,23 @@ def test_parquet_missing_metadata(tmpdir):
     df.to_parquet(filename)
 
     # missing metadata will raise ValueError
-    with pytest.raises(ValueError, match="Missing geo metadata in Parquet file."):
+    with pytest.raises(
+        ValueError, match="Missing geo metadata in Parquet/Feather file."
+    ):
         read_parquet(filename)
 
 
 @pytest.mark.parametrize(
     "geo_meta,error",
     [
-        ({"geo": b""}, "Missing or malformed geo metadata in Parquet file"),
+        ({"geo": b""}, "Missing or malformed geo metadata in Parquet/Feather file"),
         (
             {"geo": _encode_metadata({})},
-            "Missing or malformed geo metadata in Parquet file",
+            "Missing or malformed geo metadata in Parquet/Feather file",
         ),
         (
             {"geo": _encode_metadata({"foo": "bar"})},
-            "'geo' metadata in Parquet file is missing required key",
+            "'geo' metadata in Parquet/Feather file is missing required key",
         ),
     ],
 )
@@ -348,24 +395,25 @@ def test_parquet_invalid_metadata(tmpdir, geo_meta, error):
         read_parquet(filename)
 
 
-def test_parquet_subset_columns(tmpdir):
+def test_subset_columns(tmpdir, file_format):
     """Reading a subset of columns should correctly decode selected geometry
     columns.
     """
+    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset))
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
-    pq_df = read_parquet(filename, columns=["name", "geometry"])
+    writer(df, filename)
+    pq_df = reader(filename, columns=["name", "geometry"])
 
     assert_geodataframe_equal(df[["name", "geometry"]], pq_df)
 
     with pytest.raises(
         ValueError, match="No geometry columns are included in the columns read"
     ):
-        read_parquet(filename, columns=[])
+        reader(filename, columns=["name"])
 
 
 def test_parquet_repeat_columns(tmpdir):
@@ -384,53 +432,56 @@ def test_parquet_repeat_columns(tmpdir):
     assert pq_df.columns.tolist() == ["name", "iso_a3", "geometry"]
 
 
-def test_parquet_promote_secondary_geometry(tmpdir):
+def test_promote_secondary_geometry(tmpdir, file_format):
     """Reading a subset of columns that does not include the primary geometry
     column should promote the first geometry column present.
     """
+    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset))
     df["geom2"] = df.geometry.copy()
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
-    pq_df = read_parquet(filename, columns=["name", "geom2"])
+    writer(df, filename)
+    pq_df = reader(filename, columns=["name", "geom2"])
 
     assert_geodataframe_equal(df.set_geometry("geom2")[["name", "geom2"]], pq_df)
 
     df["geom3"] = df.geometry.copy()
 
-    df.to_parquet(filename)
+    writer(df, filename)
     with pytest.warns(
         UserWarning,
-        match="Multiple non-primary geometry columns read from Parquet file.",
+        match="Multiple non-primary geometry columns read from Parquet/Feather file.",
     ):
-        pq_df = read_parquet(filename, columns=["name", "geom2", "geom3"])
+        pq_df = reader(filename, columns=["name", "geom2", "geom3"])
 
     assert_geodataframe_equal(
         df.set_geometry("geom2")[["name", "geom2", "geom3"]], pq_df
     )
 
 
-def test_parquet_columns_no_geometry(tmpdir):
+def test_columns_no_geometry(tmpdir, file_format):
     """Reading a parquet file that is missing all of the geometry columns
     should raise a ValueError"""
+    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
     df = read_file(get_path(test_dataset))
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
+    writer(df, filename)
 
     with pytest.raises(ValueError):
-        read_parquet(filename, columns=["name"])
+        reader(filename, columns=["name"])
 
 
-def test_parquet_missing_crs(tmpdir):
+def test_missing_crs(tmpdir, file_format):
     """If CRS is `None`, it should be properly handled
     and remain `None` when read from parquet`.
     """
+    reader, writer = file_format
 
     test_dataset = "naturalearth_lowres"
 
@@ -438,9 +489,23 @@ def test_parquet_missing_crs(tmpdir):
     df.crs = None
 
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
-    pq_df = read_parquet(filename)
+    writer(df, filename)
+    pq_df = reader(filename)
 
     assert pq_df.crs is None
 
     assert_geodataframe_equal(df, pq_df, check_crs=True)
+
+
+@pytest.mark.skipif(
+    pyarrow.__version__ >= LooseVersion("0.17.0"),
+    reason="Feather only supported for pyarrow >= 0.17",
+)
+def test_feather_arrow_version(tmpdir):
+    df = read_file(get_path("naturalearth_lowres"))
+    filename = os.path.join(str(tmpdir), "test.feather")
+
+    with pytest.raises(
+        ImportError, match="pyarrow >= 0.17 required for Feather support"
+    ):
+        df.to_feather(filename)
