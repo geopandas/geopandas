@@ -124,9 +124,12 @@ def show_versions():
     """
     Print system information and installed module versions.
 
-    Example
-    -------
-    > python -c "import geopandas; geopandas.show_versions()"
+    Examples
+    --------
+
+    ::
+
+        $ python -c "import geopandas; geopandas.show_versions()"
     """
     sys_info = _get_sys_info()
     deps_info = _get_deps_info()

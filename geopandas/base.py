@@ -748,8 +748,8 @@ class GeoPandasBase(object):
         original index and a zero-based integer index that counts the
         number of single geometries within a multi-part geometry.
 
-        Example
-        -------
+        Examples
+        --------
         >>> gdf  # gdf is GeoSeries of MultiPoints
         0         MULTIPOINT (0 0, 1 1)
         1    MULTIPOINT (2 2, 3 3, 4 4)
