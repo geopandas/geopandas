@@ -103,8 +103,8 @@ def _read_postgis(
     -------
     GeoDataFrame
 
-    Example
-    -------
+    Examples
+    --------
     PostGIS
     >>> sql = "SELECT geom, kind FROM polygons"
     SpatiaLite
