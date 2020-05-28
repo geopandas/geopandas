@@ -86,7 +86,7 @@ def _expand_kwargs(kwargs, multiindex):
             ):
                 continue
         elif att in ["marker", "alpha"]:
-            # For these values, only a single value is allowed, so never expand.
+            # For these attributes, only a single value is allowed, so never expand.
             continue
 
         if pd.api.types.is_list_like(value):
