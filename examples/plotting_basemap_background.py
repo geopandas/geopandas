@@ -4,7 +4,7 @@ Adding a background map to plots
 
 This example shows how you can add a background basemap to plots created
 with the geopandas ``.plot()`` method. This makes use of the
-`contextily <https://github.com/darribas/contextily>`__ package to retrieve
+`contextily <https://github.com/geopandas/contextily>`__ package to retrieve
 web map tiles from several sources (OpenStreetMap, Stamen).
 
 """
