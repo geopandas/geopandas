@@ -359,9 +359,7 @@ class TestLineStringPlotting:
             self.df.plot(linestyle=":", linewidth=1),
             self.df.plot(column="values", linestyle=":", linewidth=1),
         ]:
-            np.testing.assert_array_equal(
-                [(0.0, [1.0, 1.65])], ax.collections[0].get_linestyle()
-            )
+            assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
 
         # tuple
         ax = self.lines.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
@@ -535,9 +533,7 @@ class TestPolygonPlotting:
     def test_style_kwargs_linestyle(self):
         #   single
         ax = self.df.plot(linestyle=":", linewidth=1)
-        np.testing.assert_array_equal(
-            [(0.0, [1.0, 1.65])], ax.collections[0].get_linestyle()
-        )
+        assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
 
         # tuple
         ax = self.df.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
@@ -619,9 +615,7 @@ class TestPolygonPlotting:
     def test_multipolygons_linestyle(self):
         # single
         ax = self.df2.plot(linestyle=":", linewidth=1)
-        np.testing.assert_array_equal(
-            [(0.0, [1.0, 1.65])], ax.collections[0].get_linestyle()
-        )
+        assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
 
         # tuple
         ax = self.df2.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
@@ -754,9 +748,7 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linestyle=":", linewidth=1),
             self.df.plot(linestyle=":", linewidth=1),
         ]:
-            np.testing.assert_array_equal(
-                [(0.0, [1.0, 1.65])], ax.collections[0].get_linestyle()
-            )
+            assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
 
         # tuple
         ax = self.series.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
