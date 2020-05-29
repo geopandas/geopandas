@@ -546,7 +546,7 @@ class TestPolygonPlotting:
             self.df.plot(linestyle=ls, linewidth=1),
             self.df.plot(linestyles=ls, linewidth=1),
         ]:
-            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_style_kwargs_linewidth(self):
         #   single
@@ -628,7 +628,7 @@ class TestPolygonPlotting:
             self.df2.plot(linestyle=ls, linewidth=1),
             self.df2.plot(linestyles=ls, linewidth=1),
         ]:
-            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_multipolygons_linewidth(self):
         # single
