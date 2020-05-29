@@ -58,6 +58,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
+
+    Examples
+    --------
+    Constructing GeoDataFrame from a dictionary.
+
+    >>> d = {'col1': ['name1', 'name2'], 'geometry': [shapely.geometry.Point(1,2), shapely.geometry.Point(2,1)]}
+    >>> gdf = gpd.GeoDataFrame(d)
+    >>> gdf
+        col1                 geometry
+    0  name1  POINT (1.00000 2.00000)
+    1  name2  POINT (2.00000 1.00000)
+
+    Notice that the inferred dtype of 'geometry' columns is geometry.
+
+    >>> gdf.dtypes
+    col1          object
+    geometry    geometry
+    dtype: object
     """
 
     _metadata = ["_crs", "_geometry_column_name"]
