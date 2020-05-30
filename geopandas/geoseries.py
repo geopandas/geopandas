@@ -566,3 +566,7 @@ class GeoSeries(GeoPandasBase, Series):
             stacklevel=2,
         )
         return self.difference(other)
+
+    def __covers__(self, other):
+        """"""
+        return self.covers(other)

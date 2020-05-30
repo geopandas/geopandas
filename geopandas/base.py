@@ -498,6 +498,15 @@ class GeoPandasBase(object):
         """
         return _binary_geo("intersection", self, other)
 
+    def covers(self, other):
+        """
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to check is being covered.
+        """
+        return _binary_geo("covers", self, other)
     #
     # Other operations
     #
