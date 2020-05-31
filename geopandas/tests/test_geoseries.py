@@ -241,7 +241,7 @@ class TestSeries:
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
     def test_covers_itself(self):
-        # A series covers itself
+        # Each polygon in a Series covers itself
         res = self.g1.covers(self.g1)
         exp = pd.Series([True, True])
         assert_series_equal(res, exp)
