@@ -568,5 +568,5 @@ class GeoSeries(GeoPandasBase, Series):
         return self.difference(other)
 
     def __covers__(self, other):
-        """"""
+        """Implement covers operator as for builtin set type"""
         return self.covers(other)

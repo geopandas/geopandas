@@ -32,6 +32,8 @@ class TestSeries:
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        self.t3 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
+        self.t4 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
@@ -49,6 +51,8 @@ class TestSeries:
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+        self.g6 = GeoSeries([self.sq, self.t3])
+        self.g7 = GeoSeries([self.t1, self.t4])
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -235,6 +239,22 @@ class TestSeries:
         reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
         reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+
+    def test_covers_itself(self):
+        # A series covers itself
+        res = self.g1.covers(self.g1)
+        exp = pd.Series([True, True])
+        assert_series_equal(res, exp)
+
+    def test_covers(self):
+        res = self.g6.covers(self.g7)
+        exp = pd.Series([True, False])
+        assert_series_equal(res, exp)
+
+    def test_covers_inverse(self):
+        res = self.g7.covers(self.g6)
+        exp = pd.Series([False, False])
+        assert_series_equal(res, exp)
 
 
 def test_missing_values_empty_warning():

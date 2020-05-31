@@ -500,6 +500,8 @@ class GeoPandasBase(object):
 
     def covers(self, other):
         """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that is entirely covering `other`.
 
         Parameters
         ----------
@@ -507,6 +509,7 @@ class GeoPandasBase(object):
             The Geoseries (elementwise) or geometric object to check is being covered.
         """
         return _binary_geo("covers", self, other)
+
     #
     # Other operations
     #
