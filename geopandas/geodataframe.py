@@ -63,8 +63,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     --------
     Constructing GeoDataFrame from a dictionary.
 
-    >>> d = {'col1': ['name1', 'name2'], 'geometry': [shapely.geometry.Point(1,2), shapely.geometry.Point(2,1)]}
-    >>> gdf = gpd.GeoDataFrame(d)
+    >>> d = {'col1': ['name1', 'name2'],
+    ...      'geometry': [shapely.geometry.Point(1,2), shapely.geometry.Point(2,1)]}
+    >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
     >>> gdf
         col1                 geometry
     0  name1  POINT (1.00000 2.00000)
