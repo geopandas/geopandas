@@ -60,7 +60,6 @@ The following Shapely methods and attributes are available on
 .. automethod:: geopandas.GeoSeries.within
 
 .. automethod:: geopandas.GeoSeries.covers
-.. _linearthinking : https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
 
 `Set-theoretic Methods`
 
