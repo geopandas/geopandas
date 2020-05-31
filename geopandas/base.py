@@ -503,6 +503,11 @@ class GeoPandasBase(object):
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that is entirely covering `other`.
 
+        An object A is said to cover another object B if no points of B lie
+        in the exterior of A.
+
+        See `linearthinking`_ for reference.
+
         Parameters
         ----------
         other : Geoseries or geometric object
