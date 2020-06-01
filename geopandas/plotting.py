@@ -68,15 +68,6 @@ def _expand_kwargs(kwargs, multiindex):
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
                 continue
-        elif att == "offsets":
-            # A single offset is 2-array of numbers.
-            if (
-                isinstance(value, Iterable)
-                and len(value) == 2
-                and pd.api.types.is_number(value[0])
-                and pd.api.types.is_number(value[1])
-            ):
-                continue
         elif "linestyle" in att:  # linestyle(s)
             # A single linestyle can be 2-tuple of a number and an iterable.
             if (
