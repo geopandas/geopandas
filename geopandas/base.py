@@ -440,8 +440,9 @@ class GeoPandasBase(object):
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
 
-        See https://lin-ear-th-inking.blogspot.com/2007/06/\
-        subtleties-of-ogc-covers-spatial.html for reference.
+        See
+        https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
+        for reference.
 
         Parameters
         ----------
