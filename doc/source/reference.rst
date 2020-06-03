@@ -59,6 +59,8 @@ The following Shapely methods and attributes are available on
 
 .. automethod:: geopandas.GeoSeries.within
 
+.. automethod:: geopandas.GeoSeries.covers
+
 `Set-theoretic Methods`
 
 .. automethod:: geopandas.GeoSeries.difference

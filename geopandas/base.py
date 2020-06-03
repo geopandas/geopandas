@@ -432,6 +432,25 @@ class GeoPandasBase(object):
         """
         return _binary_op("within", self, other)
 
+    def covers(self, other):
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that is entirely covering `other`.
+
+        An object A is said to cover another object B if no points of B lie
+        in the exterior of A.
+
+        See
+        https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
+        for reference.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to check is being covered.
+        """
+        return _binary_geo("covers", self, other)
+
     def distance(self, other):
         """Returns a ``Series`` containing the distance to `other`.
 

@@ -30,6 +30,8 @@ class TestGeomMethods:
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
+        self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
         self.inner_sq = Polygon(
             [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
         )
@@ -67,6 +69,8 @@ class TestGeomMethods:
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
         self.g6 = GeoSeries([self.p0, self.t3])
+        self.g7 = GeoSeries([self.sq, self.t4])
+        self.g8 = GeoSeries([self.t1, self.t5])
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
         self.empty_poly = Polygon()
@@ -401,6 +405,22 @@ class TestGeomMethods:
 
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
+
+    def test_covers_itself(self):
+        # Each polygon in a Series covers itself
+        res = self.g1.covers(self.g1)
+        exp = Series([True, True])
+        assert_series_equal(res, exp)
+
+    def test_covers(self):
+        res = self.g7.covers(self.g8)
+        exp = Series([True, False])
+        assert_series_equal(res, exp)
+
+    def test_covers_inverse(self):
+        res = self.g8.covers(self.g7)
+        exp = Series([False, False])
+        assert_series_equal(res, exp)
 
     def test_is_valid(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
