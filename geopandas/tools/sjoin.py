@@ -1,7 +1,6 @@
 import pandas as pd
 
 from geopandas import GeoDataFrame
-from geopandas._compat import HAS_RTREE
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
@@ -64,13 +63,6 @@ def sjoin(
         raise ValueError(
             "'{0}' and '{1}' cannot be names in the frames being"
             " joined".format(index_left, index_right)
-        )
-
-    # Check if rtree is installed...
-    if not HAS_RTREE:
-        raise ImportError(
-            "Rtree must be installed to use sjoin\n\n"
-            "See installation instructions at https://geopandas.org/install.html"
         )
 
     # query index
