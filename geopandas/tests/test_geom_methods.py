@@ -422,6 +422,11 @@ class TestGeomMethods:
         exp = Series([False, False])
         assert_series_equal(res, exp)
 
+    def test_covered_by(self):
+        res = self.g1.covered_by(self.g1)
+        exp = Series([True, True])
+        assert_series_equal(res, exp)
+
     def test_is_valid(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_valid", expected, self.g1)
