@@ -1,9 +1,8 @@
-from warnings import warn
-
 import pandas as pd
 
 from geopandas import GeoDataFrame
 from geopandas._compat import HAS_RTREE
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def sjoin(
