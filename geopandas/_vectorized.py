@@ -625,6 +625,12 @@ def covers(data, other):
         return _binary_predicate("covers", data, other)
 
 
+def covered_by(data, other):
+    if compat.USE_PYGEOS:
+        return _binary_method("covers", data, other)
+    else:
+        raise NotImplementedError('covered_by is only implemented for pygeos, not shapely')
+
 def contains(data, other):
     if compat.USE_PYGEOS:
         return _binary_method("contains", data, other)
