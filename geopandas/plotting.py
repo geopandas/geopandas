@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.plotting import PlotAccessor
 
 import geopandas
 
@@ -502,6 +503,8 @@ def plot_dataframe(
     ax : matplotlib axes instance
 
     """
+    if "kind" in style_kwds:
+        return pd.DataFrame.plot(df)(**style_kwds)
     if "colormap" in style_kwds:
         warnings.warn(
             "'colormap' is deprecated, please use 'cmap' instead "
@@ -730,6 +733,15 @@ def plot_dataframe(
 
     plt.draw()
     return ax
+
+
+class GeoplotAccessor(PlotAccessor):
+    """Extend Pandas PlotAccessor."""
+
+    def __call__(self, *args, **kwargs):
+        """Overide call with geoplot."""
+        data = self._parent.copy()
+        return plot_dataframe(data, *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):
