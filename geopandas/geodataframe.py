@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -1102,8 +1103,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             stacklevel=2,
         )
         return self.geometry.difference(other)
-
-    from pandas.core.accessor import CachedAccessor
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
     plot.__doc__ = plot_dataframe.__doc__

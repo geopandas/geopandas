@@ -503,8 +503,6 @@ def plot_dataframe(
     ax : matplotlib axes instance
 
     """
-    if "kind" in style_kwds:
-        return pd.DataFrame.plot(df)(**style_kwds)
     if "colormap" in style_kwds:
         warnings.warn(
             "'colormap' is deprecated, please use 'cmap' instead "
@@ -738,10 +736,18 @@ def plot_dataframe(
 class GeoplotAccessor(PlotAccessor):
     """Extend Pandas PlotAccessor."""
 
+    _pandas_kinds = PlotAccessor._all_kinds
+    _geopandas_kinds = ("geopandas",)
+
     def __call__(self, *args, **kwargs):
-        """Overide call with geoplot."""
         data = self._parent.copy()
-        return plot_dataframe(data, *args, **kwargs)
+        kind = kwargs.pop("kind", "geopandas")
+        if kind in self._pandas_kinds:
+            # Access pandas plots
+            return PlotAccessor(data)(kind=kind, **kwargs)
+        else:
+            # Fall back to geopandas plots
+            return plot_dataframe(data, *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):
