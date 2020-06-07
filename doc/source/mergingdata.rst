@@ -91,7 +91,7 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 Sjoin Arguments
 ~~~~~~~~~~~~~~~~
 
-``sjoin.()`` has two core arguments: ``how`` and ``op``.
+``sjoin()`` has two core arguments: ``how`` and ``op``.
 
 **op**
 
