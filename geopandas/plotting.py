@@ -737,7 +737,6 @@ class GeoplotAccessor(PlotAccessor):
     """Extend Pandas PlotAccessor."""
 
     _pandas_kinds = PlotAccessor._all_kinds
-    _geopandas_kinds = ("geopandas",)
 
     def __call__(self, *args, **kwargs):
         data = self._parent.copy()
