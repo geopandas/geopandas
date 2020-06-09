@@ -12,10 +12,9 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
-from geopandas._compat import PANDAS_GE_024
+from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
-
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
     a = np.asanyarray(a)
@@ -422,6 +421,7 @@ class TestGeomMethods:
         exp = Series([False, False])
         assert_series_equal(res, exp)
 
+    @pytest.mark.skipif(not compat.HAS_PYGEOS, reason='covered_by is only implemented for pygeos, not shapely')
     def test_covered_by(self):
         res = self.g1.covered_by(self.g1)
         exp = Series([True, True])
@@ -701,7 +701,7 @@ class TestGeomMethods:
             names=[index_name, None],
         )
         expected_df = expected_df.set_index(expected_index)
-        if not PANDAS_GE_024:
+        if not compat.PANDAS_GE_024:
             expected_df = expected_df[["level_1", "geometry"]]
         assert_frame_equal(test_df, expected_df)
 
