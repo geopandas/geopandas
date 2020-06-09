@@ -463,6 +463,9 @@ class GeometryArray(ExtensionArray):
     def covers(self, other):
         return self._binary_method("covers", self, other)
 
+    def covered_by(self, other):
+        return self._binary_method("covered_by", self, other)
+
     def contains(self, other):
         return self._binary_method("contains", self, other)
 
