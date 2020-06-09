@@ -629,7 +629,10 @@ def covered_by(data, other):
     if compat.USE_PYGEOS:
         return _binary_method("covered_by", data, other)
     else:
-        raise NotImplementedError('covered_by is only implemented for pygeos, not shapely')
+        raise NotImplementedError(
+            "covered_by is only implemented for pygeos, not shapely"
+        )
+
 
 def contains(data, other):
     if compat.USE_PYGEOS:

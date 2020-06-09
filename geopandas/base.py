@@ -451,7 +451,6 @@ class GeoPandasBase(object):
         """
         return _binary_geo("covers", self, other)
 
-
     def covered_by(self, other):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for

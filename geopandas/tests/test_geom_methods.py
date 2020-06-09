@@ -16,6 +16,7 @@ from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
+
 def assert_array_dtype_equal(a, b, *args, **kwargs):
     a = np.asanyarray(a)
     b = np.asanyarray(b)
@@ -421,7 +422,10 @@ class TestGeomMethods:
         exp = Series([False, False])
         assert_series_equal(res, exp)
 
-    @pytest.mark.skipif(not compat.USE_PYGEOS, reason='covered_by is only implemented for pygeos, not shapely')
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS,
+        reason="covered_by is only implemented for pygeos, not shapely",
+    )
     def test_covered_by(self):
         res = self.g1.covered_by(self.g1)
         exp = Series([True, True])
