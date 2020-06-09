@@ -455,7 +455,7 @@ class GeoPandasBase(object):
     def covered_by(self, other):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that is entirely covering `other`.
+        each geometry that is entirely covered by `other`.
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
