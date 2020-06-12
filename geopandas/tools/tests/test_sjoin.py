@@ -467,6 +467,15 @@ class TestSpatialJoinNYBB:
         df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
         assert df2.shape == (21, 8)
 
+    @pytest.mark.parametrize("op", ["intersects", "within", "contains"])
+    def test_sjoin_no_valid_geoms(self, op):
+        """Tests a completely empty GeoDataFrame."""
+        empty = GeoDataFrame(geometry=[])
+        assert sjoin(self.pointdf, empty, how="inner", op=op).empty
+        assert sjoin(self.pointdf, empty, how="right", op=op).empty
+        assert sjoin(empty, self.pointdf, how="inner", op=op).empty
+        assert sjoin(empty, self.pointdf, how="left", op=op).empty
+
 
 class TestSpatialJoinNaturalEarth:
     def setup_method(self):

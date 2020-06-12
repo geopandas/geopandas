@@ -1,10 +1,6 @@
-import numpy as np
 import pandas as pd
 
-from shapely import prepared
-
 from geopandas import GeoDataFrame
-from geopandas import _compat as compat
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
@@ -69,19 +65,34 @@ def sjoin(
             " joined".format(index_left, index_right)
         )
 
-    # Attempt to re-use spatial indexes, otherwise generate the spatial index
-    # for the longer dataframe. If we are joining to an empty dataframe,
-    # don't bother generating the index.
-    if right_df._sindex_generated or (
-        not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]
-    ):
-        tree_idx = right_df.sindex if len(left_df) > 0 else None
-        tree_idx_right = True
+    # query index
+    if op == "within":
+        # within is implemented as the inverse of contains
+        # contains is a faster predicate
+        # see discussion at https://github.com/geopandas/geopandas/pull/1421
+        predicate = "contains"
+        sindex = left_df.sindex
+        input_geoms = right_df.geometry
     else:
-        tree_idx = left_df.sindex if len(right_df) > 0 else None
-        tree_idx_right = False
+        # all other predicates are symmetric
+        # keep them the same
+        predicate = op
+        sindex = right_df.sindex
+        input_geoms = left_df.geometry
+    if sindex:
+        l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
+        result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+    else:
+        # when sindex is empty / has no valid geometries
+        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+    if op == "within":
+        # within is implemented as the inverse of contains
+        # flip back the results
+        result = result.rename(
+            columns={"_key_left": "_key_right", "_key_right": "_key_left"}
+        )
 
-    # the rtree spatial index only allows limited (numeric) index types, but an
+    # the spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
@@ -111,91 +122,7 @@ def sjoin(
         right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
-    if op == "within":
-        # within implemented as the inverse of contains; swap names
-        left_df, right_df = right_df, left_df
-        tree_idx_right = not tree_idx_right
-
-    r_idx = np.empty((0, 0))
-    l_idx = np.empty((0, 0))
-    # get rtree spatial index. If tree_idx does not exist, it is due to either a
-    # failure to generate the index (e.g., if the column is empty), or the
-    # other dataframe is empty so it wasn't necessary to generate it.
-    if tree_idx_right and tree_idx:
-        idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
-            lambda x: list(tree_idx.intersection(x)) if not x == () else []
-        )
-        idxmatch = idxmatch[idxmatch.apply(len) > 0]
-        # indexes of overlapping boundaries
-        if idxmatch.shape[0] > 0:
-            r_idx = np.concatenate(idxmatch.values)
-            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    elif not tree_idx_right and tree_idx:
-        # tree_idx_df == 'left'
-        idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
-            lambda x: list(tree_idx.intersection(x)) if not x == () else []
-        )
-        idxmatch = idxmatch[idxmatch.apply(len) > 0]
-        if idxmatch.shape[0] > 0:
-            # indexes of overlapping boundaries
-            l_idx = np.concatenate(idxmatch.values)
-            r_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-
-    if len(r_idx) > 0 and len(l_idx) > 0:
-        if compat.USE_PYGEOS:
-            import pygeos
-
-            predicate_d = {
-                "intersects": pygeos.intersects,
-                "contains": pygeos.contains,
-                "within": pygeos.contains,
-            }
-            check_predicates = predicate_d[op]
-        else:
-            # Vectorize predicate operations
-            def find_intersects(a1, a2):
-                return a1.intersects(a2)
-
-            def find_contains(a1, a2):
-                return a1.contains(a2)
-
-            predicate_d = {
-                "intersects": find_intersects,
-                "contains": find_contains,
-                "within": find_contains,
-            }
-
-            check_predicates = np.vectorize(predicate_d[op])
-
-        if compat.USE_PYGEOS:
-            res = check_predicates(
-                left_df.geometry[l_idx].values.data,
-                right_df[right_df.geometry.name][r_idx].values.data,
-            )
-        else:
-            res = check_predicates(
-                left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
-                right_df[right_df.geometry.name][r_idx],
-            )
-
-        result = pd.DataFrame(np.column_stack([l_idx, r_idx, res]))
-
-        result.columns = ["_key_left", "_key_right", "match_bool"]
-        result = pd.DataFrame(result[result["match_bool"] == 1]).drop(
-            "match_bool", axis=1
-        )
-
-    else:
-        # when output from the join has no overlapping geometries
-        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-
-    if op == "within":
-        # within implemented as the inverse of contains; swap names
-        left_df, right_df = right_df, left_df
-        result = result.rename(
-            columns={"_key_left": "_key_right", "_key_right": "_key_left"}
-        )
-
+    # perform join on the dataframes
     if how == "inner":
         result = result.set_index("_key_left")
         joined = (
