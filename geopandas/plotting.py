@@ -54,6 +54,36 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     return components, np.array(component_index)
 
 
+def _expand_kwargs(kwargs, multiindex):
+    """
+    Most arguments to the plot functions must be a (single) value, or a sequence
+    of values. This function checks each key-value pair in 'kwargs' and expands
+    it (in place) to the correct length/formats with help of 'multiindex', unless
+    the value appears to already be a valid (single) value for the key.
+    """
+    from matplotlib.colors import is_color_like
+    from typing import Iterable
+
+    for att, value in kwargs.items():
+        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+            if is_color_like(value):
+                continue
+        elif "linestyle" in att:  # linestyle(s)
+            # A single linestyle can be 2-tuple of a number and an iterable.
+            if (
+                isinstance(value, tuple)
+                and len(value) == 2
+                and isinstance(value[1], Iterable)
+            ):
+                continue
+        elif att in ["marker", "alpha"]:
+            # For these attributes, only a single value is allowed, so never expand.
+            continue
+
+        if pd.api.types.is_list_like(value):
+            kwargs[att] = np.take(value, multiindex, axis=0)
+
+
 def _plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -93,36 +123,23 @@ def _plot_polygon_collection(
             "'pip install descartes'."
         )
     from matplotlib.collections import PatchCollection
-    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
-    if "markersize" in kwargs:
-        del kwargs["markersize"]
-    if color is not None:
-        if is_color_like(color):
-            kwargs["color"] = color
-        elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex, axis=0)
-        else:
-            raise TypeError(
-                "Color attribute has to be a single color or sequence of colors."
-            )
+    kwargs = {
+        att: value
+        for att, value in kwargs.items()
+        if att not in ["markersize", "marker"]
+    }
 
-    else:
-        for att in ["facecolor", "edgecolor"]:
-            if att in kwargs:
-                if not is_color_like(kwargs[att]):
-                    if pd.api.types.is_list_like(kwargs[att]):
-                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
-                    elif kwargs[att] is not None:
-                        raise TypeError(
-                            "Color attribute has to be a single color or sequence "
-                            "of colors."
-                        )
+    # Add to kwargs for easier checking below.
+    if color is not None:
+        kwargs["color"] = color
+
+    _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -163,26 +180,23 @@ def _plot_linestring_collection(
     collection : matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import LineCollection
-    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
-    if "markersize" in kwargs:
-        del kwargs["markersize"]
+    kwargs = {
+        att: value
+        for att, value in kwargs.items()
+        if att not in ["markersize", "marker"]
+    }
 
-    # color=None gives black instead of default color cycle
+    # Add to kwargs for easier checking below.
     if color is not None:
-        if is_color_like(color):
-            kwargs["color"] = color
-        elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex, axis=0)
-        else:
-            raise TypeError(
-                "Color attribute has to be a single color or sequence of colors."
-            )
+        kwargs["color"] = color
+
+    _expand_kwargs(kwargs, multiindex)
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -234,8 +248,6 @@ def _plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    from matplotlib.colors import is_color_like
-
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
@@ -252,21 +264,17 @@ def _plot_point_collection(
     if markersize is not None:
         kwargs["s"] = markersize
 
+    # Add to kwargs for easier checking below.
     if color is not None:
-        if not is_color_like(color):
-            if pd.api.types.is_list_like(color):
-                color = np.take(color, multiindex, axis=0)
-            else:
-                raise TypeError(
-                    "Color attribute has to be a single color or sequence of colors."
-                )
+        kwargs["color"] = color
+    if marker is not None:
+        kwargs["marker"] = marker
+    _expand_kwargs(kwargs, multiindex)
 
     if "norm" not in kwargs:
-        collection = ax.scatter(
-            x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
-        )
+        collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
     else:
-        collection = ax.scatter(x, y, color=color, cmap=cmap, marker=marker, **kwargs)
+        collection = ax.scatter(x, y, cmap=cmap, **kwargs)
 
     return collection
 
@@ -493,7 +501,7 @@ def plot_dataframe(
         values are not plotted.
 
     **style_kwds : dict
-        Color options to be passed on to the actual plot function, such
+        Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
         ``alpha``.
 

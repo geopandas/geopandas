@@ -128,7 +128,7 @@ class TestPointPlotting:
         _check_colors(
             self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
         )
-        with pytest.raises(TypeError):
+        with pytest.raises((ValueError, TypeError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -155,10 +155,23 @@ class TestPointPlotting:
         ax = self.df.plot(column="values", markersize="values")
         assert (ax.collections[0].get_sizes() == self.df["values"]).all()
 
+    def test_markerstyle(self):
+        ax = self.df2.plot(marker="+")
+        expected = _style_to_vertices("+")
+        np.testing.assert_array_equal(
+            expected, ax.collections[0].get_paths()[0].vertices
+        )
+
     def test_style_kwargs(self):
 
         ax = self.points.plot(edgecolors="k")
         assert (ax.collections[0].get_edgecolor() == [0, 0, 0, 1]).all()
+
+    def test_style_kwargs_alpha(self):
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2])
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -243,6 +256,12 @@ class TestPointPlotting:
         # colors are repeated for all components within a MultiPolygon
         _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
+    def test_multipoints_alpha(self):
+        ax = self.df2.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df2.plot(alpha=[0.7, 0.2])
+
     def test_misssing(self):
         self.df.loc[0, "values"] = np.nan
         ax = self.df.plot("values")
@@ -325,7 +344,7 @@ class TestLineStringPlotting:
         _check_colors(
             self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
         )
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -333,26 +352,54 @@ class TestLineStringPlotting:
             ax = self.df.plot(column="values", color="green")
             _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
-    def test_style_kwargs(self):
-        # linestyle (style patterns depend on linewidth, therefore pin to 1)
-        linestyle = "dashed"
-        linewidth = 1
+    def test_style_kwargs_linestyle(self):
+        # single
+        for ax in [
+            self.lines.plot(linestyle=":", linewidth=1),
+            self.df.plot(linestyle=":", linewidth=1),
+            self.df.plot(column="values", linestyle=":", linewidth=1),
+        ]:
+            assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
 
-        ax = self.lines.plot(linestyle=linestyle, linewidth=linewidth)
-        exp_ls = _style_to_linestring_onoffseq(linestyle, linewidth)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert ls[1] == exp_ls[1]
+        # tuple
+        ax = self.lines.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
 
-        ax = self.df.plot(linestyle=linestyle, linewidth=linewidth)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert ls[1] == exp_ls[1]
+        # multiple
+        ls = [("dashed", "dotted", "dashdot", "solid")[k % 4] for k in range(self.N)]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls]
+        for ax in [
+            self.lines.plot(linestyle=ls, linewidth=1),
+            self.lines.plot(linestyles=ls, linewidth=1),
+            self.df.plot(linestyle=ls, linewidth=1),
+            self.df.plot(column="values", linestyle=ls, linewidth=1),
+        ]:
+            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
 
-        ax = self.df.plot(column="values", linestyle=linestyle, linewidth=linewidth)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert ls[1] == exp_ls[1]
+    def test_style_kwargs_linewidth(self):
+        # single
+        for ax in [
+            self.lines.plot(linewidth=2),
+            self.df.plot(linewidth=2),
+            self.df.plot(column="values", linewidth=2),
+        ]:
+            np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+
+        # multiple
+        lw = [(0, 1, 2, 5.5, 10)[k % 5] for k in range(self.N)]
+        for ax in [
+            self.lines.plot(linewidth=lw),
+            self.lines.plot(linewidths=lw),
+            self.df.plot(linewidth=lw),
+            self.df.plot(column="values", linewidth=lw),
+        ]:
+            np.testing.assert_array_equal(lw, ax.collections[0].get_linewidths())
+
+    def test_style_kwargs_alpha(self):
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2])
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -419,7 +466,7 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
         ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -445,7 +492,7 @@ class TestPolygonPlotting:
         actual_colors = ax.collections[0].get_facecolors()
         assert np.any(np.not_equal(actual_colors[0], actual_colors[1]))
 
-    def test_style_kwargs(self):
+    def test_style_kwargs_color(self):
 
         # facecolor overrides default cmap when color is not set
         ax = self.polys.plot(facecolor="k")
@@ -483,6 +530,38 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
 
+    def test_style_kwargs_linestyle(self):
+        #   single
+        ax = self.df.plot(linestyle=":", linewidth=1)
+        assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
+
+        # tuple
+        ax = self.df.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+        #   multiple
+        ls = ["dashed", "dotted"]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls]
+        for ax in [
+            self.df.plot(linestyle=ls, linewidth=1),
+            self.df.plot(linestyles=ls, linewidth=1),
+        ]:
+            assert exp_ls == ax.collections[0].get_linestyle()
+
+    def test_style_kwargs_linewidth(self):
+        #   single
+        ax = self.df.plot(linewidth=2)
+        np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+        #   multiple
+        for ax in [self.df.plot(linewidth=[2, 4]), self.df.plot(linewidths=[2, 4])]:
+            np.testing.assert_array_equal([2, 4], ax.collections[0].get_linewidths())
+
+        # alpha
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2])
+
     def test_legend_kwargs(self):
 
         ax = self.df.plot(
@@ -516,7 +595,7 @@ class TestPolygonPlotting:
 
         assert ax.get_figure().axes[1].get_xlabel() == label_txt
 
-    def test_multipolygons(self):
+    def test_multipolygons_color(self):
 
         # MultiPolygons
         ax = self.df2.plot()
@@ -532,6 +611,41 @@ class TestPolygonPlotting:
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
         _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
+
+    def test_multipolygons_linestyle(self):
+        # single
+        ax = self.df2.plot(linestyle=":", linewidth=1)
+        assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
+
+        # tuple
+        ax = self.df2.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+        # multiple
+        ls = ["dashed", "dotted"]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls for i in range(2)]
+        for ax in [
+            self.df2.plot(linestyle=ls, linewidth=1),
+            self.df2.plot(linestyles=ls, linewidth=1),
+        ]:
+            assert exp_ls == ax.collections[0].get_linestyle()
+
+    def test_multipolygons_linewidth(self):
+        # single
+        ax = self.df2.plot(linewidth=2)
+        np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+
+        # multiple
+        for ax in [self.df2.plot(linewidth=[2, 4]), self.df2.plot(linewidths=[2, 4])]:
+            np.testing.assert_array_equal(
+                [2, 2, 4, 4], ax.collections[0].get_linewidths()
+            )
+
+    def test_multipolygons_alpha(self):
+        ax = self.df2.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df2.plot(alpha=[0.7, 0.2])
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -627,6 +741,57 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [10]
         ax = self.df.plot(markersize=10)
         assert ax.collections[2].get_sizes() == [10]
+
+    def test_style_kwargs_linestyle(self):
+        # single
+        for ax in [
+            self.series.plot(linestyle=":", linewidth=1),
+            self.df.plot(linestyle=":", linewidth=1),
+        ]:
+            assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
+
+        # tuple
+        ax = self.series.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+    @pytest.mark.skip(
+        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
+    )
+    def test_style_kwargs_linestyle_listlike(self):
+        # multiple
+        ls = ["solid", "dotted", "dashdot"]
+        exp_ls = [_style_to_linestring_onoffseq(style, 1) for style in ls]
+        for ax in [
+            self.series.plot(linestyle=ls, linewidth=1),
+            self.series.plot(linestyles=ls, linewidth=1),
+            self.df.plot(linestyles=ls, linewidth=1),
+        ]:
+            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+
+    def test_style_kwargs_linewidth(self):
+        # single
+        ax = self.df.plot(linewidth=2)
+        np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+
+    @pytest.mark.skip(
+        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
+    )
+    def test_style_kwargs_linewidth_listlike(self):
+        # multiple
+        for ax in [
+            self.series.plot(linewidths=[2, 4, 5.5]),
+            self.series.plot(linewidths=[2, 4, 5.5]),
+            self.df.plot(linewidths=[2, 4, 5.5]),
+        ]:
+            np.testing.assert_array_equal(
+                [2, 4, 5.5], ax.collections[0].get_linewidths()
+            )
+
+    def test_style_kwargs_alpha(self):
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
 
 
 class TestMapclassifyPlotting:
@@ -795,7 +960,7 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             _plot_point_collection(ax, self.points, color="not color")
 
         # check DeprecationWarning
@@ -869,9 +1034,8 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             _plot_linestring_collection(ax, self.lines, color="not color")
-
         # check DeprecationWarning
         with pytest.warns(DeprecationWarning):
             plot_linestring_collection(ax, self.lines)
@@ -962,7 +1126,7 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             _plot_polygon_collection(ax, self.polygons, color="not color")
         # check DeprecationWarning
         with pytest.warns(DeprecationWarning):
@@ -1089,3 +1253,10 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
     """
     offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
     return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
+
+
+def _style_to_vertices(markerstyle):
+    """ Converts a markerstyle string to a path. """
+    # TODO: Vertices values are twice the actual path; unclear, why.
+    path = matplotlib.markers.MarkerStyle(markerstyle).get_path()
+    return path.vertices / 2
