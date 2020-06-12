@@ -418,7 +418,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_inner = GeoDataFrame(expected_inner_df, crs="epsg:4326")
+        expected_inner = GeoDataFrame(expected_inner_df)
 
         expected_right_df = pd.concat(
             [
@@ -435,9 +435,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_right = GeoDataFrame(expected_right_df, crs="epsg:4326").set_index(
-            "index_right"
-        )
+        expected_right = GeoDataFrame(expected_right_df).set_index("index_right")
 
         expected_left_df = pd.concat(
             [
@@ -448,7 +446,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_left = GeoDataFrame(expected_left_df, crs="epsg:4326")
+        expected_left = GeoDataFrame(expected_left_df)
 
         assert expected_inner.equals(df_inner)
         assert expected_right.equals(df_right)
@@ -470,7 +468,7 @@ class TestSpatialJoinNYBB:
     @pytest.mark.parametrize("op", ["intersects", "within", "contains"])
     def test_sjoin_no_valid_geoms(self, op):
         """Tests a completely empty GeoDataFrame."""
-        empty = GeoDataFrame(geometry=[])
+        empty = GeoDataFrame(geometry=[], crs=self.pointdf.crs)
         assert sjoin(self.pointdf, empty, how="inner", op=op).empty
         assert sjoin(self.pointdf, empty, how="right", op=op).empty
         assert sjoin(empty, self.pointdf, how="inner", op=op).empty
