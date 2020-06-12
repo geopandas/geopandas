@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 
 from geopandas import GeoDataFrame
@@ -66,19 +68,26 @@ def sjoin(
         )
 
     # query index
-    if op == "within":
-        # within is implemented as the inverse of contains
-        # contains is a faster predicate
-        # see discussion at https://github.com/geopandas/geopandas/pull/1421
-        predicate = "contains"
-        sindex = left_df.sindex
-        input_geoms = right_df.geometry
-    else:
-        # all other predicates are symmetric
-        # keep them the same
-        predicate = op
-        sindex = right_df.sindex
-        input_geoms = left_df.geometry
+    with warnings.catch_warnings():
+        # We don't need to show our own warning here
+        # TODO remove this once the deprecation has been enforced
+        warnings.filterwarnings(
+            "ignore", "Generated spatial index is empty", FutureWarning
+        )
+        if op == "within":
+            # within is implemented as the inverse of contains
+            # contains is a faster predicate
+            # see discussion at https://github.com/geopandas/geopandas/pull/1421
+            predicate = "contains"
+            sindex = left_df.sindex
+            input_geoms = right_df.geometry
+        else:
+            # all other predicates are symmetric
+            # keep them the same
+            predicate = op
+            sindex = right_df.sindex
+            input_geoms = left_df.geometry
+
     if sindex:
         l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
         result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
