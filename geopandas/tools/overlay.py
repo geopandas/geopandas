@@ -54,7 +54,7 @@ def _overlay_intersection(df1, df2):
             df2.drop(df2._geometry_column_name, axis=1),
             left_on="__idx2",
             right_index=True,
-            suffixes=["_1", "_2"],
+            suffixes=("_1", "_2"),
         )
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
@@ -109,7 +109,7 @@ def _overlay_symmetric_diff(df1, df2):
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
     dfsym = dfdiff1.merge(
-        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=["_1", "_2"]
+        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=("_1", "_2")
     )
     geometry = dfsym.geometry_1.copy()
     geometry.name = "geometry"
