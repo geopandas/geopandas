@@ -28,7 +28,20 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    """
+    _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix)
 
+    result = _geom_predicate_query(left_df, right_df, op)  # consume op param
+
+    joined = _frame_join(
+        result, left_df, right_df, how, lsuffix, rsuffix
+    )  # consume how param
+
+    return joined
+
+
+def _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix):
+    """Checks validity of input parameters.
     """
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(
@@ -67,7 +80,22 @@ def sjoin(
             " joined".format(index_left, index_right)
         )
 
-    # query index
+
+def _geom_predicate_query(left_df, right_df, op):
+    """Compute geometric comparisons and get matching indices.
+
+    Parameters
+    ----------
+    left_df : GeoDataFrame
+    right_df : GeoDataFrame
+    op : str
+
+    Returns
+    -------
+    DataFrame
+        DataFrame with matching indices in
+        columns named `_key_left` and `_key_right`.
+    """
     with warnings.catch_warnings():
         # We don't need to show our own warning here
         # TODO remove this once the deprecation has been enforced
@@ -101,10 +129,32 @@ def sjoin(
             columns={"_key_left": "_key_right", "_key_right": "_key_left"}
         )
 
+    return result
+
+
+def _frame_join(result, left_df, right_df, how, lsuffix, rsuffix):
+    """Join the GeoDataFrames at the DataFrame level.
+
+    Parameters
+    ----------
+    result : DataFrame returned by the geometric join.
+        Must have columns `_key_left` and `_key_right`
+        with integer indices representing the matches
+        from `left_df` and `right_df` respectively.
+    left_df : GeoDataFrame
+    right_df : GeoDataFrame
+    how : str
+
+    Returns
+    -------
+    GeoDataFrame
+        Joined GeoDataFrame.
+    """
     # the spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
+    index_left = "index_%s" % lsuffix
     left_df = left_df.copy(deep=True)
     try:
         left_index_name = left_df.index.name
@@ -118,6 +168,7 @@ def sjoin(
         left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
 
+    index_right = "index_%s" % rsuffix
     right_df = right_df.copy(deep=True)
     try:
         right_index_name = right_df.index.name
