@@ -34,9 +34,9 @@ def sjoin(
     """
     _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix)
 
-    indexes = _geom_predicate_query(left_df, right_df, op)
+    indices = _geom_predicate_query(left_df, right_df, op)
 
-    joined = _frame_join(indexes, left_df, right_df, how, lsuffix, rsuffix)
+    joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
     return joined
 
@@ -119,26 +119,26 @@ def _geom_predicate_query(left_df, right_df, op):
 
     if sindex:
         l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
-        indexes = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+        indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
-        indexes = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+        indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
     if op == "within":
         # within is implemented as the inverse of contains
         # flip back the results
-        indexes = indexes.rename(
+        indices = indices.rename(
             columns={"_key_left": "_key_right", "_key_right": "_key_left"}
         )
 
-    return indexes
+    return indices
 
 
-def _frame_join(indexes, left_df, right_df, how, lsuffix, rsuffix):
+def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
     """Join the GeoDataFrames at the DataFrame level.
 
     Parameters
     ----------
-    indexes : DataFrame
+    indices : DataFrame
         Indexes returned by the geometric join.
         Must have columns `_key_left` and `_key_right`
         with integer indices representing the matches
@@ -191,9 +191,9 @@ def _frame_join(indexes, left_df, right_df, how, lsuffix, rsuffix):
 
     # perform join on the dataframes
     if how == "inner":
-        indexes = indexes.set_index("_key_left")
+        indices = indices.set_index("_key_left")
         joined = (
-            left_df.merge(indexes, left_index=True, right_index=True)
+            left_df.merge(indices, left_index=True, right_index=True)
             .merge(
                 right_df.drop(right_df.geometry.name, axis=1),
                 left_on="_key_right",
@@ -209,9 +209,9 @@ def _frame_join(indexes, left_df, right_df, how, lsuffix, rsuffix):
             joined.index.name = left_index_name
 
     elif how == "left":
-        indexes = indexes.set_index("_key_left")
+        indices = indices.set_index("_key_left")
         joined = (
-            left_df.merge(indexes, left_index=True, right_index=True, how="left")
+            left_df.merge(indices, left_index=True, right_index=True, how="left")
             .merge(
                 right_df.drop(right_df.geometry.name, axis=1),
                 how="left",
@@ -231,7 +231,7 @@ def _frame_join(indexes, left_df, right_df, how, lsuffix, rsuffix):
         joined = (
             left_df.drop(left_df.geometry.name, axis=1)
             .merge(
-                indexes.merge(
+                indices.merge(
                     right_df, left_on="_key_right", right_index=True, how="right"
                 ),
                 left_index=True,
