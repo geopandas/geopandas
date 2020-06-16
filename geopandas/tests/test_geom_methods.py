@@ -285,6 +285,10 @@ class TestGeomMethods:
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real("area", expected, self.na_none)
 
+    def test_area_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.area
+
     def test_bounds(self):
         # Set columns to get the order right
         expected = DataFrame(
@@ -334,6 +338,10 @@ class TestGeomMethods:
         expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
         self._test_unary_real("length", expected, self.na_none)
 
+    def test_length_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.length
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))
@@ -371,6 +379,10 @@ class TestGeomMethods:
 
         expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
+
+    def test_distance_crs_warning(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.distance(self.p0)
 
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
@@ -473,6 +485,10 @@ class TestGeomMethods:
         points = GeoSeries([point for i in range(3)])
         assert_geoseries_equal(polygons.centroid, points)
 
+    def test_centroid_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.centroid
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
@@ -522,6 +538,12 @@ class TestGeomMethods:
         distances = Series([1, 2], index=[99, 98])
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
+
+    def test_interpolate_crs_warning(self):
+        g5_crs = self.g5.copy()
+        g5_crs.crs = 4326
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            g5_crs.interpolate(1)
 
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
@@ -640,6 +662,16 @@ class TestGeomMethods:
 
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
+
+    def test_buffer_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.buffer(1)
+
+        with pytest.warns(None) as record:
+            # do not warn for 0
+            self.g4.buffer(0)
+
+        assert len(record) == 0
 
     def test_envelope(self):
         e = self.g3.envelope

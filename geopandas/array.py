@@ -2,6 +2,7 @@ from collections.abc import Iterable
 import numbers
 import operator
 import warnings
+import inspect
 
 import numpy as np
 import pandas as pd
@@ -298,6 +299,19 @@ class GeometryArray(ExtensionArray):
         """Sets the value of the crs"""
         self._crs = None if not value else CRS.from_user_input(value)
 
+    def check_geographic_crs(self, stacklevel):
+        """Check CRS and warn if the planar operation is done in a geographic CRS"""
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(
+                "Geometry is in a geographic CRS. Results from '{}' are likely "
+                "incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                "projected CRS before this operation.\n".format(
+                    inspect.stack()[1].function
+                ),
+                UserWarning,
+                stacklevel=stacklevel,
+            )
+
     @property
     def dtype(self):
         return self._dtype
@@ -404,10 +418,12 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
+        self.check_geographic_crs(stacklevel=5)
         return vectorized.area(self.data)
 
     @property
     def length(self):
+        self.check_geographic_crs(stacklevel=5)
         return vectorized.length(self.data)
 
     #
@@ -420,6 +436,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def centroid(self):
+        self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self.data), crs=self.crs)
 
     @property
@@ -542,15 +559,19 @@ class GeometryArray(ExtensionArray):
     #
 
     def distance(self, other):
+        self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
+        if not (isinstance(distance, (int, float)) and distance == 0):
+            self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
             crs=self.crs,
         )
 
     def interpolate(self, distance, normalized=False):
+        self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
             crs=self.crs,
