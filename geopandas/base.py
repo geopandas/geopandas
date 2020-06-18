@@ -171,8 +171,33 @@ class GeoPandasBase(object):
 
     @property
     def is_empty(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        empty geometries."""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        empty geometries.
+
+        Examples
+        --------
+        An example of a GeoDataFrame with one empty point, one point and one missing
+        value:
+
+        >>> from shapely.geometry import Point
+        >>> d = {'geometry': [Point(), Point(2,1), None]}
+        >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf
+                           geometry
+        0  GEOMETRYCOLLECTION EMPTY
+        1   POINT (2.00000 1.00000)
+        2                      None
+        >>> gdf.is_empty
+        0     True
+        1    False
+        2    False
+        dtype: bool
+
+        See Also
+        --------
+        GeoSeries.isna : detect missing values
+        """
         return _delegate_property("is_empty", self)
 
     @property
