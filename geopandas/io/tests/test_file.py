@@ -243,6 +243,20 @@ def test_to_file_schema(tmpdir, df_nybb):
     assert result_schema == schema
 
 
+def test_to_file_column_len(tmpdir, df_points):
+    """
+    Ensure that a warning about truncation is given when a geodataframe with 
+    column names longer than 10 characters is saved to shapefile
+    """
+    tempfilename = os.path.join(str(tmpdir), "test.shp")
+
+    df = df_points.iloc[:1].copy()
+    df["0123456789A"] = ["the column name is 11 characters"]
+
+    with pytest.warns(UserWarning):
+        df.to_file(tempfilename, driver="ESRI Shapefile")
+
+
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     """ Test to_file with append mode and from_file """

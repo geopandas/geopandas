@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import io
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -241,6 +242,12 @@ def _to_file(
         crs = pyproj.CRS.from_user_input(crs)
     else:
         crs = df.crs
+
+    if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
+        warnings.warn(
+            "Column names longer than 10 characters will be truncated when saved to shapefile."
+        )
+
     with fiona_env():
         crs_wkt = None
         try:
