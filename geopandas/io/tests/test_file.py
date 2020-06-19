@@ -245,7 +245,7 @@ def test_to_file_schema(tmpdir, df_nybb):
 
 def test_to_file_column_len(tmpdir, df_points):
     """
-    Ensure that a warning about truncation is given when a geodataframe with 
+    Ensure that a warning about truncation is given when a geodataframe with
     column names longer than 10 characters is saved to shapefile
     """
     tempfilename = os.path.join(str(tmpdir), "test.shp")
