@@ -53,9 +53,13 @@ The following Shapely methods and attributes are available on
 
 .. automethod:: geopandas.GeoSeries.intersects
 
+.. automethod:: geopandas.GeoSeries.overlaps
+
 .. automethod:: geopandas.GeoSeries.touches
 
 .. automethod:: geopandas.GeoSeries.within
+
+.. automethod:: geopandas.GeoSeries.covers
 
 `Set-theoretic Methods`
 
@@ -132,7 +136,7 @@ correctly.
 GeoDataFrame
 ------------
 
-A ``GeoDataFrame`` is a tablular data structure that contains a column
+A ``GeoDataFrame`` is a tabular data structure that contains a column
 called ``geometry`` which contains a `GeoSeries``.
 
 Currently, the following methods/attributes are implemented for a ``GeoDataFrame``:
@@ -152,6 +156,12 @@ Currently, the following methods/attributes are implemented for a ``GeoDataFrame
 .. automethod:: geopandas.GeoDataFrame.to_file
 
 .. automethod:: geopandas.GeoDataFrame.to_json
+
+.. automethod:: geopandas.GeoDataFrame.to_parquet
+
+.. automethod:: geopandas.GeoDataFrame.to_feather
+
+.. automethod:: geopandas.GeoDataFrame.to_postgis
 
 .. automethod:: geopandas.GeoDataFrame.plot
 
@@ -195,6 +205,9 @@ Top-level Functions
   GeoDataFrame
   GeoSeries
   read_file
+  read_parquet
+  read_feather
+  read_postgis
   sjoin
   overlay
   clip

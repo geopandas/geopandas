@@ -19,6 +19,10 @@ dependencies:
   - descartes
   - mapclassify
   - geopy
+  # installed in travis.yml, because not available on windows
+  # - postgis
   - SQLalchemy
   - psycopg2
   - libspatialite
+  - geoalchemy2
+  - pyarrow

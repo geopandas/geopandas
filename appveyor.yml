@@ -35,9 +35,8 @@ install:
   #  This PATH modification only works with conda 4.6+, but it won't hurt other versions.
   - set "PATH=%MINICONDA%\condabin:%PATH%"
   - conda info -a
-  # free channel needed for older envs (< py37), see
-  # https://github.com/conda/conda/issues/8849
-  - conda config --set restore_free_channel true
+  - conda config --add channels conda-forge
+  - conda config --set channel_priority strict
   - conda env create --file="${ENV_FILE}"
 
 test_script:

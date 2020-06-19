@@ -111,6 +111,7 @@ def epsg26918(request):
 
 
 @pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore:'\\+init:FutureWarning")
 def test_transform2(epsg4326, epsg26918):
     # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
     # slightly different due to use of grid files or not -> turn off network
@@ -551,3 +552,54 @@ class TestGeometryArrayCRS:
         df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
         df2 = df.astype({"col1": str})
         assert df2.crs == self.osgb
+
+
+class TestSetCRS:
+    @pytest.mark.parametrize(
+        "constructor",
+        [
+            lambda geoms, crs: GeoSeries(geoms, crs=crs),
+            lambda geoms, crs: GeoDataFrame(geometry=geoms, crs=crs),
+        ],
+        ids=["geoseries", "geodataframe"],
+    )
+    def test_set_crs(self, constructor):
+        naive = constructor([Point(0, 0), Point(1, 1)], crs=None)
+        assert naive.crs is None
+
+        # by default returns a copy
+        result = naive.set_crs(crs="EPSG:4326")
+        assert result.crs == "EPSG:4326"
+        assert naive.crs is None
+
+        result = naive.set_crs(epsg=4326)
+        assert result.crs == "EPSG:4326"
+        assert naive.crs is None
+
+        # with inplace=True
+        result = naive.set_crs(crs="EPSG:4326", inplace=True)
+        assert result is naive
+        assert result.crs == naive.crs == "EPSG:4326"
+
+        # raise for non-naive when crs would be overridden
+        non_naive = constructor([Point(0, 0), Point(1, 1)], crs="EPSG:4326")
+        assert non_naive.crs == "EPSG:4326"
+        with pytest.raises(ValueError, match="already has a CRS"):
+            non_naive.set_crs("EPSG:3857")
+
+        # allow for equal crs
+        result = non_naive.set_crs("EPSG:4326")
+        assert result.crs == "EPSG:4326"
+
+        # replace with allow_override=True
+        result = non_naive.set_crs("EPSG:3857", allow_override=True)
+        assert non_naive.crs == "EPSG:4326"
+        assert result.crs == "EPSG:3857"
+
+        result = non_naive.set_crs("EPSG:3857", allow_override=True, inplace=True)
+        assert non_naive.crs == "EPSG:3857"
+        assert result.crs == "EPSG:3857"
+
+        # raise error when no crs is passed
+        with pytest.raises(ValueError):
+            naive.set_crs(crs=None, epsg=None)

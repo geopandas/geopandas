@@ -175,11 +175,14 @@ def from_wkb(data):
     return aout
 
 
-def to_wkb(data):
+def to_wkb(data, hex=False):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data)
+        return pygeos.to_wkb(data, hex=hex)
     else:
-        out = [geom.wkb if geom is not None else None for geom in data]
+        if hex:
+            out = [geom.wkb_hex if geom is not None else None for geom in data]
+        else:
+            out = [geom.wkb if geom is not None else None for geom in data]
         return np.array(out, dtype=object)
 
 
@@ -620,6 +623,15 @@ def covers(data, other):
         return _binary_method("covers", data, other)
     else:
         return _binary_predicate("covers", data, other)
+
+
+def covered_by(data, other):
+    if compat.USE_PYGEOS:
+        return _binary_method("covered_by", data, other)
+    else:
+        raise NotImplementedError(
+            "covered_by is only implemented for pygeos, not shapely"
+        )
 
 
 def contains(data, other):

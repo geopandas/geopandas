@@ -22,7 +22,6 @@ dependencies:
   - descartes
   #- geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
   - pip:
     - pyproj==2.3.1

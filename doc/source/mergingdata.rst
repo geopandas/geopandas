@@ -91,11 +91,11 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 Sjoin Arguments
 ~~~~~~~~~~~~~~~~
 
-``sjoin.()`` has two core arguments: ``how`` and ``op``.
+``sjoin()`` has two core arguments: ``how`` and ``op``.
 
 **op**
 
-The ```op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
+The ``op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another. There are three different join options as follows:
 
 * `intersects`: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.
 * `within`: The attributes will be joined if the object’s boundary and interior intersect *only* with the interior of the other object (not its boundary or exterior).
@@ -112,23 +112,3 @@ The `how` argument specifies the type of join that will occur and which geometry
 * ``inner``: use intersection of index values from both geodataframes; retain only the `left_df` geometry column
 
 Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the ``buffer`` method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.
-
-
-Sjoin Performance
-~~~~~~~~~~~~~~~~~~
-
-Existing spatial indexes on either `left_df` or `right_df` will be reused when performing an ``sjoin``. If neither df has a spatial index, a spatial index will be generated for the longer df. If both have a spatial index, the `right_df`'s index will be used preferentially. Performance of multiple sjoins in a row involving a common GeoDataFrame may be improved by pre-generating the spatial index of the common GeoDataFrame prior to performing sjoins using ``df1.sindex``.
-
-.. code-block:: python
-
-    df1 = # a GeoDataFrame with data
-    df2 = # a second GeoDataFrame
-    df3 = # a third GeoDataFrame
-
-    # pre-generate sindex on df1 if it doesn't already exist
-    df1.sindex
-
-    sjoin(df1, df2, ...)
-    # sindex for df1 is reused
-    sjoin(df1, df3, ...)
-    # sindex for df1 is reused again
