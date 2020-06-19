@@ -1,9 +1,11 @@
+import warnings
 from functools import reduce
 
 import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _ensure_geometry_column(df):
@@ -25,27 +27,20 @@ def _overlay_intersection(df1, df2):
     Overlay Intersection operation used in overlay function
     """
     # Spatial Index to create intersections
-    spatial_index = df2.sindex
-    bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
-    nei = []
-    for i, j in enumerate(sidx):
-        for k in j:
-            nei.append([i, k])
-    if nei != []:
-        pairs = pd.DataFrame(nei, columns=["__idx1", "__idx2"])
-        left = df1.geometry.take(pairs["__idx1"].values)
+    if idx1.size > 0 and idx2.size > 0:
+        left = df1.geometry.take(idx1)
         left.reset_index(drop=True, inplace=True)
-        right = df2.geometry.take(pairs["__idx2"].values)
+        right = df2.geometry.take(idx2)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         poly_ix = intersections.type.isin(["Polygon", "MultiPolygon"])
         intersections.loc[poly_ix] = intersections[poly_ix].buffer(0)
 
         # only keep actual intersecting geometries
-        pairs_intersect = pairs[~intersections.is_empty]
-        geom_intersect = intersections[~intersections.is_empty]
+        pairs_intersect = pd.DataFrame({"__idx1": idx1, "__idx2": idx2})
+        geom_intersect = intersections
 
         # merge data for intersecting geometries
         df1 = df1.reset_index(drop=True)
@@ -59,7 +54,7 @@ def _overlay_intersection(df1, df2):
             df2.drop(df2._geometry_column_name, axis=1),
             left_on="__idx2",
             right_index=True,
-            suffixes=["_1", "_2"],
+            suffixes=("_1", "_2"),
         )
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
@@ -75,10 +70,14 @@ def _overlay_difference(df1, df2):
     """
     Overlay Difference operation used in overlay function
     """
-    # Spatial Index to create intersections
-    spatial_index = df2.sindex
-    bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    # spatial index query to find intersections
+    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
+    idx2_split = np.split(idx2, idx1_unique_indices[1:])
+    sidx = [
+        idx2_split.pop(0) if idx in idx1_unique else []
+        for idx in range(df1.geometry.size)
+    ]
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
@@ -86,7 +85,7 @@ def _overlay_difference(df1, df2):
             lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
         )
         new_g.append(new)
-    differences = GeoSeries(new_g, index=df1.index)
+    differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
     differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()
@@ -110,7 +109,7 @@ def _overlay_symmetric_diff(df1, df2):
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
     dfsym = dfdiff1.merge(
-        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=["_1", "_2"]
+        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=("_1", "_2")
     )
     geometry = dfsym.geometry_1.copy()
     geometry.name = "geometry"
@@ -139,16 +138,17 @@ def _overlay_union(df1, df2):
 
 
 def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
-    """Perform spatial overlay between two polygons.
+    """Perform spatial overlay between two GeoDataFrames.
 
-    Currently only supports data GeoDataFrames with polygons.
-    Implements several methods that are all effectively subsets of
-    the union.
+    Currently only supports data GeoDataFrames with uniform geometry types,
+    i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
+    combination of (Multi)LineString and LinearRing shapes.
+    Implements several methods that are all effectively subsets of the union.
 
     Parameters
     ----------
-    df1 : GeoDataFrame with MultiPolygon or Polygon geometry column
-    df2 : GeoDataFrame with MultiPolygon or Polygon geometry column
+    df1 : GeoDataFrame
+    df2 : GeoDataFrame
     how : string
         Method of spatial overlay: 'intersection', 'union',
         'identity', 'symmetric_difference' or 'difference'.
@@ -174,13 +174,17 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     # Error Messages
     if how not in allowed_hows:
         raise ValueError(
-            "`how` was '{0}' but is expected to be in %s".format(how, allowed_hows)
+            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
         )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
             "overlay currently only implemented for " "GeoDataFrames"
         )
+
+    if not _check_crs(df1, df2):
+        _crs_mismatch_warn(df1, df2, stacklevel=3)
+
     polys = ["Polygon", "MultiPolygon"]
     lines = ["LineString", "MultiLineString", "LinearRing"]
     points = ["Point", "MultiPoint"]
@@ -201,17 +205,19 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     if df2.geom_type.isin(polys).all():
         df2[df2._geometry_column_name] = df2.geometry.buffer(0)
 
-    if how == "difference":
-        return _overlay_difference(df1, df2)
-    elif how == "intersection":
-        result = _overlay_intersection(df1, df2)
-    elif how == "symmetric_difference":
-        result = _overlay_symmetric_diff(df1, df2)
-    elif how == "union":
-        result = _overlay_union(df1, df2)
-    elif how == "identity":
-        dfunion = _overlay_union(df1, df2)
-        result = dfunion[dfunion["__idx1"].notnull()].copy()
+    with warnings.catch_warnings():  # CRS checked above, supress array-level warning
+        warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
+        if how == "difference":
+            return _overlay_difference(df1, df2)
+        elif how == "intersection":
+            result = _overlay_intersection(df1, df2)
+        elif how == "symmetric_difference":
+            result = _overlay_symmetric_diff(df1, df2)
+        elif how == "union":
+            result = _overlay_union(df1, df2)
+        elif how == "identity":
+            dfunion = _overlay_union(df1, df2)
+            result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if keep_geom_type:
         type = df1.geom_type.iloc[0]

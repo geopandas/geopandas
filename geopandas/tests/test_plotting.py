@@ -128,7 +128,7 @@ class TestPointPlotting:
         _check_colors(
             self.N, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
         )
-        with pytest.raises(TypeError):
+        with pytest.raises((ValueError, TypeError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -155,10 +155,23 @@ class TestPointPlotting:
         ax = self.df.plot(column="values", markersize="values")
         assert (ax.collections[0].get_sizes() == self.df["values"]).all()
 
+    def test_markerstyle(self):
+        ax = self.df2.plot(marker="+")
+        expected = _style_to_vertices("+")
+        np.testing.assert_array_equal(
+            expected, ax.collections[0].get_paths()[0].vertices
+        )
+
     def test_style_kwargs(self):
 
         ax = self.points.plot(edgecolors="k")
         assert (ax.collections[0].get_edgecolor() == [0, 0, 0, 1]).all()
+
+    def test_style_kwargs_alpha(self):
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2])
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -242,6 +255,12 @@ class TestPointPlotting:
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
         _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
+
+    def test_multipoints_alpha(self):
+        ax = self.df2.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df2.plot(alpha=[0.7, 0.2])
 
     def test_categorical_list(self):
         self.df["cats"] = ["cat1", "cat2"] * 5
@@ -340,7 +359,7 @@ class TestLineStringPlotting:
         _check_colors(
             self.N, ax.collections[0].get_colors(), [(0.5, 0.5, 0.5, 0.5)] * self.N
         )
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -348,26 +367,54 @@ class TestLineStringPlotting:
             ax = self.df.plot(column="values", color="green")
             _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
-    def test_style_kwargs(self):
-        # linestyle (style patterns depend on linewidth, therefore pin to 1)
-        linestyle = "dashed"
-        linewidth = 1
+    def test_style_kwargs_linestyle(self):
+        # single
+        for ax in [
+            self.lines.plot(linestyle=":", linewidth=1),
+            self.df.plot(linestyle=":", linewidth=1),
+            self.df.plot(column="values", linestyle=":", linewidth=1),
+        ]:
+            assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
 
-        ax = self.lines.plot(linestyle=linestyle, linewidth=linewidth)
-        exp_ls = _style_to_linestring_onoffseq(linestyle, linewidth)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert ls[1] == exp_ls[1]
+        # tuple
+        ax = self.lines.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
 
-        ax = self.df.plot(linestyle=linestyle, linewidth=linewidth)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert ls[1] == exp_ls[1]
+        # multiple
+        ls = [("dashed", "dotted", "dashdot", "solid")[k % 4] for k in range(self.N)]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls]
+        for ax in [
+            self.lines.plot(linestyle=ls, linewidth=1),
+            self.lines.plot(linestyles=ls, linewidth=1),
+            self.df.plot(linestyle=ls, linewidth=1),
+            self.df.plot(column="values", linestyle=ls, linewidth=1),
+        ]:
+            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
 
-        ax = self.df.plot(column="values", linestyle=linestyle, linewidth=linewidth)
-        for ls in ax.collections[0].get_linestyles():
-            assert ls[0] == exp_ls[0]
-            assert ls[1] == exp_ls[1]
+    def test_style_kwargs_linewidth(self):
+        # single
+        for ax in [
+            self.lines.plot(linewidth=2),
+            self.df.plot(linewidth=2),
+            self.df.plot(column="values", linewidth=2),
+        ]:
+            np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+
+        # multiple
+        lw = [(0, 1, 2, 5.5, 10)[k % 5] for k in range(self.N)]
+        for ax in [
+            self.lines.plot(linewidth=lw),
+            self.lines.plot(linewidths=lw),
+            self.df.plot(linewidth=lw),
+            self.df.plot(column="values", linewidth=lw),
+        ]:
+            np.testing.assert_array_equal(lw, ax.collections[0].get_linewidths())
+
+    def test_style_kwargs_alpha(self):
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2])
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -434,7 +481,7 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5)] * 2)
         ax = self.df.plot(color=(0.5, 0.5, 0.5, 0.5))
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -460,7 +507,7 @@ class TestPolygonPlotting:
         actual_colors = ax.collections[0].get_facecolors()
         assert np.any(np.not_equal(actual_colors[0], actual_colors[1]))
 
-    def test_style_kwargs(self):
+    def test_style_kwargs_color(self):
 
         # facecolor overrides default cmap when color is not set
         ax = self.polys.plot(facecolor="k")
@@ -498,6 +545,38 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
         _check_colors(2, ax.collections[0].get_edgecolors(), [(0.4, 0.5, 0.6, 0.5)] * 2)
 
+    def test_style_kwargs_linestyle(self):
+        #   single
+        ax = self.df.plot(linestyle=":", linewidth=1)
+        assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
+
+        # tuple
+        ax = self.df.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+        #   multiple
+        ls = ["dashed", "dotted"]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls]
+        for ax in [
+            self.df.plot(linestyle=ls, linewidth=1),
+            self.df.plot(linestyles=ls, linewidth=1),
+        ]:
+            assert exp_ls == ax.collections[0].get_linestyle()
+
+    def test_style_kwargs_linewidth(self):
+        #   single
+        ax = self.df.plot(linewidth=2)
+        np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+        #   multiple
+        for ax in [self.df.plot(linewidth=[2, 4]), self.df.plot(linewidths=[2, 4])]:
+            np.testing.assert_array_equal([2, 4], ax.collections[0].get_linewidths())
+
+        # alpha
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2])
+
     def test_legend_kwargs(self):
 
         ax = self.df.plot(
@@ -531,7 +610,7 @@ class TestPolygonPlotting:
 
         assert ax.get_figure().axes[1].get_xlabel() == label_txt
 
-    def test_multipolygons(self):
+    def test_multipolygons_color(self):
 
         # MultiPolygons
         ax = self.df2.plot()
@@ -547,6 +626,41 @@ class TestPolygonPlotting:
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
         _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
+
+    def test_multipolygons_linestyle(self):
+        # single
+        ax = self.df2.plot(linestyle=":", linewidth=1)
+        assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
+
+        # tuple
+        ax = self.df2.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+        # multiple
+        ls = ["dashed", "dotted"]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls for i in range(2)]
+        for ax in [
+            self.df2.plot(linestyle=ls, linewidth=1),
+            self.df2.plot(linestyles=ls, linewidth=1),
+        ]:
+            assert exp_ls == ax.collections[0].get_linestyle()
+
+    def test_multipolygons_linewidth(self):
+        # single
+        ax = self.df2.plot(linewidth=2)
+        np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+
+        # multiple
+        for ax in [self.df2.plot(linewidth=[2, 4]), self.df2.plot(linewidths=[2, 4])]:
+            np.testing.assert_array_equal(
+                [2, 2, 4, 4], ax.collections[0].get_linewidths()
+            )
+
+    def test_multipolygons_alpha(self):
+        ax = self.df2.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df2.plot(alpha=[0.7, 0.2])
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -642,6 +756,57 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [10]
         ax = self.df.plot(markersize=10)
         assert ax.collections[2].get_sizes() == [10]
+
+    def test_style_kwargs_linestyle(self):
+        # single
+        for ax in [
+            self.series.plot(linestyle=":", linewidth=1),
+            self.df.plot(linestyle=":", linewidth=1),
+        ]:
+            assert [(0.0, [1.0, 1.65])] == ax.collections[0].get_linestyle()
+
+        # tuple
+        ax = self.series.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
+        assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
+
+    @pytest.mark.skip(
+        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
+    )
+    def test_style_kwargs_linestyle_listlike(self):
+        # multiple
+        ls = ["solid", "dotted", "dashdot"]
+        exp_ls = [_style_to_linestring_onoffseq(style, 1) for style in ls]
+        for ax in [
+            self.series.plot(linestyle=ls, linewidth=1),
+            self.series.plot(linestyles=ls, linewidth=1),
+            self.df.plot(linestyles=ls, linewidth=1),
+        ]:
+            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+
+    def test_style_kwargs_linewidth(self):
+        # single
+        ax = self.df.plot(linewidth=2)
+        np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+
+    @pytest.mark.skip(
+        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
+    )
+    def test_style_kwargs_linewidth_listlike(self):
+        # multiple
+        for ax in [
+            self.series.plot(linewidths=[2, 4, 5.5]),
+            self.series.plot(linewidths=[2, 4, 5.5]),
+            self.df.plot(linewidths=[2, 4, 5.5]),
+        ]:
+            np.testing.assert_array_equal(
+                [2, 4, 5.5], ax.collections[0].get_linewidths()
+            )
+
+    def test_style_kwargs_alpha(self):
+        ax = self.df.plot(alpha=0.7)
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        with pytest.raises(TypeError):  # no list allowed for alpha
+            ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
 
 
 class TestMapclassifyPlotting:
@@ -759,40 +924,40 @@ class TestPlotCollections:
         # failing with matplotlib 1.4.3 (edge stays black even when specified)
         pytest.importorskip("matplotlib", "1.5.0")
 
-        from geopandas.plotting import plot_point_collection
+        from geopandas.plotting import _plot_point_collection, plot_point_collection
         from matplotlib.collections import PathCollection
 
         fig, ax = plt.subplots()
-        coll = plot_point_collection(ax, self.points)
+        coll = _plot_point_collection(ax, self.points)
         assert isinstance(coll, PathCollection)
         ax.cla()
 
         # default: single default matplotlib color
-        coll = plot_point_collection(ax, self.points)
+        coll = _plot_point_collection(ax, self.points)
         _check_colors(self.N, coll.get_facecolors(), [MPL_DFT_COLOR] * self.N)
         # edgecolor depends on matplotlib version
         # _check_colors(self.N, coll.get_edgecolors(), [MPL_DFT_COLOR]*self.N)
         ax.cla()
 
         # specify single other color
-        coll = plot_point_collection(ax, self.points, color="g")
+        coll = _plot_point_collection(ax, self.points, color="g")
         _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolors(), ["g"] * self.N)
         ax.cla()
 
         # specify edgecolor/facecolor
-        coll = plot_point_collection(ax, self.points, facecolor="g", edgecolor="r")
+        coll = _plot_point_collection(ax, self.points, facecolor="g", edgecolor="r")
         _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolors(), ["r"] * self.N)
         ax.cla()
 
         # list of colors
-        coll = plot_point_collection(ax, self.points, color=["r", "g", "b"])
+        coll = _plot_point_collection(ax, self.points, color=["r", "g", "b"])
         _check_colors(self.N, coll.get_facecolors(), ["r", "g", "b"])
         _check_colors(self.N, coll.get_edgecolors(), ["r", "g", "b"])
         ax.cla()
 
-        coll = plot_point_collection(
+        coll = _plot_point_collection(
             ax,
             self.points,
             color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
@@ -810,15 +975,19 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
-            plot_point_collection(ax, self.points, color="not color")
+        with pytest.raises((TypeError, ValueError)):
+            _plot_point_collection(ax, self.points, color="not color")
+
+        # check DeprecationWarning
+        with pytest.warns(DeprecationWarning):
+            plot_point_collection(ax, self.points)
 
     def test_points_values(self):
-        from geopandas.plotting import plot_point_collection
+        from geopandas.plotting import _plot_point_collection
 
         # default colormap
         fig, ax = plt.subplots()
-        coll = plot_point_collection(ax, self.points, self.values)
+        coll = _plot_point_collection(ax, self.points, self.values)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -827,36 +996,39 @@ class TestPlotCollections:
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
     def test_linestrings(self):
-        from geopandas.plotting import plot_linestring_collection
+        from geopandas.plotting import (
+            _plot_linestring_collection,
+            plot_linestring_collection,
+        )
         from matplotlib.collections import LineCollection
 
         fig, ax = plt.subplots()
-        coll = plot_linestring_collection(ax, self.lines)
+        coll = _plot_linestring_collection(ax, self.lines)
         assert isinstance(coll, LineCollection)
         ax.cla()
 
         # default: single default matplotlib color
-        coll = plot_linestring_collection(ax, self.lines)
+        coll = _plot_linestring_collection(ax, self.lines)
         _check_colors(self.N, coll.get_color(), [MPL_DFT_COLOR] * self.N)
         ax.cla()
 
         # specify single other color
-        coll = plot_linestring_collection(ax, self.lines, color="g")
+        coll = _plot_linestring_collection(ax, self.lines, color="g")
         _check_colors(self.N, coll.get_colors(), ["g"] * self.N)
         ax.cla()
 
         # specify edgecolor / facecolor
-        coll = plot_linestring_collection(ax, self.lines, facecolor="g", edgecolor="r")
+        coll = _plot_linestring_collection(ax, self.lines, facecolor="g", edgecolor="r")
         _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolors(), ["r"] * self.N)
         ax.cla()
 
         # list of colors
-        coll = plot_linestring_collection(ax, self.lines, color=["r", "g", "b"])
+        coll = _plot_linestring_collection(ax, self.lines, color=["r", "g", "b"])
         _check_colors(self.N, coll.get_colors(), ["r", "g", "b"])
         ax.cla()
 
-        coll = plot_linestring_collection(
+        coll = _plot_linestring_collection(
             ax,
             self.lines,
             color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
@@ -869,7 +1041,7 @@ class TestPlotCollections:
         ax.cla()
 
         # pass through of kwargs
-        coll = plot_linestring_collection(ax, self.lines, linestyle="--", linewidth=1)
+        coll = _plot_linestring_collection(ax, self.lines, linestyle="--", linewidth=1)
         exp_ls = _style_to_linestring_onoffseq("dashed", 1)
         res_ls = coll.get_linestyle()[0]
         assert res_ls[0] == exp_ls[0]
@@ -877,16 +1049,19 @@ class TestPlotCollections:
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
-            plot_linestring_collection(ax, self.lines, color="not color")
+        with pytest.raises((TypeError, ValueError)):
+            _plot_linestring_collection(ax, self.lines, color="not color")
+        # check DeprecationWarning
+        with pytest.warns(DeprecationWarning):
+            plot_linestring_collection(ax, self.lines)
 
     def test_linestrings_values(self):
-        from geopandas.plotting import plot_linestring_collection
+        from geopandas.plotting import _plot_linestring_collection
 
         fig, ax = plt.subplots()
 
         # default colormap
-        coll = plot_linestring_collection(ax, self.lines, self.values)
+        coll = _plot_linestring_collection(ax, self.lines, self.values)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -894,7 +1069,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify colormap
-        coll = plot_linestring_collection(ax, self.lines, self.values, cmap="RdBu")
+        coll = _plot_linestring_collection(ax, self.lines, self.values, cmap="RdBu")
         fig.canvas.draw_idle()
         cmap = plt.get_cmap("RdBu")
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -902,7 +1077,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify vmin/vmax
-        coll = plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
+        coll = _plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         expected_colors = cmap([0])
@@ -910,33 +1085,33 @@ class TestPlotCollections:
         ax.cla()
 
     def test_polygons(self):
-        from geopandas.plotting import plot_polygon_collection
+        from geopandas.plotting import _plot_polygon_collection, plot_polygon_collection
         from matplotlib.collections import PatchCollection
 
         fig, ax = plt.subplots()
-        coll = plot_polygon_collection(ax, self.polygons)
+        coll = _plot_polygon_collection(ax, self.polygons)
         assert isinstance(coll, PatchCollection)
         ax.cla()
 
         # default: single default matplotlib color
-        coll = plot_polygon_collection(ax, self.polygons)
+        coll = _plot_polygon_collection(ax, self.polygons)
         _check_colors(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
         ax.cla()
 
         # default: color sets both facecolor and edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, color="g")
+        coll = _plot_polygon_collection(ax, self.polygons, color="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
         ax.cla()
 
         # default: color can be passed as a list
-        coll = plot_polygon_collection(ax, self.polygons, color=["g", "b", "r"])
+        coll = _plot_polygon_collection(ax, self.polygons, color=["g", "b", "r"])
         _check_colors(self.N, coll.get_facecolor(), ["g", "b", "r"])
         _check_colors(self.N, coll.get_edgecolor(), ["g", "b", "r"])
         ax.cla()
 
-        coll = plot_polygon_collection(
+        coll = _plot_polygon_collection(
             ax,
             self.polygons,
             color=[(0.5, 0.5, 0.5, 0.5), (0.1, 0.2, 0.3, 0.5), (0.4, 0.5, 0.6, 0.5)],
@@ -954,28 +1129,31 @@ class TestPlotCollections:
         ax.cla()
 
         # only setting facecolor keeps default for edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, facecolor="g")
+        coll = _plot_polygon_collection(ax, self.polygons, facecolor="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
         ax.cla()
 
         # custom facecolor and edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, facecolor="g", edgecolor="r")
+        coll = _plot_polygon_collection(ax, self.polygons, facecolor="g", edgecolor="r")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
         _check_colors(self.N, coll.get_edgecolor(), ["r"] * self.N)
         ax.cla()
 
         # not a color
-        with pytest.raises(TypeError):
-            plot_polygon_collection(ax, self.polygons, color="not color")
+        with pytest.raises((TypeError, ValueError)):
+            _plot_polygon_collection(ax, self.polygons, color="not color")
+        # check DeprecationWarning
+        with pytest.warns(DeprecationWarning):
+            plot_polygon_collection(ax, self.polygons)
 
     def test_polygons_values(self):
-        from geopandas.plotting import plot_polygon_collection
+        from geopandas.plotting import _plot_polygon_collection
 
         fig, ax = plt.subplots()
 
         # default colormap, edge is still black by default
-        coll = plot_polygon_collection(ax, self.polygons, self.values)
+        coll = _plot_polygon_collection(ax, self.polygons, self.values)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -985,7 +1163,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify colormap
-        coll = plot_polygon_collection(ax, self.polygons, self.values, cmap="RdBu")
+        coll = _plot_polygon_collection(ax, self.polygons, self.values, cmap="RdBu")
         fig.canvas.draw_idle()
         cmap = plt.get_cmap("RdBu")
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -993,7 +1171,7 @@ class TestPlotCollections:
         ax.cla()
 
         # specify vmin/vmax
-        coll = plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
+        coll = _plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap([0])
@@ -1001,7 +1179,7 @@ class TestPlotCollections:
         ax.cla()
 
         # override edgecolor
-        coll = plot_polygon_collection(ax, self.polygons, self.values, edgecolor="g")
+        coll = _plot_polygon_collection(ax, self.polygons, self.values, edgecolor="g")
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
         exp_colors = cmap(np.arange(self.N) / (self.N - 1))
@@ -1090,3 +1268,10 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
     """
     offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
     return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
+
+
+def _style_to_vertices(markerstyle):
+    """ Converts a markerstyle string to a path. """
+    # TODO: Vertices values are twice the actual path; unclear, why.
+    path = matplotlib.markers.MarkerStyle(markerstyle).get_path()
+    return path.vertices / 2

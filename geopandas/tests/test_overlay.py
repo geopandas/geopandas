@@ -14,6 +14,11 @@ import pytest
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
 
 
+pytestmark = pytest.mark.skipif(
+    not geopandas.sindex.has_sindex(), reason="overlay requires spatial index"
+)
+
+
 @pytest.fixture
 def dfs(request):
     s1 = GeoSeries(
@@ -160,6 +165,33 @@ def test_overlay_nybb(how):
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)
 
+    # the ordering of the spatial index results causes slight deviations
+    # in the resultant geometries for multipolygons
+    # for more details on the discussion, see:
+    # https://github.com/geopandas/geopandas/pull/1338
+    # https://github.com/geopandas/geopandas/issues/1337
+
+    # Temporary workaround below:
+
+    # simplify multipolygon geometry comparison
+    # since the order of the constituent polygons depends on
+    # the ordering of spatial indexing results, we cannot
+    # compare symmetric_difference results directly when the
+    # resultant geometry is a multipolygon
+
+    # first, check that all bounds and areas are approx equal
+    # this is a very rough check for multipolygon equality
+    pd.testing.assert_series_equal(
+        result.geometry.area, expected.geometry.area, check_less_precise=True
+    )
+    pd.testing.assert_frame_equal(
+        result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
+    )
+
+    # now drop multipolygons
+    result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
+    expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
+
     assert_geodataframe_equal(
         result, expected, check_crs=False, check_column_type=False
     )
@@ -295,6 +327,14 @@ def test_preserve_crs(dfs, how):
     assert result.crs == crs
 
 
+def test_crs_mismatch(dfs, how):
+    df1, df2 = dfs
+    df1.crs = 4326
+    df2.crs = 3857
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        overlay(df1, df2, how=how)
+
+
 def test_empty_intersection(dfs):
     df1, df2 = dfs
     polys3 = GeoSeries(
@@ -419,6 +459,15 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
                 "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=keep_geom_type),
             )
         )
+
+        # the order depends on the spatial index used
+        # so we sort the resultant dataframes to get a consistent order
+        # independently of the spatial index implementation
+        assert all(expected.columns == result.columns), "Column name mismatch"
+        cols = list(set(result.columns) - set(["geometry"]))
+        expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
+        result = result.sort_values(cols, axis=0).reset_index(drop=True)
+
         assert_geodataframe_equal(
             result,
             expected,

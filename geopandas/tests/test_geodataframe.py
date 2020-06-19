@@ -12,10 +12,10 @@ from shapely.geometry import Point
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file
-from geopandas.array import GeometryArray, GeometryDtype
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from geopandas.tests.util import PACKAGE_DIR, connect, create_postgis, validate_boro_df
+from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
@@ -62,6 +62,7 @@ class TestDataFrame:
         with pytest.raises(CRSError):
             df.set_geometry(geom2, crs="dummy_crs")
 
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
     def test_geo_getitem(self):
         data = {
             "A": range(5),
@@ -76,6 +77,12 @@ class TestDataFrame:
         # good if this changed in the future
         assert not isinstance(df["geometry"], GeoSeries)
         assert isinstance(df["location"], GeoSeries)
+
+        df["buff"] = df.buffer(1)
+        assert isinstance(df["buff"], GeoSeries)
+
+        df["array"] = from_shapely([Point(x, y) for x, y in zip(range(5), range(5))])
+        assert isinstance(df["array"], GeoSeries)
 
         data["geometry"] = [Point(x + 1, y - 1) for x, y in zip(range(5), range(5))]
         df = GeoDataFrame(data, crs=self.crs)
@@ -159,7 +166,7 @@ class TestDataFrame:
         assert_geoseries_equal(df["geometry"], new_geom)
 
         # new crs
-        gs = GeoSeries(new_geom, crs="epsg:3857")
+        gs = new_geom.to_crs(crs="epsg:3857")
         df.geometry = gs
         assert df.crs == "epsg:3857"
 
@@ -208,7 +215,7 @@ class TestDataFrame:
 
         df2 = self.df.set_geometry(geom)
         assert self.df is not df2
-        assert_geoseries_equal(df2.geometry, geom)
+        assert_geoseries_equal(df2.geometry, geom, check_crs=False)
         assert_geoseries_equal(self.df.geometry, original_geom)
         assert_geoseries_equal(self.df["geometry"], self.df.geometry)
         # unknown column
@@ -420,6 +427,29 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
+    def test_to_file_crs(self):
+        """
+        Ensure that the file is written according to the crs
+        if it is specified
+
+        """
+        tempfilename = os.path.join(self.tempdir, "crs.shp")
+        # save correct CRS
+        self.df.to_file(tempfilename)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == self.df.crs
+        # overwrite CRS
+        self.df.to_file(tempfilename, crs=3857)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == "epsg:3857"
+
+        # specify CRS for gdf without one
+        df2 = self.df.copy()
+        df2.crs = None
+        df2.to_file(tempfilename, crs=2263)
+        df = GeoDataFrame.from_file(tempfilename)
+        assert df.crs == "epsg:2263"
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]
@@ -476,6 +506,23 @@ class TestDataFrame:
         )
         assert_frame_equal(expected, result)
 
+    def test_from_features_geom_interface_feature(self):
+        class Placemark(object):
+            def __init__(self, geom, val):
+                self.__geo_interface__ = {
+                    "type": "Feature",
+                    "properties": {"a": val},
+                    "geometry": geom.__geo_interface__,
+                }
+
+        p1 = Point(1, 1)
+        f1 = Placemark(p1, 0)
+        p2 = Point(3, 3)
+        f2 = Placemark(p2, 0)
+        df = GeoDataFrame.from_features([f1, f2])
+        assert sorted(df.columns) == ["a", "geometry"]
+        assert df.geometry.tolist() == [p1, p2]
+
     def test_from_feature_collection(self):
         data = {
             "name": ["a", "b", "c"],
@@ -500,33 +547,6 @@ class TestDataFrame:
         # test __geo_interface__ attribute (a GeoDataFrame has one)
         res = GeoDataFrame.from_features(gdf)
         assert_frame_equal(res, expected)
-
-    def test_from_postgis_default(self):
-        con = connect("test_geopandas")
-        if con is None or not create_postgis(self.df):
-            raise pytest.skip()
-
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = GeoDataFrame.from_postgis(sql, con)
-        finally:
-            con.close()
-
-        validate_boro_df(df, case_sensitive=False)
-
-    def test_from_postgis_custom_geom_col(self):
-        con = connect("test_geopandas")
-        geom_col = "the_geom"
-        if con is None or not create_postgis(self.df, geom_col=geom_col):
-            raise pytest.skip()
-
-        try:
-            sql = "SELECT * FROM nybb;"
-            df = GeoDataFrame.from_postgis(sql, con, geom_col=geom_col)
-        finally:
-            con.close()
-
-        validate_boro_df(df, case_sensitive=False)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
@@ -599,6 +619,11 @@ class TestDataFrame:
         # keep
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
+
+        # geometry not set
+        df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
+        with pytest.raises(AttributeError):
+            list(df.iterfeatures())
 
     def test_geodataframe_geojson_no_bbox(self):
         geo = self.df._to_geo(na="null", show_bbox=False)

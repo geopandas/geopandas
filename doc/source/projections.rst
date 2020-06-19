@@ -64,11 +64,15 @@ Be aware that **most of the time** you don't have to set a projection. Data load
 
 From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
 
-For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the :attr:`GeoSeries.crs` attribute:
+For example, if you convert a spreadsheet of latitudes and longitudes into a
+GeoSeries by hand, you would set the projection by passing the WGS84
+latitude-longitude CRS to the :meth:`GeoSeries.set_crs` method (or by setting
+the :attr:`GeoSeries.crs` attribute):
 
 .. sourcecode:: python
 
-   my_geoseries.crs = "EPSG:4326"
+    my_geoseries = my_geoseries.set_crs("EPSG:4326"})
+    my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 
 Re-Projecting
@@ -96,6 +100,45 @@ Re-projecting is the process of changing the representation of locations from on
     ax = world.plot()
     @savefig world_reproj.png
     ax.set_title("Mercator");
+
+
+Projection for multiple geometry columns
+----------------------------------------
+
+GeoPandas 0.8 implements support for different projections assigned to different geometry
+columns of the same GeoDataFrame. The projection is now stored together with geometries per column (directly
+on the GeometryArray level).
+
+Note that if GeometryArray has assigned projection, it is preferred over the
+projection passed to GeoSeries or GeoDataFrame during the creation:
+
+.. code-block:: python
+
+   >>> array.crs
+   <Geographic 2D CRS: EPSG:4326>
+   Name: WGS 84
+   Axis Info [ellipsoidal]:
+   - Lat[north]: Geodetic latitude (degree)
+   - Lon[east]: Geodetic longitude (degree)
+   ...
+   >>> GeoSeries(array, crs=3395).crs  # crs=3395 is ignored as array already has CRS
+   FutureWarning: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoDataFrame.set_crs(crs, allow_override=True)' to overwrite CRS or 'GeoDataFrame.to_crs(crs)' to reproject geometries. CRS mismatch will raise an error in the future versions of GeoPandas.
+       GeoSeries(array, crs=3395).crs
+
+   <Geographic 2D CRS: EPSG:4326>
+   Name: WGS 84
+   Axis Info [ellipsoidal]:
+   - Lat[north]: Geodetic latitude (degree)
+   - Lon[east]: Geodetic longitude (degree)
+   ...
+
+If you want to overwrite projection, you can then assign it to the GeoSeries
+manually or re-project geometries to the target projection using either
+``GeoSeries.set_crs(epsg=3395, allow_override=True)`` or
+``GeoSeries.to_crs(epsg=3395)``.
+
+All GeometryArray-based operations preserve projection; however, if you loop over a column
+containing geometry, this information might be lost.
 
 
 Upgrading to GeoPandas 0.7 with pyproj > 2.2 and PROJ > 6
@@ -384,7 +427,7 @@ If we construct the CRS object from the EPSG code (truncated output):
 
 You can see that the CRS object constructed from the WKT string has a "Easting,
 Northing" (i.e. x, y) axis order, while the CRS object constructed from the EPSG
-code has a (Northing, Easting) axis order. 
+code has a (Northing, Easting) axis order.
 
 Only having this difference in axis order is no problem when using the CRS in
 GeoPandas, since GeoPandas always uses a (x, y) order to store the data

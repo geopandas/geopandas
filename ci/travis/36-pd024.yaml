@@ -8,6 +8,7 @@ dependencies:
   - shapely
   - fiona=1.7
   #- pyproj
+  - geos
   # testing
   - pytest
   - pytest-cov
@@ -18,10 +19,11 @@ dependencies:
   - descartes
   #- geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
+  - pyarrow
   - pip:
     - pyproj
     - codecov
     - geopy
     - mapclassify
+    - git+https://github.com/pygeos/pygeos.git

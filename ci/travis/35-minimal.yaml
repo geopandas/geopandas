@@ -22,7 +22,7 @@ dependencies:
   - mapclassify
   - geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
+  - pyarrow
   - pip:
     - pyproj==2.2.2
