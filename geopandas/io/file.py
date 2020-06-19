@@ -247,7 +247,7 @@ def _to_file(
         warnings.warn(
             """Column names longer than 10 characters will be truncated when saved to ESRI
             shapefile.""",
-            stacklevel=3,
+            stacklevel=3
         )
 
     with fiona_env():
