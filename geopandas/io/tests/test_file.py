@@ -253,7 +253,9 @@ def test_to_file_column_len(tmpdir, df_points):
     df = df_points.iloc[:1].copy()
     df["0123456789A"] = ["the column name is 11 characters"]
 
-    with pytest.warns(UserWarning):
+   with pytest.warns(
+        UserWarning, match="Column names longer than 10 characters will be truncated"
+    )
         df.to_file(tempfilename, driver="ESRI Shapefile")
 
 
