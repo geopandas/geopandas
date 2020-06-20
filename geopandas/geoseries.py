@@ -293,6 +293,14 @@ class GeoSeries(GeoPandasBase, Series):
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
+    def apply(self, func, crs=None, args=(), **kwargs):
+        result = super().apply(func, args=args, **kwargs)
+        if isinstance(result, GeoSeries):
+            crs = crs or self.crs
+            if crs is not None:
+                result.set_crs(crs, inplace=True)
+        return result
+
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
         # NOTE: backported from pandas master (upcoming v0.13)
