@@ -275,7 +275,7 @@ plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, set_aspect="auto", **style_kwds
+    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
 ):
     """
     Plot a GeoSeries.
@@ -303,7 +303,7 @@ def plot_series(
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
-    set_aspect : 'auto', 'equal' or float (default 'auto')
+    aspect : 'auto', 'equal' or float (default 'auto')
         Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
         however data are not projected (coordinates are long/lat), the aspect is by
         default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
@@ -346,7 +346,7 @@ def plot_series(
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    if set_aspect == "auto":
+    if aspect == "auto":
         if s.crs and s.crs.is_geographic:
             bounds = s.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
@@ -354,7 +354,7 @@ def plot_series(
         else:
             ax.set_aspect("equal")
     else:
-        ax.set_aspect(set_aspect)
+        ax.set_aspect(aspect)
 
     if s.empty:
         warnings.warn(
@@ -439,7 +439,7 @@ def plot_dataframe(
     legend_kwds=None,
     classification_kwds=None,
     missing_kwds=None,
-    set_aspect="auto",
+    aspect="auto",
     **style_kwds
 ):
     """
@@ -510,7 +510,7 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
-    set_aspect : 'auto', 'equal' or float (default 'auto')
+    aspect : 'auto', 'equal' or float (default 'auto')
         Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
         however data are not projected (coordinates are long/lat), the aspect is by
         default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
@@ -562,7 +562,7 @@ def plot_dataframe(
             raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
 
-    if set_aspect == "auto":
+    if aspect == "auto":
         if df.crs and df.crs.is_geographic:
             bounds = df.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
@@ -570,7 +570,7 @@ def plot_dataframe(
         else:
             ax.set_aspect("equal")
     else:
-        ax.set_aspect(set_aspect)
+        ax.set_aspect(aspect)
 
     if df.empty:
         warnings.warn(
@@ -591,7 +591,7 @@ def plot_dataframe(
             ax=ax,
             figsize=figsize,
             markersize=markersize,
-            set_aspect=set_aspect,
+            aspect=aspect,
             **style_kwds
         )
 
