@@ -586,6 +586,9 @@ def plot_dataframe(
 
     nan_idx = pd.isna(values)
 
+    if categories:
+        categorical = True
+
     # Define `values` as a Series
     if categorical:
         if cmap is None:
@@ -600,6 +603,12 @@ def plot_dataframe(
                     "Categories must be a list-like object. Objects that are "
                     "considered list-like are for example Python lists, tuples, sets, "
                     "NumPy arrays, and Pandas Series."
+                )
+            missing = [x for x in values[~nan_idx] if x not in categories]
+            if missing:
+                raise ValueError(
+                    "Column contains values not listed in categories. "
+                    "Missing categories: {}.".format(missing)
                 )
 
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
