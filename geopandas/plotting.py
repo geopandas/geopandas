@@ -282,7 +282,9 @@ def _plot_point_collection(
 plot_point_collection = deprecated(_plot_point_collection)
 
 
-def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
+def plot_series(
+    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+):
     """
     Plot a GeoSeries.
 
@@ -309,6 +311,14 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
+    aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
+        the GeoSeries (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -344,7 +354,18 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if aspect == "auto":
+        if s.crs and s.crs.is_geographic:
+            bounds = s.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    else:
+        ax.set_aspect(aspect)
 
     if s.empty:
         warnings.warn(
@@ -429,6 +450,7 @@ def plot_dataframe(
     legend_kwds=None,
     classification_kwds=None,
     missing_kwds=None,
+    aspect="auto",
     **style_kwds
 ):
     """
@@ -499,6 +521,14 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
+    aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
+        the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
 
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such
@@ -543,7 +573,18 @@ def plot_dataframe(
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if aspect == "auto":
+        if df.crs and df.crs.is_geographic:
+            bounds = df.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    else:
+        ax.set_aspect(aspect)
 
     if df.empty:
         warnings.warn(
@@ -564,6 +605,7 @@ def plot_dataframe(
             ax=ax,
             figsize=figsize,
             markersize=markersize,
+            aspect=aspect,
             **style_kwds
         )
 

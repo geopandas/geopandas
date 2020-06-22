@@ -794,6 +794,51 @@ class TestNonuniformGeometryPlotting:
             ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
 
 
+class TestGeographicAspect:
+    def setup_class(self):
+        pth = get_path("naturalearth_lowres")
+        df = read_file(pth)
+        self.north = df.loc[df.continent == "North America"]
+        self.north_proj = self.north.to_crs("ESRI:102008")
+        bounds = self.north.total_bounds
+        y_coord = np.mean([bounds[1], bounds[3]])
+        self.exp = 1 / np.cos(y_coord * np.pi / 180)
+
+    def test_auto(self):
+        ax = self.north.geometry.plot()
+        assert ax.get_aspect() == self.exp
+        ax2 = self.north_proj.geometry.plot()
+        assert ax2.get_aspect() in ["equal", 1.0]
+        ax = self.north.plot()
+        assert ax.get_aspect() == self.exp
+        ax2 = self.north_proj.plot()
+        assert ax2.get_aspect() in ["equal", 1.0]
+        ax3 = self.north.plot("pop_est")
+        assert ax3.get_aspect() == self.exp
+        ax4 = self.north_proj.plot("pop_est")
+        assert ax4.get_aspect() in ["equal", 1.0]
+
+    def test_manual(self):
+        ax = self.north.geometry.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        ax2 = self.north.geometry.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.geometry.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        ax = self.north.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        ax2 = self.north.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        ax = self.north.plot("pop_est", aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        ax2 = self.north.plot("pop_est", aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.plot("pop_est", aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+
+
 class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
