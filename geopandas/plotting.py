@@ -448,6 +448,7 @@ def plot_dataframe(
     markersize=None,
     figsize=None,
     legend_kwds=None,
+    categories=None,
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
@@ -514,6 +515,8 @@ def plot_dataframe(
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() or
         matplotlib.pyplot.colorbar().
+    categories : list-like
+        Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
     missing_kwds : dict (default None)
@@ -625,14 +628,35 @@ def plot_dataframe(
 
     nan_idx = pd.isna(values)
 
+    if categories:
+        categorical = True
+
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = "tab10"
-        categories = list(set(values[~nan_idx]))
-        categories.sort()
+
+        if categories is None:
+            categories = list(set(values[~nan_idx]))
+            categories.sort()
+        else:
+            if not pd.api.types.is_list_like(categories):
+                raise ValueError(
+                    "Categories must be a list-like object. Objects that are "
+                    "considered list-like are for example Python lists, tuples, sets, "
+                    "NumPy arrays, and Pandas Series."
+                )
+            missing = [x for x in values[~nan_idx] if x not in categories]
+            if missing:
+                raise ValueError(
+                    "Column contains values not listed in categories. "
+                    "Missing categories: {}.".format(missing)
+                )
+
         valuemap = dict((k, v) for (v, k) in enumerate(categories))
         values = np.array([valuemap[k] for k in values[~nan_idx]])
+        vmin = 0 if vmin is None else vmin
+        vmax = max(valuemap.values()) if vmax is None else vmax
 
     if scheme is not None:
         if classification_kwds is None:

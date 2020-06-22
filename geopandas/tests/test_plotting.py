@@ -262,6 +262,33 @@ class TestPointPlotting:
         with pytest.raises(TypeError):  # no list allowed for alpha
             ax = self.df2.plot(alpha=[0.7, 0.2])
 
+    def test_categorical_list(self):
+        self.df["cats"] = ["cat1", "cat2"] * 5
+        self.df["nums"] = [1, 2] * 5
+        self.df["singlecat"] = ["cat2"] * 10
+        ax1 = self.df.plot("cats", legend=True)
+        ax2 = self.df.plot("singlecat", categories=["cat1", "cat2"], legend=True)
+        ax3 = self.df.plot("nums", categories=[1, 2], legend=True)
+        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors2 = ax2.collections[0].get_facecolors()
+        point_colors3 = ax3.collections[0].get_facecolors()
+        np.testing.assert_array_equal(
+            point_colors1[1], point_colors2[0], point_colors3[0]
+        )
+        legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
+        legend2 = [x.get_markerfacecolor() for x in ax2.get_legend().get_lines()]
+        legend3 = [x.get_markerfacecolor() for x in ax3.get_legend().get_lines()]
+        np.testing.assert_array_equal(legend1, legend2)
+        np.testing.assert_array_equal(legend1, legend3)
+
+        with pytest.raises(ValueError, match="Categories must be a list-like object."):
+            self.df.plot(column="cats", categories="non_list")
+
+        with pytest.raises(
+            ValueError, match="Column contains values not listed in categories."
+        ):
+            self.df.plot(column="cats", categories=["cat1"])
+
     def test_misssing(self):
         self.df.loc[0, "values"] = np.nan
         ax = self.df.plot("values")
