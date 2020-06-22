@@ -307,7 +307,8 @@ def plot_series(
         Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
         however data are not projected (coordinates are long/lat), the aspect is by
         default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
-        the GeoSeries (the mean of the y range of bounding box). This implies an
+        the GeoSeries (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
         Equirectangular projection. It can also be set manually (float) as the ratio
         of y-unit to x-unit.
     **style_kwds : dict
@@ -351,6 +352,8 @@ def plot_series(
             bounds = s.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
             ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
         else:
             ax.set_aspect("equal")
     else:
@@ -514,7 +517,8 @@ def plot_dataframe(
         Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
         however data are not projected (coordinates are long/lat), the aspect is by
         default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
-        the GeoDataFrame (the mean of the y range of bounding box). This implies an
+        the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
         Equirectangular projection. It can also be set manually (float) as the ratio
         of y-unit to x-unit.
 
@@ -567,6 +571,8 @@ def plot_dataframe(
             bounds = df.total_bounds
             y_coord = np.mean([bounds[1], bounds[3]])
             ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
         else:
             ax.set_aspect("equal")
     else:
