@@ -284,7 +284,9 @@ def _plot_point_collection(
 plot_point_collection = deprecated(_plot_point_collection)
 
 
-def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
+def plot_series(
+    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+):
     """
     Plot a GeoSeries.
 
@@ -311,6 +313,14 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
+    aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
+        the GeoSeries (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -346,7 +356,18 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if aspect == "auto":
+        if s.crs and s.crs.is_geographic:
+            bounds = s.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    else:
+        ax.set_aspect(aspect)
 
     if s.empty:
         warnings.warn(
@@ -429,8 +450,10 @@ def plot_dataframe(
     markersize=None,
     figsize=None,
     legend_kwds=None,
+    categories=None,
     classification_kwds=None,
     missing_kwds=None,
+    aspect="auto",
     **style_kwds
 ):
     """
@@ -494,6 +517,8 @@ def plot_dataframe(
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() or
         matplotlib.pyplot.colorbar().
+    categories : list-like
+        Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
     missing_kwds : dict (default None)
@@ -501,6 +526,15 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
+    aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
+        the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
+
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -544,7 +578,18 @@ def plot_dataframe(
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if aspect == "auto":
+        if df.crs and df.crs.is_geographic:
+            bounds = df.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    else:
+        ax.set_aspect(aspect)
 
     if df.empty:
         warnings.warn(
@@ -565,6 +610,7 @@ def plot_dataframe(
             ax=ax,
             figsize=figsize,
             markersize=markersize,
+            aspect=aspect,
             **style_kwds
         )
 
@@ -575,23 +621,40 @@ def plot_dataframe(
                 "The dataframe and given column have different number of rows."
             )
         else:
-            values = np.asarray(column)
+            values = column
     else:
-        values = np.asarray(df[column])
+        values = df[column]
 
-    if values.dtype is np.dtype("O"):
+    if pd.api.types.is_categorical_dtype(values.dtype):
+        if categories is not None:
+            raise ValueError(
+                "Cannot specify 'categories' when column has categorical dtype"
+            )
+        categorical = True
+    elif values.dtype is np.dtype("O") or categories:
         categorical = True
 
-    nan_idx = pd.isna(values)
+    nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = "tab10"
-        categories = list(set(values[~nan_idx]))
-        categories.sort()
-        valuemap = dict((k, v) for (v, k) in enumerate(categories))
-        values = np.array([valuemap[k] for k in values[~nan_idx]])
+
+        cat = pd.Categorical(values, categories=categories)
+        categories = list(cat.categories)
+
+        # values missing in the Categorical but not in original values
+        missing = list(np.unique(values[~nan_idx & cat.isna()]))
+        if missing:
+            raise ValueError(
+                "Column contains values not listed in categories. "
+                "Missing categories: {}.".format(missing)
+            )
+
+        values = cat.codes[~nan_idx]
+        vmin = 0 if vmin is None else vmin
+        vmax = len(categories) - 1 if vmax is None else vmax
 
     if scheme is not None:
         if classification_kwds is None:
