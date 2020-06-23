@@ -292,7 +292,7 @@ class TestPointPlotting:
             legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
             np.testing.assert_array_equal(legend1, legend2)
 
-        with pytest.raises(TypeError, match="categories"):
+        with pytest.raises(TypeError):
             self.df.plot(column="cats_object", categories="non_list")
 
         with pytest.raises(
