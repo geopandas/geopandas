@@ -5,6 +5,8 @@ import pandas as pd
 
 import geopandas
 
+from distutils.version import LooseVersion
+
 
 def deprecated(new):
     """Helper to provide deprecation warning."""
@@ -663,11 +665,10 @@ def plot_dataframe(
         binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
-        binedges = [values[~nan_idx].min()] + binning.bins.tolist()
-        categories = [
-            "{0:.2f} - {1:.2f}".format(binedges[i], binedges[i + 1])
-            for i in range(len(binedges) - 1)
-        ]
+        fmt = "{:.2f}"
+        if legend_kwds is not None and "fmt" in legend_kwds:
+            fmt = legend_kwds.pop("fmt")
+        categories = binning.get_legend_classes(fmt)
         values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
@@ -742,6 +743,8 @@ def plot_dataframe(
 
         if legend_kwds is None:
             legend_kwds = {}
+        if "fmt" in legend_kwds:
+            legend_kwds.pop("fmt")
 
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
@@ -831,15 +834,18 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
     """
     try:
         import mapclassify.classifiers as classifiers
-    except ImportError:
-        try:
-            import pysal.viz.mapclassify.classifiers as classifiers
-        except ImportError:
-            raise ImportError(
-                "The 'mapclassify' or 'pysal' package is required to use the"
-                " 'scheme' keyword"
-            )
 
+    except ImportError:
+        raise ImportError(
+            "The 'mapclassify' >= 2.2.0 package is required to use the 'scheme' keyword"
+        )
+    from mapclassify import __version__ as mc_version
+
+    if mc_version < LooseVersion("2.2.0"):
+        raise ImportError(
+            "The 'mapclassify' >= 2.2.0 package is required to "
+            "use the 'scheme' keyword"
+        )
     schemes = {}
     for classifier in classifiers.CLASSIFIERS:
         schemes[classifier.lower()] = getattr(classifiers, classifier)
@@ -884,10 +890,8 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
             )
 
     if classification_kwds["k"] is not None:
-        try:
-            from inspect import getfullargspec as getspec
-        except ImportError:
-            from inspect import getargspec as getspec
+        from inspect import getfullargspec as getspec
+
         spec = getspec(scheme_class.__init__)
         if "k" not in spec.args:
             del classification_kwds["k"]

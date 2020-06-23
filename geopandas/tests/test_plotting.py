@@ -638,6 +638,19 @@ class TestPolygonPlotting:
 
         assert ax.get_figure().axes[1].get_xlabel() == label_txt
 
+    def test_fmt_ignore(self):
+        # test if fmt is removed if scheme is not passed (it would raise Error)
+        # GH #1253
+
+        self.df.plot(
+            column="values",
+            categorical=True,
+            legend=True,
+            legend_kwds={"fmt": "{:.0f}"},
+        )
+
+        self.df.plot(column="values", legend=True, legend_kwds={"fmt": "{:.0f}"})
+
     def test_multipolygons_color(self):
 
         # MultiPolygons
@@ -888,10 +901,7 @@ class TestMapclassifyPlotting:
         try:
             import mapclassify  # noqa
         except ImportError:
-            try:
-                import pysal  # noqa
-            except ImportError:
-                pytest.importorskip("mapclassify")
+            pytest.importorskip("mapclassify")
         pth = get_path("naturalearth_lowres")
         cls.df = read_file(pth)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
@@ -904,9 +914,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"140.00 - 5217064.00",
-            u"5217064.00 - 19532732.33",
-            u"19532732.33 - 1379302771.00",
+            u"[       140.00,    5217064.00]",
+            u"(   5217064.00,   19532732.33]",
+            u"(  19532732.33, 1379302771.00]",
         ]
         assert labels == expected
 
@@ -915,7 +925,20 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10.00 - -3.41", u"-3.41 - 3.30", u"3.30 - 10.00"]
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        assert labels == expected
+
+    def test_fmt(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"fmt": "{:.0f}"},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -933,7 +956,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["140.00 - 9961396.00", "9961396.00 - 1379302771.00"]
+        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
         assert labels == expected
 
     def test_invalid_scheme(self):
