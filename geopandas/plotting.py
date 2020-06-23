@@ -639,7 +639,11 @@ def plot_dataframe(
         if cmap is None:
             cmap = "tab10"
 
-        cat = pd.Categorical(values, categories=categories)
+        if categories:
+            cat = pd.Categorical(values, categories=categories)
+        else:
+            # TODO(cleanup) pandas 0.23 does not support passing categories=None
+            cat = pd.Categorical(values)
         categories = list(cat.categories)
 
         # values missing in the Categorical but not in original values
