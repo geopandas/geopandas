@@ -619,44 +619,40 @@ def plot_dataframe(
                 "The dataframe and given column have different number of rows."
             )
         else:
-            values = np.asarray(column)
+            values = column
     else:
-        values = np.asarray(df[column])
+        values = df[column]
 
-    if values.dtype is np.dtype("O"):
+    if pd.api.types.is_categorical_dtype(values.dtype):
+        if categories is not None:
+            raise ValueError(
+                "Cannot specify 'categories' when column has categorical dtype"
+            )
+        categorical = True
+    elif values.dtype is np.dtype("O") or categories:
         categorical = True
 
-    nan_idx = pd.isna(values)
-
-    if categories:
-        categorical = True
+    nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = "tab10"
 
-        if categories is None:
-            categories = list(set(values[~nan_idx]))
-            categories.sort()
-        else:
-            if not pd.api.types.is_list_like(categories):
-                raise ValueError(
-                    "Categories must be a list-like object. Objects that are "
-                    "considered list-like are for example Python lists, tuples, sets, "
-                    "NumPy arrays, and Pandas Series."
-                )
-            missing = [x for x in values[~nan_idx] if x not in categories]
-            if missing:
-                raise ValueError(
-                    "Column contains values not listed in categories. "
-                    "Missing categories: {}.".format(missing)
-                )
+        cat = pd.Categorical(values, categories=categories)
+        categories = list(cat.categories)
 
-        valuemap = dict((k, v) for (v, k) in enumerate(categories))
-        values = np.array([valuemap[k] for k in values[~nan_idx]])
+        # values missing in the Categorical but not in original values
+        missing = list(np.unique(values[~nan_idx & cat.isna()]))
+        if missing:
+            raise ValueError(
+                "Column contains values not listed in categories. "
+                "Missing categories: {}.".format(missing)
+            )
+
+        values = cat.codes[~nan_idx]
         vmin = 0 if vmin is None else vmin
-        vmax = max(valuemap.values()) if vmax is None else vmax
+        vmax = len(categories) - 1 if vmax is None else vmax
 
     if scheme is not None:
         if classification_kwds is None:

@@ -2,6 +2,7 @@ import itertools
 import warnings
 
 import numpy as np
+import pandas as pd
 
 from shapely.affinity import rotate
 from shapely.geometry import (
@@ -262,30 +263,45 @@ class TestPointPlotting:
         with pytest.raises(TypeError):  # no list allowed for alpha
             ax = self.df2.plot(alpha=[0.7, 0.2])
 
-    def test_categorical_list(self):
-        self.df["cats"] = ["cat1", "cat2"] * 5
+    def test_categories(self):
+        self.df["cats_object"] = ["cat1", "cat2"] * 5
         self.df["nums"] = [1, 2] * 5
-        self.df["singlecat"] = ["cat2"] * 10
-        ax1 = self.df.plot("cats", legend=True)
-        ax2 = self.df.plot("singlecat", categories=["cat1", "cat2"], legend=True)
-        ax3 = self.df.plot("nums", categories=[1, 2], legend=True)
-        point_colors1 = ax1.collections[0].get_facecolors()
-        point_colors2 = ax2.collections[0].get_facecolors()
-        point_colors3 = ax3.collections[0].get_facecolors()
-        np.testing.assert_array_equal(
-            point_colors1[1], point_colors2[0], point_colors3[0]
+        self.df["singlecat_object"] = ["cat2"] * 10
+        self.df["cats"] = pd.Categorical(["cat1", "cat2"] * 5)
+        self.df["singlecat"] = pd.Categorical(
+            ["cat2"] * 10, categories=["cat1", "cat2"]
         )
-        legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
-        legend2 = [x.get_markerfacecolor() for x in ax2.get_legend().get_lines()]
-        legend3 = [x.get_markerfacecolor() for x in ax3.get_legend().get_lines()]
-        np.testing.assert_array_equal(legend1, legend2)
-        np.testing.assert_array_equal(legend1, legend3)
+        self.df["cats_ordered"] = pd.Categorical(
+            ["cat2", "cat1"] * 5, categories=["cat2", "cat1"]
+        )
 
-        with pytest.raises(ValueError, match="Categories must be a list-like object."):
-            self.df.plot(column="cats", categories="non_list")
+        ax1 = self.df.plot("cats_object", legend=True)
+        ax2 = self.df.plot("cats", legend=True)
+        ax3 = self.df.plot("singlecat_object", categories=["cat1", "cat2"], legend=True)
+        ax4 = self.df.plot("singlecat", legend=True)
+        ax5 = self.df.plot("cats_ordered", legend=True)
+        ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
+
+        point_colors1 = ax1.collections[0].get_facecolors()
+        for ax in [ax2, ax3, ax4, ax5, ax6]:
+            point_colors2 = ax.collections[0].get_facecolors()
+            np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+
+        legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
+        for ax in [ax2, ax3, ax4, ax5, ax6]:
+            legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
+            np.testing.assert_array_equal(legend1, legend2)
+
+        with pytest.raises(TypeError):
+            self.df.plot(column="cats_object", categories="non_list")
 
         with pytest.raises(
             ValueError, match="Column contains values not listed in categories."
+        ):
+            self.df.plot(column="cats_object", categories=["cat1"])
+
+        with pytest.raises(
+            ValueError, match="Cannot specify 'categories' when column has"
         ):
             self.df.plot(column="cats", categories=["cat1"])
 
