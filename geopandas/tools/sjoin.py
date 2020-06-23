@@ -6,9 +6,6 @@ from geopandas import GeoDataFrame
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
-ALLOWED_OP = {"intersects", "contains", "within"}
-
-
 def sjoin(
     left_df, right_df, how="inner", op="intersects", lsuffix="left", rsuffix="right"
 ):
@@ -42,7 +39,24 @@ def sjoin(
 
 
 def _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix):
-    """Checks validity of input parameters.
+    """Checks the validity of join input parameters.
+
+    `how` and `op` must be one of the valid options.
+    `'index_'` concatenated with `lsuffix` or `rsuffix` must not already
+    exist as columns in the left or right data frames.
+
+    Parameters
+    ------------
+    left_df : GeoDataFrame
+    right_df : GeoData Frame
+    how : str, one of 'left', 'right', 'inner'
+        join type
+    op : str, one of 'intersects', 'contains', 'within'
+        predicate operation used in join
+    lsuffix : str
+    left index suffix
+    rsuffix : str
+    right index suffix
     """
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(
@@ -60,9 +74,10 @@ def _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix):
             '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
         )
 
-    if op not in ALLOWED_OP:
+    allowed_ops = {"intersects", "contains", "within"}
+    if op not in allowed_ops:
         raise ValueError(
-            '`op` was "{}" but is expected to be in {}'.format(op, ALLOWED_OP)
+            '`op` was "{}" but is expected to be in {}'.format(op, allowed_ops)
         )
 
     if not _check_crs(left_df, right_df):
