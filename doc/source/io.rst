@@ -220,6 +220,6 @@ the spatial information.
     specification at:
     https://github.com/geopandas/geo-arrow-spec
 
-    This metadata specification does not yet make stability promises.  As such,
+    This metadata specification does not yet make stability promises. As such,
     we do not yet recommend using this in a production setting unless you are
     able to rewrite your Parquet or Feather files.
