@@ -492,8 +492,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
             <https://tools.ietf.org/html/rfc7946>`_. None will automatically
             detect CRS and re-project geometries to WGS84 in the future.
-            Set to True to force re-projection, False to ignore CRS.
-            None by default.
+            Set to True to force re-projection (and silence the warning), and
+            set to False to ignore CRS. None by default.
 
         Notes
         -----
@@ -507,11 +507,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         - ``keep``: output the missing entries as NaN.
         """
         if to_wgs84 is None:
-            if self.crs and not to_wgs84 and not self.crs == 4326:
+            if self.crs and not self.crs.equals == 4326:
                 warnings.warn(
                     "GeoJSON specification requires WGS84 CRS. Geometry will "
                     "be automatically re-projected in future versions of GeoPandas. "
-                    "To keep existing behavior use 'to_wgs84=False'. "
+                    "To keep existing behavior use 'to_wgs84=False', to silence the "
+                    "warning and get the future behaviour use 'to_wgs_84=True'. "
                     "GeoDataFrame's CRS:\n"
                     "{}".format(self.crs.__repr__()),
                     FutureWarning,
