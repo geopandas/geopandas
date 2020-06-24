@@ -7,7 +7,7 @@ Version 0.8.0 (June 24, 2020)
 **Experimental**: optional use of PyGEOS to speed up spatial operations (#1155).
 PyGEOS is a faster alternative for Shapely (being contributed back to a future
 version of Shapely), and is used in element-wise spatial operations and for
-spatial index in eg `sjoin` (#1343, #1401, #1421, #1427, #1428). See the
+spatial index in e.g. `sjoin` (#1343, #1401, #1421, #1427, #1428). See the
 [installation docs](https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency)
 for more info and how to enable it.
 
@@ -22,7 +22,7 @@ New features and improvements:
     returned (#1383).
   - `geopandas.read_file` now supports reading from file-like objects (#1329).
   - `GeoDataFrame.to_file` now supports specifying the CRS to write to the file
-  (#802). By default is still uses the CRS of the GeoDataFrame.
+  (#802). By default it still uses the CRS of the GeoDataFrame.
   - New `chunksize` keyword in `geopandas.read_postgis` to read a query in
     chunks (#1123).
 - Improvements related to geometry columns and CRS:
@@ -79,7 +79,7 @@ Bug fixes:
 - Fix `geopandas.clip` when masking with non-overlapping area resulting in an
   empty GeoDataFrame (#1309, #1365).
 - Fix error in `geopandas.sjoin` when joining on an empty geometry column (#1318).
-- CRS related fixes: `pandas.concat` preserves CRS when concatting GeoSeries
+- CRS related fixes: `pandas.concat` preserves CRS when concatenating GeoSeries
   objects (#1340), preserve the CRS in `geopandas.clip` (#1362) and in
   `GeoDataFrame.astype` (#1366).
 - Fix bug in `GeoDataFrame.explode()` when 'level_1' is one of the column names
