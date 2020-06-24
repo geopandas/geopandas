@@ -4,9 +4,12 @@ Changelog
 Version 0.8.0 (June XX, 2020)
 -----------------------------
 
-(TODO expand)
-Experimental: optional use of PyGEOS to speed up spatial operations (#1155) (see more blogpost) 
-used in for element-wise spatial operations and for spatial index (#1343, #1401, #1421, #1427, #1428)
+**Experimental**: optional use of PyGEOS to speed up spatial operations (#1155).
+PyGEOS is a faster alternative for Shapely (being contributed back to a future
+version of Shapely), and is used in element-wise spatial operations and for
+spatial index in eg `sjoin` (#1343, #1401, #1421, #1427, #1428). See the
+[installation docs](https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency)
+for more info and how to enable it.
 
 New features and improvements:
 
