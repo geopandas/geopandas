@@ -52,7 +52,11 @@ New features and improvements:
 
 Deprecations:
 
-- TODO CRS related deprecation from https://github.com/geopandas/geopandas/pull/1339
+- When constructing a GeoSeries or GeoDataFrame from data that already has a
+  CRS, a deprecation warning is raised when both CRS don't match, and in the
+  future an error will be raised in such a case. You can use the new `set_crs`
+  method to override an existing CRS. See
+  [the docs](https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns).  
 - The helper functions in the `geopandas.plotting` module are deprecated for
   public usage (#656).
 - The `geopandas.io` functions are deprecated, use the top-level `read_file` and
