@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.8.0 (June XX, 2020)
+Version 0.8.0 (June 24, 2020)
 -----------------------------
 
 **Experimental**: optional use of PyGEOS to speed up spatial operations (#1155).
