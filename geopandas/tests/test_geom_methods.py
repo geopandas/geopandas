@@ -12,6 +12,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
@@ -29,6 +30,8 @@ class TestGeomMethods:
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
+        self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
         self.inner_sq = Polygon(
             [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
         )
@@ -66,6 +69,8 @@ class TestGeomMethods:
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
         self.g6 = GeoSeries([self.p0, self.t3])
+        self.g7 = GeoSeries([self.sq, self.t4])
+        self.g8 = GeoSeries([self.t1, self.t5])
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
         self.empty_poly = Polygon()
@@ -82,6 +87,9 @@ class TestGeomMethods:
         )
         self.gdf2 = GeoDataFrame(
             {"geometry": self.g1, "col3": [4, 5], "col4": ["rand", "string"]}
+        )
+        self.gdf3 = GeoDataFrame(
+            {"geometry": self.g3, "col3": [4, 5], "col4": ["rand", "string"]}
         )
 
     def _test_unary_real(self, op, expected, a):
@@ -123,6 +131,7 @@ class TestGeomMethods:
         """
         The operators only have GeoSeries on the left, but can have
         GeoSeries or GeoDataFrame on the right.
+        If GeoDataFrame is on the left, geometry column is used.
 
         """
         if isinstance(expected, GeoPandasBase):
@@ -220,9 +229,10 @@ class TestGeomMethods:
 
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
-        self._test_binary_topological(
-            "intersection", self.all_none, self.g1, self.empty
-        )
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self._test_binary_topological(
+                "intersection", self.all_none, self.g1, self.empty
+            )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
@@ -275,6 +285,10 @@ class TestGeomMethods:
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real("area", expected, self.na_none)
 
+    def test_area_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.area
+
     def test_bounds(self):
         # Set columns to get the order right
         expected = DataFrame(
@@ -324,6 +338,10 @@ class TestGeomMethods:
         expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
         self._test_unary_real("length", expected, self.na_none)
 
+    def test_length_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.length
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))
@@ -362,6 +380,10 @@ class TestGeomMethods:
         expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
+    def test_distance_crs_warning(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.distance(self.p0)
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
@@ -395,6 +417,31 @@ class TestGeomMethods:
 
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
+
+    def test_covers_itself(self):
+        # Each polygon in a Series covers itself
+        res = self.g1.covers(self.g1)
+        exp = Series([True, True])
+        assert_series_equal(res, exp)
+
+    def test_covers(self):
+        res = self.g7.covers(self.g8)
+        exp = Series([True, False])
+        assert_series_equal(res, exp)
+
+    def test_covers_inverse(self):
+        res = self.g8.covers(self.g7)
+        exp = Series([False, False])
+        assert_series_equal(res, exp)
+
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS,
+        reason="covered_by is only implemented for pygeos, not shapely",
+    )
+    def test_covered_by(self):
+        res = self.g1.covered_by(self.g1)
+        exp = Series([True, True])
+        assert_series_equal(res, exp)
 
     def test_is_valid(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
@@ -437,6 +484,10 @@ class TestGeomMethods:
         polygons = GeoSeries([polygon for i in range(3)])
         points = GeoSeries([point for i in range(3)])
         assert_geoseries_equal(polygons.centroid, points)
+
+    def test_centroid_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.centroid
 
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
@@ -487,6 +538,12 @@ class TestGeomMethods:
         distances = Series([1, 2], index=[99, 98])
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
+
+    def test_interpolate_crs_warning(self):
+        g5_crs = self.g5.copy()
+        g5_crs.crs = 4326
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            g5_crs.interpolate(1)
 
     def test_project(self):
         expected = Series([2.0, 1.5], index=self.g5.index)
@@ -606,6 +663,16 @@ class TestGeomMethods:
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
 
+    def test_buffer_crs_warn(self):
+        with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
+            self.g4.buffer(1)
+
+        with pytest.warns(None) as record:
+            # do not warn for 0
+            self.g4.buffer(0)
+
+        assert len(record) == 0
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))
@@ -653,27 +720,64 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("index_name", [None, "test"])
+    def test_explode_geodataframe_level_1(self, index_name):
+        # GH1393
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
+        df.index.name = index_name
+
+        test_df = df.explode()
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
+        expected_index = MultiIndex(
+            [[0, 1], [0, 1]],  # levels
+            [[0, 0, 1], [0, 1, 0]],  # labels/codes
+            names=[index_name, None],
+        )
+        expected_df = expected_df.set_index(expected_index)
+        if not compat.PANDAS_GE_024:
+            expected_df = expected_df[["level_1", "geometry"]]
+        assert_frame_equal(test_df, expected_df)
+
     #
     # Test '&', '|', '^', and '-'
-    # The left can only be a GeoSeries. The right hand side can be a
-    # GeoSeries, GeoDataFrame or Shapely geometry
     #
     def test_intersection_operator(self):
-        self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
-        self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
-        self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        self._test_binary_operator("__sub__", expected, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
+        with pytest.warns(DeprecationWarning):
+            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)

@@ -42,6 +42,24 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
         return Series(data=data, index=index, **kwargs)
 
 
+def inherit_doc(cls):
+    """
+    A decorator adding a docstring from an existing method.
+    """
+
+    def decorator(decorated):
+        original_method = getattr(cls, decorated.__name__, None)
+        if original_method:
+            doc = original_method.__doc__ or ""
+        else:
+            doc = ""
+
+        decorated.__doc__ = doc
+        return decorated
+
+    return decorator
+
+
 class GeoSeries(GeoPandasBase, Series):
     """
     A Series object designed to store shapely geometry objects.
@@ -93,13 +111,14 @@ class GeoSeries(GeoPandasBase, Series):
                 if not data.crs == crs:
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS "
-                        "or 'GeoSeries.to_crs()' to reproject geometries. "
+                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "allow_override=True)' to overwrite CRS or "
+                        "'GeoSeries.to_crs(crs)' to reproject geometries. "
                         "CRS mismatch will raise an error in the future versions "
                         "of GeoPandas.",
                         FutureWarning,
                         stacklevel=2,
-                    )  # TODO: change 'GeoSeries.crs = crs' to 'set_crs()' once done
+                    )
                     # TODO: raise error in 0.9 or 0.10.
 
         if isinstance(data, SingleBlockManager):
@@ -283,14 +302,25 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method("__getitem__", key)
 
+    @inherit_doc(pd.Series)
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
+    @inherit_doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
+    @inherit_doc(pd.Series)
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
+
+    @inherit_doc(pd.Series)
+    def apply(self, func, args=(), **kwargs):
+        result = super().apply(func, args=args, **kwargs)
+        if isinstance(result, GeoSeries):
+            if self.crs is not None:
+                result.set_crs(self.crs, inplace=True)
+        return result
 
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """
@@ -417,6 +447,54 @@ class GeoSeries(GeoPandasBase, Series):
     # Additional methods
     #
 
+    def set_crs(self, crs=None, epsg=None, inplace=False, allow_override=False):
+        """
+        Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
+
+        NOTE: The underlying geometries are not transformed to this CRS. To
+        transform the geometries to a new CRS, use the ``to_crs`` method.
+
+        Parameters
+        ----------
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying the projection.
+        inplace : bool, default False
+            If True, the CRS of the GeoSeries will be changed in place
+            (while still returning the result) instead of making a copy of
+            the GeoSeries.
+        allow_override : bool, default False
+            If the the GeoSeries already has a CRS, allow to replace the
+            existing CRS, even when both are not equal.
+
+        Returns
+        -------
+        GeoSeries
+        """
+        if crs is not None:
+            crs = CRS.from_user_input(crs)
+        elif epsg is not None:
+            crs = CRS.from_epsg(epsg)
+        else:
+            raise ValueError("Must pass either crs or epsg.")
+
+        if not allow_override and self.crs is not None and not self.crs == crs:
+            raise ValueError(
+                "The GeoSeries already has a CRS which is not equal to the passed "
+                "CRS. Specify 'allow_override=True' to allow replacing the existing "
+                "CRS without doing any transformation. If you actually want to "
+                "transform the geometries, use 'GeoSeries.to_crs' instead."
+            )
+        if not inplace:
+            result = self.copy()
+        else:
+            result = self
+        result.crs = crs
+        return result
+
     def to_crs(self, crs=None, epsg=None):
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
@@ -483,16 +561,37 @@ class GeoSeries(GeoPandasBase, Series):
 
     def __xor__(self, other):
         """Implement ^ operator as for builtin set type"""
+        warnings.warn(
+            "'^' operator will be deprecated. Use the 'symmetric_difference' "
+            "method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.symmetric_difference(other)
 
     def __or__(self, other):
         """Implement | operator as for builtin set type"""
+        warnings.warn(
+            "'|' operator will be deprecated. Use the 'union' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.union(other)
 
     def __and__(self, other):
         """Implement & operator as for builtin set type"""
+        warnings.warn(
+            "'&' operator will be deprecated. Use the 'intersection' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.intersection(other)
 
     def __sub__(self, other):
         """Implement - operator as for builtin set type"""
+        warnings.warn(
+            "'-' operator will be deprecated. Use the 'difference' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.difference(other)

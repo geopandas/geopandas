@@ -1,6 +1,8 @@
 from collections.abc import Iterable
 import numbers
 import operator
+import warnings
+import inspect
 
 import numpy as np
 import pandas as pd
@@ -54,7 +56,7 @@ if compat.PANDAS_GE_024:
 
 def _isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -63,8 +65,54 @@ def _isna(value):
         return True
     elif isinstance(value, float) and np.isnan(value):
         return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
+        return True
     else:
         return False
+
+
+def _check_crs(left, right, allow_none=False):
+    """
+    Check if the projection of both arrays is the same.
+
+    If allow_none is True, empty CRS is treated as the same.
+    """
+    if allow_none:
+        if not left.crs or not right.crs:
+            return True
+    if not left.crs == right.crs:
+        return False
+    return True
+
+
+def _crs_mismatch_warn(left, right, stacklevel=3):
+    """
+    Raise a CRS mismatch warning with the information on the assigned CRS.
+    """
+    if left.crs:
+        left_srs = left.crs.to_string()
+        left_srs = left_srs if len(left_srs) <= 50 else " ".join([left_srs[:50], "..."])
+    else:
+        left_srs = None
+
+    if right.crs:
+        right_srs = right.crs.to_string()
+        right_srs = (
+            right_srs if len(right_srs) <= 50 else " ".join([right_srs[:50], "..."])
+        )
+    else:
+        right_srs = None
+
+    warnings.warn(
+        "CRS mismatch between the CRS of left geometries "
+        "and the CRS of right geometries.\n"
+        "Use `to_crs()` to reproject one of "
+        "the input geometries to match the CRS of the other.\n\n"
+        "Left CRS: {0}\n"
+        "Right CRS: {1}\n".format(left_srs, right_srs),
+        UserWarning,
+        stacklevel=stacklevel,
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -144,13 +192,13 @@ def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms):
+def to_wkb(geoms, hex=False):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms.data)
+    return vectorized.to_wkb(geoms.data, hex=hex)
 
 
 def from_wkt(data, crs=None):
@@ -215,6 +263,8 @@ class GeometryArray(ExtensionArray):
 
     def __init__(self, data, crs=None):
         if isinstance(data, self.__class__):
+            if not crs:
+                crs = data.crs
             data = data.data
         elif not isinstance(data, np.ndarray):
             raise TypeError(
@@ -248,6 +298,19 @@ class GeometryArray(ExtensionArray):
     def crs(self, value):
         """Sets the value of the crs"""
         self._crs = None if not value else CRS.from_user_input(value)
+
+    def check_geographic_crs(self, stacklevel):
+        """Check CRS and warn if the planar operation is done in a geographic CRS"""
+        if self.crs and self.crs.is_geographic:
+            warnings.warn(
+                "Geometry is in a geographic CRS. Results from '{}' are likely "
+                "incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                "projected CRS before this operation.\n".format(
+                    inspect.stack()[1].function
+                ),
+                UserWarning,
+                stacklevel=stacklevel,
+            )
 
     @property
     def dtype(self):
@@ -355,10 +418,12 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
+        self.check_geographic_crs(stacklevel=5)
         return vectorized.area(self.data)
 
     @property
     def length(self):
+        self.check_geographic_crs(stacklevel=5)
         return vectorized.length(self.data)
 
     #
@@ -371,6 +436,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def centroid(self):
+        self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self.data), crs=self.crs)
 
     @property
@@ -405,12 +471,17 @@ class GeometryArray(ExtensionArray):
                     len(left), len(right)
                 )
                 raise ValueError(msg)
+            if not _check_crs(left, right):
+                _crs_mismatch_warn(left, right, stacklevel=7)
             right = right.data
 
         return getattr(vectorized, op)(left.data, right, **kwargs)
 
     def covers(self, other):
         return self._binary_method("covers", self, other)
+
+    def covered_by(self, other):
+        return self._binary_method("covered_by", self, other)
 
     def contains(self, other):
         return self._binary_method("contains", self, other)
@@ -421,7 +492,7 @@ class GeometryArray(ExtensionArray):
     def disjoint(self, other):
         return self._binary_method("disjoint", self, other)
 
-    def equals(self, other):
+    def geom_equals(self, other):
         return self._binary_method("equals", self, other)
 
     def intersects(self, other):
@@ -436,12 +507,30 @@ class GeometryArray(ExtensionArray):
     def within(self, other):
         return self._binary_method("within", self, other)
 
+    def geom_equals_exact(self, other, tolerance):
+        return self._binary_method("equals_exact", self, other, tolerance=tolerance)
+
+    def geom_almost_equals(self, other, decimal):
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
+        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
+
     def equals_exact(self, other, tolerance):
+        warnings.warn(
+            "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
+            "GeometryArray.equals_exact() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
     def almost_equals(self, other, decimal):
-        return self.equals_exact(other, 0.5 * 10 ** (-decimal))
-        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
+        warnings.warn(
+            "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
+            "GeometryArray.almost_equals() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
 
     #
     # Binary operations that return new geometries
@@ -470,15 +559,19 @@ class GeometryArray(ExtensionArray):
     #
 
     def distance(self, other):
+        self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
 
     def buffer(self, distance, resolution=16, **kwargs):
+        if not (isinstance(distance, (int, float)) and distance == 0):
+            self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.buffer(self.data, distance, resolution=resolution, **kwargs),
             crs=self.crs,
         )
 
     def interpolate(self, distance, normalized=False):
+        self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
             crs=self.crs,
@@ -712,7 +805,13 @@ class GeometryArray(ExtensionArray):
         elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
             dtype
         ):
-            return to_wkt(self).astype(dtype, copy=False)
+            string_values = to_wkt(self)
+            if compat.PANDAS_GE_10:
+                pd_dtype = pd.api.types.pandas_dtype(dtype)
+                if isinstance(pd_dtype, pd.StringDtype):
+                    # ensure to return a pandas string array instead of numpy array
+                    return pd.array(string_values, dtype="string")
+            return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)
 
@@ -765,6 +864,9 @@ class GeometryArray(ExtensionArray):
         -------
         ExtensionArray
         """
+        # GH 1413
+        if isinstance(scalars, BaseGeometry):
+            scalars = [scalars]
         return from_shapely(scalars)
 
     def _values_for_factorize(self):
@@ -928,7 +1030,7 @@ class GeometryArray(ExtensionArray):
         # a TypeError should be raised
         res = [op(a, b) for (a, b) in zip(lvalues, rvalues)]
 
-        res = np.asarray(res)
+        res = np.asarray(res, dtype=bool)
         return res
 
     def __eq__(self, other):
