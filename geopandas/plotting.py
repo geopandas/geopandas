@@ -517,6 +517,15 @@ def plot_dataframe(
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() or
         matplotlib.pyplot.colorbar().
+        Additional accepted keywords when `scheme` is specified:
+
+        fmt : string
+            A formatting specification for the bin edges of the classes in the
+            legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
+        labels : list-like
+            A list of legend labels to override the auto-generated labels.
+            Needs to have the same number of elements as the number of
+            classes (`k`).
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
