@@ -1,6 +1,99 @@
 Changelog
 =========
 
+Version 0.8.0 (June 24, 2020)
+-----------------------------
+
+**Experimental**: optional use of PyGEOS to speed up spatial operations (#1155).
+PyGEOS is a faster alternative for Shapely (being contributed back to a future
+version of Shapely), and is used in element-wise spatial operations and for
+spatial index in e.g. `sjoin` (#1343, #1401, #1421, #1427, #1428). See the
+[installation docs](https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency)
+for more info and how to enable it.
+
+New features and improvements:
+
+- IO enhancements:
+  - New `GeoDataFrame.to_postgis()` method to write to PostGIS database (#1248).
+  - New Apache Parquet and Feather file format support (#1180, #1435)
+  - Allow appending to files with `GeoDataFrame.to_file` (#1229).
+  - Add support for the `ignore_geometry` keyword in `read_file` to only read
+    the attribute data. If set to True, a pandas DataFrame without geometry is
+    returned (#1383).
+  - `geopandas.read_file` now supports reading from file-like objects (#1329).
+  - `GeoDataFrame.to_file` now supports specifying the CRS to write to the file
+  (#802). By default it still uses the CRS of the GeoDataFrame.
+  - New `chunksize` keyword in `geopandas.read_postgis` to read a query in
+    chunks (#1123).
+- Improvements related to geometry columns and CRS:
+  - Any column of the GeoDataFrame that has a "geometry" dtype is now returned
+    as a GeoSeries. This means that when having multiple geometry columns, not
+    only the "active" geometry column is returned as a GeoSeries, but also
+    accessing another geometry column (`gdf["other_geom_column"]`) gives a
+    GeoSeries (#1336).
+  - Multiple geometry columns in a GeoDataFrame can now each have a different
+    CRS. The global `gdf.crs` attribute continues to returns the CRS of the
+    "active" geometry column. The CRS of other geometry columns can be accessed
+    from the column itself (eg `gdf["other_geom_column"].crs`) (#1339).
+  - New `set_crs()` method on GeoDataFrame/GeoSeries to set the CRS of naive
+    geometries (#747).
+- Improvements related to plotting:
+  - The y-axis is now scaled depending on the center of the plot when using a
+    geographic CRS, instead of using an equal aspect ratio (#1290).
+  - When passing a column of categorical dtype to the `column=` keyword of the
+    GeoDataFrame `plot()`, we now honor all categories and its order (#1483).
+    In addition, a new `categories` keyword allows to specify all categories
+    and their order otherwise (#1173).
+  - For choropleths using a classification scheme (using `scheme=`), the
+    `legend_kwds` accept two new keywords to control the formatting of the
+    legend: `fmt` with a format string for the bin edges (#1253), and `labels`
+    to pass fully custom class labels (#1302).
+- New `covers()` and `covered_by()` methods on GeoSeries/GeoDataframe for the
+  equivalent spatial predicates (#1460, #1462).
+- GeoPandas now warns when using distance-based methods with data in a
+  geographic projection (#1378).
+
+Deprecations:
+
+- When constructing a GeoSeries or GeoDataFrame from data that already has a
+  CRS, a deprecation warning is raised when both CRS don't match, and in the
+  future an error will be raised in such a case. You can use the new `set_crs`
+  method to override an existing CRS. See
+  [the docs](https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns).  
+- The helper functions in the `geopandas.plotting` module are deprecated for
+  public usage (#656).
+- The `geopandas.io` functions are deprecated, use the top-level `read_file` and
+  `to_file` instead (#1407).
+- The set operators (`&`, `|`, `^`, `-`) are deprecated, use the
+  `intersection()`, `union()`, `symmetric_difference()`, `difference()` methods
+  instead (#1255).
+- The `sindex` for empty dataframe will in the future return an empty spatial
+  index instead of `None` (#1438).
+- The `objects` keyword in the `intersection` method of the spatial index
+  returned by the `sindex` attribute is deprecated and will be removed in the
+  future (#1440).
+
+Bug fixes:
+
+- Fix the `total_bounds()` method to ignore missing and empty geometries (#1312).
+- Fix `geopandas.clip` when masking with non-overlapping area resulting in an
+  empty GeoDataFrame (#1309, #1365).
+- Fix error in `geopandas.sjoin` when joining on an empty geometry column (#1318).
+- CRS related fixes: `pandas.concat` preserves CRS when concatenating GeoSeries
+  objects (#1340), preserve the CRS in `geopandas.clip` (#1362) and in
+  `GeoDataFrame.astype` (#1366).
+- Fix bug in `GeoDataFrame.explode()` when 'level_1' is one of the column names
+  (#1445).
+- Better error message when rtree is not installed (#1425).
+- Fix bug in `GeoSeries.equals()` (#1451).
+- Fix plotting of multi-part geometries with additional style keywords (#1385).
+
+And we now have a [Code of Conduct](https://github.com/geopandas/geopandas/blob/master/CODE_OF_CONDUCT.md)!
+
+GeoPandas 0.8.0 is the last release to support Python 3.5. The next release
+will require Python 3.6, pandas 0.24, numpy 1.15 and shapely 1.6 or higher.
+
+
 Version 0.7.0 (February 16, 2020)
 ---------------------------------
 

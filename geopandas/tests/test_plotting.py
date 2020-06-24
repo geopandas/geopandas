@@ -2,6 +2,7 @@ import itertools
 import warnings
 
 import numpy as np
+import pandas as pd
 
 from shapely.affinity import rotate
 from shapely.geometry import (
@@ -261,6 +262,48 @@ class TestPointPlotting:
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
         with pytest.raises(TypeError):  # no list allowed for alpha
             ax = self.df2.plot(alpha=[0.7, 0.2])
+
+    def test_categories(self):
+        self.df["cats_object"] = ["cat1", "cat2"] * 5
+        self.df["nums"] = [1, 2] * 5
+        self.df["singlecat_object"] = ["cat2"] * 10
+        self.df["cats"] = pd.Categorical(["cat1", "cat2"] * 5)
+        self.df["singlecat"] = pd.Categorical(
+            ["cat2"] * 10, categories=["cat1", "cat2"]
+        )
+        self.df["cats_ordered"] = pd.Categorical(
+            ["cat2", "cat1"] * 5, categories=["cat2", "cat1"]
+        )
+
+        ax1 = self.df.plot("cats_object", legend=True)
+        ax2 = self.df.plot("cats", legend=True)
+        ax3 = self.df.plot("singlecat_object", categories=["cat1", "cat2"], legend=True)
+        ax4 = self.df.plot("singlecat", legend=True)
+        ax5 = self.df.plot("cats_ordered", legend=True)
+        ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
+
+        point_colors1 = ax1.collections[0].get_facecolors()
+        for ax in [ax2, ax3, ax4, ax5, ax6]:
+            point_colors2 = ax.collections[0].get_facecolors()
+            np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+
+        legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
+        for ax in [ax2, ax3, ax4, ax5, ax6]:
+            legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
+            np.testing.assert_array_equal(legend1, legend2)
+
+        with pytest.raises(TypeError):
+            self.df.plot(column="cats_object", categories="non_list")
+
+        with pytest.raises(
+            ValueError, match="Column contains values not listed in categories."
+        ):
+            self.df.plot(column="cats_object", categories=["cat1"])
+
+        with pytest.raises(
+            ValueError, match="Cannot specify 'categories' when column has"
+        ):
+            self.df.plot(column="cats", categories=["cat1"])
 
     def test_misssing(self):
         self.df.loc[0, "values"] = np.nan
@@ -595,6 +638,19 @@ class TestPolygonPlotting:
 
         assert ax.get_figure().axes[1].get_xlabel() == label_txt
 
+    def test_fmt_ignore(self):
+        # test if fmt is removed if scheme is not passed (it would raise Error)
+        # GH #1253
+
+        self.df.plot(
+            column="values",
+            categorical=True,
+            legend=True,
+            legend_kwds={"fmt": "{:.0f}"},
+        )
+
+        self.df.plot(column="values", legend=True, legend_kwds={"fmt": "{:.0f}"})
+
     def test_multipolygons_color(self):
 
         # MultiPolygons
@@ -794,16 +850,58 @@ class TestNonuniformGeometryPlotting:
             ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
 
 
+class TestGeographicAspect:
+    def setup_class(self):
+        pth = get_path("naturalearth_lowres")
+        df = read_file(pth)
+        self.north = df.loc[df.continent == "North America"]
+        self.north_proj = self.north.to_crs("ESRI:102008")
+        bounds = self.north.total_bounds
+        y_coord = np.mean([bounds[1], bounds[3]])
+        self.exp = 1 / np.cos(y_coord * np.pi / 180)
+
+    def test_auto(self):
+        ax = self.north.geometry.plot()
+        assert ax.get_aspect() == self.exp
+        ax2 = self.north_proj.geometry.plot()
+        assert ax2.get_aspect() in ["equal", 1.0]
+        ax = self.north.plot()
+        assert ax.get_aspect() == self.exp
+        ax2 = self.north_proj.plot()
+        assert ax2.get_aspect() in ["equal", 1.0]
+        ax3 = self.north.plot("pop_est")
+        assert ax3.get_aspect() == self.exp
+        ax4 = self.north_proj.plot("pop_est")
+        assert ax4.get_aspect() in ["equal", 1.0]
+
+    def test_manual(self):
+        ax = self.north.geometry.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        ax2 = self.north.geometry.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.geometry.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        ax = self.north.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        ax2 = self.north.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        ax = self.north.plot("pop_est", aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        ax2 = self.north.plot("pop_est", aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        ax3 = self.north_proj.plot("pop_est", aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+
+
 class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
         try:
             import mapclassify  # noqa
         except ImportError:
-            try:
-                import pysal  # noqa
-            except ImportError:
-                pytest.importorskip("mapclassify")
+            pytest.importorskip("mapclassify")
         pth = get_path("naturalearth_lowres")
         cls.df = read_file(pth)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
@@ -816,18 +914,55 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"140.00 - 5217064.00",
-            u"5217064.00 - 19532732.33",
-            u"19532732.33 - 1379302771.00",
+            u"[       140.00,    5217064.00]",
+            u"(   5217064.00,   19532732.33]",
+            u"(  19532732.33, 1379302771.00]",
         ]
         assert labels == expected
+
+    def test_bin_labels(self):
+        ax = self.df.plot(
+            column="pop_est",
+            scheme="QUANTILES",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"labels": ["foo", "bar", "baz"]},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = ["foo", "bar", "baz"]
+        assert labels == expected
+
+    def test_invalid_labels_length(self):
+        with pytest.raises(ValueError):
+            self.df.plot(
+                column="pop_est",
+                scheme="QUANTILES",
+                k=3,
+                cmap="OrRd",
+                legend=True,
+                legend_kwds={"labels": ["foo", "bar"]},
+            )
 
     def test_negative_legend(self):
         ax = self.df.plot(
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10.00 - -3.41", u"-3.41 - 3.30", u"3.30 - 10.00"]
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        assert labels == expected
+
+    def test_fmt(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"fmt": "{:.0f}"},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -845,7 +980,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["140.00 - 9961396.00", "9961396.00 - 1379302771.00"]
+        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
         assert labels == expected
 
     def test_invalid_scheme(self):

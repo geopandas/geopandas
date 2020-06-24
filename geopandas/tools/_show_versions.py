@@ -94,7 +94,6 @@ def _get_deps_info():
         "pyproj",
         "matplotlib",
         "mapclassify",
-        "pysal",
         "geopy",
         "psycopg2",
         "geoalchemy2",

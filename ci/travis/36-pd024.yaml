@@ -25,5 +25,5 @@ dependencies:
     - pyproj
     - codecov
     - geopy
-    - mapclassify
+    - mapclassify>=2.2.0
     - git+https://github.com/pygeos/pygeos.git
