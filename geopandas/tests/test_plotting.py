@@ -920,6 +920,30 @@ class TestMapclassifyPlotting:
         ]
         assert labels == expected
 
+    def test_bin_labels(self):
+        ax = self.df.plot(
+            column="pop_est",
+            scheme="QUANTILES",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"labels": ["foo", "bar", "baz"]},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = ["foo", "bar", "baz"]
+        assert labels == expected
+
+    def test_invalid_labels_length(self):
+        with pytest.raises(ValueError):
+            self.df.plot(
+                column="pop_est",
+                scheme="QUANTILES",
+                k=3,
+                cmap="OrRd",
+                legend=True,
+                legend_kwds={"labels": ["foo", "bar"]},
+            )
+
     def test_negative_legend(self):
         ax = self.df.plot(
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True

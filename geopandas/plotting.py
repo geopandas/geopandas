@@ -517,6 +517,15 @@ def plot_dataframe(
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() or
         matplotlib.pyplot.colorbar().
+        Additional accepted keywords when `scheme` is specified:
+
+        fmt : string
+            A formatting specification for the bin edges of the classes in the
+            legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
+        labels : list-like
+            A list of legend labels to override the auto-generated labels.
+            Needs to have the same number of elements as the number of
+            classes (`k`).
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
@@ -665,10 +674,21 @@ def plot_dataframe(
         binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
-        fmt = "{:.2f}"
-        if legend_kwds is not None and "fmt" in legend_kwds:
-            fmt = legend_kwds.pop("fmt")
-        categories = binning.get_legend_classes(fmt)
+        if legend_kwds is not None and "labels" in legend_kwds:
+            if len(legend_kwds["labels"]) != binning.k:
+                raise ValueError(
+                    "Number of labels must match number of bins, "
+                    "received {} labels for {} bins".format(
+                        len(legend_kwds["labels"]), binning.k
+                    )
+                )
+            else:
+                categories = list(legend_kwds.pop("labels"))
+        else:
+            fmt = "{:.2f}"
+            if legend_kwds is not None and "fmt" in legend_kwds:
+                fmt = legend_kwds.pop("fmt")
+            categories = binning.get_legend_classes(fmt)
         values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
