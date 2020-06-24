@@ -194,7 +194,8 @@ More specifically, whether the speedups are used or not is determined by:
 
     The use of PyGEOS is experimental! Although it is passing all tests,
     there might still be issues and not all functions of GeoPandas will
-    already benefit from speedups. But trying this out is very welcome!
+    already benefit from speedups (one known issue: the `to_crs` coordinate
+    transformations lose the z coordinate). But trying this out is very welcome!
     Any issues you encounter (but also reports of successful usage are
     interesting!) can be reported at https://gitter.im/geopandas/geopandas
     or https://github.com/geopandas/geopandas/issues
