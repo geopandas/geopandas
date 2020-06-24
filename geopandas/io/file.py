@@ -245,9 +245,9 @@ def _to_file(
 
     if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
         warnings.warn(
-            """Column names longer than 10 characters will be truncated when saved to ESRI
-            shapefile.""",
-            stacklevel=3
+            "Column names longer than 10 characters will be truncated when saved to ESRI "
+            "Shapefile.",
+            stacklevel=3,
         )
 
     with fiona_env():
