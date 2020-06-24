@@ -10,30 +10,45 @@ used in for element-wise spatial operations and for spatial index (#1343, #1401,
 
 New features and improvements:
 
-- New `GeoDataFrame.to_postgis()` method to write to PostGIS database (#1248).
-- New Apache Parquet and Feather file format support (#1180, #1435)
-- Allow appending to files with `GeoDataFrame.to_file` (#1229).
-- Any column of the GeoDataFrame that has a "geometry" dtype is now returned as
-  a GeoSeries. This means that when having multiple geometry columns, not only
-  the "active" geometry column is returned as a GeoSeries, but also accessing
-  another geometry column (`gdf["other_geom_column"]`) gives a GeoSeries
-  (#1336).
-- Multiple geometry columns in a GeoDataFrame can now each have a different CRS.
-  The global `gdf.crs` attribute continues to returns the CRS of the "active"
-  geometry column. The CRS of other geometry columns can be accessed from the
-  column itself (eg `gdf["other_geom_column"].crs`) (#1339).
-- New `set_crs()` method on GeoDataFrame/GeoSeries to set the CRS of naive
-  geometries (#747).
+- IO enhancements:
+  - New `GeoDataFrame.to_postgis()` method to write to PostGIS database (#1248).
+  - New Apache Parquet and Feather file format support (#1180, #1435)
+  - Allow appending to files with `GeoDataFrame.to_file` (#1229).
+  - Add support for the `ignore_geometry` keyword in `read_file` to only read
+    the attribute data. If set to True, a pandas DataFrame without geometry is
+    returned (#1383).
+  - `geopandas.read_file` now supports reading from file-like objects (#1329).
+  - `GeoDataFrame.to_file` now supports specifying the CRS to write to the file
+  (#802). By default is still uses the CRS of the GeoDataFrame.
+  - New `chunksize` keyword in `geopandas.read_postgis` to read a query in
+    chunks (#1123).
+- Improvements related to geometry columns and CRS:
+  - Any column of the GeoDataFrame that has a "geometry" dtype is now returned
+    as a GeoSeries. This means that when having multiple geometry columns, not
+    only the "active" geometry column is returned as a GeoSeries, but also
+    accessing another geometry column (`gdf["other_geom_column"]`) gives a
+    GeoSeries (#1336).
+  - Multiple geometry columns in a GeoDataFrame can now each have a different
+    CRS. The global `gdf.crs` attribute continues to returns the CRS of the
+    "active" geometry column. The CRS of other geometry columns can be accessed
+    from the column itself (eg `gdf["other_geom_column"].crs`) (#1339).
+  - New `set_crs()` method on GeoDataFrame/GeoSeries to set the CRS of naive
+    geometries (#747).
+- Improvements related to plotting:
+  - The y-axis is now scaled depending on the center of the plot when using a
+    geographic CRS, instead of using an equal aspect ratio (#1290).
+  - When passing a column of categorical dtype to the `column=` keyword of the
+    GeoDataFrame `plot()`, we now honor all categories and its order (#1483).
+    In addition, a new `categories` keyword allows to specify all categories
+    and their order otherwise (#1173).
+  - For choropleths using a classification scheme (using `scheme=`), the
+    `legend_kwds` accept two new keywords to control the formatting of the
+    legend: `fmt` with a format string for the bin edges (#1253), and `labels`
+    to pass fully custom class labels (#1302).
 - New `covers()` and `covered_by()` methods on GeoSeries/GeoDataframe for the
   equivalent spatial predicates (#1460, #1462).
-- `geopandas.read_file` now supports reading from file-like objects (#1329).
-- Add support for the `ignore_geometry` keyword in `read_file` to only read the
-  attribute data. If set to True, a pandas DataFrame without geometry is
-  returned (#1383).
-- `GeoDataFrame.to_file` now supports specifying the CRS to write to the file
-  (#802). By default is still uses the CRS of the GeoDataFrame.
-- New `chunksize` keyword in `geopandas.read_postgis` to read a query in chunks
-  (#1123).
+- GeoPandas now warns when using distance-based methods with data in a
+  geographic projection (#1378).
 
 Deprecations:
 
