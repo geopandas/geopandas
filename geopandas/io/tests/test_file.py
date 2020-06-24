@@ -1,8 +1,10 @@
 from collections import OrderedDict
 import datetime
 from distutils.version import LooseVersion
+import io
 import os
 import pathlib
+import tempfile
 import sys
 
 import numpy as np
@@ -35,6 +37,11 @@ def df_nybb():
 @pytest.fixture
 def df_null():
     return read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+
+
+@pytest.fixture
+def file_path():
+    return os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
 
 
 @pytest.fixture
@@ -204,6 +211,12 @@ def test_to_file_empty(tmpdir):
         input_empty_df.to_file(tempfilename)
 
 
+def test_to_file_privacy(tmpdir, df_nybb):
+    tempfilename = os.path.join(str(tmpdir), "test.shp")
+    with pytest.warns(DeprecationWarning):
+        geopandas.io.file.to_file(df_nybb, tempfilename)
+
+
 def test_to_file_schema(tmpdir, df_nybb):
     """
     Ensure that the file is written according to the schema
@@ -228,6 +241,36 @@ def test_to_file_schema(tmpdir, df_nybb):
         result_schema = f.schema
 
     assert result_schema == schema
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
+    """ Test to_file with append mode and from_file """
+    from fiona import supported_drivers
+
+    if "a" not in supported_drivers[driver]:
+        return None
+
+    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    df_nybb.to_file(tempfilename, driver=driver)
+    df_nybb.to_file(tempfilename, mode="a", driver=driver)
+    # Read layer back in
+    df = GeoDataFrame.from_file(tempfilename)
+    assert "geometry" in df
+    assert len(df) == (5 * 2)
+    expected = pd.concat([df_nybb] * 2, ignore_index=True)
+    assert_geodataframe_equal(df, expected)
+
+    # Write layer with null geometry out to file
+    tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
+    df_null.to_file(tempfilename, driver=driver)
+    df_null.to_file(tempfilename, mode="a", driver=driver)
+    # Read layer back in
+    df = GeoDataFrame.from_file(tempfilename)
+    assert "geometry" in df
+    assert len(df) == (2 * 2)
+    expected = pd.concat([df_null] * 2, ignore_index=True)
+    assert_geodataframe_equal(df, expected)
 
 
 # -----------------------------------------------------------------------------
@@ -257,6 +300,73 @@ def test_read_file_remote_geojson_url():
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_textio(file_path):
+    file_text_stream = open(file_path)
+    file_stringio = io.StringIO(open(file_path).read())
+    gdf_text_stream = read_file(file_text_stream)
+    gdf_stringio = read_file(file_stringio)
+    assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_bytesio(file_path):
+    file_binary_stream = open(file_path, "rb")
+    file_bytesio = io.BytesIO(open(file_path, "rb").read())
+    gdf_binary_stream = read_file(file_binary_stream)
+    gdf_bytesio = read_file(file_bytesio)
+    assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_raw_stream(file_path):
+    file_raw_stream = open(file_path, "rb", buffering=0)
+    gdf_raw_stream = read_file(file_raw_stream)
+    assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_pathlib(file_path):
+    path_object = pathlib.Path(file_path)
+    gdf_path_object = read_file(path_object)
+    assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    not _FIONA18, reason="support for file-like objects in fiona.open() added in 1.8"
+)
+def test_read_file_tempfile():
+    temp = tempfile.TemporaryFile()
+    temp.write(
+        b"""
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0, 0]
+      },
+      "properties": {
+        "name": "Null Island"
+      }
+    }
+    """
+    )
+    temp.seek(0)
+    gdf_tempfile = geopandas.read_file(temp)
+    assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
+    temp.close()
 
 
 def test_read_file_filtered(df_nybb):
@@ -310,9 +420,33 @@ def test_read_file_filtered__rows_bbox__polygon(df_nybb):
     assert filtered_df_shape == (1, 5)
 
 
-def read_file_filtered_rows_invalid():
+def test_read_file_filtered_rows_invalid():
     with pytest.raises(TypeError):
         read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
+
+
+@pytest.mark.skipif(
+    LooseVersion(fiona.__version__) < LooseVersion("1.8"),
+    reason="Ignore geometry only available in Fiona 1.8",
+)
+def test_read_file__ignore_geometry():
+    pdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True,
+    )
+    assert "geometry" not in pdf.columns
+    assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(
+    LooseVersion(fiona.__version__) < LooseVersion("1.8"),
+    reason="Ignore fields only available in Fiona 1.8",
+)
+def test_read_file__ignore_all_fields():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
+    )
+    assert gdf.columns.tolist() == ["geometry"]
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
@@ -421,6 +555,11 @@ def test_read_file_empty_shapefile(tmpdir):
     empty = read_file(fname)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ["A", "Z", "geometry"])
+
+
+def test_read_file_privacy(tmpdir, df_nybb):
+    with pytest.warns(DeprecationWarning):
+        geopandas.io.file.read_file(geopandas.datasets.get_path("nybb"))
 
 
 class FileNumber(object):

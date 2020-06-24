@@ -1,13 +1,20 @@
+from distutils.version import LooseVersion
+
 import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
-from geopandas import GeoDataFrame, GeoSeries, base, read_file, sjoin
+from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, sjoin
 
 from pandas.testing import assert_frame_equal
 import pytest
+
+
+pytestmark = pytest.mark.skipif(
+    not sindex.has_sindex(), reason="sjoin requires spatial index"
+)
 
 
 @pytest.fixture()
@@ -83,13 +90,12 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
         df1.crs = "epsg:4326"
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
             sjoin(df1, df2)
 
     @pytest.mark.parametrize(
@@ -186,7 +192,7 @@ class TestSpatialJoin:
         assert_frame_equal(res, exp)
 
     def test_empty_join(self):
-        # Check empty joins
+        # Check joins resulting in empty gdfs.
         polygons = geopandas.GeoDataFrame(
             {
                 "col2": [1, 2],
@@ -203,6 +209,32 @@ class TestSpatialJoin:
         assert empty.index_left.isnull().all()
         empty = sjoin(not_in, polygons, how="inner", op="intersects")
         assert empty.empty
+
+    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize(
+        "empty",
+        [
+            GeoDataFrame(geometry=[GeometryCollection(), GeometryCollection()]),
+            GeoDataFrame(geometry=GeoSeries()),
+        ],
+    )
+    def test_join_with_empty(self, op, empty):
+        # Check joins with empty geometry columns/dataframes.
+        polygons = geopandas.GeoDataFrame(
+            {
+                "col2": [1, 2],
+                "geometry": [
+                    Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                    Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+                ],
+            }
+        )
+        result = sjoin(empty, polygons, how="left", op=op)
+        assert result.index_right.isnull().all()
+        result = sjoin(empty, polygons, how="right", op=op)
+        assert result.index_left.isnull().all()
+        result = sjoin(empty, polygons, how="inner", op=op)
+        assert result.empty
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_sjoin_invalid_args(self, dfs):
@@ -262,10 +294,13 @@ class TestSpatialJoin:
             )
             exp.index.names = df2.index.names
 
+        # GH 1364 fix of behaviour was done in pandas 1.1.0
+        if op == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
+            exp = exp.sort_index()
+
         assert_frame_equal(res, exp, check_index_type=False)
 
 
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
 class TestSpatialJoinNYBB:
     def setup_method(self):
         nybb_filename = geopandas.datasets.get_path("nybb")
@@ -383,7 +418,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_inner = GeoDataFrame(expected_inner_df, crs="epsg:4326")
+        expected_inner = GeoDataFrame(expected_inner_df)
 
         expected_right_df = pd.concat(
             [
@@ -400,9 +435,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_right = GeoDataFrame(expected_right_df, crs="epsg:4326").set_index(
-            "index_right"
-        )
+        expected_right = GeoDataFrame(expected_right_df).set_index("index_right")
 
         expected_left_df = pd.concat(
             [
@@ -413,7 +446,7 @@ class TestSpatialJoinNYBB:
             axis=1,
         )
 
-        expected_left = GeoDataFrame(expected_left_df, crs="epsg:4326")
+        expected_left = GeoDataFrame(expected_left_df)
 
         assert expected_inner.equals(df_inner)
         assert expected_right.equals(df_right)
@@ -432,8 +465,16 @@ class TestSpatialJoinNYBB:
         df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
         assert df2.shape == (21, 8)
 
+    @pytest.mark.parametrize("op", ["intersects", "within", "contains"])
+    def test_sjoin_no_valid_geoms(self, op):
+        """Tests a completely empty GeoDataFrame."""
+        empty = GeoDataFrame(geometry=[], crs=self.pointdf.crs)
+        assert sjoin(self.pointdf, empty, how="inner", op=op).empty
+        assert sjoin(self.pointdf, empty, how="right", op=op).empty
+        assert sjoin(empty, self.pointdf, how="inner", op=op).empty
+        assert sjoin(empty, self.pointdf, how="left", op=op).empty
 
-@pytest.mark.skipif(not base.HAS_SINDEX, reason="Rtree absent, skipping")
+
 class TestSpatialJoinNaturalEarth:
     def setup_method(self):
         world_path = geopandas.datasets.get_path("naturalearth_lowres")

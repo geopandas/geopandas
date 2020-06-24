@@ -1,11 +1,9 @@
-from warnings import warn
+import warnings
 
-import numpy as np
 import pandas as pd
 
-from shapely import prepared
-
 from geopandas import GeoDataFrame
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def sjoin(
@@ -23,7 +21,7 @@ def sjoin(
         * 'right': use keys from right_df; retain only right_df geometry column
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
-    op : string, default 'intersection'
+    op : string, default 'intersects'
         Binary predicate, one of {'intersects', 'contains', 'within'}.
         See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
     lsuffix : string, default 'left'
@@ -54,13 +52,8 @@ def sjoin(
             '`op` was "%s" but is expected to be in %s' % (op, allowed_ops)
         )
 
-    if left_df.crs != right_df.crs:
-        warn(
-            (
-                "CRS of frames being joined does not match!"
-                "(%s != %s)" % (left_df.crs, right_df.crs)
-            )
-        )
+    if not _check_crs(left_df, right_df):
+        _crs_mismatch_warn(left_df, right_df, stacklevel=3)
 
     index_left = "index_%s" % lsuffix
     index_right = "index_%s" % rsuffix
@@ -74,18 +67,41 @@ def sjoin(
             " joined".format(index_left, index_right)
         )
 
-    # Attempt to re-use spatial indexes, otherwise generate the spatial index
-    # for the longer dataframe
-    if right_df._sindex_generated or (
-        not left_df._sindex_generated and right_df.shape[0] > left_df.shape[0]
-    ):
-        tree_idx = right_df.sindex
-        tree_idx_right = True
-    else:
-        tree_idx = left_df.sindex
-        tree_idx_right = False
+    # query index
+    with warnings.catch_warnings():
+        # We don't need to show our own warning here
+        # TODO remove this once the deprecation has been enforced
+        warnings.filterwarnings(
+            "ignore", "Generated spatial index is empty", FutureWarning
+        )
+        if op == "within":
+            # within is implemented as the inverse of contains
+            # contains is a faster predicate
+            # see discussion at https://github.com/geopandas/geopandas/pull/1421
+            predicate = "contains"
+            sindex = left_df.sindex
+            input_geoms = right_df.geometry
+        else:
+            # all other predicates are symmetric
+            # keep them the same
+            predicate = op
+            sindex = right_df.sindex
+            input_geoms = left_df.geometry
 
-    # the rtree spatial index only allows limited (numeric) index types, but an
+    if sindex:
+        l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
+        result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+    else:
+        # when sindex is empty / has no valid geometries
+        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+    if op == "within":
+        # within is implemented as the inverse of contains
+        # flip back the results
+        result = result.rename(
+            columns={"_key_left": "_key_right", "_key_right": "_key_left"}
+        )
+
+    # the spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
@@ -95,7 +111,8 @@ def sjoin(
         left_df.index = left_df.index.rename(index_left)
     except TypeError:
         index_left = [
-            "index_%s" % lsuffix + str(l) for l, ix in enumerate(left_df.index.names)
+            "index_%s" % lsuffix + str(pos)
+            for pos, ix in enumerate(left_df.index.names)
         ]
         left_index_name = left_df.index.names
         left_df.index = left_df.index.rename(index_left)
@@ -107,85 +124,14 @@ def sjoin(
         right_df.index = right_df.index.rename(index_right)
     except TypeError:
         index_right = [
-            "index_%s" % rsuffix + str(l) for l, ix in enumerate(right_df.index.names)
+            "index_%s" % rsuffix + str(pos)
+            for pos, ix in enumerate(right_df.index.names)
         ]
         right_index_name = right_df.index.names
         right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
-    if op == "within":
-        # within implemented as the inverse of contains; swap names
-        left_df, right_df = right_df, left_df
-        tree_idx_right = not tree_idx_right
-
-    r_idx = np.empty((0, 0))
-    l_idx = np.empty((0, 0))
-    # get rtree spatial index
-    if tree_idx_right:
-        idxmatch = left_df.geometry.apply(lambda x: x.bounds).apply(
-            lambda x: list(tree_idx.intersection(x)) if not x == () else []
-        )
-        idxmatch = idxmatch[idxmatch.apply(len) > 0]
-        # indexes of overlapping boundaries
-        if idxmatch.shape[0] > 0:
-            r_idx = np.concatenate(idxmatch.values)
-            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-    else:
-        # tree_idx_df == 'left'
-        idxmatch = right_df.geometry.apply(lambda x: x.bounds).apply(
-            lambda x: list(tree_idx.intersection(x)) if not x == () else []
-        )
-        idxmatch = idxmatch[idxmatch.apply(len) > 0]
-        if idxmatch.shape[0] > 0:
-            # indexes of overlapping boundaries
-            l_idx = np.concatenate(idxmatch.values)
-            r_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
-
-    if len(r_idx) > 0 and len(l_idx) > 0:
-        # Vectorize predicate operations
-        def find_intersects(a1, a2):
-            return a1.intersects(a2)
-
-        def find_contains(a1, a2):
-            return a1.contains(a2)
-
-        predicate_d = {
-            "intersects": find_intersects,
-            "contains": find_contains,
-            "within": find_contains,
-        }
-
-        check_predicates = np.vectorize(predicate_d[op])
-
-        result = pd.DataFrame(
-            np.column_stack(
-                [
-                    l_idx,
-                    r_idx,
-                    check_predicates(
-                        left_df.geometry.apply(lambda x: prepared.prep(x))[l_idx],
-                        right_df[right_df.geometry.name][r_idx],
-                    ),
-                ]
-            )
-        )
-
-        result.columns = ["_key_left", "_key_right", "match_bool"]
-        result = pd.DataFrame(result[result["match_bool"] == 1]).drop(
-            "match_bool", axis=1
-        )
-
-    else:
-        # when output from the join has no overlapping geometries
-        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-
-    if op == "within":
-        # within implemented as the inverse of contains; swap names
-        left_df, right_df = right_df, left_df
-        result = result.rename(
-            columns={"_key_left": "_key_right", "_key_right": "_key_left"}
-        )
-
+    # perform join on the dataframes
     if how == "inner":
         result = result.set_index("_key_left")
         joined = (

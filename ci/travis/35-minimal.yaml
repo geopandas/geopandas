@@ -19,10 +19,10 @@ dependencies:
   - matplotlib
   - descartes
   - matplotlib=2.0
-  - mapclassify
+  - mapclassify>=2.2.0
   - geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
+  - pyarrow
   - pip:
     - pyproj==2.2.2

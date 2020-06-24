@@ -4,20 +4,28 @@ sudo: false
 
 matrix:
   include:
-    # Only one test for these Python versions
+    # One build with minimum versions of dependencies
     - env: ENV_FILE="ci/travis/35-minimal.yaml"
 
+    # one build with no optional dependencies
+    - env: ENV_FILE="ci/travis/38-no-optional-deps.yaml"
+
     # Python 3.6 test all supported Pandas versions
-    - env: ENV_FILE="ci/travis/36-pd023.yaml"
-    - env: ENV_FILE="ci/travis/36-pd024.yaml"
+    - env: ENV_FILE="ci/travis/36-pd023.yaml" PYGEOS=true
+    - env: ENV_FILE="ci/travis/36-pd024.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true
-    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml"
+    - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
+    - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true
 
-    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml"
+    - env: ENV_FILE="ci/travis/38-latest-conda-forge.yaml" PYGEOS=true POSTGIS=true PGUSER=postgres PGPASSWORD=postgres
 
-    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
 
+  allow_failures:
+    - env: ENV_FILE="ci/travis/37-dev.yaml" DEV=true PYGEOS=true
+
+before_install:
+  - chmod +x ci/travis/setup_postgres.sh
 
 install:
   # Install conda
@@ -39,12 +47,21 @@ install:
   - if [ "$DEV" ]; then pip install git+https://github.com/matplotlib/matplotlib.git; fi
   - if [ "$DEV" ]; then pip install git+https://github.com/Toblerity/Shapely.git; fi
   - if [ "$STYLE" ]; then pip install black flake8; fi
+  - if [ "$POSTGIS" ]; then conda install postgis -c conda-forge; fi
   - pip install -e .
+
+  # List environment
   - conda list
   - python -c "import geopandas; geopandas.show_versions();"
 
+  # Set-up database
+  - if [ "$POSTGIS" ]; then ci/travis/setup_postgres.sh; fi
+
 script:
-  - py.test geopandas --cov geopandas -v --cov-report term-missing
+  - echo "Testing without PyGEOS"
+  - USE_PYGEOS=0 pytest geopandas -v -r s --cov geopandas --cov-report term-missing
+  - if [ "$PYGEOS" ]; then echo "Testing with PyGEOS"; fi
+  - if [ "$PYGEOS" ]; then USE_PYGEOS=1 pytest geopandas -v -r s --cov-append --cov geopandas --cov-report term-missing; fi
   - if [ "$STYLE" ]; then black --check geopandas; fi
   - if [ "$STYLE" ]; then flake8 geopandas; fi
 

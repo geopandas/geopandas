@@ -1,0 +1,33 @@
+name: geopandas-dev
+channels:
+    - conda-forge
+dependencies:
+    # required
+    - fiona>=1.7
+    - pandas>=0.23.4
+    - pyproj>=2.2.0
+    - shapely>=1.5
+
+    # geodatabase access
+    - psycopg2>=2.5.1
+    - SQLAlchemy>=0.8.3
+
+    # geocoding
+    - geopy
+
+    # plotting
+    - descartes>=1.0
+    - matplotlib>=2.0
+
+    # testing
+    - mock>=1.0.1   # technically not need for python >= 3.3
+    - pytest>=3.1.0
+    - pytest-cov
+    - codecov
+
+    # spatial access methods
+    - rtree>=0.8
+
+    # styling
+    - black
+    - pre-commit

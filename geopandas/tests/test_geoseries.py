@@ -98,12 +98,39 @@ class TestSeries:
         exp2 = pd.Series([np.nan, 1, 2], index=["A", "B", "C"])
         assert_series_equal(res2, exp2)
 
+    def test_warning_if_not_aligned(self):
+        # GH-816
+        # Test that warning is issued when operating on non-aligned series
+
+        # _series_op
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self.a1.contains(self.a2)
+
+        # _geo_op
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self.a1.union(self.a2)
+
+    def test_no_warning_if_aligned(self):
+        # GH-816
+        # Test that warning is not issued when operating on aligned series
+        a1, a2 = self.a1.align(self.a2)
+
+        with pytest.warns(None) as warnings:
+            a1.contains(a2)  # _series_op, explicitly aligned
+            self.g1.intersects(self.g2)  # _series_op, implicitly aligned
+            a2.union(a1)  # _geo_op, explicitly aligned
+            self.g2.intersection(self.g1)  # _geo_op, implicitly aligned
+
+        user_warnings = [w for w in warnings if w.category is UserWarning]
+        assert not user_warnings, user_warnings[0].message
+
     def test_geom_equals(self):
         assert np.all(self.g1.geom_equals(self.g1))
         assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
     def test_geom_equals_align(self):
-        a = self.a1.geom_equals(self.a2)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            a = self.a1.geom_equals(self.a2)
         exp = pd.Series([False, True, False], index=["A", "B", "C"])
         assert_series_equal(a, exp)
 
@@ -286,6 +313,7 @@ class TestConstructor:
         for g in geoms:
             gs = GeoSeries(g)
             assert len(gs) == 1
+            # accessing elements no longer give identical objects
             assert gs.iloc[0].equals(g)
 
             gs = GeoSeries(g, index=index)
