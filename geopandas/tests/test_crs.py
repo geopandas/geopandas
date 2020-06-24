@@ -561,10 +561,6 @@ class TestGeometryArrayCRS:
         result = s.apply(lambda x: x.centroid)
         assert result.crs == 27700
 
-        # ability to override the original CRS
-        result = s.apply(lambda x: x.centroid, crs=4326)
-        assert result.crs == 4326
-
 
 class TestSetCRS:
     @pytest.mark.parametrize(
