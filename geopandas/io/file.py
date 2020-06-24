@@ -245,8 +245,8 @@ def _to_file(
 
     if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
         warnings.warn(
-            "Column names longer than 10 characters will be truncated when saved to ESRI "
-            "Shapefile.",
+            "Column names longer than 10 characters will be truncated when saved to "
+            "ESRI Shapefile.",
             stacklevel=3,
         )
 
