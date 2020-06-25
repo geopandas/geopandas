@@ -902,6 +902,8 @@ class TestMapclassifyPlotting:
             import mapclassify  # noqa
         except ImportError:
             pytest.importorskip("mapclassify")
+        cls.classifiers = list(mapclassify.classifiers.CLASSIFIERS)
+        cls.classifiers.remove("UserDefined")
         pth = get_path("naturalearth_lowres")
         cls.df = read_file(pth)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
@@ -969,6 +971,11 @@ class TestMapclassifyPlotting:
     def test_scheme_name_compat(self, scheme):
         ax = self.df.plot(column="NEGATIVES", scheme=scheme, k=3, legend=True)
         assert len(ax.get_legend().get_texts()) == 3
+
+    def test_schemes(self):
+        # test if all available classifiers pass
+        for scheme in self.classifiers:
+            self.df.plot(column="pop_est", scheme=scheme, legend=True)
 
     def test_classification_kwds(self):
         ax = self.df.plot(
