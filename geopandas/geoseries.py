@@ -42,6 +42,24 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
         return Series(data=data, index=index, **kwargs)
 
 
+def inherit_doc(cls):
+    """
+    A decorator adding a docstring from an existing method.
+    """
+
+    def decorator(decorated):
+        original_method = getattr(cls, decorated.__name__, None)
+        if original_method:
+            doc = original_method.__doc__ or ""
+        else:
+            doc = ""
+
+        decorated.__doc__ = doc
+        return decorated
+
+    return decorator
+
+
 class GeoSeries(GeoPandasBase, Series):
     """
     A Series object designed to store shapely geometry objects.
@@ -284,14 +302,25 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method("__getitem__", key)
 
+    @inherit_doc(pd.Series)
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
+    @inherit_doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
+    @inherit_doc(pd.Series)
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
+
+    @inherit_doc(pd.Series)
+    def apply(self, func, args=(), **kwargs):
+        result = super().apply(func, args=args, **kwargs)
+        if isinstance(result, GeoSeries):
+            if self.crs is not None:
+                result.set_crs(self.crs, inplace=True)
+        return result
 
     def __finalize__(self, other, method=None, **kwargs):
         """ propagate metadata from other to self """

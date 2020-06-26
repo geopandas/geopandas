@@ -553,6 +553,14 @@ class TestGeometryArrayCRS:
         df2 = df.astype({"col1": str})
         assert df2.crs == self.osgb
 
+    def test_apply(self):
+        s = GeoSeries(self.arr)
+        assert s.crs == 27700
+
+        # apply preserves the CRS if the result is a GeoSeries
+        result = s.apply(lambda x: x.centroid)
+        assert result.crs == 27700
+
 
 class TestSetCRS:
     @pytest.mark.parametrize(
