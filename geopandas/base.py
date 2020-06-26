@@ -156,14 +156,13 @@ class GeoPandasBase(object):
         Examples
         --------
         >>> from shapely.geometry import Point, Polygon, LineString
-        >>> d = {'geometry': [Point(), Point(2,1),  Polygon([(0, 0), (1, 1), (1, 0)]),
+        >>> d = {'geometry': [Point(2, 1), Polygon([(0, 0), (1, 1), (1, 0)]),
         ... LineString([(0, 0), (1, 1)])]}
-        >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf.geom_type
-        0    GeometryCollection
-        1                 Point
-        2               Polygon
-        3            LineString
+        0                 Point
+        1               Polygon
+        2            LineString
         dtype: object
         """
         return _delegate_property("geom_type", self)
@@ -196,8 +195,8 @@ class GeoPandasBase(object):
         value:
 
         >>> from shapely.geometry import Point
-        >>> d = {'geometry': [Point(), Point(2,1), None]}
-        >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
+        >>> d = {'geometry': [Point(), Point(2, 1), None]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
                            geometry
         0  GEOMETRYCOLLECTION EMPTY
@@ -590,9 +589,9 @@ class GeoPandasBase(object):
         Examples
         --------
         >>> from shapely.geometry import Point, Polygon, LineString
-        >>> d = {'geometry': [Point(2,1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        >>> d = {'geometry': [Point(2, 1), Polygon([(0, 0), (1, 1), (1, 0)]),
         ... LineString([(0, 1), (1, 2)])]}
-        >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf.bounds
            minx  miny  maxx  maxy
         0   2.0   1.0   2.0   1.0
@@ -615,11 +614,11 @@ class GeoPandasBase(object):
         Examples
         --------
         >>> from shapely.geometry import Point, Polygon, LineString
-        >>> d = {'geometry': [Point(3,-1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        >>> d = {'geometry': [Point(3, -1), Polygon([(0, 0), (1, 1), (1, 0)]),
 .       ... LineString([(0, 1), (1, 2)])]}
-        >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf.total_bounds
-        aarray([ 0., -1.,  3.,  2.])
+        array([ 0., -1.,  3.,  2.])
         """
         return GeometryArray(self.geometry.values).total_bounds
 
