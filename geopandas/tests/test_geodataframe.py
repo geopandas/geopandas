@@ -457,12 +457,13 @@ class TestDataFrame:
         p3 = Point(3, 3)
         gs1 = geopandas.GeoSeries([p0, p1])
         gs2 = geopandas.GeoSeries([p2, p3])
-        # create a gdf with 2 geometries and different name 
+        # create a gdf with 2 geometries and different name
         # than geometry for the official geometry
         gdf = GeoDataFrame({"a": [1, 2], "b": gs1, "c": gs2}, geometry="c")
         tempfilename = os.path.join(self.tempdir, "two_geom.shp")
         # write it to disc and reopen it again
         gdf.to_file(tempfilename)
+        print("test")
         gdf2 = GeoDataFrame.from_file(tempfilename)
         assert isinstance(gdf2["a"], list)
         assert gdf2.columns[0:2].to_list() == ["a", "b"]
@@ -470,7 +471,7 @@ class TestDataFrame:
         assert gdf2.columns[3] == "c"
         assert gdf2["a"].to_list() == [1, 2]
         assert isinstance(gdf2[gdf2._geometry_column_name], GeoSeries)
-        assert isinstance(gdf2["b"][0], dict)      
+        assert isinstance(gdf2["b"][0], dict)
         # for future improvements on loading files with multiple geometries
         # assert isinstance(gdf["b"],GeoSeries)
 
