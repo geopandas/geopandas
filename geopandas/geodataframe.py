@@ -556,7 +556,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
                 if na == "drop":
                     properties_items = {
-                        k: v for k, (v if not isinstance(v,BaseGeometry) in zip(properties_cols, row) if not pd.isnull(v)
+                        k: (v if not isinstance(v,BaseGeometry) for k, v in zip(properties_cols, row) if not pd.isnull(v)
                     }
                 else:
                     properties_items = {k: (v if not isinstance(v,BaseGeometry) for k, v in zip(properties_cols, row)}
