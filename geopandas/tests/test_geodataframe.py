@@ -470,8 +470,7 @@ class TestDataFrame:
         assert gdf2.columns[3] == "c"
         assert gdf2["a"].to_list() == [1, 2]
         assert isinstance(gdf2[gdf2._geometry_column_name], GeoSeries)
-        assert isinstance(gdf2["b"][0], dict)
-        
+        assert isinstance(gdf2["b"][0], dict)      
         # for future improvements on loading files with multiple geometries
         # assert isinstance(gdf["b"],GeoSeries)
 
