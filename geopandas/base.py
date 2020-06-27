@@ -149,8 +149,22 @@ class GeoPandasBase(object):
 
     @property
     def geom_type(self):
-        """Returns a ``Series`` of strings specifying the `Geometry Type` of each
-        object."""
+        """
+        Returns a ``Series`` of strings specifying the `Geometry Type` of each
+        object.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon, LineString
+        >>> d = {'geometry': [Point(2, 1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        ... LineString([(0, 0), (1, 1)])]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.geom_type
+        0                 Point
+        1               Polygon
+        2            LineString
+        dtype: object
+        """
         return _delegate_property("geom_type", self)
 
     @property
@@ -181,8 +195,8 @@ class GeoPandasBase(object):
         value:
 
         >>> from shapely.geometry import Point
-        >>> d = {'geometry': [Point(), Point(2,1), None]}
-        >>> gdf = gpd.GeoDataFrame(d, crs="EPSG:4326")
+        >>> d = {'geometry': [Point(), Point(2, 1), None]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
                            geometry
         0  GEOMETRYCOLLECTION EMPTY
@@ -571,6 +585,18 @@ class GeoPandasBase(object):
         ``maxy`` values containing the bounds for each geometry.
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon, LineString
+        >>> d = {'geometry': [Point(2, 1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        ... LineString([(0, 1), (1, 2)])]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.bounds
+           minx  miny  maxx  maxy
+        0   2.0   1.0   2.0   1.0
+        1   0.0   0.0   1.0   1.0
+        2   0.0   1.0   1.0   2.0
         """
         bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(
@@ -584,6 +610,15 @@ class GeoPandasBase(object):
 
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon, LineString
+        >>> d = {'geometry': [Point(3, -1), Polygon([(0, 0), (1, 1), (1, 0)]),
+.       ... LineString([(0, 1), (1, 2)])]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.total_bounds
+        array([ 0., -1.,  3.,  2.])
         """
         return GeometryArray(self.geometry.values).total_bounds
 
