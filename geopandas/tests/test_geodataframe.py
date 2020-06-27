@@ -463,7 +463,6 @@ class TestDataFrame:
         tempfilename = os.path.join(self.tempdir, "two_geom.shp")
         # write it to disc and reopen it again
         gdf.to_file(tempfilename)
-        print("test")
         gdf2 = GeoDataFrame.from_file(tempfilename)
         assert isinstance(gdf2["a"], list)
         assert gdf2.columns[0:2].to_list() == ["a", "b"]
