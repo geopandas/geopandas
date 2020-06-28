@@ -460,12 +460,12 @@ class TestDataFrame:
         # create a gdf with 2 geometries and different name
         # than geometry for the official geometry
         gdf = GeoDataFrame({"a": [1, 2], "b": gs1, "c": gs2}, geometry="c")
-        tempfilename = os.path.join(self.tempdir, "two_geom.geojson")
+        tempfilename = os.path.join(self.tempdir, "two_geom.shp")
         # write it to disc and reopen it again
         # there is some problem still with infering ...
         # it does not recognise it, however when a driver is given
         # it seems to be fine ... hopefully now
-        gdf.to_file(tempfilename, driver="GeoJSON")
+        gdf.to_file(tempfilename)
         gdf2 = GeoDataFrame.from_file(tempfilename)
 
         assert isinstance(gdf2["a"], list)

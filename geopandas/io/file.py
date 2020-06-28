@@ -283,10 +283,11 @@ def infer_schema(df):
         elif str(in_type) == "geometry":
             # I don't know what kind of
             # type geometry will refer to in future
-            # anyway it will be changed below
-            # with the help of _goemetry_types
-            # its schema used by features, not geometries
-            out_type = "geometry"
+            # anyway checking a geojson file
+            # with two geometries using fio info (fiona CLI),
+            # one as regular geometry, one as property
+            # showed this geometry as "str" in "schema"
+            out_type = "str"
         else:
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
@@ -319,12 +320,8 @@ def infer_schema(df):
     # and with the resulting schema change the respective "geometry" value
     # from the ordered dict properties
 
-    for col, val in properties.items():
-        if val == "geometry":
-            df2 = df._dataframe_set_geometry(col)
-            val = _geometry_types(df2)
-
     schema = {"geometry": geom_types, "properties": properties}
+    print(schema)
 
     return schema
 
