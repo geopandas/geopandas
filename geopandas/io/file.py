@@ -280,6 +280,13 @@ def infer_schema(df):
             return "datetime"
         if str(in_type) in types:
             out_type = types[str(in_type)]
+        elif str(in_type) == "geometry":
+            # I don't know what kind of
+            # type geometry will refer to in future
+            # anyway it will be changed below
+            # with the help of _goemetry_types
+            # its schema used by features, not geometries
+            out_type = "geometry"
         else:
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
