@@ -464,12 +464,14 @@ class TestDataFrame:
         # write it to disc and reopen it again
         gdf.to_file(tempfilename)
         gdf2 = GeoDataFrame.from_file(tempfilename)
-        assert gdf2["a"].to_list == [1, 2]
+        # test feature column names
         assert gdf2.columns[0:2].to_list() == ["a", "b"]
-        # Don't know if the name of the geometry will be actually restored
-        # Nope it won't
+        # geometry column name not restored:
         # assert gdf2.columns[3] == "c"
+        # testing back conversion to GeoSeries of geometry column
         assert isinstance(gdf2[gdf2._geometry_column_name], GeoSeries)
+        # testing content
+        assert gdf2["a"].to_list() == [1, 2]
         assert isinstance(eval(gdf2["b"][0]), dict)
         # for future improvements on loading files with multiple geometries
         # assert isinstance(gdf["b"],GeoSeries)
