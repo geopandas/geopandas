@@ -3,10 +3,10 @@ channels:
     - conda-forge
 dependencies:
     # required
-    - fiona>=1.7
-    - pandas>=0.23.4
+    - fiona>=1.8
+    - pandas>=0.24
     - pyproj>=2.2.0
-    - shapely>=1.5
+    - shapely>=1.6
 
     # geodatabase access
     - psycopg2>=2.5.1
@@ -17,10 +17,9 @@ dependencies:
 
     # plotting
     - descartes>=1.0
-    - matplotlib>=2.0
+    - matplotlib>=2.2
 
     # testing
-    - mock>=1.0.1   # technically not need for python >= 3.3
     - pytest>=3.1.0
     - pytest-cov
     - codecov
