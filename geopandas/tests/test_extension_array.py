@@ -21,7 +21,6 @@ from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 
-from geopandas._compat import PANDAS_GE_024
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -31,21 +30,8 @@ import pytest
 # -----------------------------------------------------------------------------
 
 
-if not PANDAS_GE_024:
-    # pandas 0.23.4 doesn't have those tests yet, so adding dummy classes
-    # to derive from here
-    extension_tests.BaseNoReduceTests = object
-    extension_tests.BaseArithmeticOpsTests = object
-    extension_tests.BaseComparisonOpsTests = object
-    extension_tests.BasePrintingTests = object
-    extension_tests.BaseParsingTests = object
-
-
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
-skip_pandas_below_024 = pytest.mark.skipif(
-    not PANDAS_GE_024, reason="Sorting not supported"
-)
 
 
 # -----------------------------------------------------------------------------
@@ -292,7 +278,6 @@ class TestDtype(extension_tests.BaseDtypeTests):
     def test_array_type_with_arg(self, data, dtype):
         assert dtype.construct_array_type() is GeometryArray
 
-    @skip_pandas_below_024
     def test_registry(self, data, dtype):
         s = pd.Series(np.asarray(data), dtype=object)
         result = s.astype("geometry")
@@ -403,13 +388,11 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         expected = s.combine(other, op)
         self.assert_series_equal(result, expected)
 
-    @skip_pandas_below_024
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
         self._compare_other(s, data, op_name, data[0])
 
-    @skip_pandas_below_024
     def test_compare_array(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)

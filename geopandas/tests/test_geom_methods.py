@@ -737,8 +737,6 @@ class TestGeomMethods:
             names=[index_name, None],
         )
         expected_df = expected_df.set_index(expected_index)
-        if not compat.PANDAS_GE_024:
-            expected_df = expected_df[["level_1", "geometry"]]
         assert_frame_equal(test_df, expected_df)
 
     #

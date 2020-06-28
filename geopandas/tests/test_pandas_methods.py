@@ -9,7 +9,7 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025, PANDAS_GE_11
+from geopandas._compat import PANDAS_GE_025, PANDAS_GE_11
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -39,9 +39,6 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
-@pytest.mark.skipif(
-    not PANDAS_GE_024, reason="formatting for EA only implemented in 0.24.0"
-)
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
@@ -299,9 +296,6 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skipif(
-    not PANDAS_GE_024, reason="where for EA only implemented in 0.24.0 (GH24114)"
-)
 def test_where(s):
     res = s.where(np.array([True, False, True]))
     exp = GeoSeries([Point(0, 0), None, Point(2, 2)])
