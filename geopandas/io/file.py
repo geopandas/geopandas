@@ -314,6 +314,16 @@ def infer_schema(df):
     # Fiona allows a list of geometry types
     geom_types = _geometry_types(df)
 
+    # Apply same schema to "geometry" types created above in convert_type,
+    # using df2 as a copy of df with geometry set  to the respective column,
+    # and with the resulting schema change the respective "geometry" value
+    # from the ordered dict properties
+
+    for col, val in properties.items():
+        if val == "geometry":
+            df2 = df._dataframe_set_geometry(col)
+            val = _geometry_types(df2)
+
     schema = {"geometry": geom_types, "properties": properties}
 
     return schema
