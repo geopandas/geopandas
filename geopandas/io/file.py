@@ -321,7 +321,6 @@ def infer_schema(df):
     # from the ordered dict properties
 
     schema = {"geometry": geom_types, "properties": properties}
-    print(schema)
 
     return schema
 
