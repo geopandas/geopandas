@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Missing and empty geometries &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Missing and empty geometries &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -111,10 +111,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -241,7 +243,7 @@ and the result will depend on the operation:</p>
 <span class="go">dtype: geometry</span>
 </pre></div>
 </div>
-<p>The <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> method will only check for missing values and not
+<p>The <a class="reference internal" href="reference.html#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code></a> method will only check for missing values and not
 for empty geometries:</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [7]: </span><span class="n">s</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
 <span class="gh">Out[7]: </span><span class="go"></span>
@@ -282,11 +284,11 @@ you can use a combination of both:</p>
 consistent across the library.</p>
 <p>Historically, missing (“NA”) values in a GeoSeries could be represented by empty
 geometric objects, in addition to standard representations such as <code class="docutils literal notranslate"><span class="pre">None</span></code> and
-<code class="docutils literal notranslate"><span class="pre">np.nan</span></code>. At least, this was the case in <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> or when a
+<code class="docutils literal notranslate"><span class="pre">np.nan</span></code>. At least, this was the case in <a class="reference internal" href="reference.html#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code></a> or when a
 GeoSeries got aligned in geospatial operations. But, other methods like
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">dropna()</span></code> and <code class="xref py py-meth docutils literal notranslate"><span class="pre">fillna()</span></code> did not follow this
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">dropna()</span></code> and <a class="reference internal" href="reference.html#geopandas.GeoSeries.fillna" title="geopandas.GeoSeries.fillna"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fillna()</span></code></a> did not follow this
 approach and did not consider empty geometries as missing.</p>
-<p>In GeoPandas v0.6.0, the most important change is <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code> no
+<p>In GeoPandas v0.6.0, the most important change is <a class="reference internal" href="reference.html#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.isna()</span></code></a> no
 longer treating empty as missing:</p>
 <ul>
 <li><p>Using the small example from above, the old behaviour treated both the

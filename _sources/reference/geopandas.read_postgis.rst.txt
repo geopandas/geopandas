@@ -1,0 +1,16 @@
+geopandas.read\_postgis
+=======================
+
+
+.. currentmodule:: geopandas
+
+.. autofunction:: read_postgis
+
+
+
+.. include:: geopandas.read_postgis.examples
+
+.. raw:: html
+
+    <div class="clear"></div>
+

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Reference &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -110,23 +110,31 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reference to All Attributes and Methods</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#geoseries">GeoSeries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#geodataframe">GeoDataFrame</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#api-pages">API Pages</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#top-level-functions">Top-level Functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.read_file.html">geopandas.read_file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.read_parquet.html">geopandas.read_parquet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.read_feather.html">geopandas.read_feather</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.read_postgis.html">geopandas.read_postgis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.sjoin.html">geopandas.sjoin</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.overlay.html">geopandas.overlay</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.clip.html">geopandas.clip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.tools.collect.html">geopandas.tools.collect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/geopandas.points_from_xy.html">geopandas.points_from_xy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -271,12 +279,49 @@ inner rings of each polygon in the GeoSeries.</p>
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="geopandas.GeoSeries.x">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">x</code><a class="headerlink" href="#geopandas.GeoSeries.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the x location of point geometries in a GeoSeries</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="geopandas.GeoSeries.y">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">y</code><a class="headerlink" href="#geopandas.GeoSeries.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the y location of point geometries in a GeoSeries</p>
+</dd></dl>
+
 <p><cite>Unary Predicates</cite></p>
 <dl class="attribute">
 <dt id="geopandas.GeoSeries.is_empty">
 <code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">is_empty</code><a class="headerlink" href="#geopandas.GeoSeries.is_empty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for
 empty geometries.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.isna</span></code></a></dt><dd><p>detect missing values</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<p>An example of a GeoDataFrame with one empty point, one point and one missing
+value:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">Point</span><span class="p">(),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="kc">None</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gdf</span>
+<span class="go">                   geometry</span>
+<span class="go">0  GEOMETRYCOLLECTION EMPTY</span>
+<span class="go">1   POINT (2.00000 1.00000)</span>
+<span class="go">2                      None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gdf</span><span class="o">.</span><span class="n">is_empty</span>
+<span class="go">0     True</span>
+<span class="go">1    False</span>
+<span class="go">2    False</span>
+<span class="go">dtype: bool</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -308,7 +353,7 @@ geometries that are valid.</p>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> if
 each geometry is approximately equal to <cite>other</cite>.</p>
 <p>Approximate equality is tested at all points to the specified <cite>decimal</cite>
-place precision.  See also <code class="xref py py-meth docutils literal notranslate"><span class="pre">equals()</span></code>.</p>
+place precision.  See also <a class="reference internal" href="#geopandas.GeoSeries.geom_equals" title="geopandas.GeoSeries.geom_equals"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geom_equals()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -417,6 +462,21 @@ intersected.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="geopandas.GeoSeries.overlaps">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">overlaps</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True for all geometries that overlap <em>other</em>, else False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>other</strong><span class="classifier">GeoSeries or geometric object</span></dt><dd><p>The GeoSeries (elementwise) or geometric object to test if
+overlaps.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="geopandas.GeoSeries.touches">
 <code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">touches</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.touches" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for
@@ -451,6 +511,26 @@ expression <code class="docutils literal notranslate"><span class="pre">a.within
 <dd class="field-odd"><dl class="simple">
 <dt><strong>other</strong><span class="classifier">GeoSeries or geometric object</span></dt><dd><p>The GeoSeries (elementwise) or geometric object to test if each
 geometry is within.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoSeries.covers">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">covers</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">other</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.covers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for
+each geometry that is entirely covering <cite>other</cite>.</p>
+<p>An object A is said to cover another object B if no points of B lie
+in the exterior of A.</p>
+<p>See
+<a class="reference external" href="https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html">https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html</a>
+for reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>other</strong><span class="classifier">Geoseries or geometric object</span></dt><dd><p>The Geoseries (elementwise) or geometric object to check is being covered.</p>
 </dd>
 </dl>
 </dd>
@@ -720,6 +800,77 @@ dimensions respectively.</p>
 </dd></dl>
 
 <p>Additionally, the following attributes and methods are implemented:</p>
+<dl class="method">
+<dt id="geopandas.GeoSeries.from_file">
+<em class="property">classmethod </em><code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">from_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a file.</p>
+<p>Can load a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a file from any format recognized by
+<cite>fiona</cite>. See <a class="reference external" href="http://fiona.readthedocs.io/en/latest/manual.html">http://fiona.readthedocs.io/en/latest/manual.html</a> for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>filename</strong><span class="classifier">str</span></dt><dd><p>File path or file handle to read from. Depending on which kwargs
+are included, the content of filename may vary. See
+<a class="reference external" href="http://fiona.readthedocs.io/en/latest/README.html#usage">http://fiona.readthedocs.io/en/latest/README.html#usage</a> for usage details.</p>
+</dd>
+<dt><strong>kwargs</strong><span class="classifier">key-word arguments</span></dt><dd><p>These arguments are passed to fiona.open, and can be used to
+access multi-layer data, data stored within archives (zip files),
+etc.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoSeries.to_file">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">to_file</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">filename</em>, <em class="sig-param">driver='ESRI Shapefile'</em>, <em class="sig-param">index=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> to a file.</p>
+<p>By default, an ESRI shapefile is written, but any OGR data source
+supported by Fiona can be written.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>filename</strong><span class="classifier">string</span></dt><dd><p>File path or file handle to write to.</p>
+</dd>
+<dt><strong>driver</strong><span class="classifier">string, default: ‘ESRI Shapefile’</span></dt><dd><p>The OGR format driver used to write the vector file.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">bool, default None</span></dt><dd><p>If True, write index into one or more columns (for MultiIndex).
+Default None writes the index into one or more columns only if
+the index is named, is a MultiIndex, or has a non-integer data
+type. If False, no index is written.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7: </span>Previously the index was not written.</p>
+</div>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#geopandas.GeoDataFrame.to_file" title="geopandas.GeoDataFrame.to_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_file</span></code></a></dt><dd></dd>
+</dl>
+</div>
+<p class="rubric">Notes</p>
+<p>The extra keyword arguments <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> are passed to fiona.open and
+can be used to write to multi-layer data, store data within archives
+(zip files), etc.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoSeries.to_json">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">to_json</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a GeoJSON string representation of the GeoSeries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>*kwargs* that will be passed to json.dumps().</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="geopandas.GeoSeries.crs">
 <code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">crs</code><a class="headerlink" href="#geopandas.GeoSeries.crs" title="Permalink to this definition">¶</a></dt>
@@ -727,7 +878,8 @@ dimensions respectively.</p>
 object.</p>
 <p>Returns None if the CRS is not set, and to set the value it
 :getter: Returns a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> or None. When setting, the value
-can be anything accepted by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>,
+can be anything accepted by
+<a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
 such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
 </dd></dl>
 
@@ -748,33 +900,16 @@ undesirable behavior.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl>
 <dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional if <cite>epsg</cite> is specified</span></dt><dd><p>The value can be anything accepted
-by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>, such as an authority
-string (eg “EPSG:4326”) or a WKT string.</p>
+by <a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
 </dd>
 <dt><strong>epsg</strong><span class="classifier">int, optional if <cite>crs</cite> is specified</span></dt><dd><p>EPSG code specifying output projection.</p>
 </dd>
 </dl>
 </dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="geopandas.GeoSeries.from_file">
-<em class="property">classmethod </em><code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">from_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.from_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a file.</p>
-<p>Can load a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a file from any format recognized by
-<cite>fiona</cite>. See <a class="reference external" href="http://fiona.readthedocs.io/en/latest/manual.html">http://fiona.readthedocs.io/en/latest/manual.html</a> for details.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>filename</strong><span class="classifier">str</span></dt><dd><p>File path or file handle to read from. Depending on which kwargs
-are included, the content of filename may vary. See
-<a class="reference external" href="http://fiona.readthedocs.io/en/latest/README.html#usage">http://fiona.readthedocs.io/en/latest/README.html#usage</a> for usage details.</p>
-</dd>
-<dt><strong>kwargs</strong><span class="classifier">key-word arguments</span></dt><dd><p>These arguments are passed to fiona.open, and can be used to
-access multi-layer data, data stored within archives (zip files),
-etc.</p>
-</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>GeoSeries</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -806,6 +941,14 @@ colormaps include:</p>
 </dd>
 <dt><strong>figsize</strong><span class="classifier">pair of floats (default None)</span></dt><dd><p>Size of the resulting matplotlib.figure.Figure. If the argument
 ax is given explicitly, figsize is ignored.</p>
+</dd>
+<dt><strong>aspect</strong><span class="classifier">‘auto’, ‘equal’ or float (default ‘auto’)</span></dt><dd><p>Set aspect of axis. If ‘auto’, the default aspect for map plots is ‘equal’; if
+however data are not projected (coordinates are long/lat), the aspect is by
+default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
+the GeoSeries (the mean of the y range of bounding box) so that a long/lat
+square appears square in the middle of the plot. This implies an
+Equirectangular projection. It can also be set manually (float) as the ratio
+of y-unit to x-unit.</p>
 </dd>
 <dt><strong>**style_kwds</strong><span class="classifier">dict</span></dt><dd><p>Color options to be passed on to the actual plot function, such
 as <code class="docutils literal notranslate"><span class="pre">edgecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">facecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">linewidth</span></code>, <code class="docutils literal notranslate"><span class="pre">markersize</span></code>,
@@ -840,6 +983,69 @@ Note that the features will have an empty <code class="docutils literal notransl
 don’t have associated attributes (geometry only).</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="geopandas.GeoSeries.isna">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">isna</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.isna" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect missing values.</p>
+<p>Historically, NA values in a GeoSeries could be represented by
+empty geometric objects, in addition to standard representations
+such as None and np.nan. This behaviour is changed in version 0.6.0,
+and now only actual missing values return True. To detect empty
+geometries, use <code class="docutils literal notranslate"><span class="pre">GeoSeries.is_empty</span></code> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>A boolean pandas Series of the same size as the GeoSeries,</dt><dd></dd>
+<dt>True where a value is NA.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#geopandas.GeoSeries.notna" title="geopandas.GeoSeries.notna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.notna</span></code></a></dt><dd><p>inverse of isna</p>
+</dd>
+<dt><a class="reference internal" href="#geopandas.GeoSeries.is_empty" title="geopandas.GeoSeries.is_empty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.is_empty</span></code></a></dt><dd><p>detect empty geometries</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoSeries.notna">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">notna</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.notna" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect non-missing values.</p>
+<p>Historically, NA values in a GeoSeries could be represented by
+empty geometric objects, in addition to standard representations
+such as None and np.nan. This behaviour is changed in version 0.6.0,
+and now only actual missing values return False. To detect empty
+geometries, use <code class="docutils literal notranslate"><span class="pre">~GeoSeries.is_empty</span></code> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>A boolean pandas Series of the same size as the GeoSeries,</dt><dd></dd>
+<dt>False where a value is NA.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.isna</span></code></a></dt><dd><p>inverse of notna</p>
+</dd>
+<dt><a class="reference internal" href="#geopandas.GeoSeries.is_empty" title="geopandas.GeoSeries.is_empty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.is_empty</span></code></a></dt><dd><p>detect empty geometries</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoSeries.fillna">
+<code class="sig-prename descclassname">GeoSeries.</code><code class="sig-name descname">fillna</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">value=None</em>, <em class="sig-param">method=None</em>, <em class="sig-param">inplace=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.fillna" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill NA values with a geometry (empty polygon by default).</p>
+<p>“method” is currently not implemented for pandas &lt;= 0.12.</p>
+</dd></dl>
+
 <p>Methods of pandas <code class="docutils literal notranslate"><span class="pre">Series</span></code> objects are also available, although not
 all are applicable to geometric objects and some may return a
 <code class="docutils literal notranslate"><span class="pre">Series</span></code> rather than a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> result.  The methods
@@ -849,7 +1055,7 @@ correctly.</p>
 </div>
 <div class="section" id="geodataframe">
 <h2>GeoDataFrame<a class="headerlink" href="#geodataframe" title="Permalink to this headline">¶</a></h2>
-<p>A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is a tablular data structure that contains a column
+<p>A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is a tabular data structure that contains a column
 called <code class="docutils literal notranslate"><span class="pre">geometry</span></code> which contains a <cite>GeoSeries`</cite>.</p>
 <p>Currently, the following methods/attributes are implemented for a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>:</p>
 <dl class="attribute">
@@ -859,7 +1065,8 @@ called <code class="docutils literal notranslate"><span class="pre">geometry</sp
 object.</p>
 <p>Returns None if the CRS is not set, and to set the value it
 :getter: Returns a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> or None. When setting, the value
-can be anything accepted by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>,
+can be anything accepted by
+<a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
 such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
 </dd></dl>
 
@@ -867,26 +1074,31 @@ such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
 <dt id="geopandas.GeoDataFrame.to_crs">
 <code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_crs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">epsg=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_crs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform geometries to a new coordinate reference system.</p>
-<p>Transform all geometries in a GeoSeries to a different coordinate
+<p>Transform all geometries in an active geometry column to a different coordinate
 reference system.  The <code class="docutils literal notranslate"><span class="pre">crs</span></code> attribute on the current GeoSeries must
 be set.  Either <code class="docutils literal notranslate"><span class="pre">crs</span></code> or <code class="docutils literal notranslate"><span class="pre">epsg</span></code> may be specified for output.</p>
-<p>This method will transform all points in all objects.  It has no notion
+<p>This method will transform all points in all objects. It has no notion
 or projecting entire geometries.  All segments joining points are
-assumed to be lines in the current projection, not geodesics.  Objects
+assumed to be lines in the current projection, not geodesics. Objects
 crossing the dateline (or other projection boundary) will have
 undesirable behavior.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl>
-<dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional if <cite>epsg</cite> is specified</span></dt><dd><p>The value can be anything accepted
-by <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code>, such as an authority
-string (eg “EPSG:4326”) or a WKT string.</p>
+<dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional if <cite>epsg</cite> is specified</span></dt><dd><p>The value can be anything accepted by
+<a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
 </dd>
 <dt><strong>epsg</strong><span class="classifier">int, optional if <cite>crs</cite> is specified</span></dt><dd><p>EPSG code specifying output projection.</p>
 </dd>
 <dt><strong>inplace</strong><span class="classifier">bool, optional, default: False</span></dt><dd><p>Whether to return a new GeoDataFrame or do the transformation in
 place.</p>
 </dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>GeoDataFrame</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -919,8 +1131,44 @@ etc.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="geopandas.GeoDataFrame.from_features">
+<em class="property">classmethod </em><code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">from_features</code><span class="sig-paren">(</span><em class="sig-param">features</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">columns=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.from_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor to create GeoDataFrame from an iterable of
+features or a feature collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>features</strong></dt><dd><ul class="simple">
+<li><p>Iterable of features, where each element must be a feature
+dictionary or implement the __geo_interface__.</p></li>
+<li><p>Feature collection, where the ‘features’ key contains an
+iterable of features.</p></li>
+<li><p>Object holding a feature collection that implements the
+<code class="docutils literal notranslate"><span class="pre">__geo_interface__</span></code>.</p></li>
+</ul>
+</dd>
+<dt><strong>crs</strong><span class="classifier">str or dict (optional)</span></dt><dd><p>Coordinate reference system to set on the resulting frame.</p>
+</dd>
+<dt><strong>columns</strong><span class="classifier">list of column names, optional</span></dt><dd><p>Optionally specify the column names to include in the output frame.
+This does not overwrite the property names of the input, but can
+ensure a consistent output format.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>GeoDataFrame</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For more information about the <code class="docutils literal notranslate"><span class="pre">__geo_interface__</span></code>, see
+<a class="reference external" href="https://gist.github.com/sgillies/2217756">https://gist.github.com/sgillies/2217756</a></p>
+</dd></dl>
+
+<dl class="method">
 <dt id="geopandas.GeoDataFrame.from_postgis">
-<em class="property">classmethod </em><code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">from_postgis</code><span class="sig-paren">(</span><em class="sig-param">sql</em>, <em class="sig-param">con</em>, <em class="sig-param">geom_col='geom'</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">index_col=None</em>, <em class="sig-param">coerce_float=True</em>, <em class="sig-param">parse_dates=None</em>, <em class="sig-param">params=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.from_postgis" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">from_postgis</code><span class="sig-paren">(</span><em class="sig-param">sql</em>, <em class="sig-param">con</em>, <em class="sig-param">geom_col='geom'</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">index_col=None</em>, <em class="sig-param">coerce_float=True</em>, <em class="sig-param">parse_dates=None</em>, <em class="sig-param">params=None</em>, <em class="sig-param">chunksize=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.from_postgis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> from a sql query
 containing a geometry column in WKB representation.</p>
 <dl class="field-list simple">
@@ -950,6 +1198,9 @@ without native Datetime support, such as SQLite.</p></li>
 </dd>
 <dt><strong>params</strong><span class="classifier">list, tuple or dict, optional, default None</span></dt><dd><p>List of parameters to pass to execute method.</p>
 </dd>
+<dt><strong>chunksize</strong><span class="classifier">int, default None</span></dt><dd><p>If specified, return an iterator where chunksize is the number
+of rows to include in each chunk.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -960,6 +1211,40 @@ without native Datetime support, such as SQLite.</p></li>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_postgis</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_crs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">crs=None</em>, <em class="sig-param">epsg=None</em>, <em class="sig-param">inplace=False</em><span class="sig-paren">)</span></dt>
+<dd><p>Transform geometries to a new coordinate reference system.</p>
+<p>Transform all geometries in an active geometry column to a different coordinate
+reference system.  The <code class="docutils literal notranslate"><span class="pre">crs</span></code> attribute on the current GeoSeries must
+be set.  Either <code class="docutils literal notranslate"><span class="pre">crs</span></code> or <code class="docutils literal notranslate"><span class="pre">epsg</span></code> may be specified for output.</p>
+<p>This method will transform all points in all objects. It has no notion
+or projecting entire geometries.  All segments joining points are
+assumed to be lines in the current projection, not geodesics. Objects
+crossing the dateline (or other projection boundary) will have
+undesirable behavior.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional if <cite>epsg</cite> is specified</span></dt><dd><p>The value can be anything accepted by
+<a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
+</dd>
+<dt><strong>epsg</strong><span class="classifier">int, optional if <cite>crs</cite> is specified</span></dt><dd><p>EPSG code specifying output projection.</p>
+</dd>
+<dt><strong>inplace</strong><span class="classifier">bool, optional, default: False</span></dt><dd><p>Whether to return a new GeoDataFrame or do the transformation in
+place.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>GeoDataFrame</dt><dd></dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -997,7 +1282,7 @@ type. If False, no index is written.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <dl class="simple">
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.to_file</span></code></dt><dd></dd>
+<dt><a class="reference internal" href="#geopandas.GeoSeries.to_file" title="geopandas.GeoSeries.to_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.to_file</span></code></a></dt><dd></dd>
 </dl>
 </div>
 <p class="rubric">Notes</p>
@@ -1036,15 +1321,133 @@ feature individually so that features may have different properties.</p></li>
 </dd></dl>
 
 <dl class="method">
+<dt id="geopandas.GeoDataFrame.to_parquet">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_parquet</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">path</em>, <em class="sig-param">index=None</em>, <em class="sig-param">compression='snappy'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_parquet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a GeoDataFrame to the Parquet format.</p>
+<p>Any geometry columns present are serialized to WKB format in the file.</p>
+<p>Requires ‘pyarrow’.</p>
+<p>WARNING: this is an initial implementation of Parquet file support and
+associated metadata.  This is tracking version 0.1.0 of the metadata
+specification at:
+<a class="reference external" href="https://github.com/geopandas/geo-arrow-spec">https://github.com/geopandas/geo-arrow-spec</a></p>
+<p>This metadata specification does not yet make stability promises.  As such,
+we do not yet recommend using this in a production setting unless you are
+able to rewrite your Parquet files.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.8.</span></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str, path object</span></dt><dd></dd>
+<dt><strong>index</strong><span class="classifier">bool, default None</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, always include the dataframe’s index(es) as columns
+in the file output.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the index(es) will not be written to the file.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the index(ex) will be included as columns in the file
+output except <cite>RangeIndex</cite> which is stored as metadata only.</p>
+</dd>
+<dt><strong>compression</strong><span class="classifier">{‘snappy’, ‘gzip’, ‘brotli’, None}, default ‘snappy’</span></dt><dd><p>Name of the compression to use. Use <code class="docutils literal notranslate"><span class="pre">None</span></code> for no compression.</p>
+</dd>
+<dt><strong>kwargs</strong></dt><dd><p>Additional keyword arguments passed to to pyarrow.parquet.write_table().</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoDataFrame.to_feather">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_feather</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">path</em>, <em class="sig-param">index=None</em>, <em class="sig-param">compression=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_feather" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a GeoDataFrame to the Feather format.</p>
+<p>Any geometry columns present are serialized to WKB format in the file.</p>
+<p>Requires ‘pyarrow’ &gt;= 0.17.</p>
+<p>WARNING: this is an initial implementation of Feather file support and
+associated metadata.  This is tracking version 0.1.0 of the metadata
+specification at:
+<a class="reference external" href="https://github.com/geopandas/geo-arrow-spec">https://github.com/geopandas/geo-arrow-spec</a></p>
+<p>This metadata specification does not yet make stability promises.  As such,
+we do not yet recommend using this in a production setting unless you are
+able to rewrite your Feather files.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.8.</span></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str, path object</span></dt><dd></dd>
+<dt><strong>index</strong><span class="classifier">bool, default None</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, always include the dataframe’s index(es) as columns
+in the file output.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the index(es) will not be written to the file.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the index(ex) will be included as columns in the file
+output except <cite>RangeIndex</cite> which is stored as metadata only.</p>
+</dd>
+<dt><strong>compression</strong><span class="classifier">{‘zstd’, ‘lz4’, ‘uncompressed’}, optional</span></dt><dd><p>Name of the compression to use. Use <code class="docutils literal notranslate"><span class="pre">&quot;uncompressed&quot;</span></code> for no
+compression. By default uses LZ4 if available, otherwise uncompressed.</p>
+</dd>
+<dt><strong>kwargs</strong></dt><dd><p>Additional keyword arguments passed to to pyarrow.feather.write_feather().</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoDataFrame.to_postgis">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">to_postgis</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">name</em>, <em class="sig-param">con</em>, <em class="sig-param">schema=None</em>, <em class="sig-param">if_exists='fail'</em>, <em class="sig-param">index=False</em>, <em class="sig-param">index_label=None</em>, <em class="sig-param">chunksize=None</em>, <em class="sig-param">dtype=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.to_postgis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload GeoDataFrame into PostGIS database.</p>
+<p>This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+Python driver (e.g. psycopg2) to be installed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>Name of the target table.</p>
+</dd>
+<dt><strong>con</strong><span class="classifier">sqlalchemy.engine.Engine</span></dt><dd><p>Active connection to the PostGIS database.</p>
+</dd>
+<dt><strong>if_exists</strong><span class="classifier">{‘fail’, ‘replace’, ‘append’}, default ‘fail’</span></dt><dd><p>How to behave if the table already exists:</p>
+<ul class="simple">
+<li><p>fail: Raise a ValueError.</p></li>
+<li><p>replace: Drop the table before inserting new values.</p></li>
+<li><p>append: Insert new values to the existing table.</p></li>
+</ul>
+</dd>
+<dt><strong>schema</strong><span class="classifier">string, optional</span></dt><dd><p>Specify the schema. If None, use default schema: ‘public’.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">bool, default True</span></dt><dd><p>Write DataFrame index as a column.
+Uses <em>index_label</em> as the column name in the table.</p>
+</dd>
+<dt><strong>index_label</strong><span class="classifier">string or sequence, default None</span></dt><dd><p>Column label for index column(s).
+If None is given (default) and index is True,
+then the index names are used.</p>
+</dd>
+<dt><strong>chunksize</strong><span class="classifier">int, optional</span></dt><dd><p>Rows will be written in batches of this size at a time.
+By default, all rows will be written at once.</p>
+</dd>
+<dt><strong>dtype</strong><span class="classifier">dict of column name to SQL type, default None</span></dt><dd><p>Specifying the datatype for columns.
+The keys should be the column names and the values
+should be the SQLAlchemy types.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s2">&quot;postgres://myusername:mypassword@myhost:5432/mydatabase&quot;</span><span class="p">;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gdf</span><span class="o">.</span><span class="n">to_postgis</span><span class="p">(</span><span class="s2">&quot;my_table&quot;</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
 <dt id="geopandas.GeoDataFrame.plot">
 <code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a GeoDataFrame.</p>
 <p>Generate a plot of a GeoDataFrame with matplotlib.  If a
 column is specified, the plot coloring will be based on values
 in that column.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
+<dd class="field-odd"><dl>
 <dt><strong>df</strong><span class="classifier">GeoDataFrame</span></dt><dd><p>The GeoDataFrame to be plotted.  Currently Polygon,
 MultiPolygon, LineString, MultiLineString and Point
 geometries can be plotted.</p>
@@ -1095,7 +1498,19 @@ number of points.</p>
 axes is given explicitly, figsize is ignored.</p>
 </dd>
 <dt><strong>legend_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments to pass to matplotlib.pyplot.legend() or
-matplotlib.pyplot.colorbar().</p>
+matplotlib.pyplot.colorbar().
+Additional accepted keywords when <cite>scheme</cite> is specified:</p>
+<dl class="simple">
+<dt>fmt<span class="classifier">string</span></dt><dd><p>A formatting specification for the bin edges of the classes in the
+legend. For example, to have no decimals: <code class="docutils literal notranslate"><span class="pre">{&quot;fmt&quot;:</span> <span class="pre">&quot;{:.0f}&quot;}</span></code>.</p>
+</dd>
+<dt>labels<span class="classifier">list-like</span></dt><dd><p>A list of legend labels to override the auto-generated labels.
+Needs to have the same number of elements as the number of
+classes (<cite>k</cite>).</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>categories</strong><span class="classifier">list-like</span></dt><dd><p>Ordered list-like object of categories to be used for categorical plot.</p>
 </dd>
 <dt><strong>classification_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments to pass to mapclassify</p>
 </dd>
@@ -1104,7 +1519,15 @@ to be passed on to geometries with missing values in addition to
 or overwriting other style kwds. If None, geometries with missing
 values are not plotted.</p>
 </dd>
-<dt><strong>**style_kwds</strong><span class="classifier">dict</span></dt><dd><p>Color options to be passed on to the actual plot function, such
+<dt><strong>aspect</strong><span class="classifier">‘auto’, ‘equal’ or float (default ‘auto’)</span></dt><dd><p>Set aspect of axis. If ‘auto’, the default aspect for map plots is ‘equal’; if
+however data are not projected (coordinates are long/lat), the aspect is by
+default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
+the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
+square appears square in the middle of the plot. This implies an
+Equirectangular projection. It can also be set manually (float) as the ratio
+of y-unit to x-unit.</p>
+</dd>
+<dt><strong>**style_kwds</strong><span class="classifier">dict</span></dt><dd><p>Style options to be passed on to the actual plot function, such
 as <code class="docutils literal notranslate"><span class="pre">edgecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">facecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">linewidth</span></code>, <code class="docutils literal notranslate"><span class="pre">markersize</span></code>,
 <code class="docutils literal notranslate"><span class="pre">alpha</span></code>.</p>
 </dd>
@@ -1163,15 +1586,17 @@ the specified input. By default yields a new object.</p>
 </dd>
 <dt><strong>inplace</strong><span class="classifier">boolean, default False</span></dt><dd><p>Modify the GeoDataFrame in place (do not create a new object)</p>
 </dd>
-<dt><strong>crs</strong><span class="classifier">str/result of fion.get_crs (optional)</span></dt><dd><p>Coordinate system to use. If passed, overrides both DataFrame and
-col’s crs. Otherwise, tries to get crs from passed col values or
-DataFrame.</p>
+<dt><strong>crs</strong><span class="classifier">pyproj.CRS, optional</span></dt><dd><p>Coordinate system to use. The value can be anything accepted
+by <a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.
+If passed, overrides both DataFrame and col’s crs.
+Otherwise, tries to get crs from passed col values or DataFrame.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>geodataframe</strong><span class="classifier">GeoDataFrame</span></dt><dd></dd>
+<dt>GeoDataFrame</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -1180,6 +1605,56 @@ DataFrame.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;geom1&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoDataFrame.explode">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">explode</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.explode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explode muti-part geometries into multiple single geometries.</p>
+<p>Each row containing a multi-part geometry will be split into
+multiple rows with single geometries, thereby increasing the vertical
+size of the GeoDataFrame.</p>
+<p>The index of the input geodataframe is no longer unique and is
+replaced with a multi-index (original index with additional level
+indicating the multiple geometries: a new zero-based index for each
+single part geometry per multi-part geometry).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>GeoDataFrame</dt><dd><p>Exploded geodataframe with each single geometry
+as a separate entry in the geodataframe.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="geopandas.GeoDataFrame.dissolve">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">dissolve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">by=None</em>, <em class="sig-param">aggfunc='first'</em>, <em class="sig-param">as_index=True</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.dissolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dissolve geometries within <cite>groupby</cite> into single observation.
+This is accomplished by applying the <cite>unary_union</cite> method
+to all geometries within a groupself.</p>
+<p>Observations associated with each <cite>groupby</cite> group will be aggregated
+using the <cite>aggfunc</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>by</strong><span class="classifier">string, default None</span></dt><dd><p>Column whose values define groups to be dissolved</p>
+</dd>
+<dt><strong>aggfunc</strong><span class="classifier">function or string, default “first”</span></dt><dd><p>Aggregation function for manipulation of data associated
+with each group. Passed to pandas <cite>groupby.agg</cite> method.</p>
+</dd>
+<dt><strong>as_index</strong><span class="classifier">boolean, default True</span></dt><dd><p>If true, groupby columns become index of result.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>GeoDataFrame</dt><dd></dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -1198,8 +1673,101 @@ not operate in a meaningful way on the <code class="docutils literal notranslate
 return a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> result even when it would be appropriate to
 do so.</p>
 </div>
-<div class="section" id="api-pages">
-<h2>API Pages<a class="headerlink" href="#api-pages" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p>GeoPandas includes specific functions to test its objects.</p>
+<dl class="function">
+<dt id="geopandas.testing.geom_equals">
+<code class="sig-prename descclassname">geopandas.testing.</code><code class="sig-name descname">geom_equals</code><span class="sig-paren">(</span><em class="sig-param">this</em>, <em class="sig-param">that</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.testing.geom_equals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test for geometric equality. Empty or missing geometries are considered
+equal.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>this, that</strong><span class="classifier">arrays of Geo objects (or anything that has an <cite>is_empty</cite></span></dt><dd><p>attribute)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="geopandas.testing.geom_almost_equals">
+<code class="sig-prename descclassname">geopandas.testing.</code><code class="sig-name descname">geom_almost_equals</code><span class="sig-paren">(</span><em class="sig-param">this</em>, <em class="sig-param">that</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.testing.geom_almost_equals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test for ‘almost’ geometric equality. Empty or missing geometries
+considered equal.</p>
+<p>This method allows small difference in the coordinates, but this
+requires coordinates be in the same order for all components of a geometry.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>this, that</strong><span class="classifier">arrays of Geo objects (or anything that has an <cite>is_empty</cite></span></dt><dd><p>property)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="geopandas.testing.assert_geoseries_equal">
+<code class="sig-prename descclassname">geopandas.testing.</code><code class="sig-name descname">assert_geoseries_equal</code><span class="sig-paren">(</span><em class="sig-param">left</em>, <em class="sig-param">right</em>, <em class="sig-param">check_dtype=True</em>, <em class="sig-param">check_index_type=False</em>, <em class="sig-param">check_series_type=True</em>, <em class="sig-param">check_less_precise=False</em>, <em class="sig-param">check_geom_type=False</em>, <em class="sig-param">check_crs=True</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.testing.assert_geoseries_equal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test util for checking that two GeoSeries are equal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>left, right</strong><span class="classifier">two GeoSeries</span></dt><dd></dd>
+<dt><strong>check_dtype</strong><span class="classifier">bool, default False</span></dt><dd><p>If True, check geo dtype [only included so it’s a drop-in replacement
+for assert_series_equal].</p>
+</dd>
+<dt><strong>check_index_type</strong><span class="classifier">bool, default False</span></dt><dd><p>Check that index types are equal.</p>
+</dd>
+<dt><strong>check_series_type</strong><span class="classifier">bool, default True</span></dt><dd><p>Check that both are same type (<em>and</em> are GeoSeries). If False,
+will attempt to convert both into GeoSeries.</p>
+</dd>
+<dt><strong>check_less_precise</strong><span class="classifier">bool, default False</span></dt><dd><p>If True, use geom_almost_equals. if False, use geom_equals.</p>
+</dd>
+<dt><strong>check_geom_type</strong><span class="classifier">bool, default False</span></dt><dd><p>If True, check that all the geom types are equal.</p>
+</dd>
+<dt><strong>check_crs: bool, default True</strong></dt><dd><p>If <cite>check_series_type</cite> is True, then also check that the
+crs matches.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="geopandas.testing.assert_geodataframe_equal">
+<code class="sig-prename descclassname">geopandas.testing.</code><code class="sig-name descname">assert_geodataframe_equal</code><span class="sig-paren">(</span><em class="sig-param">left</em>, <em class="sig-param">right</em>, <em class="sig-param">check_dtype=True</em>, <em class="sig-param">check_index_type='equiv'</em>, <em class="sig-param">check_column_type='equiv'</em>, <em class="sig-param">check_frame_type=True</em>, <em class="sig-param">check_like=False</em>, <em class="sig-param">check_less_precise=False</em>, <em class="sig-param">check_geom_type=False</em>, <em class="sig-param">check_crs=True</em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.testing.assert_geodataframe_equal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that two GeoDataFrames are equal/</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>left, right</strong><span class="classifier">two GeoDataFrames</span></dt><dd></dd>
+<dt><strong>check_dtype</strong><span class="classifier">bool, default True</span></dt><dd><p>Whether to check the DataFrame dtype is identical.</p>
+</dd>
+<dt><strong>check_index_type, check_column_type</strong><span class="classifier">bool, default ‘equiv’</span></dt><dd><p>Check that index types are equal.</p>
+</dd>
+<dt><strong>check_frame_type</strong><span class="classifier">bool, default True</span></dt><dd><p>Check that both are same type (<em>and</em> are GeoDataFrames). If False,
+will attempt to convert both into GeoDataFrame.</p>
+</dd>
+<dt><strong>check_like</strong><span class="classifier">bool, default False</span></dt><dd><p>If true, ignore the order of rows &amp; columns</p>
+</dd>
+<dt><strong>check_less_precise</strong><span class="classifier">bool, default False</span></dt><dd><p>If True, use geom_almost_equals. if False, use geom_equals.</p>
+</dd>
+<dt><strong>check_geom_type</strong><span class="classifier">bool, default False</span></dt><dd><p>If True, check that all the geom types are equal.</p>
+</dd>
+<dt><strong>check_crs: bool, default True</strong></dt><dd><p>If <cite>check_frame_type</cite> is True, then also check that the
+crs matches.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="top-level-functions">
+<h2>Top-level Functions<a class="headerlink" href="#top-level-functions" title="Permalink to this headline">¶</a></h2>
 <table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
@@ -1215,19 +1783,34 @@ do so.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(filename[, bbox, mask, rows])</p></td>
 <td><p>Returns a GeoDataFrame from a file or URL.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.sjoin.html#geopandas.sjoin" title="geopandas.sjoin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sjoin</span></code></a>(left_df, right_df[, how, op, lsuffix, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.read_parquet.html#geopandas.read_parquet" title="geopandas.read_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_parquet</span></code></a>(path[, columns])</p></td>
+<td><p>Load a Parquet object from the file path, returning a GeoDataFrame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.read_feather.html#geopandas.read_feather" title="geopandas.read_feather"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_feather</span></code></a>(path[, columns])</p></td>
+<td><p>Load a Feather object from the file path, returning a GeoDataFrame.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.read_postgis.html#geopandas.read_postgis" title="geopandas.read_postgis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_postgis</span></code></a>(sql, con[, geom_col, crs, …])</p></td>
+<td><p>Returns a GeoDataFrame corresponding to the result of the query string, which must contain a geometry column in WKB representation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.sjoin.html#geopandas.sjoin" title="geopandas.sjoin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sjoin</span></code></a>(left_df, right_df[, how, op, lsuffix, …])</p></td>
 <td><p>Spatial join of two GeoDataFrames.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.overlay.html#geopandas.overlay" title="geopandas.overlay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay</span></code></a>(df1, df2[, how, make_valid, …])</p></td>
-<td><p>Perform spatial overlay between two polygons.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.overlay.html#geopandas.overlay" title="geopandas.overlay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlay</span></code></a>(df1, df2[, how, make_valid, …])</p></td>
+<td><p>Perform spatial overlay between two GeoDataFrames.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.clip.html#geopandas.clip" title="geopandas.clip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clip</span></code></a>(gdf, mask[, keep_geom_type])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.clip.html#geopandas.clip" title="geopandas.clip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clip</span></code></a>(gdf, mask[, keep_geom_type])</p></td>
 <td><p>Clip points, lines, or polygon geometries to the mask extent.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.tools.geocode.html#geopandas.tools.geocode" title="geopandas.tools.geocode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools.geocode</span></code></a>(strings[, provider])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.tools.geocode.html#geopandas.tools.geocode" title="geopandas.tools.geocode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools.geocode</span></code></a>(strings[, provider])</p></td>
 <td><p>Geocode a set of strings and get a GeoDataFrame of the resulting points.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="geopandas.datasets.get_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">datasets.get_path</span></code></a>(dataset)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.tools.collect.html#geopandas.tools.collect" title="geopandas.tools.collect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools.collect</span></code></a>(x[, multi])</p></td>
+<td><p>Collect single part geometries into their Multi* counterpart</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="reference/geopandas.points_from_xy.html#geopandas.points_from_xy" title="geopandas.points_from_xy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">points_from_xy</span></code></a>(x, y[, z, crs])</p></td>
+<td><p>Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="reference/geopandas.datasets.get_path.html#geopandas.datasets.get_path" title="geopandas.datasets.get_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">datasets.get_path</span></code></a>(dataset)</p></td>
 <td><p>Get the path to the data file.</p></td>
 </tr>
 </tbody>

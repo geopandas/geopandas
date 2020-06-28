@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.sjoin &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>geopandas.sjoin &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="geopandas.overlay" href="geopandas.overlay.html" />
-    <link rel="prev" title="geopandas.read_file" href="geopandas.read_file.html" /> 
+    <link rel="prev" title="geopandas.read_postgis" href="geopandas.read_postgis.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -110,23 +110,31 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../reference.html">Reference to All Attributes and Methods</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../reference.html#geoseries">GeoSeries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../reference.html#geodataframe">GeoDataFrame</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#api-pages">API Pages</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#testing">Testing</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#top-level-functions">Top-level Functions</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.read_file.html">geopandas.read_file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_parquet.html">geopandas.read_parquet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_feather.html">geopandas.read_feather</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_postgis.html">geopandas.read_postgis</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">geopandas.sjoin</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.clip.html">geopandas.clip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.tools.collect.html">geopandas.tools.collect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.points_from_xy.html">geopandas.points_from_xy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -211,7 +219,7 @@
 left_df geometry column</p></li>
 </ul>
 </dd>
-<dt><strong>op</strong><span class="classifier">string, default ‘intersection’</span></dt><dd><p>Binary predicate, one of {‘intersects’, ‘contains’, ‘within’}.
+<dt><strong>op</strong><span class="classifier">string, default ‘intersects’</span></dt><dd><p>Binary predicate, one of {‘intersects’, ‘contains’, ‘within’}.
 See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates">http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates</a>.</p>
 </dd>
 <dt><strong>lsuffix</strong><span class="classifier">string, default ‘left’</span></dt><dd><p>Suffix to apply to overlapping column names (left GeoDataFrame).</p>
@@ -236,7 +244,7 @@ See <a class="reference external" href="http://shapely.readthedocs.io/en/latest/
         <a href="geopandas.overlay.html" class="btn btn-neutral float-right" title="geopandas.overlay" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="geopandas.read_file.html" class="btn btn-neutral float-left" title="geopandas.read_file" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="geopandas.read_postgis.html" class="btn btn-neutral float-left" title="geopandas.read_postgis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

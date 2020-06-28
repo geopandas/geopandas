@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Merging Data &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Merging Data &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -102,10 +102,10 @@
 <li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Merging Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#appending">Appending</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#attribute-joins">Attribute Joins</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spatial-joins">Spatial Joins</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#sjoin-arguments">Sjoin Arguments</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#sjoin-performance">Sjoin Performance</a></li>
 </ul>
 </li>
 </ul>
@@ -116,10 +116,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -188,7 +190,7 @@
 <h1>Merging Data<a class="headerlink" href="#merging-data" title="Permalink to this headline">¶</a></h1>
 <p>There are two ways to combine datasets in <em>geopandas</em> – attribute joins and spatial joins.</p>
 <p>In an attribute join, a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> or <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is combined with a regular <em>pandas</em> <code class="docutils literal notranslate"><span class="pre">Series</span></code> or <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> based on a common variable. This is analogous to normal merging or joining in <em>pandas</em>.</p>
-<p>In a Spatial Join, observations from to <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> or <code class="docutils literal notranslate"><span class="pre">GeoDataFrames</span></code> are combined based on their spatial relationship to one another.</p>
+<p>In a Spatial Join, observations from two <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> or <code class="docutils literal notranslate"><span class="pre">GeoDataFrames</span></code> are combined based on their spatial relationship to one another.</p>
 <p>In the following examples, we use these datasets:</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
 
@@ -205,13 +207,28 @@
 <span class="gp">In [6]: </span><span class="n">countries</span> <span class="o">=</span> <span class="n">countries</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;country&#39;</span><span class="p">})</span>
 </pre></div>
 </div>
+<div class="section" id="appending">
+<h2>Appending<a class="headerlink" href="#appending" title="Permalink to this headline">¶</a></h2>
+<p>Appending GeoDataFrames and GeoSeries uses pandas <code class="docutils literal notranslate"><span class="pre">append</span></code> methods. Keep in mind, that appended geometry columns needs to have the same CRS.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># Appending GeoSeries</span>
+<span class="gp">In [7]: </span><span class="n">joined</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cities</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span>
+
+<span class="go"># Appending GeoDataFrames</span>
+<span class="gp">In [8]: </span><span class="n">europe</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="o">.</span><span class="n">continent</span> <span class="o">==</span> <span class="s1">&#39;Europe&#39;</span><span class="p">]</span>
+
+<span class="gp">In [9]: </span><span class="n">asia</span> <span class="o">=</span> <span class="n">world</span><span class="p">[</span><span class="n">world</span><span class="o">.</span><span class="n">continent</span> <span class="o">==</span> <span class="s1">&#39;Asia&#39;</span><span class="p">]</span>
+
+<span class="gp">In [10]: </span><span class="n">eurasia</span> <span class="o">=</span> <span class="n">europe</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asia</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="attribute-joins">
 <h2>Attribute Joins<a class="headerlink" href="#attribute-joins" title="Permalink to this headline">¶</a></h2>
 <p>Attribute joins are accomplished using the <code class="docutils literal notranslate"><span class="pre">merge</span></code> method. In general, it is recommended to use the <code class="docutils literal notranslate"><span class="pre">merge</span></code> method called from the spatial dataset. With that said, the stand-alone <code class="docutils literal notranslate"><span class="pre">merge</span></code> function will work if the GeoDataFrame is in the <code class="docutils literal notranslate"><span class="pre">left</span></code> argument; if a DataFrame is in the <code class="docutils literal notranslate"><span class="pre">left</span></code> argument and a GeoDataFrame is in the <code class="docutils literal notranslate"><span class="pre">right</span></code> position, the result will no longer be a GeoDataFrame.</p>
 <p>For example, consider the following merge that adds full names to a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> that initially has only ISO codes for each country by merging it with a <em>pandas</em> <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>.</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># `country_shapes` is GeoDataFrame with country shapes and iso codes</span>
-<span class="gp">In [7]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="gh">Out[7]: </span><span class="go"></span>
+<span class="gp">In [11]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[11]: </span><span class="go"></span>
 <span class="go">                                            geometry iso_a3</span>
 <span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...    FJI</span>
 <span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...    TZA</span>
@@ -220,8 +237,8 @@
 <span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...    USA</span>
 
 <span class="go"># `country_names` is DataFrame with country names and iso codes</span>
-<span class="gp">In [8]: </span><span class="n">country_names</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="gh">Out[8]: </span><span class="go"></span>
+<span class="gp">In [12]: </span><span class="n">country_names</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[12]: </span><span class="go"></span>
 <span class="go">                       name iso_a3</span>
 <span class="go">0                      Fiji    FJI</span>
 <span class="go">1                  Tanzania    TZA</span>
@@ -230,16 +247,18 @@
 <span class="go">4  United States of America    USA</span>
 
 <span class="go"># Merge with `merge` method on shared variable (iso codes):</span>
-<span class="gp">In [9]: </span><span class="n">country_shapes</span> <span class="o">=</span> <span class="n">country_shapes</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">country_names</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;iso_a3&#39;</span><span class="p">)</span>
+<span class="gp">In [13]: </span><span class="n">country_shapes</span> <span class="o">=</span> <span class="n">country_shapes</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">country_names</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;iso_a3&#39;</span><span class="p">)</span>
 
-<span class="gp">In [10]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="gh">Out[10]: </span><span class="go"></span>
-<span class="go">                                            geometry iso_a3                      name</span>
-<span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...    FJI                      Fiji</span>
-<span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...    TZA                  Tanzania</span>
-<span class="go">2  POLYGON ((-8.665589565 27.656425890, -8.665124...    ESH                 W. Sahara</span>
-<span class="go">3  MULTIPOLYGON (((-122.840000000 49.000000000, -...    CAN                    Canada</span>
-<span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...    USA  United States of America</span>
+<span class="gp">In [14]: </span><span class="n">country_shapes</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[14]: </span><span class="go"></span>
+<span class="go">                                            geometry  ...                      name</span>
+<span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...  ...                      Fiji</span>
+<span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...  ...                  Tanzania</span>
+<span class="go">2  POLYGON ((-8.665589565 27.656425890, -8.665124...  ...                 W. Sahara</span>
+<span class="go">3  MULTIPOLYGON (((-122.840000000 49.000000000, -...  ...                    Canada</span>
+<span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...  ...  United States of America</span>
+
+<span class="go">[5 rows x 3 columns]</span>
 </pre></div>
 </div>
 </div>
@@ -248,8 +267,8 @@
 <p>In a Spatial Join, two geometry objects are merged based on their spatial relationship to one another.</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="go"># One GeoDataFrame of countries, one of Cities.</span>
 <span class="go"># Want to merge so we can get each city&#39;s country.</span>
-<span class="gp">In [11]: </span><span class="n">countries</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="gh">Out[11]: </span><span class="go"></span>
+<span class="gp">In [15]: </span><span class="n">countries</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[15]: </span><span class="go"></span>
 <span class="go">                                            geometry                   country</span>
 <span class="go">0  MULTIPOLYGON (((180.000000000 -16.067132664, 1...                      Fiji</span>
 <span class="go">1  POLYGON ((33.903711197 -0.950000000, 34.072620...                  Tanzania</span>
@@ -257,8 +276,8 @@
 <span class="go">3  MULTIPOLYGON (((-122.840000000 49.000000000, -...                    Canada</span>
 <span class="go">4  MULTIPOLYGON (((-122.840000000 49.000000000, -...  United States of America</span>
 
-<span class="gp">In [12]: </span><span class="n">cities</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="gh">Out[12]: </span><span class="go"></span>
+<span class="gp">In [16]: </span><span class="n">cities</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[16]: </span><span class="go"></span>
 <span class="go">           name                           geometry</span>
 <span class="go">0  Vatican City  POINT (12.453386545 41.903282180)</span>
 <span class="go">1    San Marino  POINT (12.441770158 43.936095835)</span>
@@ -267,10 +286,10 @@
 <span class="go">4       Palikir  POINT (158.149974324 6.916643696)</span>
 
 <span class="go"># Execute spatial join</span>
-<span class="gp">In [13]: </span><span class="n">cities_with_country</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cities</span><span class="p">,</span> <span class="n">countries</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
+<span class="gp">In [17]: </span><span class="n">cities_with_country</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cities</span><span class="p">,</span> <span class="n">countries</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
 
-<span class="gp">In [14]: </span><span class="n">cities_with_country</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
-<span class="gh">Out[14]: </span><span class="go"></span>
+<span class="gp">In [18]: </span><span class="n">cities_with_country</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[18]: </span><span class="go"></span>
 <span class="go">             name                           geometry  index_right  country</span>
 <span class="go">0    Vatican City  POINT (12.453386545 41.903282180)          141    Italy</span>
 <span class="go">1      San Marino  POINT (12.441770158 43.936095835)          141    Italy</span>
@@ -281,9 +300,9 @@
 </div>
 <div class="section" id="sjoin-arguments">
 <h3>Sjoin Arguments<a class="headerlink" href="#sjoin-arguments" title="Permalink to this headline">¶</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">sjoin.()</span></code> has two core arguments: <code class="docutils literal notranslate"><span class="pre">how</span></code> and <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sjoin()</span></code> has two core arguments: <code class="docutils literal notranslate"><span class="pre">how</span></code> and <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
 <p><strong>op</strong></p>
-<p>The <code class="docutils literal notranslate"><span class="pre">`op</span></code> argument specifies how <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> decides whether or not to join the attributes of one object to another. There are three different join options as follows:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">op</span></code> argument specifies how <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> decides whether or not to join the attributes of one object to another. There are three different join options as follows:</p>
 <ul class="simple">
 <li><p><cite>intersects</cite>: The attributes will be joined if the boundary and interior of the object intersect in any way with the boundary and/or interior of the other object.</p></li>
 <li><p><cite>within</cite>: The attributes will be joined if the object’s boundary and interior intersect <em>only</em> with the interior of the other object (not its boundary or exterior).</p></li>
@@ -298,23 +317,6 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">inner</span></code>: use intersection of index values from both geodataframes; retain only the <cite>left_df</cite> geometry column</p></li>
 </ul>
 <p>Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the <code class="docutils literal notranslate"><span class="pre">buffer</span></code> method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.</p>
-</div>
-<div class="section" id="sjoin-performance">
-<h3>Sjoin Performance<a class="headerlink" href="#sjoin-performance" title="Permalink to this headline">¶</a></h3>
-<p>Existing spatial indexes on either <cite>left_df</cite> or <cite>right_df</cite> will be reused when performing an <code class="docutils literal notranslate"><span class="pre">sjoin</span></code>. If neither df has a spatial index, a spatial index will be generated for the longer df. If both have a spatial index, the <cite>right_df</cite>’s index will be used preferentially. Performance of multiple sjoins in a row involving a common GeoDataFrame may be improved by pre-generating the spatial index of the common GeoDataFrame prior to performing sjoins using <code class="docutils literal notranslate"><span class="pre">df1.sindex</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df1</span> <span class="o">=</span> <span class="c1"># a GeoDataFrame with data</span>
-<span class="n">df2</span> <span class="o">=</span> <span class="c1"># a second GeoDataFrame</span>
-<span class="n">df3</span> <span class="o">=</span> <span class="c1"># a third GeoDataFrame</span>
-
-<span class="c1"># pre-generate sindex on df1 if it doesn&#39;t already exist</span>
-<span class="n">df1</span><span class="o">.</span><span class="n">sindex</span>
-
-<span class="n">sjoin</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
-<span class="c1"># sindex for df1 is reused</span>
-<span class="n">sjoin</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df3</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
-<span class="c1"># sindex for df1 is reused again</span>
-</pre></div>
-</div>
 </div>
 </div>
 </div>

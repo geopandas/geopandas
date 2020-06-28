@@ -90,7 +90,7 @@ CartoPy (see the list
 
  .. code-block:: none
 
-    /home/joris/miniconda3/envs/geopandas_docs/lib/python3.7/site-packages/geoplot/geoplot.py:680: UserWarning: Plot extent lies outside of the Orthographic projection's viewport. Defaulting to global extent.
+    /opt/miniconda3/envs/geopandas_docs/lib/python3.7/site-packages/geoplot/geoplot.py:680: UserWarning: Plot extent lies outside of the Orthographic projection's viewport. Defaulting to global extent.
       'Plot extent lies outside of the Orthographic projection\'s '
 
 
@@ -193,6 +193,15 @@ or not a certain data column is spatially correlated.
     :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    /Users/martin/Dropbox/Python/geopandas/martinfleis/geopandas/geodataframe.py:830: UserWarning: Geometry column does not contain geometry.
+      warnings.warn("Geometry column does not contain geometry.")
+
 
 
 These are just some of the plots you can make with Geoplot. There are
@@ -204,7 +213,7 @@ the Geoplot documentation.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.994 seconds)
+   **Total running time of the script:** ( 0 minutes  13.387 seconds)
 
 
 .. _sphx_glr_download_gallery_plotting_with_geoplot.py:

@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Index &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -107,10 +107,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -187,6 +189,7 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -194,6 +197,8 @@
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#W"><strong>W</strong></a>
+ | <a href="#X"><strong>X</strong></a>
+ | <a href="#Y"><strong>Y</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -220,6 +225,10 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoSeries.area">area (geopandas.GeoSeries attribute)</a>
+</li>
+      <li><a href="reference.html#geopandas.testing.assert_geodataframe_equal">assert_geodataframe_equal() (in module geopandas.testing)</a>
+</li>
+      <li><a href="reference.html#geopandas.testing.assert_geoseries_equal">assert_geoseries_equal() (in module geopandas.testing)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -257,6 +266,8 @@
       </ul></li>
       <li><a href="reference/geopandas.clip.html#geopandas.clip">clip() (in module geopandas)</a>
 </li>
+      <li><a href="reference/geopandas.tools.collect.html#geopandas.tools.collect">collect() (in module geopandas.tools)</a>
+</li>
       <li><a href="reference.html#geopandas.GeoSeries.contains">contains() (geopandas.GeoSeries method)</a>
 </li>
   </ul></td>
@@ -267,6 +278,8 @@
         <li><a href="geometric_manipulations.html#GeoSeries.convex_hull">(GeoSeries attribute)</a>
 </li>
       </ul></li>
+      <li><a href="reference.html#geopandas.GeoSeries.covers">covers() (geopandas.GeoSeries method)</a>
+</li>
       <li><a href="reference.html#geopandas.GeoSeries.crosses">crosses() (geopandas.GeoSeries method)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoDataFrame.crs">crs (geopandas.GeoDataFrame attribute)</a>
@@ -283,9 +296,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoSeries.difference">difference() (geopandas.GeoSeries method)</a>
 </li>
+      <li><a href="reference.html#geopandas.GeoSeries.disjoint">disjoint() (geopandas.GeoSeries method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#geopandas.GeoSeries.disjoint">disjoint() (geopandas.GeoSeries method)</a>
+      <li><a href="reference.html#geopandas.GeoDataFrame.dissolve">dissolve() (geopandas.GeoDataFrame method)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.distance">distance() (geopandas.GeoSeries method)</a>
 </li>
@@ -303,6 +318,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoDataFrame.explode">explode() (geopandas.GeoDataFrame method)</a>
+</li>
       <li><a href="reference.html#geopandas.GeoSeries.exterior">exterior (geopandas.GeoSeries attribute)</a>
 </li>
   </ul></td>
@@ -311,14 +328,18 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoSeries.fillna">fillna() (geopandas.GeoSeries method)</a>
+</li>
+      <li><a href="reference.html#geopandas.GeoDataFrame.from_features">from_features() (geopandas.GeoDataFrame class method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoDataFrame.from_file">from_file() (geopandas.GeoDataFrame class method)</a>
 
       <ul>
         <li><a href="reference.html#geopandas.GeoSeries.from_file">(geopandas.GeoSeries class method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoDataFrame.from_postgis">from_postgis() (geopandas.GeoDataFrame class method)</a>
 </li>
   </ul></td>
@@ -332,11 +353,19 @@
       <li><a href="reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame">GeoDataFrame (class in geopandas)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.geom_almost_equals">geom_almost_equals() (geopandas.GeoSeries method)</a>
+
+      <ul>
+        <li><a href="reference.html#geopandas.testing.geom_almost_equals">(in module geopandas.testing)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoSeries.geom_equals">geom_equals() (geopandas.GeoSeries method)</a>
+
+      <ul>
+        <li><a href="reference.html#geopandas.testing.geom_equals">(in module geopandas.testing)</a>
 </li>
+      </ul></li>
       <li><a href="reference.html#geopandas.GeoSeries.geom_type">geom_type (geopandas.GeoSeries attribute)</a>
 </li>
       <li><a href="reference/geopandas.GeoSeries.html#geopandas.GeoSeries">GeoSeries (class in geopandas)</a>
@@ -355,15 +384,17 @@
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.intersects">intersects() (geopandas.GeoSeries method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoSeries.is_empty">is_empty (geopandas.GeoSeries attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoSeries.is_ring">is_ring (geopandas.GeoSeries attribute)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.is_simple">is_simple (geopandas.GeoSeries attribute)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.is_valid">is_valid (geopandas.GeoSeries attribute)</a>
+</li>
+      <li><a href="reference.html#geopandas.GeoSeries.isna">isna() (geopandas.GeoSeries method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -376,8 +407,20 @@
   </ul></td>
 </tr></table>
 
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoSeries.notna">notna() (geopandas.GeoSeries method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoSeries.overlaps">overlaps() (geopandas.GeoSeries method)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/geopandas.overlay.html#geopandas.overlay">overlay() (in module geopandas)</a>
 </li>
@@ -394,17 +437,27 @@
 </li>
       </ul></li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/geopandas.points_from_xy.html#geopandas.points_from_xy">points_from_xy() (in module geopandas)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/geopandas.read_feather.html#geopandas.read_feather">read_feather() (in module geopandas)</a>
+</li>
       <li><a href="reference/geopandas.read_file.html#geopandas.read_file">read_file() (in module geopandas)</a>
 </li>
-      <li><a href="reference.html#geopandas.GeoDataFrame.rename_geometry">rename_geometry() (geopandas.GeoDataFrame method)</a>
+      <li><a href="reference/geopandas.read_parquet.html#geopandas.read_parquet">read_parquet() (in module geopandas)</a>
+</li>
+      <li><a href="reference/geopandas.read_postgis.html#geopandas.read_postgis">read_postgis() (in module geopandas)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoDataFrame.rename_geometry">rename_geometry() (geopandas.GeoDataFrame method)</a>
+</li>
       <li><a href="reference.html#geopandas.GeoSeries.representative_point">representative_point() (geopandas.GeoSeries method)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.rotate">rotate() (geopandas.GeoSeries method)</a>
@@ -451,18 +504,32 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference.html#geopandas.GeoDataFrame.to_crs">to_crs() (geopandas.GeoDataFrame method)</a>
+      <li><a href="reference.html#geopandas.GeoDataFrame.to_crs">to_crs() (geopandas.GeoDataFrame method)</a>, <a href="reference.html#geopandas.GeoDataFrame.to_crs">[1]</a>
 
       <ul>
         <li><a href="reference.html#geopandas.GeoSeries.to_crs">(geopandas.GeoSeries method)</a>
 </li>
       </ul></li>
+      <li><a href="reference.html#geopandas.GeoDataFrame.to_feather">to_feather() (geopandas.GeoDataFrame method)</a>
+</li>
       <li><a href="reference.html#geopandas.GeoDataFrame.to_file">to_file() (geopandas.GeoDataFrame method)</a>
+
+      <ul>
+        <li><a href="reference.html#geopandas.GeoSeries.to_file">(geopandas.GeoSeries method)</a>
 </li>
+      </ul></li>
       <li><a href="reference.html#geopandas.GeoDataFrame.to_json">to_json() (geopandas.GeoDataFrame method)</a>
+
+      <ul>
+        <li><a href="reference.html#geopandas.GeoSeries.to_json">(geopandas.GeoSeries method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoDataFrame.to_parquet">to_parquet() (geopandas.GeoDataFrame method)</a>
+</li>
+      <li><a href="reference.html#geopandas.GeoDataFrame.to_postgis">to_postgis() (geopandas.GeoDataFrame method)</a>
+</li>
       <li><a href="reference.html#geopandas.GeoSeries.total_bounds">total_bounds (geopandas.GeoSeries attribute)</a>
 </li>
       <li><a href="reference.html#geopandas.GeoSeries.touches">touches() (geopandas.GeoSeries method)</a>
@@ -496,6 +563,22 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#geopandas.GeoSeries.within">within() (geopandas.GeoSeries method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="X">X</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoSeries.x">x (geopandas.GeoSeries attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Y">Y</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#geopandas.GeoSeries.y">y (geopandas.GeoSeries attribute)</a>
 </li>
   </ul></td>
 </tr></table>

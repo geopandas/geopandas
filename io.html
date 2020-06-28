@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reading and Writing Files &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Reading and Writing Files &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -100,6 +100,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#geometry-filter">Geometry Filter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#bounding-box-filter">Bounding Box Filter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#row-filter">Row Filter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#field-column-filters">Field/Column Filters</a></li>
 </ul>
 </li>
 </ul>
@@ -120,10 +121,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -224,7 +227,19 @@ a web URL, for example for GeoJSON files from <a class="reference external" href
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data/gadm36_AFG_1.shp&quot;</span>
 </pre></div>
 </div>
-<p><em>geopandas</em> can also get data from a PostGIS database using the <code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_postgis()</span></code> command.</p>
+<p>It is also possible to read any file-like objects with a <code class="docutils literal notranslate"><span class="pre">read()</span></code> method, such as a file handler (e.g. via built-in <code class="docutils literal notranslate"><span class="pre">open</span></code> function) or <code class="docutils literal notranslate"><span class="pre">StringIO</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;test.geojson&quot;</span>
+<span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also read path objects:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="n">path_object</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">path_object</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>geopandas</em> can also get data from a PostGIS database using the <a class="reference internal" href="reference/geopandas.read_postgis.html#geopandas.read_postgis" title="geopandas.read_postgis"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_postgis()</span></code></a> command.</p>
 <div class="section" id="reading-subsets-of-the-data">
 <h3>Reading subsets of the data<a class="headerlink" href="#reading-subsets-of-the-data" title="Permalink to this headline">¶</a></h3>
 <p>Since geopandas is powered by Fiona, which is powered by GDAL, you can take advantage of
@@ -280,6 +295,35 @@ or a slice object.</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="field-column-filters">
+<h4>Field/Column Filters<a class="headerlink" href="#field-column-filters" title="Permalink to this headline">¶</a></h4>
+<p>Load in a subset of fields from the file:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Requires Fiona 1.8+</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">ignore_fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;iso_a3&quot;</span><span class="p">,</span> <span class="s2">&quot;gdp_md_est&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Skip loading geometry from the file:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Requires Fiona 1.8+</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Returns <code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code></p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">ignore_geometry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
 </div>
 </div>
 <div class="section" id="writing-spatial-data">
@@ -287,6 +331,14 @@ or a slice object.</p>
 <p>GeoDataFrames can be exported to many different standard formats using the
 <a class="reference internal" href="reference.html#geopandas.GeoDataFrame.to_file" title="geopandas.GeoDataFrame.to_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame.to_file()</span></code></a> method.
 For a full list of supported formats, type <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">fiona.supported_drivers</span></code>.</p>
+<p>In addition, GeoDataFrames can be uploaded to <a class="reference external" href="https://postgis.net/">PostGIS</a> database (starting with GeoPandas 0.8)
+by using the <a class="reference internal" href="reference.html#geopandas.GeoDataFrame.to_postgis" title="geopandas.GeoDataFrame.to_postgis"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame.to_postgis()</span></code></a> method.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>GeoDataFrame can contain more field types than supported by most of the file formats. For example tuples or lists
+can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
+Before saving to a file, they need to be converted to a format supported by a selected driver.</p>
+</div>
 <p><strong>Writing to Shapefile</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;countries.shp&quot;</span><span class="p">)</span>
 </pre></div>
@@ -298,6 +350,13 @@ For a full list of supported formats, type <code class="docutils literal notrans
 <p><strong>Writing to GeoPackage</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;countries&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
 <span class="n">cities_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;cities&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Writing to PostGIS</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
+<span class="n">db_connection_url</span> <span class="o">=</span> <span class="s2">&quot;postgres://myusername:mypassword@myhost:5432/mydatabase&quot;</span><span class="p">;</span>
+<span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">db_connection_url</span><span class="p">)</span>
+<span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_postgis</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;countries_table&quot;</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

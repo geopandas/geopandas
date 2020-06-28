@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Changelog &mdash; GeoPandas 0.8.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing to GeoPandas" href="contributing.html" />
+    <link rel="prev" title="geopandas.datasets.get_path" href="reference/geopandas.datasets.get_path.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> GeoPandas
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-8-0-june-24-2020">Version 0.8.0 (June 24, 2020)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-7-0-february-16-2020">Version 0.7.0 (February 16, 2020)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-6-3-february-6-2020">Version 0.6.3 (February 6, 2020)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-6-2-november-18-2019">Version 0.6.2 (November 18, 2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-6-1-october-12-2019">Version 0.6.1 (October 12, 2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-6-0-september-27-2019">Version 0.6.0 (September 27, 2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-5-1-july-11-2019">Version 0.5.1 (July 11, 2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-5-0-april-25-2019">Version 0.5.0 (April 25, 2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-4-1-march-5-2019">Version 0.4.1 (March 5, 2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-4-0-july-15-2018">Version 0.4.0 (July 15, 2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-3-0-august-29-2017">Version 0.3.0 (August 29, 2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-2-0">Version 0.2.0</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Developer</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GeoPandas</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Changelog</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="version-0-8-0-june-24-2020">
+<h2>Version 0.8.0 (June 24, 2020)<a class="headerlink" href="#version-0-8-0-june-24-2020" title="Permalink to this headline">¶</a></h2>
+<p><strong>Experimental</strong>: optional use of PyGEOS to speed up spatial operations (#1155).
+PyGEOS is a faster alternative for Shapely (being contributed back to a future
+version of Shapely), and is used in element-wise spatial operations and for
+spatial index in e.g. <cite>sjoin</cite> (#1343, #1401, #1421, #1427, #1428). See the
+[installation docs](<a class="reference external" href="https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency">https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency</a>)
+for more info and how to enable it.</p>
+<p>New features and improvements:</p>
+<ul>
+<li><p>IO enhancements:
+- New <cite>GeoDataFrame.to_postgis()</cite> method to write to PostGIS database (#1248).
+- New Apache Parquet and Feather file format support (#1180, #1435)
+- Allow appending to files with <cite>GeoDataFrame.to_file</cite> (#1229).
+- Add support for the <cite>ignore_geometry</cite> keyword in <cite>read_file</cite> to only read</p>
+<blockquote>
+<div><p>the attribute data. If set to True, a pandas DataFrame without geometry is
+returned (#1383).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p><cite>geopandas.read_file</cite> now supports reading from file-like objects (#1329).</p></li>
+<li><p><cite>GeoDataFrame.to_file</cite> now supports specifying the CRS to write to the file</p></li>
+</ul>
+<p>(#802). By default it still uses the CRS of the GeoDataFrame.
+- New <cite>chunksize</cite> keyword in <cite>geopandas.read_postgis</cite> to read a query in</p>
+<blockquote>
+<div><p>chunks (#1123).</p>
+</div></blockquote>
+</li>
+<li><p>Improvements related to geometry columns and CRS:
+- Any column of the GeoDataFrame that has a “geometry” dtype is now returned</p>
+<blockquote>
+<div><p>as a GeoSeries. This means that when having multiple geometry columns, not
+only the “active” geometry column is returned as a GeoSeries, but also
+accessing another geometry column (<cite>gdf[“other_geom_column”]</cite>) gives a
+GeoSeries (#1336).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Multiple geometry columns in a GeoDataFrame can now each have a different
+CRS. The global <cite>gdf.crs</cite> attribute continues to returns the CRS of the
+“active” geometry column. The CRS of other geometry columns can be accessed
+from the column itself (eg <cite>gdf[“other_geom_column”].crs</cite>) (#1339).</p></li>
+<li><p>New <cite>set_crs()</cite> method on GeoDataFrame/GeoSeries to set the CRS of naive
+geometries (#747).</p></li>
+</ul>
+</li>
+<li><p>Improvements related to plotting:
+- The y-axis is now scaled depending on the center of the plot when using a</p>
+<blockquote>
+<div><p>geographic CRS, instead of using an equal aspect ratio (#1290).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>When passing a column of categorical dtype to the <cite>column=</cite> keyword of the
+GeoDataFrame <cite>plot()</cite>, we now honor all categories and its order (#1483).
+In addition, a new <cite>categories</cite> keyword allows to specify all categories
+and their order otherwise (#1173).</p></li>
+<li><p>For choropleths using a classification scheme (using <cite>scheme=</cite>), the
+<cite>legend_kwds</cite> accept two new keywords to control the formatting of the
+legend: <cite>fmt</cite> with a format string for the bin edges (#1253), and <cite>labels</cite>
+to pass fully custom class labels (#1302).</p></li>
+</ul>
+</li>
+<li><p>New <cite>covers()</cite> and <cite>covered_by()</cite> methods on GeoSeries/GeoDataframe for the
+equivalent spatial predicates (#1460, #1462).</p></li>
+<li><p>GeoPandas now warns when using distance-based methods with data in a
+geographic projection (#1378).</p></li>
+</ul>
+<p>Deprecations:</p>
+<ul class="simple">
+<li><p>When constructing a GeoSeries or GeoDataFrame from data that already has a
+CRS, a deprecation warning is raised when both CRS don’t match, and in the
+future an error will be raised in such a case. You can use the new <cite>set_crs</cite>
+method to override an existing CRS. See
+[the docs](<a class="reference external" href="https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns">https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns</a>).</p></li>
+<li><p>The helper functions in the <cite>geopandas.plotting</cite> module are deprecated for
+public usage (#656).</p></li>
+<li><p>The <cite>geopandas.io</cite> functions are deprecated, use the top-level <cite>read_file</cite> and
+<cite>to_file</cite> instead (#1407).</p></li>
+<li><p>The set operators (<cite>&amp;</cite>, <cite>|</cite>, <cite>^</cite>, <cite>-</cite>) are deprecated, use the
+<cite>intersection()</cite>, <cite>union()</cite>, <cite>symmetric_difference()</cite>, <cite>difference()</cite> methods
+instead (#1255).</p></li>
+<li><p>The <cite>sindex</cite> for empty dataframe will in the future return an empty spatial
+index instead of <cite>None</cite> (#1438).</p></li>
+<li><p>The <cite>objects</cite> keyword in the <cite>intersection</cite> method of the spatial index
+returned by the <cite>sindex</cite> attribute is deprecated and will be removed in the
+future (#1440).</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Fix the <cite>total_bounds()</cite> method to ignore missing and empty geometries (#1312).</p></li>
+<li><p>Fix <cite>geopandas.clip</cite> when masking with non-overlapping area resulting in an
+empty GeoDataFrame (#1309, #1365).</p></li>
+<li><p>Fix error in <cite>geopandas.sjoin</cite> when joining on an empty geometry column (#1318).</p></li>
+<li><p>CRS related fixes: <cite>pandas.concat</cite> preserves CRS when concatenating GeoSeries
+objects (#1340), preserve the CRS in <cite>geopandas.clip</cite> (#1362) and in
+<cite>GeoDataFrame.astype</cite> (#1366).</p></li>
+<li><p>Fix bug in <cite>GeoDataFrame.explode()</cite> when ‘level_1’ is one of the column names
+(#1445).</p></li>
+<li><p>Better error message when rtree is not installed (#1425).</p></li>
+<li><p>Fix bug in <cite>GeoSeries.equals()</cite> (#1451).</p></li>
+<li><p>Fix plotting of multi-part geometries with additional style keywords (#1385).</p></li>
+</ul>
+<p>And we now have a [Code of Conduct](<a class="reference external" href="https://github.com/geopandas/geopandas/blob/master/CODE_OF_CONDUCT.md">https://github.com/geopandas/geopandas/blob/master/CODE_OF_CONDUCT.md</a>)!</p>
+<p>GeoPandas 0.8.0 is the last release to support Python 3.5. The next release
+will require Python 3.6, pandas 0.24, numpy 1.15 and shapely 1.6 or higher.</p>
+</div>
+<div class="section" id="version-0-7-0-february-16-2020">
+<h2>Version 0.7.0 (February 16, 2020)<a class="headerlink" href="#version-0-7-0-february-16-2020" title="Permalink to this headline">¶</a></h2>
+<p>Support for Python 2.7 has been dropped. GeoPandas now works with Python &gt;= 3.5.</p>
+<p>The important API change of this release is that GeoPandas now requires
+PROJ &gt; 6 and pyproj &gt; 2.2, and that the <cite>.crs</cite> attribute of a GeoSeries and
+GeoDataFrame no longer stores the CRS information as a proj4 string or dict,
+but as a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> object (#1101).</p>
+<p>This gives a better user interface and integrates improvements from pyproj and
+PROJ 6, but might also require some changes in your code. Check the
+[migration guide](<a class="reference external" href="https://geopandas.readthedocs.io/en/latest/projections.html#upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6">https://geopandas.readthedocs.io/en/latest/projections.html#upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6</a>)
+in the documentation.</p>
+<p>Other API changes;</p>
+<ul class="simple">
+<li><p>The <cite>GeoDataFrame.to_file</cite> method will now also write the GeoDataFrame index
+to the file, if the index is named and/or non-integer. You can use the
+<cite>index=True/False</cite> keyword to overwrite this default inference (#1059).</p></li>
+</ul>
+<p>New features and improvements:</p>
+<ul class="simple">
+<li><p>A new <cite>geopandas.clip</cite> function to clip a GeoDataFrame to the spatial extent
+of another shape (#1128).</p></li>
+<li><p>The <cite>geopandas.overlay</cite> function now works for all geometry types, including
+points and linestrings in addition to polygons (#1110).</p></li>
+<li><p>The <cite>plot()</cite> method gained support for missing values (in the column that
+determines the colors). By default it doesn’t plot the corresponding
+geometries, but using the new <cite>missing_kwds</cite> argument you can specify how to
+style those geometries (#1156).</p></li>
+<li><p>The <cite>plot()</cite> method now also supports plotting GeometryCollection and
+LinearRing objects (#1225).</p></li>
+<li><p>Added support for filtering with a geometry or reading a subset of the rows in
+<cite>geopandas.read_file</cite> (#1160).</p></li>
+<li><p>Added support for the new nullable integer data type of pandas in
+<cite>GeoDataFrame.to_file</cite> (#1220).</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p><cite>GeoSeries.reset_index()</cite> now correctly results in a GeoDataFrame instead of DataFrame (#1252).</p></li>
+<li><p>Fixed the <cite>geopandas.sjoin</cite> function to handle MultiIndex correctly (#1159).</p></li>
+<li><p>Fixed the <cite>geopandas.sjoin</cite> function to preserve the index name of the left GeoDataFrame (#1150).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-6-3-february-6-2020">
+<h2>Version 0.6.3 (February 6, 2020)<a class="headerlink" href="#version-0-6-3-february-6-2020" title="Permalink to this headline">¶</a></h2>
+<p>Small bug-fix release:</p>
+<ul class="simple">
+<li><p>Compatibility with Shapely 1.7 and pandas 1.0 (#1244).</p></li>
+<li><p>Fix <cite>GeoDataFrame.fillna</cite> to accept non-geometry values again when there are
+no missing values in the geometry column. This should make it easier to fill
+the numerical columns of the GeoDataFrame (#1279).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-6-2-november-18-2019">
+<h2>Version 0.6.2 (November 18, 2019)<a class="headerlink" href="#version-0-6-2-november-18-2019" title="Permalink to this headline">¶</a></h2>
+<p>Small bug-fix release fixing a few regressions:</p>
+<ul class="simple">
+<li><p>Fix a regression in passing an array of RRB(A) tuples to the <code class="docutils literal notranslate"><span class="pre">.plot()</span></code>
+method (#1178, #1211).</p></li>
+<li><p>Fix the <code class="docutils literal notranslate"><span class="pre">bounds</span></code> and <code class="docutils literal notranslate"><span class="pre">total_bounds</span></code> attributes for empty GeoSeries, which
+also fixes the repr of an empty or all-NA GeoSeries (#1184, #1195).</p></li>
+<li><p>Fix filtering of a GeoDataFrame to preserve the index type when ending up
+with an empty result (#1190).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-6-1-october-12-2019">
+<h2>Version 0.6.1 (October 12, 2019)<a class="headerlink" href="#version-0-6-1-october-12-2019" title="Permalink to this headline">¶</a></h2>
+<p>Small bug-fix release fixing a few regressions:</p>
+<ul class="simple">
+<li><p>Fix <cite>astype</cite> when converting to string with Multi geometries (#1145) or when converting a dataframe without geometries (#1144).</p></li>
+<li><p>Fix <cite>GeoSeries.fillna</cite> to accept <cite>np.nan</cite> again (#1149).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-6-0-september-27-2019">
+<h2>Version 0.6.0 (September 27, 2019)<a class="headerlink" href="#version-0-6-0-september-27-2019" title="Permalink to this headline">¶</a></h2>
+<p>Important note! This will be the last release to support Python 2.7 (#1031)</p>
+<p>API changes:</p>
+<ul class="simple">
+<li><p>A refactor of the internals based on the pandas ExtensionArray interface (#1000). The main user visible changes are:
+- The <cite>.dtype</cite> of a GeoSeries is now a <cite>‘geometry’</cite> dtype (and no longer a numpy <cite>object</cite> dtype).
+- The <cite>.values</cite> of a GeoSeries now returns a custom <cite>GeometryArray</cite>, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using <cite>np.asarray(..)</cite>.</p></li>
+<li><p>The <cite>GeoSeries</cite> constructor now raises a warning when passed non-geometry data. Currently the constructor falls back to return a pandas <cite>Series</cite>, but in the future this will raise an error (#1085).</p></li>
+<li><p>The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that (see [the docs](<a class="reference external" href="https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html">https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html</a>) for more details):
+- <cite>GeoSeries.isna</cite> now considers only missing values, and if you want to check for empty geometries, you can use <cite>GeoSeries.is_empty</cite> (<cite>GeoDataFrame.isna</cite> already only looked at missing values).
+- <cite>GeoSeries.dropna</cite> now actually drops missing values (before it didn’t drop either missing or empty geometries)
+- <cite>GeoSeries.fillna</cite> only fills missing values (behaviour unchanged).
+- <cite>GeoSeries.align</cite> uses missing values instead of empty geometries by default to fill non-matching index entries.</p></li>
+</ul>
+<p>New features and improvements:</p>
+<ul class="simple">
+<li><p>Addition of a <cite>GeoSeries.affine_transform</cite> method, equivalent of Shapely’s function (#1008).</p></li>
+<li><p>Addition of a <cite>GeoDataFrame.rename_geometry</cite> method to easily rename the active geometry column (#1053).</p></li>
+<li><p>Addition of <cite>geopandas.show_versions()</cite> function, which can be used to give an overview of the installed libraries in bug reports (#899).</p></li>
+<li><p>The <cite>legend_kwds</cite> keyword of the <cite>plot()</cite> method can now also be used to specify keywords for the color bar (#1102).</p></li>
+<li><p>Performance improvement in the <cite>sjoin()</cite> operation by re-using existing spatial index of the input dataframes, if available (#789).</p></li>
+<li><p>Updated documentation to work with latest version of geoplot and contextily (#1044, #1088).</p></li>
+<li><p>A new <code class="docutils literal notranslate"><span class="pre">geopandas.options</span></code> configuration, with currently a single option to control the display precision of the coordinates (<code class="docutils literal notranslate"><span class="pre">options.display_precision</span></code>). The default is now to show less coordinates (3 for projected and 5 for geographic coordinates), but the default can be overridden with the option.</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Also try to use <cite>pysal</cite> instead of <cite>mapclassify</cite> if available (#1082).</p></li>
+<li><p>The <cite>GeoDataFrame.astype()</cite> method now correctly returns a <cite>GeoDataFrame</cite> if the geometry column is preserved (#1009).</p></li>
+<li><p>The <cite>to_crs</cite> method now uses <cite>always_xy=True</cite> to ensure correct lon/lat order handling for pyproj&gt;=2.2.0 (#1122).</p></li>
+<li><p>Fixed passing list-like colors in the <cite>plot()</cite> method in case of “multi” geometries (#1119).</p></li>
+<li><p>Fixed the coloring of shapes and colorbar when passing a custom <cite>norm</cite> in the <cite>plot()</cite> method (#1091, #1089).</p></li>
+<li><p>Fixed <cite>GeoDataFrame.to_file</cite> to preserve VFS file paths (e.g. when a “s3://” path is specified) (#1124).</p></li>
+<li><p>Fixed failing case in <code class="docutils literal notranslate"><span class="pre">geopandas.sjoin</span></code> with empty geometries (#1138).</p></li>
+</ul>
+<p>In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas &gt;=0.23.4 and matplotlib &gt;=2.0.1 (#1002).</p>
+</div>
+<div class="section" id="version-0-5-1-july-11-2019">
+<h2>Version 0.5.1 (July 11, 2019)<a class="headerlink" href="#version-0-5-1-july-11-2019" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Compatibility with latest mapclassify version 2.1.0 (#1025).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-5-0-april-25-2019">
+<h2>Version 0.5.0 (April 25, 2019)<a class="headerlink" href="#version-0-5-0-april-25-2019" title="Permalink to this headline">¶</a></h2>
+<p>Improvements:</p>
+<ul class="simple">
+<li><p>Significant performance improvement (around 10x) for <cite>GeoDataFrame.iterfeatures</cite>,
+which also improves <cite>GeoDataFrame.to_file</cite> (#864).</p></li>
+<li><dl class="simple">
+<dt>File IO enhancements based on Fiona 1.8:</dt><dd><ul>
+<li><p>Support for writing bool dtype (#855) and datetime dtype, if the file format supports it (#728).</p></li>
+<li><p>Support for writing dataframes with multiple geometry types, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867, #870).</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Compatibility with pyproj &gt;= 2 (#962).</p></li>
+<li><p>A new <cite>geopandas.points_from_xy()</cite> helper function to convert x and y coordinates to Point objects (#896).</p></li>
+<li><p>The <cite>buffer</cite> and <cite>interpolate</cite> methods now accept an array-like to specify a variable distance for each geometry (#781).</p></li>
+<li><p>Addition of a <cite>relate</cite> method, corresponding to the shapely method that returns the DE-9IM matrix (#853).</p></li>
+<li><dl class="simple">
+<dt>Plotting improvements:</dt><dd><ul>
+<li><p>Performance improvement in plotting by only flattening the geometries if there are actually ‘Multi’ geometries (#785).</p></li>
+<li><p>Choropleths: access to all <cite>mapclassify</cite> classification schemes and addition of the <cite>classification_kwds</cite> keyword in the <cite>plot</cite> method to specify options for the scheme (#876).</p></li>
+<li><p>Ability to specify a matplotlib axes object on which to plot the color bar with the <cite>cax</cite> keyword, in order to have more control over the color bar placement (#894).</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Changed the default provider in <code class="docutils literal notranslate"><span class="pre">geopandas.tools.geocode</span></code> from Google (now requires an API key) to Geocode.Farm (#907, #975).</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Remove the edge in the legend marker (#807).</p></li>
+<li><p>Fix the <cite>align</cite> method to preserve the CRS (#829).</p></li>
+<li><p>Fix <cite>geopandas.testing.assert_geodataframe_equal</cite> to correctly compare left and right dataframes (#810).</p></li>
+<li><p>Fix in choropleth mapping when the values contain missing values (#877).</p></li>
+<li><p>Better error message in <cite>sjoin</cite> if the input is not a GeoDataFrame (#842).</p></li>
+<li><p>Fix in <cite>read_postgis</cite> to handle nullable (missing) geometries (#856).</p></li>
+<li><p>Correctly passing through the <cite>parse_dates</cite> keyword in <cite>read_postgis</cite> to the underlying pandas method (#860).</p></li>
+<li><p>Fixed the shape of Antarctica in the included demo dataset ‘naturalearth_lowres’
+(by updating to the latest version) (#804).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-4-1-march-5-2019">
+<h2>Version 0.4.1 (March 5, 2019)<a class="headerlink" href="#version-0-4-1-march-5-2019" title="Permalink to this headline">¶</a></h2>
+<p>Small bug-fix release for compatibility with the latest Fiona and PySAL
+releases:</p>
+<ul class="simple">
+<li><p>Compatibility with Fiona 1.8: fix deprecation warning (#854).</p></li>
+<li><p>Compatibility with PySAL 2.0: switched to <cite>mapclassify</cite> instead of <cite>PySAL</cite> as
+dependency for choropleth mapping with the <cite>scheme</cite> keyword (#872).</p></li>
+<li><p>Fix for new <cite>overlay</cite> implementation in case the intersection is empty (#800).</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-4-0-july-15-2018">
+<h2>Version 0.4.0 (July 15, 2018)<a class="headerlink" href="#version-0-4-0-july-15-2018" title="Permalink to this headline">¶</a></h2>
+<p>Improvements:</p>
+<ul class="simple">
+<li><p>Improved <cite>overlay</cite> function (better performance, several incorrect behaviours fixed) (#429)</p></li>
+<li><p>Pass keywords to control legend behavior (<cite>legend_kwds</cite>) to <cite>plot</cite> (#434)</p></li>
+<li><p>Add basic support for reading remote datasets in <cite>read_file</cite> (#531)</p></li>
+<li><p>Pass kwargs for <cite>buffer</cite> operation on GeoSeries (#535)</p></li>
+<li><p>Expose all geopy services as options in geocoding (#550)</p></li>
+<li><p>Faster write speeds to GeoPackage (#605)</p></li>
+<li><p>Permit <cite>read_file</cite> filtering with a bounding box from a GeoDataFrame (#613)</p></li>
+<li><p>Set CRS on GeoDataFrame returned by <cite>read_postgis</cite> (#627)</p></li>
+<li><p>Permit setting markersize for Point GeoSeries plots with column values (#633)</p></li>
+<li><p>Started an example gallery (#463, #690, #717)</p></li>
+<li><p>Support for plotting MultiPoints (#683)</p></li>
+<li><p>Testing functionalty (e.g. <cite>assert_geodataframe_equal</cite>) is now publicly exposed (#707)</p></li>
+<li><p>Add <cite>explode</cite> method to GeoDataFrame (similar to the GeoSeries method) (#671)</p></li>
+<li><p>Set equal aspect on active axis on multi-axis figures (#718)</p></li>
+<li><p>Pass array of values to column argument in <cite>plot</cite> (#770)</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Ensure that colorbars are plotted on the correct axis (#523)</p></li>
+<li><p>Handle plotting empty GeoDataFrame (#571)</p></li>
+<li><p>Save z-dimension when writing files (#652)</p></li>
+<li><p>Handle reading empty shapefiles (#653)</p></li>
+<li><p>Correct dtype for empty result of spatial operations (#685)</p></li>
+<li><p>Fix empty <cite>sjoin</cite> handling for pandas&gt;=0.23 (#762)</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-3-0-august-29-2017">
+<h2>Version 0.3.0 (August 29, 2017)<a class="headerlink" href="#version-0-3-0-august-29-2017" title="Permalink to this headline">¶</a></h2>
+<p>Improvements:</p>
+<ul class="simple">
+<li><p>Improve plotting performance using <code class="docutils literal notranslate"><span class="pre">matplotlib.collections</span></code> (#267)</p></li>
+<li><p>Improve default plotting appearance. The defaults now follow the new matplotlib defaults (#318, #502, #510)</p></li>
+<li><p>Provide access to x/y coordinates as attributes for Point GeoSeries (#383)</p></li>
+<li><p>Make the NYBB dataset available through <code class="docutils literal notranslate"><span class="pre">geopandas.datasets</span></code> (#384)</p></li>
+<li><p>Enable <code class="docutils literal notranslate"><span class="pre">sjoin</span></code> on non-integer-index GeoDataFrames (#422)</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">cx</span></code> indexer to GeoDataFrame (#482)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GeoDataFrame.from_features</span></code> now also accepts a Feature Collection (#225, #507)</p></li>
+<li><p>Use index label instead of integer id in output of <code class="docutils literal notranslate"><span class="pre">iterfeatures</span></code> and
+<code class="docutils literal notranslate"><span class="pre">to_json</span></code> (#421)</p></li>
+<li><p>Return empty data frame rather than raising an error when performing a spatial join with non overlapping geodataframes (#335)</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Compatibility with shapely 1.6.0 (#512)</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">fiona.filter</span></code> results when bbox is not None (#372)</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> to retain CRS (#389)</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">cx</span></code> behavior when using index of 0 (#478)</p></li>
+<li><p>Fix display of lower bin in legend label of choropleth plots using a PySAL scheme (#450)</p></li>
+</ul>
+</div>
+<div class="section" id="version-0-2-0">
+<h2>Version 0.2.0<a class="headerlink" href="#version-0-2-0" title="Permalink to this headline">¶</a></h2>
+<p>Improvements:</p>
+<ul class="simple">
+<li><p>Complete overhaul of the documentation</p></li>
+<li><p>Addition of <code class="docutils literal notranslate"><span class="pre">overlay</span></code> to perform spatial overlays with polygons (#142)</p></li>
+<li><p>Addition of <code class="docutils literal notranslate"><span class="pre">sjoin</span></code> to perform spatial joins (#115, #145, #188)</p></li>
+<li><p>Addition of <code class="docutils literal notranslate"><span class="pre">__geo_interface__</span></code> that returns a python data structure
+to represent the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> as a GeoJSON-like <code class="docutils literal notranslate"><span class="pre">FeatureCollection</span></code> (#116)
+and <code class="docutils literal notranslate"><span class="pre">iterfeatures</span></code> method (#178)</p></li>
+<li><p>Addition of the <code class="docutils literal notranslate"><span class="pre">explode</span></code> (#146) and <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> (#310, #311) methods.</p></li>
+<li><p>Addition of the <code class="docutils literal notranslate"><span class="pre">sindex</span></code> attribute, a Spatial Index using the optional
+dependency <code class="docutils literal notranslate"><span class="pre">rtree</span></code> (<code class="docutils literal notranslate"><span class="pre">libspatialindex</span></code>) that can be used to speed up
+certain operations such as overlays (#140, #141).</p></li>
+<li><p>Addition of the <code class="docutils literal notranslate"><span class="pre">GeoSeries.cx</span></code> coordinate indexer to slice a GeoSeries based
+on a bounding box of the coordinates (#55).</p></li>
+<li><p>Improvements to plotting: ability to specify edge colors (#173), support for
+the <code class="docutils literal notranslate"><span class="pre">vmin</span></code>, <code class="docutils literal notranslate"><span class="pre">vmax</span></code>, <code class="docutils literal notranslate"><span class="pre">figsize</span></code>, <code class="docutils literal notranslate"><span class="pre">linewidth</span></code> keywords (#207), legends
+for chloropleth plots (#210), color points by specifying a colormap (#186) or
+a single color (#238).</p></li>
+<li><p>Larger flexibility of <code class="docutils literal notranslate"><span class="pre">to_crs</span></code>, accepting both dicts and proj strings (#289)</p></li>
+<li><p>Addition of embedded example data, accessible through
+<code class="docutils literal notranslate"><span class="pre">geopandas.datasets.get_path</span></code>.</p></li>
+</ul>
+<p>API changes:</p>
+<ul class="simple">
+<li><p>In the <code class="docutils literal notranslate"><span class="pre">plot</span></code> method, the <code class="docutils literal notranslate"><span class="pre">axes</span></code> keyword is renamed to <code class="docutils literal notranslate"><span class="pre">ax</span></code> for
+consistency with pandas, and the <code class="docutils literal notranslate"><span class="pre">colormap</span></code> keyword is renamed to <code class="docutils literal notranslate"><span class="pre">cmap</span></code>
+for consistency with matplotlib (#208, #228, #240).</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Properly handle rows with missing geometries (#139, #193).</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">GeoSeries.to_json</span></code> (#263).</p></li>
+<li><p>Correctly serialize metadata when pickling (#199, #206).</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">merge</span></code> and <code class="docutils literal notranslate"><span class="pre">concat</span></code> to return correct GeoDataFrame (#247, #320, #322).</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing to GeoPandas" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="reference/geopandas.datasets.get_path.html" class="btn btn-neutral float-left" title="geopandas.datasets.get_path" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2013–2019, GeoPandas developers
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

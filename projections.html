@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Managing Projections &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Managing Projections &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -102,6 +102,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#what-is-the-best-format-to-store-the-crs-information">What is the best format to store the CRS information?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#setting-a-projection">Setting a Projection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#re-projecting">Re-Projecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projection-for-multiple-geometry-columns">Projection for multiple geometry columns</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6">Upgrading to GeoPandas 0.7 with pyproj &gt; 2.2 and PROJ &gt; 6</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#importing-data-from-files">Importing data from files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#manually-specifying-the-crs">Manually specifying the CRS</a></li>
@@ -126,10 +127,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -207,7 +210,7 @@ the Earth.</p>
 <p>The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
 referred to using the authority code <code class="docutils literal notranslate"><span class="pre">&quot;EPSG:4326&quot;</span></code>.</p>
-<p><em>geopandas</em> can accept anything accepted by <a class="reference external" href="https://pyproj4.github.io/pyproj/stable/api/crs.html#pyproj.crs.CRS.from_user_input">pyproj.CRS.from_user_input()</a>:</p>
+<p><em>geopandas</em> can accept anything accepted by <a class="reference external" href="http://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v2.6.1)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>:</p>
 <ul class="simple">
 <li><p>CRS WKT string</p></li>
 <li><p>An authority string (i.e. “epsg:4326”)</p></li>
@@ -238,8 +241,12 @@ Conversions between WKT and PROJ strings will in most cases cause a loss of info
 <p>Setting a projection may be necessary when for some reason <em>geopandas</em> has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells <em>geopandas</em> how to interpret coordinates. If no CRS is set, <em>geopandas</em> geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.</p>
 <p>Be aware that <strong>most of the time</strong> you don’t have to set a projection. Data loaded from a reputable source (using the <a class="reference internal" href="reference/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a> command) <em>should</em> always include projection information. You can see an objects current CRS through the <a class="reference internal" href="reference.html#geopandas.GeoSeries.crs" title="geopandas.GeoSeries.crs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">GeoSeries.crs</span></code></a> attribute.</p>
 <p>From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so <em>geopandas</em> knows how to interpret the coordinates.</p>
-<p>For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the <a class="reference internal" href="reference.html#geopandas.GeoSeries.crs" title="geopandas.GeoSeries.crs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">GeoSeries.crs</span></code></a> attribute:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">my_geoseries</span><span class="o">.</span><span class="n">crs</span> <span class="o">=</span> <span class="s2">&quot;EPSG:4326&quot;</span>
+<p>For example, if you convert a spreadsheet of latitudes and longitudes into a
+GeoSeries by hand, you would set the projection by passing the WGS84
+latitude-longitude CRS to the <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoSeries.set_crs()</span></code> method (or by setting
+the <a class="reference internal" href="reference.html#geopandas.GeoSeries.crs" title="geopandas.GeoSeries.crs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">GeoSeries.crs</span></code></a> attribute):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">my_geoseries</span> <span class="o">=</span> <span class="n">my_geoseries</span><span class="o">.</span><span class="n">set_crs</span><span class="p">(</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">})</span>
+<span class="n">my_geoseries</span> <span class="o">=</span> <span class="n">my_geoseries</span><span class="o">.</span><span class="n">set_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="mi">4326</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -282,6 +289,39 @@ Conversions between WKT and PROJ strings will in most cases cause a loss of info
 </div>
 <img alt="_images/world_starting.png" src="_images/world_starting.png" />
 <img alt="_images/world_reproj.png" src="_images/world_reproj.png" />
+</div>
+<div class="section" id="projection-for-multiple-geometry-columns">
+<h2>Projection for multiple geometry columns<a class="headerlink" href="#projection-for-multiple-geometry-columns" title="Permalink to this headline">¶</a></h2>
+<p>GeoPandas 0.8 implements support for different projections assigned to different geometry
+columns of the same GeoDataFrame. The projection is now stored together with geometries per column (directly
+on the GeometryArray level).</p>
+<p>Note that if GeometryArray has assigned projection, it is preferred over the
+projection passed to GeoSeries or GeoDataFrame during the creation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="o">.</span><span class="n">crs</span>
+<span class="go">&lt;Geographic 2D CRS: EPSG:4326&gt;</span>
+<span class="go">Name: WGS 84</span>
+<span class="go">Axis Info [ellipsoidal]:</span>
+<span class="go">- Lat[north]: Geodetic latitude (degree)</span>
+<span class="go">- Lon[east]: Geodetic longitude (degree)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="mi">3395</span><span class="p">)</span><span class="o">.</span><span class="n">crs</span>  <span class="c1"># crs=3395 is ignored as array already has CRS</span>
+<span class="go">FutureWarning: CRS mismatch between CRS of the passed geometries and &#39;crs&#39;. Use &#39;GeoDataFrame.set_crs(crs, allow_override=True)&#39; to overwrite CRS or &#39;GeoDataFrame.to_crs(crs)&#39; to reproject geometries. CRS mismatch will raise an error in the future versions of GeoPandas.</span>
+<span class="go">    GeoSeries(array, crs=3395).crs</span>
+
+<span class="go">&lt;Geographic 2D CRS: EPSG:4326&gt;</span>
+<span class="go">Name: WGS 84</span>
+<span class="go">Axis Info [ellipsoidal]:</span>
+<span class="go">- Lat[north]: Geodetic latitude (degree)</span>
+<span class="go">- Lon[east]: Geodetic longitude (degree)</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>If you want to overwrite projection, you can then assign it to the GeoSeries
+manually or re-project geometries to the target projection using either
+<code class="docutils literal notranslate"><span class="pre">GeoSeries.set_crs(epsg=3395,</span> <span class="pre">allow_override=True)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">GeoSeries.to_crs(epsg=3395)</span></code>.</p>
+<p>All GeometryArray-based operations preserve projection; however, if you loop over a column
+containing geometry, this information might be lost.</p>
 </div>
 <div class="section" id="upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6">
 <h2>Upgrading to GeoPandas 0.7 with pyproj &gt; 2.2 and PROJ &gt; 6<a class="headerlink" href="#upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6" title="Permalink to this headline">¶</a></h2>

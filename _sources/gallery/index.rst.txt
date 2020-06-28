@@ -128,13 +128,13 @@ best-practices.
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: gallery_python.zip <//home/joris/scipy/geopandas/doc/source/gallery/gallery_python.zip>`
+    :download:`Download all examples in Python source code: gallery_python.zip <//Users/martin/Downloads/geopandas-0.8-2.0/doc/source/gallery/gallery_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: gallery_jupyter.zip <//home/joris/scipy/geopandas/doc/source/gallery/gallery_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: gallery_jupyter.zip <//Users/martin/Downloads/geopandas-0.8-2.0/doc/source/gallery/gallery_jupyter.zip>`
 
 
 .. only:: html

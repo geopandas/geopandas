@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geopandas.read_file &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>geopandas.read_file &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="geopandas.sjoin" href="geopandas.sjoin.html" />
+    <link rel="next" title="geopandas.read_parquet" href="geopandas.read_parquet.html" />
     <link rel="prev" title="geopandas.GeoSeries" href="geopandas.GeoSeries.html" /> 
 </head>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -110,26 +110,34 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../reference.html">Reference to All Attributes and Methods</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../reference.html#geoseries">GeoSeries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../reference.html#geodataframe">GeoDataFrame</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#api-pages">API Pages</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#testing">Testing</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#top-level-functions">Top-level Functions</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoDataFrame.html">geopandas.GeoDataFrame</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.GeoSeries.html">geopandas.GeoSeries</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">geopandas.read_file</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#examples-using-geopandas-read-file">Examples using <code class="docutils literal notranslate"><span class="pre">geopandas.read_file</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_parquet.html">geopandas.read_parquet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_feather.html">geopandas.read_feather</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.read_postgis.html">geopandas.read_postgis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.sjoin.html">geopandas.sjoin</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.overlay.html">geopandas.overlay</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.clip.html">geopandas.clip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.tools.geocode.html">geopandas.tools.geocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.tools.collect.html">geopandas.tools.collect</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geopandas.points_from_xy.html">geopandas.points_from_xy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="geopandas.datasets.get_path.html">geopandas.datasets.get_path</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -208,22 +216,23 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>filename: str</strong></dt><dd><p>Either the absolute or relative path to the file or URL to
-be opened.</p>
+<dt><strong>filename</strong><span class="classifier">str, path object or file-like object</span></dt><dd><p>Either the absolute or relative path to the file or URL to
+be opened, or any object with a read() method (such as an open file
+or StringIO)</p>
 </dd>
-<dt><strong>bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None</strong></dt><dd><p>Filter features by given bounding box, GeoSeries, GeoDataFrame or a
+<dt><strong>bbox</strong><span class="classifier">tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None</span></dt><dd><p>Filter features by given bounding box, GeoSeries, GeoDataFrame or a
 shapely geometry. CRS mis-matches are resolved if given a GeoSeries
 or GeoDataFrame. Cannot be used with mask.</p>
 </dd>
-<dt><strong>mask: dict | GeoDataFrame or GeoSeries | shapely Geometry, default None</strong></dt><dd><p>Filter for features that intersect with the given dict-like geojson
+<dt><strong>mask</strong><span class="classifier">dict | GeoDataFrame or GeoSeries | shapely Geometry, default None</span></dt><dd><p>Filter for features that intersect with the given dict-like geojson
 geometry, GeoSeries, GeoDataFrame or shapely geometry.
 CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
 Cannot be used with bbox.</p>
 </dd>
-<dt><strong>rows: int or slice, default None</strong></dt><dd><p>Load in specific rows by passing an integer (first <cite>n</cite> rows) or a
+<dt><strong>rows</strong><span class="classifier">int or slice, default None</span></dt><dd><p>Load in specific rows by passing an integer (first <cite>n</cite> rows) or a
 slice() object.</p>
 </dd>
-<dt><strong>**kwargs:</strong></dt><dd><p>Keyword args to be passed to the <cite>open</cite> or <cite>BytesCollection</cite> method
+<dt><strong>**kwargs :</strong></dt><dd><p>Keyword args to be passed to the <cite>open</cite> or <cite>BytesCollection</cite> method
 in the fiona library when opening the file. For more information on
 possible keywords, type:
 <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">help(fiona.open)</span></code></p>
@@ -232,7 +241,8 @@ possible keywords, type:
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><a class="reference internal" href="geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code></a></dt><dd></dd>
+<dt><a class="reference internal" href="geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code></a> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> :</dt><dd><p>If <cite>ignore_geometry=True</cite> a <code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> will be returned.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -279,7 +289,7 @@ by using the encoding keyword parameter, e.g. <code class="docutils literal notr
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="geopandas.sjoin.html" class="btn btn-neutral float-right" title="geopandas.sjoin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="geopandas.read_parquet.html" class="btn btn-neutral float-right" title="geopandas.read_parquet" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="geopandas.GeoSeries.html" class="btn btn-neutral float-left" title="geopandas.GeoSeries" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

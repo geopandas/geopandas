@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Data Structures &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Data Structures &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -124,10 +124,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -268,12 +270,14 @@ in <a class="reference internal" href="geometric_manipulations.html"><span class
 
 <span class="gp">In [2]: </span><span class="n">world</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="gh">Out[2]: </span><span class="go"></span>
-<span class="go">     pop_est      continent                      name iso_a3  gdp_md_est                                           geometry</span>
-<span class="go">0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLYGON (((180.00000 -16.06713, 180.00000...</span>
-<span class="go">1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON ((33.90371 -0.95000, 34.07262 -1.05982...</span>
-<span class="go">2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON ((-8.66559 27.65643, -8.66512 27.58948...</span>
-<span class="go">3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLYGON (((-122.84000 49.00000, -122.9742...</span>
-<span class="go">4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLYGON (((-122.84000 49.00000, -120.0000...</span>
+<span class="go">     pop_est  ...                                           geometry</span>
+<span class="go">0     920938  ...  MULTIPOLYGON (((180.00000 -16.06713, 180.00000...</span>
+<span class="go">1   53950935  ...  POLYGON ((33.90371 -0.95000, 34.07262 -1.05982...</span>
+<span class="go">2     603253  ...  POLYGON ((-8.66559 27.65643, -8.66512 27.58948...</span>
+<span class="go">3   35623680  ...  MULTIPOLYGON (((-122.84000 49.00000, -122.9742...</span>
+<span class="go">4  326625791  ...  MULTIPOLYGON (((-122.84000 49.00000, -120.0000...</span>
+
+<span class="go">[5 rows x 6 columns]</span>
 
 <span class="go">#Plot countries</span>
 <span class="gp">In [3]: </span><span class="n">world</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
@@ -326,7 +330,12 @@ option to control:</p>
 <span class="go">      The precision (maximum number of decimals) of the coordinates in the</span>
 <span class="go">      WKT representation in the Series/DataFrame display. By default (None),</span>
 <span class="go">      it tries to infer and use 3 decimals for projected coordinates and 5</span>
-<span class="go">      decimals for geographic coordinates.)</span>
+<span class="go">      decimals for geographic coordinates.</span>
+<span class="go">  use_pygeos: False [default: False]</span>
+<span class="go">      Whether to use PyGEOS to speed up spatial operations. The default is</span>
+<span class="go">      True if PyGEOS is installed, and follows the USE_PYGEOS environment</span>
+<span class="go">      variable if set.</span>
+<span class="go">  )</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">geopandas.options.display_precision</span></code> option can control the number of

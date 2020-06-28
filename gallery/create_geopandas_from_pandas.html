@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Creating a GeoDataFrame from a DataFrame with coordinates &mdash; GeoPandas 0.7.0 documentation</title>
+  <title>Creating a GeoDataFrame from a DataFrame with coordinates &mdash; GeoPandas 0.8.0 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7.0
+                0.8.0
               </div>
             
           
@@ -119,10 +119,12 @@
 <p class="caption"><span class="caption-text">Reference Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../reference.html">Reference to All Attributes and Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Developer</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to GeoPandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../code_of_conduct.html">Code of Conduct</a></li>
 </ul>
 
             
@@ -222,7 +224,7 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>. (note that <code class="docutils literal notranslate"><span class="pre">points_from_xy()</span></code> is an enhanced wrapper for
 <code class="docutils literal notranslate"><span class="pre">[Point(x,</span> <span class="pre">y)</span> <span class="pre">for</span> <span class="pre">x,</span> <span class="pre">y</span> <span class="pre">in</span> <span class="pre">zip(df.Longitude,</span> <span class="pre">df.Latitude)]</span></code>)</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <a href="../reference/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="View documentation for geopandas.GeoDataFrame"><span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span></a><span class="p">(</span>
-    <span class="n">df</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">geopandas</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">Longitude</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">Latitude</span><span class="p">))</span>
+    <span class="n">df</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a href="../reference/geopandas.points_from_xy.html#geopandas.points_from_xy" title="View documentation for geopandas.points_from_xy"><span class="n">geopandas</span><span class="o">.</span><span class="n">points_from_xy</span></a><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">Longitude</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">Latitude</span><span class="p">))</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">gdf</span></code> looks like this :</p>
@@ -295,7 +297,7 @@ of <code class="docutils literal notranslate"><span class="pre">shapely.Point</s
 </pre></div>
 </div>
 <img alt="../_images/sphx_glr_create_geopandas_from_pandas_002.png" class="sphx-glr-single-img" src="../_images/sphx_glr_create_geopandas_from_pandas_002.png" />
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.278 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.327 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-create-geopandas-from-pandas-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/5a028ec8b27cdb6e5147767c92f67a6b/create_geopandas_from_pandas.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">create_geopandas_from_pandas.py</span></code></a></p>
