@@ -248,7 +248,13 @@ def _convert_to_ewkb(gdf, geom_name, srid):
 
         geoms = [dumps(geom, srid=srid, hex=True) for geom in gdf[geom_name]]
 
-    gdf[geom_name] = geoms
+    # The gdf will warn that the geometry column doesn't hold in-memory geometries
+    # now that they are EWKB. Ignore this warning.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "Geometry column does not contain geometry.", UserWarning
+        )
+        gdf[geom_name] = geoms
     return gdf
 
 
