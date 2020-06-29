@@ -280,6 +280,14 @@ def infer_schema(df):
             return "datetime"
         if str(in_type) in types:
             out_type = types[str(in_type)]
+        elif str(in_type) == "geometry":
+            # I don't know what kind of
+            # type geometry will refer to in future
+            # anyway checking a geojson file
+            # with two geometries using fio info (fiona CLI),
+            # one as regular geometry, one as property
+            # showed this geometry as "str" in "schema"
+            out_type = "str"
         else:
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
@@ -306,6 +314,11 @@ def infer_schema(df):
     # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
     # Fiona allows a list of geometry types
     geom_types = _geometry_types(df)
+
+    # Apply same schema to "geometry" types created above in convert_type,
+    # using df2 as a copy of df with geometry set  to the respective column,
+    # and with the resulting schema change the respective "geometry" value
+    # from the ordered dict properties
 
     schema = {"geometry": geom_types, "properties": properties}
 
