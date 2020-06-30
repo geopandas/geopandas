@@ -25,7 +25,7 @@ In particular, when submitting a pull request:
   Travis will be visible on a pull request.  If you want to enable
   Travis CI on your own fork, please read the pandas guidelines link
   above or the
-  `getting started docs <http://about.travis-ci.org/docs/user/getting-started/>`_.
+  `getting started docs <https://docs.travis-ci.com/user/tutorial/>`_.
 
 - New functionality should include tests.  Please write reasonable
   tests for your code and make sure that they pass on your pull request.
