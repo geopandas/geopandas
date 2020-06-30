@@ -465,13 +465,13 @@ class TestDataFrame:
         gdf.to_file(tempfilename)
         gdf2 = GeoDataFrame.from_file(tempfilename)
         # test feature column names
-        assert gdf2.iloc[:, 0:2].columns.to_list() == ["a", "b"]
+        assert (gdf2.iloc[:, 0:2].columns.values == ["a", "b"]).all()
         # geometry column name not restored:
         # assert gdf2.columns[3] == "c"
         # testing back conversion to GeoSeries of geometry column
         assert isinstance(gdf2[gdf2._geometry_column_name], GeoSeries)
         # testing content
-        assert gdf2["a"].to_list() == [1, 2]
+        assert (gdf2["a"].values == [1, 2]).all()
         # test if wkt produced a string and that it is re-read
         assert isinstance(gdf2["b"][0], str)
 
