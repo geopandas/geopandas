@@ -465,7 +465,7 @@ class TestDataFrame:
         gdf.to_file(tempfilename)
         gdf2 = GeoDataFrame.from_file(tempfilename)
         # test feature column names
-        assert gdf2.columns[0:2].to_list() == ["a", "b"]
+        assert gdf2.iloc[:, 0:2].columns.to_list() == ["a", "b"]
         # geometry column name not restored:
         # assert gdf2.columns[3] == "c"
         # testing back conversion to GeoSeries of geometry column
