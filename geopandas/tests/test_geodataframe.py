@@ -472,9 +472,8 @@ class TestDataFrame:
         assert isinstance(gdf2[gdf2._geometry_column_name], GeoSeries)
         # testing content
         assert gdf2["a"].to_list() == [1, 2]
-        assert isinstance(eval(gdf2["b"][0]), dict)
-        # for future improvements on loading files with multiple geometries
-        # assert isinstance(gdf["b"],GeoSeries)
+        # test if wkt produced a string and that it is re-read
+        assert isinstance(gdf2["b"][0], str)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name

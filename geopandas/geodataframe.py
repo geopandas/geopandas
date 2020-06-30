@@ -556,13 +556,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
                 if na == "drop":
                     properties_items = {
-                        k: (v if not isinstance(v, BaseGeometry) else mapping(v))
+                        # fionas BaseGeometry.to_wkt() will be depreciated
+                        # in favour of property .wkt
+                        k: (v if not isinstance(v, BaseGeometry) else v.wkt)
                         for k, v in zip(properties_cols, row)
                         if not pd.isnull(v)
                     }
                 else:
                     properties_items = {
-                        k: (v if not isinstance(v, BaseGeometry) else mapping(v))
+                        k: (v if not isinstance(v, BaseGeometry) else v.wkt)
                         for k, v in zip(properties_cols, row)
                     }
 
