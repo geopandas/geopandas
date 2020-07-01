@@ -22,14 +22,16 @@ def sjoin(
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
     op : string, default 'intersects'
-        Binary predicate, one of {'intersects', 'contains', 'within'}.
-        See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
+        Binary predicate. Valid values are determined by the spatial index used.
+        You can check the valid values in `left_df` or `right_df` as
+        `left_df.sindex.valid_query_predicates` or
+        `right_df.sindex.valid_query_predicates`
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
     """
-    _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix)
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     indices = _geom_predicate_query(left_df, right_df, op)
 
@@ -38,10 +40,10 @@ def sjoin(
     return joined
 
 
-def _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix):
+def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
     """Checks the validity of join input parameters.
 
-    `how` and `op` must be one of the valid options.
+    `how` must be one of the valid options.
     `'index_'` concatenated with `lsuffix` or `rsuffix` must not already
     exist as columns in the left or right data frames.
 
@@ -51,8 +53,6 @@ def _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix):
     right_df : GeoData Frame
     how : str, one of 'left', 'right', 'inner'
         join type
-    op : str, one of 'intersects', 'contains', 'within'
-        predicate operation used in join
     lsuffix : str
     left index suffix
     rsuffix : str
@@ -74,14 +74,8 @@ def _basic_checks(left_df, right_df, how, op, lsuffix, rsuffix):
             '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
         )
 
-    allowed_ops = {"intersects", "contains", "within"}
-    if op not in allowed_ops:
-        raise ValueError(
-            '`op` was "{}" but is expected to be in {}'.format(op, allowed_ops)
-        )
-
     if not _check_crs(left_df, right_df):
-        _crs_mismatch_warn(left_df, right_df, stacklevel=3)
+        _crs_mismatch_warn(left_df, right_df, stacklevel=4)
 
     index_left = "index_{}".format(lsuffix)
     index_right = "index_{}".format(rsuffix)
