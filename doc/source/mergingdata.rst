@@ -108,8 +108,6 @@ The default spatial index in GeoPandas currently supports the following values f
 * `crosses`
 * `overlaps`
 
-To check what values are available 
-
 You can read more about each join type in the `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__.
 
 **how**
