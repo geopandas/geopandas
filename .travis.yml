@@ -11,7 +11,7 @@ matrix:
     - env: ENV_FILE="ci/travis/38-no-optional-deps.yaml"
 
     # Python 3.6 test all supported Pandas versions
-    - env: ENV_FILE="ci/travis/36-pd024.yaml" PYGEOS=true
+    - env: ENV_FILE="ci/travis/36-pd025.yaml" PYGEOS=true
 
     - env: ENV_FILE="ci/travis/37-latest-defaults.yaml" STYLE=true PYGEOS=true
     - env: ENV_FILE="ci/travis/37-latest-conda-forge.yaml" PYGEOS=true

@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.6
   # required
-  - pandas=0.24
+  - pandas=0.25
   - shapely
   - fiona
   #- pyproj
@@ -22,7 +22,7 @@ dependencies:
   - libspatialite
   - pyarrow
   - pip:
-      - pyproj
+      - pyproj==2.3.1
       - codecov
       - geopy
       - mapclassify>=2.2.0
