@@ -22,13 +22,41 @@ def sjoin(
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
     op : string, default 'intersects'
-        Binary predicate, one of {'intersects', 'contains', 'within'}.
-        See http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates.
+        Binary predicate. Valid values are determined by the spatial index used.
+        You can check the valid values in `left_df` or `right_df` as
+        `left_df.sindex.valid_query_predicates` or
+        `right_df.sindex.valid_query_predicates`
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    """
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
+    indices = _geom_predicate_query(left_df, right_df, op)
+
+    joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
+
+    return joined
+
+
+def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
+    """Checks the validity of join input parameters.
+
+    `how` must be one of the valid options.
+    `'index_'` concatenated with `lsuffix` or `rsuffix` must not already
+    exist as columns in the left or right data frames.
+
+    Parameters
+    ------------
+    left_df : GeoDataFrame
+    right_df : GeoData Frame
+    how : str, one of 'left', 'right', 'inner'
+        join type
+    lsuffix : str
+        left index suffix
+    rsuffix : str
+        right index suffix
     """
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(
@@ -43,20 +71,14 @@ def sjoin(
     allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
         raise ValueError(
-            '`how` was "%s" but is expected to be in %s' % (how, allowed_hows)
-        )
-
-    allowed_ops = ["contains", "within", "intersects"]
-    if op not in allowed_ops:
-        raise ValueError(
-            '`op` was "%s" but is expected to be in %s' % (op, allowed_ops)
+            '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
         )
 
     if not _check_crs(left_df, right_df):
-        _crs_mismatch_warn(left_df, right_df, stacklevel=3)
+        _crs_mismatch_warn(left_df, right_df, stacklevel=4)
 
-    index_left = "index_%s" % lsuffix
-    index_right = "index_%s" % rsuffix
+    index_left = "index_{}".format(lsuffix)
+    index_right = "index_{}".format(rsuffix)
 
     # due to GH 352
     if any(left_df.columns.isin([index_left, index_right])) or any(
@@ -67,7 +89,23 @@ def sjoin(
             " joined".format(index_left, index_right)
         )
 
-    # query index
+
+def _geom_predicate_query(left_df, right_df, op):
+    """Compute geometric comparisons and get matching indices.
+
+    Parameters
+    ----------
+    left_df : GeoDataFrame
+    right_df : GeoDataFrame
+    op : string
+        Binary predicate to query.
+
+    Returns
+    -------
+    DataFrame
+        DataFrame with matching indices in
+        columns named `_key_left` and `_key_right`.
+    """
     with warnings.catch_warnings():
         # We don't need to show our own warning here
         # TODO remove this once the deprecation has been enforced
@@ -90,41 +128,70 @@ def sjoin(
 
     if sindex:
         l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
-        result = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+        indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
-        result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+        indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
     if op == "within":
         # within is implemented as the inverse of contains
         # flip back the results
-        result = result.rename(
+        indices = indices.rename(
             columns={"_key_left": "_key_right", "_key_right": "_key_left"}
         )
 
+    return indices
+
+
+def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
+    """Join the GeoDataFrames at the DataFrame level.
+
+    Parameters
+    ----------
+    indices : DataFrame
+        Indexes returned by the geometric join.
+        Must have columns `_key_left` and `_key_right`
+        with integer indices representing the matches
+        from `left_df` and `right_df` respectively.
+    left_df : GeoDataFrame
+    right_df : GeoDataFrame
+    lsuffix : string
+        Suffix to apply to overlapping column names (left GeoDataFrame).
+    rsuffix : string
+        Suffix to apply to overlapping column names (right GeoDataFrame).
+    how : string
+        The type of join to use on the DataFrame level.
+
+    Returns
+    -------
+    GeoDataFrame
+        Joined GeoDataFrame.
+    """
     # the spatial index only allows limited (numeric) index types, but an
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
+    index_left = "index_{}".format(lsuffix)
     left_df = left_df.copy(deep=True)
     try:
         left_index_name = left_df.index.name
         left_df.index = left_df.index.rename(index_left)
     except TypeError:
         index_left = [
-            "index_%s" % lsuffix + str(pos)
+            "index_{}".format(lsuffix + str(pos))
             for pos, ix in enumerate(left_df.index.names)
         ]
         left_index_name = left_df.index.names
         left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
 
+    index_right = "index_{}".format(rsuffix)
     right_df = right_df.copy(deep=True)
     try:
         right_index_name = right_df.index.name
         right_df.index = right_df.index.rename(index_right)
     except TypeError:
         index_right = [
-            "index_%s" % rsuffix + str(pos)
+            "index_{}".format(rsuffix + str(pos))
             for pos, ix in enumerate(right_df.index.names)
         ]
         right_index_name = right_df.index.names
@@ -133,14 +200,14 @@ def sjoin(
 
     # perform join on the dataframes
     if how == "inner":
-        result = result.set_index("_key_left")
+        indices = indices.set_index("_key_left")
         joined = (
-            left_df.merge(result, left_index=True, right_index=True)
+            left_df.merge(indices, left_index=True, right_index=True)
             .merge(
                 right_df.drop(right_df.geometry.name, axis=1),
                 left_on="_key_right",
                 right_index=True,
-                suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
             )
             .set_index(index_left)
             .drop(["_key_right"], axis=1)
@@ -151,15 +218,15 @@ def sjoin(
             joined.index.name = left_index_name
 
     elif how == "left":
-        result = result.set_index("_key_left")
+        indices = indices.set_index("_key_left")
         joined = (
-            left_df.merge(result, left_index=True, right_index=True, how="left")
+            left_df.merge(indices, left_index=True, right_index=True, how="left")
             .merge(
                 right_df.drop(right_df.geometry.name, axis=1),
                 how="left",
                 left_on="_key_right",
                 right_index=True,
-                suffixes=("_%s" % lsuffix, "_%s" % rsuffix),
+                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
             )
             .set_index(index_left)
             .drop(["_key_right"], axis=1)
@@ -173,7 +240,7 @@ def sjoin(
         joined = (
             left_df.drop(left_df.geometry.name, axis=1)
             .merge(
-                result.merge(
+                indices.merge(
                     right_df, left_on="_key_right", right_index=True, how="right"
                 ),
                 left_index=True,
