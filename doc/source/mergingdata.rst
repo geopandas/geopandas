@@ -97,14 +97,18 @@ Sjoin Arguments
 
 The ``op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another, based on their geometric relationship.
 
-The values for ``op`` correspond to the names of geometric binary predicates. Currently, the supported values are:
+The values for ``op`` correspond to the names of geometric binary predicates and depend on the spatial index implementation.
 
-* ``intersects``
-* ``contains``
-* ``within``
-* ``touches``
-* ``crosses``
-* ``overlaps``
+The default spatial index in GeoPandas currently supports the following values for ``op``:
+
+* `intersects`
+* `contains`
+* `within`
+* `touches`
+* `crosses`
+* `overlaps`
+
+To check what values are available 
 
 You can read more about each join type in the `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__.
 

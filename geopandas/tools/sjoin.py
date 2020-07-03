@@ -54,9 +54,9 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
     how : str, one of 'left', 'right', 'inner'
         join type
     lsuffix : str
-    left index suffix
+        left index suffix
     rsuffix : str
-    right index suffix
+        right index suffix
     """
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(
