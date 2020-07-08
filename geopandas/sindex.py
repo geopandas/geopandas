@@ -409,14 +409,6 @@ if compat.HAS_PYGEOS:
                 Sequence of the form (min_x, min_y, max_x, max_y)
                 to query a rectangle or (x, y) to query a point.
             """
-            if objects:
-                warn(
-                    "`objects` is deprecated and will be removed in a future version. "
-                    "Instead, use `iloc` to index your GeoSeries/GeoDataFrame using "
-                    "integer indexes returned by `intersection`.",
-                    FutureWarning,
-                )
-
             # convert bounds to geometry
             # the old API uses tuples of bound, but pygeos uses geometries
             try:
