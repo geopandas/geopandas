@@ -111,7 +111,7 @@ class TestFrameSindex:
     def test_sindex(self):
         self.df.crs = "epsg:4326"
         assert self.df.sindex.size == 5
-        hits = self.df.sindex.intersection((2.5, 2.5, 4, 4))
+        hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4)))
         assert len(hits) == 2
         assert hits[0] == 3
 
