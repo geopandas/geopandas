@@ -916,7 +916,7 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
         if "k" not in spec.args:
             del classification_kwds["k"]
     try:
-        binning = scheme_class(values, **classification_kwds)
+        binning = scheme_class(np.asarray(values), **classification_kwds)
     except TypeError:
         raise TypeError("Invalid keyword argument for %r " % scheme)
     return binning
