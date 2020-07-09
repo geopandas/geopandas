@@ -248,8 +248,12 @@ def _convert_to_ewkb(gdf, geom_name, srid):
 
         geoms = [dumps(geom, srid=srid, hex=True) for geom in gdf[geom_name]]
 
-    gdf[geom_name] = geoms
-    return gdf
+    # The gdf will warn that the geometry column doesn't hold in-memory geometries
+    # now that they are EWKB, so convert back to a regular dataframe to avoid warning
+    # the user that the dtypes are unexpected.
+    df = pd.DataFrame(gdf, copy=False)
+    df[geom_name] = geoms
+    return df
 
 
 def _psql_insert_copy(tbl, conn, keys, data_iter):
