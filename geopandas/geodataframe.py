@@ -329,6 +329,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 # column called 'geometry' without geometry
                 self._crs = None if not value else CRS.from_user_input(value)
 
+    def __setstate__(self, state):
+        # overriding DataFrame method for compat with older pickles (CRS handling)
+        if isinstance(state, dict):
+            if "_metadata" in state and "crs" in state["_metadata"]:
+                metadata = state["_metadata"]
+                metadata[metadata.index("crs")] = "_crs"
+            if "crs" in state and "_crs" not in state:
+                crs = state.pop("crs")
+                state["_crs"] = (
+                    pyproj.CRS.from_user_input(crs) if crs is not None else crs
+                )
+
+        super().__setstate__(state)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
