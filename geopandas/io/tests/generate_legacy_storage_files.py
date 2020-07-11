@@ -79,10 +79,7 @@ def write_legacy_pickles(output_dir):
 
 
 def main():
-    # # force our cwd to be the first searched
-    # sys.path.insert(0, ".")
-
-    if not (3 <= len(sys.argv) <= 4):
+    if len(sys.argv) != 3:
         exit(
             "Specify output directory and storage type: generate_legacy_"
             "storage_files.py <output_dir> <storage_type> "
