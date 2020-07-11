@@ -337,11 +337,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 metadata[metadata.index("crs")] = "_crs"
             if "crs" in state and "_crs" not in state:
                 crs = state.pop("crs")
-                state["_crs"] = (
-                    pyproj.CRS.from_user_input(crs) if crs is not None else crs
-                )
+                state["_crs"] = CRS.from_user_input(crs) if crs is not None else crs
 
         super().__setstate__(state)
+
+        # for some versions that didn't yet have CRS at array level -> crs is set
+        # at GeoDataFrame level with '_crs' (and not 'crs'), so without propagating
+        # to the GeoSeries/GeometryArray
+        try:
+            if self.crs is not None:
+                if self.geometry.crs is None:
+                    self.crs = self.crs
+        except Exception:
+            pass
 
     @classmethod
     def from_file(cls, filename, **kwargs):
