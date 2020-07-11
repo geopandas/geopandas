@@ -65,17 +65,17 @@ def write_legacy_pickles(output_dir):
         "This script generates a storage file for the current arch, system, "
         "and python version"
     )
-    print(f"geopandas version: {geopandas.__version__}")
-    print(f"   output dir    : {output_dir}")
+    print("geopandas version: {}").format(geopandas.__version__)
+    print("   output dir    : {}".format(output_dir))
     print("   storage format: pickle")
 
-    pth = f"{platform_name()}.pickle"
+    pth = "{}.pickle".format(platform_name())
 
     fh = open(os.path.join(output_dir, pth), "wb")
     pickle.dump(create_pickle_data(), fh, pickle.DEFAULT_PROTOCOL)
     fh.close()
 
-    print(f"created pickle file: {pth}")
+    print("created pickle file: {}".format(pth))
 
 
 def main():
