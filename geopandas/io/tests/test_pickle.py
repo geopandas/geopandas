@@ -2,11 +2,14 @@
 See generate_legacy_storage_files.py for the creation of the legacy files.
 
 """
+from distutils.version import LooseVersion
 import glob
 import os
 import pathlib
 
 import pandas as pd
+
+import pyproj
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -33,8 +36,11 @@ def legacy_pickle(request):
 
 
 @pytest.mark.skipif(
-    compat.USE_PYGEOS,
-    reason="pygeos-based unpickling currently only works for pygeos-written files",
+    compat.USE_PYGEOS or (str(pyproj.__version__) < LooseVersion("2.4")),
+    reason=(
+        "pygeos-based unpickling currently only works for pygeos-written files; "
+        "old pyproj versions can't read pickles from newer pyproj versions"
+    ),
 )
 def test_legacy_pickles(current_pickle_data, legacy_pickle):
     result = pd.read_pickle(legacy_pickle)
