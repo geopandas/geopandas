@@ -497,6 +497,18 @@ class TestMethods(extension_tests.BaseMethodsTests):
     def test_argsort_missing_array(self):
         pass
 
+    @no_sorting
+    def test_argmin_argmax(self):
+        pass
+
+    @no_sorting
+    def test_argmin_argmax_empty_array(self):
+        pass
+
+    @no_sorting
+    def test_argmin_argmax_all_na(self):
+        pass
+
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass
