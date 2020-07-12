@@ -366,8 +366,6 @@ def plot_series(
             # https://github.com/edzer/sp/blob/master/R/mapasp.R
         else:
             ax.set_aspect("equal")
-    elif aspect == "equal":
-        ax.set_aspect("equal")
     elif aspect is not None:
         ax.set_aspect(aspect)
 
@@ -599,8 +597,6 @@ def plot_dataframe(
             # https://github.com/edzer/sp/blob/master/R/mapasp.R
         else:
             ax.set_aspect("equal")
-    elif aspect == "equal":
-        ax.set_aspect("equal")
     elif aspect is not None:
         ax.set_aspect(aspect)
 
