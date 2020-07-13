@@ -877,21 +877,39 @@ class TestGeographicAspect:
     def test_manual(self):
         ax = self.north.geometry.plot(aspect="equal")
         assert ax.get_aspect() in ["equal", 1.0]
+        self.north.geometry.plot(ax=ax, aspect=None)
+        assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.geometry.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        self.north.geometry.plot(ax=ax2, aspect=None)
         assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.geometry.plot(aspect=0.5)
         assert ax3.get_aspect() == 0.5
+        self.north_proj.geometry.plot(ax=ax3, aspect=None)
+        assert ax3.get_aspect() == 0.5
         ax = self.north.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        self.north.plot(ax=ax, aspect=None)
         assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.plot(aspect=0.5)
         assert ax2.get_aspect() == 0.5
+        self.north.plot(ax=ax2, aspect=None)
+        assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        self.north_proj.plot(ax=ax3, aspect=None)
         assert ax3.get_aspect() == 0.5
         ax = self.north.plot("pop_est", aspect="equal")
         assert ax.get_aspect() in ["equal", 1.0]
+        self.north.plot("pop_est", ax=ax, aspect=None)
+        assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.plot("pop_est", aspect=0.5)
         assert ax2.get_aspect() == 0.5
+        self.north.plot("pop_est", ax=ax2, aspect=None)
+        assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.plot("pop_est", aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        self.north_proj.plot("pop_est", ax=ax3, aspect=None)
         assert ax3.get_aspect() == 0.5
 
 
