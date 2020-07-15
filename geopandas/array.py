@@ -384,6 +384,13 @@ class GeometryArray(ExtensionArray):
             self.data = geoms
             self.base = None
 
+    else:
+
+        def __setstate__(self, state):
+            if "_crs" not in state:
+                state["_crs"] = None
+            self.__dict__.update(state)
+
     # -------------------------------------------------------------------------
     # Geometry related methods
     # -------------------------------------------------------------------------
