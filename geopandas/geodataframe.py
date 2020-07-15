@@ -346,7 +346,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # to the GeoSeries/GeometryArray
         try:
             if self.crs is not None:
-                if self.geometry.crs is None:
+                if self.geometry.values.crs is None:
                     self.crs = self.crs
         except Exception:
             pass
