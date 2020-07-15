@@ -1,6 +1,19 @@
 Changelog
 =========
 
+
+Version 0.8.1 (July 15, 2020)
+-----------------------------
+
+Small bug-fix release:
+
+- Fix a regression in the `plot()` method when visualizing with a
+  JenksCaspallSampled or FisherJenksSampled scheme (#1486).
+- Fix spurious warning in `GeoDataFrame.to_postgis` (#1497).
+- Fix the un-pickling with `pd.read_pickle` of files written with older
+  GeoPandas versions (#1511).
+
+
 Version 0.8.0 (June 24, 2020)
 -----------------------------
 
