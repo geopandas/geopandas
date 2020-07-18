@@ -615,7 +615,7 @@ class GeoPandasBase(object):
         --------
         >>> from shapely.geometry import Point, Polygon, LineString
         >>> d = {'geometry': [Point(3, -1), Polygon([(0, 0), (1, 1), (1, 0)]),
-.       ... LineString([(0, 1), (1, 2)])]}
+        ... LineString([(0, 1), (1, 2)])]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf.total_bounds
         array([ 0., -1.,  3.,  2.])
