@@ -45,7 +45,9 @@ class TestNoSindex:
 class TestSeriesSindex:
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
-        assert not GeoSeries(dtype=object).sindex
+        s = GeoSeries(dtype=object)
+        assert not s.sindex
+        assert len(s.sindex) == 0
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -58,8 +60,8 @@ class TestSeriesSindex:
     def test_empty_point(self):
         """Tests that a single empty Point results in an empty tree."""
         s = GeoSeries([Point()])
-
         assert not s.sindex
+        assert len(s.sindex) == 0
 
     def test_polygons(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
