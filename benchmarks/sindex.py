@@ -42,10 +42,6 @@ class Bench:
         for bounds in self.bounds:
             self.data[tree_geom_type].sindex.intersection(bounds)
 
-    def time_intersects_objects(self, tree_geom_type):
-        for bounds in self.bounds:
-            self.data[tree_geom_type].sindex.intersection(bounds, objects=True)
-
 
 class BenchQuery:
 
