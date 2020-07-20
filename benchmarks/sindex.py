@@ -54,6 +54,8 @@ class BenchQuery:
 
     def setup(self, *args):
         self.data = generate_test_df()
+        for data in self.data.values():
+            data.sindex  # ensure index is pre-generated
 
     def time_query_bulk(self, predicate, input_geom_type, tree_geom_type):
         self.data[tree_geom_type].sindex.query_bulk(
