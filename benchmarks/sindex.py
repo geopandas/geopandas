@@ -64,9 +64,17 @@ class BenchIndexCreation:
 
     def time_index_creation(self, tree_geom_type):
         """Time creation of spatial index.
+
+        Note: requires running a single query to ensure that
+        lazy-building indexes are actually built.
         """
         self.data[tree_geom_type].geometry.values._sindex = None
         self.data[tree_geom_type].sindex
+        # also do a single query to ensure the index is actually
+        # generated and used
+        self.data[tree_geom_type].sindex.query(
+            self.data[tree_geom_type].geometry.values.data[0]
+        )
 
 
 class BenchQuery:
