@@ -1,3 +1,5 @@
+import numpy as np
+
 from geopandas import read_file, datasets
 from geopandas.sindex import VALID_QUERY_PREDICATES
 
@@ -21,26 +23,50 @@ def generate_test_df():
 
 class Bench:
 
+    param_names = ["input_geom_type", "tree_geom_type"]
+    params = [
+        ["mixed", "points", "polygons"],
+        ["mixed", "points", "polygons"],
+    ]
+
+    def setup(self, *args):
+        self.data = generate_test_df()
+        # cache bounds so that bound creation is not counted in benchmarks
+        self.bounds = {
+            data_type: [g.bounds for g in self.data[data_type].geometry]
+            for data_type in self.data.keys()
+        }
+        # ensure index is pre-generated
+        for data_type in self.data.keys():
+            self.data[data_type].sindex.query(
+                self.data[data_type].geometry.values.data[0]
+            )
+        np.random.seed(0)  # set numpy random seed for reproducible results
+
+    def time_intersects(self, tree_geom_type, input_geom_type):
+        for bounds in self.bounds[input_geom_type]:
+            self.data[tree_geom_type].sindex.intersection(bounds)
+
+
+class BenchIndexCreation:
+
     param_names = ["tree_geom_type"]
     params = [["mixed", "points", "polygons"]]
 
     def setup(self, *args):
         self.data = generate_test_df()
-        # cache bounds so that bound creation is not counted in benchmarks
-        self.bounds = [g.bounds for g in self.data["mixed"].geometry]
+        # ensure index is pre-generated
+        for data_type in self.data.keys():
+            self.data[data_type].sindex.query(
+                self.data[data_type].geometry.values.data[0]
+            )
+        np.random.seed(0)  # set numpy random seed for reproducible results
 
     def time_index_creation(self, tree_geom_type):
         """Time creation of spatial index.
-
-        Note: pygeos will only create the index once; this benchmark
-        is not intended to be used to compare rtree and pygeos.
         """
         self.data[tree_geom_type].geometry.values._sindex = None
         self.data[tree_geom_type].sindex
-
-    def time_intersects(self, tree_geom_type):
-        for bounds in self.bounds:
-            self.data[tree_geom_type].sindex.intersection(bounds)
 
 
 class BenchQuery:
@@ -54,14 +80,20 @@ class BenchQuery:
 
     def setup(self, *args):
         self.data = generate_test_df()
-        for data in self.data.values():
-            data.sindex  # ensure index is pre-generated
+        # ensure index is pre-generated
+        for data_type in self.data.keys():
+            self.data[data_type].sindex.query(
+                self.data[data_type].geometry.values.data[0]
+            )
+        np.random.seed(0)  # set numpy random seed for reproducible results
 
     def time_query_bulk(self, predicate, input_geom_type, tree_geom_type):
         self.data[tree_geom_type].sindex.query_bulk(
-            self.data[input_geom_type].geometry, predicate=predicate
+            self.data[input_geom_type].geometry.values.data, predicate=predicate
         )
 
     def time_query(self, predicate, input_geom_type, tree_geom_type):
-        for geo in self.data[input_geom_type].geometry.sample(10, random_state=0):
-            self.data[tree_geom_type].sindex.query(geo, predicate=predicate)
+        self.data[tree_geom_type].sindex.query(
+            np.random.choice(self.data[input_geom_type].geometry.values),
+            predicate=predicate,
+        )
