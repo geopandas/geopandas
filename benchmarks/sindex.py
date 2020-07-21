@@ -94,6 +94,6 @@ class BenchQuery:
 
     def time_query(self, predicate, input_geom_type, tree_geom_type):
         self.data[tree_geom_type].sindex.query(
-            np.random.choice(self.data[input_geom_type].geometry.values),
+            np.random.choice(self.data[input_geom_type].geometry.values.data),
             predicate=predicate,
         )
