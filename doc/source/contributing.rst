@@ -316,3 +316,45 @@ From the root of the geopandas repository, you should then install the
 Then ``black`` and ``flake8`` will be run automatically
 each time you commit changes. You can skip these checks with
 ``git commit --no-verify``.
+
+Updating your pull request
+--------------------------
+
+Based on the review you get on your pull request, you will probably need to make
+some changes to the code. In that case, you can make them in your branch,
+add a new commit to that branch, push it to GitHub, and the pull request will be
+automatically updated.  Pushing them to GitHub again is done by::
+
+    git push origin shiny-new-feature
+
+This will automatically update your pull request with the latest code and restart the
+Continuous Integration tests.
+
+Another reason you might need to update your pull request is to solve conflicts
+with changes that have been merged into the master branch since you opened your
+pull request.
+
+To do this, you need to "merge upstream master" in your branch::
+
+    git checkout shiny-new-feature
+    git fetch upstream
+    git merge upstream/master
+
+If there are no conflicts (or they could be fixed automatically), a file with a
+default commit message will open, and you can simply save and quit this file.
+
+If there are merge conflicts, you need to solve those conflicts. See for
+example at https://help.github.com/articles/resolving-a-merge-conflict-using-the-command-line/
+for an explanation on how to do this.
+Once the conflicts are merged and the files where the conflicts were solved are
+added, you can run ``git commit`` to save those fixes.
+
+If you have uncommitted changes at the moment you want to update the branch with
+master, you will need to ``stash`` them prior to updating (see the
+`stash docs <https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning>`__).
+This will effectively store your changes and they can be reapplied after updating.
+
+After the feature branch has been update locally, you can now update your pull
+request by pushing to the branch on GitHub::
+
+    git push origin shiny-new-feature
