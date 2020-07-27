@@ -63,6 +63,7 @@ class BenchIndexCreation:
         lazy-building indexes are actually built.
         """
         for tree_geom_type in geom_types:
+            self.data[tree_geom_type]._sindex_generated = None
             self.data[tree_geom_type].geometry.values._sindex = None
             self.data[tree_geom_type].sindex
             # also do a single query to ensure the index is actually
