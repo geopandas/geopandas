@@ -3,12 +3,9 @@ channels:
   - defaults
 dependencies:
   - python=3.6
-  - pip
   # required
-  - pandas==0.23.4
-  - nomkl
+  - pandas=0.25
   - shapely
-  - gdal=2.3
   - fiona
   #- pyproj
   - geos
@@ -18,14 +15,15 @@ dependencies:
   #- codecov
   # optional
   - rtree
-  - matplotlib=2
+  - matplotlib
   - descartes
   #- geopy
   - SQLalchemy
   - libspatialite
+  - pyarrow
   - pip:
-    - pyproj==2.3.1
-    - geopy
-    - codecov
-    - mapclassify>=2.2.0
-    - git+https://github.com/pygeos/pygeos.git
+      - pyproj==2.3.1
+      - codecov
+      - geopy
+      - mapclassify>=2.2.0
+      - git+https://github.com/pygeos/pygeos.git

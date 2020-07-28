@@ -6,7 +6,11 @@ import inspect
 
 import numpy as np
 import pandas as pd
-from pandas.api.extensions import ExtensionArray, ExtensionDtype
+from pandas.api.extensions import (
+    ExtensionArray,
+    ExtensionDtype,
+    register_extension_dtype,
+)
 
 import shapely
 import shapely.affinity
@@ -48,10 +52,7 @@ class GeometryDtype(ExtensionDtype):
         return GeometryArray
 
 
-if compat.PANDAS_GE_024:
-    from pandas.api.extensions import register_extension_dtype
-
-    register_extension_dtype(GeometryDtype)
+register_extension_dtype(GeometryDtype)
 
 
 def _isna(value):
