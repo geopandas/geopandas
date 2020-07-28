@@ -321,7 +321,7 @@ Commit message conventions
 --------------------------
 
 Commit your changes to your local repository with an explanatory message. GeoPandas
-uses the pandas convention for commit message prefixes and layout.  Here are
+uses the pandas convention for commit message prefixes and layout. Here are
 some common prefixes along with general guidelines for when to use them:
 
 * ENH: Enhancement, new functionality
