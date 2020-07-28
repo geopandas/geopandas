@@ -320,7 +320,7 @@ each time you commit changes. You can skip these checks with
 Commit message conventions
 --------------------------
 
-Commit your changes to your local repository with an explanatory message. geopandas
+Commit your changes to your local repository with an explanatory message. GeoPandas
 uses the pandas convention for commit message prefixes and layout.  Here are
 some common prefixes along with general guidelines for when to use them:
 
