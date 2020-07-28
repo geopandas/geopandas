@@ -62,6 +62,7 @@ examples/nybb_*.zip
 doc/source/gallery
 doc/source/savefig
 doc/source/reference
+doc/source/_build
 
 geopandas.egg-info
 geopandas/version.py
