@@ -334,7 +334,7 @@ some common prefixes along with general guidelines for when to use them:
 * CLN: Code cleanup
 
 The following defines how a commit message should be structured.  Please reference the
-relevant GitHub issues in your commit message using GH1234 or #1234.  Either style
+relevant GitHub issues in your commit message using GH1234 or #1234. Either style
 is fine, but the former is generally preferred:
 
 * a subject line with `< 80` chars.
