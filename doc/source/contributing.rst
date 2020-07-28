@@ -344,7 +344,7 @@ If there are no conflicts (or they could be fixed automatically), a file with a
 default commit message will open, and you can simply save and quit this file.
 
 If there are merge conflicts, you need to solve those conflicts. See for
-example at https://help.github.com/articles/resolving-a-merge-conflict-using-the-command-line/
+example at `GitHub <https://help.github.com/articles/resolving-a-merge-conflict-using-the-command-line/>`__
 for an explanation on how to do this.
 Once the conflicts are merged and the files where the conflicts were solved are
 added, you can run ``git commit`` to save those fixes.
