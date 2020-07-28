@@ -316,3 +316,32 @@ From the root of the geopandas repository, you should then install the
 Then ``black`` and ``flake8`` will be run automatically
 each time you commit changes. You can skip these checks with
 ``git commit --no-verify``.
+
+Commit message conventions
+--------------------------
+
+Commit your changes to your local repository with an explanatory message. GeoPandas
+uses the pandas convention for commit message prefixes and layout. Here are
+some common prefixes along with general guidelines for when to use them:
+
+* ENH: Enhancement, new functionality
+* BUG: Bug fix
+* DOC: Additions/updates to documentation
+* TST: Additions/updates to tests
+* BLD: Updates to the build process/scripts
+* PERF: Performance improvement
+* TYP: Type annotations
+* CLN: Code cleanup
+
+The following defines how a commit message should be structured. Please refer to the
+relevant GitHub issues in your commit message using GH1234 or #1234. Either style
+is fine, but the former is generally preferred:
+
+* a subject line with `< 80` chars.
+* One blank line.
+* Optionally, a commit message body.
+
+Now you can commit your changes in your local repository::
+
+    git commit -m
+    
