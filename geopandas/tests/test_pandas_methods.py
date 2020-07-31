@@ -272,7 +272,7 @@ def test_numerical_operations(s, df):
     exp = pd.Series([3, 4], index=["value1", "value2"])
     assert_series_equal(df.sum(), exp)
 
-    # series methods raise error
+    # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
         s.sum()
 
@@ -280,6 +280,7 @@ def test_numerical_operations(s, df):
         s.max()
 
     with pytest.raises((TypeError, ValueError)):
+        # TODO: remove ValueError after pandas-dev/pandas#32749
         s.idxmax()
 
     # numerical ops raise an error
