@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import functools
+import pathlib
 import warnings
 import numpy as np
 import pandas as pd
@@ -99,6 +100,17 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             memfile = fiona.io.MemoryFile(data)
             reader = memfile.open
     else:
+        # Opening a file via URL above automatically detects a zipped file.
+        # In order to match that behavior, attempt to add a zip scheme if missing.
+        # Casting to a pathlib.Path allows the same check to work for plain strings
+        # and pathlib.Path instances.
+        if pathlib.Path(filename).suffix == ".zip":
+            parsed = fiona.path.ParsedPath.from_uri(str(filename))
+            if not parsed.scheme:
+                parsed.scheme = "zip"
+            elif "zip" not in parsed.scheme.split("+"):
+                parsed.scheme = "zip+" + parsed.scheme
+            filename = parsed.name
         reader = functools.partial(fiona.open, filename)
 
     with fiona_env():
