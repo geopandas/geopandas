@@ -137,7 +137,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
+def overlay(df1, df2, how="intersection", keep_geom_type=True):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
