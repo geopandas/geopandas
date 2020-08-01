@@ -1,17 +1,20 @@
-/*This ensures that clickable links in the SG examples are the right color*/
-div.section a span {
-    color: #2980B9 !important
+h1 {
+    color: #139C5A;
 }
 
-/*Copied from sphinx' basic.css to ensure the sphinx >2.0 docstrings are
-rendered somewhat properly (xref https://github.com/numpy/numpydoc/issues/215) */
-
-.classifier {
-    font-style: oblique;
+h2 {
+    color: #333333;
 }
 
-.classifier:before {
-    font-style: normal;
-    margin: 0.5em;
-    content: ":";
+.nav li.active>a, .navbar-nav>.active>.nav-link {
+    color: #139C5A!important;
+}
+
+.toc-entry>.nav-link.active {
+    border-left-color: #139C5A;
+    color: #139C5A!important;
+}
+
+.nav li>a:hover {
+    color: #333333!important;
 }
