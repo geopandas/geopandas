@@ -1,3 +1,5 @@
+/* colors */
+
 h1 {
     color: #139C5A;
 }
@@ -17,4 +19,30 @@ h2 {
 
 .nav li>a:hover {
     color: #333333!important;
+}
+
+/* buttons */
+
+.tutorial {
+    box-shadow: 0px 4px 14px -7px #999999;
+    background-color: white;
+    border: 1px solid #bbbbbb;
+    display: inline-block;
+    cursor: pointer;
+    color: #139C5A;
+    padding: 1em 1em;
+    text-align: center;
+    text-decoration: none;
+    font-size: 140%;
+    margin: 2%;
+    width: 40%;
+}
+
+.tutorial:hover {
+    border-color: #139C5A;
+}
+
+.tutorial:active {
+    position: relative;
+    top: 1px;
 }
