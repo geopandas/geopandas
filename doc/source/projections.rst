@@ -64,11 +64,15 @@ Be aware that **most of the time** you don't have to set a projection. Data load
 
 From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
 
-For example, if you convert a spreadsheet of latitudes and longitudes into a GeoSeries by hand, you would set the projection by assigning the WGS84 latitude-longitude CRS to the :attr:`GeoSeries.crs` attribute:
+For example, if you convert a spreadsheet of latitudes and longitudes into a
+GeoSeries by hand, you would set the projection by passing the WGS84
+latitude-longitude CRS to the :meth:`GeoSeries.set_crs` method (or by setting
+the :attr:`GeoSeries.crs` attribute):
 
 .. sourcecode:: python
 
-   my_geoseries.crs = "EPSG:4326"
+    my_geoseries = my_geoseries.set_crs("EPSG:4326"})
+    my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 
 Re-Projecting
@@ -118,7 +122,7 @@ projection passed to GeoSeries or GeoDataFrame during the creation:
    - Lon[east]: Geodetic longitude (degree)
    ...
    >>> GeoSeries(array, crs=3395).crs  # crs=3395 is ignored as array already has CRS
-   FutureWarning: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoSeries.crs = crs' to overwrite CRS or 'GeoSeries.to_crs()' to reproject geometries. CRS mismatch will raise an error in the future versions of GeoPandas.
+   FutureWarning: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoDataFrame.set_crs(crs, allow_override=True)' to overwrite CRS or 'GeoDataFrame.to_crs(crs)' to reproject geometries. CRS mismatch will raise an error in the future versions of GeoPandas.
        GeoSeries(array, crs=3395).crs
 
    <Geographic 2D CRS: EPSG:4326>
@@ -128,9 +132,10 @@ projection passed to GeoSeries or GeoDataFrame during the creation:
    - Lon[east]: Geodetic longitude (degree)
    ...
 
-If you want to overwrite projection, you can then assign it to the GeoSeries manually
-or re-project geometries to the target projection using either ``GeoSeries.crs = 3395``
-or ``GeoSeries.to_crs(3395)``.
+If you want to overwrite projection, you can then assign it to the GeoSeries
+manually or re-project geometries to the target projection using either
+``GeoSeries.set_crs(epsg=3395, allow_override=True)`` or
+``GeoSeries.to_crs(epsg=3395)``.
 
 All GeometryArray-based operations preserve projection; however, if you loop over a column
 containing geometry, this information might be lost.

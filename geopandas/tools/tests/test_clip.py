@@ -9,9 +9,14 @@ from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCol
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+
+
+pytestmark = pytest.mark.skipif(
+    not geopandas.sindex.has_sindex(), reason="clip requires spatial index"
+)
 
 
 @pytest.fixture
@@ -355,3 +360,8 @@ def test_warning_geomcoll(single_rectangle_gdf, geomcol_gdf):
     called on a GDF with GeometryCollection"""
     with pytest.warns(UserWarning):
         clip(geomcol_gdf, single_rectangle_gdf, keep_geom_type=True)
+
+
+def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        clip(point_gdf, single_rectangle_gdf.to_crs(3857))

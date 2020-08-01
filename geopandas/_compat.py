@@ -1,24 +1,37 @@
 from distutils.version import LooseVersion
+import importlib
 import os
 import warnings
 
 import pandas as pd
+import shapely
 
 # -----------------------------------------------------------------------------
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
 PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
+PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
 
 
 # -----------------------------------------------------------------------------
 # Shapely / PyGEOS compat
 # -----------------------------------------------------------------------------
 
+
+SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
+
+HAS_PYGEOS = None
 USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
+
+try:
+    import pygeos  # noqa
+
+    HAS_PYGEOS = True
+except ImportError:
+    HAS_PYGEOS = False
 
 
 def set_use_pygeos(val=None):
@@ -38,12 +51,8 @@ def set_use_pygeos(val=None):
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-            try:
-                import pygeos  # noqa
 
-                USE_PYGEOS = True
-            except ImportError:
-                USE_PYGEOS = False
+            USE_PYGEOS = HAS_PYGEOS
 
             env_use_pygeos = os.getenv("USE_PYGEOS", None)
             if env_use_pygeos is not None:
@@ -90,3 +99,54 @@ def set_use_pygeos(val=None):
 
 
 set_use_pygeos()
+
+
+def import_optional_dependency(name: str, extra: str = ""):
+    """
+    Import an optional dependency.
+
+    Adapted from pandas.compat._optional::import_optional_dependency
+
+    Raises a formatted ImportError if the module is not present.
+
+    Parameters
+    ----------
+    name : str
+        The module name.
+    extra : str
+        Additional text to include in the ImportError message.
+    Returns
+    -------
+    module
+    """
+    msg = """Missing optional dependency '{name}'. {extra}  "
+        "Use pip or conda to install {name}.""".format(
+        name=name, extra=extra
+    )
+
+    if not isinstance(name, str):
+        raise ValueError(
+            "Invalid module name: '{name}'; must be a string".format(name=name)
+        )
+
+    try:
+        module = importlib.import_module(name)
+
+    except ImportError:
+        raise ImportError(msg) from None
+
+    return module
+
+
+# -----------------------------------------------------------------------------
+# RTree compat
+# -----------------------------------------------------------------------------
+
+HAS_RTREE = None
+RTREE_GE_094 = False
+try:
+    import rtree  # noqa
+
+    HAS_RTREE = True
+except ImportError:
+    HAS_RTREE = False

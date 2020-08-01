@@ -17,6 +17,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
+
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
@@ -57,6 +58,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
+
+    Examples
+    --------
+    Constructing GeoDataFrame from a dictionary.
+
+    >>> from shapely.geometry import Point
+    >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+    >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+    >>> gdf
+        col1                 geometry
+    0  name1  POINT (1.00000 2.00000)
+    1  name2  POINT (2.00000 1.00000)
+
+    Notice that the inferred dtype of 'geometry' columns is geometry.
+
+    >>> gdf.dtypes
+    col1          object
+    geometry    geometry
+    dtype: object
     """
 
     _metadata = ["_crs", "_geometry_column_name"]
@@ -90,13 +110,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 ):
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
-                        "or 'GeoDataFrame.to_crs()' to reproject geometries. "
+                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "allow_override=True)' to overwrite CRS or "
+                        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
                         "CRS mismatch will raise an error in the future versions "
                         "of GeoPandas.",
                         FutureWarning,
                         stacklevel=2,
-                    )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
+                    )
                     # TODO: raise error in 0.9 or 0.10.
                 self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
@@ -118,13 +139,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 warnings.warn(
                     "CRS mismatch between CRS of the passed geometries "
-                    "and 'crs'. Use 'GeoDataFrame.crs = crs' to overwrite CRS "
-                    "or 'GeoDataFrame.to_crs()' to reproject geometries. "
+                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                    "allow_override=True)' to overwrite CRS or "
+                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
                     "CRS mismatch will raise an error in the future versions "
                     "of GeoPandas.",
                     FutureWarning,
                     stacklevel=2,
-                )  # TODO: change 'GeoDataFrame.crs = crs' to 'set_crs()' once done
+                )
                 # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
         self._invalidate_sindex()
@@ -307,6 +329,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 # column called 'geometry' without geometry
                 self._crs = None if not value else CRS.from_user_input(value)
 
+    def __setstate__(self, state):
+        # overriding DataFrame method for compat with older pickles (CRS handling)
+        if isinstance(state, dict):
+            if "_metadata" in state and "crs" in state["_metadata"]:
+                metadata = state["_metadata"]
+                metadata[metadata.index("crs")] = "_crs"
+            if "crs" in state and "_crs" not in state:
+                crs = state.pop("crs")
+                state["_crs"] = CRS.from_user_input(crs) if crs is not None else crs
+
+        super().__setstate__(state)
+
+        # for some versions that didn't yet have CRS at array level -> crs is set
+        # at GeoDataFrame level with '_crs' (and not 'crs'), so without propagating
+        # to the GeoSeries/GeometryArray
+        try:
+            if self.crs is not None:
+                if self.geometry.values.crs is None:
+                    self.crs = self.crs
+        except Exception:
+            pass
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
@@ -329,7 +373,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
         """
-        return geopandas.io.file.read_file(filename, **kwargs)
+        return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
     def from_features(cls, features, crs=None, columns=None):
@@ -375,18 +419,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
-        for f in features_lst:
-            if hasattr(f, "__geo_interface__"):
-                f = f.__geo_interface__
-            else:
-                f = f
-
-            d = {"geometry": shape(f["geometry"]) if f["geometry"] else None}
-            d.update(f["properties"])
-            rows.append(d)
-        df = GeoDataFrame(rows, columns=columns)
-        df.crs = crs
-        return df
+        for feature in features_lst:
+            # load geometry
+            if hasattr(feature, "__geo_interface__"):
+                feature = feature.__geo_interface__
+            row = {
+                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+            }
+            # load properties
+            row.update(feature["properties"])
+            rows.append(row)
+        return GeoDataFrame(rows, columns=columns, crs=crs)
 
     @classmethod
     def from_postgis(
@@ -399,6 +442,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float=True,
         parse_dates=None,
         params=None,
+        chunksize=None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -428,6 +472,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               without native Datetime support, such as SQLite.
         params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
+        chunksize : int, default None
+            If specified, return an iterator where chunksize is the number
+            of rows to include in each chunk.
 
         Examples
         --------
@@ -437,7 +484,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
         """
 
-        df = geopandas.io.sql.read_postgis(
+        df = geopandas.io.sql._read_postgis(
             sql,
             con,
             geom_col=geom_col,
@@ -446,6 +493,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             coerce_float=coerce_float,
             parse_dates=parse_dates,
             params=params,
+            chunksize=chunksize,
         )
 
         return df
@@ -574,6 +622,81 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
+    def to_parquet(self, path, index=None, compression="snappy", **kwargs):
+        """Write a GeoDataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+        .. versionadded:: 0.8
+
+        Parameters
+        ----------
+        path : str, path object
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+            Name of the compression to use. Use ``None`` for no compression.
+        kwargs
+            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+        """
+
+        from geopandas.io.arrow import _to_parquet
+
+        _to_parquet(self, path, compression=compression, index=index, **kwargs)
+
+    def to_feather(self, path, index=None, compression=None, **kwargs):
+        """Write a GeoDataFrame to the Feather format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow' >= 0.17.
+
+        WARNING: this is an initial implementation of Feather file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Feather files.
+
+        .. versionadded:: 0.8
+
+        Parameters
+        ----------
+        path : str, path object
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        compression : {'zstd', 'lz4', 'uncompressed'}, optional
+            Name of the compression to use. Use ``"uncompressed"`` for no
+            compression. By default uses LZ4 if available, otherwise uncompressed.
+        kwargs
+            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+        """
+
+        from geopandas.io.arrow import _to_feather
+
+        _to_feather(self, path, index=index, compression=compression, **kwargs)
+
     def to_file(
         self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
     ):
@@ -618,9 +741,44 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         --------
         GeoSeries.to_file
         """
-        from geopandas.io.file import to_file
+        from geopandas.io.file import _to_file
 
-        to_file(self, filename, driver, schema, index, **kwargs)
+        _to_file(self, filename, driver, schema, index, **kwargs)
+
+    def set_crs(self, crs=None, epsg=None, inplace=False, allow_override=False):
+        """
+        Set the Coordinate Reference System (CRS) of the ``GeoDataFrame``.
+
+        If there are multiple geometry columns within the GeoDataFrame, only
+        the CRS of the active geometry column is set.
+
+        NOTE: The underlying geometries are not transformed to this CRS. To
+        transform the geometries to a new CRS, use the ``to_crs`` method.
+
+        Parameters
+        ----------
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying the projection.
+        inplace : bool, default False
+            If True, the CRS of the GeoDataFrame will be changed in place
+            (while still returning the result) instead of making a copy of
+            the GeoDataFrame.
+        allow_override : bool, default False
+            If the the GeoDataFrame already has a CRS, allow to replace the
+            existing CRS, even when both are not equal.
+        """
+        if not inplace:
+            df = self.copy()
+        else:
+            df = self
+        df.geometry = df.geometry.set_crs(
+            crs=crs, epsg=epsg, allow_override=allow_override, inplace=True
+        )
+        return df
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
@@ -835,6 +993,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         df_copy = self.copy()
 
+        if "level_1" in df_copy.columns:  # GH1393
+            df_copy = df_copy.rename(columns={"level_1": "__level_1"})
+
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
@@ -845,6 +1006,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
         df.index.names = list(self.index.names) + [None]
+
+        if "__level_1" in df.columns:
+            df = df.rename(columns={"__level_1": "level_1"})
+
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
@@ -873,6 +1038,65 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def to_postgis(
+        self,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
+    ):
+
+        """
+        Upload GeoDataFrame into PostGIS database.
+
+        This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+        Python driver (e.g. psycopg2) to be installed.
+
+        Parameters
+        ----------
+        name : str
+            Name of the target table.
+        con : sqlalchemy.engine.Engine
+            Active connection to the PostGIS database.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            How to behave if the table already exists:
+
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
+        schema : string, optional
+            Specify the schema. If None, use default schema: 'public'.
+        index : bool, default True
+            Write DataFrame index as a column.
+            Uses *index_label* as the column name in the table.
+        index_label : string or sequence, default None
+            Column label for index column(s).
+            If None is given (default) and index is True,
+            then the index names are used.
+        chunksize : int, optional
+            Rows will be written in batches of this size at a time.
+            By default, all rows will be written at once.
+        dtype : dict of column name to SQL type, default None
+            Specifying the datatype for columns.
+            The keys should be the column names and the values
+            should be the SQLAlchemy types.
+
+        Examples
+        --------
+
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase";)
+        >>> gdf.to_postgis("my_table", engine)
+        """
+        geopandas.io.sql._write_postgis(
+            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
 
         #
         # Implement standard operators for GeoSeries

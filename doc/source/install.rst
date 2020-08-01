@@ -92,9 +92,9 @@ as well::
     When using pip to install GeoPandas, you need to make sure that all dependencies are
     installed correctly.
 
-    - `shapely`_ and `fiona`_ provide binary wheels with the
-      dependencies included for Mac and Linux, but not for Windows.
-    - `pyproj`_ provides binary wheels with depencies included
+    - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
+      but not for Windows.
+    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
     - `rtree`_ does not provide wheels.
     - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
@@ -139,7 +139,7 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 0.23.4 or later)
+- `pandas`_ (version 0.24 or later)
 - `shapely`_ (interface to `GEOS`_)
 - `fiona`_ (interface to `GDAL`_)
 - `pyproj`_ (interface to `PROJ`_; version 2.2.0 or later)
@@ -149,13 +149,15 @@ Further, optional dependencies are:
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
+- `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
+
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 2.0.1)
+- `matplotlib`_ (>= 2.2.0)
 - `descartes`_
-- `mapclassify`_
+- `mapclassify`_ (>= 2.2.0)
 
 
 Using the optional PyGEOS dependency
@@ -192,7 +194,8 @@ More specifically, whether the speedups are used or not is determined by:
 
     The use of PyGEOS is experimental! Although it is passing all tests,
     there might still be issues and not all functions of GeoPandas will
-    already benefit from speedups. But trying this out is very welcome!
+    already benefit from speedups (one known issue: the `to_crs` coordinate
+    transformations lose the z coordinate). But trying this out is very welcome!
     Any issues you encounter (but also reports of successful usage are
     interesting!) can be reported at https://gitter.im/geopandas/geopandas
     or https://github.com/geopandas/geopandas/issues
@@ -217,6 +220,8 @@ More specifically, whether the speedups are used or not is determined by:
 .. _geopy: https://github.com/geopy/geopy
 
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
+
+.. _GeoAlchemy2: https://geoalchemy-2.readthedocs.io/
 
 .. _mapclassify: http://pysal.org/mapclassify
 

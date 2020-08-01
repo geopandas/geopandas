@@ -5,6 +5,8 @@ import pandas as pd
 
 import geopandas
 
+from distutils.version import LooseVersion
+
 
 def deprecated(new):
     """Helper to provide deprecation warning."""
@@ -54,6 +56,36 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     return components, np.array(component_index)
 
 
+def _expand_kwargs(kwargs, multiindex):
+    """
+    Most arguments to the plot functions must be a (single) value, or a sequence
+    of values. This function checks each key-value pair in 'kwargs' and expands
+    it (in place) to the correct length/formats with help of 'multiindex', unless
+    the value appears to already be a valid (single) value for the key.
+    """
+    from matplotlib.colors import is_color_like
+    from typing import Iterable
+
+    for att, value in kwargs.items():
+        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+            if is_color_like(value):
+                continue
+        elif "linestyle" in att:  # linestyle(s)
+            # A single linestyle can be 2-tuple of a number and an iterable.
+            if (
+                isinstance(value, tuple)
+                and len(value) == 2
+                and isinstance(value[1], Iterable)
+            ):
+                continue
+        elif att in ["marker", "alpha"]:
+            # For these attributes, only a single value is allowed, so never expand.
+            continue
+
+        if pd.api.types.is_list_like(value):
+            kwargs[att] = np.take(value, multiindex, axis=0)
+
+
 def _plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -93,36 +125,23 @@ def _plot_polygon_collection(
             "'pip install descartes'."
         )
     from matplotlib.collections import PatchCollection
-    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
-    if "markersize" in kwargs:
-        del kwargs["markersize"]
-    if color is not None:
-        if is_color_like(color):
-            kwargs["color"] = color
-        elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex, axis=0)
-        else:
-            raise TypeError(
-                "Color attribute has to be a single color or sequence of colors."
-            )
+    kwargs = {
+        att: value
+        for att, value in kwargs.items()
+        if att not in ["markersize", "marker"]
+    }
 
-    else:
-        for att in ["facecolor", "edgecolor"]:
-            if att in kwargs:
-                if not is_color_like(kwargs[att]):
-                    if pd.api.types.is_list_like(kwargs[att]):
-                        kwargs[att] = np.take(kwargs[att], multiindex, axis=0)
-                    elif kwargs[att] is not None:
-                        raise TypeError(
-                            "Color attribute has to be a single color or sequence "
-                            "of colors."
-                        )
+    # Add to kwargs for easier checking below.
+    if color is not None:
+        kwargs["color"] = color
+
+    _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -163,26 +182,23 @@ def _plot_linestring_collection(
     collection : matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import LineCollection
-    from matplotlib.colors import is_color_like
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
-    if "markersize" in kwargs:
-        del kwargs["markersize"]
+    kwargs = {
+        att: value
+        for att, value in kwargs.items()
+        if att not in ["markersize", "marker"]
+    }
 
-    # color=None gives black instead of default color cycle
+    # Add to kwargs for easier checking below.
     if color is not None:
-        if is_color_like(color):
-            kwargs["color"] = color
-        elif pd.api.types.is_list_like(color):
-            kwargs["color"] = np.take(color, multiindex, axis=0)
-        else:
-            raise TypeError(
-                "Color attribute has to be a single color or sequence of colors."
-            )
+        kwargs["color"] = color
+
+    _expand_kwargs(kwargs, multiindex)
 
     segments = [np.array(linestring)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -234,8 +250,6 @@ def _plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    from matplotlib.colors import is_color_like
-
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
@@ -252,21 +266,17 @@ def _plot_point_collection(
     if markersize is not None:
         kwargs["s"] = markersize
 
+    # Add to kwargs for easier checking below.
     if color is not None:
-        if not is_color_like(color):
-            if pd.api.types.is_list_like(color):
-                color = np.take(color, multiindex, axis=0)
-            else:
-                raise TypeError(
-                    "Color attribute has to be a single color or sequence of colors."
-                )
+        kwargs["color"] = color
+    if marker is not None:
+        kwargs["marker"] = marker
+    _expand_kwargs(kwargs, multiindex)
 
     if "norm" not in kwargs:
-        collection = ax.scatter(
-            x, y, color=color, vmin=vmin, vmax=vmax, cmap=cmap, marker=marker, **kwargs
-        )
+        collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
     else:
-        collection = ax.scatter(x, y, color=color, cmap=cmap, marker=marker, **kwargs)
+        collection = ax.scatter(x, y, cmap=cmap, **kwargs)
 
     return collection
 
@@ -274,7 +284,9 @@ def _plot_point_collection(
 plot_point_collection = deprecated(_plot_point_collection)
 
 
-def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
+def plot_series(
+    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+):
     """
     Plot a GeoSeries.
 
@@ -301,6 +313,14 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
+    aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
+        the GeoSeries (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -336,7 +356,18 @@ def plot_series(s, cmap=None, color=None, ax=None, figsize=None, **style_kwds):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if aspect == "auto":
+        if s.crs and s.crs.is_geographic:
+            bounds = s.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    else:
+        ax.set_aspect(aspect)
 
     if s.empty:
         warnings.warn(
@@ -419,8 +450,10 @@ def plot_dataframe(
     markersize=None,
     figsize=None,
     legend_kwds=None,
+    categories=None,
     classification_kwds=None,
     missing_kwds=None,
+    aspect="auto",
     **style_kwds
 ):
     """
@@ -484,6 +517,17 @@ def plot_dataframe(
     legend_kwds : dict (default None)
         Keyword arguments to pass to matplotlib.pyplot.legend() or
         matplotlib.pyplot.colorbar().
+        Additional accepted keywords when `scheme` is specified:
+
+        fmt : string
+            A formatting specification for the bin edges of the classes in the
+            legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
+        labels : list-like
+            A list of legend labels to override the auto-generated labels.
+            Needs to have the same number of elements as the number of
+            classes (`k`).
+    categories : list-like
+        Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
         Keyword arguments to pass to mapclassify
     missing_kwds : dict (default None)
@@ -491,9 +535,17 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
+    aspect : 'auto', 'equal' or float (default 'auto')
+        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
+        however data are not projected (coordinates are long/lat), the aspect is by
+        default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
+        the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
+        square appears square in the middle of the plot. This implies an
+        Equirectangular projection. It can also be set manually (float) as the ratio
+        of y-unit to x-unit.
 
     **style_kwds : dict
-        Color options to be passed on to the actual plot function, such
+        Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
         ``alpha``.
 
@@ -535,7 +587,18 @@ def plot_dataframe(
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
         fig, ax = plt.subplots(figsize=figsize)
-    ax.set_aspect("equal")
+
+    if aspect == "auto":
+        if df.crs and df.crs.is_geographic:
+            bounds = df.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    else:
+        ax.set_aspect(aspect)
 
     if df.empty:
         warnings.warn(
@@ -556,6 +619,7 @@ def plot_dataframe(
             ax=ax,
             figsize=figsize,
             markersize=markersize,
+            aspect=aspect,
             **style_kwds
         )
 
@@ -566,23 +630,40 @@ def plot_dataframe(
                 "The dataframe and given column have different number of rows."
             )
         else:
-            values = np.asarray(column)
+            values = column
     else:
-        values = np.asarray(df[column])
+        values = df[column]
 
-    if values.dtype is np.dtype("O"):
+    if pd.api.types.is_categorical_dtype(values.dtype):
+        if categories is not None:
+            raise ValueError(
+                "Cannot specify 'categories' when column has categorical dtype"
+            )
+        categorical = True
+    elif values.dtype is np.dtype("O") or categories:
         categorical = True
 
-    nan_idx = pd.isna(values)
+    nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     # Define `values` as a Series
     if categorical:
         if cmap is None:
             cmap = "tab10"
-        categories = list(set(values[~nan_idx]))
-        categories.sort()
-        valuemap = dict((k, v) for (v, k) in enumerate(categories))
-        values = np.array([valuemap[k] for k in values[~nan_idx]])
+
+        cat = pd.Categorical(values, categories=categories)
+        categories = list(cat.categories)
+
+        # values missing in the Categorical but not in original values
+        missing = list(np.unique(values[~nan_idx & cat.isna()]))
+        if missing:
+            raise ValueError(
+                "Column contains values not listed in categories. "
+                "Missing categories: {}.".format(missing)
+            )
+
+        values = cat.codes[~nan_idx]
+        vmin = 0 if vmin is None else vmin
+        vmax = len(categories) - 1 if vmax is None else vmax
 
     if scheme is not None:
         if classification_kwds is None:
@@ -593,11 +674,21 @@ def plot_dataframe(
         binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
         # set categorical to True for creating the legend
         categorical = True
-        binedges = [values[~nan_idx].min()] + binning.bins.tolist()
-        categories = [
-            "{0:.2f} - {1:.2f}".format(binedges[i], binedges[i + 1])
-            for i in range(len(binedges) - 1)
-        ]
+        if legend_kwds is not None and "labels" in legend_kwds:
+            if len(legend_kwds["labels"]) != binning.k:
+                raise ValueError(
+                    "Number of labels must match number of bins, "
+                    "received {} labels for {} bins".format(
+                        len(legend_kwds["labels"]), binning.k
+                    )
+                )
+            else:
+                categories = list(legend_kwds.pop("labels"))
+        else:
+            fmt = "{:.2f}"
+            if legend_kwds is not None and "fmt" in legend_kwds:
+                fmt = legend_kwds.pop("fmt")
+            categories = binning.get_legend_classes(fmt)
         values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
@@ -672,6 +763,8 @@ def plot_dataframe(
 
         if legend_kwds is None:
             legend_kwds = {}
+        if "fmt" in legend_kwds:
+            legend_kwds.pop("fmt")
 
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
@@ -761,15 +854,18 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
     """
     try:
         import mapclassify.classifiers as classifiers
-    except ImportError:
-        try:
-            import pysal.viz.mapclassify.classifiers as classifiers
-        except ImportError:
-            raise ImportError(
-                "The 'mapclassify' or 'pysal' package is required to use the"
-                " 'scheme' keyword"
-            )
 
+    except ImportError:
+        raise ImportError(
+            "The 'mapclassify' >= 2.2.0 package is required to use the 'scheme' keyword"
+        )
+    from mapclassify import __version__ as mc_version
+
+    if mc_version < LooseVersion("2.2.0"):
+        raise ImportError(
+            "The 'mapclassify' >= 2.2.0 package is required to "
+            "use the 'scheme' keyword"
+        )
     schemes = {}
     for classifier in classifiers.CLASSIFIERS:
         schemes[classifier.lower()] = getattr(classifiers, classifier)
@@ -814,15 +910,13 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
             )
 
     if classification_kwds["k"] is not None:
-        try:
-            from inspect import getfullargspec as getspec
-        except ImportError:
-            from inspect import getargspec as getspec
+        from inspect import getfullargspec as getspec
+
         spec = getspec(scheme_class.__init__)
         if "k" not in spec.args:
             del classification_kwds["k"]
     try:
-        binning = scheme_class(values, **classification_kwds)
+        binning = scheme_class(np.asarray(values), **classification_kwds)
     except TypeError:
         raise TypeError("Invalid keyword argument for %r " % scheme)
     return binning

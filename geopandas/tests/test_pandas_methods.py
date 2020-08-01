@@ -9,7 +9,7 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
+from geopandas._compat import PANDAS_GE_025, PANDAS_GE_11
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -39,9 +39,6 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
-@pytest.mark.skipif(
-    not PANDAS_GE_024, reason="formatting for EA only implemented in 0.24.0"
-)
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
@@ -275,14 +272,15 @@ def test_numerical_operations(s, df):
     exp = pd.Series([3, 4], index=["value1", "value2"])
     assert_series_equal(df.sum(), exp)
 
-    # series methods raise error
+    # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
         s.sum()
 
     with pytest.raises(TypeError):
         s.max()
 
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, ValueError)):
+        # TODO: remove ValueError after pandas-dev/pandas#32749
         s.idxmax()
 
     # numerical ops raise an error
@@ -299,9 +297,6 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skipif(
-    not PANDAS_GE_024, reason="where for EA only implemented in 0.24.0 (GH24114)"
-)
 def test_where(s):
     res = s.where(np.array([True, False, True]))
     exp = GeoSeries([Point(0, 0), None, Point(2, 2)])
@@ -312,6 +307,22 @@ def test_select_dtypes(df):
     res = df.select_dtypes(include=[np.number])
     exp = df[["value1", "value2"]]
     assert_frame_equal(res, exp)
+
+
+def test_equals(s, df):
+    # https://github.com/geopandas/geopandas/issues/1420
+    s2 = s.copy()
+    assert s.equals(s2) is True
+    s2.iloc[0] = None
+    assert s.equals(s2) is False
+
+    df2 = df.copy()
+    assert df.equals(df2) is True
+    df2.loc[0, "geometry"] = Point(10, 10)
+    assert df.equals(df2) is False
+    df2 = df.copy()
+    df2.loc[0, "value1"] = 10
+    assert df.equals(df2) is False
 
 
 # Missing values
@@ -444,11 +455,24 @@ def test_groupby(df):
 
     # applying on the geometry column
     res = df.groupby("value2")["geometry"].apply(lambda x: x.cascaded_union)
-    exp = pd.Series(
-        [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-        index=pd.Index([1, 2], name="value2"),
-        name="geometry",
-    )
+    if PANDAS_GE_11:
+        exp = GeoSeries(
+            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+            index=pd.Index([1, 2], name="value2"),
+            name="geometry",
+        )
+    else:
+        exp = pd.Series(
+            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+            index=pd.Index([1, 2], name="value2"),
+            name="geometry",
+        )
+    assert_series_equal(res, exp)
+
+    # apply on geometry column not resulting in new geometry
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union.area)
+    exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry")
+
     assert_series_equal(res, exp)
 
 
@@ -458,6 +482,26 @@ def test_groupby_groups(df):
     assert isinstance(res, GeoDataFrame)
     exp = df.loc[[0, 2]]
     assert_frame_equal(res, exp)
+
+
+def test_apply(s):
+    # function that returns geometry preserves GeoSeries class
+    def geom_func(geom):
+        assert isinstance(geom, Point)
+        return geom
+
+    result = s.apply(geom_func)
+    assert isinstance(result, GeoSeries)
+    assert_geoseries_equal(result, s)
+
+    # function that returns non-geometry results in Series
+    def numeric_func(geom):
+        assert isinstance(geom, Point)
+        return geom.x
+
+    result = s.apply(numeric_func)
+    assert not isinstance(result, GeoSeries)
+    assert_series_equal(result, pd.Series([0.0, 1.0, 2.0]))
 
 
 def test_apply_loc_len1(df):

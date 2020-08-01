@@ -3,12 +3,12 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.5
+  - python=3.6
   # required
-  - numpy=1.12
-  - pandas==0.23.4
-  - shapely=1.5
-  - fiona=1.7
+  - numpy=1.15
+  - pandas==0.24
+  - shapely=1.6
+  - fiona=1.8
   #- pyproj
   # testing
   - pytest
@@ -18,11 +18,11 @@ dependencies:
   - rtree
   - matplotlib
   - descartes
-  - matplotlib=2.0
-  - mapclassify
+  - matplotlib=2.2
+  - mapclassify>=2.2.0
   - geopy
   - SQLalchemy
-  - psycopg2
   - libspatialite
+  - pyarrow
   - pip:
-    - pyproj==2.2.2
+      - pyproj==2.2.2

@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import io
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -23,7 +24,6 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
 
-_FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
@@ -36,7 +36,7 @@ def _is_url(url):
         return False
 
 
-def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -44,23 +44,23 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Parameters
     ----------
-    filename: str, path object or file-like object
+    filename : str, path object or file-like object
         Either the absolute or relative path to the file or URL to
         be opened, or any object with a read() method (such as an open file
         or StringIO)
-    bbox: tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
+    bbox : tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
         or GeoDataFrame. Cannot be used with mask.
-    mask: dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
+    mask : dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox.
-    rows: int or slice, default None
+    rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
-    **kwargs:
+    **kwargs :
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
         possible keywords, type:
@@ -72,7 +72,8 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Returns
     -------
-    :obj:`geopandas.GeoDataFrame`
+    :obj:`geopandas.GeoDataFrame` or :obj:`pandas.DataFrame` :
+        If `ignore_geometry=True` a :obj:`pandas.DataFrame` will be returned.
 
     Notes
     -----
@@ -128,14 +129,46 @@ def read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
+            # get list of columns
+            columns = list(features.schema["properties"])
+            if kwargs.get("ignore_geometry", False):
+                return pd.DataFrame(
+                    [record["properties"] for record in f_filt], columns=columns
+                )
 
-            columns = list(features.meta["schema"]["properties"]) + ["geometry"]
-            gdf = GeoDataFrame.from_features(f_filt, crs=crs, columns=columns)
+            return GeoDataFrame.from_features(
+                f_filt, crs=crs, columns=columns + ["geometry"]
+            )
 
-    return gdf
+
+def read_file(*args, **kwargs):
+    import warnings
+
+    warnings.warn(
+        "geopandas.io.file.read_file() is intended for internal "
+        "use only, and will be deprecated. Use geopandas.read_file() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    return _read_file(*args, **kwargs)
 
 
-def to_file(
+def to_file(*args, **kwargs):
+    import warnings
+
+    warnings.warn(
+        "geopandas.io.file.to_file() is intended for internal "
+        "use only, and will be deprecated. Use GeoDataFrame.to_file() "
+        "or GeoSeries.to_file() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    return _to_file(*args, **kwargs)
+
+
+def _to_file(
     df,
     filename,
     driver="ESRI Shapefile",
@@ -208,6 +241,14 @@ def to_file(
         crs = pyproj.CRS.from_user_input(crs)
     else:
         crs = df.crs
+
+    if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
+        warnings.warn(
+            "Column names longer than 10 characters will be truncated when saved to "
+            "ESRI Shapefile.",
+            stacklevel=3,
+        )
+
     with fiona_env():
         crs_wkt = None
         try:
@@ -242,12 +283,6 @@ def infer_schema(df):
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"
-        if not _FIONA18 and out_type == "bool":
-            raise ValueError(
-                'column "{}" is boolean type, '.format(column)
-                + "which is unsupported in file writing with fiona "
-                "< 1.8. Consider casting the column to int type."
-            )
         return out_type
 
     properties = OrderedDict(
@@ -274,24 +309,11 @@ def _geometry_types(df):
     """
     Determine the geometry types in the GeoDataFrame for the schema.
     """
-    if _FIONA18:
-        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
-        # can have mixed geometries:
-        # - 3D and 2D shapes can coexist in inferred schema
-        # - Shape and MultiShape types can (and must) coexist in inferred
-        #   schema
-        geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
-        geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
-        geom_types = geom_types_3D + geom_types_2D
-
-    else:
-        # Before Fiona 1.8, schema submitted to write a gdf should have
-        # one single geometry type whenever possible:
-        # - 3D and 2D shapes cannot coexist in inferred schema
-        # - Shape and MultiShape can not coexist in inferred schema
-        geom_types = _geometry_types_back_compat(df)
+    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+    geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+    geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
+    geom_types = geom_types_3D + geom_types_2D
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -302,25 +324,3 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
-
-
-def _geometry_types_back_compat(df):
-    """
-    for backward compatibility with Fiona<1.8 only
-    """
-    unique_geom_types = df.geometry.geom_type.unique()
-    unique_geom_types = [gtype for gtype in unique_geom_types if gtype is not None]
-
-    # merge single and Multi types (eg Polygon and MultiPolygon)
-    unique_geom_types = [
-        gtype
-        for gtype in unique_geom_types
-        if not gtype.startswith("Multi") or gtype[5:] not in unique_geom_types
-    ]
-
-    if df.geometry.has_z.any():
-        # declare all geometries as 3D geometries
-        unique_geom_types = ["3D " + type for type in unique_geom_types]
-    # by default, all geometries are 2D geometries
-
-    return unique_geom_types
