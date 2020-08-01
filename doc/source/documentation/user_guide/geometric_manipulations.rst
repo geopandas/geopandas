@@ -90,7 +90,7 @@ Examples of Geometric Manipulations
     2    POLYGON ((2 0, 3 0, 3 1, 2 1, 2 0))
     dtype: geometry
 
-.. image:: _static/test.png
+.. image:: ../../_static/test.png
 
 Some geographic operations return normal pandas object.  The ``area`` property of a ``GeoSeries`` will return a ``pandas.Series`` containing the area of each item in the ``GeoSeries``:
 
@@ -112,7 +112,7 @@ Other operations return GeoPandas objects:
     2    POLYGON ((1.5 0, 1.5 1, 1.502407636663901 1.04...
     dtype: geometry
 
-.. image:: _static/test_buffer.png
+.. image:: ../../_static/test_buffer.png
 
 GeoPandas objects also know how to plot themselves.  GeoPandas uses `descartes`_ to generate a `matplotlib`_ plot. To generate a plot of our GeoSeries, use:
 
@@ -145,7 +145,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     4         MULTIPOLYGON (((1029606.076599121 156073.81420...  
     5         MULTIPOLYGON (((970217.0223999023 145643.33221...  
 
-.. image:: _static/nyc.png
+.. image:: ../../_static/nyc.png
 
 .. sourcecode:: python
 
@@ -158,7 +158,7 @@ GeoPandas also implements alternate constructors that can read any data format r
     5    POLYGON ((915517.6877458114 120121.8812543372,...
     dtype: geometry
 
-.. image:: _static/nyc_hull.png
+.. image:: ../../_static/nyc_hull.png
 
 To demonstrate a more complex operation, we'll generate a
 ``GeoSeries`` containing 2000 random points:
@@ -192,7 +192,7 @@ just use:
 
     >>> holes = boros['geometry'].intersection(mp)
 
-.. image:: _static/holes.png
+.. image:: ../../_static/holes.png
 
 and to get the area outside of the holes:
 
@@ -200,7 +200,7 @@ and to get the area outside of the holes:
 
     >>> boros_with_holes = boros['geometry'].difference(mp)
 
-.. image:: _static/boros_with_holes.png
+.. image:: ../../_static/boros_with_holes.png
 
 Note that this can be simplified a bit, since ``geometry`` is
 available as an attribute on a ``GeoDataFrame``, and the

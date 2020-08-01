@@ -48,7 +48,7 @@ element of the series with that geometry.  In either case, a
 ``Series`` or a :class:`GeoSeries` will be returned, as appropriate.
 
 A short summary of a few attributes and methods for GeoSeries is
-presented here, and a full list can be found in the :doc:`all attributes and methods page <reference>`.
+presented here, and a full list can be found in the :doc:`all attributes and methods page <../api/geoseries>`.
 There is also a family of methods for creating new shapes by expanding
 existing shapes or applying set-theoretic operations like "union" described
 in :doc:`geometric manipulations <geometric_manipulations>`.

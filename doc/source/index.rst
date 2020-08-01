@@ -27,7 +27,7 @@ such as PostGIS.
    :hidden:
 
    Home <self>
-   About 
+   About <about>
    Getting started <getting_started>
    Documentation <documentation>
    Community <community>

@@ -8,6 +8,6 @@ Links to different parts of documentation.
   :caption: Documentation
 
   User Guide <documentation/user_guide>
-  Advanced Guide <documentation/advanced_guide>
   API reference <documentation/reference>
   Changelog <documentation/changelog>
+..   Advanced Guide <documentation/advanced_guide>
