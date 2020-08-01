@@ -13,7 +13,7 @@ dependencies:
 - descartes=1.1.0
 - mapclassify=2.2.0
 - sphinx=2.4.1
-- sphinx_rtd_theme=0.4.3
+- pydata_sphinx_theme=0.3.1
 - numpydoc=0.9.2
 - recommonmark==0.6.0
 - ipython=7.12.0

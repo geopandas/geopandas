@@ -27,30 +27,10 @@ such as PostGIS.
    :hidden:
 
    Home <self>
-
-.. toctree::
-  :maxdepth: 2
-  :caption: Getting Started
-
-  Installation <install>
-  Examples Gallery <gallery/index>
-  User Guide <user_guide>
-
-.. toctree::
-  :maxdepth: 2
-  :caption: Reference Guide
-
-  API reference <reference>
-  Changelog <changelog>
-
-
-.. toctree::
-  :maxdepth: 2
-  :caption: Developer
-
-  Development <contributing>
-  Code of Conduct <code_of_conduct>
-
+   About 
+   Getting started <getting_started>
+   Documentation <documentation>
+   Community <community>
 
 Get in touch
 ------------
