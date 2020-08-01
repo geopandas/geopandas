@@ -23,7 +23,7 @@ h2 {
 
 /* buttons */
 
-.tutorial {
+.button>p>a {
     box-shadow: 0px 4px 14px -7px #999999;
     background-color: white;
     border: 1px solid #bbbbbb;
@@ -38,11 +38,12 @@ h2 {
     width: 40%;
 }
 
-.tutorial:hover {
+.button>p>a:hover {
     border-color: #139C5A;
+    color: #e32e00;
 }
 
-.tutorial:active {
+.button>p>a:active {
     position: relative;
     top: 1px;
 }

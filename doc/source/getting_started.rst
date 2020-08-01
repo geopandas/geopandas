@@ -25,19 +25,20 @@ Do you prefer ``pip install`` or installation from source? Or specific version? 
 What now?
 =========
 
-If you don't have GeoPandas yet, check :doc:`Installation <getting_started/install>`. 
-If you have never used GeoPandas and want to get familiar with it and its core 
-functionality quickly, see :doc:`Getting Started Tutorial <getting_started/introduction>`. 
-Detailed illustration how to work with different parts of GeoPandas, how to make maps,
-manage projections, spatially merge data or geocode are part of our 
-:doc:`User Guide <documentation/user_guide>`. And if you are interested in the complete 
-documentation of all classes, functions, method and attributes GeoPandas offers, 
-:doc:`API Reference <documentation/reference>` is here for you.
+- If you don't have GeoPandas yet, check :doc:`Installation <getting_started/install>`. 
+- If you have never used GeoPandas and want to get familiar with it and its core 
+  functionality quickly, see :doc:`Getting Started Tutorial <getting_started/introduction>`. 
+- Detailed illustration how to work with different parts of GeoPandas, how to make maps,
+  manage projections, spatially merge data or geocode are part of our 
+  :doc:`User Guide <documentation/user_guide>`. 
+- And if you are interested in the complete 
+  documentation of all classes, functions, method and attributes GeoPandas offers, 
+  :doc:`API Reference <documentation/reference>` is here for you.
 
-.. raw:: html
+.. container:: button
 
-  <a href="#" class="tutorial">Installation</a> <a href="#" class="tutorial">Tutorial</a> <br />
-  <a href="#" class="tutorial">User Guide</a> <a href="#" class="tutorial">API Reference</a>
+    :doc:`Installation <getting_started/install>` :doc:`Tutorial <getting_started/introduction>`
+    :doc:`User Guide <documentation/user_guide>` :doc:`API Reference <documentation/reference>`
 
 
 Get in touch
