@@ -90,7 +90,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
-        self._crs = crs if crs is not None else None
+        self._crs = CRS.from_user_input(crs) if crs else None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
