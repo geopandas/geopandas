@@ -1,5 +1,3 @@
-%%writefile /content/geopandas/benchmarks/sindex_new.py
-
 import numpy as np
 import random
 
