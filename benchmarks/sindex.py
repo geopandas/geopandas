@@ -1,3 +1,5 @@
+%%writefile /content/geopandas/benchmarks/sindex_new.py
+
 import numpy as np
 import random
 
@@ -9,14 +11,11 @@ from geopandas.sindex import VALID_QUERY_PREDICATES
 np.random.seed(0)
 random.seed(0)
 
-predicates = tuple(sorted(VALID_QUERY_PREDICATES, key=lambda x: (x is None, x)))
+predicates = sorted(VALID_QUERY_PREDICATES, key=lambda x: (x is None, x))
 geom_types = ("mixed", "points", "polygons")
 
 
 def generate_test_df():
-    # set random seeds for deterministic results
-    np.random.seed(0)
-    random.seed(0)
     world = read_file(datasets.get_path("naturalearth_lowres"))
     capitals = read_file(datasets.get_path("naturalearth_cities"))
     countries = world.to_crs("epsg:3395")[["geometry"]]
@@ -37,6 +36,13 @@ def generate_test_df():
 
 
 class BenchIntersection:
+
+    param_names = ["input_geom_type", "tree_geom_type"]
+    params = [
+        geom_types,
+        geom_types,
+    ]
+
     def setup(self, *args):
         self.data = generate_test_df()
         # cache bounds so that bound creation is not counted in benchmarks
@@ -45,52 +51,60 @@ class BenchIntersection:
             for data_type in self.data.keys()
         }
 
-    def time_intersects(self):
-        for input_geom_type in geom_types:
-            for tree_geom_type in geom_types:
-                for bounds in self.bounds[input_geom_type]:
-                    self.data[tree_geom_type].sindex.intersection(bounds)
+    def time_intersects(self, input_geom_type, tree_geom_type):
+        tree = self.data[tree_geom_type].sindex
+        for bounds in self.bounds[input_geom_type]:
+            tree.intersection(bounds)
 
 
 class BenchIndexCreation:
+
+    param_names = ["tree_geom_type"]
+    params = [
+        geom_types,
+    ]
+
     def setup(self, *args):
         self.data = generate_test_df()
 
-    def time_index_creation(self):
+    def time_index_creation(self, tree_geom_type):
         """Time creation of spatial index.
 
         Note: requires running a single query to ensure that
         lazy-building indexes are actually built.
         """
-        for tree_geom_type in geom_types:
-            self.data[tree_geom_type]._sindex_generated = None
-            self.data[tree_geom_type].geometry.values._sindex = None
-            self.data[tree_geom_type].sindex
-            # also do a single query to ensure the index is actually
-            # generated and used
-            self.data[tree_geom_type].sindex.query(
-                self.data[tree_geom_type].geometry.values.data[0]
-            )
+        self.data[tree_geom_type]._sindex_generated = None
+        self.data[tree_geom_type].geometry.values._sindex = None
+        tree = self.data[tree_geom_type].sindex
+        # also do a single query to ensure the index is actually
+        # generated and used
+        tree.query(
+            self.data[tree_geom_type].geometry.values.data[0]
+        )
 
 
 class BenchQuery:
+
+    param_names = ["predicate", "input_geom_type", "tree_geom_type"]
+    params = [
+        predicates,
+        geom_types,
+        geom_types,
+    ]
+
     def setup(self, *args):
         self.data = generate_test_df()
 
-    def time_query_bulk(self):
-        for input_geom_type in geom_types:
-            for tree_geom_type in geom_types:
-                for predicate in predicates:
-                    self.data[tree_geom_type].sindex.query_bulk(
-                        self.data[input_geom_type].geometry.values.data,
-                        predicate=predicate,
-                    )
+    def time_query_bulk(self, predicate, input_geom_type, tree_geom_type):
+        self.data[tree_geom_type].sindex.query_bulk(
+            self.data[input_geom_type].geometry.values.data,
+            predicate=predicate,
+        )
 
-    def time_query(self):
-        for input_geom_type in geom_types:
-            for tree_geom_type in geom_types:
-                for predicate in predicates:
-                    for geom in self.data[input_geom_type].geometry.values.data:
-                        self.data[tree_geom_type].sindex.query(
-                            geom, predicate=predicate,
-                        )
+    def time_query(self, predicate, input_geom_type, tree_geom_type):
+        tree = self.data[tree_geom_type].sindex
+        for geom in self.data[input_geom_type].geometry.values.data:
+            tree.query(
+                geom,
+                predicate=predicate
+            )
