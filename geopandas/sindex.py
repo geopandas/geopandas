@@ -70,8 +70,8 @@ if compat.HAS_RTREE:
 
         Parameters
         ----------
-        geometry : GeoSeries
-            GeoSeries from which to build the spatial index.
+        geometry : np.array of PyGEOS geometries
+            Geometries from which to build the spatial index.
         """
 
         # set of valid predicates for this spatial index
@@ -276,8 +276,8 @@ if compat.HAS_PYGEOS:
 
         Parameters
         ----------
-        geometry : GeoSeries
-            GeoSeries from which to build the spatial index.
+        geometry : np.array of PyGEOS geometries
+            Geometries from which to build the spatial index.
         """
 
         # set of valid predicates for this spatial index

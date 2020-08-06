@@ -1,13 +1,6 @@
-import numpy as np
-import random
-
 from geopandas import read_file, datasets
 from geopandas.sindex import VALID_QUERY_PREDICATES
 
-
-# set random seeds for deterministic results
-np.random.seed(0)
-random.seed(0)
 
 predicates = sorted(VALID_QUERY_PREDICATES, key=lambda x: (x is None, x))
 geom_types = ("mixed", "points", "polygons")
