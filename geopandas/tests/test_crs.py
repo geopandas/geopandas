@@ -529,11 +529,17 @@ class TestGeometryArrayCRS:
     # CRS should be assigned to geometry
     def test_deprecation(self):
         with pytest.warns(FutureWarning):
-            GeoDataFrame([], crs=27700)
+            df = GeoDataFrame([], crs=27700)
+
+        # https://github.com/geopandas/geopandas/issues/1548
+        # ensure we still have converted the crs value to a CRS object
+        assert isinstance(df.crs, pyproj.CRS)
 
         with pytest.warns(FutureWarning):
             df = GeoDataFrame([])
             df.crs = 27700
+
+        assert isinstance(df.crs, pyproj.CRS)
 
     # make sure that geometry column from list has CRS (__setitem__)
     def test_setitem_geometry(self):
