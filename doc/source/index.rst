@@ -29,7 +29,7 @@ such as PostGIS.
    Home <self>
    About <about>
    Getting started <getting_started>
-   Documentation <documentation>
+   Documentation <docs>
    Community <community>
 
 Get in touch

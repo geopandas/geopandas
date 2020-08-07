@@ -33,7 +33,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
-    "recommonmark",
+    "myst_nb",
     "numpydoc",
 ]
 

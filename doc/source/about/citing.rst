@@ -1,4 +1,0 @@
-Citing
-------
-
-Text
