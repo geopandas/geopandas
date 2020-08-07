@@ -286,7 +286,7 @@ class GeometryArray(ExtensionArray):
     @property
     def sindex(self):
         if self._sindex is None:
-            self._sindex = get_sindex_class()(self.data) 
+            self._sindex = get_sindex_class()(self.data)
         return self._sindex
 
     @property
