@@ -1,7 +1,7 @@
 About GeoPandas
 ---------------
 
-Links to About, Roadmap, Team and Citing (add intro text).
+Links to About, Roadmap, Team and Citing.
 
 .. container:: button
 
