@@ -70,7 +70,7 @@ if compat.HAS_RTREE:
 
         Parameters
         ----------
-        geometry : np.array of PyGEOS geometries
+        geometry : np.array of Shapely geometries
             Geometries from which to build the spatial index.
         """
 

@@ -64,6 +64,10 @@ class BenchIndexCreation:
         Note: requires running a single query to ensure that
         lazy-building indexes are actually built.
         """
+        # Note: the GeoDataFram._sindex_generated attribute will
+        # be removed by GH#1444 but is kept so that
+        # benchmarks can be run comparing pre GH#1444 to
+        # post GH#1444
         self.data[tree_geom_type]._sindex_generated = None
         self.data[tree_geom_type].geometry.values._sindex = None
         tree = self.data[tree_geom_type].sindex

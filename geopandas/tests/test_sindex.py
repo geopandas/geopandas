@@ -94,8 +94,17 @@ class TestSeriesSindex:
 
     def test_rebuild_on_slice(self):
         s = GeoSeries([Point(0, 0), Point(0, 0)])
+        # Select a couple
         original_index = s.sindex
         sliced = s.iloc[:1]
+        assert sliced.sindex is not original_index
+        # Select all
+        original_index = s.sindex
+        sliced = s.iloc[:]
+        assert sliced.sindex is original_index
+        # Select all flip
+        original_index = s.sindex
+        sliced = s.iloc[::-1]
         assert sliced.sindex is not original_index
 
 
@@ -130,6 +139,32 @@ class TestFrameSindex:
             [Point(x, y) for x, y in zip(range(5, 10), range(5, 10))], inplace=True
         )
         assert self.df.sindex is not original_index
+    
+    def test_rebuild_on_row_slice(self):
+        # Select a couple
+        original_index = self.df.sindex
+        sliced = self.df.iloc[:1]
+        assert sliced.sindex is not original_index
+        # Select all
+        original_index = self.df.sindex
+        sliced = self.df.iloc[:]
+        assert sliced.sindex is original_index
+        # Select all inverse
+        sliced = self.df.iloc[::-1]
+        assert sliced.sindex is not original_index
+    
+    def test_rebuild_on_col_selection(self):
+        """Selecting columns should not rebuild the spatial index."""
+        # Selecting geometry column
+        original_index = self.df.sindex
+        geometry_col = self.df["location"]
+        assert geometry_col.sindex is original_index
+        assert original_index is self.df.sindex
+        # Selecting a subset of columns
+        subset1 = self.df[["location", "A"]]
+        assert subset1.sindex is original_index
+        subset2 = self.df[["A", "location"]]
+        assert subset2.sindex is original_index
 
 
 # Skip to accommodate Shapely geometries being unhashable
