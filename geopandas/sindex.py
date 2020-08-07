@@ -303,7 +303,7 @@ if compat.HAS_PYGEOS:
 
             Parameters
             ----------
-            geometry : single PyGEOS geometry
+            geometry : single PyGEOS or shapely geometry
             predicate : {None, 'intersects', 'within', 'contains', \
 'overlaps', 'crosses', 'touches'}, optional
                 If predicate is provided, the input geometry is tested
