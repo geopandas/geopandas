@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import sys
 
 from shapely.geometry import (
@@ -152,26 +153,21 @@ class TestFrameSindex:
         sliced = self.df.iloc[::-1]
         assert sliced.sindex is not original_index
 
+    @pytest.mark.skipif(
+        str(pd.__version__) >= LooseVersion("1.0.0"),
+        reason="Column selection returns a copy on pd<=1.0.0"
+    )
     def test_rebuild_on_col_selection(self):
         """Selecting columns should not rebuild the spatial index."""
         # Selecting geometry column preserves the index
         original_index = self.df.sindex
         geometry_col = self.df["location"]
         assert geometry_col.sindex is original_index
-
-        if int(pd.__version__.split('.')[0]) >= 1:
-            # Selecting a subset of columns preserves the
-            # index on pd > 1
-            subset1 = self.df[["location", "A"]]
-            assert subset1.sindex is original_index
-            subset2 = self.df[["A", "location"]]
-            assert subset2.sindex is original_index
-        else:
-            # On pd < 1, a copy is returned
-            subset1 = self.df[["location", "A"]]
-            assert subset1.sindex is not original_index
-            subset2 = self.df[["A", "location"]]
-            assert subset2.sindex is not original_index
+        # Selecting a subset of columns preserves the index
+        subset1 = self.df[["location", "A"]]
+        assert subset1.sindex is original_index
+        subset2 = self.df[["A", "location"]]
+        assert subset2.sindex is original_index
 
 
 # Skip to accommodate Shapely geometries being unhashable
