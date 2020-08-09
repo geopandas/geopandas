@@ -66,7 +66,7 @@ def _clip_line_poly(gdf, poly):
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
-        clipped["geometry"] = gdf_sub.intersection(poly)
+        clipped[gdf.geometry.name] = gdf_sub.intersection(poly)
     else:
         # GeoSeries
         clipped = gdf_sub.intersection(poly)
