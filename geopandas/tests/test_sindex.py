@@ -15,6 +15,7 @@ from geopandas import _compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, datasets
 
 import pytest
+import pandas as pd
 import numpy as np
 
 
@@ -157,11 +158,12 @@ class TestFrameSindex:
         original_index = self.df.sindex
         geometry_col = self.df["location"]
         assert geometry_col.sindex is original_index
-        # Selecting a subset of columns preserves the index
-        subset1 = self.df[["location", "A"]]
-        assert subset1.sindex is original_index
-        subset2 = self.df[["A", "location"]]
-        assert subset2.sindex is original_index
+        # Selecting a subset of columns preserves the index on pd > 1
+        if int(pd.__version__.split('.')[0]) >= 1:
+            subset1 = self.df[["location", "A"]]
+            assert subset1.sindex is original_index
+            subset2 = self.df[["A", "location"]]
+            assert subset2.sindex is original_index
 
 
 # Skip to accommodate Shapely geometries being unhashable
