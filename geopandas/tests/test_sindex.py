@@ -94,16 +94,14 @@ class TestSeriesSindex:
 
     def test_rebuild_on_slice(self):
         s = GeoSeries([Point(0, 0), Point(0, 0)])
-        # Select a couple
         original_index = s.sindex
+        # Select a couple of rows
         sliced = s.iloc[:1]
         assert sliced.sindex is not original_index
-        # Select all
-        original_index = s.sindex
+        # Select all rows
         sliced = s.iloc[:]
         assert sliced.sindex is original_index
-        # Select all flip
-        original_index = s.sindex
+        # Select all rows and flip
         sliced = s.iloc[::-1]
         assert sliced.sindex is not original_index
 
@@ -139,28 +137,27 @@ class TestFrameSindex:
             [Point(x, y) for x, y in zip(range(5, 10), range(5, 10))], inplace=True
         )
         assert self.df.sindex is not original_index
-    
+
     def test_rebuild_on_row_slice(self):
-        # Select a couple
+        # Select a subset of rows rebuilds
         original_index = self.df.sindex
         sliced = self.df.iloc[:1]
         assert sliced.sindex is not original_index
-        # Select all
+        # Slicing all does not rebuild
         original_index = self.df.sindex
         sliced = self.df.iloc[:]
         assert sliced.sindex is original_index
-        # Select all inverse
+        # Re-ordering rebuilds
         sliced = self.df.iloc[::-1]
         assert sliced.sindex is not original_index
-    
+
     def test_rebuild_on_col_selection(self):
         """Selecting columns should not rebuild the spatial index."""
-        # Selecting geometry column
+        # Selecting geometry column preserves the index
         original_index = self.df.sindex
         geometry_col = self.df["location"]
         assert geometry_col.sindex is original_index
-        assert original_index is self.df.sindex
-        # Selecting a subset of columns
+        # Selecting a subset of columns preserves the index
         subset1 = self.df[["location", "A"]]
         assert subset1.sindex is original_index
         subset2 = self.df[["A", "location"]]
