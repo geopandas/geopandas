@@ -154,7 +154,7 @@ class TestFrameSindex:
         assert sliced.sindex is not original_index
 
     @pytest.mark.skipif(
-        str(pd.__version__) >= LooseVersion("1.0.0"),
+        str(pd.__version__) <= LooseVersion("1.0.0"),
         reason="Column selection returns a copy on pd<=1.0.0"
     )
     def test_rebuild_on_col_selection(self):
