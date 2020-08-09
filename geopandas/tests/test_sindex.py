@@ -155,7 +155,7 @@ class TestFrameSindex:
 
     @pytest.mark.skipif(
         str(pd.__version__) <= LooseVersion("1.0.0"),
-        reason="Column selection returns a copy on pd<=1.0.0"
+        reason="Column selection returns a copy on pd<=1.0.0",
     )
     def test_rebuild_on_col_selection(self):
         """Selecting columns should not rebuild the spatial index."""
