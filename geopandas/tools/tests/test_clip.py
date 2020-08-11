@@ -224,6 +224,16 @@ def test_clip_poly(buffered_locations, single_rectangle_gdf):
     assert all(clipped_poly.geom_type == "Polygon")
 
 
+def test_clip_poly_geom_col_rename(buffered_locations, single_rectangle_gdf):
+    """Test clipping a polygon GDF with a generic polygon geometry."""
+
+    poly_gdf_geom_col_rename = buffered_locations.rename_geometry("geometry2")
+    clipped_poly = clip(poly_gdf_geom_col_rename, single_rectangle_gdf)
+    assert len(clipped_poly.geometry) == 3
+    assert "geometry" not in clipped_poly.keys()
+    assert "geometry2" in clipped_poly.keys()
+
+
 def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon GDF with a generic polygon geometry."""
     clipped_poly = clip(buffered_locations.geometry, single_rectangle_gdf)
