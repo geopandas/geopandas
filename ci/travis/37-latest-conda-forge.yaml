@@ -13,6 +13,9 @@ dependencies:
   - pytest
   - pytest-cov
   - codecov
+  - fsspec
+  - requests
+  - aiohttp
   # optional
   - rtree
   - matplotlib

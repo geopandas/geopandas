@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 import fiona
-import fsspec
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -358,6 +357,7 @@ def test_read_file_tempfile():
 
 
 def test_read_binary_file_fsspec():
+    fsspec = pytest.importorskip("fsspec")
     # Remove the zip scheme so fsspec doesn't open as a zipped file,
     # instead we want to read as bytes and let fiona decode it.
     path = geopandas.datasets.get_path("nybb")[6:]
@@ -367,12 +367,14 @@ def test_read_binary_file_fsspec():
 
 
 def test_read_text_file_fsspec(file_path):
+    fsspec = pytest.importorskip("fsspec")
     with fsspec.open(file_path, "r") as f:
         gdf = read_file(f)
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
 def test_read_remote_text_file_fsspec():
+    fsspec = pytest.importorskip("fsspec")
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "master/examples/null_geom.geojson"
