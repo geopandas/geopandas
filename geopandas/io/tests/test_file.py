@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 import fiona
+import fsspec
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -354,6 +355,39 @@ def test_read_file_tempfile():
     gdf_tempfile = geopandas.read_file(temp)
     assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
     temp.close()
+
+
+def test_read_binary_file_fsspec():
+    # Remove the zip scheme so fsspec doesn't open as a zipped file,
+    # instead we want to read as bytes and let fiona decode it.
+    path = geopandas.datasets.get_path("nybb")[6:]
+    with fsspec.open(path, "rb") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_text_file_fsspec(file_path):
+    with fsspec.open(file_path, "r") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_remote_text_file_fsspec():
+    url = (
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "master/examples/null_geom.geojson"
+    )
+    with fsspec.open(url, "r") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_infer_zipped_file():
+    # Remove the zip scheme so that the test for a zipped file can
+    # check it and add it back.
+    path = geopandas.datasets.get_path("nybb")[6:]
+    gdf = read_file(path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
 def test_read_file_filtered(df_nybb):
