@@ -56,6 +56,7 @@ Binary Predicates
    GeoSeries.touches
    GeoSeries.within
    GeoSeries.covers
+   GeoSeries.covered_by
 
 
 Set-theoretic Methods
