@@ -934,7 +934,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         by : string, default None
-            Column whose values define groups to be dissolved
+            Column whose values define groups to be dissolved. If None,
+            whole GeoDataFrame is considered a single group.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
@@ -945,6 +946,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         GeoDataFrame
         """
+
+        if by is None:
+            self["__dummy"] = True
+            by = "__dummy"
+            drop = True
+            as_index = False
+        else:
+            drop = False
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -966,7 +975,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Reset if requested
         if not as_index:
-            aggregated = aggregated.reset_index()
+            aggregated = aggregated.reset_index(drop=drop)
 
         return aggregated
 
