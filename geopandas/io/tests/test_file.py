@@ -392,6 +392,13 @@ def test_infer_zipped_file():
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+def test_allow_legacy_gdal_path():
+    # Construct a GDAL-style zip path.
+    path = "/vsizip/" + geopandas.datasets.get_path("nybb")[6:]
+    gdf = read_file(path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
 def test_read_file_filtered(df_nybb):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
