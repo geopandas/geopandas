@@ -948,12 +948,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
 
         if by is None:
-            self["__dummy"] = True
-            by = "__dummy"
-            drop = True
-            as_index = False
-        else:
-            drop = False
+            by = np.zeros(len(self), dtype="int64")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -975,7 +970,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Reset if requested
         if not as_index:
-            aggregated = aggregated.reset_index(drop=drop)
+            aggregated = aggregated.reset_index()
 
         return aggregated
 
