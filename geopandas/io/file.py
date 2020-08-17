@@ -105,12 +105,22 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         # Casting to a pathlib.Path allows the same check to work for plain strings
         # and pathlib.Path instances.
         if pathlib.Path(filename).suffix == ".zip":
-            parsed = fiona.path.ParsedPath.from_uri(str(filename))
-            if not parsed.scheme:
-                parsed.scheme = "zip"
-            elif "zip" not in parsed.scheme.split("+"):
-                parsed.scheme = "zip+" + parsed.scheme
-            filename = parsed.name
+            parsed = fiona.parse_path(str(filename))
+            if isinstance(parsed, fiona.path.ParsedPath):
+                # If fiona returns a parsed path, we can safely look at the scheme
+                # and add zip if necessary.
+                if not parsed.scheme:
+                    parsed.scheme = "zip"
+                elif "zip" not in parsed.scheme.split("+"):
+                    parsed.scheme = "zip+" + parsed.scheme
+                filename = parsed.name
+            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
+                filename
+            ).startswith("/vsi"):
+                # If fiona is unable to parse the path, it might have a Windows drive
+                # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
+                # it is a legacy GDAL path type, so let it pass unmodified.
+                filename = "zip://" + parsed.name
         reader = functools.partial(fiona.open, filename)
 
     with fiona_env():
