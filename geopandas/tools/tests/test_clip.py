@@ -203,11 +203,35 @@ def test_clip_points(point_gdf, single_rectangle_gdf):
     assert_geodataframe_equal(clip_pts, exp)
 
 
+def test_clip_points_geom_col_rename(point_gdf, single_rectangle_gdf):
+    """Test clipping a points GDF with a generic polygon geometry."""
+    point_gdf_geom_col_rename = point_gdf.rename_geometry("geometry2")
+    clip_pts = clip(point_gdf_geom_col_rename, single_rectangle_gdf)
+    pts = np.array([[2, 2], [3, 4], [9, 8]])
+    exp = GeoDataFrame(
+        [Point(xy) for xy in pts],
+        columns=["geometry2"],
+        crs="EPSG:4326",
+        geometry="geometry2",
+    )
+    assert_geodataframe_equal(clip_pts, exp)
+
+
 def test_clip_poly(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon GDF with a generic polygon geometry."""
     clipped_poly = clip(buffered_locations, single_rectangle_gdf)
     assert len(clipped_poly.geometry) == 3
     assert all(clipped_poly.geom_type == "Polygon")
+
+
+def test_clip_poly_geom_col_rename(buffered_locations, single_rectangle_gdf):
+    """Test clipping a polygon GDF with a generic polygon geometry."""
+
+    poly_gdf_geom_col_rename = buffered_locations.rename_geometry("geometry2")
+    clipped_poly = clip(poly_gdf_geom_col_rename, single_rectangle_gdf)
+    assert len(clipped_poly.geometry) == 3
+    assert "geometry" not in clipped_poly.keys()
+    assert "geometry2" in clipped_poly.keys()
 
 
 def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
