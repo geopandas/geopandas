@@ -4,12 +4,12 @@ GeoDataFrame
 .. currentmodule:: geopandas
 
 A ``GeoDataFrame`` is a tabular data structure that contains a column
-called ``geometry`` which contains a ``GeoSeries``.
+which contains a ``GeoSeries`` storing geometry.
 
 Constructor
 -----------
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame
 
@@ -17,7 +17,7 @@ Reading and writing files
 -------------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.from_file
    GeoDataFrame.from_features
@@ -32,7 +32,7 @@ Projection handling
 -------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.crs
    GeoDataFrame.set_crs
@@ -42,7 +42,7 @@ Active geometry handling
 ------------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.rename_geometry
    GeoDataFrame.set_geometry
@@ -51,7 +51,7 @@ Aggregating and exploding
 -------------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.dissolve
    GeoDataFrame.explode
@@ -60,7 +60,7 @@ Plotting
 --------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.plot
 
@@ -69,7 +69,7 @@ Spatial index
 -------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.sindex
 
@@ -77,11 +77,11 @@ Interface
 ---------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geodataframe/
 
    GeoDataFrame.__geo_interface__
 
 All pandas ``DataFrame`` methods are also available, although they may
-not operate in a meaningful way on the ``geometry`` column and may not
-return a ``GeoDataFrame`` result even when it would be appropriate to
-do so.
+not operate in a meaningful way on the ``geometry`` column. All methods
+listed in `GeoSeries <geoseries>`__ work directly on an active geometry column of GeoDataFrame.
+

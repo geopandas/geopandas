@@ -7,9 +7,9 @@ Reference
   :maxdepth: 2
   :caption: API Reference
 
-  GeoSeries <api/geoseries>
-  GeoDataFrame <api/geodataframe>
-  Input/output <api/io>
-  Tools <api/tools>
-  Testing <api/testing>
+  GeoSeries <reference/geoseries>
+  GeoDataFrame <reference/geodataframe>
+  Input/output <reference/io>
+  Tools <reference/tools>
+  Testing <reference/testing>
 

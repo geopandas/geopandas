@@ -6,7 +6,7 @@ GeoSeries
 Constructor
 -----------
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries
 
@@ -14,7 +14,7 @@ General methods and attributes
 ------------------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.area
    GeoSeries.bounds
@@ -32,19 +32,20 @@ Unary predicates
 ----------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.is_empty
    GeoSeries.is_ring
    GeoSeries.is_simple
    GeoSeries.is_valid
+   GeoSeries.has_z
 
 
 Binary Predicates
 -----------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.geom_almost_equals
    GeoSeries.contains
@@ -63,18 +64,18 @@ Set-theoretic Methods
 ---------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.difference
    GeoSeries.intersection
    GeoSeries.symmetric_difference
    GeoSeries.union
 
-Constructive Methods
---------------------
+Constructive Methods and Attributes
+-----------------------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.buffer
    GeoSeries.boundary
@@ -87,7 +88,7 @@ Affine transformations
 ----------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.affine_transform
    GeoSeries.rotate
@@ -99,7 +100,7 @@ Aggregating methods
 -------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.unary_union
 
@@ -107,7 +108,7 @@ Reading and writing files
 -------------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.from_file
    GeoSeries.to_file
@@ -117,7 +118,7 @@ Projection handling
 -------------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.crs
    GeoSeries.set_crs
@@ -127,7 +128,7 @@ Missing values
 --------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.fillna
    GeoSeries.isna
@@ -137,7 +138,7 @@ Plotting
 --------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.plot
 
@@ -146,7 +147,7 @@ Spatial index
 -------------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.sindex
 
@@ -154,14 +155,14 @@ Interface
 ---------
 
 .. autosummary::
-   :toctree: api/
+   :toctree: geoseries/
 
    GeoSeries.__geo_interface__
 
 
 Methods of pandas ``Series`` objects are also available, although not
 all are applicable to geometric objects and some may return a
-``Series`` rather than a ``GeoSeries`` result.  The methods
+``Series`` rather than a ``GeoSeries`` result when appropriate. The methods
 ``isna()`` and ``fillna()`` have been
 implemented specifically for ``GeoSeries`` and are expected to work
 correctly.
