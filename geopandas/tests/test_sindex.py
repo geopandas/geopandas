@@ -153,16 +153,22 @@ class TestFrameSindex:
         sliced = self.df.iloc[::-1]
         assert sliced.sindex is not original_index
 
-    @pytest.mark.skipif(
-        str(pd.__version__) <= LooseVersion("1.0.0"),
-        reason="Column selection returns a copy on pd<=1.0.0",
-    )
-    def test_rebuild_on_col_selection(self):
-        """Selecting columns should not rebuild the spatial index."""
+    def test_rebuild_on_single_col_selection(self):
+        """Selecting a single column should not rebuild the spatial index."""
         # Selecting geometry column preserves the index
         original_index = self.df.sindex
         geometry_col = self.df["location"]
         assert geometry_col.sindex is original_index
+        geometry_col = self.df.geometry
+        assert geometry_col.sindex is original_index
+    
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_10,
+        reason="Column selection returns a copy on pd<=1.0.0",
+    )
+    def test_rebuild_on_multiple_col_selection(self):
+        """Selecting a subset of columns preserves the index."""
+        original_index = self.df.sindex
         # Selecting a subset of columns preserves the index
         subset1 = self.df[["location", "A"]]
         assert subset1.sindex is original_index
