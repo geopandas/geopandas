@@ -161,10 +161,9 @@ class TestFrameSindex:
         assert geometry_col.sindex is original_index
         geometry_col = self.df.geometry
         assert geometry_col.sindex is original_index
-    
+
     @pytest.mark.skipif(
-        not compat.PANDAS_GE_10,
-        reason="Column selection returns a copy on pd<=1.0.0",
+        not compat.PANDAS_GE_10, reason="Column selection returns a copy on pd<=1.0.0",
     )
     def test_rebuild_on_multiple_col_selection(self):
         """Selecting a subset of columns preserves the index."""
