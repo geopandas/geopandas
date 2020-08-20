@@ -578,7 +578,7 @@ class TestPygeosInterface:
     def test_is_empty(self):
         """Tests the `is_empty` property."""
         # create empty tree
-        empty = geopandas.GeoSeries([])
+        empty = geopandas.GeoSeries([], dtype=object)
         assert empty.sindex.is_empty
         empty = geopandas.GeoSeries([None])
         assert empty.sindex.is_empty
