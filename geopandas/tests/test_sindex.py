@@ -1,4 +1,3 @@
-from distutils.version import LooseVersion
 import sys
 
 from shapely.geometry import (
@@ -16,7 +15,6 @@ from geopandas import _compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, datasets
 
 import pytest
-import pandas as pd
 import numpy as np
 
 
