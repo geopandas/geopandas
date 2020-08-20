@@ -149,7 +149,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
                 # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
-        self._invalidate_sindex()
 
         if geometry is None and crs:
             warnings.warn(
@@ -260,7 +259,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame.index = index
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
-        frame._invalidate_sindex()
         if not inplace:
             return frame
 
@@ -829,11 +827,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
-            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
             result._geometry_column_name = geo_col
-            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
@@ -883,7 +879,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = GeoDataFrame
             result.crs = self.crs
             result._geometry_column_name = geo_col
-            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result

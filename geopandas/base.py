@@ -11,7 +11,7 @@ from shapely.ops import cascaded_union
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
-from .sindex import get_sindex_class, has_sindex
+from .sindex import has_sindex
 
 # for backwards compat
 # this will be static (will NOT follow USE_PYGEOS changes)
@@ -91,37 +91,6 @@ def _delegate_geo_method(op, this, *args, **kwargs):
 
 
 class GeoPandasBase(object):
-    _sindex = None
-    _sindex_generated = False
-
-    def _generate_sindex(self):
-        sindex_cls = get_sindex_class()
-        if sindex_cls is not None:
-            _sindex = sindex_cls(self.geometry)
-            if not _sindex.is_empty:
-                self._sindex = _sindex
-            else:
-                warn(
-                    "Generated spatial index is empty and returned `None`. "
-                    "Future versions of GeoPandas will return zero-length spatial "
-                    "index instead of `None`. Use `len(gdf.sindex) > 0` "
-                    "or `if gdf.sindex` instead of `if gd.sindex is not None` "
-                    "to check for empty spatial indexes.",
-                    FutureWarning,
-                    stacklevel=3,
-                )
-                self._sindex = None
-        self._sindex_generated = True
-
-    def _invalidate_sindex(self):
-        """
-        Indicates that the spatial index should be re-built next
-        time it's requested.
-
-        """
-        self._sindex = None
-        self._sindex_generated = False
-
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
@@ -624,9 +593,7 @@ class GeoPandasBase(object):
 
     @property
     def sindex(self):
-        if not self._sindex_generated:
-            self._generate_sindex()
-        return self._sindex
+        return self.geometry.values.sindex
 
     def buffer(self, distance, resolution=16, **kwargs):
         """Returns a ``GeoSeries`` of geometries representing all points within
