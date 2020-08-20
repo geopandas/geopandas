@@ -27,6 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
+from .sindex import get_sindex_class
 
 
 class GeometryDtype(ExtensionDtype):
@@ -280,6 +281,13 @@ class GeometryArray(ExtensionArray):
 
         self._crs = None
         self.crs = crs
+        self._sindex = None
+
+    @property
+    def sindex(self):
+        if self._sindex is None:
+            self._sindex = get_sindex_class()(self.data)
+        return self._sindex
 
     @property
     def crs(self):
@@ -365,6 +373,9 @@ class GeometryArray(ExtensionArray):
             raise TypeError(
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
+
+        # invalidate spatial index
+        self._sindex = None
 
         # TODO: use this once pandas-dev/pandas#33457 is fixed
         # if hasattr(value, "crs"):

@@ -45,9 +45,9 @@ class TestNoSindex:
 class TestSeriesSindex:
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
-        with pytest.warns(FutureWarning, match="Generated spatial index is empty"):
-            # TODO: add checking len(GeoSeries().sindex) == 0 once deprecated
-            assert not GeoSeries(dtype=object).sindex
+        s = GeoSeries(dtype=object)
+        assert not s.sindex
+        assert len(s.sindex) == 0
 
     def test_point(self):
         s = GeoSeries([Point(0, 0)])
@@ -60,12 +60,8 @@ class TestSeriesSindex:
     def test_empty_point(self):
         """Tests that a single empty Point results in an empty tree."""
         s = GeoSeries([Point()])
-
-        with pytest.warns(FutureWarning, match="Generated spatial index is empty"):
-            # TODO: add checking len(s) == 0 once deprecated
-            assert not s.sindex
-
-        assert s._sindex_generated is True
+        assert not s.sindex
+        assert len(s.sindex) == 0
 
     def test_polygons(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
@@ -86,9 +82,28 @@ class TestSeriesSindex:
 
     def test_lazy_build(self):
         s = GeoSeries([Point(0, 0)])
-        assert s._sindex is None
+        assert s.values._sindex is None
         assert s.sindex.size == 1
-        assert s._sindex is not None
+        assert s.values._sindex is not None
+
+    def test_rebuild_on_item_change(self):
+        s = GeoSeries([Point(0, 0)])
+        original_index = s.sindex
+        s.iloc[0] = Point(0, 0)
+        assert s.sindex is not original_index
+
+    def test_rebuild_on_slice(self):
+        s = GeoSeries([Point(0, 0), Point(0, 0)])
+        original_index = s.sindex
+        # Select a couple of rows
+        sliced = s.iloc[:1]
+        assert sliced.sindex is not original_index
+        # Select all rows
+        sliced = s.iloc[:]
+        assert sliced.sindex is original_index
+        # Select all rows and flip
+        sliced = s.iloc[::-1]
+        assert sliced.sindex is not original_index
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
@@ -105,24 +120,57 @@ class TestFrameSindex:
     def test_sindex(self):
         self.df.crs = "epsg:4326"
         assert self.df.sindex.size == 5
-        with pytest.warns(FutureWarning, match="`objects` is deprecated"):
-            # TODO: remove warning check once deprecated
-            hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4), objects=True))
+        hits = list(self.df.sindex.intersection((2.5, 2.5, 4, 4)))
         assert len(hits) == 2
-        assert hits[0].object == 3
+        assert hits[0] == 3
 
     def test_lazy_build(self):
-        assert self.df._sindex is None
+        assert self.df.geometry.values._sindex is None
         assert self.df.sindex.size == 5
-        assert self.df._sindex is not None
+        assert self.df.geometry.values._sindex is not None
 
     def test_sindex_rebuild_on_set_geometry(self):
         # First build the sindex
         assert self.df.sindex is not None
+        original_index = self.df.sindex
         self.df.set_geometry(
             [Point(x, y) for x, y in zip(range(5, 10), range(5, 10))], inplace=True
         )
-        assert self.df._sindex_generated is False
+        assert self.df.sindex is not original_index
+
+    def test_rebuild_on_row_slice(self):
+        # Select a subset of rows rebuilds
+        original_index = self.df.sindex
+        sliced = self.df.iloc[:1]
+        assert sliced.sindex is not original_index
+        # Slicing all does not rebuild
+        original_index = self.df.sindex
+        sliced = self.df.iloc[:]
+        assert sliced.sindex is original_index
+        # Re-ordering rebuilds
+        sliced = self.df.iloc[::-1]
+        assert sliced.sindex is not original_index
+
+    def test_rebuild_on_single_col_selection(self):
+        """Selecting a single column should not rebuild the spatial index."""
+        # Selecting geometry column preserves the index
+        original_index = self.df.sindex
+        geometry_col = self.df["location"]
+        assert geometry_col.sindex is original_index
+        geometry_col = self.df.geometry
+        assert geometry_col.sindex is original_index
+
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_10, reason="Column selection returns a copy on pd<=1.0.0",
+    )
+    def test_rebuild_on_multiple_col_selection(self):
+        """Selecting a subset of columns preserves the index."""
+        original_index = self.df.sindex
+        # Selecting a subset of columns preserves the index
+        subset1 = self.df[["location", "A"]]
+        assert subset1.sindex is original_index
+        subset2 = self.df[["A", "location"]]
+        assert subset2.sindex is original_index
 
 
 # Skip to accommodate Shapely geometries being unhashable
@@ -135,28 +183,22 @@ class TestJoinSindex:
     def test_merge_geo(self):
         # First check that we gets hits from the boros frame.
         tree = self.boros.sindex
-        with pytest.warns(FutureWarning, match="`objects` is deprecated"):
-            # TODO: remove warning check once deprecated
-            hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [self.boros.loc[hit.object]["BoroName"] for hit in hits]
+        hits = tree.intersection((1012821.80, 229228.26))
+        res = [self.boros.iloc[hit]["BoroName"] for hit in hits]
         assert res == ["Bronx", "Queens"]
 
         # Check that we only get the Bronx from this view.
         first = self.boros[self.boros["BoroCode"] < 3]
         tree = first.sindex
-        with pytest.warns(FutureWarning, match="`objects` is deprecated"):
-            # TODO: remove warning check once deprecated
-            hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [first.loc[hit.object]["BoroName"] for hit in hits]
+        hits = tree.intersection((1012821.80, 229228.26))
+        res = [first.iloc[hit]["BoroName"] for hit in hits]
         assert res == ["Bronx"]
 
         # Check that we only get Queens from this view.
         second = self.boros[self.boros["BoroCode"] >= 3]
         tree = second.sindex
-        with pytest.warns(FutureWarning, match="`objects` is deprecated"):
-            # TODO: remove warning check once deprecated
-            hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = ([second.loc[hit.object]["BoroName"] for hit in hits],)
+        hits = tree.intersection((1012821.80, 229228.26))
+        res = ([second.iloc[hit]["BoroName"] for hit in hits],)
         assert res == ["Queens"]
 
         # Get both the Bronx and Queens again.
@@ -164,10 +206,8 @@ class TestJoinSindex:
         assert len(merged) == 5
         assert merged.sindex.size == 5
         tree = merged.sindex
-        with pytest.warns(FutureWarning, match="`objects` is deprecated"):
-            # TODO: remove warning check once deprecated
-            hits = tree.intersection((1012821.80, 229228.26), objects=True)
-        res = [merged.loc[hit.object]["BoroName"] for hit in hits]
+        hits = tree.intersection((1012821.80, 229228.26))
+        res = [merged.iloc[hit]["BoroName"] for hit in hits]
         assert res == ["Bronx", "Queens"]
 
 
@@ -535,14 +575,15 @@ class TestPygeosInterface:
     def test_is_empty(self):
         """Tests the `is_empty` property."""
         # create empty tree
-        cls_ = sindex.get_sindex_class()
-        empty = geopandas.GeoSeries(dtype=object)
-        tree = cls_(empty)
-        assert tree.is_empty
+        empty = geopandas.GeoSeries([], dtype=object)
+        assert empty.sindex.is_empty
+        empty = geopandas.GeoSeries([None])
+        assert empty.sindex.is_empty
+        empty = geopandas.GeoSeries([Point()])
+        assert empty.sindex.is_empty
         # create a non-empty tree
         non_empty = geopandas.GeoSeries([Point(0, 0)])
-        tree = cls_(non_empty)
-        assert not tree.is_empty
+        assert not non_empty.sindex.is_empty
 
     @pytest.mark.parametrize(
         "predicate, expected_shape",
