@@ -6,7 +6,7 @@ GeoSeries
 Constructor
 -----------
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries
 
@@ -14,7 +14,7 @@ General methods and attributes
 ------------------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.area
    GeoSeries.bounds
@@ -32,7 +32,7 @@ Unary predicates
 ----------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.is_empty
    GeoSeries.is_ring
@@ -45,7 +45,7 @@ Binary Predicates
 -----------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.geom_almost_equals
    GeoSeries.contains
@@ -64,7 +64,7 @@ Set-theoretic Methods
 ---------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.difference
    GeoSeries.intersection
@@ -75,7 +75,7 @@ Constructive Methods and Attributes
 -----------------------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.buffer
    GeoSeries.boundary
@@ -88,7 +88,7 @@ Affine transformations
 ----------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.affine_transform
    GeoSeries.rotate
@@ -100,7 +100,7 @@ Aggregating methods
 -------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.unary_union
 
@@ -108,7 +108,7 @@ Reading and writing files
 -------------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.from_file
    GeoSeries.to_file
@@ -118,7 +118,7 @@ Projection handling
 -------------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.crs
    GeoSeries.set_crs
@@ -128,7 +128,7 @@ Missing values
 --------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.fillna
    GeoSeries.isna
@@ -138,7 +138,7 @@ Plotting
 --------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.plot
 
@@ -147,7 +147,7 @@ Spatial index
 -------------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.sindex
 
@@ -155,7 +155,7 @@ Interface
 ---------
 
 .. autosummary::
-   :toctree: geoseries/
+   :toctree: api/
 
    GeoSeries.__geo_interface__
 

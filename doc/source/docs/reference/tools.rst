@@ -4,7 +4,7 @@ Tools
 .. currentmodule:: geopandas
 
 .. autosummary::
-   :toctree: tools/
+   :toctree: api/
 
    sjoin
    overlay

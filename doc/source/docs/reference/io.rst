@@ -6,48 +6,32 @@ Input/output
 GIS vector files
 ----------------
 .. autosummary::
-   :toctree: io/
+   :toctree: api/
 
    read_file
-
-.. autosummary::
-   :toctree: geodataframe/
-
    GeoDataFrame.to_file
 
 PostGIS
 -------
 .. autosummary::
-   :toctree: io/
+   :toctree: api/
 
    read_postgis
-
-.. autosummary::
-   :toctree: geodataframe/
-
    GeoDataFrame.to_postgis
 
 
 Feather
 -------
 .. autosummary::
-   :toctree: io/
+   :toctree: api/
 
    read_feather
-
-.. autosummary::
-   :toctree: geodataframe/
-
    GeoDataFrame.to_feather
 
 Parquet
 -------
 .. autosummary::
-   :toctree: io/
+   :toctree: api/
 
    read_parquet
-
-.. autosummary::
-   :toctree: geodataframe/
-   
    GeoDataFrame.to_parquet

@@ -9,7 +9,7 @@ which contains a ``GeoSeries`` storing geometry.
 Constructor
 -----------
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame
 
@@ -17,7 +17,7 @@ Reading and writing files
 -------------------------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.from_file
    GeoDataFrame.from_features
@@ -32,7 +32,7 @@ Projection handling
 -------------------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.crs
    GeoDataFrame.set_crs
@@ -42,7 +42,7 @@ Active geometry handling
 ------------------------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.rename_geometry
    GeoDataFrame.set_geometry
@@ -51,7 +51,7 @@ Aggregating and exploding
 -------------------------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.dissolve
    GeoDataFrame.explode
@@ -60,7 +60,7 @@ Plotting
 --------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.plot
 
@@ -69,7 +69,7 @@ Spatial index
 -------------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.sindex
 
@@ -77,7 +77,7 @@ Interface
 ---------
 
 .. autosummary::
-   :toctree: geodataframe/
+   :toctree: api/
 
    GeoDataFrame.__geo_interface__
 

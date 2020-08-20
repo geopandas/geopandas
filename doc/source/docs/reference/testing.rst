@@ -6,7 +6,7 @@ Testing
 GeoPandas includes specific functions to test its objects.
 
 .. autosummary::
-   :toctree: testing/
+   :toctree: api/
 
    .. testing.geom_equals
    .. testing.geom_almost_equals
