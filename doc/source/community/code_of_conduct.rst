@@ -92,7 +92,7 @@ free to contact the Code of Conduct Committee at
 
 8. **A simple apology can go a long way**. It can often de-escalate a situation,
    and telling someone that you are sorry is an act of empathy that doesn’t
-    automatically imply an admission of guilt.
+   automatically imply an admission of guilt.
 
 Reporting
 ---------

@@ -22,7 +22,7 @@ properties from both are retained. In effect, for every shape in the first
 GeoDataFrame, this operation is executed against every other shape in the other
 GeoDataFrame:
 
-.. image:: _static/overlay_operations.png
+.. image:: ../../_static/overlay_operations.png
 
 **Source: QGIS Documentation**
 
