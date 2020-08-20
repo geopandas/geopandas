@@ -304,6 +304,16 @@ def test_read_file_remote_geojson_url():
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.web
+def test_read_file_remote_zipfile_url():
+    url = (
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "master/geopandas/datasets/nybb_16a.zip"
+    )
+    gdf = read_file(url)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
 def test_read_file_textio(file_path):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
@@ -373,6 +383,7 @@ def test_read_text_file_fsspec(file_path):
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.web
 def test_read_remote_text_file_fsspec():
     fsspec = pytest.importorskip("fsspec")
     url = (
@@ -389,6 +400,10 @@ def test_infer_zipped_file():
     # check it and add it back.
     path = geopandas.datasets.get_path("nybb")[6:]
     gdf = read_file(path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    # Check that it can sucessfully add a zip scheme to a path that already has a scheme
+    gdf = read_file("file+file://" + path)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
