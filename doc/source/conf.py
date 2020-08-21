@@ -193,6 +193,33 @@ html_static_path = ["_static"]
 # template names.
 # html_additional_pages = {}
 
+# Add redirect for previously existing pages, each item is like `(from_old, to_new)`
+
+moved_pages = [
+    # user guide
+    ("aggregation_with_dissolve", "docs/user_guide/aggregation_with_dissolve"),
+    ("data_structures", "docs/user_guide/data_structures"),
+    ("geocoding", "docs/user_guide/geocoding"),
+    ("geometric_manipulations", "docs/user_guide/geometric_manipulations"),
+    ("indexing", "docs/user_guide/indexing"),
+    ("io", "docs/user_guide/io"),
+    ("mapping", "docs/user_guide/mapping"),
+    ("mergingdata", "docs/user_guide/mergingdata"),
+    ("missing_empty", "docs/user_guide/missing_empty"),
+    ("projections", "docs/user_guide/projections"),
+    ("set_operations", "docs/user_guide/set_operations"),
+    # other
+    ("install", "getting_started/install"),
+    ("reference", "docs/reference"),
+    ("changelog", "docs/changelog"),
+    ("code_of_conduct", "community/code_of_conduct"),
+    ("contributing", "community/contributing"),
+]
+
+html_additional_pages = {page[0]: "redirect.html" for page in moved_pages}
+
+html_context = {"redirects": {old: new for old, new in moved_pages}}
+
 # If false, no module index is generated.
 # html_domain_indices = True
 
@@ -237,7 +264,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", "GeoPandas.tex", u"GeoPandas Documentation", u"Kelsey Jordahl", "manual"),
+    ("index", "GeoPandas.tex", u"GeoPandas Documentation", u"Kelsey Jordahl", "manual")
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -285,7 +312,7 @@ texinfo_documents = [
         "GeoPandas",
         "One line description of project.",
         "Miscellaneous",
-    ),
+    )
 ]
 
 # Documents to append as an appendix to all manuals.
