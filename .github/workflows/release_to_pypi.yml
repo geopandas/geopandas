@@ -1,0 +1,29 @@
+name: Publish geopandas to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-n-publish:
+    name: Build and publish geopandas to PyPI
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Build a binary wheel and a source tarball
+        run: |
+          python setup.py sdist bdist_wheel
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}
