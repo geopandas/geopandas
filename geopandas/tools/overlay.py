@@ -234,7 +234,9 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
             num_dropped = orig_num_geoms - result.shape[0]
             warnings.warn(
                 "`keep_geom_type=True` in overlay resulted in {} dropped "
-                "geometries.".format(num_dropped),
+                "geometries of different geometry types than df1 has. "
+                "Set `keep_geom_type=False` to retain all "
+                "geometries".format(num_dropped),
                 UserWarning,
                 stacklevel=2,
             )
