@@ -326,12 +326,20 @@ def _geometry_types(df):
     return geom_types
 
 
-def _read_pyshp(filename, **kwargs):
+def _read_pyshp(filename, encoding="ISO-8859-1", encoding_errors="strict"):
     """Shapefile reader using pyshp instead of fiona"""
     import shapefile
 
     try:
-        shp = shapefile.Reader(filename, **kwargs)
+        with open(filename[:-3] + "cpg", "r") as cpg:
+            encoding = cpg.read()
+    except FileNotFoundError:
+        pass
+
+    try:
+        shp = shapefile.Reader(
+            filename, encoding=encoding, encodingErrors=encoding_errors
+        )
         records = shp.shapeRecords()
     except UnicodeDecodeError:
         import chardet
@@ -339,7 +347,7 @@ def _read_pyshp(filename, **kwargs):
         # guess encoding
         with open(filename[:-3] + "dbf", "rb") as dbf:
             encoding = chardet.detect(dbf.read())["encoding"]
-        shp = shapefile.Reader(filename, encoding=encoding)
+        shp = shapefile.Reader(filename, encoding=encoding, encodingErrors="replace")
         records = shp.shapeRecords()
 
     # fetch CRS
