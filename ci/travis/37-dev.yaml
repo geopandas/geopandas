@@ -13,6 +13,7 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
+  - pytest-xdist
   #- codecov
   # optional
   - rtree
@@ -23,7 +24,6 @@ dependencies:
   - libspatialite
   - pyarrow
   - pip:
-    - codecov
     - geopy
     - mapclassify>=2.2.0
     - git+https://github.com/pygeos/pygeos.git

@@ -12,7 +12,7 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  - codecov
+  - pytest-xdist
   # optional
   - rtree
   - matplotlib
@@ -22,3 +22,4 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
+ 

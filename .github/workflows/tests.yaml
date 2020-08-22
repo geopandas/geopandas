@@ -1,0 +1,167 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  Linting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: pre-commit/action@v2.0.0
+
+  Test:
+    needs: Linting
+    name: Run Tests ${{ matrix.os }} / ENV=${{ matrix.env }} / POSTGIS=${{ matrix.postgis }} / DEV=${{ matrix.dev }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        postgis: [false]
+        dev: [false]
+        experimental: [false]
+        env:
+          - ci/travis/36-minimal.yaml
+          - ci/travis/37-dev.yaml
+          - ci/travis/38-no-optional-deps.yaml
+          - ci/travis/36-pd025.yaml
+          - ci/travis/37-latest-conda-forge.yaml
+          - ci/travis/38-latest-conda-forge.yaml
+        include:
+          - env: ci/travis/38-latest-conda-forge.yaml
+            os: macos-latest
+            postgis: false
+            dev: false
+          - env: ci/travis/38-latest-conda-forge.yaml
+            os: windows-latest
+            postgis: false
+            dev: false
+          - env: ci/travis/37-latest-conda-forge.yaml
+            os: macos-latest
+            postgis: false
+            dev: false
+          - env: ci/travis/37-latest-conda-forge.yaml
+            os: windows-latest
+            postgis: false
+            dev: false
+          - env: ci/travis/38-latest-conda-forge.yaml
+            os: ubuntu-latest
+            postgis: true
+            dev: false
+          - env: ci/travis/38-latest-conda-forge.yaml
+            os: ubuntu-latest
+            postgis: false
+            dev: true
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if etc/example-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles(matrix.env) }}-${{ matrix.postgis }}-${{ matrix.dev }}
+      
+      - uses: actions/setup-python@v2
+      
+      - name: Get Pip Cache Dir
+        shell: bash
+        run: |
+          PIP_CACHE_DIR=$(pip cache dir)
+          echo "Saving pip cache dir $PIP_CACHE_DIR"
+          echo "::set-env name=PIP_CACHE_DIR::$PIP_CACHE_DIR"
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if etc/example-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles(matrix.env) }}-${{ matrix.postgis }}-${{ matrix.dev }}
+
+      - name: Install Environment with Conda
+        uses: goanpeca/setup-miniconda@v1
+        with:
+          miniconda-version: "latest"
+          use-only-tar-bz2: true
+          activate-environment: test
+          environment-file: ${{ matrix.env }}
+          auto-activate-base: false
+          channel-priority: strict
+
+      - name: Install dev packages
+        shell: bash -l {0}
+        if: matrix.dev == true
+        run: |
+          pip install -U git+https://github.com/pydata/pandas.git@master
+          pip install -U git+https://github.com/matplotlib/matplotlib.git@master
+          pip install -U git+https://github.com/Toblerity/Shapely.git@master
+
+      - name: Install & Setup PostgreSQL
+        if: matrix.postgis == true
+        shell: bash -l {0}
+        run: |
+          conda install postgis -c conda-forge
+          PGUSER=postgres
+          PGPASSWORD=postgres
+          source ci/travis/setup_postgres.sh
+
+      - name: Check and Log Environment
+        shell: bash -l {0}
+        run: |
+          if ( $(conda list | grep -q pygeos) || $(pip freeze | grep -q pygeos) )
+          then
+            echo "Setting HAS_PYGEOS=1"
+            echo '::set-env name=HAS_PYGEOS::1'
+          else
+            echo "Setting HAS_PYGEOS=0"
+            echo '::set-env name=HAS_PYGEOS::0'
+          fi
+          conda info
+          conda list
+
+      - name: Test PostGIS
+        shell: bash -l {0}
+        if: matrix.postgis == true
+        env:
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: pytest -v -k "postgis" || if grep -q SKIPPED;then exit 1;fi
+
+      - name: Test without PyGEOS
+        shell: bash -l {0}
+        continue-on-error: ${{ matrix.dev }}
+        env:
+          USE_PYGEOS: 0
+        run: |
+          if ${{ matrix.dev }} != true
+          then
+            pytest -v --cov=geopandas --cov-report xml -r s --numprocesses=auto || (echo "RUN FAILED, RUNNING SEQUENTIALLY FOR DEBUGGING" && pytest -v -r s && exit 1)
+          else
+            pytest -v -r s
+          fi
+
+      - name: Test with PyGEOS
+        shell: bash -l {0}
+        continue-on-error: ${{ matrix.dev }}
+        if: env.HAS_PYGEOS == 1
+        env:
+          USE_PYGEOS: 1
+        run: |
+          if ${{ matrix.dev }} != true
+          then
+            pytest -v --cov=geopandas --cov-report xml -r s --numprocesses=auto || (echo "RUN FAILED, RUNNING SEQUENTIALLY FOR DEBUGGING" && pytest -v -r s && exit 1)
+          else
+            pytest -v -r s
+          fi
+
+      - uses: codecov/codecov-action@v1
