@@ -220,15 +220,23 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
             result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if keep_geom_type:
+        key_order = result.keys()
+        exploded = result.reset_index(drop=True).explode()
+        exploded.reset_index(level=0, inplace=True)
+
         type = df1.geom_type.iloc[0]
         if type in polys:
-            result = result.loc[result.geom_type.isin(polys)]
+            exploded = exploded.loc[exploded.geom_type.isin(polys)]
         elif type in lines:
-            result = result.loc[result.geom_type.isin(lines)]
+            exploded = exploded.loc[exploded.geom_type.isin(lines)]
         elif type in points:
-            result = result.loc[result.geom_type.isin(points)]
+            exploded = exploded.loc[exploded.geom_type.isin(points)]
         else:
             raise TypeError("`keep_geom_type` does not support {}.".format(type))
+
+        # level_0 created with above reset_index operation
+        # and represents the original geometry collections
+        result = exploded.dissolve(by="level_0")[key_order]
 
     result.reset_index(drop=True, inplace=True)
     result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
