@@ -361,7 +361,9 @@ def _read_pyshp(filename, encoding="ISO-8859-1", encoding_errors="strict"):
     return GeoDataFrame.from_features(records.__geo_interface__, crs=crs)
 
 
-def _write_pyshp(df, filename, index=False):
+def _write_pyshp(
+    df, filename, index=False, encoding="ISO-8859-1", encoding_errors="strict"
+):
     """
     Shapefile writer using pyshp instead of fiona
 
@@ -394,7 +396,9 @@ def _write_pyshp(df, filename, index=False):
     if index:
         data = data.reset_index()
 
-    with shapefile.Writer(filename) as w:
+    with shapefile.Writer(
+        filename, encoding=encoding, encodingErrors=encoding_errors
+    ) as w:
         for name, dtype in data.dtypes.iteritems():
             w.field(str(name), fields_mapping[dtype.kind])
 
@@ -450,3 +454,7 @@ def _write_pyshp(df, filename, index=False):
     if df.crs:
         with open(filename[:-3] + "prj", "w") as prj:
             prj.write(df.crs.to_wkt(version="WKT1_ESRI"))
+
+    # write encoding to .cpg
+    with open(filename[:-3] + "cpg", "w") as cpg:
+        cpg.write(encoding)
