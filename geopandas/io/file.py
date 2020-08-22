@@ -406,7 +406,9 @@ def _write_pyshp(
             w.record(*t)
 
         for geom in geometry:
-            if geom.type == "Point":
+            if geom is None:
+                w.null()
+            elif geom.type == "Point":
                 if geom.has_z:
                     w.pointz(geom.x, geom.y, geom.z)
                 else:
@@ -449,6 +451,8 @@ def _write_pyshp(
                 raise ValueError(
                     "Geometry type of 'Geometry Collection' is not supported in SHP."
                 )
+            else:
+                w.null()
 
     # write CRS to .prj
     if df.crs:
