@@ -41,11 +41,13 @@ def connection_postgis():
         con = psycopg2.connect(
             dbname=dbname, user=user, password=password, host=host, port=port
         )
+        yield con
+        con.close()
     except OperationalError:
-        pytest.skip("Cannot connect with postgresql database")
-
-    yield con
-    con.close()
+        pytest.skip(
+            "Cannot connect with postgresql database"
+            f" {dbname}@{host} w/ user={user} & pass={password}"
+        )
 
 
 @pytest.fixture()
