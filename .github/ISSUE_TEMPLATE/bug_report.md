@@ -30,9 +30,10 @@ labels: "Bug, Needs Triage"
 
 #### Expected Output
 
+#### Output of ``geopandas.show_versions()``
+
 <details>
 
 [paste the output of ``geopandas.show_versions()`` here leaving a blank line after the details tag]
 
 </details>
-
