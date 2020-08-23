@@ -3,7 +3,7 @@
 name: Bug Report
 about: Create a bug report to help us improve geopandas
 title: "BUG:"
-labels: "bug"
+labels: "bug, needs triage"
 
 ---
 

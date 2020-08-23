@@ -9,6 +9,8 @@ labels: "installation"
 
 - [ ] I have read the [documentation on installation](https://geopandas.org/install.html) and followed the instructions provided.
 
+- [ ] I have looked through [issues labeled "installation"](https://github.com/geopandas/geopandas/labels/installation) in the geopandas repo.
+
 ---
 
 #### System information
