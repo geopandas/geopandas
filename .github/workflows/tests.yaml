@@ -59,42 +59,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Cache conda
-        uses: actions/cache@v2
-        env:
-          # Increase this value to reset cache if etc/example-environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles(matrix.env) }}-${{ matrix.postgis }}-${{ matrix.dev }}
-      
-      - name: Set up base Python
-        uses: actions/setup-python@v2
-
-      - name: Get Pip Cache Dir
-        shell: bash
-        run: |
-          PIP_CACHE_DIR=$(pip cache dir)
-          echo "Saving pip cache dir $PIP_CACHE_DIR"
-          echo "::set-env name=PIP_CACHE_DIR::$PIP_CACHE_DIR"
-
-      - name: Cache pip
-        uses: actions/cache@v2
-        env:
-          # Increase this value to reset cache if etc/example-environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ${{ env.PIP_CACHE_DIR }}
-          key: ${{ runner.os }}-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles(matrix.env) }}-${{ matrix.postgis }}-${{ matrix.dev }}
-
       - name: Install Environment with Conda
         uses: goanpeca/setup-miniconda@v1
         with:
-          miniconda-version: "latest"
-          use-only-tar-bz2: true
+          mamba-version: "*"
           activate-environment: test
           environment-file: ${{ matrix.env }}
           auto-activate-base: false
+          channels: conda-forge, default
           channel-priority: strict
 
       - name: Install dev packages
