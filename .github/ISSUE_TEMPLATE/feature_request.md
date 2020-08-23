@@ -3,7 +3,7 @@
 name: Feature Request
 about: Suggest an idea for geopandas
 title: "ENH:"
-labels: "Enhancement, Needs Triage"
+labels: "enhancement"
 
 ---
 
