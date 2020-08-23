@@ -7,9 +7,9 @@ labels: "question"
 
 ---
 
-- [ ] I have searched the [[geopandas] tag](https://stackoverflow.com/questions/tagged/geopandas) on StackOverflow for similar questions.
+- [ ] I have searched the [geopandas] tag on [StackOverflow](https://stackoverflow.com/questions/tagged/geopandas) and [GIS StackExchange](https://gis.stackexchange.com/questions/tagged/geopandas) for similar questions.
 
-- [ ] I have asked my usage related question on [StackOverflow](https://stackoverflow.com).
+- [ ] I have asked my usage related question on [StackOverflow](https://stackoverflow.com) or [GIS StackExhange](https://gis.stackexchange.com).
 
 ---
 
