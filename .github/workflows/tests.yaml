@@ -72,6 +72,7 @@ jobs:
       - name: Check and Log Environment
         shell: bash -l {0}
         run: |
+          python -V
           conda info
           conda list 2>&1 | tee conda.txt
           if ( cat conda.txt | grep -q pygeos  )
