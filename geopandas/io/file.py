@@ -104,7 +104,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         # In order to match that behavior, attempt to add a zip scheme if missing.
         # Casting to a pathlib.Path allows the same check to work for plain strings
         # and pathlib.Path instances.
-        if pathlib.Path(filename).suffix == ".zip":
+        if pathlib.Path(filename).suffix[:4] == ".zip":
             parsed = fiona.parse_path(str(filename))
             if isinstance(parsed, fiona.path.ParsedPath):
                 # If fiona returns a parsed path, we can safely look at the scheme
