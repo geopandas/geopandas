@@ -600,6 +600,11 @@ def plot_dataframe(
     elif aspect is not None:
         ax.set_aspect(aspect)
 
+    # GH 1555
+    # if legend_kwds set, copy so we don't update it in place
+    if legend_kwds is not None:
+        legend_kwds = legend_kwds.copy()
+
     if df.empty:
         warnings.warn(
             "The GeoDataFrame you are attempting to plot is "
