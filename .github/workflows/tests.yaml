@@ -28,6 +28,7 @@ jobs:
           - ci/travis/36-minimal.yaml
           - ci/travis/38-no-optional-deps.yaml
           - ci/travis/36-pd025.yaml
+          - ci/travis/37-latest-defaults.yaml
           - ci/travis/37-latest-conda-forge.yaml
           - ci/travis/38-latest-conda-forge.yaml
         include:
