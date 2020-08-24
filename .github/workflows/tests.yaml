@@ -59,31 +59,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Environment with Conda
+      - name: Setup Conda Env
         uses: goanpeca/setup-miniconda@v1
         with:
-          mamba-version: "*"
+          auto-update-conda: true
+          auto-activate-base: false
           activate-environment: test
           environment-file: ${{ matrix.env }}
-          auto-activate-base: false
-          channels: conda-forge, default
           channel-priority: strict
-
-      - name: Install dev packages
-        shell: bash -l {0}
-        if: matrix.dev == true
-        run: |
-          conda remove pandas
-          conda remove matplotlib
-          conda remove shapely
-          pip install -U git+https://github.com/pydata/pandas.git@master
-          pip install -U git+https://github.com/matplotlib/matplotlib.git@master
-          pip install -U git+https://github.com/Toblerity/Shapely.git@master
 
       - name: Check and Log Environment
         shell: bash -l {0}
         run: |
-          if ( { conda list & pip freeze; } | grep -q pygeos  )
+          conda info
+          conda list 2>&1 | tee conda.txt
+          if ( cat conda.txt | grep -q pygeos  )
           then
             echo "Setting HAS_PYGEOS=1"
             echo '::set-env name=HAS_PYGEOS::1'
@@ -91,15 +81,14 @@ jobs:
             echo "Setting HAS_PYGEOS=0"
             echo '::set-env name=HAS_PYGEOS::0'
           fi
-          conda info
-          conda list
 
       - name: Test without PyGEOS
         shell: bash -l {0}
         continue-on-error: ${{ matrix.dev }}
         env:
           USE_PYGEOS: 0
-        run: pytest -v --cov=geopandas -r s -n auto --color=yes
+        run: |
+          pytest -v --cov=geopandas -r s -n auto --color=yes
 
       - name: Test with PyGEOS
         shell: bash -l {0}
@@ -107,7 +96,8 @@ jobs:
         if: env.HAS_PYGES == 'true'
         env:
           USE_PYGEOS: 1
-        run: pytest -v --cov=geopandas -r s -n auto --color=yes
+        run: |
+          pytest -v --cov=geopandas -r s -n auto --color=yes
 
       - name: Test with PostGIS
         shell: bash -l {0}
@@ -119,6 +109,6 @@ jobs:
         run: |
           conda install postgis -c conda-forge
           source ci/travis/setup_postgres.sh
-          pytest -v -k "postgis" -r s --color=yes | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r s --color=yes geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - uses: codecov/codecov-action@v1
