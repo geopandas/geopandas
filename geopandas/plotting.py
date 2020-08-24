@@ -541,7 +541,7 @@ def plot_dataframe(
         default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
         the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
         square appears square in the middle of the plot. This implies an
-        Equirectangular projection. If None, the aspect of ax won't be changed. It can
+        Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
 
     **style_kwds : dict
