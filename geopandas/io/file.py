@@ -1,7 +1,6 @@
 from distutils.version import LooseVersion
 
 import functools
-import pathlib
 import warnings
 import numpy as np
 import pandas as pd
@@ -36,6 +35,16 @@ def _is_url(url):
         return parse_url(url).scheme in _VALID_URLS
     except Exception:
         return False
+
+
+def _is_zip(path):
+    """Check if a given path is a zipfile"""
+    parsed = fiona.path.ParsedPath.from_uri(path)
+    return (
+        parsed.archive.endswith(".zip")
+        if parsed.archive
+        else parsed.path.endswith(".zip")
+    )
 
 
 def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
@@ -100,15 +109,14 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             memfile = fiona.io.MemoryFile(data)
             reader = memfile.open
     else:
-        # Opening a file via URL above automatically detects a zipped file.
-        # In order to match that behavior, attempt to add a zip scheme if missing.
-        # Casting to a pathlib.Path allows the same check to work for plain strings
-        # and pathlib.Path instances.
-        if pathlib.Path(filename).suffix[:4] == ".zip":
+        # Opening a file via URL or file-like-object above automatically detects a
+        # zipped file. In order to match that behavior, attempt to add a zip scheme
+        # if missing.
+        if _is_zip(str(filename)):
             parsed = fiona.parse_path(str(filename))
             if isinstance(parsed, fiona.path.ParsedPath):
-                # If fiona returns a parsed path, we can safely look at the scheme
-                # and add zip if necessary.
+                # If fiona is able to parse the path, we can safely look at the scheme
+                # and update it to have a zip scheme if necessary.
                 if not parsed.scheme:
                     parsed.scheme = "zip"
                 elif "zip" not in parsed.scheme.split("+"):
