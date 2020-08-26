@@ -188,7 +188,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", cmap="RdYlGn", legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -198,7 +198,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", categorical=True, legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        cbar_colors = ax.get_legend().axes.collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -211,7 +211,7 @@ class TestPointPlotting:
         )
         ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
