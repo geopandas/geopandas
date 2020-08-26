@@ -409,7 +409,6 @@ def test_infer_zipped_file():
     # Check that it can add a zip scheme for a path that includes a subpath
     # within the archive.
     gdf = read_file(path + "!nybb.shp")
-    print(gdf)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
