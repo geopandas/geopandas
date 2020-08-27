@@ -1,13 +1,11 @@
 from distutils.version import LooseVersion
 
-import functools
 import warnings
 import numpy as np
 import pandas as pd
 
 import fiona
 import pyproj
-from fiona.collection import get_filetype
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
@@ -94,20 +92,12 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     """
     if _is_url(filename):
         req = _urlopen(filename)
-        data = req.read()
-        if get_filetype(data) == "zip":
-            reader = functools.partial(fiona.BytesCollection, data)
-        else:
-            memfile = fiona.io.MemoryFile(data)
-            reader = memfile.open
+        path_or_bytes = req.read()
+        reader = fiona.BytesCollection
     elif pd.api.types.is_file_like(filename):
         data = filename.read()
-        data = data.encode("utf-8") if isinstance(data, str) else data
-        if get_filetype(data) == "zip":
-            reader = functools.partial(fiona.BytesCollection, data)
-        else:
-            memfile = fiona.io.MemoryFile(data)
-            reader = memfile.open
+        path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+        reader = fiona.BytesCollection
     else:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
@@ -129,10 +119,11 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
                 # it is a legacy GDAL path type, so let it pass unmodified.
                 filename = "zip://" + parsed.name
-        reader = functools.partial(fiona.open, filename)
+        path_or_bytes = filename
+        reader = fiona.open
 
     with fiona_env():
-        with reader(**kwargs) as features:
+        with reader(path_or_bytes, **kwargs) as features:
 
             # In a future Fiona release the crs attribute of features will
             # no longer be a dict, but will behave like a dict. So this should
