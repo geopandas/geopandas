@@ -383,18 +383,6 @@ def test_read_text_file_fsspec(file_path):
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-@pytest.mark.web
-def test_read_remote_text_file_fsspec():
-    fsspec = pytest.importorskip("fsspec")
-    url = (
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/examples/null_geom.geojson"
-    )
-    with fsspec.open(url, "r") as f:
-        gdf = read_file(f)
-        assert isinstance(gdf, geopandas.GeoDataFrame)
-
-
 def test_infer_zipped_file():
     # Remove the zip scheme so that the test for a zipped file can
     # check it and add it back.
