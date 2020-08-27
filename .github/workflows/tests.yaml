@@ -17,7 +17,7 @@ jobs:
 
   Test:
     needs: Linting
-    name: ${{ matrix.os }}, ${{ matrix.env }}, POSTGIS=${{ matrix.postgis }}
+    name: ${{ matrix.os }}, ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -48,30 +48,27 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/travis/38-latest-conda-forge.yaml
-            os: ubuntu-latest
-            postgis: true
-            dev: false
           - env: ci/travis/37-dev.yaml
             os: ubuntu-latest
-            postgis: false
             dev: true
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Conda Env
-        uses: goanpeca/setup-miniconda@v1
+      - name: Setup Conda
+        uses: s-weigand/setup-conda@v1.0.4
         with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: test
-          environment-file: ${{ matrix.env }}
-          channel-priority: strict
+          activate-conda: false
+
+      - name: Install Env
+        shell: bash
+        run: conda env create -f ${{ matrix.env }}
+
 
       - name: Check and Log Environment
-        shell: bash -l {0}
+        shell: bash
         run: |
+          source activate test
           python -V
           conda info
           conda list 2>&1 | tee conda.txt
@@ -85,30 +82,33 @@ jobs:
           fi
 
       - name: Test without PyGEOS
-        shell: bash -l {0}
+        shell: bash
         continue-on-error: ${{ matrix.dev }}
         env:
           USE_PYGEOS: 0
         run: |
+          source activate test
           pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PyGEOS
-        shell: bash -l {0}
+        shell: bash
         continue-on-error: ${{ matrix.dev }}
         if: env.HAS_PYGEOS == 1
         env:
           USE_PYGEOS: 1
         run: |
+          source activate test
           pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        shell: bash -l {0}
-        if: matrix.postgis == true
+        shell: bash
+        if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
           PGHOST: "127.0.0.1"
         run: |
+          source activate test
           conda install postgis -c conda-forge
           source ci/travis/setup_postgres.sh
           pytest -v -r s -color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
