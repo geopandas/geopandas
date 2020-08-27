@@ -414,7 +414,7 @@ def test_read_file_filtered_rows_invalid():
 
 def test_read_file__ignore_geometry():
     pdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True,
+        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True
     )
     assert "geometry" not in pdf.columns
     assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)

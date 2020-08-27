@@ -1406,10 +1406,10 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
 
 
 def _style_to_linestring_onoffseq(linestyle, linewidth):
-    """ Converts a linestyle string representation, namely one of:
-            ['dashed',  'dotted', 'dashdot', 'solid'],
-        documented in `Collections.set_linestyle`,
-        to the form `onoffseq`.
+    """Converts a linestyle string representation, namely one of:
+        ['dashed',  'dotted', 'dashdot', 'solid'],
+    documented in `Collections.set_linestyle`,
+    to the form `onoffseq`.
     """
     offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
     return matplotlib.lines._scale_dashes(offset, dashes, linewidth)

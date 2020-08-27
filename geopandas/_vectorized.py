@@ -262,7 +262,7 @@ def _binary_method(op, left, right, **kwargs):
 
 def _binary_geo(op, left, right):
     # type: (str, np.array[geoms], [np.array[geoms]/BaseGeometry]) -> np.array[geoms]
-    """ Apply geometry-valued operation
+    """Apply geometry-valued operation
 
     Supports:
 
