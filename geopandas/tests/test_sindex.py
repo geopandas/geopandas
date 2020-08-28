@@ -161,7 +161,7 @@ class TestFrameSindex:
         assert geometry_col.sindex is original_index
 
     @pytest.mark.skipif(
-        not compat.PANDAS_GE_10, reason="Column selection returns a copy on pd<=1.0.0",
+        not compat.PANDAS_GE_10, reason="Column selection returns a copy on pd<=1.0.0"
     )
     def test_rebuild_on_multiple_col_selection(self):
         """Selecting a subset of columns preserves the index."""
@@ -304,8 +304,7 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     def test_query_invalid_geometry(self):
-        """Tests the `query` method with invalid geometry.
-        """
+        """Tests the `query` method with invalid geometry."""
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
 
@@ -320,14 +319,12 @@ class TestPygeosInterface:
         ],
     )
     def test_query_empty_geometry(self, test_geom, expected_value):
-        """Tests the `query` method with empty geometry.
-        """
+        """Tests the `query` method with empty geometry."""
         res = self.df.sindex.query(test_geom)
         assert_array_equal(res, expected_value)
 
     def test_query_invalid_predicate(self):
-        """Tests the `query` method with invalid predicates.
-        """
+        """Tests the `query` method with invalid predicates."""
         test_geom = box(-1, -1, -0.5, -0.5)
         with pytest.raises(ValueError):
             self.df.sindex.query(test_geom, predicate="test")
@@ -440,8 +437,7 @@ class TestPygeosInterface:
         ],
     )
     def test_query_bulk_empty_geometry(self, test_geoms, expected_value):
-        """Tests the `query_bulk` method with an empty geometry.
-        """
+        """Tests the `query_bulk` method with an empty geometry."""
         # pass through GeoSeries to have GeoPandas
         # determine if it should use shapely or pygeos geometry objects
         # note: for this test, test_geoms (note plural) is a list already
@@ -450,23 +446,22 @@ class TestPygeosInterface:
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_empty_input_array(self):
-        """Tests the `query_bulk` method with an empty input array.
-        """
+        """Tests the `query_bulk` method with an empty input array."""
         test_array = np.array([], dtype=object)
         expected_value = [[], []]
         res = self.df.sindex.query_bulk(test_array)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_invalid_input_geometry(self):
-        """Tests the `query_bulk` method with invalid input for the `geometry` parameter.
+        """
+        Tests the `query_bulk` method with invalid input for the `geometry` parameter.
         """
         test_array = "notanarray"
         with pytest.raises(TypeError):
             self.df.sindex.query_bulk(test_array)
 
     def test_query_bulk_invalid_predicate(self):
-        """Tests the `query_bulk` method with invalid predicates.
-        """
+        """Tests the `query_bulk` method with invalid predicates."""
         test_geom_bounds = (-1, -1, -0.5, -0.5)
         test_predicate = "test"
 
@@ -558,8 +553,7 @@ class TestPygeosInterface:
     # --------------------------- misc tests ---------------------------- #
 
     def test_empty_tree_geometries(self):
-        """Tests building sindex with interleaved empty geometries.
-        """
+        """Tests building sindex with interleaved empty geometries."""
         geoms = [Point(0, 0), None, Point(), Point(1, 1), Point()]
         df = geopandas.GeoDataFrame(geometry=geoms)
         assert df.sindex.query(Point(1, 1))[0] == 3
