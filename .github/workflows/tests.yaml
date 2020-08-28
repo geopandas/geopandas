@@ -71,6 +71,8 @@ jobs:
           source activate test
           python -V
           conda info
+          # save conda list to file and print out
+          # so that we can do the HAS_PYGEOS check without calling conda again
           conda list 2>&1 | tee conda.txt
           if ( cat conda.txt | grep -q pygeos  )
           then
