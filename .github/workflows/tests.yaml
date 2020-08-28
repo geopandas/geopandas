@@ -70,6 +70,7 @@ jobs:
         run: |
           source activate test
           python -V
+          python -c "import geopandas; geopandas.show_versions();"
           conda info
           # save conda list to file and print out
           # so that we can do the HAS_PYGEOS check without calling conda again
