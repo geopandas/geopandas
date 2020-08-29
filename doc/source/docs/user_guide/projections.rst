@@ -469,7 +469,7 @@ could be replaced with the more robust check (requires pyproj 2.6+):
 
 .. code-block:: python
 
-   gdf.crs.utm_zone
+   gdf.crs.utm_zone is not None
 
 And there are many other methods available on the ``pyproj.CRS`` class to get
 information about the CRS.
