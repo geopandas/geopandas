@@ -465,11 +465,11 @@ Or to check if a CRS was a certain UTM zone:
 
    '+proj=utm ' in gdf.crs
 
-could be replaced with the longer but more robust check:
+could be replaced with the more robust check (requires pyproj 2.6+):
 
 .. code-block:: python
 
-   gdf.crs.is_projected and gdf.crs.coordinate_operation.name.upper().startswith('UTM')
+   gdf.crs.utm_zone
 
 And there are many other methods available on the ``pyproj.CRS`` class to get
 information about the CRS.
