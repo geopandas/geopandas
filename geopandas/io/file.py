@@ -107,10 +107,9 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             if isinstance(parsed, fiona.path.ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
                 # and update it to have a zip scheme if necessary.
-                if not parsed.scheme:
-                    parsed.scheme = "zip"
-                elif "zip" not in parsed.scheme.split("+"):
-                    parsed.scheme = "zip+" + parsed.scheme
+                schemes = (parsed.scheme or "").split("+")
+                if "zip" not in schemes:
+                    parsed.scheme = "+".join(["zip"] + schemes)
                 filename = parsed.name
             elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
                 filename
