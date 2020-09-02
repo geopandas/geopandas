@@ -304,6 +304,16 @@ def test_read_file_remote_geojson_url():
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.web
+def test_read_file_remote_zipfile_url():
+    url = (
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "master/geopandas/datasets/nybb_16a.zip"
+    )
+    gdf = read_file(url)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
 def test_read_file_textio(file_path):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
@@ -354,6 +364,47 @@ def test_read_file_tempfile():
     gdf_tempfile = geopandas.read_file(temp)
     assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
     temp.close()
+
+
+def test_read_binary_file_fsspec():
+    fsspec = pytest.importorskip("fsspec")
+    # Remove the zip scheme so fsspec doesn't open as a zipped file,
+    # instead we want to read as bytes and let fiona decode it.
+    path = geopandas.datasets.get_path("nybb")[6:]
+    with fsspec.open(path, "rb") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_text_file_fsspec(file_path):
+    fsspec = pytest.importorskip("fsspec")
+    with fsspec.open(file_path, "r") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_infer_zipped_file():
+    # Remove the zip scheme so that the test for a zipped file can
+    # check it and add it back.
+    path = geopandas.datasets.get_path("nybb")[6:]
+    gdf = read_file(path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    # Check that it can sucessfully add a zip scheme to a path that already has a scheme
+    gdf = read_file("file+file://" + path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    # Check that it can add a zip scheme for a path that includes a subpath
+    # within the archive.
+    gdf = read_file(path + "!nybb.shp")
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_allow_legacy_gdal_path():
+    # Construct a GDAL-style zip path.
+    path = "/vsizip/" + geopandas.datasets.get_path("nybb")[6:]
+    gdf = read_file(path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
 def test_read_file_filtered(df_nybb):
