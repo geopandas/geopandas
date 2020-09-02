@@ -290,7 +290,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         geometry_col = self.geometry.name
         if col in self.columns:
-            raise ValueError("Column named %s already exists" % col)
+            raise ValueError(f"Column named {col} already exists")
         else:
             if not inplace:
                 return self.rename(columns={geometry_col: col}).set_geometry(
