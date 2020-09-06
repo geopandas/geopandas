@@ -985,6 +985,19 @@ class TestMapclassifyPlotting:
         expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
         assert labels == expected
 
+    def test_interval(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"interval": False},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
+        assert labels == expected
+
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
     def test_scheme_name_compat(self, scheme):
         ax = self.df.plot(column="NEGATIVES", scheme=scheme, k=3, legend=True)
