@@ -476,7 +476,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
-    def to_file(self, filename, driver="ESRI Shapefile", index=None, **kwargs):
+    def to_file(self, filename, driver=None, index=None, **kwargs):
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -486,8 +486,9 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempt to infer it from the file extension.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None writes the index into one or more columns only if

@@ -1,4 +1,5 @@
 from distutils.version import LooseVersion
+from pathlib import Path
 
 import warnings
 import numpy as np
@@ -233,10 +234,32 @@ def to_file(*args, **kwargs):
     return _to_file(*args, **kwargs)
 
 
+_DRIVER_EXTENSION_MAP = {
+    ".shp": "ESRI Shapefile",
+    ".gpkg": "GPKG",
+    ".geojson": "GeoJSON",
+}
+
+
+def _detect_driver(path):
+    """
+    Attempt to auto-detect driver based on the extension
+    """
+    try:
+        # in case the path is a file handle
+        path = path.name
+    except AttributeError:
+        pass
+    try:
+        return _DRIVER_EXTENSION_MAP[Path(path).suffix.lower()]
+    except KeyError:
+        raise RuntimeError("Unable to detect driver. Please specify driver.")
+
+
 def _to_file(
     df,
     filename,
-    driver="ESRI Shapefile",
+    driver=None,
     schema=None,
     index=None,
     mode="w",
@@ -255,8 +278,9 @@ def _to_file(
     df : GeoDataFrame to be written
     filename : string
         File path or file handle to write to.
-    driver : string, default 'ESRI Shapefile'
+    driver : string, default None
         The OGR format driver used to write the vector file.
+        If not specified, it attempt to infer it from the file extension.
     schema : dict, default None
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
@@ -307,6 +331,9 @@ def _to_file(
         crs = pyproj.CRS.from_user_input(crs)
     else:
         crs = df.crs
+
+    if driver is None:
+        driver = _detect_driver(filename)
 
     if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
         warnings.warn(

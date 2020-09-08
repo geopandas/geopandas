@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env
+from geopandas.io.file import fiona_env, _detect_driver
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -61,7 +61,14 @@ def df_points():
 # to_file tests
 # -----------------------------------------------------------------------------
 
-driver_ext_pairs = [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson"), ("GPKG", "gpkg")]
+driver_ext_pairs = [
+    ("ESRI Shapefile", "shp"),
+    ("GeoJSON", "geojson"),
+    ("GPKG", "gpkg"),
+    (None, "shp"),
+    (None, "geojson"),
+    (None, "gpkg"),
+]
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -112,7 +119,10 @@ def test_to_file_bool(tmpdir, driver, ext):
 
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
-    if driver == "ESRI Shapefile":
+    if ext == "geojson":
+        # geojson by default assumes epsg:4326
+        result.crs = None
+    if ext == "shp":
         # Shapefile does not support boolean, so is read back as int
         df["b"] = df["b"].astype("int64")
     assert_geodataframe_equal(result, df)
@@ -248,10 +258,11 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     """Test to_file with append mode and from_file"""
     from fiona import supported_drivers
 
+    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    driver = driver if driver else _detect_driver(tempfilename)
     if "a" not in supported_drivers[driver]:
         return None
 
-    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
     df_nybb.to_file(tempfilename, driver=driver)
     df_nybb.to_file(tempfilename, mode="a", driver=driver)
     # Read layer back in
@@ -802,3 +813,10 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
     # named DatetimeIndex
     df.index.name = "datetime"
     do_checks(df, index_is_used=True)
+
+
+def test_to_file__undetermined_driver(tmp_path, df_nybb):
+    with pytest.raises(
+        RuntimeError, match="Unable to detect driver. Please specify driver."
+    ):
+        df_nybb.to_file(tmp_path / "boros.invalid")
