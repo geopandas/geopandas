@@ -169,16 +169,22 @@ def _prepare_geocode_result(results):
     index = []
 
     for i, s in results.items():
-        address, loc = s
 
-        # loc is lat, lon and we want lon, lat
-        if loc is None:
+        if s is None:
             p = Point()
-        else:
-            p = Point(loc[1], loc[0])
-
-        if address is None:
             address = np.nan
+
+        else:
+            address, loc = s
+
+            # loc is lat, lon and we want lon, lat
+            if loc is None:
+                p = Point()
+            else:
+                p = Point(loc[1], loc[0])
+
+            if address is None:
+                address = np.nan
 
         d["geometry"].append(p)
         d["address"].append(address)
