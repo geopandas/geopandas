@@ -62,12 +62,13 @@ def df_points():
 # -----------------------------------------------------------------------------
 
 driver_ext_pairs = [
-    ("ESRI Shapefile", "shp"),
-    ("GeoJSON", "geojson"),
-    ("GPKG", "gpkg"),
-    (None, "shp"),
-    (None, "geojson"),
-    (None, "gpkg"),
+    ("ESRI Shapefile", ".shp"),
+    ("GeoJSON", ".geojson"),
+    ("GPKG", ".gpkg"),
+    (None, ".shp"),
+    (None, ""),
+    (None, ".geojson"),
+    (None, ".gpkg"),
 ]
 
 
@@ -83,7 +84,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
-    tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
+    tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
     df_null.to_file(tempfilename, driver=driver)
     # Read layer back in
     df = GeoDataFrame.from_file(tempfilename)
@@ -119,10 +120,10 @@ def test_to_file_bool(tmpdir, driver, ext):
 
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
-    if ext == "geojson":
+    if ext.endswith("json"):
         # geojson by default assumes epsg:4326
         result.crs = None
-    if ext == "shp":
+    if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
         df["b"] = df["b"].astype("int64")
     assert_geodataframe_equal(result, df)
@@ -143,7 +144,7 @@ def test_to_file_datetime(tmpdir):
 def test_to_file_with_point_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(str(tmpdir), "test_3Dpoint." + ext)
+    tempfilename = os.path.join(str(tmpdir), "test_3Dpoint" + ext)
     point3d = Point(0, 0, 500)
     point2d = Point(1, 1)
     df = GeoDataFrame({"a": [1, 2]}, geometry=[point3d, point2d], crs=_CRS)
@@ -156,7 +157,7 @@ def test_to_file_with_point_z(tmpdir, ext, driver):
 def test_to_file_with_poly_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(str(tmpdir), "test_3Dpoly." + ext)
+    tempfilename = os.path.join(str(tmpdir), "test_3Dpoly" + ext)
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
     df = GeoDataFrame({"a": [1, 2]}, geometry=[poly3d, poly2d], crs=_CRS)
@@ -258,7 +259,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     """Test to_file with append mode and from_file"""
     from fiona import supported_drivers
 
-    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     driver = driver if driver else _detect_driver(tempfilename)
     if "a" not in supported_drivers[driver]:
         return None
@@ -273,7 +274,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert_geodataframe_equal(df, expected, check_less_precise=True)
 
     # Write layer with null geometry out to file
-    tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
+    tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
     df_null.to_file(tempfilename, driver=driver)
     df_null.to_file(tempfilename, mode="a", driver=driver)
     # Read layer back in

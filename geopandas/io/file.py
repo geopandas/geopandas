@@ -236,8 +236,10 @@ def to_file(*args, **kwargs):
 
 _DRIVER_EXTENSION_MAP = {
     ".shp": "ESRI Shapefile",
+    "": "ESRI Shapefile",  # shapefile folder
     ".gpkg": "GPKG",
     ".geojson": "GeoJSON",
+    ".json": "GeoJSON",
 }
 
 
