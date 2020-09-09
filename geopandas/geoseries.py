@@ -193,12 +193,56 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def x(self):
-        """Return the x location of point geometries in a GeoSeries"""
+        """Return the x location of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.x
+        0    1.0
+        1    2.0
+        2    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.y
+
+        """
         return _delegate_property("x", self)
 
     @property
     def y(self):
-        """Return the y location of point geometries in a GeoSeries"""
+        """Return the y location of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.y
+        0    1.0
+        1    2.0
+        2    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.x
+
+        """
         return _delegate_property("y", self)
 
     @classmethod
@@ -233,6 +277,20 @@ class GeoSeries(GeoPandasBase, Series):
         represents the ``GeoSeries`` as a GeoJSON-like ``FeatureCollection``.
         Note that the features will have an empty ``properties`` dict as they
         don't have associated attributes (geometry only).
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.__geo_interface__
+        {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', \
+'properties': {}, 'geometry': {'type': 'Point', 'coordinates': (1.0, 1.0)}, \
+'bbox': (1.0, 1.0, 1.0, 1.0)}, {'id': '1', 'type': 'Feature', \
+'properties': {}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 2.0)}, \
+'bbox': (2.0, 2.0, 2.0, 2.0)}, {'id': '2', 'type': 'Feature', 'properties': \
+{}, 'geometry': {'type': 'Point', 'coordinates': (3.0, 3.0)}, 'bbox': (3.0, \
+3.0, 3.0, 3.0)}], 'bbox': (1.0, 1.0, 3.0, 3.0)}
         """
         from geopandas import GeoDataFrame
 
@@ -342,6 +400,24 @@ class GeoSeries(GeoPandasBase, Series):
         A boolean pandas Series of the same size as the GeoSeries,
         True where a value is NA.
 
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+                [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
+            )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                                                 None
+        2                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        >>> s.isna()
+        0    False
+        1     True
+        2    False
+        dtype: bool
+
         See Also
         --------
         GeoSeries.notna : inverse of isna
@@ -383,6 +459,24 @@ class GeoSeries(GeoPandasBase, Series):
         A boolean pandas Series of the same size as the GeoSeries,
         False where a value is NA.
 
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+                [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
+            )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                                                 None
+        2                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        >>> s.notna()
+        0     True
+        1    False
+        2     True
+        dtype: bool
+
         See Also
         --------
         GeoSeries.isna : inverse of notna
@@ -412,6 +506,35 @@ class GeoSeries(GeoPandasBase, Series):
         """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (0, 1)]),
+                None,
+                Polygon([(0, 0), (-1, 1), (0, -1)]),
+            ]
+        )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                                                 None
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
+        >>> s.fillna()
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                             GEOMETRYCOLLECTION EMPTY
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
+        >>> s.fillna(Polygon([(0, 1), (2, 1), (1, 2)]))
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((0.00000 1.00000, 2.00000 1.00000, 1....
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
         """
         if value is None:
             value = BaseGeometry()
