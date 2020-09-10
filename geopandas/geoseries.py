@@ -341,6 +341,15 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
         GeoDataFrame.to_file
+
+        Examples
+        --------
+
+        >>> s.to_file('series.shp')
+
+        >>> s.to_file('series.gpkg', driver='GPKG', layer='name1')
+
+        >>> s.to_file('series.geojson', driver='GeoJSON')
         """
         from geopandas import GeoDataFrame
 
