@@ -251,6 +251,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Can load a ``GeoSeries`` from a file from any format recognized by
         `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
+        From a file with attributes loads only geometry column. Note that to do
+        that, GeoPandas first loads the whole GeoDataFrame.
 
         Parameters
         ----------
@@ -262,6 +264,19 @@ class GeoSeries(GeoPandasBase, Series):
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
+
+        Examples
+        --------
+
+        >>> path = geopandas.datasets.get_path('nybb')
+        >>> s = geopandas.GeoSeries.from_file(path)
+        >>> s
+        0    MULTIPOLYGON (((970217.022 145643.332, 970227....
+        1    MULTIPOLYGON (((1029606.077 156073.814, 102957...
+        2    MULTIPOLYGON (((1021176.479 151374.797, 102100...
+        3    MULTIPOLYGON (((981219.056 188655.316, 980940....
+        4    MULTIPOLYGON (((1012821.806 229228.265, 101278...
+        Name: geometry, dtype: geometry
         """
         from geopandas import GeoDataFrame
 
@@ -594,6 +609,45 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+
+        Setting CRS to a GeoSeries without one:
+
+        >>> s.crs is None
+        True
+
+        >>> s = s.set_crs('epsg:3857')
+        >>> s.crs
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        Overriding existing CRS:
+
+        >>> s = s.set_crs(4326, allow_override=True)
+
+        Without ``allow_override=True``, ``set_crs`` returns an error if you try to
+        override CRS.
+
         """
         if crs is not None:
             crs = CRS.from_user_input(crs)
@@ -642,6 +696,49 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)], crs=4326)
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        >>> s.crs
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        >>> s = s.to_crs(3857)
+        >>> s
+        0    POINT (111319.491 111325.143)
+        1    POINT (222638.982 222684.209)
+        2    POINT (333958.472 334111.171)
+        >>> s.crs
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
         """
         if self.crs is None:
             raise ValueError(
@@ -673,6 +770,27 @@ class GeoSeries(GeoPandasBase, Series):
         Parameters
         ----------
         *kwargs* that will be passed to json.dumps().
+
+        Returns
+        -------
+        JSON string
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+
+        >>> s.to_json()
+        '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", "pr\
+operties": {}, "geometry": {"type": "Point", "coordinates": [1.0, 1.0]}, "bbox": [1.0,\
+ 1.0, 1.0, 1.0]}, {"id": "1", "type": "Feature", "properties": {}, "geometry": {"type"\
+: "Point", "coordinates": [2.0, 2.0]}, "bbox": [2.0, 2.0, 2.0, 2.0]}, {"id": "2", "typ\
+e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3.0, 3.\
+0]}, "bbox": [3.0, 3.0, 3.0, 3.0]}], "bbox": [1.0, 1.0, 3.0, 3.0]}'
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 
