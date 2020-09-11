@@ -10,7 +10,8 @@ def test_prepare_geocode_result_when_result_is_tuple_of_None():
 
     result = {0: (None, None)}
     expected_output = gpd.GeoDataFrame(
-        {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
+        {"geometry": [Point()], "address": [np.nan]},
+        crs="EPSG:4326",
     )
 
     output = _prepare_geocode_result(result)
@@ -22,7 +23,8 @@ def test_prepare_geocode_result_when_result_is_None():
 
     result = {0: None}
     expected_output = gpd.GeoDataFrame(
-        {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
+        {"geometry": [Point()], "address": [np.nan]},
+        crs="EPSG:4326",
     )
 
     output = _prepare_geocode_result(result)
