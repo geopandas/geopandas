@@ -255,7 +255,8 @@ def _detect_driver(path):
     try:
         return _DRIVER_EXTENSION_MAP[Path(path).suffix.lower()]
     except KeyError:
-        raise RuntimeError("Unable to detect driver. Please specify driver.")
+        # pass to fiona to handle the missing driver
+        return None
 
 
 def _to_file(

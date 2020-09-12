@@ -817,7 +817,5 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
 
 
 def test_to_file__undetermined_driver(tmp_path, df_nybb):
-    with pytest.raises(
-        RuntimeError, match="Unable to detect driver. Please specify driver."
-    ):
+    with pytest.raises(fiona.errors.DriverError):
         df_nybb.to_file(tmp_path / "boros.invalid")
