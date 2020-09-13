@@ -350,6 +350,32 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             pass
 
     @classmethod
+    def from_dict(cls, data, geometry=None, crs=None, **kwargs):
+        """
+        Construct GeoDataFrame from dict of array-like or dicts by
+        overiding DataFrame.from_dict method with geometry and crs
+
+        Parameters
+        ----------
+        data : dict
+            Of the form {field : array-like} or {field : dict}.
+        geometry : str or array (optional)
+            If str, column to use as geometry. If array, will be set as 'geometry'
+            column on GeoDataFrame.
+        crs : str or dict (optional)
+            Coordinate reference system to set on the resulting frame.
+        kwargs : key-word arguments
+            These arguments are passed to DataFrame.from_dict
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        dataframe = DataFrame.from_dict(data, **kwargs)
+        return GeoDataFrame(dataframe, geometry=geometry, crs=crs)
+
+    @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
