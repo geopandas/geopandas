@@ -1,7 +1,6 @@
 from collections import defaultdict
 import time
 
-import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point
@@ -182,7 +181,6 @@ def _prepare_geocode_result(results):
                 p = Point()
             else:
                 p = Point(loc[1], loc[0])
-
 
         d["geometry"].append(p)
         d["address"].append(address)
