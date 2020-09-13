@@ -196,6 +196,18 @@ To run *GeoPandas* in an development environment, you must first install
 
     conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
 
+Install development dependencies via::
+
+    pip install -r requirements-dev.txt
+
+Optionally (but recommended), you can setup `pre-commit hooks <https://pre-commit.com/>`_
+to automatically run ``black`` and ``flake8`` when you make a git commit. This
+can be done by installing ``pre-commit``::
+
+   $ python -m pip install pre-commit
+
+See `<contributing_style>`
+
 This should install all necessary dependencies.
 
 
