@@ -12,6 +12,7 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
+  - fsspec
   #- codecov
   # optional
   - rtree

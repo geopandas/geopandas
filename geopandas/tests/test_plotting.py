@@ -188,7 +188,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", cmap="RdYlGn", legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -198,7 +198,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", categorical=True, legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        cbar_colors = ax.get_legend().axes.collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -211,7 +211,7 @@ class TestPointPlotting:
         )
         ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -877,21 +877,39 @@ class TestGeographicAspect:
     def test_manual(self):
         ax = self.north.geometry.plot(aspect="equal")
         assert ax.get_aspect() in ["equal", 1.0]
+        self.north.geometry.plot(ax=ax, aspect=None)
+        assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.geometry.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        self.north.geometry.plot(ax=ax2, aspect=None)
         assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.geometry.plot(aspect=0.5)
         assert ax3.get_aspect() == 0.5
+        self.north_proj.geometry.plot(ax=ax3, aspect=None)
+        assert ax3.get_aspect() == 0.5
         ax = self.north.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        self.north.plot(ax=ax, aspect=None)
         assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.plot(aspect=0.5)
         assert ax2.get_aspect() == 0.5
+        self.north.plot(ax=ax2, aspect=None)
+        assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        self.north_proj.plot(ax=ax3, aspect=None)
         assert ax3.get_aspect() == 0.5
         ax = self.north.plot("pop_est", aspect="equal")
         assert ax.get_aspect() in ["equal", 1.0]
+        self.north.plot("pop_est", ax=ax, aspect=None)
+        assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.plot("pop_est", aspect=0.5)
         assert ax2.get_aspect() == 0.5
+        self.north.plot("pop_est", ax=ax2, aspect=None)
+        assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.plot("pop_est", aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        self.north_proj.plot("pop_est", ax=ax3, aspect=None)
         assert ax3.get_aspect() == 0.5
 
 
@@ -1388,10 +1406,10 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
 
 
 def _style_to_linestring_onoffseq(linestyle, linewidth):
-    """ Converts a linestyle string representation, namely one of:
-            ['dashed',  'dotted', 'dashdot', 'solid'],
-        documented in `Collections.set_linestyle`,
-        to the form `onoffseq`.
+    """Converts a linestyle string representation, namely one of:
+        ['dashed',  'dotted', 'dashdot', 'solid'],
+    documented in `Collections.set_linestyle`,
+    to the form `onoffseq`.
     """
     offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
     return matplotlib.lines._scale_dashes(offset, dashes, linewidth)

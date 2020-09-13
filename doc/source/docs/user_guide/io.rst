@@ -57,6 +57,14 @@ as a file handler (e.g. via built-in ``open`` function) or ``StringIO``::
     file = open(filename)
     df = geopandas.read_file(file)
 
+File-like objects from `fsspec <https://filesystem-spec.readthedocs.io/en/latest>`_
+can also be used to read data, allowing for any combination of storage backends and caching
+supported by that project::
+
+    path = "simplecache::http://download.geofabrik.de/antarctica-latest-free.shp.zip"
+    with fsspec.open(path) as file:
+        df = geopandas.read_file(file)
+
 You can also read path objects::
 
     import pathlib

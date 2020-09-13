@@ -192,7 +192,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         col : column label or array
-        drop : boolean, default True
+        drop : boolean, default False
             Delete column to be used as the new geometry
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)

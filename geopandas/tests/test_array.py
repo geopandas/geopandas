@@ -326,7 +326,7 @@ def test_predicates_vector_vector(attr, args):
 
 
 @pytest.mark.parametrize(
-    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))],
+    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))]
 )
 def test_equals_deprecation(attr, args):
     point = points[0]
