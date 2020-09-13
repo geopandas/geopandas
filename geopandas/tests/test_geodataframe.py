@@ -472,6 +472,10 @@ class TestDataFrame:
         assert df.crs == "epsg:3857"
         assert df._geometry_column_name == "geometry"
 
+        data = {"B": [1], "location": [Point(0.0, 0.0)]}
+        df = GeoDataFrame.from_dict(data, geometry="location")
+        assert df._geometry_column_name == "location"
+
     def test_from_features(self):
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
