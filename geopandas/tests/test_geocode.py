@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point
@@ -107,7 +106,7 @@ def test_prepare_result_none():
     # TODO we should probably replace this with a missing value instead of point?
     # assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
-    assert np.isnan(row["address"])
+    assert row["address"] is None
 
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
@@ -115,7 +114,8 @@ def test_prepare_geocode_result_when_result_is(geocode_result):
 
     result = {0: geocode_result}
     expected_output = GeoDataFrame(
-        {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
+        {"geometry": [Point()], "address": [None]},
+        crs="EPSG:4326",
     )
 
     output = _prepare_geocode_result(result)
