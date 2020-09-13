@@ -1059,7 +1059,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             File path or file handle to write to.
         driver : string, default None
             The OGR format driver used to write the vector file.
-            If not specified, it attempt to infer it from the file extension.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
