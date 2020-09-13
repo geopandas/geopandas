@@ -9,6 +9,7 @@ from geopandas.tools.geocoding import _prepare_geocode_result
 
 from geopandas.tests.util import assert_geoseries_equal, mock
 from pandas.testing import assert_series_equal
+from geopandas.testing import assert_geodataframe_equal
 import pytest
 
 geopy = pytest.importorskip("geopy")
@@ -109,6 +110,31 @@ def test_prepare_result_none():
     assert np.isnan(row["address"])
 
 
+@pytest.mark.parametrize("geocode_result", (None, (None, None)))
+def test_prepare_geocode_result_when_result_is_None():
+
+    result = {0: None}
+    expected_output = GeoDataFrame(
+        {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
+    )
+
+    output = _prepare_geocode_result(result)
+
+    assert_geodataframe_equal(output, expected_output)
+
+
+def test_prepare_geocode_result_when_result_is_tuple_of_None():
+
+    result = {0: (None, None)}
+    expected_output = GeoDataFrame(
+        {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
+    )
+
+    output = _prepare_geocode_result(result)
+
+    assert_geodataframe_equal(output, expected_output)
+
+
 def test_bad_provider_forward():
     from geopy.exc import GeocoderNotFound
 
@@ -156,3 +182,4 @@ def test_reverse(locations, points):
             ["address" + str(x) for x in range(len(points))], name="address"
         )
         assert_series_equal(g["address"], address)
+
