@@ -488,7 +488,8 @@ class GeoSeries(GeoPandasBase, Series):
             File path or file handle to write to.
         driver : string, default None
             The OGR format driver used to write the vector file.
-            If not specified, it attempt to infer it from the file extension.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None writes the index into one or more columns only if
