@@ -172,7 +172,7 @@ def _prepare_geocode_result(results):
 
         if s is None:
             p = Point()
-            address = np.nan
+            address = None
 
         else:
             address, loc = s
