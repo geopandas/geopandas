@@ -111,21 +111,9 @@ def test_prepare_result_none():
 
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
-def test_prepare_geocode_result_when_result_is_None():
+def test_prepare_geocode_result_when_result_is(geocode_result):
 
-    result = {0: None}
-    expected_output = GeoDataFrame(
-        {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
-    )
-
-    output = _prepare_geocode_result(result)
-
-    assert_geodataframe_equal(output, expected_output)
-
-
-def test_prepare_geocode_result_when_result_is_tuple_of_None():
-
-    result = {0: (None, None)}
+    result = {0: geocode_result}
     expected_output = GeoDataFrame(
         {"geometry": [Point()], "address": [np.nan]}, crs="EPSG:4326",
     )
