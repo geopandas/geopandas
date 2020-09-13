@@ -170,4 +170,3 @@ def test_reverse(locations, points):
             ["address" + str(x) for x in range(len(points))], name="address"
         )
         assert_series_equal(g["address"], address)
-
