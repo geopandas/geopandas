@@ -393,6 +393,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
+        It is recommended to use :func:`geopandas.read_file` instead.
+
         Can load a ``GeoDataFrame`` from a file in any format recognized by
         `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
 
@@ -425,6 +427,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 (981219.056 188655.316, 980940....
         4         2          Bronx  464392.991824  1.186925e+09  MULTIPOLYGON ((\
 (1012821.806 229228.265, 101278...
+
+        The recommended method of reading files is :func:`geopandas.read_file`:
+
+        >>> gdf = geopandas.read_file(path)
+
+        See also
+        --------
+        read_file
 
         """
         return geopandas.io.file._read_file(filename, **kwargs)
@@ -462,11 +472,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-        >>> feature_coll = {'type': 'FeatureCollection', 'features': [{'id': '0', 'type\
-': 'Feature', 'properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinat\
-es': (1.0, 2.0)}, 'bbox': (1.0, 2.0, 1.0, 2.0)}, {'id': '1', 'type': 'Feature', 'proper\
-ties': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'bb\
-ox': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
+        >>> feature_coll = {
+        ...     "type": "FeatureCollection",
+        ...     "features": [
+        ...         {
+        ...             "id": "0",
+        ...             "type": "Feature",
+        ...             "properties": {"col1": "name1"},
+        ...             "geometry": {"type": "Point", "coordinates": (1.0, 2.0)},
+        ...             "bbox": (1.0, 2.0, 1.0, 2.0),
+        ...         },
+        ...         {
+        ...             "id": "1",
+        ...             "type": "Feature",
+        ...             "properties": {"col1": "name2"},
+        ...             "geometry": {"type": "Point", "coordinates": (2.0, 1.0)},
+        ...             "bbox": (2.0, 1.0, 2.0, 1.0),
+        ...         },
+        ...     ],
+        ...     "bbox": (1.0, 1.0, 2.0, 2.0),
+        ... }
         >>> df = geopandas.GeoDataFrame.from_features(feature_coll)
         >>> df
                         geometry   col1
@@ -1168,9 +1193,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         --------
         >>> from shapely.geometry import Point
         >>> d = {
-                "col1": ["name1", "name2", "name1"],
-                "geometry": [Point(1, 2), Point(2, 1), Point(0, 1)],
-            }
+        ...     "col1": ["name1", "name2", "name1"],
+        ...     "geometry": [Point(1, 2), Point(2, 1), Point(0, 1)],
+        ... }
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
             col1                 geometry
@@ -1236,12 +1261,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         >>> from shapely.geometry import MultiPoint
         >>> d = {
-                "col1": ["name1", "name2"],
-                "geometry": [
-                    MultiPoint([(1, 2), (3, 4)]),
-                    MultiPoint([(2, 1), (0, 0)]),
-                ],
-            }
+        ...     "col1": ["name1", "name2"],
+        ...     "geometry": [
+        ...         MultiPoint([(1, 2), (3, 4)]),
+        ...         MultiPoint([(2, 1), (0, 0)]),
+        ...     ],
+        ... }
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
             col1                                       geometry

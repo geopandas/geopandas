@@ -101,12 +101,12 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    Polygon([(10, 0), (10, 5), (0, 0)]),
-                    Polygon([(0, 0), (2, 2), (2, 0)]),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(10, 0), (10, 5), (0, 0)]),
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((10.00000 0.00000, 10.00000 5.00000, ...
@@ -190,12 +190,12 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    Polygon([(10, 0), (10, 5), (0, 0)]),
-                    Polygon([(0, 0), (2, 2), (2, 0)]),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(10, 0), (10, 5), (0, 0)]),
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((10.00000 0.00000, 10.00000 5.00000, ...
@@ -223,13 +223,13 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    Polygon([(0,0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
-                    Polygon([(0, 0), (2, 2), (2, 0)]),
-                    None
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0,0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         None
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....
@@ -289,11 +289,11 @@ class GeoPandasBase(object):
         --------
         >>> from shapely.geometry import LineString
         >>> s = geopandas.GeoSeries(
-            [
-                LineString([(0, 0), (1, 1), (1, -1), (0, 1)]),
-                LineString([(0, 0), (1, 1), (1, -1)]),
-            ]
-        )
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, -1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...     ]
+        ... )
         >>> s
         0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -315,12 +315,12 @@ class GeoPandasBase(object):
         --------
         >>> from shapely.geometry import LineString, LinearRing
         >>> s = geopandas.GeoSeries(
-                [
-                    LineString([(0, 0), (1, 1), (1, -1)]),
-                    LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
-                    LinearRing([(0, 0), (1, 1), (1, -1)]),
-                ]
-            )
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...         LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+        ...         LinearRing([(0, 0), (1, 1), (1, -1)]),
+        ...     ]
+        ... )
         >>> s
         0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -345,11 +345,11 @@ class GeoPandasBase(object):
         --------
         >>> from shapely.geometry import LineString
         >>> s = geopandas.GeoSeries(
-                [
-                    LineString([(0, 0), (1, 1), (1, -1)]),
-                    LineString([(0, 0, 0), (1, 1, 1), (1, -1, 0)]),
-                ]
-            )
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...         LineString([(0, 0, 0), (1, 1, 1), (1, -1, 0)]),
+        ...     ]
+        ... )
         >>> s
         0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
         1    LINESTRING Z (0.00000 0.00000 0.00000, 1.00000...
@@ -375,12 +375,12 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    LineString([(0, 0), (1, 1), (1, 0)]),
-                    Point(0, 0),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -406,12 +406,12 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    LineString([(0, 0), (1, 1), (1, 0)]),
-                    Point(0, 0),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -443,14 +443,14 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    LineString([(0, 0), (1, 1), (1, 0)]),
-                    MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0), (0.5, 0.5)]),
-                    MultiPoint([(0, 0), (1, 1)]),
-                    Point(0, 0),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0), (0.5, 0.5)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -483,13 +483,13 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    LineString([(0, 0), (1, 1), (1, 0)]),
-                    MultiPoint([(0, 0), (1, 1)]),
-                    Point(0, 0),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -518,11 +518,11 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    Polygon([(1, 0), (2, 1), (0, 0)]),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(1, 0), (2, 1), (0, 0)]),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((1.00000 0.00000, 2.00000 1.00000, 0....
@@ -553,14 +553,14 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon(
-                        [(0, 0), (0, 5), (5, 5), (5, 0)],
-                        [[(1, 1), (2, 1), (1, 2)], [(1, 4), (2, 4), (2, 3)]],
-                    ),
-                    Polygon([(1, 0), (2, 1), (0, 0)]),
-                ]
-            )
+        ...     [
+        ...         Polygon(
+        ...             [(0, 0), (0, 5), (5, 5), (5, 0)],
+        ...             [[(1, 1), (2, 1), (1, 2)], [(1, 4), (2, 4), (2, 3)]],
+        ...         ),
+        ...         Polygon([(1, 0), (2, 1), (0, 0)]),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 0.00000 5.00000, 5....
         1    POLYGON ((1.00000 0.00000, 2.00000 1.00000, 0....
@@ -582,12 +582,12 @@ class GeoPandasBase(object):
 
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
-                [
-                    Polygon([(0, 0), (1, 1), (0, 1)]),
-                    LineString([(0, 0), (1, 1), (1, 0)]),
-                    Point(0, 0),
-                ]
-            )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
@@ -619,7 +619,7 @@ class GeoPandasBase(object):
         Examples
         --------
 
-        >>> from shapely.geometry import Points
+        >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(i, 0).buffer(0.7) for i in range(5)])
         >>> s
         0    POLYGON ((0.70000 0.00000, 0.69663 -0.06861, 0...

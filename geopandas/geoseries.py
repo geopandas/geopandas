@@ -429,8 +429,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
-            )
+        ...     [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
@@ -488,8 +488,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-                [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
-            )
+        ...     [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
@@ -536,12 +536,12 @@ class GeoSeries(GeoPandasBase, Series):
 
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
-            [
-                Polygon([(0, 0), (1, 1), (0, 1)]),
-                None,
-                Polygon([(0, 0), (-1, 1), (0, -1)]),
-            ]
-        )
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         None,
+        ...         Polygon([(0, 0), (-1, 1), (0, -1)]),
+        ...     ]
+        ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
