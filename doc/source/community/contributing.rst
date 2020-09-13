@@ -206,7 +206,7 @@ can be done by installing ``pre-commit``::
 
    $ python -m pip install pre-commit
 
-See `<contributing_style>`
+See :ref:`Contributing Style <contributing.contributing_style>` for more information
 
 This should install all necessary dependencies.
 
@@ -294,7 +294,7 @@ submit a pull request to have them integrated into the *GeoPandas* code base.
 
 You can find a pull request (or PR) tutorial in the `GitHub's Help Docs <https://help.github.com/articles/using-pull-requests/>`_.
 
-.. _contributing_style:
+.. __contributing.contributing_style:
 
 Style Guide & Linting
 ---------------------
