@@ -37,6 +37,31 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
+try:
+    from fiona.drvsupport import extension_to_driver as _EXTENSION_TO_DRIVER
+except ImportError:
+    _EXTENSION_TO_DRIVER = {
+        "bna": "BNA",
+        "dxf": "DXF",
+        "csv": "CSV",
+        "shp": "ESRI Shapefile",
+        "dbf": "ESRI Shapefile",
+        "json": "GeoJSON",
+        "geojson": "GeoJSON",
+        "geojsonl": "GeoJSONSeq",
+        "geojsons": "GeoJSONSeq",
+        "gpkg": "GPKG",
+        "gml": "GML",
+        "xml": "GML",
+        "gpx": "GPX",
+        "gtm": "GPSTrackMaker",
+        "gtz": "GPSTrackMaker",
+        "tab": "MapInfo File",
+        "mif": "MapInfo File",
+        "mid": "MapInfo File",
+        "dgn": "DGN",
+    }
+
 
 def _check_fiona(func):
     if fiona is None:
@@ -234,15 +259,6 @@ def to_file(*args, **kwargs):
     return _to_file(*args, **kwargs)
 
 
-_DRIVER_EXTENSION_MAP = {
-    ".shp": "ESRI Shapefile",
-    "": "ESRI Shapefile",  # shapefile folder
-    ".gpkg": "GPKG",
-    ".geojson": "GeoJSON",
-    ".json": "GeoJSON",
-}
-
-
 def _detect_driver(path):
     """
     Attempt to auto-detect driver based on the extension
@@ -253,10 +269,9 @@ def _detect_driver(path):
     except AttributeError:
         pass
     try:
-        return _DRIVER_EXTENSION_MAP[Path(path).suffix.lower()]
+        return _EXTENSION_TO_DRIVER[Path(path).suffix.lower()]
     except KeyError:
-        # pass to fiona to handle the missing driver
-        return None
+        return "ESRI Shapefile"  # assume it is a shapefile folder
 
 
 def _to_file(
