@@ -8,7 +8,7 @@ import pandas as pd
 
 from shapely.geometry import Point, Polygon, LineString
 import pyproj
-from geopandas import _compat as compat
+
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
 from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
 
@@ -51,16 +51,11 @@ def test_to_crs_transform():
 
 def test_to_crs_transform__missing_data():
     # https://github.com/geopandas/geopandas/issues/1573
-    state = compat.USE_PYGEOS
-    compat.set_use_pygeos(False)
-    try:
-        df = df_epsg26918()
-        df.loc[3, "geometry"] = None
-        lonlat = df.to_crs(epsg=4326)
-        utm = lonlat.to_crs(epsg=26918)
-        assert_geodataframe_equal(df, utm, check_less_precise=True)
-    finally:
-        compat.set_use_pygeos(state)
+    df = df_epsg26918()
+    df.loc[3, "geometry"] = None
+    lonlat = df.to_crs(epsg=4326)
+    utm = lonlat.to_crs(epsg=26918)
+    assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
 def test_to_crs_inplace():
