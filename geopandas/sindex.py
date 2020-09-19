@@ -17,8 +17,7 @@ VALID_QUERY_PREDICATES = {
 
 
 def has_sindex():
-    """Dynamically checks for ability to generate spatial index.
-    """
+    """Dynamically checks for ability to generate spatial index."""
     try:
         get_sindex_class()
         return True
@@ -49,8 +48,7 @@ if compat.HAS_RTREE:
     from shapely.prepared import prep  # noqa
 
     class SpatialIndex(rtree.index.Index):
-        """Original rtree wrapper, kept for backwards compatibility.
-        """
+        """Original rtree wrapper, kept for backwards compatibility."""
 
         def __init__(self, *args):
             super().__init__(self, *args)

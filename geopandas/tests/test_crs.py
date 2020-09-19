@@ -49,6 +49,15 @@ def test_to_crs_transform():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_transform__missing_data():
+    # https://github.com/geopandas/geopandas/issues/1573
+    df = df_epsg26918()
+    df.loc[3, "geometry"] = None
+    lonlat = df.to_crs(epsg=4326)
+    utm = lonlat.to_crs(epsg=26918)
+    assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
 def test_to_crs_inplace():
     df = df_epsg26918()
     lonlat = df.to_crs(epsg=4326)

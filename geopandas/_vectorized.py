@@ -262,7 +262,7 @@ def _binary_method(op, left, right, **kwargs):
 
 def _binary_geo(op, left, right):
     # type: (str, np.array[geoms], [np.array[geoms]/BaseGeometry]) -> np.array[geoms]
-    """ Apply geometry-valued operation
+    """Apply geometry-valued operation
 
     Supports:
 
@@ -886,6 +886,9 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            result[i] = transform(func, geom)
+            if _isna(geom):
+                result[i] = geom
+            else:
+                result[i] = transform(func, geom)
 
         return result

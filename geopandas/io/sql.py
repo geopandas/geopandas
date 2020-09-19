@@ -170,7 +170,7 @@ def _get_geometry_type(gdf):
           such as GeometryCollection([Point, LineStrings])
      - if any of the geometries has Z-coordinate, all records will
        be written with 3D.
-     """
+    """
     geom_types = list(gdf.geometry.geom_type.unique())
     has_curve = False
 

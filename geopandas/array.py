@@ -742,7 +742,7 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
-        """ Fill index locations with value
+        """Fill index locations with value
 
         Value should be a BaseGeometry
         """
@@ -755,7 +755,7 @@ class GeometryArray(ExtensionArray):
         return self
 
     def fillna(self, value=None, method=None, limit=None):
-        """ Fill NA/NaN values using the specified method.
+        """Fill NA/NaN values using the specified method.
 
         Parameters
         ----------
@@ -1035,7 +1035,7 @@ class GeometryArray(ExtensionArray):
                 ovalues = [param] * len(self)
             return ovalues
 
-        if isinstance(other, (pd.Series, pd.Index)):
+        if isinstance(other, (pd.Series, pd.Index, pd.DataFrame)):
             # rely on pandas to unbox and dispatch to us
             return NotImplemented
 

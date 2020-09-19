@@ -13,6 +13,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
+  - fsspec
   # optional
   - rtree
   - matplotlib
