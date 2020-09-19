@@ -297,6 +297,31 @@ class GeometryArray(ExtensionArray):
         return self._sindex
 
     def sindex_generated(self):
+        """Retruns `True` if the spatial index (`.sindex` property)
+        has been generated and `False` otherwise.
+        Note that spatial indexes may lazily generate the index,
+        thus a `True` value does not mean that all computation
+        needed to use the index has been completed.
+
+        Examples
+        --------
+        Checking if the spatial index has been generated.
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.sindex_generated()
+        False
+        >>> gdf.sindex
+        >>> gdf.sindex_generated()
+        True
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
         return self._sindex is not None
 
     @property
