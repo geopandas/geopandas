@@ -5,26 +5,26 @@ dependencies:
   - python=3.7.3
   - cython
   # required
-  - pandas
-  - shapely
   - fiona
   - pyproj
   - geos
   # testing
   - pytest
   - pytest-cov
+  - pytest-xdist
   - fsspec
-  #- codecov
   # optional
   - rtree
-  - matplotlib
   - descartes
   #- geopy
   - SQLalchemy
   - libspatialite
   - pyarrow
   - pip:
-    - codecov
     - geopy
     - mapclassify>=2.2.0
-    - git+https://github.com/pygeos/pygeos.git
+    # dev versions of packages
+    - git+https://github.com/pydata/pandas.git@master
+    - git+https://github.com/matplotlib/matplotlib.git@master
+    - git+https://github.com/Toblerity/Shapely.git@master
+    - git+https://github.com/pygeos/pygeos.git@master
