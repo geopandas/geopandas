@@ -22,8 +22,20 @@ class TestNoSindex:
     @pytest.mark.skipif(sindex.has_sindex(), reason="Spatial index present, skipping")
     def test_no_sindex_installed(self):
         """Checks that an error is raised when no spatial index is present."""
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+        s = GeoSeries([t1, t2])
+        d = GeoDataFrame({"location": [t1, t2]}, geometry="location")
         with pytest.raises(ImportError):
             sindex.get_sindex_class()
+        assert not s.sindex_generated()
+        with pytest.raises(ImportError):
+            s.sindex
+        assert not s.sindex_generated()
+        assert not d.sindex_generated()
+        with pytest.raises(ImportError):
+            d.sindex
+        assert not d.sindex_generated()
 
     @pytest.mark.skipif(
         compat.HAS_RTREE or not compat.HAS_PYGEOS,
@@ -43,6 +55,27 @@ class TestNoSindex:
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
 class TestSeriesSindex:
+    def test_sindex_generated(self):
+        """Test the sindex_generated method."""
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+        s = GeoSeries([t1, t2])
+        d = GeoDataFrame({"location": [t1, t2]}, geometry="location")
+        assert not d.sindex_generated()
+        assert not s.sindex_generated()
+        d.sindex
+        assert d.sindex_generated()
+        s.sindex
+        assert s.sindex_generated()
+        d.geometry.values._sindex = None
+        assert not d.sindex_generated()
+        s.values._sindex = None
+        assert not s.sindex_generated()
+        d.sindex
+        assert d.sindex_generated()
+        s.sindex
+        assert s.sindex_generated()
+
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
         s = GeoSeries(dtype=object)

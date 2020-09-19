@@ -969,6 +969,9 @@ GeometryCollection
     def sindex(self):
         return self.geometry.values.sindex
 
+    def sindex_generated(self):
+        return self.geometry.values.sindex_generated()
+
     def buffer(self, distance, resolution=16, **kwargs):
         """Returns a ``GeoSeries`` of geometries representing all points within
         a given `distance` of each geometric object.
