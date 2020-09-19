@@ -98,6 +98,13 @@ class TestSpatialJoin:
         with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
             sjoin(df1, df2)
 
+    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
+    def test_deprecated_op_param(self, dfs, op):
+        index, df1, df2, expected = dfs
+        with pytest.warns(UserWarning, match="`op` parameter is is deprecated"):
+            sjoin(df1, df2, op=op)
+
     @pytest.mark.parametrize(
         "dfs",
         [
@@ -109,13 +116,13 @@ class TestSpatialJoin:
         ],
         indirect=True,
     )
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    def test_inner(self, op, dfs):
+    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
+    def test_inner(self, predicate, dfs):
         index, df1, df2, expected = dfs
 
-        res = sjoin(df1, df2, how="inner", op=op)
+        res = sjoin(df1, df2, how="inner", predicate=predicate)
 
-        exp = expected[op].dropna().copy()
+        exp = expected[predicate].dropna().copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
         exp[["df1", "df2"]] = exp[["df1", "df2"]].astype("int64")
         if index == "default-index":
@@ -152,20 +159,20 @@ class TestSpatialJoin:
         ],
         indirect=True,
     )
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    def test_left(self, op, dfs):
+    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
+    def test_left(self, predicate, dfs):
         index, df1, df2, expected = dfs
 
-        res = sjoin(df1, df2, how="left", op=op)
+        res = sjoin(df1, df2, how="left", predicate=predicate)
 
         if index in ["default-index", "string-index"]:
-            exp = expected[op].dropna(subset=["index_left"]).copy()
+            exp = expected[predicate].dropna(subset=["index_left"]).copy()
         elif index == "named-index":
-            exp = expected[op].dropna(subset=["df1_ix"]).copy()
+            exp = expected[predicate].dropna(subset=["df1_ix"]).copy()
         elif index == "multi-index":
-            exp = expected[op].dropna(subset=["level_0_x"]).copy()
+            exp = expected[predicate].dropna(subset=["level_0_x"]).copy()
         elif index == "named-multi-index":
-            exp = expected[op].dropna(subset=["df1_ix1"]).copy()
+            exp = expected[predicate].dropna(subset=["df1_ix1"]).copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
         exp["df1"] = exp["df1"].astype("int64")
         if index == "default-index":
@@ -203,14 +210,14 @@ class TestSpatialJoin:
             }
         )
         not_in = geopandas.GeoDataFrame({"col1": [1], "geometry": [Point(-0.5, 0.5)]})
-        empty = sjoin(not_in, polygons, how="left", op="intersects")
+        empty = sjoin(not_in, polygons, how="left", predicate="intersects")
         assert empty.index_right.isnull().all()
-        empty = sjoin(not_in, polygons, how="right", op="intersects")
+        empty = sjoin(not_in, polygons, how="right", predicate="intersects")
         assert empty.index_left.isnull().all()
-        empty = sjoin(not_in, polygons, how="inner", op="intersects")
+        empty = sjoin(not_in, polygons, how="inner", predicate="intersects")
         assert empty.empty
 
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
     @pytest.mark.parametrize(
         "empty",
         [
@@ -218,7 +225,7 @@ class TestSpatialJoin:
             GeoDataFrame(geometry=GeoSeries()),
         ],
     )
-    def test_join_with_empty(self, op, empty):
+    def test_join_with_empty(self, predicate, empty):
         # Check joins with empty geometry columns/dataframes.
         polygons = geopandas.GeoDataFrame(
             {
@@ -229,11 +236,11 @@ class TestSpatialJoin:
                 ],
             }
         )
-        result = sjoin(empty, polygons, how="left", op=op)
+        result = sjoin(empty, polygons, how="left", predicate=predicate)
         assert result.index_right.isnull().all()
-        result = sjoin(empty, polygons, how="right", op=op)
+        result = sjoin(empty, polygons, how="right", predicate=predicate)
         assert result.index_left.isnull().all()
-        result = sjoin(empty, polygons, how="inner", op=op)
+        result = sjoin(empty, polygons, how="inner", predicate=predicate)
         assert result.empty
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
@@ -257,20 +264,20 @@ class TestSpatialJoin:
         ],
         indirect=True,
     )
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    def test_right(self, op, dfs):
+    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
+    def test_right(self, predicate, dfs):
         index, df1, df2, expected = dfs
 
-        res = sjoin(df1, df2, how="right", op=op)
+        res = sjoin(df1, df2, how="right", predicate=predicate)
 
         if index in ["default-index", "string-index"]:
-            exp = expected[op].dropna(subset=["index_right"]).copy()
+            exp = expected[predicate].dropna(subset=["index_right"]).copy()
         elif index == "named-index":
-            exp = expected[op].dropna(subset=["df2_ix"]).copy()
+            exp = expected[predicate].dropna(subset=["df2_ix"]).copy()
         elif index == "multi-index":
-            exp = expected[op].dropna(subset=["level_0_y"]).copy()
+            exp = expected[predicate].dropna(subset=["level_0_y"]).copy()
         elif index == "named-multi-index":
-            exp = expected[op].dropna(subset=["df2_ix1"]).copy()
+            exp = expected[predicate].dropna(subset=["df2_ix1"]).copy()
         exp = exp.drop("geometry_x", axis=1).rename(columns={"geometry_y": "geometry"})
         exp["df2"] = exp["df2"].astype("int64")
         if index == "default-index":
@@ -295,7 +302,7 @@ class TestSpatialJoin:
             exp.index.names = df2.index.names
 
         # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if op == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
+        if predicate == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
@@ -352,21 +359,21 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="inner")
         assert df.shape == (11, 8)
 
-    def test_sjoin_op(self):
+    def test_sjoin_predicate(self):
         # points within polygons
-        df = sjoin(self.pointdf, self.polydf, how="left", op="within")
+        df = sjoin(self.pointdf, self.polydf, how="left", predicate="within")
         assert df.shape == (21, 8)
         assert df.loc[1]["BoroName"] == "Staten Island"
 
         # points contain polygons? never happens so we should have nulls
-        df = sjoin(self.pointdf, self.polydf, how="left", op="contains")
+        df = sjoin(self.pointdf, self.polydf, how="left", predicate="contains")
         assert df.shape == (21, 8)
         assert np.isnan(df.loc[1]["Shape_Area"])
 
-    def test_sjoin_bad_op(self):
+    def test_sjoin_bad_predicate(self):
         # AttributeError: 'Point' object has no attribute 'spandex'
         with pytest.raises(ValueError):
-            sjoin(self.pointdf, self.polydf, how="left", op="spandex")
+            sjoin(self.pointdf, self.polydf, how="left", predicate="spandex")
 
     def test_sjoin_duplicate_column_name(self):
         pointdf2 = self.pointdf.rename(columns={"pointattr1": "Shape_Area"})
@@ -465,14 +472,14 @@ class TestSpatialJoinNYBB:
         df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
         assert df2.shape == (21, 8)
 
-    @pytest.mark.parametrize("op", ["intersects", "within", "contains"])
-    def test_sjoin_no_valid_geoms(self, op):
+    @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
+    def test_sjoin_no_valid_geoms(self, predicate):
         """Tests a completely empty GeoDataFrame."""
         empty = GeoDataFrame(geometry=[], crs=self.pointdf.crs)
-        assert sjoin(self.pointdf, empty, how="inner", op=op).empty
-        assert sjoin(self.pointdf, empty, how="right", op=op).empty
-        assert sjoin(empty, self.pointdf, how="inner", op=op).empty
-        assert sjoin(empty, self.pointdf, how="left", op=op).empty
+        assert sjoin(self.pointdf, empty, how="inner", predicate=predicate).empty
+        assert sjoin(self.pointdf, empty, how="right", predicate=predicate).empty
+        assert sjoin(empty, self.pointdf, how="inner", predicate=predicate).empty
+        assert sjoin(empty, self.pointdf, how="left", predicate=predicate).empty
 
 
 class TestSpatialJoinNaturalEarth:
@@ -487,6 +494,6 @@ class TestSpatialJoinNaturalEarth:
         countries = self.world[["geometry", "name"]]
         countries = countries.rename(columns={"name": "country"})
         cities_with_country = sjoin(
-            self.cities, countries, how="inner", op="intersects"
+            self.cities, countries, how="inner", predicate="intersects"
         )
         assert cities_with_country.shape == (172, 4)
