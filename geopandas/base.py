@@ -99,24 +99,30 @@ class GeoPandasBase(object):
         Examples
         --------
 
-        >>> from shapely.geometry import Polygon
+        >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         Polygon([(0, 0), (1, 1), (0, 1)]),
         ...         Polygon([(10, 0), (10, 5), (0, 0)]),
         ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         Point(0, 1)
         ...     ]
         ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((10.00000 0.00000, 10.00000 5.00000, ...
         2    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 2....
+        3    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        4                              POINT (0.00000 1.00000)
         dtype: geometry
 
         >>> s.area
         0     0.5
         1    25.0
         2     2.0
+        3     0.0
+        4     0.0
         dtype: float64
         """
         return _delegate_property("area", self)
@@ -188,24 +194,35 @@ class GeoPandasBase(object):
         Examples
         --------
 
-        >>> from shapely.geometry import Polygon
+        >>> from shapely.geometry import Polygon, LineString, MultiLineString, Point, \
+GeometryCollection
         >>> s = geopandas.GeoSeries(
         ...     [
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(10, 0), (10, 5), (0, 0)]),
+        ...         MultiLineString([((0, 0), (1, 0)), ((-1, 0), (1, 0))]),
         ...         Polygon([(0, 0), (1, 1), (0, 1)]),
-        ...         Polygon([(10, 0), (10, 5), (0, 0)]),
-        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         Point(0, 1),
+        ...         GeometryCollection([Point(1, 0), LineString([(10, 0), (10, 5), (0,\
+ 0)])])
         ...     ]
         ... )
         >>> s
-        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
-        1    POLYGON ((10.00000 0.00000, 10.00000 5.00000, ...
-        2    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 2....
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (10.00000 0.00000, 10.00000 5.00000...
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        4                              POINT (0.00000 1.00000)
+        5    GEOMETRYCOLLECTION (POINT (1.00000 0.00000), L...
         dtype: geometry
 
         >>> s.length
-        0     3.414214
-        1    26.180340
-        2     6.828427
+        0     2.414214
+        1    16.180340
+        2     3.000000
+        3     3.414214
+        4     0.000000
+        5    16.180340
         dtype: float64
         """
         return _delegate_property("length", self)
