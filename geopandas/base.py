@@ -970,11 +970,14 @@ GeometryCollection
         return self.geometry.values.sindex
 
     def sindex_generated(self):
-        """Retruns `True` if the spatial index (`.sindex` property)
-        has been generated and `False` otherwise.
-        Note that spatial indexes may lazily generate the index,
-        thus a `True` value does not mean that all computation
-        needed to use the index has been completed.
+        """Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.  This function quickly checks
+        the existence of the index without generating the index.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
 
         Examples
         --------
