@@ -256,7 +256,7 @@ if compat.HAS_RTREE:
                 size = self._size
             else:
                 # self.leaves are lists of tuples of (int, lists...)
-                # index [0][1] always has an element
+                # index [0][1] always has an element, even for empty sindex
                 # for an empty index, it will be an empty list
                 size = len(self.leaves()[0][1])
                 self._size = size
