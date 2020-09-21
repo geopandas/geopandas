@@ -131,6 +131,9 @@ def _geom_predicate_query(left_df, right_df, predicate):
         warnings.filterwarnings(
             "ignore", "Generated spatial index is empty", FutureWarning
         )
+
+        original_predicate = predicate
+
         if predicate == "within":
             # within is implemented as the inverse of contains
             # contains is a faster predicate
@@ -141,7 +144,6 @@ def _geom_predicate_query(left_df, right_df, predicate):
         else:
             # all other predicates are symmetric
             # keep them the same
-            # predicate = predicate
             sindex = right_df.sindex
             input_geoms = left_df.geometry
 
@@ -151,7 +153,8 @@ def _geom_predicate_query(left_df, right_df, predicate):
     else:
         # when sindex is empty / has no valid geometries
         indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-    if predicate == "within":
+
+    if original_predicate == "within":
         # within is implemented as the inverse of contains
         # flip back the results
         indices = indices.rename(
