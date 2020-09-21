@@ -255,6 +255,9 @@ if compat.HAS_RTREE:
             if hasattr(self, "_size"):
                 size = self._size
             else:
+                # self.leaves are lists of tuples of (int, lists...)
+                # index [0][1] always has an element
+                # for an empty index, it will be an empty list
                 size = len(self.leaves()[0][1])
                 self._size = size
             return size
