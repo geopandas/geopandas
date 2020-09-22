@@ -344,6 +344,11 @@ GeometryCollection
         2    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
         dtype: geometry
 
+        Note: When constructing a LinearRing, the sequence of coordinates may be
+        explicitly closed by passing identical values in the first and last indices.
+        Otherwise, the sequence will be implicitly closed by copying the first tuple
+        to the last index.
+
         >>> s.is_ring
         0    False
         1    True
@@ -360,16 +365,17 @@ GeometryCollection
 
         Examples
         --------
-        >>> from shapely.geometry import LineString
+        >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         LineString([(0, 0), (1, 1), (1, -1)]),
-        ...         LineString([(0, 0, 0), (1, 1, 1), (1, -1, 0)]),
+        ...         Point(0, 1),
+        ...         Point(0, 1, 2),
         ...     ]
         ... )
         >>> s
-        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
-        1    LINESTRING Z (0.00000 0.00000 0.00000, 1.00000...
+        0              POINT (0.00000 1.00000)
+        1    POINT Z (0.00000 1.00000 2.00000)
+        dtype: geometry
 
         >>> s.has_z
         0    False
@@ -418,6 +424,8 @@ GeometryCollection
         """Returns a ``GeoSeries`` of points representing the centroid of each
         geometry.
 
+        Note that centroid does not have to be on or within original geometry.
+
         Examples
         --------
 
@@ -440,8 +448,6 @@ GeometryCollection
         1    POINT (0.70711 0.50000)
         2    POINT (0.00000 0.00000)
         dtype: geometry
-
-        Note that centroid does not have to be on or within original geometry.
         """
         return _delegate_property("centroid", self)
 
@@ -528,26 +534,30 @@ GeometryCollection
         """Returns a ``GeoSeries`` of LinearRings representing the outer
         boundary of each polygon in the GeoSeries.
 
-        Applies to GeoSeries containing only Polygons.
+        Applies to GeoSeries containing only Polygons. Returns ``None``` for
+        other geometry types.
 
         Examples
         --------
 
-        >>> from shapely.geometry import Polygon
+        >>> from shapely.geometry import Polygon, Point
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         Polygon([(0, 0), (1, 1), (0, 1)]),
         ...         Polygon([(1, 0), (2, 1), (0, 0)]),
+        ...         Point(0, 1)
         ...     ]
         ... )
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((1.00000 0.00000, 2.00000 1.00000, 0....
+        2                              POINT (0.00000 1.00000)
         dtype: geometry
 
         >>> s.exterior
         0    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
         1    LINEARRING (1.00000 0.00000, 2.00000 1.00000, ...
+        2                                                 None
         dtype: geometry
         """
         # TODO: return empty geometry for non-polygons
@@ -636,19 +646,16 @@ GeometryCollection
         Examples
         --------
 
-        >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries([Point(i, 0).buffer(0.7) for i in range(5)])
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
         >>> s
-        0    POLYGON ((0.70000 0.00000, 0.69663 -0.06861, 0...
-        1    POLYGON ((1.70000 0.00000, 1.69663 -0.06861, 1...
-        2    POLYGON ((2.70000 0.00000, 2.69663 -0.06861, 2...
-        3    POLYGON ((3.70000 0.00000, 3.69663 -0.06861, 3...
-        4    POLYGON ((4.70000 0.00000, 4.69663 -0.06861, 4...
+        0    POLYGON ((1.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((2.00000 0.00000, 2.00000 2.00000, 0....
         dtype: geometry
 
         >>> union = s.unary_union
-        >>> union
-        <shapely.geometry.polygon.Polygon object at 0x7f82b0e7a290>
+        >>> print(union)
+        POLYGON ((0 0, 0 1, 0 2, 2 2, 2 0, 1 0, 0 0))
         """
         return self.geometry.values.unary_union()
 
