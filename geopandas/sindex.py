@@ -252,11 +252,19 @@ if compat.HAS_RTREE:
 
         @property
         def size(self):
-            return len(self.leaves()[0][1])
+            if hasattr(self, "_size"):
+                size = self._size
+            else:
+                # self.leaves are lists of tuples of (int, lists...)
+                # index [0][1] always has an element, even for empty sindex
+                # for an empty index, it will be an empty list
+                size = len(self.leaves()[0][1])
+                self._size = size
+            return size
 
         @property
         def is_empty(self):
-            return self.size == 0
+            return self.geometries.size == 0 or self.size == 0
 
         def __len__(self):
             return self.size

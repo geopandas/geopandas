@@ -261,7 +261,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == (5 * 2)
     expected = pd.concat([df_nybb] * 2, ignore_index=True)
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_less_precise=True)
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
@@ -272,7 +272,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == (2 * 2)
     expected = pd.concat([df_null] * 2, ignore_index=True)
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_less_precise=True)
 
 
 # -----------------------------------------------------------------------------

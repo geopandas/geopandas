@@ -754,7 +754,7 @@ def plot_dataframe(
             **style_kwds
         )
 
-    if missing_kwds is not None:
+    if missing_kwds is not None and not expl_series[nan_idx].empty:
         if color:
             if "color" not in missing_kwds:
                 missing_kwds["color"] = color

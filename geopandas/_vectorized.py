@@ -886,6 +886,9 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            result[i] = transform(func, geom)
+            if _isna(geom):
+                result[i] = geom
+            else:
+                result[i] = transform(func, geom)
 
         return result
