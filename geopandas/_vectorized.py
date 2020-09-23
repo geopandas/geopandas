@@ -477,7 +477,7 @@ def is_ring(data):
     warnings.warn(
         "is_ring currently returns True for Polygons, which is not correct. "
         "This will be corrected to False in a future release.",
-        FutureWarning,
+        FutureWarning, stacklevel=3
     )
     if compat.USE_PYGEOS:
         return pygeos.is_ring(data) | pygeos.is_ring(pygeos.get_exterior_ring(data))
