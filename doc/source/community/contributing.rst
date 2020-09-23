@@ -21,11 +21,9 @@ In particular, when submitting a pull request:
 
 - All existing tests should pass.  Please make sure that the test
   suite passes, both locally and on
-  `Travis CI <https://travis-ci.org/geopandas/geopandas>`_.  Status on
-  Travis will be visible on a pull request.  If you want to enable
-  Travis CI on your own fork, please read the pandas guidelines link
-  above or the
-  `getting started docs <https://docs.travis-ci.com/user/tutorial/>`_.
+  `GitHub Actions <hhttps://github.com/geopandas/geopandas/actions>`_.  Status on
+  GHA will be visible on a pull request. GHA are automatically enabled
+  on your own fork as well.
 
 - New functionality should include tests.  Please write reasonable
   tests for your code and make sure that they pass on your pull request.
@@ -46,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.5+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.6+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 
@@ -109,11 +107,9 @@ want to clone your fork to your machine::
 This creates the directory `geopandas-yourname` and connects your repository to
 the upstream (main project) *GeoPandas* repository.
 
-The testing suite will run automatically on Travis-CI once your pull request is
-submitted.  However, if you wish to run the test suite on a branch prior to
-submitting the pull request, then Travis-CI needs to be hooked up to your
-GitHub repository.  Instructions for doing so are `here
-<http://about.travis-ci.org/docs/user/getting-started/>`__.
+The testing suite will run automatically on GitHub Actions once your pull request is
+submitted. The test suite will also autmatically run on your branch so you can 
+check it  prior to submitting the pull request.
 
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
@@ -292,7 +288,7 @@ and uses `Black <https://black.readthedocs.io/en/stable/>`_ and
 `Flake8 <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code
 format throughout the project.
 
-Continuous Integration (Travis CI) will run those tools and
+Continuous Integration (GitHub Actions) will run those tools and
 report any stylistic errors in your code. Therefore, it is helpful before
 submitting code to run the check yourself::
 
