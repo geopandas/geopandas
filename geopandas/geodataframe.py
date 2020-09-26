@@ -522,8 +522,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
         """
-        return json.dumps(self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id),
-                          **kwargs)
+        return json.dumps(
+            self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
+        )
 
     @property
     def __geo_interface__(self):
