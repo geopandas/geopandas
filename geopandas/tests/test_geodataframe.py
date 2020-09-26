@@ -364,6 +364,12 @@ class TestDataFrame:
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
 
+    def test_to_json_only_geom_column(self):
+        text = self.df[["geometry"]].to_json()
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
+
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
@@ -425,6 +431,13 @@ class TestDataFrame:
 
     def test_to_json_drop_id(self):
         text = self.df.to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
+
+    def test_to_json_drop_id_only_geom_column(self):
+        text = self.df[["geometry"]].to_json(drop_id=True)
         data = json.loads(text)
         assert len(data["features"]) == 5
         for f in data["features"]:
