@@ -313,8 +313,8 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @inherit_doc(pd.Series)
-    def apply(self, func, args=(), **kwargs):
-        result = super().apply(func, args=args, **kwargs)
+    def apply(self, func, convert_dtype=True, args=(), **kwargs):
+        result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
             if self.crs is not None:
                 result.set_crs(self.crs, inplace=True)
