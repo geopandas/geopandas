@@ -22,8 +22,7 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - pygeos
   - pip:
-    - geopy
-    - mapclassify
-    - pygeos
+      - geopy
+      - mapclassify
+      - pygeos
