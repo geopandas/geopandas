@@ -22,8 +22,8 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
+  - pygeos
   - pip:
       - pyproj==2.3.1
       - geopy
       - mapclassify==2.2.0
-      - git+https://github.com/pygeos/pygeos.git
