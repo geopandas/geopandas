@@ -289,10 +289,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geodataframe : GeoDataFrame
         """
         geometry_col = self.geometry.name
-        if not inplace:
-            return self.rename(columns={geometry_col: col}).set_geometry(col, inplace)
-        self.rename(columns={geometry_col: col}, inplace=inplace)
-        self.set_geometry(col, inplace=inplace)
+        if col in self.columns:
+            raise ValueError(f"Column named {col} already exists")
+        else:
+            if not inplace:
+                return self.rename(columns={geometry_col: col}).set_geometry(
+                    col, inplace
+                )
+            self.rename(columns={geometry_col: col}, inplace=inplace)
+            self.set_geometry(col, inplace=inplace)
 
     @property
     def crs(self):
