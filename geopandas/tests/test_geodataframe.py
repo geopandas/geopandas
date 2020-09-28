@@ -209,6 +209,13 @@ class TestDataFrame:
         assert df2 is None
         assert self.df.geometry.name == "new_name"
 
+        # existing column error
+        msg = "Column named Shape_Area already exists"
+        with pytest.raises(ValueError, match=msg):
+            df2 = self.df.rename_geometry("Shape_Area")
+        with pytest.raises(ValueError, match=msg):
+            self.df.rename_geometry("Shape_Area", inplace=True)
+
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
