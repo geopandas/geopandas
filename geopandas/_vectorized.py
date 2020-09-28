@@ -38,7 +38,10 @@ _names = {
 if compat.USE_PYGEOS:
     type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
     geometry_type_ids = list(type_mapping.keys())
-    geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
+    geometry_type_ids.insert(0, -1)
+    type_mapping_list = list(type_mapping.values())
+    type_mapping_list.insert(0, None)
+    geometry_type_values = np.array(type_mapping_list, dtype=object)
 else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
 
