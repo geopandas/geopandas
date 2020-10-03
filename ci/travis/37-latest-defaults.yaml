@@ -23,6 +23,6 @@ dependencies:
   - libspatialite
   - pyarrow
   - pip:
-    - geopy
-    - mapclassify
-    - git+https://github.com/pygeos/pygeos.git
+      - geopy
+      - mapclassify
+      - pygeos
