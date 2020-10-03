@@ -508,7 +508,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         show_bbox : bool, optional, default: False
             Include bbox (bounds) in the geojson
         drop_id : bool, optional
-            Whether to retain the id. Default is False, but may want True
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated GeoJSON. Default is False, but may want True
             if the index is just arbitrary row numbers.
 
         Notes
@@ -557,7 +558,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         show_bbox : bool, optional
             Include bbox (bounds) in the geojson. Default False.
         drop_id : bool, optional
-            Whether to retain the id. Default is False, but may want True
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated GeoJSON. Default is False, but may want True
             if the index is just arbitrary row numbers.
         """
         if na not in ["null", "drop", "keep"]:
