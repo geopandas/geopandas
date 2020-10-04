@@ -7,7 +7,7 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - pyproj
+  #- pyproj
   - pygeos
   # testing
   - pytest
@@ -29,3 +29,5 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
+  - pip:
+    - pyproj==3.0.dev3

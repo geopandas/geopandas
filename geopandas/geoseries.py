@@ -777,6 +777,54 @@ class GeoSeries(GeoPandasBase, Series):
             GeometryArray(new_data), crs=crs, index=self.index, name=self.name
         )
 
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.10
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+        """
+        try:
+            from pyproj.aoi import AreaOfInterest
+            from pyproj.database import query_utm_crs_info
+        except ImportError:
+            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
+
+        if not self.crs:
+            raise RuntimeError("crs must be set to estimate UTM CRS.")
+
+        # ensure using geographic coordinates
+        if not self.crs.is_geographic:
+            geoseries = self.to_crs("EPSG:4326")
+        else:
+            geoseries = self
+
+        minx, miny, maxx, maxy = geoseries.total_bounds
+        x_center = np.mean([minx, maxx])
+        y_center = np.mean([miny, maxy])
+        utm_crs_list = query_utm_crs_info(
+            datum_name=datum_name,
+            area_of_interest=AreaOfInterest(
+                west_lon_degree=x_center,
+                south_lat_degree=y_center,
+                east_lon_degree=x_center,
+                north_lat_degree=y_center,
+            ),
+        )
+        try:
+            return CRS.from_epsg(utm_crs_list[0].code)
+        except IndexError:
+            raise RuntimeError("Unable to determine UTM CRS")
+
     def to_json(self, **kwargs):
         """
         Returns a GeoJSON string representation of the GeoSeries.
