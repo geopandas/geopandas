@@ -17,6 +17,14 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
+import geopandas
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def add_geopandas(doctest_namespace):
+    doctest_namespace["geopandas"] = geopandas
+
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
@@ -337,7 +345,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Examples
         --------
 
-        >>> gdf.crs
+        >>> gdf.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
         Axis Info [ellipsoidal]:
@@ -1209,7 +1217,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         2  name1  POINT (0.00000 1.00000)
 
         >>> dissolved = gdf.dissolve('col1')
-        >>> dissolved
+        >>> dissolved  # doctest: +SKIP
                                                     geometry
         col1
         name1  MULTIPOINT (0.00000 1.00000, 1.00000 2.00000)
