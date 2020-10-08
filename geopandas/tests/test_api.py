@@ -8,10 +8,10 @@ def test_no_additional_imports():
     # test that 'import geopandas' does not import any of the optional or
     # development dependencies
     blacklist = {
-        "pytest",
-        "py",
+        # "pytest", # pytest gets imported if installed
+        # "py", # py gets imported if installed
         "ipython",
-        # 'matplotlib',  # matplotlib gets imported by pandas, see below
+        "matplotlib",  # matplotlib gets imported by pandas, see below
         "descartes",
         "mapclassify",
         # 'rtree',  # rtree actually gets imported if installed

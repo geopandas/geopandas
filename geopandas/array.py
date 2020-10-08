@@ -29,13 +29,17 @@ from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import get_sindex_class
 
-import geopandas
-import pytest
+try:
+    import pytest
+    import geopandas
+
+    @pytest.fixture(autouse=True)
+    def add_geopandas(doctest_namespace):
+        doctest_namespace["geopandas"] = geopandas
 
 
-@pytest.fixture(autouse=True)
-def add_geopandas(doctest_namespace):
-    doctest_namespace["geopandas"] = geopandas
+except ImportError:
+    pass
 
 
 class GeometryDtype(ExtensionDtype):

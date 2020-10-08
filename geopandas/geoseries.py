@@ -16,13 +16,18 @@ from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from . import _vectorized as vectorized
 
-import geopandas
-import pytest
+
+try:
+    import pytest
+    import geopandas
+
+    @pytest.fixture(autouse=True)
+    def add_geopandas(doctest_namespace):
+        doctest_namespace["geopandas"] = geopandas
 
 
-@pytest.fixture(autouse=True)
-def add_geopandas(doctest_namespace):
-    doctest_namespace["geopandas"] = geopandas
+except ImportError:
+    pass
 
 
 _SERIES_WARNING_MSG = """\

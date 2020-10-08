@@ -6,12 +6,17 @@ import pandas as pd
 from shapely.geometry import Point
 
 import geopandas
-import pytest
+
+try:
+    import pytest
+
+    @pytest.fixture(autouse=True)
+    def add_geopandas(doctest_namespace):
+        doctest_namespace["geopandas"] = geopandas
 
 
-@pytest.fixture(autouse=True)
-def add_geopandas(doctest_namespace):
-    doctest_namespace["geopandas"] = geopandas
+except ImportError:
+    pass
 
 
 def _get_throttle_time(provider):
