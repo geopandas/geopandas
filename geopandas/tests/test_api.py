@@ -11,7 +11,7 @@ def test_no_additional_imports():
         # "pytest", # pytest gets imported if installed
         # "py", # py gets imported if installed
         "ipython",
-        "matplotlib",  # matplotlib gets imported by pandas, see below
+        # "matplotlib",  # matplotlib gets imported by pandas, see below
         "descartes",
         "mapclassify",
         # 'rtree',  # rtree actually gets imported if installed
