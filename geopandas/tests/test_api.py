@@ -9,7 +9,7 @@ def test_no_additional_imports():
     # development dependencies
     blacklist = {
         # "pytest", # pytest gets imported if installed
-        # "py", # py gets imported if installed
+        # "py", # py gets imported by pytest if installed
         "ipython",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
         "descartes",
