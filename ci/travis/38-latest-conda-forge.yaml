@@ -27,4 +27,6 @@ dependencies:
   - libspatialite
   - geoalchemy2
   - pyarrow
- 
+  - pip
+  - pip:
+      - pytest-doctestplus

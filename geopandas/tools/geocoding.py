@@ -58,7 +58,7 @@ def geocode(strings, provider=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.tools.geocode(
+    >>> df = geopandas.tools.geocode(  # doctest: +SKIP
     ...         ["boston, ma", "1600 pennsylvania ave. washington, dc"]
     ...     )
     >>> df  # doctest: +SKIP
@@ -113,7 +113,7 @@ def reverse_geocode(points, provider=None, **kwargs):
     Examples
     --------
     >>> from shapely.geometry import Point
-    >>> df = geopandas.tools.reverse_geocode(
+    >>> df = geopandas.tools.reverse_geocode(  # doctest: +SKIP
     ...     [Point(-71.0594869, 42.3584697), Point(-77.0365305, 38.8977332)]
     ... )
     >>> df  # doctest: +SKIP
