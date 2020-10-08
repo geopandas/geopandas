@@ -93,7 +93,7 @@ jobs:
           USE_PYGEOS: 0
         run: |
           source activate test
-          pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r s -n auto --doctest-modules --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PyGEOS
         shell: bash
@@ -103,7 +103,7 @@ jobs:
           USE_PYGEOS: 1
         run: |
           source activate test
-          pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r s -n auto --doctest-modules --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
         shell: bash
