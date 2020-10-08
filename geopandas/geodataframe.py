@@ -430,7 +430,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         >>> path = geopandas.datasets.get_path('nybb')
         >>> gdf = geopandas.GeoDataFrame.from_file(path)
-        >>> gdf
+        >>> gdf  # doctest: +SKIP
            BoroCode       BoroName     Shape_Leng    Shape_Area                 \
                           geometry
         0         5  Staten Island  330470.010332  1.623820e+09  MULTIPOLYGON ((\
