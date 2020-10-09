@@ -8,10 +8,10 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
 
+import geopandas as gpd
+
 from .array import GeometryArray, GeometryDtype
 from .sindex import has_sindex
-
-import geopandas
 
 # for backwards compat
 # this will be static (will NOT follow USE_PYGEOS changes)
@@ -1219,7 +1219,7 @@ GeometryCollection
             index.extend(idxs)
             geometries.extend(geoms)
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-        return geopandas.GeoSeries(geometries, index=index).__finalize__(self)
+        return gpd.GeoSeries(geometries, index=index).__finalize__(self)
 
     @property
     def cx(self):
