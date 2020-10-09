@@ -11,18 +11,7 @@ from shapely.ops import cascaded_union
 from .array import GeometryArray, GeometryDtype
 from .sindex import has_sindex
 
-try:
-    import pytest
-    import geopandas
-
-    @pytest.fixture(autouse=True)
-    def add_geopandas(doctest_namespace):
-        doctest_namespace["geopandas"] = geopandas
-
-
-except ImportError:
-    pass
-
+import geopandas
 
 # for backwards compat
 # this will be static (will NOT follow USE_PYGEOS changes)

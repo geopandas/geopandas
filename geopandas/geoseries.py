@@ -17,19 +17,6 @@ from .base import is_geometry_type
 from . import _vectorized as vectorized
 
 
-try:
-    import pytest
-    import geopandas
-
-    @pytest.fixture(autouse=True)
-    def add_geopandas(doctest_namespace):
-        doctest_namespace["geopandas"] = geopandas
-
-
-except ImportError:
-    pass
-
-
 _SERIES_WARNING_MSG = """\
     You are passing non-geometry data to the GeoSeries constructor. Currently,
     it falls back to returning a pandas Series. But in the future, we will start

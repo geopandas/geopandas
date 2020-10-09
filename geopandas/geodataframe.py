@@ -17,14 +17,6 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 
-import geopandas
-import pytest
-
-
-@pytest.fixture(autouse=True)
-def add_geopandas(doctest_namespace):
-    doctest_namespace["geopandas"] = geopandas
-
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
