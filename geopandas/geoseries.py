@@ -651,7 +651,6 @@ class GeoSeries(GeoPandasBase, Series):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
 
-
         Overriding existing CRS:
 
         >>> s = s.set_crs(4326, allow_override=True)
