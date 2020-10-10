@@ -243,10 +243,17 @@ def points_from_xy(x, y, z=None, crs=None):
 
     Examples
     --------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'x': [0, 1, 2], 'y': [0, 1, 2], 'z': [0, 1, 2]})
+    >>> df
+       x  y  z
+    0  0  0  0
+    1  1  1  1
+    2  2  2  2
     >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
     >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
     >>> gdf = geopandas.GeoDataFrame(
-            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+    ...     df, geometry=geopandas.points_from_xy(df['x'], df['y']))
 
     Returns
     -------

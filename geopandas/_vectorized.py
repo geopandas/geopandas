@@ -24,6 +24,7 @@ except ImportError:
 
 
 _names = {
+    "MISSING": None,
     "NAG": None,
     "POINT": "Point",
     "LINESTRING": "LineString",
@@ -474,23 +475,28 @@ def is_simple(data):
 
 
 def is_ring(data):
-    if compat.USE_PYGEOS:
-        return pygeos.is_ring(pygeos.get_exterior_ring(data))
-    else:
-        # operates on the exterior, so can't use _unary_op()
-        # XXX needed to change this because there is now a geometry collection
-        # in the shapely ones that was something else before?
-        return np.array(
-            [
-                geom.exterior.is_ring
-                if geom is not None
-                and hasattr(geom, "exterior")
-                and geom.exterior is not None
-                else False
-                for geom in data
-            ],
-            dtype=bool,
+    if "Polygon" in geom_type(data):
+        warnings.warn(
+            "is_ring currently returns True for Polygons, which is not correct. "
+            "This will be corrected to False in a future release.",
+            FutureWarning,
+            stacklevel=3,
         )
+    if compat.USE_PYGEOS:
+        return pygeos.is_ring(data) | pygeos.is_ring(pygeos.get_exterior_ring(data))
+    else:
+        # for polygons operates on the exterior, so can't use _unary_op()
+        results = []
+        for geom in data:
+            if geom is None:
+                results.append(False)
+            elif geom.type == "Polygon":
+                results.append(geom.exterior.is_ring)
+            elif geom.type in ["LineString", "LinearRing"]:
+                results.append(geom.is_ring)
+            else:
+                results.append(False)
+        return np.array(results, dtype=bool)
 
 
 def is_closed(data):

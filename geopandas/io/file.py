@@ -77,7 +77,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.read_file("nybb.shp")
+    >>> df = geopandas.read_file("nybb.shp")  # doctest: +SKIP
 
     Returns
     -------
@@ -212,7 +212,7 @@ def _to_file(
 
     A dictionary of supported OGR providers is available via:
     >>> import fiona
-    >>> fiona.supported_drivers
+    >>> fiona.supported_drivers  # doctest: +SKIP
 
     Parameters
     ----------

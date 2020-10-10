@@ -5,6 +5,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron:  '0 0 * * *'
 
 jobs:
   Linting:
@@ -114,6 +116,15 @@ jobs:
           source activate test
           conda install postgis -c conda-forge
           source ci/envs/setup_postgres.sh
-          pytest -v -r s -color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r s --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
+      - name: Test doctsrings
+        shell: bash
+        if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        env:
+          USE_PYGEOS: 1
+        run: |
+          source activate test
+          pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
+      
       - uses: codecov/codecov-action@v1

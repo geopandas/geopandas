@@ -512,3 +512,9 @@ def test_apply_loc_len1(df):
     result = subset.apply(lambda geom: geom.is_empty)
     expected = subset.is_empty
     np.testing.assert_allclose(result, expected)
+
+
+def test_apply_convert_dtypes_keyword(s):
+    # ensure the convert_dtypes keyword is accepted
+    res = s.apply(lambda x: x, convert_dtype=True, args=())
+    assert_geoseries_equal(res, s)

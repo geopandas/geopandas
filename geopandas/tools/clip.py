@@ -107,7 +107,6 @@ def clip(gdf, mask, keep_geom_type=False):
     Clip points (global cities) with a polygon (the South American continent):
 
     >>> import geopandas
-    >>> path =
     >>> world = geopandas.read_file(
     ...     geopandas.datasets.get_path('naturalearth_lowres'))
     >>> south_america = world[world['continent'] == "South America"]
