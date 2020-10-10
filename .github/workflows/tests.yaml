@@ -118,7 +118,7 @@ jobs:
           source ci/envs/setup_postgres.sh
           pytest -v -r s --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
-      - name: Test doctsrings
+      - name: Test docstrings
         shell: bash
         if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
