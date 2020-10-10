@@ -85,9 +85,9 @@ class GeoSeries(GeoPandasBase, Series):
     >>> from shapely.geometry import Point
     >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
     >>> s
-    0    POINT (1 1)
-    1    POINT (2 2)
-    2    POINT (3 3)
+    0    POINT (1.00000 1.00000)
+    1    POINT (2.00000 2.00000)
+    2    POINT (3.00000 3.00000)
     dtype: geometry
 
     See Also
@@ -345,11 +345,11 @@ class GeoSeries(GeoPandasBase, Series):
         Examples
         --------
 
-        >>> s.to_file('series.shp')
+        >>> s.to_file('series.shp')  # doctest: +SKIP
 
-        >>> s.to_file('series.gpkg', driver='GPKG', layer='name1')
+        >>> s.to_file('series.gpkg', driver='GPKG', layer='name1')  # doctest: +SKIP
 
-        >>> s.to_file('series.geojson', driver='GeoJSON')
+        >>> s.to_file('series.geojson', driver='GeoJSON')  # doctest: +SKIP
         """
         from geopandas import GeoDataFrame
 
@@ -627,6 +627,7 @@ class GeoSeries(GeoPandasBase, Series):
         0    POINT (1.00000 1.00000)
         1    POINT (2.00000 2.00000)
         2    POINT (3.00000 3.00000)
+        dtype: geometry
 
         Setting CRS to a GeoSeries without one:
 
@@ -634,7 +635,7 @@ class GeoSeries(GeoPandasBase, Series):
         True
 
         >>> s = s.set_crs('epsg:3857')
-        >>> s.crs
+        >>> s.crs  # doctest: +SKIP
         <Projected CRS: EPSG:3857>
         Name: WGS 84 / Pseudo-Mercator
         Axis Info [cartesian]:
@@ -714,7 +715,8 @@ class GeoSeries(GeoPandasBase, Series):
         0    POINT (1.00000 1.00000)
         1    POINT (2.00000 2.00000)
         2    POINT (3.00000 3.00000)
-        >>> s.crs
+        dtype: geometry
+        >>> s.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
         Axis Info [ellipsoidal]:
@@ -732,7 +734,8 @@ class GeoSeries(GeoPandasBase, Series):
         0    POINT (111319.491 111325.143)
         1    POINT (222638.982 222684.209)
         2    POINT (333958.472 334111.171)
-        >>> s.crs
+        dtype: geometry
+        >>> s.crs  # doctest: +SKIP
         <Projected CRS: EPSG:3857>
         Name: WGS 84 / Pseudo-Mercator
         Axis Info [cartesian]:
@@ -792,6 +795,7 @@ class GeoSeries(GeoPandasBase, Series):
         0    POINT (1.00000 1.00000)
         1    POINT (2.00000 2.00000)
         2    POINT (3.00000 3.00000)
+        dtype: geometry
 
         >>> s.to_json()
         '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", "pr\

@@ -224,7 +224,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Using existing column:
 
         >>> gdf["buffered"] = gdf.buffer(2)
-        >>> df2 = df.set_geometry("buffered")
+        >>> df2 = gdf.set_geometry("buffered")
         >>> df2.geometry
         0    POLYGON ((3.00000 2.00000, 2.99037 1.80397, 2....
         1    POLYGON ((4.00000 1.00000, 3.99037 0.80397, 3....
@@ -300,6 +300,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> df = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> df1 = df.rename_geometry('geom1')
         >>> df1.geometry.name
         'geom1'
@@ -337,7 +340,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Examples
         --------
 
-        >>> gdf.crs
+        >>> gdf.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
         Axis Info [ellipsoidal]:
@@ -419,7 +422,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         >>> path = geopandas.datasets.get_path('nybb')
         >>> gdf = geopandas.GeoDataFrame.from_file(path)
-        >>> gdf
+        >>> gdf  # doctest: +SKIP
            BoroCode       BoroName     Shape_Leng    Shape_Area                 \
                           geometry
         0         5  Staten Island  330470.010332  1.623820e+09  MULTIPOLYGON ((\
@@ -499,7 +502,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ... }
         >>> df = geopandas.GeoDataFrame.from_features(feature_coll)
         >>> df
-                        geometry   col1
+                          geometry   col1
         0  POINT (1.00000 2.00000)  name1
         1  POINT (2.00000 1.00000)  name2
 
@@ -576,9 +579,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Examples
         --------
         >>> sql = "SELECT geom, highway FROM roads"
+
         SpatiaLite
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
-        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
+        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
         """
 
         df = geopandas.io.sql._read_postgis(
@@ -808,7 +812,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Examples
         --------
 
-        >>> gdf.to_parquet('data.parquet')
+        >>> gdf.to_parquet('data.parquet')  # doctest: +SKIP
         """
 
         from geopandas.io.arrow import _to_parquet
@@ -851,7 +855,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Examples
         --------
 
-        >>> gdf.to_feather('data.feather')
+        >>> gdf.to_feather('data.feather')  # doctest: +SKIP
         """
 
         from geopandas.io.arrow import _to_feather
@@ -868,7 +872,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         providers is available via:
 
         >>> import fiona
-        >>> fiona.supported_drivers
+        >>> fiona.supported_drivers  # doctest: +SKIP
 
         Parameters
         ----------
@@ -905,11 +909,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Examples
         --------
 
-        >>> gdf.to_file('dataframe.shp')
+        >>> gdf.to_file('dataframe.shp')  # doctest: +SKIP
 
-        >>> gdf.to_file('dataframe.gpkg', driver='GPKG', layer='name1')
+        >>> gdf.to_file('dataframe.gpkg', driver='GPKG', layer='name')  # doctest: +SKIP
 
-        >>> gdf.to_file('dataframe.geojson', driver='GeoJSON')
+        >>> gdf.to_file('dataframe.geojson', driver='GeoJSON')  # doctest: +SKIP
         """
         from geopandas.io.file import _to_file
 
@@ -957,7 +961,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         True
 
         >>> gdf = gdf.set_crs('epsg:3857')
-        >>> gdf.crs
+        >>> gdf.crs  # doctest: +SKIP
         <Projected CRS: EPSG:3857>
         Name: WGS 84 / Pseudo-Mercator
         Axis Info [cartesian]:
@@ -1025,9 +1029,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
             col1                 geometry
-        0  name1  POINT (1.00000 1.00000)
-        1  name2  POINT (2.00000 2.00000)
-        >>> gdf.crs
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+        >>> gdf.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
         Axis Info [ellipsoidal]:
@@ -1045,7 +1049,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             col1                       geometry
         0  name1  POINT (111319.491 222684.209)
         1  name2  POINT (222638.982 111325.143)
-        >>> gdf.crs
+        >>> gdf.crs  # doctest: +SKIP
         <Projected CRS: EPSG:3857>
         Name: WGS 84 / Pseudo-Mercator
         Axis Info [cartesian]:
@@ -1209,7 +1213,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         2  name1  POINT (0.00000 1.00000)
 
         >>> dissolved = gdf.dissolve('col1')
-        >>> dissolved
+        >>> dissolved  # doctest: +SKIP
                                                     geometry
         col1
         name1  MULTIPOINT (0.00000 1.00000, 1.00000 2.00000)
@@ -1386,8 +1390,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         >>> from sqlalchemy import create_engine
         >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
-/mydatabase";)
-        >>> gdf.to_postgis("my_table", engine)
+/mydatabase")  # doctest: +SKIP
+        >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
         """
         geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype

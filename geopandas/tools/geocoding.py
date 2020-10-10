@@ -52,14 +52,13 @@ def geocode(strings, provider=None, **kwargs):
 
     Examples
     --------
-    >>> df = geocode(['boston, ma', '1600 pennsylvania ave. washington, dc'])
-    >>> df
-                                                 address  \\
-    0                                    Boston, MA, USA
-    1  1600 Pennsylvania Avenue Northwest, President'...
-                             geometry
-    0  POINT (-71.0597732 42.3584308)
-    1  POINT (-77.0365305 38.8977332)
+    >>> df = geopandas.tools.geocode(  # doctest: +SKIP
+    ...         ["boston, ma", "1600 pennsylvania ave. washington, dc"]
+    ...     )
+    >>> df  # doctest: +SKIP
+                        geometry                                            address
+    0  POINT (-71.05863 42.35899)                          Boston, MA, United States
+    1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
 
     if provider is None:
@@ -107,15 +106,14 @@ def reverse_geocode(points, provider=None, **kwargs):
 
     Examples
     --------
-    >>> df = reverse_geocode([Point(-71.0594869, 42.3584697),
-                              Point(-77.0365305, 38.8977332)])
-    >>> df
-                                             address  \\
-    0             29 Court Square, Boston, MA 02108, USA
-    1  1600 Pennsylvania Avenue Northwest, President'...
-                             geometry
-    0  POINT (-71.0594869 42.3584697)
-    1  POINT (-77.0365305 38.8977332)
+    >>> from shapely.geometry import Point
+    >>> df = geopandas.tools.reverse_geocode(  # doctest: +SKIP
+    ...     [Point(-71.0594869, 42.3584697), Point(-77.0365305, 38.8977332)]
+    ... )
+    >>> df  # doctest: +SKIP
+                         geometry                                            address
+    0  POINT (-71.05941 42.35837)       29 Court Sq, Boston, MA 02108, United States
+    1  POINT (-77.03641 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
 
     if provider is None:

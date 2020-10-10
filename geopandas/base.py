@@ -142,7 +142,7 @@ class GeoPandasBase(object):
         Examples
         --------
 
-        >>> s.crs
+        >>> s.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
         Axis Info [ellipsoidal]:
@@ -175,9 +175,9 @@ class GeoPandasBase(object):
         ... LineString([(0, 0), (1, 1)])]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf.geom_type
-        0                 Point
-        1               Polygon
-        2            LineString
+        0         Point
+        1       Polygon
+        2    LineString
         dtype: object
         """
         return _delegate_property("geom_type", self)
@@ -210,7 +210,7 @@ GeometryCollection
         >>> s
         0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
         1    LINESTRING (10.00000 0.00000, 10.00000 5.00000...
-        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 0.0...
         3    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         4                              POINT (0.00000 1.00000)
         5    GEOMETRYCOLLECTION (POINT (1.00000 0.00000), L...
@@ -351,8 +351,8 @@ GeometryCollection
 
         >>> s.is_ring
         0    False
-        1    True
-        2    True
+        1     True
+        2     True
         dtype: bool
 
         """
@@ -480,6 +480,7 @@ GeometryCollection
         2    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000, ...
         3        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
         4                              POINT (0.00000 0.00000)
+        dtype: geometry
 
         >>> s.convex_hull
         0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
@@ -1188,17 +1189,21 @@ GeometryCollection
 
         Examples
         --------
-        >>> gdf  # gdf is GeoSeries of MultiPoints
-        0         MULTIPOINT (0 0, 1 1)
-        1    MULTIPOINT (2 2, 3 3, 4 4)
+        >>> from shapely.geometry import MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        ... )
+        >>> s
+        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
         dtype: geometry
 
-        >>> gdf.explode()
-        0  0    POINT (0 0)
-           1    POINT (1 1)
-        1  0    POINT (2 2)
-           1    POINT (3 3)
-           2    POINT (4 4)
+        >>> s.explode()
+        0  0    POINT (0.00000 0.00000)
+           1    POINT (1.00000 1.00000)
+        1  0    POINT (2.00000 2.00000)
+           1    POINT (3.00000 3.00000)
+           2    POINT (4.00000 4.00000)
         dtype: geometry
 
         """
