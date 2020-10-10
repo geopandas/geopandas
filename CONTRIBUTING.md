@@ -24,7 +24,7 @@ In particular, when submitting a pull request:
   suite passes, both locally and on
   [GitHub Actions](https://github.com/geopandas/geopandas/actions). Status on
   GHA will be visible on a pull request. GHA are automatically enabled
-  on your own fork as well.
+  on your own fork as well. To trigger a check, make a PR to your own fork.
 
 - New functionality should include tests. Please write reasonable
   tests for your code and make sure that they pass on your pull request.
