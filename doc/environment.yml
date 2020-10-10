@@ -33,3 +33,4 @@ dependencies:
 - geos=3.8.0
 - pip:
   - myst-nb
+  - sphinx-toggleprompt

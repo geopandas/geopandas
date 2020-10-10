@@ -80,6 +80,7 @@ Interface
    :toctree: api/
 
    GeoDataFrame.__geo_interface__
+   GeoDataFrame.iterfeatures
 
 All pandas ``DataFrame`` methods are also available, although they may
 not operate in a meaningful way on the ``geometry`` column. All methods
