@@ -981,8 +981,10 @@ GeometryCollection
 
         Examples
         --------
-        Given a GeoDataFrame 'gdf':
 
+        >>> from shapely.geometry import Point
+        >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
         >>> gdf.sindex_generated()
         False
         >>> gdf.sindex
