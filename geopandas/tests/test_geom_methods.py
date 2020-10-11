@@ -74,6 +74,7 @@ class TestGeomMethods:
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
         self.empty_poly = Polygon()
+        self.g9 = GeoSeries(self.g0, index=range(1, 8))
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -234,14 +235,23 @@ class TestGeomMethods:
                 "intersection", self.all_none, self.g1, self.empty
             )
 
+        assert len(self.g0.intersection(self.g9, align=True) == 8)
+        assert len(self.g0.intersection(self.g9, align=False) == 7)
+
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
+
+        assert len(self.g0.union(self.g9, align=True) == 8)
+        assert len(self.g0.union(self.g9, align=False) == 7)
 
     def test_union_polygon(self):
         self._test_binary_topological("union", self.sq, self.g1, self.t2)
 
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
+
+        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
+        assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
 
     def test_symmetric_difference_poly(self):
         expected = GeoSeries([GeometryCollection(), self.sq], crs=self.g3.crs)
@@ -252,6 +262,9 @@ class TestGeomMethods:
     def test_difference_series(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
+
+        assert len(self.g0.difference(self.g9, align=True) == 8)
+        assert len(self.g0.difference(self.g9, align=False) == 7)
 
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])
@@ -331,6 +344,12 @@ class TestGeomMethods:
         expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
+        expected = [False, True, True, True, True, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
+
+        expected = [False, False, True, False, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
+
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real("length", expected, self.g1)
@@ -349,9 +368,21 @@ class TestGeomMethods:
         expected = [False, True]
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
+        expected = [False] * 8
+        assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
+
+        expected = [False] * 7
+        assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=False))
+
     def test_disjoint(self):
         expected = [False, False, False, False, False, True, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
+
+        expected = [False] * 8
+        assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
+
+        expected = [False, False, False, False, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=False))
 
     def test_relate(self):
         expected = Series(
@@ -371,6 +402,36 @@ class TestGeomMethods:
         expected = Series(["FF0FFF212", None], index=self.g6.index)
         assert_array_dtype_equal(expected, self.g6.relate(self.na_none))
 
+        expected = Series(
+            [
+                None,
+                "2FFF1FFF2",
+                "2FFF1FFF2",
+                "2FFF1FFF2",
+                "2FFF1FFF2",
+                "0FFFFFFF2",
+                None,
+                None,
+            ],
+            index=range(8),
+        )
+
+        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+
+        expected = Series(
+            [
+                "FF2F11212",
+                "2FF11F212",
+                "212FF1FF2",
+                "FF2F1F212",
+                "FF2FF10F2",
+                None,
+                None,
+            ],
+            index=self.g0.index,
+        )
+        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=False))
+
     def test_distance(self):
         expected = Series(
             np.array([np.sqrt((5 - 1) ** 2 + (5 - 1) ** 2), np.nan]), self.na_none.index
@@ -379,6 +440,13 @@ class TestGeomMethods:
 
         expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
+
+        val = self.g0.iloc[4].distance(self.g9.iloc[4])
+        expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
+        assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=False))
 
     def test_distance_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
@@ -400,6 +468,12 @@ class TestGeomMethods:
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
+        expected = [False, True, True, True, True, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
+
+        expected = [True, True, True, True, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=False))
+
     def test_overlaps(self):
         expected = [True, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.overlaps(self.inner_sq))
@@ -407,9 +481,21 @@ class TestGeomMethods:
         expected = [False, False]
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
+        expected = [False] * 8
+        assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
+
+        expected = [False] * 7
+        assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=False))
+
     def test_touches(self):
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
+
+        expected = [False] * 8
+        assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
+
+        expected = [True, False, False, True, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=False))
 
     def test_within(self):
         expected = [True, False, False, False, False, False, False]
@@ -417,6 +503,12 @@ class TestGeomMethods:
 
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
+
+        expected = [False, True, True, True, True, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
+
+        expected = [False, True, False, False, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.within(self.g9, align=False))
 
     def test_covers_itself(self):
         # Each polygon in a Series covers itself
@@ -428,6 +520,12 @@ class TestGeomMethods:
         res = self.g7.covers(self.g8)
         exp = Series([True, False])
         assert_series_equal(res, exp)
+
+        expected = [False, True, True, True, True, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
+
+        expected = [False, False, True, False, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=False))
 
     def test_covers_inverse(self):
         res = self.g8.covers(self.g7)
@@ -442,6 +540,12 @@ class TestGeomMethods:
         res = self.g1.covered_by(self.g1)
         exp = Series([True, True])
         assert_series_equal(res, exp)
+
+        expected = [False, True, True, True, True, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
+
+        expected = [False, True, False, False, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=False))
 
     def test_is_valid(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
@@ -552,6 +656,9 @@ class TestGeomMethods:
 
         expected = Series([1.0, 0.5], index=self.g5.index)
         self._test_binary_real("project", expected, self.g5, p, normalized=True)
+
+        assert len(self.g0.project(self.g9, align=True) == 8)
+        assert len(self.g0.project(self.g9, align=False) == 7)
 
     def test_affine_transform(self):
         # 45 degree reflection matrix

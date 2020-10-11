@@ -130,8 +130,12 @@ class TestSeries:
 
     def test_geom_equals_align(self):
         with pytest.warns(UserWarning, match="The indices .+ different"):
-            a = self.a1.geom_equals(self.a2)
+            a = self.a1.geom_equals(self.a2, align=True)
         exp = pd.Series([False, True, False], index=["A", "B", "C"])
+        assert_series_equal(a, exp)
+
+        a = self.a1.geom_equals(self.a2, align=False)
+        exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
     def test_geom_almost_equals(self):
@@ -139,10 +143,24 @@ class TestSeries:
         assert np.all(self.g1.geom_almost_equals(self.g1))
         assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
 
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+        )
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+        )
+
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
+
+        assert_array_equal(
+            self.a1.geom_equals_exact(self.a2, 0.001, align=True), [False, True, False]
+        )
+        assert_array_equal(
+            self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
+        )
 
     def test_equal_comp_op(self):
         s = GeoSeries([Point(x, x) for x in range(3)])
