@@ -31,11 +31,11 @@ def is_geometry_type(data):
         return False
 
 
-def _delegate_binary_method(op, this, other, *args, **kwargs):
+def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
     this = this.geometry
     if isinstance(other, GeoPandasBase):
-        if not this.index.equals(other.index):
+        if align and not this.index.equals(other.index):
             warn("The indices of the two GeoSeries are different.")
             this, other = this.align(other.geometry)
         else:
@@ -52,19 +52,19 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     return data, this.index
 
 
-def _binary_geo(op, this, other):
+def _binary_geo(op, this, other, align):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
-    geoms, index = _delegate_binary_method(op, this, other)
+    geoms, index = _delegate_binary_method(op, this, other, align)
     return GeoSeries(geoms.data, index=index, crs=this.crs)
 
 
-def _binary_op(op, this, other, *args, **kwargs):
+def _binary_op(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
-    data, index = _delegate_binary_method(op, this, other, *args, **kwargs)
+    data, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return Series(data, index=index)
 
 
@@ -664,7 +664,7 @@ GeometryCollection
     # Binary operations that return a pandas Series
     #
 
-    def contains(self, other):
+    def contains(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that contains `other`.
 
@@ -680,10 +680,13 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             contained.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
         """
-        return _binary_op("contains", self, other)
+        return _binary_op("contains", self, other, align)
 
-    def geom_equals(self, other):
+    def geom_equals(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry equal to `other`.
 
@@ -697,9 +700,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to test for
             equality.
         """
-        return _binary_op("geom_equals", self, other)
+        return _binary_op("geom_equals", self, other, align)
 
-    def geom_almost_equals(self, other, decimal=6):
+    def geom_almost_equals(self, other, decimal=6, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each geometry is approximately equal to `other`.
 
@@ -713,14 +716,18 @@ GeometryCollection
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        return _binary_op("geom_almost_equals", self, other, decimal=decimal)
+        return _binary_op(
+            "geom_almost_equals", self, other, decimal=decimal, align=align
+        )
 
-    def geom_equals_exact(self, other, tolerance):
+    def geom_equals_exact(self, other, tolerance, align=True):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        return _binary_op("geom_equals_exact", self, other, tolerance=tolerance)
+        return _binary_op(
+            "geom_equals_exact", self, other, tolerance=tolerance, align=align
+        )
 
-    def crosses(self, other):
+    def crosses(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that cross `other`.
 
@@ -734,9 +741,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to test if is
             crossed.
         """
-        return _binary_op("crosses", self, other)
+        return _binary_op("crosses", self, other, align)
 
-    def disjoint(self, other):
+    def disjoint(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry disjoint to `other`.
 
@@ -749,9 +756,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to test if is
             disjoint.
         """
-        return _binary_op("disjoint", self, other)
+        return _binary_op("disjoint", self, other, align)
 
-    def intersects(self, other):
+    def intersects(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that intersects `other`.
 
@@ -764,9 +771,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to test if is
             intersected.
         """
-        return _binary_op("intersects", self, other)
+        return _binary_op("intersects", self, other, align)
 
-    def overlaps(self, other):
+    def overlaps(self, other, align=True):
         """Returns True for all geometries that overlap *other*, else False.
 
         Parameters
@@ -775,9 +782,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to test if
             overlaps.
         """
-        return _binary_op("overlaps", self, other)
+        return _binary_op("overlaps", self, other, align)
 
-    def touches(self, other):
+    def touches(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that touches `other`.
 
@@ -791,9 +798,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to test if is
             touched.
         """
-        return _binary_op("touches", self, other)
+        return _binary_op("touches", self, other, align)
 
-    def within(self, other):
+    def within(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that is within `other`.
 
@@ -812,9 +819,9 @@ GeometryCollection
             geometry is within.
 
         """
-        return _binary_op("within", self, other)
+        return _binary_op("within", self, other, align)
 
-    def covers(self, other):
+    def covers(self, other, align=True):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that is entirely covering `other`.
@@ -831,9 +838,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
         """
-        return _binary_geo("covers", self, other)
+        return _binary_geo("covers", self, other, align)
 
-    def covered_by(self, other):
+    def covered_by(self, other, align=True):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each geometry that is entirely covered by `other`.
@@ -850,9 +857,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
         """
-        return _binary_geo("covered_by", self, other)
+        return _binary_geo("covered_by", self, other, align)
 
-    def distance(self, other):
+    def distance(self, other, align=True):
         """Returns a ``Series`` containing the distance to `other`.
 
         Parameters
@@ -861,13 +868,13 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to find the
             distance to.
         """
-        return _binary_op("distance", self, other)
+        return _binary_op("distance", self, other, align)
 
     #
     # Binary operations that return a GeoSeries
     #
 
-    def difference(self, other):
+    def difference(self, other, align=True):
         """Returns a ``GeoSeries`` of the points in each geometry that
         are not in `other`.
 
@@ -877,9 +884,9 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to find the
             difference to.
         """
-        return _binary_geo("difference", self, other)
+        return _binary_geo("difference", self, other, align)
 
-    def symmetric_difference(self, other):
+    def symmetric_difference(self, other, align=True):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
         each geometry with `other`.
 
@@ -892,9 +899,9 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to find the
             symmetric difference to.
         """
-        return _binary_geo("symmetric_difference", self, other)
+        return _binary_geo("symmetric_difference", self, other, align)
 
-    def union(self, other):
+    def union(self, other, align=True):
         """Returns a ``GeoSeries`` of the union of points in each geometry with
         `other`.
 
@@ -904,9 +911,9 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to find the union
             with.
         """
-        return _binary_geo("union", self, other)
+        return _binary_geo("union", self, other, align)
 
-    def intersection(self, other):
+    def intersection(self, other, align=True):
         """Returns a ``GeoSeries`` of the intersection of points in each
         geometry with `other`.
 
@@ -916,7 +923,7 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to find the
             intersection with.
         """
-        return _binary_geo("intersection", self, other)
+        return _binary_geo("intersection", self, other, align)
 
     #
     # Other operations
@@ -1014,7 +1021,7 @@ GeometryCollection
         """
         return _delegate_geo_method("simplify", self, *args, **kwargs)
 
-    def relate(self, other):
+    def relate(self, other, align=True):
         """
         Returns the DE-9IM intersection matrices for the geometries
 
@@ -1030,9 +1037,9 @@ GeometryCollection
             The DE-9IM intersection matrices which describe
             the spatial relations of the other geometry.
         """
-        return _binary_op("relate", self, other)
+        return _binary_op("relate", self, other, align)
 
-    def project(self, other, normalized=False):
+    def project(self, other, normalized=False, align=True):
         """
         Return the distance along each geometry nearest to *other*
 
@@ -1046,7 +1053,7 @@ GeometryCollection
 
         The project method is the inverse of interpolate.
         """
-        return _binary_op("project", self, other, normalized=normalized)
+        return _binary_op("project", self, other, normalized=normalized, align=align)
 
     def interpolate(self, distance, normalized=False):
         """
