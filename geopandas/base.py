@@ -666,7 +666,7 @@ GeometryCollection
 
     def contains(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that contains `other`.
+        each aligned geometry that contains `other`.
 
         An object is said to contain `other` if its `interior` contains the
         `boundary` and `interior` of the other object and their boundaries do
@@ -683,12 +683,112 @@ GeometryCollection
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(0, 4),
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (1, 2), (0, 2)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
+        2        LINESTRING (0.00000 0.00000, 0.00000 1.00000)
+        3                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2    POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....
+        3        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s2.contains(s, align=True)
+        0    False
+        1    False
+        2    False
+        3     True
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s2.contains(s, align=False)
+        1     True
+        2    False
+        3     True
+        4     True
+        dtype: bool
+
+        The difference is that in the first case, ``align`` is used before the
+        operation and ``contains`` then uses the following aligned GeoSeries:
+
+        >>> aligned_s2, aligned_s = s2.align(s)
+        >>> geopandas.GeoDataFrame({"s2": aligned_s2, "s": aligned_s})
+                                                          s2                           \
+                       s
+        0                                               None  POLYGON ((0.00000 0.00000\
+, 1.00000 1.00000, 0....
+        1  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....      LINESTRING (0.00000 0\
+.00000, 0.00000 2.00000)
+        2  POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....      LINESTRING (0.00000 0\
+.00000, 0.00000 1.00000)
+        3      LINESTRING (0.00000 0.00000, 0.00000 2.00000)                           \
+ POINT (0.00000 1.00000)
+        4                            POINT (0.00000 1.00000)                           \
+                    None
+
+
+        We can also check if each geometry of GeoSeries contains a single
+        geometry:
+
+        >>> point = Point(0, 1)
+        >>> s.contains(point)
+        0    False
+        1     True
+        2    False
+        3     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries ``contains`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.within
         """
         return _binary_op("contains", self, other, align)
 
     def geom_equals(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry equal to `other`.
+        each aligned geometry equal to `other`.
 
         An object is said to be equal to `other` if its set-theoretic
         `boundary`, `interior`, and `exterior` coincides with those of the
@@ -699,15 +799,117 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test for
             equality.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (1, 2), (0, 2)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (1, 2), (0, 2)]),
+        ...         Point(0, 1),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
+        3                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2    POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....
+        3                              POINT (0.00000 1.00000)
+        4        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.geom_equals(s2)
+        0    False
+        1    False
+        2    False
+        3     True
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.geom_equals(s2, align=False)
+        0     True
+        1     True
+        2    False
+        3    False
+        dtype: bool
+
+        The difference is that in the first case, ``align`` is used before the
+        operation and ``geom_equals`` then uses the following aligned GeoSeries:
+
+        >>> aligned_s, aligned_s2 = s.align(s2)
+        >>> geopandas.GeoDataFrame({"s2": aligned_s2, "s": aligned_s})
+                                                        s2                             \
+                     s
+        0                                               None  POLYGON ((0.00000 0.00000\
+, 2.00000 2.00000, 0....
+        1  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....  POLYGON ((0.00000 0.00000\
+, 1.00000 2.00000, 0....
+        2  POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....      LINESTRING (0.00000 0\
+.00000, 0.00000 2.00000)
+        3                            POINT (0.00000 1.00000)                           \
+ POINT (0.00000 1.00000)
+        4      LINESTRING (0.00000 0.00000, 0.00000 2.00000)                           \
+                    None
+
+        We can also check if each geometry of GeoSeries contains a single
+        geometry:
+
+        >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
+        >>> s.geom_equals(polygon)
+        0     True
+        1    False
+        2    False
+        3    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries is equal to `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.geom_almost_equals
+        GeoSeries.geom_equals_exact
+
         """
         return _binary_op("geom_equals", self, other, align)
 
     def geom_almost_equals(self, other, decimal=6, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
-        each geometry is approximately equal to `other`.
+        each aligned geometry is approximately equal to `other`.
 
         Approximate equality is tested at all points to the specified `decimal`
-        place precision.  See also :meth:`geom_equals`.
+        place precision.
 
         Parameters
         ----------
@@ -715,14 +917,117 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to compare to.
         decimal : int
             Decimal place presion used when testing for approximate equality.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1.1),
+        ...         Point(0, 1.01),
+        ...         Point(0, 1.001),
+        ...     ],
+        ... )
+
+        >>> s
+        0    POINT (0.00000 1.10000)
+        1    POINT (0.00000 1.01000)
+        2    POINT (0.00000 1.00100)
+        dtype: geometry
+
+
+        >>> s.geom_almost_equals(Point(0, 1), decimal=2)
+        0    False
+        1    False
+        2     True
+        dtype: bool
+
+        >>> s.geom_almost_equals(Point(0, 1), decimal=1)
+        0    False
+        1     True
+        2     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries is equal to `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.geom_equals
+        GeoSeries.geom_equals_exact
+
         """
         return _binary_op(
             "geom_almost_equals", self, other, decimal=decimal, align=align
         )
 
     def geom_equals_exact(self, other, tolerance, align=True):
-        """Return True for all geometries that equal *other* to a given
-        tolerance, else False"""
+        """Return True for all geometries that equal aligned *other* to a given
+        tolerance, else False.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to compare to.
+        tolerance : float
+            Decimal place presion used when testing for approximate equality.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1.1),
+        ...         Point(0, 1.0),
+        ...         Point(0, 1.2),
+        ...     ]
+        ... )
+
+        >>> s
+        0    POINT (0.00000 1.10000)
+        1    POINT (0.00000 1.00000)
+        2    POINT (0.00000 1.20000)
+        dtype: geometry
+
+
+        >>> s.geom_equals_exact(Point(0, 1), tolerance=0.1)
+        0    False
+        1     True
+        2    False
+        dtype: bool
+
+        >>> s.geom_equals_exact(Point(0, 1), tolerance=0.15)
+        0     True
+        1     True
+        2    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries is equal to `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.geom_equals
+        GeoSeries.geom_almost_equals
+        """
         return _binary_op(
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
@@ -802,7 +1107,7 @@ GeometryCollection
 
     def within(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that is within `other`.
+        each aligned geometry that is within `other`.
 
         An object is said to be within `other` if its `boundary` and `interior`
         intersects only with the `interior` of the other (not its `boundary` or
@@ -817,7 +1122,107 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if each
             geometry is within.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
 
+        Returns
+        -------
+        GeoSeries (bool)
+
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (1, 2), (0, 2)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
+        3                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
+        3        LINESTRING (0.00000 0.00000, 0.00000 1.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s2.within(s)
+        0    False
+        1    False
+        2     True
+        3    False
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s2.within(s, align=False)
+        1     True
+        2    False
+        3     True
+        4     True
+        dtype: bool
+
+        The difference is that in the first case, ``align`` is used before the
+        operation and ``within`` then uses the following aligned GeoSeries:
+
+        >>> aligned_s2, aligned_s = s2.align(s)
+        >>> geopandas.GeoDataFrame({"s2": aligned_s2, "s": aligned_s})
+                                                          s2                           \
+                       s
+        0                                               None  POLYGON ((0.00000 0.00000\
+, 2.00000 2.00000, 0....
+        1  POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....  POLYGON ((0.00000 0.00000\
+, 1.00000 2.00000, 0....
+        2      LINESTRING (0.00000 0.00000, 0.00000 2.00000)      LINESTRING (0.00000 0\
+.00000, 0.00000 2.00000)
+        3      LINESTRING (0.00000 0.00000, 0.00000 1.00000)                           \
+ POINT (0.00000 1.00000)
+        4                            POINT (0.00000 1.00000)                           \
+                    None
+
+        We can also check if each geometry of GeoSeries is within a single
+        geometry:
+
+        >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
+        >>> s.within(polygon)
+        0     True
+        1     True
+        2    False
+        3    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries is ``within`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.contains
         """
         return _binary_op("within", self, other, align)
 

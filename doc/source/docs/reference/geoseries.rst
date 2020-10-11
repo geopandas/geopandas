@@ -47,11 +47,12 @@ Binary Predicates
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.geom_almost_equals
    GeoSeries.contains
    GeoSeries.crosses
    GeoSeries.disjoint
    GeoSeries.geom_equals
+   GeoSeries.geom_almost_equals
+   GeoSeries.geom_equals_exact
    GeoSeries.intersects
    GeoSeries.overlaps
    GeoSeries.touches
