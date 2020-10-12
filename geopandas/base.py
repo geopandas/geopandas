@@ -686,7 +686,7 @@ GeometryCollection
 
         Returns
         -------
-        GeoSeries (bool)
+        Series (bool)
 
         Examples
         --------
@@ -805,7 +805,7 @@ GeometryCollection
 
         Returns
         -------
-        GeoSeries (bool)
+        Series (bool)
 
         Examples
         --------
@@ -923,7 +923,7 @@ GeometryCollection
 
         Returns
         -------
-        GeoSeries (bool)
+        Series (bool)
 
         Examples
         --------
@@ -986,7 +986,7 @@ GeometryCollection
 
         Returns
         -------
-        GeoSeries (bool)
+        Series (bool)
 
         Examples
         --------
@@ -1034,7 +1034,7 @@ GeometryCollection
 
     def crosses(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that cross `other`.
+        each aligned geometry that cross `other`.
 
         An object is said to cross `other` if its `interior` intersects the
         `interior` of the other but does not contain it, and the dimension of
@@ -1045,12 +1045,117 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             crossed.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        2        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        3                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        2    LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        3                          POINT (1.00000 1.00000)
+        4                          POINT (0.00000 1.00000)
+        dtype: geometry
+
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.crosses(s2, align=True)
+        0    False
+        1     True
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.crosses(s2, align=False)
+        0     True
+        1     True
+        2    False
+        3    False
+        dtype: bool
+
+        Notice that a line does not cross a point that it contains.
+
+        The difference is that in the first case, ``align`` is used before the
+        operation and ``crosses`` then uses the following aligned GeoSeries:
+
+        >>> aligned_s, aligned_s2 = s.align(s2)
+        >>> geopandas.GeoDataFrame({"s": aligned_s, "s2": aligned_s2})
+                                                           s                           \
+                  s2
+        0  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....                           \
+                None
+        1      LINESTRING (0.00000 0.00000, 2.00000 2.00000)  LINESTRING (1.00000 0.000\
+00, 1.00000 3.00000)
+        2      LINESTRING (2.00000 0.00000, 0.00000 2.00000)  LINESTRING (2.00000 0.000\
+00, 0.00000 2.00000)
+        3                            POINT (0.00000 1.00000)                        POI\
+NT (1.00000 1.00000)
+        4                                               None                        POI\
+NT (0.00000 1.00000)
+
+        We can also check if each geometry of GeoSeries crosses a single
+        geometry:
+
+        >>> line = LineString([(-1, 1), (3, 1)])
+        >>> s.crosses(line)
+        0     True
+        1     True
+        2     True
+        3    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries ``crosses`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.disjoint
+        GeoSeries.intersects
+
         """
         return _binary_op("crosses", self, other, align)
 
     def disjoint(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry disjoint to `other`.
+        each aligned geometry disjoint to `other`.
 
         An object is said to be disjoint to `other` if its `boundary` and
         `interior` does not intersect at all with those of the other.
@@ -1060,12 +1165,82 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             disjoint.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(-1, 0), (-1, 2), (0, -2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(1, 1),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        2        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        3                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        0    POLYGON ((-1.00000 0.00000, -1.00000 2.00000, ...
+        1        LINESTRING (0.00000 0.00000, 0.00000 1.00000)
+        2                              POINT (1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.disjoint(s2)
+        0     True
+        1    False
+        2    False
+        3     True
+        dtype: bool
+
+        We can also check each geometry of GeoSeries to a single
+        geometry:
+
+        >>> line = LineString([(0, 0), (2, 0)])
+        >>> s.disjoint(line)
+        0    False
+        1    False
+        2    False
+        3     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries is equal to `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.intersects
+        GeoSeries.touches
+
         """
         return _binary_op("disjoint", self, other, align)
 
     def intersects(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that intersects `other`.
+        each aligned geometry that intersects `other`.
 
         An object is said to intersect `other` if its `boundary` and `interior`
         intersects in any way with those of the other.
@@ -1075,33 +1250,310 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             intersected.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        2        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        3                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        2    LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        3                          POINT (1.00000 1.00000)
+        4                          POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.intersects(s2, align=True)
+        0    False
+        1     True
+        2     True
+        3    False
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.intersects(s2, align=False)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        The difference is that in the first case, ``align`` is used before the
+        operation and ``intersects`` then uses the following aligned GeoSeries:
+
+        >>> aligned_s, aligned_s2 = s.align(s2)
+        >>> geopandas.GeoDataFrame({"s": aligned_s, "s2": aligned_s2})
+                                                           s                           \
+                  s2
+        0  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....                           \
+                None
+        1      LINESTRING (0.00000 0.00000, 2.00000 2.00000)  LINESTRING (1.00000 0.000\
+00, 1.00000 3.00000)
+        2      LINESTRING (2.00000 0.00000, 0.00000 2.00000)  LINESTRING (2.00000 0.000\
+00, 0.00000 2.00000)
+        3                            POINT (0.00000 1.00000)                        POI\
+NT (1.00000 1.00000)
+        4                                               None                        POI\
+NT (0.00000 1.00000)
+
+        We can also check if each geometry of GeoSeries crosses a single
+        geometry:
+
+        >>> line = LineString([(-1, 1), (3, 1)])
+        >>> s.intersects(line)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries ``crosses`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.disjoint
+        GeoSeries.crosses
+        GeoSeries.touches
+        GeoSeries.intersection
         """
         return _binary_op("intersects", self, other, align)
 
     def overlaps(self, other, align=True):
-        """Returns True for all geometries that overlap *other*, else False.
+        """Returns True for all aligned geometries that overlap *other*, else False.
+
+        Geometries overlaps if they have more than one but not all
+        points in common, have the same dimension, and the intersection of the
+        interiors of the geometries has the same dimension as the geometries
+        themselves.
 
         Parameters
         ----------
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if
             overlaps.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, MultiPoint, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         MultiPoint([(0, 0), (0, 1)]),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 0), (0, 2)]),
+        ...         LineString([(0, 1), (1, 1)]),
+        ...         LineString([(1, 1), (3, 3)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        MULTIPOINT (0.00000 0.00000, 0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 2.00000 0.00000, 0....
+        2        LINESTRING (0.00000 1.00000, 1.00000 1.00000)
+        3        LINESTRING (1.00000 1.00000, 3.00000 3.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.overlaps(s2)
+        0    False
+        1     True
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.overlaps(s2, align=False)
+        0     True
+        1    False
+        2     True
+        3    False
+        dtype: bool
+
+        We can also check if each geometry of GeoSeries overlaps a single
+        geometry:
+
+        >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        >>> s.overlaps(polygon)
+        0     True
+        1     True
+        2    False
+        3    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries ``overlaps`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.crosses
+        GeoSeries.intersects
+
         """
         return _binary_op("overlaps", self, other, align)
 
     def touches(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that touches `other`.
+        each aligned geometry that touches `other`.
 
         An object is said to touch `other` if it has at least one point in
         common with `other` and its interior does not intersect with any part
-        of the other.
+        of the other. Overlapping features therefore do not touch.
 
         Parameters
         ----------
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             touched.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, MultiPoint, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         MultiPoint([(0, 0), (0, 1)]),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (-2, 0), (0, -2)]),
+        ...         LineString([(0, 1), (1, 1)]),
+        ...         LineString([(1, 1), (3, 0)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        MULTIPOINT (0.00000 0.00000, 0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, -2.00000 0.00000, 0...
+        2        LINESTRING (0.00000 1.00000, 1.00000 1.00000)
+        3        LINESTRING (1.00000 1.00000, 3.00000 0.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.touches(s2, align=True)
+        0    False
+        1     True
+        2     True
+        3    False
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.touches(s2, align=False)
+        0     True
+        1    False
+        2     True
+        3    False
+        dtype: bool
+
+        We can also check if each geometry of GeoSeries touches a single
+        geometry:
+
+        >>> line = LineString([(0, 0), (-1, -2)])
+        >>> s.touches(line)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries ``touches`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.overlaps
+        GeoSeries.intersects
+
         """
         return _binary_op("touches", self, other, align)
 
@@ -1128,7 +1580,7 @@ GeometryCollection
 
         Returns
         -------
-        GeoSeries (bool)
+        Series (bool)
 
 
         Examples
@@ -1229,7 +1681,7 @@ GeometryCollection
     def covers(self, other, align=True):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that is entirely covering `other`.
+        each aligned geometry that is entirely covering `other`.
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
@@ -1242,13 +1694,96 @@ GeometryCollection
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)]),
+        ...         Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+        ...         LineString([(1, 1), (1.5, 1.5)]),
+        ...         Point(0, 0),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 0.00000, 2....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.50000 0.50000, 1.50000 0.50000, 1....
+        2    POLYGON ((0.00000 0.00000, 2.00000 0.00000, 2....
+        3        LINESTRING (1.00000 1.00000, 1.50000 1.50000)
+        4                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.covers(s2, align=True)
+        0    False
+        1    False
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.covers(s2, align=False)
+        0     True
+        1    False
+        2     True
+        3     True
+        dtype: bool
+
+        We can also check if each geometry of GeoSeries overlaps a single
+        geometry:
+
+        >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
+        >>> s.covers(poly)
+        0     True
+        1    False
+        2    False
+        3    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries ``covers`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.covered_by
+        GeoSeries.overlaps
         """
-        return _binary_geo("covers", self, other, align)
+        return _binary_op("covers", self, other, align)
 
     def covered_by(self, other, align=True):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each geometry that is entirely covered by `other`.
+        each aligned geometry that is entirely covered by `other`.
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
@@ -1261,17 +1796,174 @@ GeometryCollection
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)]),
+        ...         Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+        ...         LineString([(1, 1), (1.5, 1.5)]),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         Point(0, 0),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.50000 0.50000, 1.50000 0.50000, 1....
+        1    POLYGON ((0.00000 0.00000, 2.00000 0.00000, 2....
+        2        LINESTRING (1.00000 1.00000, 1.50000 1.50000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 2.00000 0.00000, 2....
+        2    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        3        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        4                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.covered_by(s2, align=True)
+        0    False
+        1     True
+        2     True
+        3     True
+        4    False
+        dtype: bool
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.covered_by(s2, align=False)
+        0     True
+        1    False
+        2     True
+        3     True
+        dtype: bool
+
+        We can also check if each geometry of GeoSeries overlaps a single
+        geometry:
+
+        >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
+        >>> s.covered_by(poly)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if element
+        of one GeoSeries is ``covered_by`` `any` element of the other one.
+
+        See also
+        --------
+        GeoSeries.covers
+        GeoSeries.overlaps
         """
-        return _binary_geo("covered_by", self, other, align)
+        return _binary_op("covered_by", self, other, align)
 
     def distance(self, other, align=True):
-        """Returns a ``Series`` containing the distance to `other`.
+        """Returns a ``Series`` containing the distance to aligned `other`.
 
         Parameters
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+
+        Returns
+        -------
+        Series (float)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 0), (1, 1)]),
+        ...         Polygon([(0, 0), (-1, 0), (-1, 1)]),
+        ...         LineString([(1, 1), (0, 0)]),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)]),
+        ...         Point(3, 1),
+        ...         LineString([(1, 0), (2, 0)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
+        1    POLYGON ((0.00000 0.00000, -1.00000 0.00000, -...
+        2        LINESTRING (1.00000 1.00000, 0.00000 0.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.50000 0.50000, 1.50000 0.50000, 1....
+        2                              POINT (3.00000 1.00000)
+        3        LINESTRING (1.00000 0.00000, 2.00000 0.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index:
+
+        >>> s.distance(s2, align=True)
+        0         NaN
+        1    0.707107
+        2    2.000000
+        3    1.000000
+        4         NaN
+        dtype: float64
+
+        Or we can ignore index and compare elements based on their matching order:
+
+        >>> s.distance(s2, align=False)
+        0    0.000000
+        1    3.162278
+        2    0.707107
+        3    1.000000
+        dtype: float64
+
+        We can also check the distance of each geometry of GeoSeries to a single
+        geometry:
+
+        >>> point = Point(-1, 0)
+        >>> s.distance(point)
+        0    1.0
+        1    0.0
+        2    1.0
+        3    1.0
+        dtype: float64
         """
         return _binary_op("distance", self, other, align)
 
@@ -1280,7 +1972,7 @@ GeometryCollection
     #
 
     def difference(self, other, align=True):
-        """Returns a ``GeoSeries`` of the points in each geometry that
+        """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
         Parameters
@@ -1288,12 +1980,25 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             difference to.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.symmetric_difference
+        GeoSeries.union
+        GeoSeries.intersection
         """
         return _binary_geo("difference", self, other, align)
 
     def symmetric_difference(self, other, align=True):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
-        each geometry with `other`.
+        each aligned geometry with `other`.
 
         For each geometry, the symmetric difference consists of points in the
         geometry not in `other`, and points in `other` not in the geometry.
@@ -1303,11 +2008,28 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             symmetric difference to.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        .. image:: ../../_static/test.png
+
+        See Also
+        --------
+        GeoSeries.difference
+        GeoSeries.union
+        GeoSeries.intersection
         """
         return _binary_geo("symmetric_difference", self, other, align)
 
     def union(self, other, align=True):
-        """Returns a ``GeoSeries`` of the union of points in each geometry with
+        """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
         Parameters
@@ -1315,18 +2037,44 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the union
             with.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.symmetric_difference
+        GeoSeries.difference
+        GeoSeries.intersection
         """
         return _binary_geo("union", self, other, align)
 
     def intersection(self, other, align=True):
         """Returns a ``GeoSeries`` of the intersection of points in each
-        geometry with `other`.
+        aligned geometry with `other`.
 
         Parameters
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             intersection with.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.difference
+        GeoSeries.symmetric_difference
+        GeoSeries.union
         """
         return _binary_geo("intersection", self, other, align)
 
