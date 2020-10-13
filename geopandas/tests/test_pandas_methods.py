@@ -518,3 +518,18 @@ def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
     res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
+
+
+def test_preserve_attrs(df):
+    # https://github.com/geopandas/geopandas/issues/1654
+    df.attrs["name"] = "my_name"
+    attrs = {"name": "my_name"}
+    assert df.attrs == attrs
+
+    # preserve attrs in indexing operations
+    for subset in [df[:2], df[df["value1"] > 2], df[["value2", "geometry"]]]:
+        assert df.attrs == attrs
+
+    # preserve attrs in methods
+    df2 = df.reset_index()
+    assert df2.attrs == attrs
