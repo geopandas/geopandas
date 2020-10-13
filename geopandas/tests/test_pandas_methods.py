@@ -9,7 +9,7 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_025, PANDAS_GE_11
+from geopandas._compat import PANDAS_GE_025, PANDAS_GE_10, PANDAS_GE_11
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -520,6 +520,7 @@ def test_apply_convert_dtypes_keyword(s):
     assert_geoseries_equal(res, s)
 
 
+@pytest.mark.skipif(not PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df.attrs["name"] = "my_name"
