@@ -102,7 +102,8 @@ def from_shapely(data):
     if compat.USE_PYGEOS and compat.PYGEOS_SHAPELY_COMPAT:
         if not isinstance(data, np.ndarray):
             arr = np.empty(len(data), dtype=object)
-            arr[:] = data
+            with compat.ignore_shapely2_warnings():
+                arr[:] = data
         else:
             arr = data
         try:
@@ -140,14 +141,16 @@ def from_shapely(data):
         # numpy can expand geometry collections into 2D arrays, use this
         # two-step construction to avoid this
         aout = np.empty(len(data), dtype=object)
-        aout[:] = out
+        with compat.ignore_shapely2_warnings():
+            aout[:] = out
         return aout
 
 
 def to_shapely(data):
     if compat.USE_PYGEOS:
         out = np.empty(len(data), dtype=object)
-        out[:] = [_pygeos_to_shapely(geom) for geom in data]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [_pygeos_to_shapely(geom) for geom in data]
         return out
     else:
         return data
@@ -172,7 +175,8 @@ def from_wkb(data):
         out.append(geom)
 
     aout = np.empty(len(data), dtype=object)
-    aout[:] = out
+    with compat.ignore_shapely2_warnings():
+        aout[:] = out
     return aout
 
 
@@ -208,7 +212,8 @@ def from_wkt(data):
         out.append(geom)
 
     aout = np.empty(len(data), dtype=object)
-    aout[:] = out
+    with compat.ignore_shapely2_warnings():
+        aout[:] = out
     return aout
 
 
@@ -281,10 +286,11 @@ def _binary_geo(op, left, right):
         # intersection can return empty GeometryCollections, and if the
         # result are only those, numpy will coerce it to empty 2D array
         data = np.empty(len(left), dtype=object)
-        data[:] = [
-            getattr(s, op)(right) if s is not None and right is not None else None
-            for s in left
-        ]
+        with compat.ignore_shapely2_warnings():
+            data[:] = [
+                getattr(s, op)(right) if s is not None and right is not None else None
+                for s in left
+            ]
         return data
     elif isinstance(right, np.ndarray):
         if len(left) != len(right):
@@ -293,12 +299,13 @@ def _binary_geo(op, left, right):
             )
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
-        data[:] = [
-            getattr(this_elem, op)(other_elem)
-            if this_elem is not None and other_elem is not None
-            else None
-            for this_elem, other_elem in zip(left, right)
-        ]
+        with compat.ignore_shapely2_warnings():
+            data[:] = [
+                getattr(this_elem, op)(other_elem)
+                if this_elem is not None and other_elem is not None
+                else None
+                for this_elem, other_elem in zip(left, right)
+            ]
         return data
     else:
         raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
@@ -432,7 +439,8 @@ def _affinity_method(op, left, *args, **kwargs):
             res = getattr(shapely.affinity, op)(geom, *args, **kwargs)
         out.append(res)
     data = np.empty(len(left), dtype=object)
-    data[:] = out
+    with compat.ignore_shapely2_warnings():
+        data[:] = out
     return from_shapely(data)
 
 
@@ -545,7 +553,8 @@ def _unary_geo(op, left, *args, **kwargs):
     """Unary operation that returns new geometries"""
     # ensure 1D output, see note above
     data = np.empty(len(left), dtype=object)
-    data[:] = [getattr(geom, op, None) for geom in left]
+    with compat.ignore_shapely2_warnings():
+        data[:] = [getattr(geom, op, None) for geom in left]
     return data
 
 
@@ -767,16 +776,22 @@ def buffer(data, distance, resolution=16, **kwargs):
                     "length of the GeoSeries"
                 )
 
-            out[:] = [
-                geom.buffer(dist, resolution, **kwargs) if geom is not None else None
-                for geom, dist in zip(data, distance)
-            ]
+            with compat.ignore_shapely2_warnings():
+                out[:] = [
+                    geom.buffer(dist, resolution, **kwargs)
+                    if geom is not None
+                    else None
+                    for geom, dist in zip(data, distance)
+                ]
             return out
 
-        out[:] = [
-            geom.buffer(distance, resolution, **kwargs) if geom is not None else None
-            for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.buffer(distance, resolution, **kwargs)
+                if geom is not None
+                else None
+                for geom in data
+            ]
         return out
 
 
@@ -808,10 +823,11 @@ def simplify(data, tolerance, preserve_topology=True):
     else:
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
-        out[:] = [
-            geom.simplify(tolerance, preserve_topology=preserve_topology)
-            for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.simplify(tolerance, preserve_topology=preserve_topology)
+                for geom in data
+            ]
         return out
 
 
