@@ -16,6 +16,7 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
+from . import _compat as compat
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -86,7 +87,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop("crs", None)
         geometry = kwargs.pop("geometry", None)
-        super(GeoDataFrame, self).__init__(*args, **kwargs)
+        with compat.ignore_shapely2_warnings():
+            super(GeoDataFrame, self).__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs

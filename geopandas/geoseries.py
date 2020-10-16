@@ -15,6 +15,7 @@ from geopandas.plotting import plot_series
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from . import _vectorized as vectorized
+from ._compat import ignore_shapely2_warnings
 
 
 _SERIES_WARNING_MSG = """\
@@ -155,7 +156,8 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            s = pd.Series(data, index=index, name=name, **kwargs)
+            with ignore_shapely2_warnings():
+                s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
                 if s.empty:
