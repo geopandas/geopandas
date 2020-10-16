@@ -12,8 +12,9 @@ import shapely
 # -----------------------------------------------------------------------------
 
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
+PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
 PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
+PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 
 
 # -----------------------------------------------------------------------------
