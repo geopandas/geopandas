@@ -122,7 +122,9 @@ if shapely_warning is not None and not SHAPELY_GE_20:
     @contextlib.contextmanager
     def ignore_shapely2_warnings():
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "Iteration", shapely_warning)
+            warnings.filterwarnings(
+                "ignore", "Iteration|The array interface", shapely_warning
+            )
             yield
 
 
