@@ -714,7 +714,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         >>> feature
         {'id': '0', 'type': 'Feature', 'properties': {'col1': 'name1'}, 'geometry': {\
 'type': 'Point', 'coordinates': (1.0, 2.0)}}
->>>>>>> master
         """
         if na not in ["null", "drop", "keep"]:
             raise ValueError("Unknown na method {0}".format(na))
