@@ -314,7 +314,7 @@ class GeometryArray(ExtensionArray):
         >>> gdf = geopandas.GeoDataFrame(d)
         >>> gdf.sindex_generated()
         False
-        >>> gdf.sindex
+        >>> index = gdf.sindex
         >>> gdf.sindex_generated()
         True
 
