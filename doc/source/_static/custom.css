@@ -1,24 +1,9 @@
 /* colors */
 
-h1 {
-    color: #139C5A;
-}
-
-h2 {
-    color: #333333;
-}
-
-.nav li.active>a, .navbar-nav>.active>.nav-link {
-    color: #139C5A!important;
-}
-
-.toc-entry>.nav-link.active {
-    border-left-color: #139C5A;
-    color: #139C5A!important;
-}
-
-.nav li>a:hover {
-    color: #333333!important;
+:root {
+    --color-primary: 19, 156, 90;
+    --color-active-navigation: 19, 156, 90;
+    --color-h2: var(--color-text-base);
 }
 
 /* buttons */
