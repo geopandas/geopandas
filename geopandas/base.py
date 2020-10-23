@@ -675,6 +675,11 @@ GeometryCollection
         This is the inverse of :meth:`within` in the sense that the expression
         ``a.contains(b) == b.within(a)`` always evaluates to ``True``.
 
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
         Parameters
         ----------
         other : GeoSeries or geometric object
@@ -724,9 +729,12 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
-
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s2.contains(s, align=True)
         0    False
@@ -736,8 +744,6 @@ GeometryCollection
         4    False
         dtype: bool
 
-        Or we can ignore index and compare elements based on their matching order:
-
         >>> s2.contains(s, align=False)
         1     True
         2    False
@@ -745,27 +751,11 @@ GeometryCollection
         4     True
         dtype: bool
 
-        The difference is that in the first case, ``align`` is used before the
-        operation and ``contains`` then uses the following aligned GeoSeries:
-
-        >>> aligned_s2, aligned_s = s2.align(s)
-        >>> geopandas.GeoDataFrame({"s2": aligned_s2, "s": aligned_s})
-                                                          s2                           \
-                       s
-        0                                               None  POLYGON ((0.00000 0.00000\
-, 1.00000 1.00000, 0....
-        1  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....      LINESTRING (0.00000 0\
-.00000, 0.00000 2.00000)
-        2  POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....      LINESTRING (0.00000 0\
-.00000, 0.00000 1.00000)
-        3      LINESTRING (0.00000 0.00000, 0.00000 2.00000)                           \
- POINT (0.00000 1.00000)
-        4                            POINT (0.00000 1.00000)                           \
-                    None
-
-
         We can also check if each geometry of GeoSeries contains a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> point = Point(0, 1)
         >>> s.contains(point)
@@ -793,6 +783,11 @@ GeometryCollection
         An object is said to be equal to `other` if its set-theoretic
         `boundary`, `interior`, and `exterior` coincides with those of the
         other.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -843,7 +838,11 @@ GeometryCollection
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.geom_equals(s2)
         0    False
@@ -853,8 +852,6 @@ GeometryCollection
         4    False
         dtype: bool
 
-        Or we can ignore index and compare elements based on their matching order:
-
         >>> s.geom_equals(s2, align=False)
         0     True
         1     True
@@ -862,26 +859,11 @@ GeometryCollection
         3    False
         dtype: bool
 
-        The difference is that in the first case, ``align`` is used before the
-        operation and ``geom_equals`` then uses the following aligned GeoSeries:
-
-        >>> aligned_s, aligned_s2 = s.align(s2)
-        >>> geopandas.GeoDataFrame({"s2": aligned_s2, "s": aligned_s})
-                                                        s2                             \
-                     s
-        0                                               None  POLYGON ((0.00000 0.00000\
-, 2.00000 2.00000, 0....
-        1  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....  POLYGON ((0.00000 0.00000\
-, 1.00000 2.00000, 0....
-        2  POLYGON ((0.00000 0.00000, 1.00000 2.00000, 0....      LINESTRING (0.00000 0\
-.00000, 0.00000 2.00000)
-        3                            POINT (0.00000 1.00000)                           \
- POINT (0.00000 1.00000)
-        4      LINESTRING (0.00000 0.00000, 0.00000 2.00000)                           \
-                    None
-
         We can also check if each geometry of GeoSeries contains a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
         >>> s.geom_equals(polygon)
@@ -910,6 +892,11 @@ GeometryCollection
 
         Approximate equality is tested at all points to the specified `decimal`
         place precision.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -973,6 +960,11 @@ GeometryCollection
     def geom_equals_exact(self, other, tolerance, align=True):
         """Return True for all geometries that equal aligned *other* to a given
         tolerance, else False.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1040,6 +1032,11 @@ GeometryCollection
         `interior` of the other but does not contain it, and the dimension of
         the intersection is less than the dimension of the one or the other.
 
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
         Parameters
         ----------
         other : GeoSeries or geometric object
@@ -1088,9 +1085,12 @@ GeometryCollection
         4                          POINT (0.00000 1.00000)
         dtype: geometry
 
-
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.crosses(s2, align=True)
         0    False
@@ -1099,8 +1099,6 @@ GeometryCollection
         3    False
         4    False
         dtype: bool
-
-        Or we can ignore index and compare elements based on their matching order:
 
         >>> s.crosses(s2, align=False)
         0     True
@@ -1111,26 +1109,11 @@ GeometryCollection
 
         Notice that a line does not cross a point that it contains.
 
-        The difference is that in the first case, ``align`` is used before the
-        operation and ``crosses`` then uses the following aligned GeoSeries:
-
-        >>> aligned_s, aligned_s2 = s.align(s2)
-        >>> geopandas.GeoDataFrame({"s": aligned_s, "s2": aligned_s2})
-                                                           s                           \
-                  s2
-        0  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....                           \
-                None
-        1      LINESTRING (0.00000 0.00000, 2.00000 2.00000)  LINESTRING (1.00000 0.000\
-00, 1.00000 3.00000)
-        2      LINESTRING (2.00000 0.00000, 0.00000 2.00000)  LINESTRING (2.00000 0.000\
-00, 0.00000 2.00000)
-        3                            POINT (0.00000 1.00000)                        POI\
-NT (1.00000 1.00000)
-        4                                               None                        POI\
-NT (0.00000 1.00000)
-
         We can also check if each geometry of GeoSeries crosses a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> line = LineString([(-1, 1), (3, 1)])
         >>> s.crosses(line)
@@ -1159,6 +1142,11 @@ NT (0.00000 1.00000)
 
         An object is said to be disjoint to `other` if its `boundary` and
         `interior` does not intersect at all with those of the other.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1207,6 +1195,13 @@ NT (0.00000 1.00000)
         3                              POINT (0.00000 0.00000)
         dtype: geometry
 
+        We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
         >>> s.disjoint(s2)
         0     True
         1    False
@@ -1216,6 +1211,9 @@ NT (0.00000 1.00000)
 
         We can also check each geometry of GeoSeries to a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> line = LineString([(0, 0), (2, 0)])
         >>> s.disjoint(line)
@@ -1244,6 +1242,11 @@ NT (0.00000 1.00000)
 
         An object is said to intersect `other` if its `boundary` and `interior`
         intersects in any way with those of the other.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1294,7 +1297,11 @@ NT (0.00000 1.00000)
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.intersects(s2, align=True)
         0    False
@@ -1304,8 +1311,6 @@ NT (0.00000 1.00000)
         4    False
         dtype: bool
 
-        Or we can ignore index and compare elements based on their matching order:
-
         >>> s.intersects(s2, align=False)
         0    True
         1    True
@@ -1313,26 +1318,11 @@ NT (0.00000 1.00000)
         3    True
         dtype: bool
 
-        The difference is that in the first case, ``align`` is used before the
-        operation and ``intersects`` then uses the following aligned GeoSeries:
-
-        >>> aligned_s, aligned_s2 = s.align(s2)
-        >>> geopandas.GeoDataFrame({"s": aligned_s, "s2": aligned_s2})
-                                                           s                           \
-                  s2
-        0  POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....                           \
-                None
-        1      LINESTRING (0.00000 0.00000, 2.00000 2.00000)  LINESTRING (1.00000 0.000\
-00, 1.00000 3.00000)
-        2      LINESTRING (2.00000 0.00000, 0.00000 2.00000)  LINESTRING (2.00000 0.000\
-00, 0.00000 2.00000)
-        3                            POINT (0.00000 1.00000)                        POI\
-NT (1.00000 1.00000)
-        4                                               None                        POI\
-NT (0.00000 1.00000)
-
         We can also check if each geometry of GeoSeries crosses a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> line = LineString([(-1, 1), (3, 1)])
         >>> s.intersects(line)
@@ -1363,6 +1353,11 @@ NT (0.00000 1.00000)
         points in common, have the same dimension, and the intersection of the
         interiors of the geometries has the same dimension as the geometries
         themselves.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1412,9 +1407,12 @@ NT (0.00000 1.00000)
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
-
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.overlaps(s2)
         0    False
@@ -1423,8 +1421,6 @@ NT (0.00000 1.00000)
         3    False
         4    False
         dtype: bool
-
-        Or we can ignore index and compare elements based on their matching order:
 
         >>> s.overlaps(s2, align=False)
         0     True
@@ -1435,6 +1431,9 @@ NT (0.00000 1.00000)
 
         We can also check if each geometry of GeoSeries overlaps a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         >>> s.overlaps(polygon)
@@ -1464,6 +1463,11 @@ NT (0.00000 1.00000)
         An object is said to touch `other` if it has at least one point in
         common with `other` and its interior does not intersect with any part
         of the other. Overlapping features therefore do not touch.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1514,7 +1518,11 @@ NT (0.00000 1.00000)
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.touches(s2, align=True)
         0    False
@@ -1523,8 +1531,6 @@ NT (0.00000 1.00000)
         3    False
         4    False
         dtype: bool
-
-        Or we can ignore index and compare elements based on their matching order:
 
         >>> s.touches(s2, align=False)
         0     True
@@ -1535,6 +1541,10 @@ NT (0.00000 1.00000)
 
         We can also check if each geometry of GeoSeries touches a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
 
         >>> line = LineString([(0, 0), (-1, -2)])
         >>> s.touches(line)
@@ -1568,6 +1578,11 @@ NT (0.00000 1.00000)
         This is the inverse of :meth:`contains` in the sense that the
         expression ``a.within(b) == b.contains(a)`` always evaluates to
         ``True``.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1619,7 +1634,11 @@ NT (0.00000 1.00000)
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s2.within(s)
         0    False
@@ -1629,8 +1648,6 @@ NT (0.00000 1.00000)
         4    False
         dtype: bool
 
-        Or we can ignore index and compare elements based on their matching order:
-
         >>> s2.within(s, align=False)
         1     True
         2    False
@@ -1638,26 +1655,11 @@ NT (0.00000 1.00000)
         4     True
         dtype: bool
 
-        The difference is that in the first case, ``align`` is used before the
-        operation and ``within`` then uses the following aligned GeoSeries:
-
-        >>> aligned_s2, aligned_s = s2.align(s)
-        >>> geopandas.GeoDataFrame({"s2": aligned_s2, "s": aligned_s})
-                                                          s2                           \
-                       s
-        0                                               None  POLYGON ((0.00000 0.00000\
-, 2.00000 2.00000, 0....
-        1  POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....  POLYGON ((0.00000 0.00000\
-, 1.00000 2.00000, 0....
-        2      LINESTRING (0.00000 0.00000, 0.00000 2.00000)      LINESTRING (0.00000 0\
-.00000, 0.00000 2.00000)
-        3      LINESTRING (0.00000 0.00000, 0.00000 1.00000)                           \
- POINT (0.00000 1.00000)
-        4                            POINT (0.00000 1.00000)                           \
-                    None
-
         We can also check if each geometry of GeoSeries is within a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
         >>> s.within(polygon)
@@ -1685,6 +1687,11 @@ NT (0.00000 1.00000)
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         See
         https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
@@ -1738,7 +1745,11 @@ NT (0.00000 1.00000)
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.covers(s2, align=True)
         0    False
@@ -1748,8 +1759,6 @@ NT (0.00000 1.00000)
         4    False
         dtype: bool
 
-        Or we can ignore index and compare elements based on their matching order:
-
         >>> s.covers(s2, align=False)
         0     True
         1    False
@@ -1757,8 +1766,11 @@ NT (0.00000 1.00000)
         3     True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries overlaps a single
+        We can also check if each geometry of GeoSeries covers a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
         >>> s.covers(poly)
@@ -1787,6 +1799,11 @@ NT (0.00000 1.00000)
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         See
         https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
@@ -1840,7 +1857,11 @@ NT (0.00000 1.00000)
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.covered_by(s2, align=True)
         0    False
@@ -1850,8 +1871,6 @@ NT (0.00000 1.00000)
         4    False
         dtype: bool
 
-        Or we can ignore index and compare elements based on their matching order:
-
         >>> s.covered_by(s2, align=False)
         0     True
         1    False
@@ -1859,8 +1878,11 @@ NT (0.00000 1.00000)
         3     True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries overlaps a single
+        We can also check if each geometry of GeoSeries is covered by a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
         >>> s.covered_by(poly)
@@ -1884,6 +1906,11 @@ NT (0.00000 1.00000)
 
     def distance(self, other, align=True):
         """Returns a ``Series`` containing the distance to aligned `other`.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
 
         Parameters
         ----------
@@ -1935,7 +1962,11 @@ NT (0.00000 1.00000)
         dtype: geometry
 
         The GeoSeries above have different indices. We can either align both GeoSeries
-        based on index values and compare elements with the same index:
+        based on index values and use elements with the same index using
+        ``align=True`` or ignore index and use elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.distance(s2, align=True)
         0         NaN
@@ -1944,8 +1975,6 @@ NT (0.00000 1.00000)
         3    1.000000
         4         NaN
         dtype: float64
-
-        Or we can ignore index and compare elements based on their matching order:
 
         >>> s.distance(s2, align=False)
         0    0.000000
@@ -1956,6 +1985,9 @@ NT (0.00000 1.00000)
 
         We can also check the distance of each geometry of GeoSeries to a single
         geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
 
         >>> point = Point(-1, 0)
         >>> s.distance(point)
@@ -1975,6 +2007,14 @@ NT (0.00000 1.00000)
         """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
+        .. image:: ../../../_static/binary_geo-difference.svg
+           :align: center
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
         Parameters
         ----------
         other : Geoseries or geometric object
@@ -1987,6 +2027,83 @@ NT (0.00000 1.00000)
         Returns
         -------
         GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2        LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (1.00000 1.00000)
+        5                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.difference(s2, align=True)
+        0                                                 None
+        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3                                     LINESTRING EMPTY
+        4                              POINT (0.00000 1.00000)
+        5                                                 None
+        dtype: geometry
+
+        >>> s.difference(s2, align=False)
+        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                                          POINT EMPTY
+        dtype: geometry
+
+        We can also do difference of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.difference(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        2        LINESTRING (1.00000 1.00000, 2.00000 2.00000)
+        3    MULTILINESTRING ((2.00000 0.00000, 1.00000 1.0...
+        4                                          POINT EMPTY
+        dtype: geometry
 
         See Also
         --------
@@ -2003,6 +2120,15 @@ NT (0.00000 1.00000)
         For each geometry, the symmetric difference consists of points in the
         geometry not in `other`, and points in `other` not in the geometry.
 
+        .. image:: ../../../_static/binary_geo-symm_diff.svg
+           :align: center
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+
         Parameters
         ----------
         other : Geoseries or geometric object
@@ -2018,7 +2144,80 @@ NT (0.00000 1.00000)
 
         Examples
         --------
-        .. image:: ../../_static/test.png
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2        LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (1.00000 1.00000)
+        5                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.symmetric_difference(s2, align=True)
+        0                                                 None
+        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3                                     LINESTRING EMPTY
+        4        MULTIPOINT (0.00000 1.00000, 1.00000 1.00000)
+        5                                                 None
+        dtype: geometry
+
+        >>> s.symmetric_difference(s2, align=False)
+        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    GEOMETRYCOLLECTION (LINESTRING (1.00000 0.0000...
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                                          POINT EMPTY
+        dtype: geometry
+
+        We can also do symmetric difference of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.symmetric_difference(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
+        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
+        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        dtype: geometry
 
         See Also
         --------
@@ -2031,6 +2230,15 @@ NT (0.00000 1.00000)
     def union(self, other, align=True):
         """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
+
+        .. image:: ../../../_static/binary_geo-union.svg
+           :align: center
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
 
         Parameters
         ----------
@@ -2045,6 +2253,84 @@ NT (0.00000 1.00000)
         -------
         GeoSeries
 
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2        LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (1.00000 1.00000)
+        5                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.union(s2, align=True)
+        0                                                 None
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4        MULTIPOINT (0.00000 1.00000, 1.00000 1.00000)
+        5                                                 None
+        dtype: geometry
+
+        >>> s.union(s2, align=False)
+        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    GEOMETRYCOLLECTION (LINESTRING (1.00000 0.0000...
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        We can also do union of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.union(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
+        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
+        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        dtype: geometry
+
+
         See Also
         --------
         GeoSeries.symmetric_difference
@@ -2056,6 +2342,15 @@ NT (0.00000 1.00000)
     def intersection(self, other, align=True):
         """Returns a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
+
+        .. image:: ../../../_static/binary_geo-intersection.svg
+           :align: center
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
 
         Parameters
         ----------
@@ -2069,6 +2364,84 @@ NT (0.00000 1.00000)
         Returns
         -------
         GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2        LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (1.00000 1.00000)
+        5                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.intersection(s2, align=True)
+        0                                                 None
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2                              POINT (1.00000 1.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                                          POINT EMPTY
+        5                                                 None
+        dtype: geometry
+
+        >>> s.intersection(s2, align=False)
+        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1        LINESTRING (1.00000 1.00000, 1.00000 2.00000)
+        2                              POINT (1.00000 1.00000)
+        3                              POINT (1.00000 1.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        We can also do intersection of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.intersection(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (1.00000 1.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
 
         See Also
         --------
@@ -2178,23 +2551,117 @@ NT (0.00000 1.00000)
         """
         Returns the DE-9IM intersection matrices for the geometries
 
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
         Parameters
         ----------
         other : BaseGeometry or GeoSeries
             The other geometry to computed
             the DE-9IM intersection matrices from.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
 
         Returns
         ----------
         spatial_relations: Series of strings
             The DE-9IM intersection matrices which describe
             the spatial relations of the other geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2        LINESTRING (1.00000 0.00000, 1.00000 3.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (1.00000 1.00000)
+        5                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.relate(s2, align=True)
+        0         None
+        1    212F11FF2
+        2    0F1FF0102
+        3    1FFF0FFF2
+        4    FF0FFF0F2
+        5         None
+        dtype: object
+
+        >>> s.relate(s2, align=False)
+        0    212F11FF2
+        1    1F20F1102
+        2    0F1FF0102
+        3    0F1FF0FF2
+        4    0FFFFFFF2
+        dtype: object
+
+        We can also relate each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.relate(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    212F11FF2
+        1    212F11FF2
+        2    F11F00212
+        3    F01FF0212
+        4    F0FFFF212
+        dtype: object
+
         """
         return _binary_op("relate", self, other, align)
 
     def project(self, other, normalized=False, align=True):
         """
         Return the distance along each geometry nearest to *other*
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        The project method is the inverse of interpolate.
+
 
         Parameters
         ----------
@@ -2203,8 +2670,80 @@ NT (0.00000 1.00000)
         normalized : boolean
             If normalized is True, return the distance normalized to
             the length of the object.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
 
-        The project method is the inverse of interpolate.
+        Returns
+        -------
+        Series
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 0),
+        ...         Point(1, 0),
+        ...         Point(2, 1),
+        ...     ],
+        ...     index=range(1, 4),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        2        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POINT (1.00000 0.00000)
+        2    POINT (1.00000 0.00000)
+        3    POINT (2.00000 1.00000)
+        dtype: geometry
+
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and project elements with the same index using
+        ``align=True`` or ignore index and project elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.project(s2, align=True)
+        0         NaN
+        1    0.707107
+        2    0.707107
+        3         NaN
+        dtype: float64
+
+        >>> s.project(s2, align=False)
+        0   -1.000000
+        1    0.707107
+        2    0.707107
+        dtype: float64
+
+        We can also project each geometry on a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.project(Point(1, 0))
+        0   -1.000000
+        1    0.707107
+        2    0.707107
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.interpolate
         """
         return _binary_op("project", self, other, normalized=normalized, align=align)
 
