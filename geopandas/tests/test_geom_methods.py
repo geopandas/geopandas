@@ -657,7 +657,7 @@ class TestGeomMethods:
         expected = Series([1.0, 0.5], index=self.g5.index)
         self._test_binary_real("project", expected, self.g5, p, normalized=True)
 
-        if compat.HAS_PYGEOS:  # shapely  supports only linear types in this operation
+        if compat.USE_PYGEOS:  # shapely  supports only linear types in this operation
             assert len(self.g0.project(self.g9, align=True) == 8)
             assert len(self.g0.project(self.g9, align=False) == 7)
 
