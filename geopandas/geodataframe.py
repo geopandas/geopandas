@@ -16,6 +16,7 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
+from . import _compat as compat
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -86,7 +87,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def __init__(self, *args, **kwargs):
         crs = kwargs.pop("crs", None)
         geometry = kwargs.pop("geometry", None)
-        super(GeoDataFrame, self).__init__(*args, **kwargs)
+        with compat.ignore_shapely2_warnings():
+            super(GeoDataFrame, self).__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -1147,6 +1149,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self """
+        self = super().__finalize__(other, method=method, **kwargs)
+
         # merge operation: using metadata of the left object
         if method == "merge":
             for name in self._metadata:
@@ -1155,9 +1159,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         elif method == "concat":
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
-        else:
-            for name in self._metadata:
-                object.__setattr__(self, name, getattr(other, name, None))
 
         return self
 

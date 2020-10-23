@@ -46,7 +46,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
 
     for ix, geom in enumerate(geoms):
         if geom.type.startswith(prefix):
-            for poly in geom:
+            for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
         else:

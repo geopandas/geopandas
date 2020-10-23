@@ -557,7 +557,7 @@ class TestDataFrame:
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
-            {"A": range(len(self.df)), "location": list(self.df.geometry)},
+            {"A": range(len(self.df)), "location": np.array(self.df.geometry)},
             index=self.df.index,
         )
         gf = df.set_geometry("location", crs=self.df.crs)

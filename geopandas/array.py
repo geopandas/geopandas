@@ -372,7 +372,8 @@ class GeometryArray(ExtensionArray):
                 raise TypeError("should be valid geometry")
             if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
-                value_array[:] = [value]
+                with compat.ignore_shapely2_warnings():
+                    value_array[:] = [value]
                 self.data[key] = value_array
             else:
                 self.data[key] = value
