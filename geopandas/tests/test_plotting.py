@@ -1,5 +1,4 @@
 import itertools
-import random
 import warnings
 
 import numpy as np
