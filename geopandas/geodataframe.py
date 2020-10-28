@@ -745,29 +745,35 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 else:
                     properties_items = {k: v for k, v in zip(properties_cols, row)}
 
-                feature = {
-                    "type": "Feature",
-                    "properties": properties_items,
-                    "geometry": mapping(geom) if geom else None,
-                }
+                if drop_id:
+                    feature = {}
+                else:
+                    feature = {"id": str(ids[i])}
+
+                feature["type"] = "Feature"
+                feature["properties"] = properties_items
+                feature["geometry"] = mapping(geom) if geom else None
 
                 if show_bbox:
                     feature["bbox"] = geom.bounds if geom else None
-                if not drop_id:
-                    feature["id"] = str(ids[i])
+
                 yield feature
 
         else:
             for fid, geom in zip(ids, geometries):
-                feature = {
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": mapping(geom) if geom else None,
-                }
+
+                if drop_id:
+                    feature = {}
+                else:
+                    feature = {"id": str(fid)}
+
+                feature["type"] = "Feature"
+                feature["properties"] = {}
+                feature["geometry"] = mapping(geom) if geom else None
+
                 if show_bbox:
                     feature["bbox"] = geom.bounds if geom else None
-                if not drop_id:
-                    feature["id"] = str(fid)
+
                 yield feature
 
     def _to_geo(self, **kwargs):
