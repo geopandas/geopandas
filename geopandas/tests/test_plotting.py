@@ -1,4 +1,5 @@
 import itertools
+import random
 import warnings
 
 import numpy as np
@@ -85,6 +86,26 @@ class TestPointPlotting:
         cmap = plt.get_cmap()
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
         _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
+
+    def test_color_reindex(self):
+
+        # Color order
+        colors_ord = pd.Series(
+            ["a", "a", "a", "a", "b", "b", "b", "c", "c", "c"],
+            index=[0, 3, 6, 9, 1, 4, 7, 2, 5, 8],
+        )
+
+        # Plot using Series
+        ax1 = self.df.plot(colors_ord)
+
+        # Add as column to df and plot
+        self.df["colors_ord"] = colors_ord
+        ax2 = self.df.plot("colors_ord")
+
+        # Check colors
+        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors2 = ax2.collections[0].get_facecolors()
+        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
 
     def test_colormap(self):
 
