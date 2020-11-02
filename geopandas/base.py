@@ -68,6 +68,22 @@ def _binary_op(op, this, other, *args, **kwargs):
     return Series(data, index=index)
 
 
+def _binary_matrix(op, this, other, boolean=False):
+    """Binary matrix-wise operation that returns a Series"""
+    this = this.geometry
+    inp, res = other.sindex.query_bulk(this, predicate=op)
+
+    if boolean:
+        return Series(np.isin(np.arange(0, len(this)), inp), index=this.index)
+
+    unique, counts = np.unique(inp, return_counts=True)
+    values = np.split(res, np.cumsum(counts)[:-1])
+    indices = np.empty(len(this), dtype="object")
+    indices[unique] = values
+
+    return Series(indices, index=this.index)
+
+
 def _delegate_property(op, this):
     # type: (str, GeoSeries) -> GeoSeries/Series
     a_this = GeometryArray(this.geometry.values)
@@ -765,6 +781,34 @@ GeometryCollection
             intersected.
         """
         return _binary_op("intersects", self, other)
+
+    def intersects_any(self, other):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that intersects any geometry in `other`.
+
+        An object is said to intersect `other` if its `boundary` and `interior`
+        intersects in any way with those of the other.
+
+        Parameters
+        ----------
+        other : GeoSeries
+            The GeoSeries to test if is any of its geometries is intersected.
+        """
+        return _binary_matrix("intersects", self, other, boolean=True)
+
+    def intersects_matrix(self, other):
+        """Returns a ``Series`` of ``dtype('object')`` with list of integer
+        indices of each geometry in `other` that intersects geometry.
+
+        An object is said to intersect `other` if its `boundary` and `interior`
+        intersects in any way with those of the other.
+
+        Parameters
+        ----------
+        other : GeoSeries
+            The GeoSeries to test which of its geometries are intersected.
+        """
+        return _binary_matrix("intersects", self, other)
 
     def overlaps(self, other):
         """Returns True for all geometries that overlap *other*, else False.
