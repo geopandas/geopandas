@@ -92,11 +92,11 @@ def PolygonPatch(polygon, **kwargs):
     The `kwargs` are those supported by the matplotlib.patches.Polygon class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
 
-    Example (using Shapely Point and a matplotlib axes):
+    Example (using Shapely Point and a matplotlib axes)::
 
-    >>> b = shapely.geometry.Point(0, 0).buffer(1.0)
-    >>> patch = PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
-    >>> ax.add_patch(patch)
+        b = shapely.geometry.Point(0, 0).buffer(1.0)
+        patch = PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
+        ax.add_patch(patch)
 
     This code of this function is based on the descartes package by
     Sean Gillies (BSD license, https://pypi.org/project/descartes).
@@ -113,8 +113,8 @@ def PolygonPatch(polygon, **kwargs):
         return vals
 
     vertices = np.concatenate(
-        [np.asarray(polygon.exterior)[:, :2]]
-        + [np.asarray(r)[:, :2] for r in polygon.interiors]
+        [np.asarray(polygon.exterior.coords)[:, :2]]
+        + [np.asarray(r.coords)[:, :2] for r in polygon.interiors]
     )
     codes = np.concatenate(
         [coding(polygon.exterior)] + [coding(r) for r in polygon.interiors]
