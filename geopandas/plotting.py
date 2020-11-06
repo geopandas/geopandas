@@ -86,6 +86,43 @@ def _expand_kwargs(kwargs, multiindex):
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
+def PolygonPatch(polygon, **kwargs):
+    """Constructs a matplotlib patch from a Polygon geometry
+
+    The `kwargs` are those supported by the matplotlib.patches.Polygon class
+    constructor. Returns an instance of matplotlib.patches.PathPatch.
+
+    Example (using Shapely Point and a matplotlib axes):
+
+    >>> b = shapely.geometry.Point(0, 0).buffer(1.0)
+    >>> patch = PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
+    >>> ax.add_patch(patch)
+
+    This code of this function is based on the descartes package by
+    Sean Gillies (BSD license, https://pypi.org/project/descartes).
+    """
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path
+
+    def coding(ob):
+        # The codes will be all "LINETO" commands, except for "MOVETO"s at the
+        # beginning of each subpath
+        n = len(getattr(ob, "coords", None) or ob)
+        vals = np.ones(n, dtype=Path.code_type) * Path.LINETO
+        vals[0] = Path.MOVETO
+        return vals
+
+    vertices = np.concatenate(
+        [np.asarray(polygon.exterior)[:, :2]]
+        + [np.asarray(r)[:, :2] for r in polygon.interiors]
+    )
+    codes = np.concatenate(
+        [coding(polygon.exterior)] + [coding(r) for r in polygon.interiors]
+    )
+
+    return PathPatch(Path(vertices, codes), **kwargs)
+
+
 def _plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -115,15 +152,6 @@ def _plot_polygon_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-
-    try:
-        from descartes.patch import PolygonPatch
-    except ImportError:
-        raise ImportError(
-            "The descartes package is required for plotting polygons in geopandas. "
-            "You can install it using 'conda install -c conda-forge descartes' or "
-            "'pip install descartes'."
-        )
     from matplotlib.collections import PatchCollection
 
     geoms, multiindex = _flatten_multi_geoms(geoms)

@@ -12,7 +12,6 @@ SQLAlchemy>=0.8.3
 geopy
 
 # plotting
-descartes>=1.0
 matplotlib>=2.2
 mapclassify
 

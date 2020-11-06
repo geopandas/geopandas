@@ -12,7 +12,6 @@ def test_no_additional_imports():
         "py",
         "ipython",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
-        "descartes",
         "mapclassify",
         # 'rtree',  # rtree actually gets imported if installed
         "sqlalchemy",

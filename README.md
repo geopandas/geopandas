@@ -36,7 +36,7 @@ for all details. GeoPandas depends on the following packages:
 - ``fiona``
 - ``pyproj``
 
-Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
+Further, ``matplotlib`` is an optional dependency, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
 dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
 
@@ -87,7 +87,9 @@ Other operations return GeoPandas objects:
 
 ![Example 2](examples/test_buffer.png)
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](https://pypi.python.org/pypi/descartes) to generate a [matplotlib](http://matplotlib.org) plot. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves. GeoPandas uses
+[matplotlib](http://matplotlib.org) for plotting. To generate a plot of our
+GeoSeries, use:
 
     >>> g.plot()
 
