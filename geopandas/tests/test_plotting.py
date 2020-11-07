@@ -86,22 +86,39 @@ class TestPointPlotting:
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
         _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
 
-    def test_color_reindex(self):
+    def test_series_color_no_index(self):
 
-        # Color order
+        # Color order with ordered index
+        colors_ord = pd.Series(["a", "b", "c", "a", "b", "c", "a", "b", "c", "a"])
+
+        # Plot using Series as color
+        ax1 = self.df.plot(colors_ord)
+
+        # Correct answer: Add as column to df and plot
+        self.df["colors_ord"] = colors_ord
+        ax2 = self.df.plot("colors_ord")
+
+        # Confirm out-of-order index re-sorted
+        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors2 = ax2.collections[0].get_facecolors()
+        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+
+    def test_series_color_index(self):
+
+        # Color order with out-of-order index
         colors_ord = pd.Series(
             ["a", "a", "a", "a", "b", "b", "b", "c", "c", "c"],
             index=[0, 3, 6, 9, 1, 4, 7, 2, 5, 8],
         )
 
-        # Plot using Series
+        # Plot using Series as color
         ax1 = self.df.plot(colors_ord)
 
-        # Add as column to df and plot
+        # Correct answer: Add as column to df and plot
         self.df["colors_ord"] = colors_ord
         ax2 = self.df.plot("colors_ord")
 
-        # Check colors
+        # Confirm out-of-order index re-sorted
         point_colors1 = ax1.collections[0].get_facecolors()
         point_colors2 = ax2.collections[0].get_facecolors()
         np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
