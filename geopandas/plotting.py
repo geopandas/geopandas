@@ -636,6 +636,10 @@ def plot_dataframe(
             )
         else:
             values = column
+
+            # Make sure index of a Series matches index of df
+            if isinstance(values, pd.Series):
+                values = values.reindex(df.index)
     else:
         values = df[column]
 
