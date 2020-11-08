@@ -298,7 +298,7 @@ class GeometryArray(ExtensionArray):
 
     def sindex_generated(self):
         """Check the existence of the spatial index without generating it.
-        
+
         Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
         to generate a spatial index if it does not yet exist,
         which may take considerable time based on the underlying index
