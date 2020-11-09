@@ -1095,7 +1095,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         Examples
         --------
-        >>> import geopandas
         >>> world = geopandas.read_file(
         ...     geopandas.datasets.get_path("naturalearth_lowres")
         ... )
