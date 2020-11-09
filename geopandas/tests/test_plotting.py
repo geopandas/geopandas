@@ -880,7 +880,7 @@ class TestNonuniformGeometryPlotting:
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
         # TODO splitting array-like arguments for the different plot types
-        # is not yet supported
+        # is not yet supported - https://github.com/geopandas/geopandas/issues/1379
         # try:
         #     ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
         # except TypeError:
