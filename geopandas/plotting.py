@@ -67,7 +67,8 @@ def _expand_kwargs(kwargs, multiindex):
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    if matplotlib.__version__ > LooseVersion("3.3.2"):
+    mpl = matplotlib.__version__
+    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "post" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker"]
     else:
