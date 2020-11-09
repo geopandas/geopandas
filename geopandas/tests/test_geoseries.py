@@ -196,9 +196,8 @@ class TestSeries:
             assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
             assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
-        if PYPROJ_LT_3:
-            return
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
         )
