@@ -122,10 +122,7 @@ def from_shapely(data):
             else:
                 out.append(geom)
         elif hasattr(geom, "__geo_interface__"):
-            geom = shapely.geometry.asShape(geom)
-            # asShape returns GeometryProxy -> trigger actual materialization
-            # with one of its methods
-            geom.wkb
+            geom = shapely.geometry.shape(geom)
             if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:

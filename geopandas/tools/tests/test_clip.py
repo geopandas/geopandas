@@ -14,9 +14,7 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
 
 
-pytestmark = pytest.mark.skipif(
-    not geopandas.sindex.has_sindex(), reason="clip requires spatial index"
-)
+pytestmark = pytest.mark.skip_no_sindex
 
 
 @pytest.fixture

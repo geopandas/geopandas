@@ -200,7 +200,7 @@ def _plot_linestring_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    segments = [np.array(linestring)[:, :2] for linestring in geoms]
+    segments = [np.array(linestring.coords)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
 
     if values is not None:
@@ -636,6 +636,10 @@ def plot_dataframe(
             )
         else:
             values = column
+
+            # Make sure index of a Series matches index of df
+            if isinstance(values, pd.Series):
+                values = values.reindex(df.index)
     else:
         values = df[column]
 

@@ -11,11 +11,6 @@ from shapely.ops import cascaded_union
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
-from .sindex import has_sindex
-
-# for backwards compat
-# this will be static (will NOT follow USE_PYGEOS changes)
-HAS_SINDEX = has_sindex()
 
 
 def is_geometry_type(data):
