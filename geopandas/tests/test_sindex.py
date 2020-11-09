@@ -12,16 +12,14 @@ from numpy.testing import assert_array_equal
 
 import geopandas
 from geopandas import _compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, datasets
+from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 
 import pytest
 import numpy as np
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(
-    not sindex.has_sindex_backend(), reason="Spatial index absent, skipping"
-)
+@pytest.mark.skip_no_sindex
 class TestSeriesSindex:
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
@@ -87,9 +85,7 @@ class TestSeriesSindex:
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(
-    not sindex.has_sindex_backend(), reason="Spatial index absent, skipping"
-)
+@pytest.mark.skip_no_sindex
 class TestFrameSindex:
     def setup_method(self):
         data = {
@@ -193,9 +189,7 @@ class TestJoinSindex:
         assert res == ["Bronx", "Queens"]
 
 
-@pytest.mark.skipif(
-    not sindex.has_sindex_backend(), reason="Spatial index absent, skipping"
-)
+@pytest.mark.skip_no_sindex
 class TestPygeosInterface:
     def setup_method(self):
         data = {

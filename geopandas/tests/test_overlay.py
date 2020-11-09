@@ -14,9 +14,7 @@ import pytest
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
 
 
-pytestmark = pytest.mark.skipif(
-    not geopandas.sindex.has_sindex_backend(), reason="overlay requires spatial index"
-)
+pytestmark = pytest.mark.skip_no_sindex
 
 
 @pytest.fixture
