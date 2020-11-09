@@ -27,7 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
-from .sindex import get_sindex_class
+from .sindex import _get_sindex_class
 
 
 class GeometryDtype(ExtensionDtype):
@@ -293,7 +293,7 @@ class GeometryArray(ExtensionArray):
     @property
     def sindex(self):
         if self._sindex is None:
-            self._sindex = get_sindex_class()(self.data)
+            self._sindex = _get_sindex_class()(self.data)
         return self._sindex
 
     @property

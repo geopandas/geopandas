@@ -16,16 +16,7 @@ VALID_QUERY_PREDICATES = {
 }
 
 
-def has_sindex():
-    """Dynamically checks for ability to generate spatial index."""
-    try:
-        get_sindex_class()
-        return True
-    except ImportError:
-        return False
-
-
-def get_sindex_class():
+def _get_sindex_class():
     """Dynamically chooses a spatial indexing backend.
 
     Required to comply with _compat.USE_PYGEOS.
