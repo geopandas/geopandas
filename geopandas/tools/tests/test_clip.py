@@ -15,7 +15,7 @@ import pytest
 
 
 pytestmark = pytest.mark.skipif(
-    not geopandas.sindex.has_sindex(), reason="clip requires spatial index"
+    not geopandas.sindex.has_sindex_backend(), reason="clip requires spatial index"
 )
 
 

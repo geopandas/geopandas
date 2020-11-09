@@ -18,30 +18,10 @@ import pytest
 import numpy as np
 
 
-class TestNoSindex:
-    @pytest.mark.skipif(sindex.has_sindex(), reason="Spatial index present, skipping")
-    def test_no_sindex_installed(self):
-        """Checks that an error is raised when no spatial index is present."""
-        with pytest.raises(ImportError):
-            sindex.get_sindex_class()
-
-    @pytest.mark.skipif(
-        compat.HAS_RTREE or not compat.HAS_PYGEOS,
-        reason="rtree cannot be disabled via flags",
-    )
-    def test_no_sindex_active(self):
-        """Checks that an error is given when rtree is not installed
-        and compat.USE_PYGEOS is False.
-        """
-        state = compat.USE_PYGEOS  # try to save state
-        compat.set_use_pygeos(False)
-        with pytest.raises(ImportError):
-            sindex.get_sindex_class()
-        compat.set_use_pygeos(state)  # try to restore state
-
-
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
+@pytest.mark.skipif(
+    not sindex.has_sindex_backend(), reason="Spatial index absent, skipping"
+)
 class TestSeriesSindex:
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
@@ -107,7 +87,9 @@ class TestSeriesSindex:
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
+@pytest.mark.skipif(
+    not sindex.has_sindex_backend(), reason="Spatial index absent, skipping"
+)
 class TestFrameSindex:
     def setup_method(self):
         data = {
@@ -211,7 +193,9 @@ class TestJoinSindex:
         assert res == ["Bronx", "Queens"]
 
 
-@pytest.mark.skipif(not sindex.has_sindex(), reason="Spatial index absent, skipping")
+@pytest.mark.skipif(
+    not sindex.has_sindex_backend(), reason="Spatial index absent, skipping"
+)
 class TestPygeosInterface:
     def setup_method(self):
         data = {

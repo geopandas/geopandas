@@ -13,7 +13,7 @@ import pytest
 
 
 pytestmark = pytest.mark.skipif(
-    not sindex.has_sindex(), reason="sjoin requires spatial index"
+    not sindex.has_sindex_backend(), reason="sjoin requires spatial index"
 )
 
 
