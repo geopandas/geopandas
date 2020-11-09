@@ -981,7 +981,9 @@ class GeometryArray(ExtensionArray):
             if precision is None:
                 # dummy heuristic based on 10 first geometries that should
                 # work in most cases
-                xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
                 if (
                     (-180 <= xmin <= 180)
                     and (-180 <= xmax <= 180)
