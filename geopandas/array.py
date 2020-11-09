@@ -296,7 +296,8 @@ class GeometryArray(ExtensionArray):
             self._sindex = _get_sindex_class()(self.data)
         return self._sindex
 
-    def sindex_generated(self):
+    @property
+    def has_sindex(self):
         """Check the existence of the spatial index without generating it.
 
         Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
@@ -307,17 +308,9 @@ class GeometryArray(ExtensionArray):
         Note that the underlying spatial index may not be fully
         initialized until the first use.
 
-        Examples
-        --------
-
-        >>> from shapely.geometry import Point
-        >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
-        >>> gdf = geopandas.GeoDataFrame(d)
-        >>> gdf.sindex_generated()
-        False
-        >>> index = gdf.sindex
-        >>> gdf.sindex_generated()
-        True
+        See Also
+        ---------
+        GeoDataFrame.has_sindex
 
         Returns
         -------

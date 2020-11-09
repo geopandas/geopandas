@@ -21,28 +21,28 @@ import numpy as np
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
 class TestSeriesSindex:
-    def test_sindex_generated(self):
-        """Test the sindex_generated method."""
+    def test_has_sindex(self):
+        """Test the has_sindex method."""
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(0, 0), (1, 1), (0, 1)])
 
         d = GeoDataFrame({"geom": [t1, t2]}, geometry="geom")
-        assert not d.sindex_generated()
+        assert not d.has_sindex
         d.sindex
-        assert d.sindex_generated()
+        assert d.has_sindex
         d.geometry.values._sindex = None
-        assert not d.sindex_generated()
+        assert not d.has_sindex
         d.sindex
-        assert d.sindex_generated()
+        assert d.has_sindex
 
         s = GeoSeries([t1, t2])
-        assert not s.sindex_generated()
+        assert not s.has_sindex
         s.sindex
-        assert s.sindex_generated()
+        assert s.has_sindex
         s.values._sindex = None
-        assert not s.sindex_generated()
+        assert not s.has_sindex
         s.sindex
-        assert s.sindex_generated()
+        assert s.has_sindex
 
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""

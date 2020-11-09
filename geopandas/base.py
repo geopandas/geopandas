@@ -964,8 +964,11 @@ GeometryCollection
     def sindex(self):
         return self.geometry.values.sindex
 
-    def sindex_generated(self):
-        """Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+    @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
         to generate a spatial index if it does not yet exist,
         which may take considerable time based on the underlying index
         implementation.  This function quickly checks
@@ -980,10 +983,10 @@ GeometryCollection
         >>> from shapely.geometry import Point
         >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d)
-        >>> gdf.sindex_generated()
+        >>> gdf.has_sindex
         False
         >>> index = gdf.sindex
-        >>> gdf.sindex_generated()
+        >>> gdf.has_sindex
         True
 
         Returns
@@ -992,7 +995,7 @@ GeometryCollection
             `True` if the spatial index has been generated or
             `False` if not.
         """
-        return self.geometry.values.sindex_generated()
+        return self.geometry.values.has_sindex
 
     def buffer(self, distance, resolution=16, **kwargs):
         """Returns a ``GeoSeries`` of geometries representing all points within
