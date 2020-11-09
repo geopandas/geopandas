@@ -849,3 +849,54 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             stacklevel=2,
         )
         return self.difference(other)
+
+    def from_wkb(self, hex=False):
+        """
+    Convert a list or array of WKB objects to a GeometryArray.
+
+    Parameters
+    ----------
+    data : array-like
+        list or array of WKB objects
+    crs : value, optional
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
+    """
+        return GeometryArray(vectorized.from_wkb(data), crs=crs)
+
+    def from_wkt(self, crs=None):
+        """
+    Convert a list or array of WKT objects to a GeometryArray.
+
+    Parameters
+    ----------
+    data : array-like
+        list or array of WKT objects
+    crs : value, optional
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
+    """
+        return GeometryArray(vectorized.from_wkt(data), crs=crs)
+
+    def to_wkt(self, **kwargs):
+         """
+    Convert GeometryArray to a numpy object array of WKT objects.
+    """
+        if not isinstance(geoms, GeometryArray):
+            raise ValueError("'geoms' must be a GeometryArray")
+        return vectorized.to_wkt(geoms.data, **kwargs)
+
+    def to_wkb(self, hex=False):
+        """
+    Convert GeometryArray to a numpy object array of WKB objects.
+    """
+        if not isinstance(geoms, GeometryArray):
+            raise ValueError("'geoms' must be a GeometryArray")
+        return vectorized.to_wkb(geoms.data, hex=hex)
+        
+        
+        

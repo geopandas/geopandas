@@ -176,59 +176,6 @@ def to_shapely(geoms):
         raise ValueError("'geoms' must be a GeometryArray")
     return vectorized.to_shapely(geoms.data)
 
-
-def from_wkb(data, crs=None):
-    """
-    Convert a list or array of WKB objects to a GeometryArray.
-
-    Parameters
-    ----------
-    data : array-like
-        list or array of WKB objects
-    crs : value, optional
-        Coordinate Reference System of the geometry objects. Can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
-    """
-    return GeometryArray(vectorized.from_wkb(data), crs=crs)
-
-
-def to_wkb(geoms, hex=False):
-    """
-    Convert GeometryArray to a numpy object array of WKB objects.
-    """
-    if not isinstance(geoms, GeometryArray):
-        raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms.data, hex=hex)
-
-
-def from_wkt(data, crs=None):
-    """
-    Convert a list or array of WKT objects to a GeometryArray.
-
-    Parameters
-    ----------
-    data : array-like
-        list or array of WKT objects
-    crs : value, optional
-        Coordinate Reference System of the geometry objects. Can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
-    """
-    return GeometryArray(vectorized.from_wkt(data), crs=crs)
-
-
-def to_wkt(geoms, **kwargs):
-    """
-    Convert GeometryArray to a numpy object array of WKT objects.
-    """
-    if not isinstance(geoms, GeometryArray):
-        raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkt(geoms.data, **kwargs)
-
-
 def points_from_xy(x, y, z=None, crs=None):
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
