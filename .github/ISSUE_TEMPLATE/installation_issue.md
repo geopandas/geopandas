@@ -11,7 +11,7 @@ labels: "installation"
 
 - [ ] I have looked through [issues labeled "installation"](https://github.com/geopandas/geopandas/labels/installation) in the geopandas repo.
 
-- If your issue is related to installation using `conda-forge` channel, please open an issue in [geopandas-feedstock repository](https://github.com/conda-forge/geopandas-feedstock) instead.
+- If your issue is related to installation using the `conda-forge` channel, please open an issue in [geopandas-feedstock repository](https://github.com/conda-forge/geopandas-feedstock) instead.
 
 ---
 
