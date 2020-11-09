@@ -68,7 +68,7 @@ def _expand_kwargs(kwargs, multiindex):
     from typing import Iterable
 
     mpl = matplotlib.__version__
-    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "post" in mpl):
+    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker"]
     else:
