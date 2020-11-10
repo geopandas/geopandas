@@ -10,6 +10,7 @@ from shapely.ops import cascaded_union
 
 import geopandas as gpd
 
+from . import _compat as compat
 from .array import GeometryArray, GeometryDtype
 
 
@@ -1202,6 +1203,35 @@ GeometryCollection
         dtype: geometry
 
         """
+
+        # TODO: use version check instead of hasattr below
+        # if compat.HAS_PYGEOS and compat.PYGEOS_GE_09:
+        if compat.HAS_PYGEOS:
+            import pygeos  # noqa
+
+            if hasattr(pygeos, "get_parts"):
+
+                geometries, outer_index = pygeos.get_parts(
+                    self.values.data, return_index=True
+                )
+
+                if len(outer_index):
+                    # generate inner index
+                    _, counts = np.unique(outer_index, return_counts=True)
+                    inner_index = np.concatenate([np.arange(c) for c in counts])
+                else:
+                    inner_index = []
+
+                index = MultiIndex.from_arrays(
+                    [outer_index, inner_index], names=self.index.names + [None]
+                )
+
+                return gpd.GeoSeries(
+                    geometries, index=index, crs=self.crs
+                ).__finalize__(self)
+
+        # else PyGEOS is not available or version <= 0.8
+
         index = []
         geometries = []
         for idx, s in self.geometry.iteritems():
@@ -1213,7 +1243,9 @@ GeometryCollection
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
+
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+
         return gpd.GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     @property

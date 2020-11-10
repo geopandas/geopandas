@@ -26,14 +26,19 @@ SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
 SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
 SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
 
+
 HAS_PYGEOS = None
 USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
+
+PYGEOES_GE_09 = None
 
 try:
     import pygeos  # noqa
 
     HAS_PYGEOS = True
+    PYGEOS_GT_09 = str(pygeos.__version__) >= LooseVersion("0.9.0")
+
 except ImportError:
     HAS_PYGEOS = False
 
