@@ -63,8 +63,16 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
+    import matplotlib
     from matplotlib.colors import is_color_like
     from typing import Iterable
+
+    mpl = matplotlib.__version__
+    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
+        # alpha is supported as array argument with matplotlib 3.4+
+        scalar_kwargs = ["marker"]
+    else:
+        scalar_kwargs = ["marker", "alpha"]
 
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
@@ -78,7 +86,7 @@ def _expand_kwargs(kwargs, multiindex):
                 and isinstance(value[1], Iterable)
             ):
                 continue
-        elif att in ["marker", "alpha"]:
+        elif att in scalar_kwargs:
             # For these attributes, only a single value is allowed, so never expand.
             continue
 
