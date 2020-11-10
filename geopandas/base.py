@@ -1205,8 +1205,8 @@ GeometryCollection
         """
 
         # TODO: use version check instead of hasattr below
-        # if compat.HAS_PYGEOS and compat.PYGEOS_GE_09:
-        if compat.HAS_PYGEOS:
+        # if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
+        if compat.USE_PYGEOS:
             import pygeos  # noqa
 
             if hasattr(pygeos, "get_parts"):
