@@ -72,6 +72,7 @@ Spatial index
    :toctree: api/
 
    GeoDataFrame.sindex
+   GeoDataFrame.has_sindex
 
 Interface
 ---------

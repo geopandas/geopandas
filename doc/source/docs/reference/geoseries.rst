@@ -150,6 +150,7 @@ Spatial index
    :toctree: api/
 
    GeoSeries.sindex
+   GeoSeries.has_sindex
 
 Interface
 ---------
