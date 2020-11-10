@@ -21,6 +21,29 @@ import numpy as np
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
 class TestSeriesSindex:
+    def test_has_sindex(self):
+        """Test the has_sindex method."""
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+
+        d = GeoDataFrame({"geom": [t1, t2]}, geometry="geom")
+        assert not d.has_sindex
+        d.sindex
+        assert d.has_sindex
+        d.geometry.values._sindex = None
+        assert not d.has_sindex
+        d.sindex
+        assert d.has_sindex
+
+        s = GeoSeries([t1, t2])
+        assert not s.has_sindex
+        s.sindex
+        assert s.has_sindex
+        s.values._sindex = None
+        assert not s.has_sindex
+        s.sindex
+        assert s.has_sindex
+
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
         s = GeoSeries(dtype=object)
@@ -91,9 +114,9 @@ class TestFrameSindex:
         data = {
             "A": range(5),
             "B": range(-5, 0),
-            "location": [Point(x, y) for x, y in zip(range(5), range(5))],
+            "geom": [Point(x, y) for x, y in zip(range(5), range(5))],
         }
-        self.df = GeoDataFrame(data, geometry="location")
+        self.df = GeoDataFrame(data, geometry="geom")
 
     def test_sindex(self):
         self.df.crs = "epsg:4326"
@@ -133,7 +156,7 @@ class TestFrameSindex:
         """Selecting a single column should not rebuild the spatial index."""
         # Selecting geometry column preserves the index
         original_index = self.df.sindex
-        geometry_col = self.df["location"]
+        geometry_col = self.df["geom"]
         assert geometry_col.sindex is original_index
         geometry_col = self.df.geometry
         assert geometry_col.sindex is original_index
@@ -145,9 +168,9 @@ class TestFrameSindex:
         """Selecting a subset of columns preserves the index."""
         original_index = self.df.sindex
         # Selecting a subset of columns preserves the index
-        subset1 = self.df[["location", "A"]]
+        subset1 = self.df[["geom", "A"]]
         assert subset1.sindex is original_index
-        subset2 = self.df[["A", "location"]]
+        subset2 = self.df[["A", "geom"]]
         assert subset2.sindex is original_index
 
 
@@ -193,11 +216,11 @@ class TestJoinSindex:
 class TestPygeosInterface:
     def setup_method(self):
         data = {
-            "location": [Point(x, y) for x, y in zip(range(5), range(5))]
+            "geom": [Point(x, y) for x, y in zip(range(5), range(5))]
             + [box(10, 10, 20, 20)]  # include a box geometry
         }
-        self.df = GeoDataFrame(data, geometry="location")
-        self.expected_size = len(data["location"])
+        self.df = GeoDataFrame(data, geometry="geom")
+        self.expected_size = len(data["geom"])
 
     # --------------------------- `intersection` tests -------------------------- #
     @pytest.mark.parametrize(
