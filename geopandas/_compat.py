@@ -31,13 +31,13 @@ HAS_PYGEOS = None
 USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
 
-PYGEOES_GE_09 = None
+PYGEOS_GE_09 = None
 
 try:
     import pygeos  # noqa
 
     HAS_PYGEOS = True
-    PYGEOS_GT_09 = str(pygeos.__version__) >= LooseVersion("0.9.0")
+    PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9.0")
 
 except ImportError:
     HAS_PYGEOS = False
