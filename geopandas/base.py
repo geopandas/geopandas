@@ -971,8 +971,7 @@ GeometryCollection
         Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
         to generate a spatial index if it does not yet exist,
         which may take considerable time based on the underlying index
-        implementation.  This function quickly checks
-        the existence of the index without generating the index.
+        implementation.
 
         Note that the underlying spatial index may not be fully
         initialized until the first use.
