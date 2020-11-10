@@ -202,17 +202,15 @@ class TestSeries:
             "EPSG:32618"
         )
 
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):
-        if PYPROJ_LT_3:
-            return
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__missing_crs(self):
-        if PYPROJ_LT_3:
-            return
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
 
