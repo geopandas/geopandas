@@ -1211,16 +1211,29 @@ GeometryCollection
 
             if hasattr(pygeos, "get_parts"):
 
-                geometries, outer_index = pygeos.get_parts(
+                geometries, outer_idx = pygeos.get_parts(
                     self.values.data, return_index=True
                 )
 
-                if len(outer_index):
-                    # generate inner index
-                    _, counts = np.unique(outer_index, return_counts=True)
-                    inner_index = np.concatenate([np.arange(c) for c in counts])
+                if len(outer_idx):
+                    # generate inner index as a range per value of outer_idx
+
+                    # identify the start of each run of values in outer_idx
+                    run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+
+                    # count the number of values in each run
+                    counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+
+                    # increment values for each value in each run after run start
+                    inner_index = (~run_start).cumsum()
+                    # decrement these so that each run is a range that starts at 0
+                    inner_index -= np.repeat(inner_index[run_start], counts)
+
                 else:
                     inner_index = []
+
+                # extract original index values based on integer index
+                outer_index = self.index.take(outer_idx)
 
                 index = MultiIndex.from_arrays(
                     [outer_index, inner_index], names=self.index.names + [None]
