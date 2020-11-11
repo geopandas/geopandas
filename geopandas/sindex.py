@@ -315,7 +315,7 @@ if compat.HAS_PYGEOS:
 
         @property
         def valid_query_predicates(self):
-            return pygeos.strtree.VALID_PREDICATES
+            return pygeos.strtree.VALID_PREDICATES + set([None])
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
