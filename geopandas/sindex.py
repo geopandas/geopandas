@@ -32,6 +32,20 @@ def _get_sindex_class():
     )
 
 
+class UnknownPredicateError(ValueError):
+    def __init__(self, predicate, valid_predicates=None, message=None):
+        valid_predicates = valid_predicates or set()
+        message = message or "Predicate {} is not valid; must be one of {}".format(
+            predicate,
+            valid_predicates,
+        )
+        super().__init__(message)
+
+
+class UnknownGeometryType(ValueError):
+    pass
+
+
 if compat.HAS_RTREE:
 
     import rtree.index  # noqa
@@ -63,10 +77,6 @@ if compat.HAS_RTREE:
             Geometries from which to build the spatial index.
         """
 
-        # set of valid predicates for this spatial index
-        # by default, the global set
-        valid_query_predicates = VALID_QUERY_PREDICATES
-
         def __init__(self, geometry):
             stream = (
                 (i, item.bounds, None)
@@ -88,6 +98,22 @@ if compat.HAS_RTREE:
             self._prepared_geometries = np.array(
                 [None] * self.geometries.size, dtype=object
             )
+
+        @property
+        def valid_query_predicates(self):
+            # TODO: can we dynamically query these from somewhere?
+            # TODO: what about different Shapely versions?
+            return {
+                None,
+                "intersects",
+                "within",
+                "contains",
+                "overlaps",
+                "crosses",
+                "touches",
+                "covers",
+                "contains_properly",
+            }
 
         def query(self, geometry, predicate=None, sort=False):
             """Compatibility layer for pygeos.query.
@@ -119,10 +145,8 @@ if compat.HAS_RTREE:
 
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
-                        predicate, self.valid_query_predicates
-                    )
+                raise UnknownPredicateError(
+                    predicate=predicate, valid_predicates=self.valid_query_predicates
                 )
 
             # handle empty / invalid geometries
@@ -132,7 +156,7 @@ if compat.HAS_RTREE:
 
             if not isinstance(geometry, BaseGeometry):
                 raise TypeError(
-                    "Got `geometry` of type `{}`, `geometry` must be ".format(
+                    "Got `geometry` of type `{}`; `geometry` must be ".format(
                         type(geometry)
                     )
                     + "a shapely geometry."
@@ -277,10 +301,6 @@ if compat.HAS_PYGEOS:
             Geometries from which to build the spatial index.
         """
 
-        # set of valid predicates for this spatial index
-        # by default, the global set
-        valid_query_predicates = VALID_QUERY_PREDICATES
-
         def __init__(self, geometry):
             # set empty geometries to None to avoid segfault on GEOS <= 3.6
             # see:
@@ -292,6 +312,10 @@ if compat.HAS_PYGEOS:
             super().__init__(non_empty)
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
+
+        @property
+        def valid_query_predicates(self):
+            return pygeos.strtree.VALID_PREDICATES
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.
@@ -321,12 +345,10 @@ if compat.HAS_PYGEOS:
             See PyGEOS.strtree documentation for more information.
             """
 
+            # handle invalid predicates
             if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`; ".format(predicate)
-                    + "`predicate` must be one of {}".format(
-                        self.valid_query_predicates
-                    )
+                raise UnknownPredicateError(
+                    predicate=predicate, valid_predicates=self.valid_query_predicates
                 )
 
             if isinstance(geometry, BaseGeometry):
