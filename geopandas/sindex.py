@@ -395,11 +395,10 @@ if compat.HAS_PYGEOS:
             """
 
             if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
-                        predicate, self.valid_query_predicates
-                    )
+                raise UnknownPredicateError(
+                    predicate=predicate, valid_predicates=self.valid_query_predicates
                 )
+
             if isinstance(geometry, geoseries.GeoSeries):
                 geometry = geometry.values.data
             elif isinstance(geometry, array.GeometryArray):
