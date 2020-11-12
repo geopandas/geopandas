@@ -75,7 +75,8 @@ if compat.HAS_RTREE:
             )
 
         @property
-        def valid_query_predicates(self):
+        @classmethod
+        def valid_query_predicates(cls):
             """Returns valid predicates for this spatial index.
 
             Returns
@@ -179,7 +180,12 @@ if compat.HAS_RTREE:
             elif predicate is not None:
                 # For the remaining predicates,
                 # we compare input_geom.predicate(tree_geom)
-                if predicate in ("contains", "intersects"):
+                if predicate in (
+                    "contains",
+                    "intersects",
+                    "covers",
+                    "contains_properly",
+                ):
                     # prepare this input geometry
                     geometry = prep(geometry)
                 tree_idx = [
@@ -296,7 +302,8 @@ if compat.HAS_PYGEOS:
             self.geometries = geometry.copy()
 
         @property
-        def valid_query_predicates(self):
+        @classmethod
+        def valid_query_predicates(cls):
             """Returns valid predicates for this spatial index.
 
             Returns
