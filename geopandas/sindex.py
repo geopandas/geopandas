@@ -5,17 +5,6 @@ import numpy as np
 from . import _compat as compat
 
 
-VALID_QUERY_PREDICATES = {
-    None,
-    "intersects",
-    "within",
-    "contains",
-    "overlaps",
-    "crosses",
-    "touches",
-}
-
-
 def _get_sindex_class():
     """Dynamically chooses a spatial indexing backend.
 
@@ -30,20 +19,6 @@ def _get_sindex_class():
         "Spatial indexes require either `rtree` or `pygeos`. "
         "See installation instructions at https://geopandas.org/install.html"
     )
-
-
-class UnknownPredicateError(ValueError):
-    def __init__(self, predicate, valid_predicates=None, message=None):
-        valid_predicates = valid_predicates or set()
-        message = message or "Predicate {} is not valid; must be one of {}".format(
-            predicate,
-            valid_predicates,
-        )
-        super().__init__(message)
-
-
-class UnknownGeometryType(ValueError):
-    pass
 
 
 if compat.HAS_RTREE:
@@ -101,8 +76,13 @@ if compat.HAS_RTREE:
 
         @property
         def valid_query_predicates(self):
-            # TODO: can we dynamically query these from somewhere?
-            # TODO: what about different Shapely versions?
+            """Returns valid predicates for this spatial index.
+
+            Returns
+            -------
+            set
+                Set of valid predicates for this spatial index.
+            """
             return {
                 None,
                 "intersects",
@@ -145,8 +125,10 @@ if compat.HAS_RTREE:
 
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
-                raise UnknownPredicateError(
-                    predicate=predicate, valid_predicates=self.valid_query_predicates
+                raise ValueError(
+                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                        predicate, self.valid_query_predicates
+                    )
                 )
 
             # handle empty / invalid geometries
@@ -156,7 +138,7 @@ if compat.HAS_RTREE:
 
             if not isinstance(geometry, BaseGeometry):
                 raise TypeError(
-                    "Got `geometry` of type `{}`; `geometry` must be ".format(
+                    "Got `geometry` of type `{}`, `geometry` must be ".format(
                         type(geometry)
                     )
                     + "a shapely geometry."
@@ -315,6 +297,13 @@ if compat.HAS_PYGEOS:
 
         @property
         def valid_query_predicates(self):
+            """Returns valid predicates for this spatial index.
+
+            Returns
+            -------
+            set
+                Set of valid predicates for this spatial index.
+            """
             return pygeos.strtree.VALID_PREDICATES | set([None])
 
         def query(self, geometry, predicate=None, sort=False):
@@ -345,10 +334,12 @@ if compat.HAS_PYGEOS:
             See PyGEOS.strtree documentation for more information.
             """
 
-            # handle invalid predicates
             if predicate not in self.valid_query_predicates:
-                raise UnknownPredicateError(
-                    predicate=predicate, valid_predicates=self.valid_query_predicates
+                raise ValueError(
+                    "Got `predicate` = `{}`; ".format(predicate)
+                    + "`predicate` must be one of {}".format(
+                        self.valid_query_predicates
+                    )
                 )
 
             if isinstance(geometry, BaseGeometry):
@@ -395,10 +386,11 @@ if compat.HAS_PYGEOS:
             """
 
             if predicate not in self.valid_query_predicates:
-                raise UnknownPredicateError(
-                    predicate=predicate, valid_predicates=self.valid_query_predicates
+                raise ValueError(
+                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                        predicate, self.valid_query_predicates
+                    )
                 )
-
             if isinstance(geometry, geoseries.GeoSeries):
                 geometry = geometry.values.data
             elif isinstance(geometry, array.GeometryArray):

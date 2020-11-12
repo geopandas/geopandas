@@ -13,7 +13,6 @@ from numpy.testing import assert_array_equal
 import geopandas
 from geopandas import _compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
-from geopandas.sindex import UnknownPredicateError
 
 import pytest
 import numpy as np
@@ -328,7 +327,7 @@ class TestPygeosInterface:
     def test_query_invalid_predicate(self):
         """Tests the `query` method with invalid predicates."""
         test_geom = box(-1, -1, -0.5, -0.5)
-        with pytest.raises(UnknownPredicateError):
+        with pytest.raises(ValueError):
             self.df.sindex.query(test_geom, predicate="test")
 
     @pytest.mark.parametrize(
@@ -471,7 +470,7 @@ class TestPygeosInterface:
         # determine if it should use shapely or pygeos geometry objects
         test_geom = geopandas.GeoSeries([box(*test_geom_bounds)], index=["0"])
 
-        with pytest.raises(UnknownPredicateError):
+        with pytest.raises(ValueError):
             self.df.sindex.query_bulk(test_geom.geometry, predicate=test_predicate)
 
     @pytest.mark.parametrize(
