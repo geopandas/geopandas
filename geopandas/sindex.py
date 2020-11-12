@@ -75,8 +75,7 @@ if compat.HAS_RTREE:
             )
 
         @property
-        @classmethod
-        def valid_query_predicates(cls):
+        def valid_query_predicates(self):
             """Returns valid predicates for this spatial index.
 
             Returns
@@ -302,8 +301,7 @@ if compat.HAS_PYGEOS:
             self.geometries = geometry.copy()
 
         @property
-        @classmethod
-        def valid_query_predicates(cls):
+        def valid_query_predicates(self):
             """Returns valid predicates for this spatial index.
 
             Returns
