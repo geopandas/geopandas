@@ -33,6 +33,7 @@ jobs:
           - ci/envs/37-latest-defaults.yaml
           - ci/envs/37-latest-conda-forge.yaml
           - ci/envs/38-latest-conda-forge.yaml
+          - ci/envs/39-latest-conda-forge.yaml
         include:
           - env: ci/envs/37-latest-conda-forge.yaml
             os: macos-latest
