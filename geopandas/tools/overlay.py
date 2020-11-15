@@ -222,7 +222,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
     if keep_geom_type:
         key_order = result.keys()
         exploded = result.reset_index(drop=True).explode()
-        exploded.reset_index(level=0, inplace=True)
+        exploded = exploded.reset_index(level=0)
 
         type = df1.geom_type.iloc[0]
         if type in polys:
