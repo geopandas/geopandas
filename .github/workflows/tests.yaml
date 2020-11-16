@@ -2,11 +2,11 @@ name: Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   schedule:
-    - cron:  '0 0 * * *'
+    - cron: "0 0 * * *"
 
 jobs:
   Linting:
@@ -66,7 +66,6 @@ jobs:
         shell: bash
         run: conda env create -f ${{ matrix.env }}
 
-
       - name: Check and Log Environment
         shell: bash
         run: |
@@ -80,10 +79,10 @@ jobs:
           if ( cat conda.txt | grep -q pygeos  )
           then
             echo "Setting HAS_PYGEOS=1"
-            echo '::set-env name=HAS_PYGEOS::1'
+            echo "HAS_PYGEOS=1" >> $GITHUB_ENV
           else
             echo "Setting HAS_PYGEOS=0"
-            echo '::set-env name=HAS_PYGEOS::0'
+            echo "HAS_PYGEOS=0 >> $GITHUB_ENV
           fi
 
       - name: Test without PyGEOS
@@ -96,7 +95,7 @@ jobs:
 
       - name: Test with PyGEOS
         shell: bash
-        if: env.HAS_PYGEOS == 1
+        if: $HAS_PYGEOS == 1
         env:
           USE_PYGEOS: 1
         run: |
@@ -124,5 +123,5 @@ jobs:
         run: |
           source activate test
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
-      
+
       - uses: codecov/codecov-action@v1
