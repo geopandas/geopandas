@@ -82,7 +82,7 @@ jobs:
             echo "HAS_PYGEOS=1" >> $GITHUB_ENV
           else
             echo "Setting HAS_PYGEOS=0"
-            echo "HAS_PYGEOS=0 >> $GITHUB_ENV
+            echo "HAS_PYGEOS=0" >> $GITHUB_ENV
           fi
 
       - name: Test without PyGEOS
