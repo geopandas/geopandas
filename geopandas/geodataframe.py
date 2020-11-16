@@ -1342,7 +1342,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def to_postgis(
         self,
         name,
-        con,
+        engine,
         schema=None,
         if_exists="fail",
         index=False,
@@ -1361,8 +1361,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         name : str
             Name of the target table.
-        con : sqlalchemy.engine.Engine
-            Active connection to the PostGIS database.
+        engine : sqlalchemy.engine.Engine
+            A sqlalchemy Engine managing the connection to the PostGIS database.
         if_exists : {'fail', 'replace', 'append'}, default 'fail'
             How to behave if the table already exists:
 
@@ -1395,7 +1395,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
         """
         geopandas.io.sql._write_postgis(
-            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+            self, name, engine, schema, if_exists, index, index_label, chunksize, dtype
         )
 
         #

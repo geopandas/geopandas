@@ -325,7 +325,7 @@ class TestIO:
         drop_table_if_exists(engine, table)
 
         # Write to db
-        write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="fail")
         # Validate
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
@@ -340,10 +340,10 @@ class TestIO:
         table = "nybb"
 
         # Ensure table exists
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
 
         try:
-            write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+            write_postgis(df_nybb, engine=engine, name=table, if_exists="fail")
         except ValueError as e:
             if "already exists" in str(e):
                 pass
@@ -359,9 +359,9 @@ class TestIO:
         table = "nybb"
 
         # Ensure table exists
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
         # Overwrite
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
         # Validate
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
@@ -377,8 +377,8 @@ class TestIO:
         table = "nybb"
 
         orig_rows, orig_cols = df_nybb.shape
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
-        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="append")
         # Validate
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
@@ -406,7 +406,7 @@ class TestIO:
         # Write to db
         df_nybb = df_nybb
         df_nybb.crs = None
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
         # Validate that srid is -1
         target_srid = engine.execute(
             "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
@@ -425,7 +425,9 @@ class TestIO:
 
         table = "geomtype_tests"
 
-        write_postgis(df_geom_collection, con=engine, name=table, if_exists="replace")
+        write_postgis(
+            df_geom_collection, engine=engine, name=table, if_exists="replace"
+        )
 
         # Validate geometry type
         sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
@@ -449,7 +451,7 @@ class TestIO:
         table = "geomtype_tests"
 
         write_postgis(
-            df_mixed_single_and_multi, con=engine, name=table, if_exists="replace"
+            df_mixed_single_and_multi, engine=engine, name=table, if_exists="replace"
         )
 
         # Validate geometry type
@@ -469,7 +471,7 @@ class TestIO:
 
         table = "geomtype_tests"
 
-        write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
+        write_postgis(df_linear_ring, engine=engine, name=table, if_exists="replace")
 
         # Validate geometry type
         sql = "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
@@ -489,7 +491,7 @@ class TestIO:
 
         write_postgis(
             df_mixed_single_and_multi,
-            con=engine,
+            engine=engine,
             name=table,
             if_exists="replace",
             chunksize=1,
@@ -520,7 +522,11 @@ class TestIO:
         engine.execute(sql)
 
         write_postgis(
-            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
+            df_nybb,
+            engine=engine,
+            name=table,
+            if_exists="replace",
+            schema=schema_to_use,
         )
         # Validate
         sql = "SELECT * FROM {schema}.{table};".format(
@@ -545,7 +551,11 @@ class TestIO:
 
         try:
             write_postgis(
-                df_nybb, con=engine, name=table, if_exists="fail", schema=schema_to_use
+                df_nybb,
+                engine=engine,
+                name=table,
+                if_exists="fail",
+                schema=schema_to_use,
             )
             # Validate
             sql = "SELECT * FROM {schema}.{table};".format(
@@ -561,7 +571,11 @@ class TestIO:
 
         # Try with replace flag on
         write_postgis(
-            df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
+            df_nybb,
+            engine=engine,
+            name=table,
+            if_exists="replace",
+            schema=schema_to_use,
         )
         # Validate
         sql = "SELECT * FROM {schema}.{table};".format(
@@ -579,7 +593,7 @@ class TestIO:
 
         table = "geomtype_tests"
 
-        write_postgis(df_3D_geoms, con=engine, name=table, if_exists="replace")
+        write_postgis(df_3D_geoms, engine=engine, name=table, if_exists="replace")
 
         # Check that all geometries have 3 dimensions
         sql = "SELECT * FROM {table};".format(table=table)
@@ -595,7 +609,7 @@ class TestIO:
         table = "row_order_test"
         correct_order = df_nybb["BoroCode"].tolist()
 
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
 
         # Check that the row order matches
         sql = "SELECT * FROM {table};".format(table=table)
@@ -612,7 +626,7 @@ class TestIO:
         # If table exists, delete it before trying to write with defaults
         drop_table_if_exists(engine, table)
 
-        write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="append")
 
         # Check that the row order matches
         sql = "SELECT * FROM {table};".format(table=table)
@@ -626,11 +640,11 @@ class TestIO:
         engine = engine_postgis
 
         table = "nybb"
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        write_postgis(df_nybb, engine=engine, name=table, if_exists="replace")
 
         # Reproject
         df_nybb2 = df_nybb.to_crs(epsg=4326)
 
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
-            write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+            write_postgis(df_nybb2, engine=engine, name=table, if_exists="append")

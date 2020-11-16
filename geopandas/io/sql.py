@@ -277,7 +277,7 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
 def _write_postgis(
     gdf,
     name,
-    con,
+    engine,
     schema=None,
     if_exists="fail",
     index=False,
@@ -293,10 +293,12 @@ def _write_postgis(
 
     Parameters
     ----------
+    gdf : GeoDataFrame
+        GeoDataFrame to be written into PostGIS database.
     name : str
         Name of the target table.
-    con : sqlalchemy.engine.Engine
-        Active connection to the PostGIS database.
+    engine : sqlalchemy.engine.Engine
+        A sqlalchemy Engine managing the connection to the PostGIS database.
     if_exists : {'fail', 'replace', 'append'}, default 'fail'
         How to behave if the table already exists:
 
@@ -322,7 +324,6 @@ def _write_postgis(
 
     Examples
     --------
-
     >>> from sqlalchemy import create_engine  # doctest: +SKIP
     >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
 /mydatabase";)  # doctest: +SKIP
@@ -365,7 +366,7 @@ def _write_postgis(
 
     if if_exists == "append":
         # Check that the geometry srid matches with the current GeoDataFrame
-        with con.begin() as connection:
+        with engine.begin() as connection:
             if schema is not None:
                 schema_name = schema
             else:
@@ -388,7 +389,7 @@ def _write_postgis(
                     )
                     raise ValueError(msg)
 
-    with con.begin() as connection:
+    with engine.begin() as connection:
 
         gdf.to_sql(
             name,
