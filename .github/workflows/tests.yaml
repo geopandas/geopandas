@@ -95,7 +95,7 @@ jobs:
 
       - name: Test with PyGEOS
         shell: bash
-        if: $HAS_PYGEOS == 1
+        if: env.HAS_PYGEOS == 1
         env:
           USE_PYGEOS: 1
         run: |
