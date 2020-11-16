@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Setup Conda
-        uses: s-weigand/setup-conda@v1.0.4
+        uses: s-weigand/setup-conda@v1
         with:
           activate-conda: false
 
