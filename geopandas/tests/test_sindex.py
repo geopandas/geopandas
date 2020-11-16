@@ -297,6 +297,56 @@ class TestPygeosInterface:
                 box(-0.5, -0.5, 1.5, 1.5),
                 [],
             ),  # bbox intersects but geom does not touch
+            (
+                "contains",
+                box(10, 10, 20, 20),
+                [5],
+            ),  # contains but does not contains_properly
+            (
+                "covers",
+                box(-0.5, -0.5, 1, 1),
+                [0, 1],
+            ),  # covers (0, 0) and (1, 1)
+            (
+                "covers",
+                box(0.001, 0.001, 0.99, 0.99),
+                [],
+            ),  # does not cover any
+            (
+                "covers",
+                box(0, 0, 1, 1),
+                [0, 1],
+            ),  # covers but does not contain
+            (
+                "contains_properly",
+                box(0, 0, 1, 1),
+                [],
+            ),  # intersects but does not contain
+            (
+                "contains_properly",
+                box(0, 0, 1.001, 1.001),
+                [1],
+            ),  # intersects 2 and contains 1
+            (
+                "contains_properly",
+                box(0.5, 0.5, 1.001, 1.001),
+                [1],
+            ),  # intersects 1 and contains 1
+            (
+                "contains_properly",
+                box(0.5, 0.5, 1.5, 1.5),
+                [1],
+            ),  # intersects and contains
+            (
+                "contains_properly",
+                box(-1, -1, 2, 2),
+                [0, 1],
+            ),  # intersects and contains multiple
+            (
+                "contains_properly",
+                box(10, 10, 20, 20),
+                [],
+            ),  # contains but does not contains_properly
         ),
     )
     def test_query(self, predicate, test_geom, expected):
@@ -395,7 +445,11 @@ class TestPygeosInterface:
             ("within", [(0.25, 0.28, 0.75, 0.75)], [[], []]),  # does not intersect
             ("within", [(0, 0, 10, 10)], [[], []]),  # intersects but is not within
             ("within", [(11, 11, 12, 12)], [[0], [5]]),  # intersects and is within
-            ("contains", [(0, 0, 1, 1)], [[], []]),  # intersects but does not contain
+            (
+                "contains",
+                [(0, 0, 1, 1)],
+                [[], []],
+            ),  # intersects and covers, but does not contain
             (
                 "contains",
                 [(0, 0, 1.001, 1.001)],
@@ -412,6 +466,62 @@ class TestPygeosInterface:
                 [(-1, -1, 2, 2)],
                 [[0, 0], [0, 1]],
             ),  # intersects and contains multiple
+            (
+                "contains",
+                [(10, 10, 20, 20)],
+                [[0], [5]],
+            ),  # contains but does not contains_properly
+            ("touches", [(-1, -1, 0, 0)], [[0], [0]]),  # bbox intersects and touches
+            (
+                "touches",
+                [(-0.5, -0.5, 1.5, 1.5)],
+                [[], []],
+            ),  # bbox intersects but geom does not touch
+            (
+                "covers",
+                [(-0.5, -0.5, 1, 1)],
+                [[0, 0], [0, 1]],
+            ),  # covers (0, 0) and (1, 1)
+            (
+                "covers",
+                [(0.001, 0.001, 0.99, 0.99)],
+                [[], []],
+            ),  # does not cover any
+            (
+                "covers",
+                [(0, 0, 1, 1)],
+                [[0, 0], [0, 1]],
+            ),  # covers but does not contain
+            (
+                "contains_properly",
+                [(0, 0, 1, 1)],
+                [[], []],
+            ),  # intersects but does not contain
+            (
+                "contains_properly",
+                [(0, 0, 1.001, 1.001)],
+                [[0], [1]],
+            ),  # intersects 2 and contains 1
+            (
+                "contains_properly",
+                [(0.5, 0.5, 1.001, 1.001)],
+                [[0], [1]],
+            ),  # intersects 1 and contains 1
+            (
+                "contains_properly",
+                [(0.5, 0.5, 1.5, 1.5)],
+                [[0], [1]],
+            ),  # intersects and contains
+            (
+                "contains_properly",
+                [(-1, -1, 2, 2)],
+                [[0, 0], [0, 1]],
+            ),  # intersects and contains multiple
+            (
+                "contains_properly",
+                [(10, 10, 20, 20)],
+                [[], []],
+            ),  # contains but does not contains_properly
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):
