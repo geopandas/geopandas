@@ -297,6 +297,30 @@ class GeometryArray(ExtensionArray):
         return self._sindex
 
     @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
+
+        See Also
+        ---------
+        GeoDataFrame.has_sindex
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
+        return self._sindex is not None
+
+    @property
     def crs(self):
         """
         The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``

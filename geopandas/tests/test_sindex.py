@@ -21,6 +21,29 @@ import numpy as np
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
 class TestSeriesSindex:
+    def test_has_sindex(self):
+        """Test the has_sindex method."""
+        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+
+        d = GeoDataFrame({"geom": [t1, t2]}, geometry="geom")
+        assert not d.has_sindex
+        d.sindex
+        assert d.has_sindex
+        d.geometry.values._sindex = None
+        assert not d.has_sindex
+        d.sindex
+        assert d.has_sindex
+
+        s = GeoSeries([t1, t2])
+        assert not s.has_sindex
+        s.sindex
+        assert s.has_sindex
+        s.values._sindex = None
+        assert not s.has_sindex
+        s.sindex
+        assert s.has_sindex
+
     def test_empty_geoseries(self):
         """Tests creating a spatial index from an empty GeoSeries."""
         s = GeoSeries(dtype=object)
@@ -91,9 +114,9 @@ class TestFrameSindex:
         data = {
             "A": range(5),
             "B": range(-5, 0),
-            "location": [Point(x, y) for x, y in zip(range(5), range(5))],
+            "geom": [Point(x, y) for x, y in zip(range(5), range(5))],
         }
-        self.df = GeoDataFrame(data, geometry="location")
+        self.df = GeoDataFrame(data, geometry="geom")
 
     def test_sindex(self):
         self.df.crs = "epsg:4326"
@@ -133,7 +156,7 @@ class TestFrameSindex:
         """Selecting a single column should not rebuild the spatial index."""
         # Selecting geometry column preserves the index
         original_index = self.df.sindex
-        geometry_col = self.df["location"]
+        geometry_col = self.df["geom"]
         assert geometry_col.sindex is original_index
         geometry_col = self.df.geometry
         assert geometry_col.sindex is original_index
@@ -145,9 +168,9 @@ class TestFrameSindex:
         """Selecting a subset of columns preserves the index."""
         original_index = self.df.sindex
         # Selecting a subset of columns preserves the index
-        subset1 = self.df[["location", "A"]]
+        subset1 = self.df[["geom", "A"]]
         assert subset1.sindex is original_index
-        subset2 = self.df[["A", "location"]]
+        subset2 = self.df[["A", "geom"]]
         assert subset2.sindex is original_index
 
 
@@ -193,11 +216,11 @@ class TestJoinSindex:
 class TestPygeosInterface:
     def setup_method(self):
         data = {
-            "location": [Point(x, y) for x, y in zip(range(5), range(5))]
+            "geom": [Point(x, y) for x, y in zip(range(5), range(5))]
             + [box(10, 10, 20, 20)]  # include a box geometry
         }
-        self.df = GeoDataFrame(data, geometry="location")
-        self.expected_size = len(data["location"])
+        self.df = GeoDataFrame(data, geometry="geom")
+        self.expected_size = len(data["geom"])
 
     # --------------------------- `intersection` tests -------------------------- #
     @pytest.mark.parametrize(
@@ -274,6 +297,56 @@ class TestPygeosInterface:
                 box(-0.5, -0.5, 1.5, 1.5),
                 [],
             ),  # bbox intersects but geom does not touch
+            (
+                "contains",
+                box(10, 10, 20, 20),
+                [5],
+            ),  # contains but does not contains_properly
+            (
+                "covers",
+                box(-0.5, -0.5, 1, 1),
+                [0, 1],
+            ),  # covers (0, 0) and (1, 1)
+            (
+                "covers",
+                box(0.001, 0.001, 0.99, 0.99),
+                [],
+            ),  # does not cover any
+            (
+                "covers",
+                box(0, 0, 1, 1),
+                [0, 1],
+            ),  # covers but does not contain
+            (
+                "contains_properly",
+                box(0, 0, 1, 1),
+                [],
+            ),  # intersects but does not contain
+            (
+                "contains_properly",
+                box(0, 0, 1.001, 1.001),
+                [1],
+            ),  # intersects 2 and contains 1
+            (
+                "contains_properly",
+                box(0.5, 0.5, 1.001, 1.001),
+                [1],
+            ),  # intersects 1 and contains 1
+            (
+                "contains_properly",
+                box(0.5, 0.5, 1.5, 1.5),
+                [1],
+            ),  # intersects and contains
+            (
+                "contains_properly",
+                box(-1, -1, 2, 2),
+                [0, 1],
+            ),  # intersects and contains multiple
+            (
+                "contains_properly",
+                box(10, 10, 20, 20),
+                [],
+            ),  # contains but does not contains_properly
         ),
     )
     def test_query(self, predicate, test_geom, expected):
@@ -372,7 +445,11 @@ class TestPygeosInterface:
             ("within", [(0.25, 0.28, 0.75, 0.75)], [[], []]),  # does not intersect
             ("within", [(0, 0, 10, 10)], [[], []]),  # intersects but is not within
             ("within", [(11, 11, 12, 12)], [[0], [5]]),  # intersects and is within
-            ("contains", [(0, 0, 1, 1)], [[], []]),  # intersects but does not contain
+            (
+                "contains",
+                [(0, 0, 1, 1)],
+                [[], []],
+            ),  # intersects and covers, but does not contain
             (
                 "contains",
                 [(0, 0, 1.001, 1.001)],
@@ -389,6 +466,62 @@ class TestPygeosInterface:
                 [(-1, -1, 2, 2)],
                 [[0, 0], [0, 1]],
             ),  # intersects and contains multiple
+            (
+                "contains",
+                [(10, 10, 20, 20)],
+                [[0], [5]],
+            ),  # contains but does not contains_properly
+            ("touches", [(-1, -1, 0, 0)], [[0], [0]]),  # bbox intersects and touches
+            (
+                "touches",
+                [(-0.5, -0.5, 1.5, 1.5)],
+                [[], []],
+            ),  # bbox intersects but geom does not touch
+            (
+                "covers",
+                [(-0.5, -0.5, 1, 1)],
+                [[0, 0], [0, 1]],
+            ),  # covers (0, 0) and (1, 1)
+            (
+                "covers",
+                [(0.001, 0.001, 0.99, 0.99)],
+                [[], []],
+            ),  # does not cover any
+            (
+                "covers",
+                [(0, 0, 1, 1)],
+                [[0, 0], [0, 1]],
+            ),  # covers but does not contain
+            (
+                "contains_properly",
+                [(0, 0, 1, 1)],
+                [[], []],
+            ),  # intersects but does not contain
+            (
+                "contains_properly",
+                [(0, 0, 1.001, 1.001)],
+                [[0], [1]],
+            ),  # intersects 2 and contains 1
+            (
+                "contains_properly",
+                [(0.5, 0.5, 1.001, 1.001)],
+                [[0], [1]],
+            ),  # intersects 1 and contains 1
+            (
+                "contains_properly",
+                [(0.5, 0.5, 1.5, 1.5)],
+                [[0], [1]],
+            ),  # intersects and contains
+            (
+                "contains_properly",
+                [(-1, -1, 2, 2)],
+                [[0, 0], [0, 1]],
+            ),  # intersects and contains multiple
+            (
+                "contains_properly",
+                [(10, 10, 20, 20)],
+                [[], []],
+            ),  # contains but does not contains_properly
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):

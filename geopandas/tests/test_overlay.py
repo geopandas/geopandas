@@ -520,3 +520,18 @@ def test_keep_geom_type_error():
     df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
     with pytest.raises(TypeError):
         overlay(dfcol, df1, keep_geom_type=True)
+
+
+def test_keep_geom_type_geometry_collection():
+    # GH 1581
+
+    df1 = read_file(os.path.join(DATA, "geom_type", "df1.geojson"))
+    df2 = read_file(os.path.join(DATA, "geom_type", "df2.geojson"))
+
+    intersection = overlay(df1, df2, keep_geom_type=True)
+    assert len(intersection) == 1
+    assert (intersection.geom_type == "Polygon").all()
+
+    intersection = overlay(df1, df2, keep_geom_type=False)
+    assert len(intersection) == 1
+    assert (intersection.geom_type == "GeometryCollection").all()
