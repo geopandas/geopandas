@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from shapely import wkt
 from shapely.affinity import rotate
 from shapely.geometry import (
     MultiPolygon,
@@ -19,6 +20,7 @@ from shapely.geometry import (
 
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
+import geopandas._compat as compat
 
 import pytest
 
@@ -285,6 +287,16 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
+
+        if compat.USE_PYGEOS:
+            s = GeoSeries([wkt.loads("POLYGON EMPTY")])
+            s.plot()
+            assert len(ax.collections) == 0
+
+        if not compat.USE_PYGEOS:
+            s = GeoSeries([Polygon()])
+            s.plot()
+            assert len(ax.collections) == 0
 
     def test_multipoints(self):
 
