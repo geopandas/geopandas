@@ -271,14 +271,18 @@ class TestSeries:
 
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
-        assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb_hex, self.sq.wkb_hex], hex=True))
+        assert_geoseries_equal(
+            self.g1, GeoSeries.from_wkb([self.t1.wkb_hex, self.sq.wkb_hex], hex=True)
+        )
 
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
 
     def test_to_wkb(self):
         assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
-        assert_series_equal(pd.Series([self.t1.wkb_hex, self.sq.wkb_hex]), self.g1.to_wkb(hex=True))
+        assert_series_equal(
+            pd.Series([self.t1.wkb_hex, self.sq.wkb_hex]), self.g1.to_wkb(hex=True)
+        )
 
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())

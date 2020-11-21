@@ -12,7 +12,15 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
-from .array import GeometryArray, GeometryDtype, from_shapely, from_wkb, from_wkt, to_wkb, to_wkt
+from .array import (
+    GeometryArray,
+    GeometryDtype,
+    from_shapely,
+    from_wkb,
+    from_wkt,
+    to_wkb,
+    to_wkt,
+)
 from .base import is_geometry_type
 from . import _vectorized as vectorized
 from ._compat import ignore_shapely2_warnings
@@ -1140,7 +1148,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         dtype: object
         """
         return Series(to_wkt(self.array))
-
 
     #
     # Implement standard operators for GeoSeries

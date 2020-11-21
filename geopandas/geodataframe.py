@@ -117,7 +117,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         for arg in [geometry, wkt, wkb, wkb_hex]:
             if arg is not None:
                 if found_geo_kwarg:
-                    raise ValueError("At most one of geometry, wkt, wkb, or wkb_hex can be set.")
+                    raise ValueError(
+                        "At most one of geometry, wkt, wkb, or wkb_hex can be set."
+                    )
                 found_geo_kwarg = True
 
         # need to set this before calling self['geometry'], because
