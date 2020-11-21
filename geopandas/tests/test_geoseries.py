@@ -23,6 +23,7 @@ import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.array import GeometryArray, GeometryDtype
+from geopandas.testing import assert_geoseries_equal
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
@@ -267,6 +268,13 @@ class TestSeries:
         reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
         reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+
+    def test_from_wkb(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb_hex, self.sq.wkb_hex], hex=True))
+
+    def test_from_wkt(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
 
     def test_to_wkb(self):
         assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
