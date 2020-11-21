@@ -359,24 +359,6 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
-
-        Examples
-        --------
-
-        >>> wkbs = [
-        ... (b'\x01\x01\x00\x00\x00\x00\x00\x00\x00'
-        ...  b'\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?'),
-        ... (b'\x01\x01\x00\x00\x00\x00\x00\x00\x00'
-        ...  b'\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00@'),
-        ... (b'\x01\x01\x00\x00\x00\x00\x00\x00\x00'
-        ...  b'\x00\x00\x08@\x00\x00\x00\x00\x00\x00\x08@'),
-        ... ]
-        >>> s = geopandas.GeoSeries.from_wkb(wkbs)
-        >>> s
-        0    POINT (1.00000 1.00000)
-        1    POINT (2.00000 2.00000)
-        2    POINT (3.00000 3.00000)
-        dtype: geometry
         """
         return GeoSeries(from_wkb(data, crs=crs), index=index, **kwargs)
 
@@ -1083,28 +1065,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         -------
         Series
             WKB representations of the geometries
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
-        >>> s
-        0    POINT (1.00000 1.00000)
-        1    POINT (2.00000 2.00000)
-        2    POINT (3.00000 3.00000)
-        dtype: geometry
-
-        >>> s.to_wkb()
-        0    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
-        1    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
-        2    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
-        dtype: object
-
-        >>> s.to_wkb(hex=True)
-        0    0101000000000000000000F03F000000000000F03F
-        1    010100000000000000000000400000000000000040
-        2    010100000000000000000008400000000000000840
-        dtype: object
         """
         return Series(to_wkb(self.array, hex=hex))
 
