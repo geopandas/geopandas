@@ -268,6 +268,13 @@ class TestSeries:
         reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
+    def test_to_wkb(self):
+        assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
+        assert_series_equal(pd.Series([self.t1.wkb_hex, self.sq.wkb_hex]), self.g1.to_wkb(hex=True))
+
+    def test_to_wkt(self):
+        assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
+
 
 def test_missing_values_empty_warning():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])

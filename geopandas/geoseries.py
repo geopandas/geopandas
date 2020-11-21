@@ -12,7 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
-from .array import GeometryArray, GeometryDtype, from_shapely
+from .array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from .base import is_geometry_type
 from . import _vectorized as vectorized
 from ._compat import ignore_shapely2_warnings
@@ -974,6 +974,70 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 0]}, "bbox": [3.0, 3.0, 3.0, 3.0]}], "bbox": [1.0, 1.0, 3.0, 3.0]}'
         """
         return json.dumps(self.__geo_interface__, **kwargs)
+
+    def to_wkb(self, hex=False):
+        """
+        Convert GeoSeries geometries to WKB
+
+        Parameters
+        ----------
+        hex : bool
+            Use WKB hex representation. Default: False
+
+        Returns
+        -------
+        A pandas Series of the same size as the GeoSeries containing WKB representations of the geometries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.to_wkb()
+        0    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
+        1    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
+        2    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
+        dtype: object
+
+        >>> s.to_wkb(hex=True)
+        0    0101000000000000000000F03F000000000000F03F
+        1    010100000000000000000000400000000000000040
+        2    010100000000000000000008400000000000000840
+        dtype: object
+        """
+        return Series(to_wkb(self.array, hex=hex))
+
+    def to_wkt(self):
+        """
+        Convert GeoSeries geometries to WKT
+
+        Returns
+        -------
+        A pandas Series of the same size as the GeoSeries containing WKT representations of the geometries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.to_wkt()
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (3 3)
+        dtype: object
+        """
+        return Series(to_wkt(self.array))
+
 
     #
     # Implement standard operators for GeoSeries
