@@ -330,7 +330,8 @@ class GeoSeries(GeoPandasBase, Series):
     @staticmethod
     def from_wkb(data, hex=False, index=None, crs=None, **kwargs):
         """
-        Alternate constructor to create a ``GeoSeries`` from a list or array of WKB objects
+        Alternate constructor to create a ``GeoSeries``
+        from a list or array of WKB objects
 
         Parameters
         ----------
@@ -341,7 +342,8 @@ class GeoSeries(GeoPandasBase, Series):
         index : array-like or Index
             The index for the GeoSeries.
         crs : value, optional
-            Coordinate Reference System of the geometry objects. Can be anything accepted by
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
             :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
         kwargs
@@ -356,9 +358,12 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         >>> wkbs = [
-        ... b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?',
-        ... b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00@',
-        ... b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08@\x00\x00\x00\x00\x00\x00\x08@',
+        ... (b'\x01\x01\x00\x00\x00\x00\x00\x00\x00'
+        ...  b'\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?'),
+        ... (b'\x01\x01\x00\x00\x00\x00\x00\x00\x00'
+        ...  b'\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00@'),
+        ... (b'\x01\x01\x00\x00\x00\x00\x00\x00\x00'
+        ...  b'\x00\x00\x08@\x00\x00\x00\x00\x00\x00\x08@'),
         ... ]
         >>> s = geopandas.GeoSeries.from_wkb(wkbs)
         >>> s
@@ -384,7 +389,8 @@ class GeoSeries(GeoPandasBase, Series):
     @staticmethod
     def from_wkt(data, index=None, crs=None, **kwargs):
         """
-        Alternate constructor to create a ``GeoSeries`` from a list or array of WKT objects
+        Alternate constructor to create a ``GeoSeries``
+        from a list or array of WKT objects
 
         Parameters
         ----------
@@ -393,7 +399,8 @@ class GeoSeries(GeoPandasBase, Series):
         index : array-like or Index
             The index for the GeoSeries.
         crs : value, optional
-            Coordinate Reference System of the geometry objects. Can be anything accepted by
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
             :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
         kwargs
@@ -1080,7 +1087,8 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         Returns
         -------
-        A pandas Series of the same size as the GeoSeries containing WKB representations of the geometries
+        Series
+            WKB representations of the geometries
 
         Examples
         --------
@@ -1112,7 +1120,8 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         Returns
         -------
-        A pandas Series of the same size as the GeoSeries containing WKT representations of the geometries
+        Series
+            WKT representations of the geometries
 
         Examples
         --------
