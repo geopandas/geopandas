@@ -177,7 +177,7 @@ def to_shapely(geoms):
     return vectorized.to_shapely(geoms.data)
 
 
-def from_wkb(data, crs=None):
+def from_wkb(data, crs=None, hex=False):
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -189,9 +189,11 @@ def from_wkb(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    hex : bool
+        Whether WKB objects are in hex representation. Default: False
 
     """
-    return GeometryArray(vectorized.from_wkb(data), crs=crs)
+    return GeometryArray(vectorized.from_wkb(data, hex=hex), crs=crs)
 
 
 def to_wkb(geoms, hex=False):

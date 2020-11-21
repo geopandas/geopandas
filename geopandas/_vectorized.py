@@ -153,12 +153,12 @@ def to_shapely(data):
         return data
 
 
-def from_wkb(data):
+def from_wkb(data, hex=False):
     """
     Convert a list or array of WKB objects to a np.ndarray[geoms].
     """
     if compat.USE_PYGEOS:
-        return pygeos.from_wkb(data)
+        return pygeos.from_wkb(data, hex=hex)
 
     import shapely.wkb
 
@@ -166,7 +166,7 @@ def from_wkb(data):
 
     for geom in data:
         if geom is not None and len(geom):
-            geom = shapely.wkb.loads(geom)
+            geom = shapely.wkb.loads(geom, hex=hex)
         else:
             geom = None
         out.append(geom)
