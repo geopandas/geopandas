@@ -279,6 +279,11 @@ class TestPointPlotting:
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
     def test_empty_plot(self):
+
+        s = GeoSeries([Polygon()])
+        with pytest.warns(UserWarning):
+            ax = s.plot()
+        assert len(ax.collections) == 0
         s = GeoSeries([])
         with pytest.warns(UserWarning):
             ax = s.plot()
@@ -288,15 +293,19 @@ class TestPointPlotting:
             ax = df.plot()
         assert len(ax.collections) == 0
 
+    def test_empty_geometry(self):
+
         if compat.USE_PYGEOS:
             s = GeoSeries([wkt.loads("POLYGON EMPTY")])
-            s.plot()
-            assert len(ax.collections) == 0
-
+            s = GeoSeries(
+                [Polygon([(0, 0), (1, 0), (1, 1)]), wkt.loads("POLYGON EMPTY")]
+            )
+            ax = s.plot()
+            assert len(ax.collections) == 1
         if not compat.USE_PYGEOS:
-            s = GeoSeries([Polygon()])
-            s.plot()
-            assert len(ax.collections) == 0
+            s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
+            ax = s.plot()
+            assert len(ax.collections) == 1
 
     def test_multipoints(self):
 
