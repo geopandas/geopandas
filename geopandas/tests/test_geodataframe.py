@@ -683,6 +683,48 @@ class TestDataFrame:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
             assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
+    def test_to_wkb(self):
+        wkbs0 = [
+            b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',  # POINT (0 0)
+            b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?',  # POINT (1 1)
+        ]
+        wkbs1 = [
+            b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00@',  # POINT (2 2)
+            b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08@\x00\x00\x00\x00\x00\x00\x08@',  # POINT (3 3)
+        ]
+        gs0 = GeoSeries.from_wkb(wkbs0)
+        gs1 = GeoSeries.from_wkb(wkbs1)
+        gdf = GeoDataFrame({'geom_col0': gs0, 'geom_col1': gs1})
+
+        expected_df = pd.DataFrame({'geom_col0': wkbs0, 'geom_col1': wkbs1})
+        assert_frame_equal(expected_df, gdf.to_wkb())
+
+    def test_to_wkb_hex(self):
+        wkbs0 = [
+            '010100000000000000000000000000000000000000',  # POINT (0 0)
+            '0101000000000000000000F03F000000000000F03F',  # POINT (1 1)
+        ]
+        wkbs1 = [
+            '010100000000000000000000400000000000000040',  # POINT (2 2)
+            '010100000000000000000008400000000000000840',  # POINT (3 3)
+        ]
+        gs0 = GeoSeries.from_wkb(wkbs0, hex=True)
+        gs1 = GeoSeries.from_wkb(wkbs1, hex=True)
+        gdf = GeoDataFrame({'geom_col0': gs0, 'geom_col1': gs1})
+
+        expected_df = pd.DataFrame({'geom_col0': wkbs0, 'geom_col1': wkbs1})
+        assert_frame_equal(expected_df, gdf.to_wkb(hex=True))
+
+    def test_to_wkt(self):
+        wkts0 = ['POINT (0 0)', 'POINT (1 1)']
+        wkts1 = ['POINT (2 2)', 'POINT (3 3)']
+        gs0 = GeoSeries.from_wkt(wkts0)
+        gs1 = GeoSeries.from_wkt(wkts1)
+        gdf = GeoDataFrame({'gs0': gs0, 'gs1': gs1})
+
+        expected_df = pd.DataFrame({'gs0': wkts0, 'gs1': wkts1})
+        assert_frame_equal(expected_df, gdf.to_wkt())
+
 
 def check_geodataframe(df, geometry_column="geometry"):
     assert isinstance(df, GeoDataFrame)

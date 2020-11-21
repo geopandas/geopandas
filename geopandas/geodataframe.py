@@ -11,7 +11,7 @@ from shapely.geometry.base import BaseGeometry
 
 from pyproj import CRS
 
-from geopandas.array import GeometryArray, from_shapely, GeometryDtype
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
@@ -871,6 +871,47 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             geo["bbox"] = tuple(self.total_bounds)
 
         return geo
+
+    def to_wkb(self, hex=False):
+        """
+        Encode all geometry columns in the GeoDataFrame to WKB.
+
+        Parameters
+        ----------
+        hex : bool
+            Use WKB hex representation. Default: False
+
+        Returns
+        -------
+        DataFrame
+            geometry columns are encoded to WKB
+        """
+
+        df = DataFrame(self.copy())
+
+        # Encode all geometry columns to WKB
+        for col in df.columns[df.dtypes == "geometry"]:
+            df[col] = to_wkb(df[col].values, hex=hex)
+
+        return df
+
+    def to_wkt(self):
+        """
+        Encode all geometry columns in the GeoDataFrame to WKT.
+
+        Returns
+        -------
+        DataFrame
+            geometry columns are encoded to WKT
+        """
+
+        df = DataFrame(self.copy())
+
+        # Encode all geometry columns to WKT
+        for col in df.columns[df.dtypes == "geometry"]:
+            df[col] = to_wkt(df[col].values)
+
+        return df
 
     def to_parquet(self, path, index=None, compression="snappy", **kwargs):
         """Write a GeoDataFrame to the Parquet format.
