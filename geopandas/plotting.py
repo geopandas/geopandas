@@ -387,6 +387,14 @@ def plot_series(
         )
         return ax
 
+    if all([g.is_empty for g in s]):
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
+            UserWarning,
+        )
+        return ax
+
     # if cmap is specified, create range of colors based on cmap
     values = None
     if cmap is not None:
@@ -736,6 +744,7 @@ def plot_dataframe(
 
     # plot all Polygons and all MultiPolygon components in the same collection
     polys = expl_series[poly_idx & np.invert(nan_idx)]
+    print(polys)
     subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
         _plot_polygon_collection(
