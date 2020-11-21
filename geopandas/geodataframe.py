@@ -59,19 +59,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
-        Cannot be used with ``wkt``, ``wkb``, or ``wkb_hex`` keywords.
+        Cannot be used with ``wkt`` or ``wkb`` keywords.
     wkt : str or array (optional)
         If str, column with WKT values to load and use as geometry.
         If array, will be loaded and set as 'geometry' column on GeoDataFrame.
-        Cannot be used with ``geometry``, ``wkb``, or ``wkb_hex`` keywords.
+        Cannot be used with ``geometry`` or ``wkb`` keywords.
     wkb : str or array (optional)
         If str, column with WKB values to load and use as geometry.
         If array, will be loaded and set as 'geometry' column on GeoDataFrame.
-        Cannot be used with ``geometry``, ``wkt``, or ``wkb_hex`` keywords.
-    wkb_hex : str or array (optional)
-        If str, column with WKB hex values to load and use as geometry.
-        If array, will be loaded and set as 'geometry' column on GeoDataFrame.
-        Cannot be used with ``geometry``, ``wkt``, or ``wkb`` keywords.
+        Cannot be used with ``geometry`` or``wkt`` keywords.
 
     Examples
     --------
@@ -108,18 +104,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, geometry=None, crs=None, wkt=None, wkb=None, wkb_hex=None, **kwargs):
+    def __init__(self, *args, geometry=None, crs=None, wkt=None, wkb=None, **kwargs):
         with compat.ignore_shapely2_warnings():
             super(GeoDataFrame, self).__init__(*args, **kwargs)
 
         # Check at most one of geometry, wkt, wkb, wkb_hex is passed
         found_geo_kwarg = False
-        for arg in [geometry, wkt, wkb, wkb_hex]:
+        for arg in [geometry, wkt, wkb]:
             if arg is not None:
                 if found_geo_kwarg:
-                    raise ValueError(
-                        "At most one of geometry, wkt, wkb, or wkb_hex can be set."
-                    )
+                    raise ValueError("At most one of geometry, wkt, or wkb can be set.")
                 found_geo_kwarg = True
 
         # need to set this before calling self['geometry'], because
@@ -171,18 +165,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             else:
                 geometry = GeoSeries.from_wkt(wkt)
 
-        if wkb_hex is not None:
-            wkb = wkb_hex
-            hex = True
-        else:
-            hex = False
-
         if wkb is not None:
             if isinstance(wkb, str):
-                self[wkb] = GeoSeries.from_wkb(self[wkb].values, hex=hex)
+                self[wkb] = GeoSeries.from_wkb(self[wkb].values)
                 geometry = wkb
             else:
-                geometry = GeoSeries.from_wkb(wkb, hex=hex)
+                geometry = GeoSeries.from_wkb(wkb)
 
         if geometry is not None:
             if (
@@ -874,14 +862,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return geo
 
-    def to_wkb(self, hex=False):
+    def to_wkb(self):
         """
         Encode all geometry columns in the GeoDataFrame to WKB.
-
-        Parameters
-        ----------
-        hex : bool
-            Use WKB hex representation. Default: False
 
         Returns
         -------
@@ -893,7 +876,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         # Encode all geometry columns to WKB
         for col in df.columns[df.dtypes == "geometry"]:
-            df[col] = to_wkb(df[col].values, hex=hex)
+            df[col] = to_wkb(df[col].values)
 
         return df
 

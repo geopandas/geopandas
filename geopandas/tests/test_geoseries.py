@@ -271,9 +271,6 @@ class TestSeries:
 
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
-        assert_geoseries_equal(
-            self.g1, GeoSeries.from_wkb([self.t1.wkb_hex, self.sq.wkb_hex], hex=True)
-        )
 
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))

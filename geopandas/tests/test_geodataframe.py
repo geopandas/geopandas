@@ -711,22 +711,6 @@ class TestDataFrame:
         expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
         assert_frame_equal(expected_df, gdf.to_wkb())
 
-    def test_to_wkb_hex(self):
-        wkbs0 = [
-            "010100000000000000000000000000000000000000",  # POINT (0 0)
-            "0101000000000000000000F03F000000000000F03F",  # POINT (1 1)
-        ]
-        wkbs1 = [
-            "010100000000000000000000400000000000000040",  # POINT (2 2)
-            "010100000000000000000008400000000000000840",  # POINT (3 3)
-        ]
-        gs0 = GeoSeries.from_wkb(wkbs0, hex=True)
-        gs1 = GeoSeries.from_wkb(wkbs1, hex=True)
-        gdf = GeoDataFrame({"geom_col0": gs0, "geom_col1": gs1})
-
-        expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
-        assert_frame_equal(expected_df, gdf.to_wkb(hex=True))
-
     def test_to_wkt(self):
         wkts0 = ["POINT (0 0)", "POINT (1 1)"]
         wkts1 = ["POINT (2 2)", "POINT (3 3)"]
@@ -1012,28 +996,6 @@ class TestConstructor:
         column_name = "my cool wkbs"
         gdf = GeoDataFrame({column_name: wkbs}, wkb=column_name)
         assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkb(wkbs))
-        assert gdf.geometry.name == column_name
-
-    def test_from_wkb_hex_list(self):
-        wkbs_hex = [
-            "0101000000000000000000F03F000000000000F03F",  # POINT (1 1)
-            "010100000000000000000000400000000000000040",  # POINT (2 2)
-            "010100000000000000000008400000000000000840",  # POINT (3 3)
-        ]
-
-        gdf = GeoDataFrame(wkb_hex=wkbs_hex)
-        assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkb(wkbs_hex, hex=True))
-        assert gdf.geometry.name == geopandas.geodataframe.DEFAULT_GEO_COLUMN_NAME
-
-    def test_from_wkb_hex_columm(self):
-        wkbs_hex = [
-            "0101000000000000000000F03F000000000000F03F",  # POINT (1 1)
-            "010100000000000000000000400000000000000040",  # POINT (2 2)
-            "010100000000000000000008400000000000000840",  # POINT (3 3)
-        ]
-        column_name = "my cool wkbs hex"
-        gdf = GeoDataFrame({column_name: wkbs_hex}, wkb_hex=column_name)
-        assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkb(wkbs_hex, hex=True))
         assert gdf.geometry.name == column_name
 
     def test_from_wkt_list(self):
