@@ -335,8 +335,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoSeries(df.geometry, crs=df.crs)
 
-    @staticmethod
-    def from_wkb(data, index=None, crs=None, **kwargs):
+    @classmethod
+    def from_wkb(cls, data, index=None, crs=None, **kwargs):
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
@@ -360,10 +360,10 @@ class GeoSeries(GeoPandasBase, Series):
         -------
         GeoSeries
         """
-        return GeoSeries(from_wkb(data, crs=crs), index=index, **kwargs)
+        return cls(from_wkb(data, crs=crs), index=index, **kwargs)
 
-    @staticmethod
-    def from_wkt(data, index=None, crs=None, **kwargs):
+    @classmethod
+    def from_wkt(cls, data, index=None, crs=None, **kwargs):
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKT objects
@@ -402,7 +402,7 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (3.00000 3.00000)
         dtype: geometry
         """
-        return GeoSeries(from_wkt(data, crs=crs), index=index, **kwargs)
+        return cls(from_wkt(data, crs=crs), index=index, **kwargs)
 
     @property
     def __geo_interface__(self):
