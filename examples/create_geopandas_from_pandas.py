@@ -69,10 +69,9 @@ df = pd.DataFrame(
                      'POINT(-66.86 10.48)']})
 
 ###############################################################################
-# We use ``shapely.wkt`` sub-module to parse wkt format:
-from shapely import wkt
+# We can construct a ``GeoSeries`` by parsing a column in wkt format:
 
-df['Coordinates'] = df['Coordinates'].apply(wkt.loads)
+df['Coordinates'] = geopandas.GeoSeries.from_wkt(df['Coordinates'])
 
 ###############################################################################
 #  The ``GeoDataFrame`` is constructed as follows :
