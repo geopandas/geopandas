@@ -958,60 +958,6 @@ class TestConstructor:
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
 
-    def test_from_wkb_list(self):
-        wkbs = [
-            (
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
-            ),  # POINT (1 1)
-            (
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
-            ),  # POINT (2 2)
-            (
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
-            ),  # POINT (3 3)
-        ]
-
-        gdf = GeoDataFrame(wkb=wkbs)
-        assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkb(wkbs))
-        assert gdf.geometry.name == geopandas.geodataframe.DEFAULT_GEO_COLUMN_NAME
-
-    def test_from_wkb_columm(self):
-        wkbs = [
-            (
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
-            ),  # POINT (1 1)
-            (
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
-            ),  # POINT (2 2)
-            (
-                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
-                b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
-            ),  # POINT (3 3)
-        ]
-        column_name = "my cool wkbs"
-        gdf = GeoDataFrame({column_name: wkbs}, wkb=column_name)
-        assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkb(wkbs))
-        assert gdf.geometry.name == column_name
-
-    def test_from_wkt_list(self):
-        wkts = ["POINT (1 1)", "POINT (2 2)", "POINT (3 3)"]
-
-        gdf = GeoDataFrame(wkt=wkts)
-        assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkt(wkts))
-        assert gdf.geometry.name == geopandas.geodataframe.DEFAULT_GEO_COLUMN_NAME
-
-    def test_from_wkt_columm(self):
-        wkts = ["POINT (1 1)", "POINT (2 2)", "POINT (3 3)"]
-        column_name = "my cool wkbs"
-        gdf = GeoDataFrame({column_name: wkts}, wkt=column_name)
-        assert_geoseries_equal(gdf.geometry, GeoSeries.from_wkt(wkts))
-        assert gdf.geometry.name == column_name
-
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame()

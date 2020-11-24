@@ -59,15 +59,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
-        Cannot be used with ``wkt`` or ``wkb`` keywords.
-    wkt : str or array (optional)
-        If str, column with WKT values to load and use as geometry.
-        If array, will be loaded and set as 'geometry' column on GeoDataFrame.
-        Cannot be used with ``geometry`` or ``wkb`` keywords.
-    wkb : str or array (optional)
-        If str, column with WKB values to load and use as geometry.
-        If array, will be loaded and set as 'geometry' column on GeoDataFrame.
-        Cannot be used with ``geometry`` or``wkt`` keywords.
 
     Examples
     --------
@@ -91,30 +82,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     Constructing GeoDataFrame from a pandas DataFrame with a column of WKT geometries
 
     >>> import pandas as pd
-    >>> d = {'col1': ['name1', 'name2'], 'wkt_col': ['POINT (1 2)', 'POINT (2 1)']}
+    >>> d = {'col1': ['name1', 'name2'], 'wkt': ['POINT (1 2)', 'POINT (2 1)']}
     >>> df = pd.DataFrame(d)
-    >>> gdf = geopandas.GeoDataFrame(df, wkt='wkt_col')
+    >>> gs = geopandas.GeoSeries.from_wkt(df['wkt'])
+    >>> gdf = geopandas.GeoDataFrame(df, geometry=gs, crs="EPSG:4326")
     >>> gdf
-        col1                  wkt_col
-    0  name1  POINT (1.00000 2.00000)
-    1  name2  POINT (2.00000 1.00000)
+        col1          wkt                 geometry
+    0  name1  POINT (1 2)  POINT (1.00000 2.00000)
+    1  name2  POINT (2 1)  POINT (2.00000 1.00000)
     """
 
     _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, geometry=None, crs=None, wkt=None, wkb=None, **kwargs):
+    def __init__(self, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
             super(GeoDataFrame, self).__init__(*args, **kwargs)
-
-        # Check at most one of geometry, wkt, wkb, wkb_hex is passed
-        found_geo_kwarg = False
-        for arg in [geometry, wkt, wkb]:
-            if arg is not None:
-                if found_geo_kwarg:
-                    raise ValueError("At most one of geometry, wkt, or wkb can be set.")
-                found_geo_kwarg = True
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -157,20 +141,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     # index if needed
                     self.index = index
                 geometry = "geometry"
-
-        if wkt is not None:
-            if isinstance(wkt, str):
-                self[wkt] = GeoSeries.from_wkt(self[wkt].values)
-                geometry = wkt
-            else:
-                geometry = GeoSeries.from_wkt(wkt)
-
-        if wkb is not None:
-            if isinstance(wkb, str):
-                self[wkb] = GeoSeries.from_wkb(self[wkb].values)
-                geometry = wkb
-            else:
-                geometry = GeoSeries.from_wkb(wkb)
 
         if geometry is not None:
             if (
