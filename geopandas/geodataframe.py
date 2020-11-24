@@ -1186,7 +1186,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Parameters
         ----------
         by : string, default None
-            Column whose values define groups to be dissolved
+            Column whose values define groups to be dissolved. If None,
+            whole GeoDataFrame is considered a single group.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
@@ -1219,6 +1220,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         name2                        POINT (2.00000 1.00000)
 
         """
+
+        if by is None:
+            by = np.zeros(len(self), dtype="int64")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
