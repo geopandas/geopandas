@@ -360,9 +360,7 @@ class GeoSeries(GeoPandasBase, Series):
         -------
         GeoSeries
         """
-        if isinstance(data, Series):
-            data = data.values
-        return cls(from_wkb(data, crs=crs), index=index, **kwargs)
+        return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
 
     @classmethod
     def from_wkt(cls, data, index=None, crs=None, **kwargs):
@@ -404,9 +402,21 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (3.00000 3.00000)
         dtype: geometry
         """
+        return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
+
+    @classmethod
+    def _from_wkb_or_wkb(
+        cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
+    ):
         if isinstance(data, Series):
+            series_index = data.index
+            if index and not series_index.equals(index):
+                raise ValueError(
+                    "Index mismatch between passed index and index of passed Series."
+                )
+            index = series_index
             data = data.values
-        return cls(from_wkt(data, crs=crs), index=index, **kwargs)
+        return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 
     @property
     def __geo_interface__(self):
