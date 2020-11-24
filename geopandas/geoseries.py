@@ -343,8 +343,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        data : array-like
-            list or array of WKB objects
+        data : array-like or Series
+            Series, list or array of WKB objects
         index : array-like or Index
             The index for the GeoSeries.
         crs : value, optional
@@ -360,6 +360,8 @@ class GeoSeries(GeoPandasBase, Series):
         -------
         GeoSeries
         """
+        if isinstance(data, Series):
+            data = data.values
         return cls(from_wkb(data, crs=crs), index=index, **kwargs)
 
     @classmethod
@@ -370,8 +372,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        data : array-like
-            list or array of WKT objects
+        data : array-like, Series
+            Series, list, or array of WKT objects
         index : array-like or Index
             The index for the GeoSeries.
         crs : value, optional
@@ -402,6 +404,8 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (3.00000 3.00000)
         dtype: geometry
         """
+        if isinstance(data, Series):
+            data = data.values
         return cls(from_wkt(data, crs=crs), index=index, **kwargs)
 
     @property
