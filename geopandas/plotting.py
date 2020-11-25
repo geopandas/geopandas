@@ -45,7 +45,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom.type.startswith(prefix):
+        if geom.type.startswith(prefix) and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
@@ -151,7 +151,9 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
+    collection = PatchCollection(
+        [PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
+    )
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -381,6 +383,14 @@ def plot_series(
         warnings.warn(
             "The GeoSeries you are attempting to plot is "
             "empty. Nothing has been displayed.",
+            UserWarning,
+        )
+        return ax
+
+    if s.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
             UserWarning,
         )
         return ax
