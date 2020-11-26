@@ -824,15 +824,18 @@ class GeoSeries(GeoPandasBase, Series):
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")
 
+        minx, miny, maxx, maxy = self.total_bounds
         # ensure using geographic coordinates
         if not self.crs.is_geographic:
-            geoseries = self.to_crs("EPSG:4326")
+            lon, lat = Transformer.from_crs(
+                self.crs, "EPSG:4326", always_xy=True
+            ).transform((minx, maxx, minx, maxx), (miny, miny, maxy, maxy))
+            x_center = np.mean(lon)
+            y_center = np.mean(lat)
         else:
-            geoseries = self
+            x_center = np.mean([minx, maxx])
+            y_center = np.mean([miny, maxy])
 
-        minx, miny, maxx, maxy = geoseries.total_bounds
-        x_center = np.mean([minx, maxx])
-        y_center = np.mean([miny, maxy])
         utm_crs_list = query_utm_crs_info(
             datum_name=datum_name,
             area_of_interest=AreaOfInterest(
