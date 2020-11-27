@@ -1075,6 +1075,46 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if not inplace:
             return df
 
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        return self.geometry.estimate_utm_crs(datum_name=datum_name)
+
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a
