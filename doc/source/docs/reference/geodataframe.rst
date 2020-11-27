@@ -37,6 +37,7 @@ Projection handling
    GeoDataFrame.crs
    GeoDataFrame.set_crs
    GeoDataFrame.to_crs
+   GeoDataFrame.estimate_utm_crs
 
 Active geometry handling
 ------------------------
@@ -72,6 +73,7 @@ Spatial index
    :toctree: api/
 
    GeoDataFrame.sindex
+   GeoDataFrame.has_sindex
 
 Interface
 ---------

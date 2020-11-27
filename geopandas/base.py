@@ -11,11 +11,6 @@ from shapely.ops import cascaded_union
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
-from .sindex import has_sindex
-
-# for backwards compat
-# this will be static (will NOT follow USE_PYGEOS changes)
-HAS_SINDEX = has_sindex()
 
 
 def is_geometry_type(data):
@@ -968,6 +963,38 @@ GeometryCollection
     @property
     def sindex(self):
         return self.geometry.values.sindex
+
+    @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
+        >>> gdf.has_sindex
+        False
+        >>> index = gdf.sindex
+        >>> gdf.has_sindex
+        True
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
+        return self.geometry.values.has_sindex
 
     def buffer(self, distance, resolution=16, **kwargs):
         """Returns a ``GeoSeries`` of geometries representing all points within

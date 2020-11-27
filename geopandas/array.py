@@ -27,7 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
-from .sindex import get_sindex_class
+from .sindex import _get_sindex_class
 
 
 class GeometryDtype(ExtensionDtype):
@@ -293,8 +293,32 @@ class GeometryArray(ExtensionArray):
     @property
     def sindex(self):
         if self._sindex is None:
-            self._sindex = get_sindex_class()(self.data)
+            self._sindex = _get_sindex_class()(self.data)
         return self._sindex
+
+    @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
+
+        See Also
+        ---------
+        GeoDataFrame.has_sindex
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
+        return self._sindex is not None
 
     @property
     def crs(self):
@@ -981,7 +1005,9 @@ class GeometryArray(ExtensionArray):
             if precision is None:
                 # dummy heuristic based on 10 first geometries that should
                 # work in most cases
-                xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
                 if (
                     (-180 <= xmin <= 180)
                     and (-180 <= xmax <= 180)
