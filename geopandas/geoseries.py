@@ -419,12 +419,8 @@ class GeoSeries(GeoPandasBase, Series):
     ):
         """Create a GeoSeries from either WKT or WKB values"""
         if isinstance(data, Series):
-            series_index = data.index
-            if index and not series_index.equals(index):
-                raise ValueError(
-                    "Index mismatch between passed index and index of passed Series."
-                )
-            index = series_index
+            if index is not None:
+                data = data.reindex(index)
             data = data.values
         return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 

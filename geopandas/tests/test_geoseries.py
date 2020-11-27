@@ -278,15 +278,10 @@ class TestSeries:
         )
 
     def test_from_wkb_series_with_index(self):
-        index = [1, 2]
-        s = pd.Series([self.t1.wkb, self.sq.wkb], index=index)
-        gs = self.g1.copy()
-        gs.index = index
-        assert_geoseries_equal(gs, GeoSeries.from_wkb(s))
-
-        message = "Index mismatch between passed index and index of passed Series."
-        with pytest.raises(ValueError, match=message):
-            GeoSeries.from_wkb(s, index=[0, 1])
+        index = [0]
+        s = pd.Series([self.t1.wkb])
+        gs = self.g1.reindex(index)
+        assert_geoseries_equal(gs, GeoSeries.from_wkb(s, index=index))
 
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
@@ -297,15 +292,10 @@ class TestSeries:
         )
 
     def test_from_wkt_series_with_index(self):
-        index = [1, 2]
-        s = pd.Series([self.t1.wkt, self.sq.wkt], index=index)
-        gs = self.g1.copy()
-        gs.index = index
-        assert_geoseries_equal(gs, GeoSeries.from_wkt(s))
-
-        message = "Index mismatch between passed index and index of passed Series."
-        with pytest.raises(ValueError, match=message):
-            GeoSeries.from_wkt(s, index=[0, 1])
+        index = [0]
+        s = pd.Series([self.t1.wkt])
+        gs = self.g1.reindex(index)
+        assert_geoseries_equal(gs, GeoSeries.from_wkt(s, index=index))
 
     def test_to_wkb(self):
         assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
