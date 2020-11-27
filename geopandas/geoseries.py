@@ -359,6 +359,11 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkt
+
         """
         return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
 
@@ -387,6 +392,10 @@ class GeoSeries(GeoPandasBase, Series):
         -------
         GeoSeries
 
+        See Also
+        --------
+        GeoSeries.from_wkb
+
         Examples
         --------
 
@@ -408,6 +417,7 @@ class GeoSeries(GeoPandasBase, Series):
     def _from_wkb_or_wkb(
         cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
     ):
+        """Create a GeoSeries from either WKT or WKB values"""
         if isinstance(data, Series):
             series_index = data.index
             if index and not series_index.equals(index):
