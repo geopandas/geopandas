@@ -1079,8 +1079,12 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         -------
         Series
             WKB representations of the geometries
+
+        See also
+        --------
+        GeoSeries.to_wkt
         """
-        return Series(to_wkb(self.array, hex=hex))
+        return Series(to_wkb(self.array, hex=hex), index=self.index)
 
     def to_wkt(self):
         """
@@ -1106,8 +1110,12 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         1    POINT (2 2)
         2    POINT (3 3)
         dtype: object
+
+        See also
+        --------
+        GeoSeries.to_wkb
         """
-        return Series(to_wkt(self.array))
+        return Series(to_wkt(self.array), index=self.index)
 
     #
     # Implement standard operators for GeoSeries
