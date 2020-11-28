@@ -24,6 +24,8 @@ import geopandas._compat as compat
 
 import pytest
 
+from pandas.tests.plotting.test_boxplot_method import TestDataFramePlots  # noqa
+
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa

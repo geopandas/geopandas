@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.plotting import PlotAccessor
 
 import geopandas
 
@@ -850,6 +851,22 @@ def plot_dataframe(
 
     plt.draw()
     return ax
+
+
+class GeoplotAccessor(PlotAccessor):
+    """Extend Pandas PlotAccessor."""
+
+    _pandas_kinds = PlotAccessor._all_kinds
+
+    def __call__(self, *args, **kwargs):
+        data = self._parent.copy()
+        kind = kwargs.pop("kind", "geopandas")
+        if kind in self._pandas_kinds:
+            # Access pandas plots
+            return PlotAccessor(data)(kind=kind, **kwargs)
+        else:
+            # Fall back to geopandas plots
+            return plot_dataframe(data, *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):
