@@ -488,6 +488,19 @@ def plot_dataframe(
         The GeoDataFrame to be plotted.  Currently Polygon,
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
+    kind : str
+        The kind of plot to produce:
+        - 'geo': Map (default)
+        Pandas Kinds
+        - 'line' : line plot
+        - 'bar' : vertical bar plot
+        - 'barh' : horizontal bar plot
+        - 'hist' : histogram
+        - 'box' : boxplot
+        - 'area' : area plot
+        - 'pie' : pie plot
+        - 'scatter' : scatter plot
+        - 'hexbin' : hexbin plot.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
         If np.array or pd.Series are used then it must have same length as
@@ -854,7 +867,7 @@ def plot_dataframe(
 
 
 class GeoplotAccessor(PlotAccessor):
-    """Extend Pandas PlotAccessor."""
+    """Extend Pandas PlotAccessor to plot GeoDataFrames."""
 
     _pandas_kinds = PlotAccessor._all_kinds
 

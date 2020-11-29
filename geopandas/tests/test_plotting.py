@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.tests.plotting.common import _check_plot_works
 
 from shapely import wkt
 from shapely.affinity import rotate
@@ -23,10 +24,6 @@ from geopandas.datasets import get_path
 import geopandas._compat as compat
 
 import pytest
-
-# Test pandas plots
-# from pandas.tests.plotting.test_hist_method import TestSeriesPlots  # noqa
-# from pandas.tests.plotting.test_boxplot_method import TestDataFramePlots  # noqa
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
@@ -70,12 +67,6 @@ class TestPointPlotting:
         ax = self.df.plot(figsize=(1, 1))
         np.testing.assert_array_equal(ax.figure.get_size_inches(), (1, 1))
 
-        ax = self.df.plot(kind="geo", figsize=(1, 1))
-        np.testing.assert_array_equal(ax.figure.get_size_inches(), (1, 1))
-
-        ax = self.df.plot.geo(figsize=(1, 1))
-        np.testing.assert_array_equal(ax.figure.get_size_inches(), (1, 1))
-
     def test_default_colors(self):
 
         # # without specifying values -> uniform color
@@ -88,14 +79,6 @@ class TestPointPlotting:
 
         # GeoDataFrame
         ax = self.df.plot()
-        _check_colors(
-            self.N, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * self.N
-        )
-        ax = self.df.plot(kind="geo")
-        _check_colors(
-            self.N, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * self.N
-        )
-        ax = self.df.plot.geo()
         _check_colors(
             self.N, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * self.N
         )
@@ -430,8 +413,6 @@ class TestPointZPlotting:
     def test_plot(self):
         # basic test that points with z coords don't break plotting
         self.df.plot()
-        self.df.plot(kind="geo")
-        self.df.plot.geo()
 
 
 class TestLineStringPlotting:
@@ -462,12 +443,6 @@ class TestLineStringPlotting:
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
         ax = self.df.plot(color="green")
-        _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
-
-        ax = self.df.plot(kind="geo", color="green")
-        _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
-
-        ax = self.df.plot.geo(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
         ax = self.linearrings.plot(color="green")
@@ -1459,18 +1434,37 @@ class TestPlotCollections:
         ax.cla()
 
 
-def test_error_plots():
-    """
-    The errors in the available plots
-    """
-    poly = [Polygon([(0, 0), (1, 0), (1, 1)])]
-    df = GeoDataFrame({"geometry": poly, "values": [1]})
-    with pytest.raises(ValueError, match="error is not a valid plot kind"):
-        df.plot(kind="error")
-    with pytest.raises(
-        AttributeError, match="'GeoplotAccessor' object has no attribute 'error'"
-    ):
-        df.plot.error()
+class TestGeoplotAccessor:
+    def setup_method(self):
+        geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
+        self.gdf = GeoDataFrame({"geometry": geometries, "values": [1, 2]})
+
+    def test_pandas_kind(self):
+        pandas_kinds = ["line", "bar", "barh", "hist", "box"]
+        for kind in pandas_kinds:
+            _check_plot_works(self.gdf.plot, kind=kind)
+            _check_plot_works(getattr(self.gdf.plot, kind))
+
+    def test_geo_kind(self):
+        _check_plot_works(self.gdf.plot)
+        _check_plot_works(self.gdf.plot, kind="geo")
+        _check_plot_works(self.gdf.plot.geo)
+
+    def test_invalid_kind(self):
+        """
+        When invalid kinds.
+        """
+        _invalid_kinds = ["kde", "density"]
+        for kind in _invalid_kinds:
+            with pytest.raises(ModuleNotFoundError, match="No module named 'scipy'"):
+                self.gdf.plot(kind=kind)
+
+        with pytest.raises(ValueError, match="error is not a valid plot kind"):
+            self.gdf.plot(kind="error")
+        with pytest.raises(
+            AttributeError, match="'GeoplotAccessor' object has no attribute 'error'"
+        ):
+            self.gdf.plot.error()
 
 
 def test_column_values():
