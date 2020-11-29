@@ -10,7 +10,7 @@ from pyproj import CRS, Transformer
 from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
-from geopandas.plotting import plot_series
+from geopandas.plotting import plot_series, GeoplotAccessor
 
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
@@ -580,14 +580,9 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
-    def plot(self, *args, **kwargs):
-        """Generate a plot of the geometries in the ``GeoSeries``.
+    from pandas.core.accessor import CachedAccessor
 
-        Wraps the ``plot_series()`` function, and documentation is copied from
-        there.
-        """
-        return plot_series(self, *args, **kwargs)
-
+    plot = CachedAccessor("plot", GeoplotAccessor)
     plot.__doc__ = plot_series.__doc__
 
     #

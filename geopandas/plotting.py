@@ -238,7 +238,7 @@ def _plot_point_collection(
     vmax=None,
     marker="o",
     markersize=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -473,7 +473,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
-    **style_kwds
+    **style_kwds,
 ):
     """
     Plot a GeoDataFrame.
@@ -644,7 +644,7 @@ def plot_dataframe(
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
-            **style_kwds
+            **style_kwds,
         )
 
     # To accept pd.Series and np.arrays as column
@@ -774,7 +774,7 @@ def plot_dataframe(
             vmax=mx,
             markersize=markersize,
             cmap=cmap,
-            **style_kwds
+            **style_kwds,
         )
 
     if missing_kwds is not None and not expl_series[nan_idx].empty:
@@ -860,13 +860,18 @@ class GeoplotAccessor(PlotAccessor):
 
     def __call__(self, *args, **kwargs):
         data = self._parent.copy()
-        kind = kwargs.pop("kind", "geopandas")
+        kind = kwargs.pop("kind", "geo")
+        if kind == "geo":
+            return plot_dataframe(data, *args, **kwargs)
         if kind in self._pandas_kinds:
             # Access pandas plots
             return PlotAccessor(data)(kind=kind, **kwargs)
         else:
-            # Fall back to geopandas plots
-            return plot_dataframe(data, *args, **kwargs)
+            # raise error
+            raise ValueError(f"{kind} is not a valid plot kind")
+
+    def geo(self, *args, **kwargs):
+        return self(kind="geo", *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):
