@@ -262,6 +262,7 @@ def _plot_point_collection(
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
+    # values are expanded below as kwargs["c"]
 
     x = [p.x for p in geoms]
     y = [p.y for p in geoms]
