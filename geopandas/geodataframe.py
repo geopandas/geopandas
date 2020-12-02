@@ -1289,7 +1289,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides GeoPandasBase method
-    def explode(self):
+    def explode(self, column=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1333,6 +1333,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
         """
+
+        if column != self.geometry.name:
+            exploded_df = pd.DataFrame(self).explode(column, **kwargs)
+            return GeoDataFrame(exploded_df, geometry=self.geometry.name, crs=self.crs)
+
         df_copy = self.copy()
 
         if "level_1" in df_copy.columns:  # GH1393

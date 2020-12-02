@@ -741,6 +741,48 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    def test_explode_pandas_fallback(self):
+        d = {
+            "col1": [["name1", "name2"], ["name3", "name4"]],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        }
+        gdf = GeoDataFrame(d, crs=4326)
+        exploded_df = gdf.explode(column="col1")
+        expected_df = GeoDataFrame({
+            "col1": ["name1", "name2", "name3", "name4"],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        }, index=[0, 0, 1, 1])
+        assert_frame_equal(exploded_df, expected_df)
+
+    def test_explode_pandas_fallback_ignore_index(self):
+        d = {
+            "col1": [["name1", "name2"], ["name3", "name4"]],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        }
+        gdf = GeoDataFrame(d, crs=4326)
+        exploded_df = gdf.explode(column="col1", ignore_index=True)
+        expected_df = GeoDataFrame({
+            "col1": ["name1", "name2", "name3", "name4"],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        })
+        assert_frame_equal(exploded_df, expected_df)
+
     #
     # Test '&', '|', '^', and '-'
     #
