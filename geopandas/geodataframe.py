@@ -1339,7 +1339,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if column is None:
             column = self.geometry.name
         # If the specified column is not a geometry dtype then fall back to pandas native explode method
-        if type(self[column].dtype) != GeometryDtype:
+        if not isinstance(self[column].dtype, GeometryDtype):
             return super(GeoPandasBase, self).explode(column, **kwargs)
             # exploded_df = pd.DataFrame(self).explode(column, **kwargs)
             # return GeoDataFrame(exploded_df, geometry=self.geometry.name, crs=self.crs)
