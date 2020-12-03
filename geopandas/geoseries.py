@@ -636,8 +636,7 @@ class GeoSeries(GeoPandasBase, Series):
             index.extend(idxs)
             geometries.extend(geoms)
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-        # return gpd.GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
-        return self._constructor(geometries, index=index, crs=self.crs).__finalize__(self)
+        return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
     # Additional methods

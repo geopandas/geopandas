@@ -1288,8 +1288,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return aggregated
 
-    # overrides GeoPandasBase method
-    # also overrides the pandas native explode method to break up features geometrically
+    # overrides the pandas native explode method to break up features geometrically
     def explode(self, column=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
@@ -1338,11 +1337,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # If no column is specified then default to the active geometry column
         if column is None:
             column = self.geometry.name
-        # If the specified column is not a geometry dtype then fall back to pandas native explode method
+        # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
             return super(GeoDataFrame, self).explode(column, **kwargs)
-            # exploded_df = pd.DataFrame(self).explode(column, **kwargs)
-            # return GeoDataFrame(exploded_df, geometry=self.geometry.name, crs=self.crs)
+            # TODO: make sure index behaviour is consistent
 
         df_copy = self.copy()
 
