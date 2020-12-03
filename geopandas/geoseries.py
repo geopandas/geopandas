@@ -590,7 +590,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     plot.__doc__ = plot_series.__doc__
 
-    def explode(self, ignore_index: bool = False):
+    def explode(self):
         """
         Explode multi-part geometries into multiple single geometries.
 
