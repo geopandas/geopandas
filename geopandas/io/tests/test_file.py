@@ -1,9 +1,9 @@
 from collections import OrderedDict
 import datetime
-from distutils.version import LooseVersion
+import io
 import os
 import pathlib
-import sys
+import tempfile
 
 import numpy as np
 import pandas as pd
@@ -13,8 +13,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env, _FIONA18
-from geopandas._compat import PANDAS_GE_024
+from geopandas.io.file import fiona_env
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -37,6 +36,11 @@ def df_null():
     return read_file(
         os.path.join(PACKAGE_DIR, "doc/source/gallery", "null_geom.geojson")
     )
+
+
+@pytest.fixture
+def file_path():
+    return os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
 
 
 @pytest.fixture
@@ -82,7 +86,6 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-@pytest.mark.skipif(not _FIONA18, reason="pathlib support added to fiona in 1.8")
 def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
     """ Test to_file and from_file """
     temppath = pathlib.Path(os.path.join(str(tmpdir), "boros." + ext))
@@ -106,26 +109,17 @@ def test_to_file_bool(tmpdir, driver, ext):
         }
     )
 
-    if LooseVersion(fiona.__version__) < LooseVersion("1.8"):
-        with pytest.raises(ValueError):
-            df.to_file(tempfilename, driver=driver)
-    else:
-        df.to_file(tempfilename, driver=driver)
-        result = read_file(tempfilename)
-        if driver == "GeoJSON":
-            # geojson by default assumes epsg:4326
-            result.crs = None
-        if driver == "ESRI Shapefile":
-            # Shapefile does not support boolean, so is read back as int
-            df["b"] = df["b"].astype("int64")
-        # PY2: column names 'mixed' instead of 'unicode'
-        assert_geodataframe_equal(result, df, check_column_type=False)
+    df.to_file(tempfilename, driver=driver)
+    result = read_file(tempfilename)
+    if driver == "GeoJSON":
+        # geojson by default assumes epsg:4326
+        result.crs = None
+    if driver == "ESRI Shapefile":
+        # Shapefile does not support boolean, so is read back as int
+        df["b"] = df["b"].astype("int64")
+    assert_geodataframe_equal(result, df)
 
 
-@pytest.mark.skipif(
-    (sys.version_info < (3, 0)) and sys.platform.startswith("win"),
-    reason="GPKG tests failing on AppVeyor for Python 2.7",
-)
 def test_to_file_datetime(tmpdir):
     """Test writing a data file with the datetime column type"""
     tempfilename = os.path.join(str(tmpdir), "test_datetime.gpkg")
@@ -188,7 +182,6 @@ def test_to_file_types(tmpdir, df_points):
     df.to_file(tempfilename)
 
 
-@pytest.mark.skipif(not PANDAS_GE_024, reason="pandas >= 0.24 needed")
 def test_to_file_int64(tmpdir, df_points):
     tempfilename = os.path.join(str(tmpdir), "int64.shp")
     geometry = df_points.geometry
@@ -204,6 +197,12 @@ def test_to_file_empty(tmpdir):
     tempfilename = os.path.join(str(tmpdir), "test.shp")
     with pytest.raises(ValueError, match="Cannot write empty DataFrame to file."):
         input_empty_df.to_file(tempfilename)
+
+
+def test_to_file_privacy(tmpdir, df_nybb):
+    tempfilename = os.path.join(str(tmpdir), "test.shp")
+    with pytest.warns(DeprecationWarning):
+        geopandas.io.file.to_file(df_nybb, tempfilename)
 
 
 def test_to_file_schema(tmpdir, df_nybb):
@@ -232,6 +231,22 @@ def test_to_file_schema(tmpdir, df_nybb):
     assert result_schema == schema
 
 
+def test_to_file_column_len(tmpdir, df_points):
+    """
+    Ensure that a warning about truncation is given when a geodataframe with
+    column names longer than 10 characters is saved to shapefile
+    """
+    tempfilename = os.path.join(str(tmpdir), "test.shp")
+
+    df = df_points.iloc[:1].copy()
+    df["0123456789A"] = ["the column name is 11 characters"]
+
+    with pytest.warns(
+        UserWarning, match="Column names longer than 10 characters will be truncated"
+    ):
+        df.to_file(tempfilename, driver="ESRI Shapefile")
+
+
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     """ Test to_file with append mode and from_file """
@@ -248,7 +263,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == (5 * 2)
     expected = pd.concat([df_nybb] * 2, ignore_index=True)
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_less_precise=True)
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
@@ -259,7 +274,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == (2 * 2)
     expected = pd.concat([df_null] * 2, ignore_index=True)
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_less_precise=True)
 
 
 # -----------------------------------------------------------------------------
@@ -288,6 +303,109 @@ def test_read_file_remote_geojson_url():
         "master/examples/null_geom.geojson"
     )
     gdf = read_file(url)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.web
+def test_read_file_remote_zipfile_url():
+    url = (
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "master/geopandas/datasets/nybb_16a.zip"
+    )
+    gdf = read_file(url)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_file_textio(file_path):
+    file_text_stream = open(file_path)
+    file_stringio = io.StringIO(open(file_path).read())
+    gdf_text_stream = read_file(file_text_stream)
+    gdf_stringio = read_file(file_stringio)
+    assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
+
+
+def test_read_file_bytesio(file_path):
+    file_binary_stream = open(file_path, "rb")
+    file_bytesio = io.BytesIO(open(file_path, "rb").read())
+    gdf_binary_stream = read_file(file_binary_stream)
+    gdf_bytesio = read_file(file_bytesio)
+    assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
+    assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
+
+
+def test_read_file_raw_stream(file_path):
+    file_raw_stream = open(file_path, "rb", buffering=0)
+    gdf_raw_stream = read_file(file_raw_stream)
+    assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
+
+
+def test_read_file_pathlib(file_path):
+    path_object = pathlib.Path(file_path)
+    gdf_path_object = read_file(path_object)
+    assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
+
+
+def test_read_file_tempfile():
+    temp = tempfile.TemporaryFile()
+    temp.write(
+        b"""
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0, 0]
+      },
+      "properties": {
+        "name": "Null Island"
+      }
+    }
+    """
+    )
+    temp.seek(0)
+    gdf_tempfile = geopandas.read_file(temp)
+    assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
+    temp.close()
+
+
+def test_read_binary_file_fsspec():
+    fsspec = pytest.importorskip("fsspec")
+    # Remove the zip scheme so fsspec doesn't open as a zipped file,
+    # instead we want to read as bytes and let fiona decode it.
+    path = geopandas.datasets.get_path("nybb")[6:]
+    with fsspec.open(path, "rb") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_text_file_fsspec(file_path):
+    fsspec = pytest.importorskip("fsspec")
+    with fsspec.open(file_path, "r") as f:
+        gdf = read_file(f)
+        assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_infer_zipped_file():
+    # Remove the zip scheme so that the test for a zipped file can
+    # check it and add it back.
+    path = geopandas.datasets.get_path("nybb")[6:]
+    gdf = read_file(path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    # Check that it can sucessfully add a zip scheme to a path that already has a scheme
+    gdf = read_file("file+file://" + path)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    # Check that it can add a zip scheme for a path that includes a subpath
+    # within the archive.
+    gdf = read_file(path + "!nybb.shp")
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_allow_legacy_gdal_path():
+    # Construct a GDAL-style zip path.
+    path = "/vsizip/" + geopandas.datasets.get_path("nybb")[6:]
+    gdf = read_file(path)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
@@ -342,9 +460,25 @@ def test_read_file_filtered__rows_bbox__polygon(df_nybb):
     assert filtered_df_shape == (1, 5)
 
 
-def read_file_filtered_rows_invalid():
+def test_read_file_filtered_rows_invalid():
     with pytest.raises(TypeError):
         read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
+
+
+def test_read_file__ignore_geometry():
+    pdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True
+    )
+    assert "geometry" not in pdf.columns
+    assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
+
+
+def test_read_file__ignore_all_fields():
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
+    )
+    assert gdf.columns.tolist() == ["geometry"]
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb):
@@ -453,6 +587,11 @@ def test_read_file_empty_shapefile(tmpdir):
     empty = read_file(fname)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ["A", "Z", "geometry"])
+
+
+def test_read_file_privacy(tmpdir, df_nybb):
+    with pytest.warns(DeprecationWarning):
+        geopandas.io.file.read_file(geopandas.datasets.get_path("nybb"))
 
 
 class FileNumber(object):

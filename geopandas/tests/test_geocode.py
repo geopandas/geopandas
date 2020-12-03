@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point
@@ -9,6 +8,7 @@ from geopandas.tools.geocoding import _prepare_geocode_result
 
 from geopandas.tests.util import assert_geoseries_equal, mock
 from pandas.testing import assert_series_equal
+from geopandas.testing import assert_geodataframe_equal
 import pytest
 
 geopy = pytest.importorskip("geopy")
@@ -98,8 +98,29 @@ def test_prepare_result_none():
     assert "address" in df
 
     row = df.loc["b"]
-    assert len(row["geometry"].coords) == 0
-    assert np.isnan(row["address"])
+    # The shapely.geometry.Point() is actually a GeometryCollection, and thus
+    # gets converted to that in conversion to pygeos. When converting back
+    # on access, you now get a GeometryCollection object instead of Point,
+    # which has no coords
+    # see https://github.com/Toblerity/Shapely/issues/742/#issuecomment-545296708
+    # TODO we should probably replace this with a missing value instead of point?
+    # assert len(row["geometry"].coords) == 0
+    assert row["geometry"].is_empty
+    assert row["address"] is None
+
+
+@pytest.mark.parametrize("geocode_result", (None, (None, None)))
+def test_prepare_geocode_result_when_result_is(geocode_result):
+
+    result = {0: geocode_result}
+    expected_output = GeoDataFrame(
+        {"geometry": [Point()], "address": [None]},
+        crs="EPSG:4326",
+    )
+
+    output = _prepare_geocode_result(result)
+
+    assert_geodataframe_equal(output, expected_output)
 
 
 def test_bad_provider_forward():

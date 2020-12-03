@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series
 
-from pyproj import CRS
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
@@ -12,17 +11,6 @@ from shapely.ops import cascaded_union
 import geopandas as gpd
 
 from .array import GeometryArray, GeometryDtype
-
-try:
-    from rtree.core import RTreeError
-
-    HAS_SINDEX = True
-except ImportError:
-
-    class RTreeError(Exception):
-        pass
-
-    HAS_SINDEX = False
 
 
 def is_geometry_type(data):
@@ -42,10 +30,12 @@ def _delegate_binary_method(op, this, other, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
     this = this.geometry
     if isinstance(other, GeoPandasBase):
-        this, other = this.align(other.geometry)
+        if not this.index.equals(other.index):
+            warn("The indices of the two GeoSeries are different.")
+            this, other = this.align(other.geometry)
+        else:
+            other = other.geometry
 
-        if this.crs != other.crs:
-            warn("GeoSeries crs mismatch: {0} and {1}".format(this.crs, other.crs))
         a_this = GeometryArray(this.values)
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
@@ -96,42 +86,40 @@ def _delegate_geo_method(op, this, *args, **kwargs):
 
 
 class GeoPandasBase(object):
-    _sindex = None
-    _sindex_generated = False
-
-    def _generate_sindex(self):
-        if not HAS_SINDEX:
-            warn("Cannot generate spatial index: Missing package `rtree`.")
-        else:
-            from geopandas.sindex import SpatialIndex
-
-            stream = (
-                (i, item.bounds, idx)
-                for i, (idx, item) in enumerate(self.geometry.iteritems())
-                if pd.notnull(item) and not item.is_empty
-            )
-            try:
-                self._sindex = SpatialIndex(stream)
-            # What we really want here is an empty generator error, or
-            # for the bulk loader to log that the generator was empty
-            # and move on. See https://github.com/Toblerity/rtree/issues/20.
-            except RTreeError:
-                pass
-        self._sindex_generated = True
-
-    def _invalidate_sindex(self):
-        """
-        Indicates that the spatial index should be re-built next
-        time it's requested.
-
-        """
-        self._sindex = None
-        self._sindex_generated = False
-
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
-        ``GeoSeries``."""
+        ``GeoSeries``.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(10, 0), (10, 5), (0, 0)]),
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         Point(0, 1)
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((10.00000 0.00000, 10.00000 5.00000, ...
+        2    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 2....
+        3    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s.area
+        0     0.5
+        1    25.0
+        2     2.0
+        3     0.0
+        4     0.0
+        dtype: float64
+        """
         return _delegate_property("area", self)
 
     @property
@@ -145,18 +133,48 @@ class GeoPandasBase(object):
         can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+
+        Examples
+        --------
+
+        >>> s.crs  # doctest: +SKIP
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
         """
-        return self._crs
+        return self.geometry.values.crs
 
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self._crs = None if not value else CRS.from_user_input(value)
+        self.geometry.values.crs = value
 
     @property
     def geom_type(self):
-        """Returns a ``Series`` of strings specifying the `Geometry Type` of each
-        object."""
+        """
+        Returns a ``Series`` of strings specifying the `Geometry Type` of each
+        object.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon, LineString
+        >>> d = {'geometry': [Point(2, 1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        ... LineString([(0, 0), (1, 1)])]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.geom_type
+        0         Point
+        1       Polygon
+        2    LineString
+        dtype: object
+        """
         return _delegate_property("geom_type", self)
 
     @property
@@ -166,19 +184,110 @@ class GeoPandasBase(object):
 
     @property
     def length(self):
-        """Returns a ``Series`` containing the length of each geometry."""
+        """Returns a ``Series`` containing the length of each geometry.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, MultiLineString, Point, \
+GeometryCollection
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(10, 0), (10, 5), (0, 0)]),
+        ...         MultiLineString([((0, 0), (1, 0)), ((-1, 0), (1, 0))]),
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Point(0, 1),
+        ...         GeometryCollection([Point(1, 0), LineString([(10, 0), (10, 5), (0,\
+ 0)])])
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (10.00000 0.00000, 10.00000 5.00000...
+        2    MULTILINESTRING ((0.00000 0.00000, 1.00000 0.0...
+        3    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        4                              POINT (0.00000 1.00000)
+        5    GEOMETRYCOLLECTION (POINT (1.00000 0.00000), L...
+        dtype: geometry
+
+        >>> s.length
+        0     2.414214
+        1    16.180340
+        2     3.000000
+        3     3.414214
+        4     0.000000
+        5    16.180340
+        dtype: float64
+        """
         return _delegate_property("length", self)
 
     @property
     def is_valid(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        geometries that are valid."""
+        geometries that are valid.
+
+        Examples
+        --------
+
+        An example with one invalid polygon (a bowtie geometry crossing itself)
+        and one missing geometry:
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0,0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         None
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....
+        2    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 2....
+        3                                                 None
+        dtype: geometry
+
+        >>> s.is_valid
+        0     True
+        1    False
+        2     True
+        3    False
+        dtype: bool
+
+        """
         return _delegate_property("is_valid", self)
 
     @property
     def is_empty(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        empty geometries."""
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        empty geometries.
+
+        Examples
+        --------
+        An example of a GeoDataFrame with one empty point, one point and one missing
+        value:
+
+        >>> from shapely.geometry import Point
+        >>> d = {'geometry': [Point(), Point(2, 1), None]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf
+                           geometry
+        0  GEOMETRYCOLLECTION EMPTY
+        1   POINT (2.00000 1.00000)
+        2                      None
+        >>> gdf.is_empty
+        0     True
+        1    False
+        2    False
+        dtype: bool
+
+        See Also
+        --------
+        GeoSeries.isna : detect missing values
+        """
         return _delegate_property("is_empty", self)
 
     @property
@@ -187,19 +296,87 @@ class GeoPandasBase(object):
         geometries that do not cross themselves.
 
         This is meaningful only for `LineStrings` and `LinearRings`.
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, -1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        dtype: geometry
+
+        >>> s.is_simple
+        0    False
+        1     True
+        dtype: bool
         """
         return _delegate_property("is_simple", self)
 
     @property
     def is_ring(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        features that are closed."""
+        features that are closed.
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, LinearRing
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...         LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+        ...         LinearRing([(0, 0), (1, 1), (1, -1)]),
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
+        dtype: geometry
+
+        Note: When constructing a LinearRing, the sequence of coordinates may be
+        explicitly closed by passing identical values in the first and last indices.
+        Otherwise, the sequence will be implicitly closed by copying the first tuple
+        to the last index.
+
+        >>> s.is_ring
+        0    False
+        1     True
+        2     True
+        dtype: bool
+
+        """
         return _delegate_property("is_ring", self)
 
     @property
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        features that have a z-component."""
+        features that have a z-component.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1),
+        ...         Point(0, 1, 2),
+        ...     ]
+        ... )
+        >>> s
+        0              POINT (0.00000 1.00000)
+        1    POINT Z (0.00000 1.00000 2.00000)
+        dtype: geometry
+
+        >>> s.has_z
+        0    False
+        1     True
+        dtype: bool
+        """
         return _delegate_property("has_z", self)
 
     #
@@ -209,13 +386,64 @@ class GeoPandasBase(object):
     @property
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
-        each geometries's set-theoretic `boundary`."""
+        each geometries's set-theoretic `boundary`.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.boundary
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1        MULTIPOINT (0.00000 0.00000, 1.00000 0.00000)
+        2                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+
+        """
         return _delegate_property("boundary", self)
 
     @property
     def centroid(self):
         """Returns a ``GeoSeries`` of points representing the centroid of each
-        geometry."""
+        geometry.
+
+        Note that centroid does not have to be on or within original geometry.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.centroid
+        0    POINT (0.33333 0.66667)
+        1    POINT (0.70711 0.50000)
+        2    POINT (0.00000 0.00000)
+        dtype: geometry
+        """
         return _delegate_property("centroid", self)
 
     @property
@@ -226,7 +454,38 @@ class GeoPandasBase(object):
         The convex hull of a geometry is the smallest convex `Polygon`
         containing all the points in each geometry, unless the number of points
         in the geometric object is less than three. For two points, the convex
-        hull collapses to a `LineString`; for 1, a `Point`."""
+        hull collapses to a `LineString`; for 1, a `Point`.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0), (0.5, 0.5)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000, ...
+        3        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        4                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.convex_hull
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....
+        2    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        3        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        4                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        """
         return _delegate_property("convex_hull", self)
 
     @property
@@ -236,7 +495,34 @@ class GeoPandasBase(object):
 
         The envelope of a geometry is the bounding rectangle. That is, the
         point or smallest rectangular polygon (with sides parallel to the
-        coordinate axes) that contains the geometry."""
+        coordinate axes) that contains the geometry.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.envelope
+        0    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
+        1    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
+        2    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+        """
         return _delegate_property("envelope", self)
 
     @property
@@ -244,7 +530,31 @@ class GeoPandasBase(object):
         """Returns a ``GeoSeries`` of LinearRings representing the outer
         boundary of each polygon in the GeoSeries.
 
-        Applies to GeoSeries containing only Polygons.
+        Applies to GeoSeries containing only Polygons. Returns ``None``` for
+        other geometry types.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(1, 0), (2, 1), (0, 0)]),
+        ...         Point(0, 1)
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((1.00000 0.00000, 2.00000 1.00000, 0....
+        2                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s.exterior
+        0    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINEARRING (1.00000 0.00000, 2.00000 1.00000, ...
+        2                                                 None
+        dtype: geometry
         """
         # TODO: return empty geometry for non-polygons
         return _delegate_property("exterior", self)
@@ -260,12 +570,58 @@ class GeoPandasBase(object):
         ----------
         inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon(
+        ...             [(0, 0), (0, 5), (5, 5), (5, 0)],
+        ...             [[(1, 1), (2, 1), (1, 2)], [(1, 4), (2, 4), (2, 3)]],
+        ...         ),
+        ...         Polygon([(1, 0), (2, 1), (0, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 0.00000 5.00000, 5....
+        1    POLYGON ((1.00000 0.00000, 2.00000 1.00000, 0....
+        dtype: geometry
+
+        >>> s.interiors
+        0    [LINEARRING (1 1, 2 1, 1 2, 1 1), LINEARRING (...
+        1                                                   []
+        dtype: object
         """
         return _delegate_property("interiors", self)
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.representative_point()
+        0    POINT (0.25000 0.50000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (0.00000 0.00000)
+        dtype: geometry
         """
         return _delegate_geo_method("representative_point", self)
 
@@ -281,7 +637,22 @@ class GeoPandasBase(object):
     @property
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
-        ``GeoSeries``."""
+        ``GeoSeries``.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
+        >>> s
+        0    POLYGON ((1.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((2.00000 0.00000, 2.00000 2.00000, 0....
+        dtype: geometry
+
+        >>> union = s.unary_union
+        >>> print(union)
+        POLYGON ((0 0, 0 1, 0 2, 2 2, 2 0, 1 0, 0 0))
+        """
         return self.geometry.values.unary_union()
 
     #
@@ -321,14 +692,14 @@ class GeoPandasBase(object):
             The GeoSeries (elementwise) or geometric object to test for
             equality.
         """
-        return _binary_op("equals", self, other)
+        return _binary_op("geom_equals", self, other)
 
     def geom_almost_equals(self, other, decimal=6):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each geometry is approximately equal to `other`.
 
         Approximate equality is tested at all points to the specified `decimal`
-        place precision.  See also :meth:`equals`.
+        place precision.  See also :meth:`geom_equals`.
 
         Parameters
         ----------
@@ -337,12 +708,12 @@ class GeoPandasBase(object):
         decimal : int
             Decimal place presion used when testing for approximate equality.
         """
-        return _binary_op("almost_equals", self, other, decimal=decimal)
+        return _binary_op("geom_almost_equals", self, other, decimal=decimal)
 
     def geom_equals_exact(self, other, tolerance):
         """Return True for all geometries that equal *other* to a given
         tolerance, else False"""
-        return _binary_op("equals_exact", self, other, tolerance=tolerance)
+        return _binary_op("geom_equals_exact", self, other, tolerance=tolerance)
 
     def crosses(self, other):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -391,7 +762,14 @@ class GeoPandasBase(object):
         return _binary_op("intersects", self, other)
 
     def overlaps(self, other):
-        """Return True for all geometries that overlap *other*, else False"""
+        """Returns True for all geometries that overlap *other*, else False.
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if
+            overlaps.
+        """
         return _binary_op("overlaps", self, other)
 
     def touches(self, other):
@@ -430,6 +808,44 @@ class GeoPandasBase(object):
 
         """
         return _binary_op("within", self, other)
+
+    def covers(self, other):
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that is entirely covering `other`.
+
+        An object A is said to cover another object B if no points of B lie
+        in the exterior of A.
+
+        See
+        https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
+        for reference.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to check is being covered.
+        """
+        return _binary_geo("covers", self, other)
+
+    def covered_by(self, other):
+        """
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each geometry that is entirely covered by `other`.
+
+        An object A is said to cover another object B if no points of B lie
+        in the exterior of A.
+
+        See
+        https://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
+        for reference.
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to check is being covered.
+        """
+        return _binary_geo("covered_by", self, other)
 
     def distance(self, other):
         """Returns a ``Series`` containing the distance to `other`.
@@ -507,6 +923,18 @@ class GeoPandasBase(object):
         ``maxy`` values containing the bounds for each geometry.
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon, LineString
+        >>> d = {'geometry': [Point(2, 1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        ... LineString([(0, 1), (1, 2)])]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.bounds
+           minx  miny  maxx  maxy
+        0   2.0   1.0   2.0   1.0
+        1   0.0   0.0   1.0   1.0
+        2   0.0   1.0   1.0   2.0
         """
         bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(
@@ -520,14 +948,53 @@ class GeoPandasBase(object):
 
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon, LineString
+        >>> d = {'geometry': [Point(3, -1), Polygon([(0, 0), (1, 1), (1, 0)]),
+        ... LineString([(0, 1), (1, 2)])]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf.total_bounds
+        array([ 0., -1.,  3.,  2.])
         """
         return GeometryArray(self.geometry.values).total_bounds
 
     @property
     def sindex(self):
-        if not self._sindex_generated:
-            self._generate_sindex()
-        return self._sindex
+        return self.geometry.values.sindex
+
+    @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
+        >>> gdf.has_sindex
+        False
+        >>> index = gdf.sindex
+        >>> gdf.has_sindex
+        True
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
+        return self.geometry.values.has_sindex
 
     def buffer(self, distance, resolution=16, **kwargs):
         """Returns a ``GeoSeries`` of geometries representing all points within
@@ -747,19 +1214,23 @@ class GeoPandasBase(object):
         original index and a zero-based integer index that counts the
         number of single geometries within a multi-part geometry.
 
-        Example
-        -------
-        >>> gdf  # gdf is GeoSeries of MultiPoints
-        0         MULTIPOINT (0 0, 1 1)
-        1    MULTIPOINT (2 2, 3 3, 4 4)
+        Examples
+        --------
+        >>> from shapely.geometry import MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        ... )
+        >>> s
+        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
         dtype: geometry
 
-        >>> gdf.explode()
-        0  0    POINT (0 0)
-           1    POINT (1 1)
-        1  0    POINT (2 2)
-           1    POINT (3 3)
-           2    POINT (4 4)
+        >>> s.explode()
+        0  0    POINT (0.00000 0.00000)
+           1    POINT (1.00000 1.00000)
+        1  0    POINT (2.00000 2.00000)
+           1    POINT (3.00000 3.00000)
+           2    POINT (4.00000 4.00000)
         dtype: geometry
 
         """
@@ -775,7 +1246,7 @@ class GeoPandasBase(object):
             index.extend(idxs)
             geometries.extend(geoms)
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-        return gpd.GeoSeries(geometries, index=index).__finalize__(self)
+        return gpd.GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     @property
     def cx(self):
@@ -788,6 +1259,34 @@ class GeoPandasBase(object):
         will return the full series/frame, but ``.cx[:]`` is not implemented.
         """
         return _CoordinateIndexer(self)
+
+    def equals(self, other):
+        """
+        Test whether two objects contain the same elements.
+
+        This function allows two GeoSeries or GeoDataFrames to be compared
+        against each other to see if they have the same shape and elements.
+        Missing values in the same location are considered equal. The
+        row/column index do not need to have the same type (as long as the
+        values are still considered equal), but the dtypes of the respective
+        columns must be the same.
+
+        Parameters
+        ----------
+        other : GeoSeries or GeoDataFrame
+            The other GeoSeries or GeoDataFrame to be compared with the first.
+
+        Returns
+        -------
+        bool
+            True if all elements are the same in both objects, False
+            otherwise.
+        """
+        # we override this because pandas is using `self._constructor` in the
+        # isinstance check (https://github.com/geopandas/geopandas/issues/1420)
+        if not isinstance(other, type(self)):
+            return False
+        return self._data.equals(other._data)
 
 
 class _CoordinateIndexer(object):

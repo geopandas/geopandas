@@ -13,9 +13,8 @@ dependencies:
 - descartes=1.1.0
 - mapclassify=2.2.0
 - sphinx=2.4.1
-- sphinx_rtd_theme=0.4.3
+- pydata-sphinx-theme=0.3.1
 - numpydoc=0.9.2
-- recommonmark==0.6.0
 - ipython=7.12.0
 - pillow=7.0.0
 - mock=3.0.5
@@ -36,3 +35,6 @@ dependencies:
 - libgdal=3.0.4
 - proj=6.3.0
 - geos=3.8.0
+- pip:
+  - myst-nb
+  - sphinx-toggleprompt

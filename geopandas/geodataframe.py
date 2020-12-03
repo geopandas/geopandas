@@ -1,26 +1,35 @@
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
 from shapely.geometry import mapping, shape
+from shapely.geometry.base import BaseGeometry
 
-from geopandas.array import GeometryArray, from_shapely
+
+from pyproj import CRS
+
+from geopandas.array import GeometryArray, from_shapely, GeometryDtype
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.plotting import plot_dataframe
+from . import _compat as compat
+
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _ensure_geometry(data):
+def _ensure_geometry(data, crs=None):
     """
     Ensure the data is of geometry dtype or converted to it.
 
     If input is a (Geo)Series, output is a GeoSeries, otherwise output
     is GeometryArray.
+
+    If the input is a GeometryDtype with a set CRS, `crs` is ignored.
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
@@ -28,10 +37,10 @@ def _ensure_geometry(data):
         return data
     else:
         if isinstance(data, Series):
-            out = from_shapely(np.asarray(data))
+            out = from_shapely(np.asarray(data), crs=crs)
             return GeoSeries(out, index=data.index, name=data.name)
         else:
-            out = from_shapely(data)
+            out = from_shapely(data, crs=crs)
             return out
 
 
@@ -43,26 +52,45 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     Parameters
     ----------
-    crs : str (optional)
-        Coordinate system
+    crs : value (optional)
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
     geometry : str or array (optional)
         If str, column to use as geometry. If array, will be set as 'geometry'
         column on GeoDataFrame.
+
+    Examples
+    --------
+    Constructing GeoDataFrame from a dictionary.
+
+    >>> from shapely.geometry import Point
+    >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+    >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+    >>> gdf
+        col1                 geometry
+    0  name1  POINT (1.00000 2.00000)
+    1  name2  POINT (2.00000 1.00000)
+
+    Notice that the inferred dtype of 'geometry' columns is geometry.
+
+    >>> gdf.dtypes
+    col1          object
+    geometry    geometry
+    dtype: object
     """
 
     _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, **kwargs):
-        crs = kwargs.pop("crs", None)
-        geometry = kwargs.pop("geometry", None)
-        super(GeoDataFrame, self).__init__(*args, **kwargs)
+    def __init__(self, *args, geometry=None, crs=None, **kwargs):
+        with compat.ignore_shapely2_warnings():
+            super(GeoDataFrame, self).__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
-        self._crs = None
-        self.crs = crs
+        self._crs = CRS.from_user_input(crs) if crs else None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -74,7 +102,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # only if we have actual geometry values -> call set_geometry
             index = self.index
             try:
-                self["geometry"] = _ensure_geometry(self["geometry"].values)
+                if (
+                    hasattr(self["geometry"].values, "crs")
+                    and self["geometry"].values.crs
+                    and crs
+                    and not self["geometry"].values.crs == crs
+                ):
+                    warnings.warn(
+                        "CRS mismatch between CRS of the passed geometries "
+                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "allow_override=True)' to overwrite CRS or "
+                        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
+                        "CRS mismatch will raise an error in the future versions "
+                        "of GeoPandas.",
+                        FutureWarning,
+                        stacklevel=2,
+                    )
+                    # TODO: raise error in 0.9 or 0.10.
+                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
                 pass
             else:
@@ -86,8 +131,32 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 geometry = "geometry"
 
         if geometry is not None:
+            if (
+                hasattr(geometry, "crs")
+                and geometry.crs
+                and crs
+                and not geometry.crs == crs
+            ):
+                warnings.warn(
+                    "CRS mismatch between CRS of the passed geometries "
+                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                    "allow_override=True)' to overwrite CRS or "
+                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
+                    "CRS mismatch will raise an error in the future versions "
+                    "of GeoPandas.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
+                # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
-        self._invalidate_sindex()
+
+        if geometry is None and crs:
+            warnings.warn(
+                "Assigning CRS to a GeoDataFrame without a geometry column is now "
+                "deprecated and will not be supported in the future.",
+                FutureWarning,
+                stacklevel=2,
+            )
 
     def __setattr__(self, attr, val):
         # have to special case geometry b/c pandas tries to use as column...
@@ -100,7 +169,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if self._geometry_column_name not in self:
             raise AttributeError(
                 "No geometry data set yet (expected in"
-                " column '%s'." % self._geometry_column_name
+                " column '%s'.)" % self._geometry_column_name
             )
         return self[self._geometry_column_name]
 
@@ -123,7 +192,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         col : column label or array
-        drop : boolean, default True
+        drop : boolean, default False
             Delete column to be used as the new geometry
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
@@ -136,8 +205,31 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-        >>> df1 = df.set_geometry([Point(0,0), Point(1,1), Point(2,2)])
-        >>> df2 = df.set_geometry('geom1')
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+
+        Passing an array:
+
+        >>> df1 = gdf.set_geometry([Point(0,0), Point(1,1)])
+        >>> df1
+            col1                 geometry
+        0  name1  POINT (0.00000 0.00000)
+        1  name2  POINT (1.00000 1.00000)
+
+        Using existing column:
+
+        >>> gdf["buffered"] = gdf.buffer(2)
+        >>> df2 = gdf.set_geometry("buffered")
+        >>> df2.geometry
+        0    POLYGON ((3.00000 2.00000, 2.99037 1.80397, 2....
+        1    POLYGON ((4.00000 1.00000, 3.99037 0.80397, 3....
+        Name: buffered, dtype: geometry
+
 
         Returns
         -------
@@ -148,9 +240,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
-
-        if not crs:
-            crs = getattr(col, "crs", self.crs)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -174,13 +263,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if to_remove:
             del frame[to_remove]
 
-        if isinstance(level, GeoSeries) and level.crs != crs:
+        if not crs:
+            level_crs = getattr(level, "crs", None)
+            crs = level_crs if level_crs is not None else self._crs
+
+        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
             level = level.copy()
             level.crs = crs
 
         # Check that we are using a listlike of geometries
-        level = _ensure_geometry(level)
+        level = _ensure_geometry(level, crs=crs)
         index = frame.index
         frame[geo_column_name] = level
         if frame.index is not index and len(frame.index) == len(index):
@@ -189,7 +282,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame.index = index
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
-        frame._invalidate_sindex()
         if not inplace:
             return frame
 
@@ -208,6 +300,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> df = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> df1 = df.rename_geometry('geom1')
         >>> df1.geometry.name
         'geom1'
@@ -220,14 +315,93 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geodataframe : GeoDataFrame
         """
         geometry_col = self.geometry.name
-        if not inplace:
-            return self.rename(columns={geometry_col: col}).set_geometry(col, inplace)
-        self.rename(columns={geometry_col: col}, inplace=inplace)
-        self.set_geometry(col, inplace=inplace)
+        if col in self.columns:
+            raise ValueError(f"Column named {col} already exists")
+        else:
+            if not inplace:
+                return self.rename(columns={geometry_col: col}).set_geometry(
+                    col, inplace
+                )
+            self.rename(columns={geometry_col: col}, inplace=inplace)
+            self.set_geometry(col, inplace=inplace)
+
+    @property
+    def crs(self):
+        """
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
+        object.
+
+        Returns None if the CRS is not set, and to set the value it
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+
+        Examples
+        --------
+
+        >>> gdf.crs  # doctest: +SKIP
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        """
+        return self._crs
+
+    @crs.setter
+    def crs(self, value):
+        """Sets the value of the crs"""
+        if self._geometry_column_name not in self:
+            warnings.warn(
+                "Assigning CRS to a GeoDataFrame without a geometry column is now "
+                "deprecated and will not be supported in the future.",
+                FutureWarning,
+                stacklevel=4,
+            )
+            self._crs = None if not value else CRS.from_user_input(value)
+        else:
+            if hasattr(self.geometry.values, "crs"):
+                self.geometry.values.crs = value
+                self._crs = self.geometry.values.crs
+            else:
+                # column called 'geometry' without geometry
+                self._crs = None if not value else CRS.from_user_input(value)
+
+    def __setstate__(self, state):
+        # overriding DataFrame method for compat with older pickles (CRS handling)
+        if isinstance(state, dict):
+            if "_metadata" in state and "crs" in state["_metadata"]:
+                metadata = state["_metadata"]
+                metadata[metadata.index("crs")] = "_crs"
+            if "crs" in state and "_crs" not in state:
+                crs = state.pop("crs")
+                state["_crs"] = CRS.from_user_input(crs) if crs is not None else crs
+
+        super().__setstate__(state)
+
+        # for some versions that didn't yet have CRS at array level -> crs is set
+        # at GeoDataFrame level with '_crs' (and not 'crs'), so without propagating
+        # to the GeoSeries/GeometryArray
+        try:
+            if self.crs is not None:
+                if self.geometry.values.crs is None:
+                    self.crs = self.crs
+        except Exception:
+            pass
 
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
+
+        It is recommended to use :func:`geopandas.read_file` instead.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
         `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
@@ -245,9 +419,33 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-        >>> df = geopandas.GeoDataFrame.from_file('nybb.shp')
+
+        >>> path = geopandas.datasets.get_path('nybb')
+        >>> gdf = geopandas.GeoDataFrame.from_file(path)
+        >>> gdf  # doctest: +SKIP
+           BoroCode       BoroName     Shape_Leng    Shape_Area                 \
+                          geometry
+        0         5  Staten Island  330470.010332  1.623820e+09  MULTIPOLYGON ((\
+(970217.022 145643.332, 970227....
+        1         4         Queens  896344.047763  3.045213e+09  MULTIPOLYGON ((\
+(1029606.077 156073.814, 102957...
+        2         3       Brooklyn  741080.523166  1.937479e+09  MULTIPOLYGON ((\
+(1021176.479 151374.797, 102100...
+        3         1      Manhattan  359299.096471  6.364715e+08  MULTIPOLYGON ((\
+(981219.056 188655.316, 980940....
+        4         2          Bronx  464392.991824  1.186925e+09  MULTIPOLYGON ((\
+(1012821.806 229228.265, 101278...
+
+        The recommended method of reading files is :func:`geopandas.read_file`:
+
+        >>> gdf = geopandas.read_file(path)
+
+        See also
+        --------
+        read_file
+
         """
-        return geopandas.io.file.read_file(filename, **kwargs)
+        return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
     def from_features(cls, features, crs=None, columns=None):
@@ -280,6 +478,34 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         For more information about the ``__geo_interface__``, see
         https://gist.github.com/sgillies/2217756
 
+        Examples
+        --------
+        >>> feature_coll = {
+        ...     "type": "FeatureCollection",
+        ...     "features": [
+        ...         {
+        ...             "id": "0",
+        ...             "type": "Feature",
+        ...             "properties": {"col1": "name1"},
+        ...             "geometry": {"type": "Point", "coordinates": (1.0, 2.0)},
+        ...             "bbox": (1.0, 2.0, 1.0, 2.0),
+        ...         },
+        ...         {
+        ...             "id": "1",
+        ...             "type": "Feature",
+        ...             "properties": {"col1": "name2"},
+        ...             "geometry": {"type": "Point", "coordinates": (2.0, 1.0)},
+        ...             "bbox": (2.0, 1.0, 2.0, 1.0),
+        ...         },
+        ...     ],
+        ...     "bbox": (1.0, 1.0, 2.0, 2.0),
+        ... }
+        >>> df = geopandas.GeoDataFrame.from_features(feature_coll)
+        >>> df
+                          geometry   col1
+        0  POINT (1.00000 2.00000)  name1
+        1  POINT (2.00000 1.00000)  name2
+
         """
         # Handle feature collections
         if hasattr(features, "__geo_interface__"):
@@ -293,18 +519,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
-        for f in features_lst:
-            if hasattr(f, "__geo_interface__"):
-                f = f.__geo_interface__
-            else:
-                f = f
-
-            d = {"geometry": shape(f["geometry"]) if f["geometry"] else None}
-            d.update(f["properties"])
-            rows.append(d)
-        df = GeoDataFrame(rows, columns=columns)
-        df.crs = crs
-        return df
+        for feature in features_lst:
+            # load geometry
+            if hasattr(feature, "__geo_interface__"):
+                feature = feature.__geo_interface__
+            row = {
+                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+            }
+            # load properties
+            row.update(feature["properties"])
+            rows.append(row)
+        return GeoDataFrame(rows, columns=columns, crs=crs)
 
     @classmethod
     def from_postgis(
@@ -317,6 +542,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         coerce_float=True,
         parse_dates=None,
         params=None,
+        chunksize=None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -346,16 +572,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
               without native Datetime support, such as SQLite.
         params : list, tuple or dict, optional, default None
             List of parameters to pass to execute method.
+        chunksize : int, default None
+            If specified, return an iterator where chunksize is the number
+            of rows to include in each chunk.
 
         Examples
         --------
         >>> sql = "SELECT geom, highway FROM roads"
+
         SpatiaLite
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
-        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)
+        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
         """
 
-        df = geopandas.io.sql.read_postgis(
+        df = geopandas.io.sql._read_postgis(
             sql,
             con,
             geom_col=geom_col,
@@ -364,6 +594,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             coerce_float=coerce_float,
             parse_dates=parse_dates,
             params=params,
+            chunksize=chunksize,
         )
 
         return df
@@ -390,6 +621,24 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         - ``drop``: remove the property from the feature. This applies to each
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+
+        >>> gdf.to_json()
+        '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", \
+"properties": {"col1": "name1"}, "geometry": {"type": "Point", "coordinates": [1.0,\
+ 2.0]}}, {"id": "1", "type": "Feature", "properties": {"col1": "name2"}, "geometry"\
+: {"type": "Point", "coordinates": [2.0, 1.0]}}]}'
+
         """
         return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
 
@@ -403,6 +652,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         This differs from `_to_geo()` only in that it is a property with
         default args instead of a method
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+
+        >>> gdf.__geo_interface__
+        {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', \
+'properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.0\
+, 2.0)}, 'bbox': (1.0, 2.0, 1.0, 2.0)}, {'id': '1', 'type': 'Feature', 'properties\
+': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
+box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
+
+
         """
         return self._to_geo(na="null", show_bbox=True)
 
@@ -422,9 +691,31 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             * keep: output the missing entries as NaN
 
         show_bbox : include bbox (bounds) in the geojson. default False
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+
+        >>> feature = next(gdf.iterfeatures())
+        >>> feature
+        {'id': '0', 'type': 'Feature', 'properties': {'col1': 'name1'}, 'geometry': {\
+'type': 'Point', 'coordinates': (1.0, 2.0)}}
         """
         if na not in ["null", "drop", "keep"]:
             raise ValueError("Unknown na method {0}".format(na))
+
+        if self._geometry_column_name not in self:
+            raise AttributeError(
+                "No geometry data set (expected in"
+                " column '%s')." % self._geometry_column_name
+            )
 
         ids = np.array(self.index, copy=False)
         geometries = np.array(self[self._geometry_column_name], copy=False)
@@ -486,6 +777,91 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return geo
 
+    def to_parquet(self, path, index=None, compression="snappy", **kwargs):
+        """Write a GeoDataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+        .. versionadded:: 0.8
+
+        Parameters
+        ----------
+        path : str, path object
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+            Name of the compression to use. Use ``None`` for no compression.
+        kwargs
+            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+
+        Examples
+        --------
+
+        >>> gdf.to_parquet('data.parquet')  # doctest: +SKIP
+        """
+
+        from geopandas.io.arrow import _to_parquet
+
+        _to_parquet(self, path, compression=compression, index=index, **kwargs)
+
+    def to_feather(self, path, index=None, compression=None, **kwargs):
+        """Write a GeoDataFrame to the Feather format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow' >= 0.17.
+
+        WARNING: this is an initial implementation of Feather file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Feather files.
+
+        .. versionadded:: 0.8
+
+        Parameters
+        ----------
+        path : str, path object
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        compression : {'zstd', 'lz4', 'uncompressed'}, optional
+            Name of the compression to use. Use ``"uncompressed"`` for no
+            compression. By default uses LZ4 if available, otherwise uncompressed.
+        kwargs
+            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+
+        Examples
+        --------
+
+        >>> gdf.to_feather('data.feather')  # doctest: +SKIP
+        """
+
+        from geopandas.io.arrow import _to_feather
+
+        _to_feather(self, path, index=index, compression=compression, **kwargs)
+
     def to_file(
         self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
     ):
@@ -496,7 +872,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         providers is available via:
 
         >>> import fiona
-        >>> fiona.supported_drivers
+        >>> fiona.supported_drivers  # doctest: +SKIP
 
         Parameters
         ----------
@@ -529,21 +905,104 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         See Also
         --------
         GeoSeries.to_file
-        """
-        from geopandas.io.file import to_file
 
-        to_file(self, filename, driver, schema, index, **kwargs)
+        Examples
+        --------
+
+        >>> gdf.to_file('dataframe.shp')  # doctest: +SKIP
+
+        >>> gdf.to_file('dataframe.gpkg', driver='GPKG', layer='name')  # doctest: +SKIP
+
+        >>> gdf.to_file('dataframe.geojson', driver='GeoJSON')  # doctest: +SKIP
+        """
+        from geopandas.io.file import _to_file
+
+        _to_file(self, filename, driver, schema, index, **kwargs)
+
+    def set_crs(self, crs=None, epsg=None, inplace=False, allow_override=False):
+        """
+        Set the Coordinate Reference System (CRS) of the ``GeoDataFrame``.
+
+        If there are multiple geometry columns within the GeoDataFrame, only
+        the CRS of the active geometry column is set.
+
+        NOTE: The underlying geometries are not transformed to this CRS. To
+        transform the geometries to a new CRS, use the ``to_crs`` method.
+
+        Parameters
+        ----------
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying the projection.
+        inplace : bool, default False
+            If True, the CRS of the GeoDataFrame will be changed in place
+            (while still returning the result) instead of making a copy of
+            the GeoDataFrame.
+        allow_override : bool, default False
+            If the the GeoDataFrame already has a CRS, allow to replace the
+            existing CRS, even when both are not equal.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+
+        Setting CRS to a GeoDataFrame without one:
+
+        >>> gdf.crs is None
+        True
+
+        >>> gdf = gdf.set_crs('epsg:3857')
+        >>> gdf.crs  # doctest: +SKIP
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        Overriding existing CRS:
+
+        >>> gdf = gdf.set_crs(4326, allow_override=True)
+
+        Without ``allow_override=True``, ``set_crs`` returns an error if you try to
+        override CRS.
+        """
+        if not inplace:
+            df = self.copy()
+        else:
+            df = self
+        df.geometry = df.geometry.set_crs(
+            crs=crs, epsg=epsg, allow_override=allow_override, inplace=True
+        )
+        return df
 
     def to_crs(self, crs=None, epsg=None, inplace=False):
         """Transform geometries to a new coordinate reference system.
 
-        Transform all geometries in a GeoSeries to a different coordinate
+        Transform all geometries in an active geometry column to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
-        This method will transform all points in all objects.  It has no notion
+        This method will transform all points in all objects. It has no notion
         or projecting entire geometries.  All segments joining points are
-        assumed to be lines in the current projection, not geodesics.  Objects
+        assumed to be lines in the current projection, not geodesics. Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
 
@@ -562,6 +1021,49 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Returns
         -------
         GeoDataFrame
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+        >>> gdf.crs  # doctest: +SKIP
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        >>> gdf = gdf.to_crs(3857)
+        >>> gdf
+            col1                       geometry
+        0  name1  POINT (111319.491 222684.209)
+        1  name2  POINT (222638.982 111325.143)
+        >>> gdf.crs  # doctest: +SKIP
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
         """
         if inplace:
             df = self
@@ -573,6 +1075,46 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return df
 
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        return self.geometry.estimate_utm_crs(datum_name=datum_name)
+
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a
@@ -581,18 +1123,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, str) and key == geo_col:
+        if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
-            result.crs = self.crs
-            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col in result:
             result.__class__ = GeoDataFrame
-            result.crs = self.crs
             result._geometry_column_name = geo_col
-            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
+
+    def __setitem__(self, key, value):
+        """
+        Overwritten to preserve CRS of GeometryArray in cases like
+        df['geometry'] = [geom... for geom in df.geometry]
+        """
+        if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
+            if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
+                value = [value] * self.shape[0]
+            try:
+                value = _ensure_geometry(value, crs=self.crs)
+            except TypeError:
+                warnings.warn("Geometry column does not contain geometry.")
+        super(GeoDataFrame, self).__setitem__(key, value)
 
     #
     # Implement pandas methods
@@ -625,7 +1177,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             result.__class__ = GeoDataFrame
             result.crs = self.crs
             result._geometry_column_name = geo_col
-            result._invalidate_sindex()
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
@@ -636,6 +1187,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self """
+        self = super().__finalize__(other, method=method, **kwargs)
+
         # merge operation: using metadata of the left object
         if method == "merge":
             for name in self._metadata:
@@ -644,9 +1197,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         elif method == "concat":
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
-        else:
-            for name in self._metadata:
-                object.__setattr__(self, name, getattr(other, name, None))
+
         return self
 
     def plot(self, *args, **kwargs):
@@ -675,7 +1226,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         by : string, default None
-            Column whose values define groups to be dissolved
+            Column whose values define groups to be dissolved. If None,
+            whole GeoDataFrame is considered a single group.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
@@ -685,7 +1237,32 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Returns
         -------
         GeoDataFrame
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> d = {
+        ...     "col1": ["name1", "name2", "name1"],
+        ...     "geometry": [Point(1, 2), Point(2, 1), Point(0, 1)],
+        ... }
+        >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
+        >>> gdf
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name2  POINT (2.00000 1.00000)
+        2  name1  POINT (0.00000 1.00000)
+
+        >>> dissolved = gdf.dissolve('col1')
+        >>> dissolved  # doctest: +SKIP
+                                                    geometry
+        col1
+        name1  MULTIPOINT (0.00000 1.00000, 1.00000 2.00000)
+        name2                        POINT (2.00000 1.00000)
+
         """
+
+        if by is None:
+            by = np.zeros(len(self), dtype="int64")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -731,8 +1308,35 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Exploded geodataframe with each single geometry
             as a separate entry in the geodataframe.
 
+        Examples
+        --------
+
+        >>> from shapely.geometry import MultiPoint
+        >>> d = {
+        ...     "col1": ["name1", "name2"],
+        ...     "geometry": [
+        ...         MultiPoint([(1, 2), (3, 4)]),
+        ...         MultiPoint([(2, 1), (0, 0)]),
+        ...     ],
+        ... }
+        >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
+        >>> gdf
+            col1                                       geometry
+        0  name1  MULTIPOINT (1.00000 2.00000, 3.00000 4.00000)
+        1  name2  MULTIPOINT (2.00000 1.00000, 0.00000 0.00000)
+
+        >>> exploded = gdf.explode()
+        >>> exploded
+              col1                 geometry
+        0 0  name1  POINT (1.00000 2.00000)
+          1  name1  POINT (3.00000 4.00000)
+        1 0  name2  POINT (2.00000 1.00000)
+          1  name2  POINT (0.00000 0.00000)
         """
         df_copy = self.copy()
+
+        if "level_1" in df_copy.columns:  # GH1393
+            df_copy = df_copy.rename(columns={"level_1": "__level_1"})
 
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
@@ -744,6 +1348,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
         df.index.names = list(self.index.names) + [None]
+
+        if "__level_1" in df.columns:
+            df = df.rename(columns={"__level_1": "level_1"})
+
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
 
@@ -772,6 +1380,106 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def to_postgis(
+        self,
+        name,
+        con,
+        schema=None,
+        if_exists="fail",
+        index=False,
+        index_label=None,
+        chunksize=None,
+        dtype=None,
+    ):
+
+        """
+        Upload GeoDataFrame into PostGIS database.
+
+        This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
+        Python driver (e.g. psycopg2) to be installed.
+
+        Parameters
+        ----------
+        name : str
+            Name of the target table.
+        con : sqlalchemy.engine.Engine
+            Active connection to the PostGIS database.
+        if_exists : {'fail', 'replace', 'append'}, default 'fail'
+            How to behave if the table already exists:
+
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
+        schema : string, optional
+            Specify the schema. If None, use default schema: 'public'.
+        index : bool, default True
+            Write DataFrame index as a column.
+            Uses *index_label* as the column name in the table.
+        index_label : string or sequence, default None
+            Column label for index column(s).
+            If None is given (default) and index is True,
+            then the index names are used.
+        chunksize : int, optional
+            Rows will be written in batches of this size at a time.
+            By default, all rows will be written at once.
+        dtype : dict of column name to SQL type, default None
+            Specifying the datatype for columns.
+            The keys should be the column names and the values
+            should be the SQLAlchemy types.
+
+        Examples
+        --------
+
+        >>> from sqlalchemy import create_engine
+        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+/mydatabase")  # doctest: +SKIP
+        >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
+        """
+        geopandas.io.sql._write_postgis(
+            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
+
+        #
+        # Implement standard operators for GeoSeries
+        #
+
+    def __xor__(self, other):
+        """Implement ^ operator as for builtin set type"""
+        warnings.warn(
+            "'^' operator will be deprecated. Use the 'symmetric_difference' "
+            "method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.symmetric_difference(other)
+
+    def __or__(self, other):
+        """Implement | operator as for builtin set type"""
+        warnings.warn(
+            "'|' operator will be deprecated. Use the 'union' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.union(other)
+
+    def __and__(self, other):
+        """Implement & operator as for builtin set type"""
+        warnings.warn(
+            "'&' operator will be deprecated. Use the 'intersection' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.intersection(other)
+
+    def __sub__(self, other):
+        """Implement - operator as for builtin set type"""
+        warnings.warn(
+            "'-' operator will be deprecated. Use the 'difference' method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.geometry.difference(other)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

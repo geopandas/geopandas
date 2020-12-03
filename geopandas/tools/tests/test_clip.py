@@ -9,15 +9,36 @@ from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCol
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+
+
+pytestmark = pytest.mark.skip_no_sindex
 
 
 @pytest.fixture
 def point_gdf():
     """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    return gdf
+
+
+@pytest.fixture
+def pointsoutside_nooverlap_gdf():
+    """Create a point GeoDataFrame. Its points are all outside the single
+    rectangle, and its bounds are outside the single rectangle's."""
+    pts = np.array([[5, 15], [15, 15], [15, 20]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    return gdf
+
+
+@pytest.fixture
+def pointsoutside_overlap_gdf():
+    """Create a point GeoDataFrame. Its points are all outside the single
+    rectangle, and its bounds are overlapping the single rectangle's."""
+    pts = np.array([[5, 15], [15, 15], [15, 5]])
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
     return gdf
 
@@ -167,9 +188,7 @@ def test_non_overlapping_geoms():
         lambda x: shapely.affinity.translate(x, xoff=20)
     )
     out = clip(unit_gdf, non_overlapping_gdf)
-    assert_geodataframe_equal(
-        out, GeoDataFrame(columns=unit_gdf.columns, crs=unit_gdf.crs)
-    )
+    assert_geodataframe_equal(out, unit_gdf.iloc[:0])
     out2 = clip(unit_gdf.geometry, non_overlapping_gdf)
     assert_geoseries_equal(out2, GeoSeries(crs=unit_gdf.crs))
 
@@ -182,11 +201,35 @@ def test_clip_points(point_gdf, single_rectangle_gdf):
     assert_geodataframe_equal(clip_pts, exp)
 
 
+def test_clip_points_geom_col_rename(point_gdf, single_rectangle_gdf):
+    """Test clipping a points GDF with a generic polygon geometry."""
+    point_gdf_geom_col_rename = point_gdf.rename_geometry("geometry2")
+    clip_pts = clip(point_gdf_geom_col_rename, single_rectangle_gdf)
+    pts = np.array([[2, 2], [3, 4], [9, 8]])
+    exp = GeoDataFrame(
+        [Point(xy) for xy in pts],
+        columns=["geometry2"],
+        crs="EPSG:4326",
+        geometry="geometry2",
+    )
+    assert_geodataframe_equal(clip_pts, exp)
+
+
 def test_clip_poly(buffered_locations, single_rectangle_gdf):
     """Test clipping a polygon GDF with a generic polygon geometry."""
     clipped_poly = clip(buffered_locations, single_rectangle_gdf)
     assert len(clipped_poly.geometry) == 3
     assert all(clipped_poly.geom_type == "Polygon")
+
+
+def test_clip_poly_geom_col_rename(buffered_locations, single_rectangle_gdf):
+    """Test clipping a polygon GDF with a generic polygon geometry."""
+
+    poly_gdf_geom_col_rename = buffered_locations.rename_geometry("geometry2")
+    clipped_poly = clip(poly_gdf_geom_col_rename, single_rectangle_gdf)
+    assert len(clipped_poly.geometry) == 3
+    assert "geometry" not in clipped_poly.keys()
+    assert "geometry2" in clipped_poly.keys()
 
 
 def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
@@ -315,6 +358,18 @@ def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
     assert "LineString" == clipped.geom_type[1]
 
 
+def test_clip_no_box_overlap(pointsoutside_nooverlap_gdf, single_rectangle_gdf):
+    """Test clip when intersection is empty and boxes do not overlap."""
+    clipped = clip(pointsoutside_nooverlap_gdf, single_rectangle_gdf)
+    assert len(clipped) == 0
+
+
+def test_clip_box_overlap(pointsoutside_overlap_gdf, single_rectangle_gdf):
+    """Test clip when intersection is emtpy and boxes do overlap."""
+    clipped = clip(pointsoutside_overlap_gdf, single_rectangle_gdf)
+    assert len(clipped) == 0
+
+
 def test_warning_extra_geoms_mixed(single_rectangle_gdf, mixed_gdf):
     """Test the correct warnings are raised if keep_geom_type is
     called on a mixed GDF"""
@@ -327,3 +382,8 @@ def test_warning_geomcoll(single_rectangle_gdf, geomcol_gdf):
     called on a GDF with GeometryCollection"""
     with pytest.warns(UserWarning):
         clip(geomcol_gdf, single_rectangle_gdf, keep_geom_type=True)
+
+
+def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        clip(point_gdf, single_rectangle_gdf.to_crs(3857))

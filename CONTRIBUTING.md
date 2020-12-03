@@ -10,18 +10,21 @@ readable code. Performance matters, but not at the expense of those
 goals.
 
 In general, GeoPandas follows the conventions of the pandas project
-where applicable. Please read the [pandas contributing
-guidelines](http://pandas.pydata.org/pandas-docs/stable/contributing.html).
+where applicable. Please read the [contributing
+guidelines](https://geopandas.readthedocs.io/en/latest/community/contributing.html).
+
 
 In particular, when submitting a pull request:
 
+- Install the requirements for the development environment (one can do this
+  with either conda, and the environment.yml file, or pip, and the
+  requirements-dev.txt file, and can use the pandas contributing guidelines
+  as a guide). 
 - All existing tests should pass. Please make sure that the test
   suite passes, both locally and on
-  [Travis CI](https://travis-ci.org/geopandas/geopandas).  Status on
-  Travis will be visible on a pull request. If you want to enable
-  Travis CI on your own fork, please read the pandas guidelines link
-  above or the
-  [getting started docs](http://about.travis-ci.org/docs/user/getting-started/).
+  [GitHub Actions](https://github.com/geopandas/geopandas/actions). Status on
+  GHA will be visible on a pull request. GHA are automatically enabled
+  on your own fork as well. To trigger a check, make a PR to your own fork.
 
 - New functionality should include tests. Please write reasonable
   tests for your code and make sure that they pass on your pull request.
@@ -36,7 +39,7 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
-- GeoPandas supports Python 3.5+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.6+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 - GeoPandas follows [the PEP 8
@@ -46,7 +49,7 @@ Style
   code format throughout the project.
 
 - Imports should be grouped with standard library imports first,
-  3rd-party libraries next, and GeoPandas imports third. Within each
+  third-party libraries next, and GeoPandas imports third. Within each
   grouping, imports should be alphabetized. Always use absolute
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
