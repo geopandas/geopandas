@@ -741,6 +741,10 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_025,
+        reason="pandas explode introduced in pandas 0.25",
+    )
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
