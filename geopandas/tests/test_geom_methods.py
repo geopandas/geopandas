@@ -796,6 +796,34 @@ class TestGeomMethods:
         )
         assert_frame_equal(exploded_df, expected_df)
 
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_025,
+        reason="pandas explode introduced in pandas 0.25",
+    )
+    def test_explode_pandas_fallback_column_as_arg(self):
+        d = {
+            "col1": [["name1", "name2"], ["name3", "name4"]],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        }
+        gdf = GeoDataFrame(d, crs=4326)
+        exploded_df = gdf.explode("col1")
+        expected_df = GeoDataFrame(
+            {
+                "col1": ["name1", "name2", "name3", "name4"],
+                "geometry": [
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                ],
+            },
+            index=[0, 0, 1, 1],
+        )
+        assert_frame_equal(exploded_df, expected_df)
+
     #
     # Test '&', '|', '^', and '-'
     #
