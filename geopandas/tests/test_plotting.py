@@ -3,7 +3,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas.tests.plotting.common import _check_plot_works
 
 from shapely import wkt
 from shapely.affinity import rotate
@@ -1442,13 +1441,15 @@ class TestGeoplotAccessor:
     def test_pandas_kind(self):
         pandas_kinds = ["line", "bar", "barh", "hist", "box"]
         for kind in pandas_kinds:
-            _check_plot_works(self.gdf.plot, kind=kind)
-            _check_plot_works(getattr(self.gdf.plot, kind))
+            ax1 = self.gdf.plot(kind=kind)
+            ax2 = getattr(self.gdf.plot, kind)()
+            assert type(ax1) is type(ax2)
 
     def test_geo_kind(self):
-        _check_plot_works(self.gdf.plot)
-        _check_plot_works(self.gdf.plot, kind="geo")
-        _check_plot_works(self.gdf.plot.geo)
+        ax1 = self.gdf.plot()
+        ax2 = self.gdf.plot(kind="geo")
+        ax3 = self.gdf.plot.geo()
+        assert type(ax1) is type(ax2) is type(ax3)
 
     def test_invalid_kind(self):
         """
