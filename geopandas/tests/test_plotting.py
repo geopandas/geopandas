@@ -1451,15 +1451,26 @@ class TestGeoplotAccessor:
         ax3 = self.gdf.plot.geo()
         assert type(ax1) is type(ax2) is type(ax3)
 
+    def test_scipy_kind(self):
+        import importlib
+
+        _scipy_kinds = ["kde", "density"]
+        if importlib.find_loader("scipy"):
+            for kind in _scipy_kinds:
+                ax1 = self.gdf.plot(kind=kind)
+                ax2 = getattr(self.gdf.plot, kind)()
+                assert type(ax1) is type(ax2)
+        else:
+            for kind in _scipy_kinds:
+                with pytest.raises(
+                    ModuleNotFoundError, match="No module named 'scipy'"
+                ):
+                    self.gdf.plot(kind=kind)
+
     def test_invalid_kind(self):
         """
         When invalid kinds.
         """
-        _invalid_kinds = ["kde", "density"]
-        for kind in _invalid_kinds:
-            with pytest.raises(ModuleNotFoundError, match="No module named 'scipy'"):
-                self.gdf.plot(kind=kind)
-
         with pytest.raises(ValueError, match="error is not a valid plot kind"):
             self.gdf.plot(kind="error")
         with pytest.raises(
