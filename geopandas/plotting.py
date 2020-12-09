@@ -2,7 +2,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas.plotting import PlotAccessor
 
 import geopandas
 
@@ -488,19 +487,6 @@ def plot_dataframe(
         The GeoDataFrame to be plotted.  Currently Polygon,
         MultiPolygon, LineString, MultiLineString and Point
         geometries can be plotted.
-    kind : str
-        The kind of plot to produce:
-        - 'geo': Map (default)
-        Pandas Kinds
-        - 'line' : line plot
-        - 'bar' : vertical bar plot
-        - 'barh' : horizontal bar plot
-        - 'hist' : histogram
-        - 'box' : boxplot
-        - 'area' : area plot
-        - 'pie' : pie plot
-        - 'scatter' : scatter plot
-        - 'hexbin' : hexbin plot.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
         If np.array or pd.Series are used then it must have same length as
@@ -866,25 +852,41 @@ def plot_dataframe(
     return ax
 
 
-class GeoplotAccessor(PlotAccessor):
-    """Extend Pandas PlotAccessor to plot GeoDataFrames."""
+if geopandas._compat.PANDAS_GE_025:
+    from pandas.plotting import PlotAccessor
 
-    _pandas_kinds = PlotAccessor._all_kinds
+    class GeoplotAccessor(PlotAccessor):
+        """Extend Pandas PlotAccessor to plot GeoDataFrames.
+        The different kinds of plots :
+         - 'geo': Map (default)
+         Pandas Kinds
+         - 'line' : line plot
+         - 'bar' : vertical bar plot
+         - 'barh' : horizontal bar plot
+         - 'hist' : histogram
+         - 'box' : boxplot
+         - 'area' : area plot
+         - 'pie' : pie plot
+         - 'scatter' : scatter plot
+         - 'hexbin' : hexbin plot.
+        """
 
-    def __call__(self, *args, **kwargs):
-        data = self._parent.copy()
-        kind = kwargs.pop("kind", "geo")
-        if kind == "geo":
-            return plot_dataframe(data, *args, **kwargs)
-        if kind in self._pandas_kinds:
-            # Access pandas plots
-            return PlotAccessor(data)(kind=kind, **kwargs)
-        else:
-            # raise error
-            raise ValueError(f"{kind} is not a valid plot kind")
+        _pandas_kinds = PlotAccessor._all_kinds
 
-    def geo(self, *args, **kwargs):
-        return self(kind="geo", *args, **kwargs)
+        def __call__(self, *args, **kwargs):
+            data = self._parent.copy()
+            kind = kwargs.pop("kind", "geo")
+            if kind == "geo":
+                return plot_dataframe(data, *args, **kwargs)
+            if kind in self._pandas_kinds:
+                # Access pandas plots
+                return PlotAccessor(data)(kind=kind, **kwargs)
+            else:
+                # raise error
+                raise ValueError(f"{kind} is not a valid plot kind")
+
+        def geo(self, *args, **kwargs):
+            return self(kind="geo", *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):
