@@ -12,7 +12,7 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  - codecov
+  - pytest-xdist
   - fsspec
   # optional
   - rtree
@@ -20,10 +20,12 @@ dependencies:
   - descartes
   - mapclassify
   - geopy
-  # installed in travis.yml, because not available on windows
+  # installed in tests.yaml, because not available on windows
   # - postgis
   - SQLalchemy
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
+  # doctest testing
+  - pytest-doctestplus

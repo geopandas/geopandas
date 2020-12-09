@@ -5,27 +5,7 @@ import numpy as np
 from . import _compat as compat
 
 
-VALID_QUERY_PREDICATES = {
-    None,
-    "intersects",
-    "within",
-    "contains",
-    "overlaps",
-    "crosses",
-    "touches",
-}
-
-
-def has_sindex():
-    """Dynamically checks for ability to generate spatial index."""
-    try:
-        get_sindex_class()
-        return True
-    except ImportError:
-        return False
-
-
-def get_sindex_class():
+def _get_sindex_class():
     """Dynamically chooses a spatial indexing backend.
 
     Required to comply with _compat.USE_PYGEOS.
@@ -72,10 +52,6 @@ if compat.HAS_RTREE:
             Geometries from which to build the spatial index.
         """
 
-        # set of valid predicates for this spatial index
-        # by default, the global set
-        valid_query_predicates = VALID_QUERY_PREDICATES
-
         def __init__(self, geometry):
             stream = (
                 (i, item.bounds, None)
@@ -97,6 +73,27 @@ if compat.HAS_RTREE:
             self._prepared_geometries = np.array(
                 [None] * self.geometries.size, dtype=object
             )
+
+        @property
+        def valid_query_predicates(self):
+            """Returns valid predicates for this spatial index.
+
+            Returns
+            -------
+            set
+                Set of valid predicates for this spatial index.
+            """
+            return {
+                None,
+                "intersects",
+                "within",
+                "contains",
+                "overlaps",
+                "crosses",
+                "touches",
+                "covers",
+                "contains_properly",
+            }
 
         def query(self, geometry, predicate=None, sort=False):
             """Compatibility layer for pygeos.query.
@@ -182,7 +179,12 @@ if compat.HAS_RTREE:
             elif predicate is not None:
                 # For the remaining predicates,
                 # we compare input_geom.predicate(tree_geom)
-                if predicate in ("contains", "intersects"):
+                if predicate in (
+                    "contains",
+                    "intersects",
+                    "covers",
+                    "contains_properly",
+                ):
                     # prepare this input geometry
                     geometry = prep(geometry)
                 tree_idx = [
@@ -252,11 +254,19 @@ if compat.HAS_RTREE:
 
         @property
         def size(self):
-            return len(self.leaves()[0][1])
+            if hasattr(self, "_size"):
+                size = self._size
+            else:
+                # self.leaves are lists of tuples of (int, lists...)
+                # index [0][1] always has an element, even for empty sindex
+                # for an empty index, it will be an empty list
+                size = len(self.leaves()[0][1])
+                self._size = size
+            return size
 
         @property
         def is_empty(self):
-            return self.size == 0
+            return self.geometries.size == 0 or self.size == 0
 
         def __len__(self):
             return self.size
@@ -278,10 +288,6 @@ if compat.HAS_PYGEOS:
             Geometries from which to build the spatial index.
         """
 
-        # set of valid predicates for this spatial index
-        # by default, the global set
-        valid_query_predicates = VALID_QUERY_PREDICATES
-
         def __init__(self, geometry):
             # set empty geometries to None to avoid segfault on GEOS <= 3.6
             # see:
@@ -293,6 +299,17 @@ if compat.HAS_PYGEOS:
             super().__init__(non_empty)
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
+
+        @property
+        def valid_query_predicates(self):
+            """Returns valid predicates for this spatial index.
+
+            Returns
+            -------
+            set
+                Set of valid predicates for this spatial index.
+            """
+            return pygeos.strtree.VALID_PREDICATES | set([None])
 
         def query(self, geometry, predicate=None, sort=False):
             """Wrapper for pygeos.query.

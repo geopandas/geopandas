@@ -123,6 +123,7 @@ Projection handling
    GeoSeries.crs
    GeoSeries.set_crs
    GeoSeries.to_crs
+   GeoSeries.estimate_utm_crs
 
 Missing values
 --------------
@@ -150,6 +151,7 @@ Spatial index
    :toctree: api/
 
    GeoSeries.sindex
+   GeoSeries.has_sindex
 
 Interface
 ---------

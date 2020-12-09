@@ -2,11 +2,14 @@ import json
 import os
 import shutil
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
 
 import fiona
+import pyproj
+from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point
 
@@ -18,6 +21,9 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
+
+
+PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 
 
 class TestDataFrame:
@@ -208,6 +214,13 @@ class TestDataFrame:
         df2 = self.df.rename_geometry("new_name", inplace=True)
         assert df2 is None
         assert self.df.geometry.name == "new_name"
+
+        # existing column error
+        msg = "Column named Shape_Area already exists"
+        with pytest.raises(ValueError, match=msg):
+            df2 = self.df.rename_geometry("Shape_Area")
+        with pytest.raises(ValueError, match=msg):
+            self.df.rename_geometry("Shape_Area", inplace=True)
 
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
@@ -560,7 +573,7 @@ class TestDataFrame:
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
-            {"A": range(len(self.df)), "location": list(self.df.geometry)},
+            {"A": range(len(self.df)), "location": np.array(self.df.geometry)},
             index=self.df.index,
         )
         gf = df.set_geometry("location", crs=self.df.crs)
@@ -661,6 +674,14 @@ class TestDataFrame:
         unpickled = pd.read_pickle(filename)
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
+
+    def test_estimate_utm_crs(self):
+        if PYPROJ_LT_3:
+            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
+                self.df.estimate_utm_crs()
+        else:
+            assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
+            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
 
 def check_geodataframe(df, geometry_column="geometry"):

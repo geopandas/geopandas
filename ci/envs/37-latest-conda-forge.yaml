@@ -1,29 +1,26 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=3.7.3
+  - python=3.7
   # required
   - pandas
   - shapely
   - fiona
   - pyproj
-  - geos
+  - pygeos
   # testing
   - pytest
   - pytest-cov
+  - pytest-xdist
   - fsspec
-  #- codecov
   # optional
   - rtree
   - matplotlib
   - descartes
-  #- geopy
+  - mapclassify
+  - geopy
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - pip:
-    - codecov
-    - geopy
-    - mapclassify
-    - git+https://github.com/pygeos/pygeos.git
+ 

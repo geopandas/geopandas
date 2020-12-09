@@ -231,8 +231,6 @@ More specifically, whether the speedups are used or not is determined by:
 
 .. _libspatialindex: https://github.com/libspatialindex/libspatialindex
 
-.. _Travis CI: https://travis-ci.org/geopandas/geopandas
-
 .. _conda: https://conda.io/en/latest/
 
 .. _Anaconda distribution: https://www.anaconda.com/distribution/

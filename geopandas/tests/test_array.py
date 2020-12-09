@@ -479,6 +479,22 @@ def test_unary_predicates(attr):
     assert result.tolist() == expected
 
 
+def test_is_ring():
+    g = [
+        shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
+        shapely.geometry.LineString([(0, 0), (1, 1), (1, -1)]),
+        shapely.geometry.LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+        shapely.geometry.Polygon([(0, 0), (1, 1), (1, -1)]),
+        shapely.geometry.Polygon(),
+        None,
+    ]
+    expected = [True, False, True, True, False, False]
+
+    result = from_shapely(g).is_ring
+
+    assert result.tolist() == expected
+
+
 @pytest.mark.parametrize("attr", ["area", "length"])
 def test_unary_float(attr):
     na_value = np.nan

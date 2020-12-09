@@ -9,7 +9,7 @@ from shapely.geometry import Point, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_025, PANDAS_GE_11
+import geopandas._compat as compat
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -71,7 +71,7 @@ def test_repr_all_missing():
 def test_repr_empty():
     # https://github.com/geopandas/geopandas/issues/1195
     s = GeoSeries([])
-    if PANDAS_GE_025:
+    if compat.PANDAS_GE_025:
         # repr with correct name fixed in pandas 0.25
         assert repr(s) == "GeoSeries([], dtype: geometry)"
     else:
@@ -455,7 +455,7 @@ def test_groupby(df):
 
     # applying on the geometry column
     res = df.groupby("value2")["geometry"].apply(lambda x: x.cascaded_union)
-    if PANDAS_GE_11:
+    if compat.PANDAS_GE_11:
         exp = GeoSeries(
             [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
             index=pd.Index([1, 2], name="value2"),
@@ -512,3 +512,50 @@ def test_apply_loc_len1(df):
     result = subset.apply(lambda geom: geom.is_empty)
     expected = subset.is_empty
     np.testing.assert_allclose(result, expected)
+
+
+def test_apply_convert_dtypes_keyword(s):
+    # ensure the convert_dtypes keyword is accepted
+    res = s.apply(lambda x: x, convert_dtype=True, args=())
+    assert_geoseries_equal(res, s)
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
+def test_preserve_attrs(df):
+    # https://github.com/geopandas/geopandas/issues/1654
+    df.attrs["name"] = "my_name"
+    attrs = {"name": "my_name"}
+    assert df.attrs == attrs
+
+    # preserve attrs in indexing operations
+    for subset in [df[:2], df[df["value1"] > 2], df[["value2", "geometry"]]]:
+        assert df.attrs == attrs
+
+    # preserve attrs in methods
+    df2 = df.reset_index()
+    assert df2.attrs == attrs
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")
+def test_preserve_flags(df):
+    # https://github.com/geopandas/geopandas/issues/1654
+    df = df.set_flags(allows_duplicate_labels=False)
+    assert df.flags.allows_duplicate_labels is False
+
+    # preserve flags in indexing operations
+    for subset in [df[:2], df[df["value1"] > 2], df[["value2", "geometry"]]]:
+        assert df.flags.allows_duplicate_labels is False
+
+    # preserve attrs in methods
+    df2 = df.reset_index()
+    assert df2.flags.allows_duplicate_labels is False
+
+    # it is honored for operations that introduce duplicate labels
+    with pytest.raises(ValueError):
+        df.reindex([0, 0, 1])
+
+    with pytest.raises(ValueError):
+        df[["value1", "value1", "geometry"]]
+
+    with pytest.raises(ValueError):
+        pd.concat([df, df])
