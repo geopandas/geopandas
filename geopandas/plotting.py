@@ -94,7 +94,7 @@ def _expand_kwargs(kwargs, multiindex):
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
-def PolygonPatch(polygon, **kwargs):
+def _PolygonPatch(polygon, **kwargs):
     """Constructs a matplotlib patch from a Polygon geometry
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
@@ -103,7 +103,7 @@ def PolygonPatch(polygon, **kwargs):
     Example (using Shapely Point and a matplotlib axes)::
 
         b = shapely.geometry.Point(0, 0).buffer(1.0)
-        patch = PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
+        patch = _PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
         ax.add_patch(patch)
 
     GeoPandas originally relied on the descartes package by Sean Gillies
@@ -169,7 +169,7 @@ def _plot_polygon_collection(
     _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection(
-        [PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
+        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
     )
 
     if values is not None:

@@ -1472,14 +1472,14 @@ def test_column_values():
 def test_polygon_patch():
     # test adapted from descartes by Sean Gillies
     # (BSD license, https://pypi.org/project/descartes).
-    from geopandas.plotting import PolygonPatch
+    from geopandas.plotting import _PolygonPatch
     from matplotlib.patches import PathPatch
 
     polygon = (
         Point(0, 0).buffer(10.0).difference(MultiPoint([(-5, 0), (5, 0)]).buffer(3.0))
     )
 
-    patch = PolygonPatch(polygon)
+    patch = _PolygonPatch(polygon)
     assert isinstance(patch, PathPatch)
     path = patch.get_path()
     assert len(path.vertices) == len(path.codes) == 198
