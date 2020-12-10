@@ -41,7 +41,9 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+        self.df3 = read_file(
+            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
