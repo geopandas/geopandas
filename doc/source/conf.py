@@ -33,9 +33,10 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
-    "myst_nb",
+    "myst_parser",
+    "nbsphinx",
     "numpydoc",
-    'sphinx_toggleprompt',
+    "sphinx_toggleprompt",
 ]
 
 # continue doc build and only print warnings/errors in examples
