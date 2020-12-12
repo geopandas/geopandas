@@ -998,7 +998,7 @@ GeometryCollection
 
     def buffer(self, distance, resolution=16, **kwargs):
         """Returns a ``GeoSeries`` of geometries representing all points within
-        a given `distance` of each geometric object.
+        a given ``distance`` of each geometric object.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#object.buffer
         for details.
@@ -1008,9 +1008,63 @@ GeometryCollection
         distance : float, np.array, pd.Series
             The radius of the buffer. If np.array or pd.Series are used
             then it must have same length as the GeoSeries.
-        resolution: int
-            Optional, the resolution of the buffer around each vertex.
+        resolution : int (optional, default 16)
+            The resolution of the buffer around each vertex.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...             [
+        ...                 Point(0, 0),
+        ...                 LineString([(1, -1), (1, 0), (2, 0), (2, 1)]),
+        ...                 Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...             ]
+        ...         )
+        >>> s
+        0                              POINT (0.00000 0.00000)
+        1    LINESTRING (1.00000 -1.00000, 1.00000 0.00000,...
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.buffer(0.2)
+        0    POLYGON ((0.20000 0.00000, 0.19904 -0.01960, 0...
+        1    POLYGON ((0.80000 0.00000, 0.80096 0.01960, 0....
+        2    POLYGON ((2.80000 -1.00000, 2.80000 1.00000, 2...
+        dtype: geometry
+
+        ``**kwargs`` accept furhter specification as ``join_style`` and ``cap_style``.
+        See the following illustration of different options.
+
+        >>> import matplotlib.pyplot as plt
+        ...
+        ...
+        ... fix, axs = plt.subplots(3, 2, figsize=(12, 12), sharex=True, sharey=True)
+        ... for ax in axs.flatten():
+        ...     s.plot(ax=ax)
+        ...
+        ... s.buffer(0.2).plot(ax=axs[0,0], alpha=.6)
+        ... axs[0,0].set_title('s.buffer(0.2)')
+        ...
+        ... s.buffer(0.2, resolution=2).plot(ax=axs[0,1], alpha=.6)
+        ... axs[0,1].set_title('s.buffer(0.2, resolution=2)')
+        ...
+        ... s.buffer(0.2, cap_style=2).plot(ax=axs[1,0], alpha=.6)
+        ... axs[1,0].set_title('s.buffer(0.2, cap_style=2)')
+        ...
+        ... s.buffer(0.2, cap_style=3).plot(ax=axs[1,1], alpha=.6)
+        ... axs[1,1].set_title('s.buffer(0.2, cap_style=3)')
+        ...
+        ... s.buffer(0.2, join_style=2).plot(ax=axs[2,0], alpha=.6)
+        ... axs[2,0].set_title('s.buffer(0.2, join_style=2)')
+        ...
+        ... s.buffer(0.2, join_style=3).plot(ax=axs[2,1], alpha=.6)
+        ... axs[2,1].set_title('s.buffer(0.2, join_style=3)')
+
+        .. image:: ../../../_static/buffer_illustrations.svg
+            :align: center
         """
+        # TODO: update docstring based on pygeos after shapely 2.0
         if isinstance(distance, pd.Series):
             if not self.index.equals(distance.index):
                 raise ValueError(
@@ -1035,9 +1089,32 @@ GeometryCollection
         tolerance : float
             All points in a simplified geometry will be no more than
             `tolerance` distance from the original.
-        preserve_topology: bool
+        preserve_topology: bool (default True)
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
+
+        Notes
+        -----
+        Invalid geometric objects may result from simplification that does not
+        preserve topology and simplification may be sensitive to the order of
+        coordinates: two geometries differing only in order of coordinates may be
+        simplified differently.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [Point(0, 0).buffer(1), LineString([(0, 0), (1, 10), (0, 20)])]
+        ... )
+        >>> s
+        0    POLYGON ((1.00000 0.00000, 0.99518 -0.09802, 0...
+        1    LINESTRING (0.00000 0.00000, 1.00000 10.00000,...
+        dtype: geometry
+
+        >>> s.simplify(1)
+        0    POLYGON ((1.00000 0.00000, 0.00000 -1.00000, -...
+        1       LINESTRING (0.00000 0.00000, 0.00000 20.00000)
+        dtype: geometry
         """
         return _delegate_geo_method("simplify", self, *args, **kwargs)
 
@@ -1110,10 +1187,35 @@ GeometryCollection
         ----------
         matrix: List or tuple
             6 or 12 items for 2D or 3D transformations respectively.
+
             For 2D affine transformations,
-            the 6 parameter matrix is [a, b, d, e, xoff, yoff]
+            the 6 parameter matrix is ``[a, b, d, e, xoff, yoff]``
+
             For 3D affine transformations,
-            the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
+            the 12 parameter matrix is ``[a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]``
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.affine_transform([2, 3, 2, 4, 5, 2])
+        0                             POINT (10.00000 8.00000)
+        1        LINESTRING (4.00000 0.00000, 7.00000 4.00000)
+        2    POLYGON ((8.00000 4.00000, 13.00000 10.00000, ...
+        dtype: geometry
+
         """  # noqa (E501 link is longer than max line length)
         return _delegate_geo_method("affine_transform", self, matrix)
 
@@ -1129,6 +1231,29 @@ GeometryCollection
             Amount of offset along each dimension.
             xoff, yoff, and zoff for translation along the x, y, and z
             dimensions respectively.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.translate(2, 3)
+        0                              POINT (3.00000 4.00000)
+        1        LINESTRING (3.00000 2.00000, 3.00000 3.00000)
+        2    POLYGON ((5.00000 2.00000, 6.00000 3.00000, 5....
+        dtype: geometry
+
         """  # noqa (E501 link is longer than max line length)
         return _delegate_geo_method("translate", self, xoff, yoff, zoff)
 
@@ -1150,6 +1275,35 @@ GeometryCollection
             object or a coordinate tuple (x, y).
         use_radians : boolean
             Whether to interpret the angle of rotation as degrees or radians
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.rotate(90)
+        0                              POINT (1.00000 1.00000)
+        1      LINESTRING (1.50000 -0.50000, 0.50000 -0.50000)
+        2    POLYGON ((4.50000 -0.50000, 3.50000 0.50000, 2...
+        dtype: geometry
+
+        >>> s.rotate(90, origin=(0, 0))
+        0                             POINT (-1.00000 1.00000)
+        1        LINESTRING (1.00000 1.00000, 0.00000 1.00000)
+        2    POLYGON ((1.00000 3.00000, 0.00000 4.00000, -1...
+        dtype: geometry
+
         """
         return _delegate_geo_method(
             "rotate", self, angle, origin=origin, use_radians=use_radians
@@ -1172,6 +1326,34 @@ GeometryCollection
             The point of origin can be a keyword 'center' for the 2D bounding
             box center (default), 'centroid' for the geometry's 2D centroid, a
             Point object or a coordinate tuple (x, y, z).
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.scale(2, 3)
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -2.00000, 1.00000 1.00000)
+        2    POLYGON ((2.50000 -3.00000, 4.50000 0.00000, 2...
+        dtype: geometry
+
+        >>> s.scale(2, 3, origin=(0, 0))
+        0                              POINT (2.00000 3.00000)
+        1       LINESTRING (2.00000 -3.00000, 2.00000 0.00000)
+        2    POLYGON ((6.00000 -3.00000, 8.00000 0.00000, 6...
+        dtype: geometry
         """
         return _delegate_geo_method("scale", self, xfact, yfact, zfact, origin=origin)
 
@@ -1195,6 +1377,34 @@ GeometryCollection
             object or a coordinate tuple (x, y).
         use_radians : boolean
             Whether to interpret the shear angle(s) as degrees or radians
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.skew(45, 30)
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (0.50000 -1.00000, 1.50000 0.00000)
+        2    POLYGON ((2.00000 -1.28868, 4.00000 0.28868, 4...
+        dtype: geometry
+
+        >>> s.skew(45, 30, origin=(0, 0))
+        0                              POINT (2.00000 1.57735)
+        1       LINESTRING (0.00000 -0.42265, 1.00000 0.57735)
+        2    POLYGON ((2.00000 0.73205, 4.00000 2.30940, 4....
+        dtype: geometry
         """
         return _delegate_geo_method(
             "skew", self, xs, ys, origin=origin, use_radians=use_radians

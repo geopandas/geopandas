@@ -394,6 +394,17 @@ def _read_parquet(path, columns=None, **kwargs):
     Returns
     -------
     GeoDataFrame
+
+    Examples
+    --------
+    >>> df = geopandas.read_parquet("data.parquet)  # doctest: +SKIP
+
+    Specifying columns to read:
+
+    >>> df = geopandas.read_parquet(
+    ...     "data.parquet,
+    ...     columns=["geometry", "pop_est"]
+    ... )  # doctest: +SKIP
     """
 
     parquet = import_optional_dependency(
@@ -439,6 +450,17 @@ def _read_feather(path, columns=None, **kwargs):
     Returns
     -------
     GeoDataFrame
+
+    Examples
+    --------
+    >>> df = geopandas.read_feather("data.feather)  # doctest: +SKIP
+
+    Specifying columns to read:
+
+    >>> df = geopandas.read_feather(
+    ...     "data.feather,
+    ...     columns=["geometry", "pop_est"]
+    ... )  # doctest: +SKIP
     """
 
     feather = import_optional_dependency(
