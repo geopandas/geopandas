@@ -1440,19 +1440,22 @@ class TestPlotCollections:
 class TestGeoplotAccessor:
     def setup_method(self):
         geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
-        values = [1, 2]
-        self.gdf = GeoDataFrame({"geometry": geometries, "values": values})
-        self.df = pd.DataFrame({"values": [1, 2]})
+        x = [1, 2]
+        y = [10, 20]
+        self.gdf = GeoDataFrame({"geometry": geometries, "x": x, "y": y})
+        self.df = pd.DataFrame({"x": x, "y": y})
 
-    def compare_figures(self, kind, fig_test, fig_ref):
+    def compare_figures(self, kind, fig_test, fig_ref, kwargs):
         """Compare Figures."""
-        ax_pandas_1 = self.df.plot(kind=kind)
-        ax_geopandas_1 = self.gdf.plot(kind=kind)
-        fig_test.subplots().plot(ax=ax_pandas_1)
+        ax_pandas_1 = self.df.plot(kind=kind, **kwargs)
+        ax_geopandas_1 = self.gdf.plot(kind=kind, **kwargs)
+        fig_test.subplots().plot(
+            ax=ax_pandas_1,
+        )
         fig_ref.subplots().plot(ax=ax_geopandas_1)
 
-        ax_pandas_2 = getattr(self.df.plot, kind)()
-        ax_geopandas_2 = getattr(self.gdf.plot, kind)()
+        ax_pandas_2 = getattr(self.df.plot, kind)(**kwargs)
+        ax_geopandas_2 = getattr(self.gdf.plot, kind)(**kwargs)
         fig_test.subplots().plot(ax=ax_pandas_2)
         fig_ref.subplots().plot(ax=ax_geopandas_2)
 
@@ -1460,19 +1463,26 @@ class TestGeoplotAccessor:
     def test_pandas_kind(self, fig_test, fig_ref):
         """Test Pandas kind."""
         import importlib
+        from geopandas.plotting import GeoplotAccessor
 
-        pandas_kinds = ["line", "bar", "barh", "hist", "box", "kde", "density"]
-        _scipy_dependent_kinds = ["kde", "density"]
-
-        for kind in pandas_kinds:
+        _pandas_kinds = GeoplotAccessor._pandas_kinds
+        _scipy_dependent_kinds = ["kde", "density"]  # Needs scipy
+        _y_kinds = ["pie"]  # Needs y
+        _xy_kinds = ["scatter", "hexbin"]  # Needs x & y
+        kwargs = {}
+        for kind in _pandas_kinds:
             if kind in _scipy_dependent_kinds:
                 if not importlib.util.find_spec("scipy"):
                     with pytest.raises(
                         ModuleNotFoundError, match="No module named 'scipy'"
                     ):
                         self.gdf.plot(kind=kind)
-            else:
-                self.compare_figures(kind, fig_test, fig_ref)
+            elif kind in _y_kinds:
+                kwargs = {"y": "y"}
+            elif kind in _xy_kinds:
+                kwargs = {"x": "x", "y": "y"}
+
+            self.compare_figures(kind, fig_test, fig_ref, kwargs)
 
     @check_figures_equal()
     def test_geo_kind(self, fig_test, fig_ref):
