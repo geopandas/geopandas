@@ -1072,14 +1072,18 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 
-    def to_wkb(self, hex=False):
+    def to_wkb(self, hex=False, **kwargs):
         """
         Convert GeoSeries geometries to WKB
 
         Parameters
         ----------
         hex : bool
-            Use WKB hex representation. Default: False
+            If true, export the WKB as a hexadecimal string.
+            The default is to return a binary bytes object.
+        kwargs
+            Additional keyword args will be passed to
+            :func:`pygeos.to_wkb` if pygeos is installed.
 
         Returns
         -------
@@ -1090,11 +1094,17 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_wkt
         """
-        return Series(to_wkb(self.array, hex=hex), index=self.index)
+        return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
-    def to_wkt(self):
+    def to_wkt(self, **kwargs):
         """
         Convert GeoSeries geometries to WKT
+
+        Parameters
+        ----------
+        kwargs
+            Keyword args will be passed to :func:`pygeos.to_wkt`
+            if pygeos is installed.
 
         Returns
         -------
@@ -1121,7 +1131,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_wkb
         """
-        return Series(to_wkt(self.array), index=self.index)
+        return Series(to_wkt(self.array, **kwargs), index=self.index)
 
     #
     # Implement standard operators for GeoSeries

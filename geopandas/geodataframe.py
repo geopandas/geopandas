@@ -832,9 +832,18 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return geo
 
-    def to_wkb(self):
+    def to_wkb(self, hex=False, **kwargs):
         """
         Encode all geometry columns in the GeoDataFrame to WKB.
+
+        Parameters
+        ----------
+        hex : bool
+            If true, export the WKB as a hexadecimal string.
+            The default is to return a binary bytes object.
+        kwargs
+            Additional keyword args will be passed to
+            :func:`pygeos.to_wkb` if pygeos is installed.
 
         Returns
         -------
@@ -846,13 +855,19 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         # Encode all geometry columns to WKB
         for col in df.columns[df.dtypes == "geometry"]:
-            df[col] = to_wkb(df[col].values)
+            df[col] = to_wkb(df[col].values, hex=hex, **kwargs)
 
         return df
 
-    def to_wkt(self):
+    def to_wkt(self, **kwargs):
         """
         Encode all geometry columns in the GeoDataFrame to WKT.
+
+        Parameters
+        ----------
+        kwargs
+            Keyword args will be passed to :func:`pygeos.to_wkt`
+            if pygeos is installed.
 
         Returns
         -------
@@ -864,7 +879,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         # Encode all geometry columns to WKT
         for col in df.columns[df.dtypes == "geometry"]:
-            df[col] = to_wkt(df[col].values)
+            df[col] = to_wkt(df[col].values, **kwargs)
 
         return df
 
