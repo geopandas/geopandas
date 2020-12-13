@@ -27,6 +27,7 @@ import pytest
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa
+from matplotlib.testing.decorators import check_figures_equal  # noqa
 
 
 @pytest.fixture(autouse=True)
@@ -40,6 +41,8 @@ try:
     MPL_DFT_COLOR = cycle["color"][0]
 except KeyError:
     MPL_DFT_COLOR = matplotlib.rcParams["axes.color_cycle"][0]
+
+plt.rcParams.update({"figure.max_open_warning": 0})
 
 
 class TestPointPlotting:
@@ -1433,53 +1436,61 @@ class TestPlotCollections:
         ax.cla()
 
 
-if compat.PANDAS_GE_025:
+@pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
+class TestGeoplotAccessor:
+    def setup_method(self):
+        geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
+        values = [1, 2]
+        self.gdf = GeoDataFrame({"geometry": geometries, "values": values})
+        self.df = pd.DataFrame({"values": [1, 2]})
 
-    class TestGeoplotAccessor:
-        def setup_method(self):
-            geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
-            self.gdf = GeoDataFrame({"geometry": geometries, "values": [1, 2]})
+    def compare_figures(self, kind, fig_test, fig_ref):
+        """Compare Figures."""
+        ax_pandas_1 = self.df.plot(kind=kind)
+        ax_geopandas_1 = self.gdf.plot(kind=kind)
+        fig_test.subplots().plot(ax=ax_pandas_1)
+        fig_ref.subplots().plot(ax=ax_geopandas_1)
 
-        def test_pandas_kind(self):
-            pandas_kinds = ["line", "bar", "barh", "hist", "box"]
-            for kind in pandas_kinds:
-                ax1 = self.gdf.plot(kind=kind)
-                ax2 = getattr(self.gdf.plot, kind)()
-                assert type(ax1) is type(ax2)
+        ax_pandas_2 = getattr(self.df.plot, kind)()
+        ax_geopandas_2 = getattr(self.gdf.plot, kind)()
+        fig_test.subplots().plot(ax=ax_pandas_2)
+        fig_ref.subplots().plot(ax=ax_geopandas_2)
 
-        def test_geo_kind(self):
-            ax1 = self.gdf.plot()
-            ax2 = self.gdf.plot(kind="geo")
-            ax3 = self.gdf.plot.geo()
-            assert type(ax1) is type(ax2) is type(ax3)
+    @check_figures_equal()
+    def test_pandas_kind(self, fig_test, fig_ref):
+        """Test Pandas kind."""
+        import importlib
 
-        def test_scipy_kind(self):
-            import importlib
+        pandas_kinds = ["line", "bar", "barh", "hist", "box", "kde", "density"]
+        _scipy_dependent_kinds = ["kde", "density"]
 
-            _scipy_kinds = ["kde", "density"]
-            if importlib.find_loader("scipy"):
-                for kind in _scipy_kinds:
-                    ax1 = self.gdf.plot(kind=kind)
-                    ax2 = getattr(self.gdf.plot, kind)()
-                    assert type(ax1) is type(ax2)
-            else:
-                for kind in _scipy_kinds:
+        for kind in pandas_kinds:
+            if kind in _scipy_dependent_kinds:
+                if not importlib.util.find_spec("scipy"):
                     with pytest.raises(
                         ModuleNotFoundError, match="No module named 'scipy'"
                     ):
                         self.gdf.plot(kind=kind)
+            else:
+                self.compare_figures(kind, fig_test, fig_ref)
 
-        def test_invalid_kind(self):
-            """
-            When invalid kinds.
-            """
-            with pytest.raises(ValueError, match="error is not a valid plot kind"):
-                self.gdf.plot(kind="error")
-            with pytest.raises(
-                AttributeError,
-                match="'GeoplotAccessor' object has no attribute 'error'",
-            ):
-                self.gdf.plot.error()
+    @check_figures_equal()
+    def test_geo_kind(self, fig_test, fig_ref):
+        """Test Geo kind."""
+        ax1 = self.gdf.plot()
+        ax2 = getattr(self.gdf.plot, "geo")()
+        fig_test.subplots().plot(ax=ax1)
+        fig_ref.subplots().plot(ax=ax2)
+
+    def test_invalid_kind(self):
+        """Test invalid kinds."""
+        with pytest.raises(ValueError, match="error is not a valid plot kind"):
+            self.gdf.plot(kind="error")
+        with pytest.raises(
+            AttributeError,
+            match="'GeoplotAccessor' object has no attribute 'error'",
+        ):
+            self.gdf.plot.error()
 
 
 def test_column_values():

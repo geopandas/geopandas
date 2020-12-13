@@ -864,7 +864,9 @@ if geopandas._compat.PANDAS_GE_025:
          - 'bar' : vertical bar plot
          - 'barh' : horizontal bar plot
          - 'hist' : histogram
-         - 'box' : boxplot
+         - 'box' : BoxPlot
+         - 'kde' : Kernel Density Estimation plot
+         - 'density' : same as 'kde'
          - 'area' : area plot
          - 'pie' : pie plot
          - 'scatter' : scatter plot
