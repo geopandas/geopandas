@@ -397,12 +397,12 @@ def _read_parquet(path, columns=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.read_parquet("data.parquet)  # doctest: +SKIP
+    >>> df = geopandas.read_parquet("data.parquet")  # doctest: +SKIP
 
     Specifying columns to read:
 
     >>> df = geopandas.read_parquet(
-    ...     "data.parquet,
+    ...     "data.parquet",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
@@ -453,12 +453,12 @@ def _read_feather(path, columns=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.read_feather("data.feather)  # doctest: +SKIP
+    >>> df = geopandas.read_feather("data.feather")  # doctest: +SKIP
 
     Specifying columns to read:
 
     >>> df = geopandas.read_feather(
-    ...     "data.feather,
+    ...     "data.feather",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
