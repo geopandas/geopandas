@@ -1015,12 +1015,12 @@ GeometryCollection
         --------
         >>> from shapely.geometry import Point, LineString, Polygon
         >>> s = geopandas.GeoSeries(
-        ...             [
-        ...                 Point(0, 0),
-        ...                 LineString([(1, -1), (1, 0), (2, 0), (2, 1)]),
-        ...                 Polygon([(3, -1), (4, 0), (3, 1)]),
-        ...             ]
-        ...         )
+        ...     [
+        ...         Point(0, 0),
+        ...         LineString([(1, -1), (1, 0), (2, 0), (2, 1)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
         >>> s
         0                              POINT (0.00000 0.00000)
         1    LINESTRING (1.00000 -1.00000, 1.00000 0.00000,...
