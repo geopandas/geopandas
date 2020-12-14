@@ -1036,25 +1036,8 @@ GeometryCollection
         ``**kwargs`` accept further specification as ``join_style`` and ``cap_style``.
         See the following illustration of different options.
 
-        >>> import matplotlib.pyplot as plt
-        >>> fix, axs = plt.subplots(3, 2, figsize=(12, 12), sharex=True, sharey=True)
-        >>> for ax in axs.flatten():  # doctest: +SKIP
-        ...     s.plot(ax=ax)
-        >>> s.buffer(0.2).plot(ax=axs[0,0], alpha=.6)  # doctest: +SKIP
-        >>> axs[0,0].set_title('s.buffer(0.2)')  # doctest: +SKIP
-        >>> s.buffer(0.2, resolution=2).plot(ax=axs[0,1], alpha=.6)  # doctest: +SKIP
-        >>> axs[0,1].set_title('s.buffer(0.2, resolution=2)')  # doctest: +SKIP
-        >>> s.buffer(0.2, cap_style=2).plot(ax=axs[1,0], alpha=.6)  # doctest: +SKIP
-        >>> axs[1,0].set_title('s.buffer(0.2, cap_style=2)')  # doctest: +SKIP
-        >>> s.buffer(0.2, cap_style=3).plot(ax=axs[1,1], alpha=.6)  # doctest: +SKIP
-        >>> axs[1,1].set_title('s.buffer(0.2, cap_style=3)')  # doctest: +SKIP
-        >>> s.buffer(0.2, join_style=2).plot(ax=axs[2,0], alpha=.6)  # doctest: +SKIP
-        >>> axs[2,0].set_title('s.buffer(0.2, join_style=2)')  # doctest: +SKIP
-        >>> s.buffer(0.2, join_style=3).plot(ax=axs[2,1], alpha=.6)  # doctest: +SKIP
-        >>> axs[2,1].set_title('s.buffer(0.2, join_style=3)')  # doctest: +SKIP
+        .. plot:: _static/code/buffer.py
 
-        .. image:: ../../../_static/buffer_illustrations.svg
-            :align: center
         """
         # TODO: update docstring based on pygeos after shapely 2.0
         if isinstance(distance, pd.Series):
