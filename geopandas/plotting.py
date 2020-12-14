@@ -709,7 +709,7 @@ def plot_dataframe(
             classification_kwds["k"] = k
 
         binning = mapclassify.classify(
-            values[~nan_idx].values, scheme, **classification_kwds
+            np.asarray(values[~nan_idx]), scheme, **classification_kwds
         )
         # set categorical to True for creating the legend
         categorical = True
