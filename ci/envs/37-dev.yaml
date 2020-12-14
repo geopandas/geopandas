@@ -22,7 +22,7 @@ dependencies:
   - pyarrow
   - pip:
     - geopy
-    - mapclassify>=2.2.0
+    - mapclassify>=2.4.0
     # dev versions of packages
     - git+https://github.com/pydata/pandas.git@master
     - git+https://github.com/matplotlib/matplotlib.git@master

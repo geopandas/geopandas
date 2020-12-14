@@ -25,5 +25,5 @@ dependencies:
   - pip:
       - pyproj==2.3.1
       - geopy
-      - mapclassify==2.2.0
+      - mapclassify==2.4.0
       - pygeos

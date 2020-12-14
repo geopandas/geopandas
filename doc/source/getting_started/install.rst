@@ -157,7 +157,7 @@ For plotting, these additional packages may be used:
 
 - `matplotlib`_ (>= 2.2.0)
 - `descartes`_
-- `mapclassify`_ (>= 2.2.0)
+- `mapclassify`_ (>= 2.4.0)
 
 
 Using the optional PyGEOS dependency
