@@ -1459,30 +1459,30 @@ class TestGeoplotAccessor:
         fig_test.subplots().plot(ax=ax_pandas_2)
         fig_ref.subplots().plot(ax=ax_geopandas_2)
 
+    from geopandas.plotting import GeoplotAccessor
+
+    @pytest.mark.parametrize("kind", GeoplotAccessor._pandas_kinds)
     @check_figures_equal()
-    def test_pandas_kind(self, fig_test, fig_ref):
+    def test_pandas_kind(self, kind, fig_test, fig_ref):
         """Test Pandas kind."""
         import importlib
-        from geopandas.plotting import GeoplotAccessor
 
-        _pandas_kinds = GeoplotAccessor._pandas_kinds
         _scipy_dependent_kinds = ["kde", "density"]  # Needs scipy
         _y_kinds = ["pie"]  # Needs y
         _xy_kinds = ["scatter", "hexbin"]  # Needs x & y
         kwargs = {}
-        for kind in _pandas_kinds:
-            if kind in _scipy_dependent_kinds:
-                if not importlib.util.find_spec("scipy"):
-                    with pytest.raises(
-                        ModuleNotFoundError, match="No module named 'scipy'"
-                    ):
-                        self.gdf.plot(kind=kind)
-            elif kind in _y_kinds:
-                kwargs = {"y": "y"}
-            elif kind in _xy_kinds:
-                kwargs = {"x": "x", "y": "y"}
+        if kind in _scipy_dependent_kinds:
+            if not importlib.util.find_spec("scipy"):
+                with pytest.raises(
+                    ModuleNotFoundError, match="No module named 'scipy'"
+                ):
+                    self.gdf.plot(kind=kind)
+        elif kind in _y_kinds:
+            kwargs = {"y": "y"}
+        elif kind in _xy_kinds:
+            kwargs = {"x": "x", "y": "y"}
 
-            self.compare_figures(kind, fig_test, fig_ref, kwargs)
+        self.compare_figures(kind, fig_test, fig_ref, kwargs)
 
     @check_figures_equal()
     def test_geo_kind(self, fig_test, fig_ref):
