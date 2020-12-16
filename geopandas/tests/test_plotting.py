@@ -1459,10 +1459,14 @@ class TestGeoplotAccessor:
         fig_test.subplots().plot(ax=ax_pandas_2)
         fig_ref.subplots().plot(ax=ax_geopandas_2)
 
-    from geopandas.plotting import GeoplotAccessor
+    _pandas_kinds = []
+    if compat.PANDAS_GE_025:
+        from geopandas.plotting import GeoplotAccessor
 
-    @pytest.mark.parametrize("kind", GeoplotAccessor._pandas_kinds)
-    @check_figures_equal()
+        _pandas_kinds = GeoplotAccessor._pandas_kinds
+
+    @pytest.mark.parametrize("kind", _pandas_kinds)
+    @check_figures_equal(extensions=["png", "pdf"])
     def test_pandas_kind(self, kind, fig_test, fig_ref):
         """Test Pandas kind."""
         import importlib
@@ -1484,7 +1488,7 @@ class TestGeoplotAccessor:
 
         self.compare_figures(kind, fig_test, fig_ref, kwargs)
 
-    @check_figures_equal()
+    @check_figures_equal(extensions=["png", "pdf"])
     def test_geo_kind(self, fig_test, fig_ref):
         """Test Geo kind."""
         ax1 = self.gdf.plot()
