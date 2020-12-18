@@ -254,7 +254,7 @@ You can also create these other plots using the methods ``GeoDataFrame.plot.<kin
     @savefig pandas_bar_plot.png
     gdf.plot.bar()
 
-More information check out the : `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+More information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
 
 
 Other Resources
