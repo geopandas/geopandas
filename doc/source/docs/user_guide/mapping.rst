@@ -11,7 +11,7 @@
    plt.close('all')
 
 
-Mapping Tools
+Mapping and Plotting Tools
 =========================================
 
 
@@ -221,6 +221,41 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
     ax = cities.plot(color='k', zorder=2)
     @savefig zorder_set.png
     world.plot(ax=ax, zorder=1);
+
+
+Pandas Plots
+-----------------
+
+Plotting methods also allows for different plot styles from pandas
+along with the default ``geo`` plot. These methods can be provided as
+the ``kind`` keyword argument to :meth:`~GeoDataFrame.plot`, and include:
+
+* ``geo`` for mapping
+* ``line`` for line plots
+* ``bar`` or ``barh`` for bar plots
+* ``hist`` for histogram
+* ``box`` for boxplot
+* ``kde`` or ``density`` for density plots
+* ``area``  for area plots
+* ``scatter`` for scatter plots
+* ``hexbin`` for hexagonal bin plots
+* ``pie`` for pie plots
+
+.. ipython:: python
+
+    gdf = world.head(10)
+    @savefig pandas_line_plot.png
+    gdf.plot(kind='line')
+
+You can also create these other plots using the methods ``GeoDataFrame.plot.<kind>`` instead of providing the ``kind`` keyword argument.
+
+.. ipython:: python
+
+    @savefig pandas_bar_plot.png
+    gdf.plot.bar()
+
+More information check out the : `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+
 
 Other Resources
 -----------------
