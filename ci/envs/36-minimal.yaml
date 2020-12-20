@@ -18,7 +18,6 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   - matplotlib=2.2
   - mapclassify>=2.2.0
   - geopy

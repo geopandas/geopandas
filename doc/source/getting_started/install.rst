@@ -156,7 +156,6 @@ Further, optional dependencies are:
 For plotting, these additional packages may be used:
 
 - `matplotlib`_ (>= 2.2.0)
-- `descartes`_
 - `mapclassify`_ (>= 2.2.0)
 
 
@@ -212,8 +211,6 @@ More specifically, whether the speedups are used or not is determined by:
 .. _shapely: https://shapely.readthedocs.io
 
 .. _fiona: https://fiona.readthedocs.io
-
-.. _Descartes: https://pypi.python.org/pypi/descartes
 
 .. _matplotlib: http://matplotlib.org
 
