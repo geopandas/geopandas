@@ -1,0 +1,29 @@
+name: test
+channels:
+  - defaults
+dependencies:
+  - python=3.7.3
+  - cython
+  # required
+  - fiona
+  - pyproj
+  - geos
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  # optional
+  - rtree
+  #- geopy
+  - SQLalchemy
+  - libspatialite
+  - pyarrow
+  - pip:
+    - geopy
+    - mapclassify>=2.2.0
+    # dev versions of packages
+    - git+https://github.com/pydata/pandas.git@master
+    - git+https://github.com/matplotlib/matplotlib.git@master
+    - git+https://github.com/Toblerity/Shapely.git@master
+    - git+https://github.com/pygeos/pygeos.git@master

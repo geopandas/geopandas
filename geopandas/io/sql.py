@@ -107,9 +107,10 @@ def _read_postgis(
     --------
     PostGIS
     >>> sql = "SELECT geom, kind FROM polygons"
+
     SpatiaLite
     >>> sql = "SELECT ST_AsBinary(geom) AS geom, kind FROM polygons"
-    >>> df = geopandas.read_postgis(sql, con)
+    >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
     if chunksize is None:
@@ -170,7 +171,7 @@ def _get_geometry_type(gdf):
           such as GeometryCollection([Point, LineStrings])
      - if any of the geometries has Z-coordinate, all records will
        be written with 3D.
-     """
+    """
     geom_types = list(gdf.geometry.geom_type.unique())
     has_curve = False
 
@@ -322,10 +323,10 @@ def _write_postgis(
     Examples
     --------
 
-    >>> from sqlalchemy import create_engine
+    >>> from sqlalchemy import create_engine  # doctest: +SKIP
     >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
-/mydatabase";)
-    >>> gdf.to_postgis("my_table", engine)
+/mydatabase";)  # doctest: +SKIP
+    >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
     """
     try:
         from geoalchemy2 import Geometry

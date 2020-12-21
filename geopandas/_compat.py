@@ -1,3 +1,4 @@
+import contextlib
 from distutils.version import LooseVersion
 import importlib
 import os
@@ -10,10 +11,10 @@ import shapely
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
-PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0.dev")
+PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
+PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
+PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 
 
 # -----------------------------------------------------------------------------
@@ -22,6 +23,8 @@ PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0.dev")
 
 
 SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
+SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
+SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
 
 HAS_PYGEOS = None
 USE_PYGEOS = None
@@ -100,6 +103,37 @@ def set_use_pygeos(val=None):
 
 
 set_use_pygeos()
+
+
+# compat related to deprecation warnings introduced in Shapely 1.8
+# -> creating a numpy array from a list-like of Multi-part geometries,
+# although doing the correct thing (not expanding in its parts), still raises
+# the warning about iteration being deprecated
+# This adds a context manager to explicitly ignore this warning
+
+
+try:
+    from shapely.errors import ShapelyDeprecationWarning as shapely_warning
+except ImportError:
+    shapely_warning = None
+
+
+if shapely_warning is not None and not SHAPELY_GE_20:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Iteration|The array interface", shapely_warning
+            )
+            yield
+
+
+else:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        yield
 
 
 def import_optional_dependency(name: str, extra: str = ""):

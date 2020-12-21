@@ -49,6 +49,15 @@ def test_to_crs_transform():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_transform__missing_data():
+    # https://github.com/geopandas/geopandas/issues/1573
+    df = df_epsg26918()
+    df.loc[3, "geometry"] = None
+    lonlat = df.to_crs(epsg=4326)
+    utm = lonlat.to_crs(epsg=26918)
+    assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
 def test_to_crs_inplace():
     df = df_epsg26918()
     lonlat = df.to_crs(epsg=4326)
@@ -529,11 +538,17 @@ class TestGeometryArrayCRS:
     # CRS should be assigned to geometry
     def test_deprecation(self):
         with pytest.warns(FutureWarning):
-            GeoDataFrame([], crs=27700)
+            df = GeoDataFrame([], crs=27700)
+
+        # https://github.com/geopandas/geopandas/issues/1548
+        # ensure we still have converted the crs value to a CRS object
+        assert isinstance(df.crs, pyproj.CRS)
 
         with pytest.warns(FutureWarning):
             df = GeoDataFrame([])
             df.crs = 27700
+
+        assert isinstance(df.crs, pyproj.CRS)
 
     # make sure that geometry column from list has CRS (__setitem__)
     def test_setitem_geometry(self):

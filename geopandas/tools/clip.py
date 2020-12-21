@@ -66,7 +66,7 @@ def _clip_line_poly(gdf, poly):
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
-        clipped["geometry"] = gdf_sub.intersection(poly)
+        clipped[gdf.geometry.name] = gdf_sub.intersection(poly)
     else:
         # GeoSeries
         clipped = gdf_sub.intersection(poly)
@@ -107,7 +107,6 @@ def clip(gdf, mask, keep_geom_type=False):
     Clip points (global cities) with a polygon (the South American continent):
 
     >>> import geopandas
-    >>> path =
     >>> world = geopandas.read_file(
     ...     geopandas.datasets.get_path('naturalearth_lowres'))
     >>> south_america = world[world['continent'] == "South America"]
@@ -127,7 +126,7 @@ def clip(gdf, mask, keep_geom_type=False):
     if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries or"
-            "(Multi)Polygon, got {}".format(type(gdf))
+            "(Multi)Polygon, got {}".format(type(mask))
         )
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):

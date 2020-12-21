@@ -691,7 +691,8 @@ class TestGeomMethods:
 
     def test_explode_geoseries(self):
         s = GeoSeries(
-            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
+            crs=4326,
         )
         s.index.name = "test_index_name"
         expected_index_name = ["test_index_name", None]
@@ -699,6 +700,7 @@ class TestGeomMethods:
         expected = GeoSeries(
             [Point(0, 0), Point(1, 1), Point(2, 2), Point(3, 3), Point(4, 4)],
             index=MultiIndex.from_tuples(index, names=expected_index_name),
+            crs=4326,
         )
         assert_geoseries_equal(expected, s.explode())
 
@@ -737,8 +739,6 @@ class TestGeomMethods:
             names=[index_name, None],
         )
         expected_df = expected_df.set_index(expected_index)
-        if not compat.PANDAS_GE_024:
-            expected_df = expected_df[["level_1", "geometry"]]
         assert_frame_equal(test_df, expected_df)
 
     #

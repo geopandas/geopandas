@@ -326,7 +326,7 @@ def test_predicates_vector_vector(attr, args):
 
 
 @pytest.mark.parametrize(
-    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))],
+    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))]
 )
 def test_equals_deprecation(attr, args):
     point = points[0]
@@ -476,6 +476,22 @@ def test_unary_predicates(attr):
         ]
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
+    assert result.tolist() == expected
+
+
+def test_is_ring():
+    g = [
+        shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
+        shapely.geometry.LineString([(0, 0), (1, 1), (1, -1)]),
+        shapely.geometry.LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+        shapely.geometry.Polygon([(0, 0), (1, 1), (1, -1)]),
+        shapely.geometry.Polygon(),
+        None,
+    ]
+    expected = [True, False, True, True, False, False]
+
+    result = from_shapely(g).is_ring
+
     assert result.tolist() == expected
 
 

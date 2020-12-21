@@ -6,7 +6,11 @@ import inspect
 
 import numpy as np
 import pandas as pd
-from pandas.api.extensions import ExtensionArray, ExtensionDtype
+from pandas.api.extensions import (
+    ExtensionArray,
+    ExtensionDtype,
+    register_extension_dtype,
+)
 
 import shapely
 import shapely.affinity
@@ -23,6 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
+from .sindex import _get_sindex_class
 
 
 class GeometryDtype(ExtensionDtype):
@@ -48,10 +53,7 @@ class GeometryDtype(ExtensionDtype):
         return GeometryArray
 
 
-if compat.PANDAS_GE_024:
-    from pandas.api.extensions import register_extension_dtype
-
-    register_extension_dtype(GeometryDtype)
+register_extension_dtype(GeometryDtype)
 
 
 def _isna(value):
@@ -241,10 +243,17 @@ def points_from_xy(x, y, z=None, crs=None):
 
     Examples
     --------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'x': [0, 1, 2], 'y': [0, 1, 2], 'z': [0, 1, 2]})
+    >>> df
+       x  y  z
+    0  0  0  0
+    1  1  1  1
+    2  2  2  2
     >>> geometry = geopandas.points_from_xy(x=[1, 0], y=[0, 1])
     >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
     >>> gdf = geopandas.GeoDataFrame(
-            df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+    ...     df, geometry=geopandas.points_from_xy(df['x'], df['y']))
 
     Returns
     -------
@@ -279,6 +288,37 @@ class GeometryArray(ExtensionArray):
 
         self._crs = None
         self.crs = crs
+        self._sindex = None
+
+    @property
+    def sindex(self):
+        if self._sindex is None:
+            self._sindex = _get_sindex_class()(self.data)
+        return self._sindex
+
+    @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
+
+        See Also
+        ---------
+        GeoDataFrame.has_sindex
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
+        return self._sindex is not None
 
     @property
     def crs(self):
@@ -356,7 +396,8 @@ class GeometryArray(ExtensionArray):
                 raise TypeError("should be valid geometry")
             if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
-                value_array[:] = [value]
+                with compat.ignore_shapely2_warnings():
+                    value_array[:] = [value]
                 self.data[key] = value_array
             else:
                 self.data[key] = value
@@ -364,6 +405,9 @@ class GeometryArray(ExtensionArray):
             raise TypeError(
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
+
+        # invalidate spatial index
+        self._sindex = None
 
         # TODO: use this once pandas-dev/pandas#33457 is fixed
         # if hasattr(value, "crs"):
@@ -730,7 +774,7 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
-        """ Fill index locations with value
+        """Fill index locations with value
 
         Value should be a BaseGeometry
         """
@@ -743,7 +787,7 @@ class GeometryArray(ExtensionArray):
         return self
 
     def fillna(self, value=None, method=None, limit=None):
-        """ Fill NA/NaN values using the specified method.
+        """Fill NA/NaN values using the specified method.
 
         Parameters
         ----------
@@ -961,7 +1005,9 @@ class GeometryArray(ExtensionArray):
             if precision is None:
                 # dummy heuristic based on 10 first geometries that should
                 # work in most cases
-                xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
                 if (
                     (-180 <= xmin <= 180)
                     and (-180 <= xmax <= 180)
@@ -1023,7 +1069,7 @@ class GeometryArray(ExtensionArray):
                 ovalues = [param] * len(self)
             return ovalues
 
-        if isinstance(other, (pd.Series, pd.Index)):
+        if isinstance(other, (pd.Series, pd.Index, pd.DataFrame)):
             # rely on pandas to unbox and dispatch to us
             return NotImplemented
 

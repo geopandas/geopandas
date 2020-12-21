@@ -5,12 +5,11 @@ GeoPandas is an open source project to make working with geospatial
 data in python easier.  GeoPandas extends the datatypes used by
 `pandas`_ to allow spatial operations on geometric types.  Geometric
 operations are performed by `shapely`_.  Geopandas further depends on
-`fiona`_ for file access and `descartes`_ and `matplotlib`_ for plotting.
+`fiona`_ for file access and `matplotlib`_ for plotting.
 
 .. _pandas: http://pandas.pydata.org
 .. _shapely: https://shapely.readthedocs.io
 .. _fiona: https://fiona.readthedocs.io
-.. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 
 Description
@@ -24,43 +23,13 @@ operations in python that would otherwise require a spatial database
 such as PostGIS.
 
 .. toctree::
-  :maxdepth: 1
-  :caption: Getting Started
+   :hidden:
 
-  Installation <install>
-  Examples Gallery <gallery/index>
-
-.. toctree::
-  :maxdepth: 1
-  :caption: User Guide
-
-  Data Structures <data_structures>
-  Reading and Writing Files <io>
-  Indexing and Selecting Data <indexing>
-  Making Maps <mapping>
-  Managing Projections <projections>
-  Geometric Manipulations <geometric_manipulations>
-  Set Operations with overlay <set_operations>
-  Aggregation with dissolve <aggregation_with_dissolve>
-  Merging Data <mergingdata>
-  Geocoding <geocoding>
-  missing_empty
-
-.. toctree::
-  :maxdepth: 1
-  :caption: Reference Guide
-
-  Reference to All Attributes and Methods <reference>
-  Changelog <changelog>
-
-
-.. toctree::
-  :maxdepth: 1
-  :caption: Developer
-
-  Contributing to GeoPandas <contributing>
-  Code of Conduct <code_of_conduct>
-
+   Home <self>
+   About <about>
+   Getting started <getting_started>
+   Documentation <docs>
+   Community <community>
 
 Get in touch
 ------------

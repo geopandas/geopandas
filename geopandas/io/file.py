@@ -1,6 +1,5 @@
 from distutils.version import LooseVersion
 
-import io
 import warnings
 import numpy as np
 import pandas as pd
@@ -24,7 +23,6 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
 
-_FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
@@ -35,6 +33,16 @@ def _is_url(url):
         return parse_url(url).scheme in _VALID_URLS
     except Exception:
         return False
+
+
+def _is_zip(path):
+    """Check if a given path is a zipfile"""
+    parsed = fiona.path.ParsedPath.from_uri(path)
+    return (
+        parsed.archive.endswith(".zip")
+        if parsed.archive
+        else parsed.path.endswith(".zip")
+    )
 
 
 def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
@@ -69,7 +77,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.read_file("nybb.shp")
+    >>> df = geopandas.read_file("nybb.shp")  # doctest: +SKIP
 
     Returns
     -------
@@ -86,10 +94,30 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         req = _urlopen(filename)
         path_or_bytes = req.read()
         reader = fiona.BytesCollection
-    elif isinstance(filename, io.TextIOBase):
-        path_or_bytes = filename.read()
-        reader = fiona.open
+    elif pd.api.types.is_file_like(filename):
+        data = filename.read()
+        path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+        reader = fiona.BytesCollection
     else:
+        # Opening a file via URL or file-like-object above automatically detects a
+        # zipped file. In order to match that behavior, attempt to add a zip scheme
+        # if missing.
+        if _is_zip(str(filename)):
+            parsed = fiona.parse_path(str(filename))
+            if isinstance(parsed, fiona.path.ParsedPath):
+                # If fiona is able to parse the path, we can safely look at the scheme
+                # and update it to have a zip scheme if necessary.
+                schemes = (parsed.scheme or "").split("+")
+                if "zip" not in schemes:
+                    parsed.scheme = "+".join(["zip"] + schemes)
+                filename = parsed.name
+            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
+                filename
+            ).startswith("/vsi"):
+                # If fiona is unable to parse the path, it might have a Windows drive
+                # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
+                # it is a legacy GDAL path type, so let it pass unmodified.
+                filename = "zip://" + parsed.name
         path_or_bytes = filename
         reader = fiona.open
 
@@ -184,7 +212,7 @@ def _to_file(
 
     A dictionary of supported OGR providers is available via:
     >>> import fiona
-    >>> fiona.supported_drivers
+    >>> fiona.supported_drivers  # doctest: +SKIP
 
     Parameters
     ----------
@@ -284,12 +312,6 @@ def infer_schema(df):
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"
-        if not _FIONA18 and out_type == "bool":
-            raise ValueError(
-                'column "{}" is boolean type, '.format(column)
-                + "which is unsupported in file writing with fiona "
-                "< 1.8. Consider casting the column to int type."
-            )
         return out_type
 
     properties = OrderedDict(
@@ -316,24 +338,11 @@ def _geometry_types(df):
     """
     Determine the geometry types in the GeoDataFrame for the schema.
     """
-    if _FIONA18:
-        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
-        # can have mixed geometries:
-        # - 3D and 2D shapes can coexist in inferred schema
-        # - Shape and MultiShape types can (and must) coexist in inferred
-        #   schema
-        geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
-        geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
-        geom_types = geom_types_3D + geom_types_2D
-
-    else:
-        # Before Fiona 1.8, schema submitted to write a gdf should have
-        # one single geometry type whenever possible:
-        # - 3D and 2D shapes cannot coexist in inferred schema
-        # - Shape and MultiShape can not coexist in inferred schema
-        geom_types = _geometry_types_back_compat(df)
+    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+    geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+    geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
+    geom_types = geom_types_3D + geom_types_2D
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -344,25 +353,3 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
-
-
-def _geometry_types_back_compat(df):
-    """
-    for backward compatibility with Fiona<1.8 only
-    """
-    unique_geom_types = df.geometry.geom_type.unique()
-    unique_geom_types = [gtype for gtype in unique_geom_types if gtype is not None]
-
-    # merge single and Multi types (eg Polygon and MultiPolygon)
-    unique_geom_types = [
-        gtype
-        for gtype in unique_geom_types
-        if not gtype.startswith("Multi") or gtype[5:] not in unique_geom_types
-    ]
-
-    if df.geometry.has_z.any():
-        # declare all geometries as 3D geometries
-        unique_geom_types = ["3D " + type for type in unique_geom_types]
-    # by default, all geometries are 2D geometries
-
-    return unique_geom_types

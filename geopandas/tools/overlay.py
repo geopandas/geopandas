@@ -137,7 +137,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
+def overlay(df1, df2, how="intersection", keep_geom_type=True):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -220,14 +220,18 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
             result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if keep_geom_type:
+        key_order = result.keys()
+        exploded = result.reset_index(drop=True).explode()
+        exploded = exploded.reset_index(level=0)
+
         orig_num_geoms = result.shape[0]
         geom_type = df1.geom_type.iloc[0]
         if geom_type in polys:
-            result = result.loc[result.geom_type.isin(polys)]
+            exploded = exploded.loc[exploded.geom_type.isin(polys)]
         elif geom_type in lines:
-            result = result.loc[result.geom_type.isin(lines)]
+            exploded = exploded.loc[exploded.geom_type.isin(lines)]
         elif geom_type in points:
-            result = result.loc[result.geom_type.isin(points)]
+            exploded = exploded.loc[exploded.geom_type.isin(points)]
         else:
             raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
         if result.shape[0] != orig_num_geoms:
@@ -240,6 +244,10 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
                 UserWarning,
                 stacklevel=2,
             )
+
+        # level_0 created with above reset_index operation
+        # and represents the original geometry collections
+        result = exploded.dissolve(by="level_0")[key_order]
 
     result.reset_index(drop=True, inplace=True)
     result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
