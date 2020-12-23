@@ -427,6 +427,7 @@ class GeometryArray(ExtensionArray):
         if compat.USE_PYGEOS:
             geoms = pygeos.from_wkb(state[0])
             self._crs = state[1]
+            self._sindex = None
             self.data = geoms
             self.base = None
         else:

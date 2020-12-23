@@ -59,6 +59,7 @@ def test_round_trip_current(tmpdir, current_pickle_data):
         value.to_pickle(path)
         result = pd.read_pickle(path)
         assert_geodataframe_equal(result, value)
+        assert isinstance(result.has_sindex, bool)
 
 
 @pytest.mark.skipif(not compat.USE_PYGEOS, reason="requires pygeos to test #1745")
