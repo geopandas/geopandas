@@ -36,6 +36,14 @@ def legacy_pickle(request):
     return request.param
 
 
+@pytest.fixture
+def with_use_pygeos_false():
+    orig = geopandas.options.use_pygeos
+    geopandas.options.use_pygeos = not orig
+    yield
+    geopandas.options.use_pygeos = orig
+
+
 @pytest.mark.skipif(
     compat.USE_PYGEOS or (str(pyproj.__version__) < LooseVersion("2.4")),
     reason=(
@@ -63,8 +71,7 @@ def test_round_trip_current(tmpdir, current_pickle_data):
 
 
 @pytest.mark.skipif(not compat.USE_PYGEOS, reason="requires pygeos to test #1745")
-def test_pygeos_switch(tmpdir):
-    geopandas.options.use_pygeos = False
+def test_pygeos_switch(tmpdir, with_use_pygeos_false):
     gdf_crs = geopandas.GeoDataFrame(
         {"a": [0.1, 0.2, 0.3], "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)]},
         crs="EPSG:4326",
@@ -73,4 +80,3 @@ def test_pygeos_switch(tmpdir):
     gdf_crs.to_pickle(path)
     result = pd.read_pickle(path)
     assert_geodataframe_equal(result, gdf_crs)
-    geopandas.options.use_pygeos = True
