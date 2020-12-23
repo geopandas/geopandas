@@ -73,3 +73,4 @@ def test_pygeos_switch(tmpdir):
     gdf_crs.to_pickle(path)
     result = pd.read_pickle(path)
     assert_geodataframe_equal(result, gdf_crs)
+    geopandas.options.use_pygeos = True
