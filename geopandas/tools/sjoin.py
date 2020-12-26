@@ -11,6 +11,9 @@ def sjoin(
 ):
     """Spatial join of two GeoDataFrames.
 
+    See the User Guide page :doc:`../../user_guide/mergingdata` for details.
+
+
     Parameters
     ----------
     left_df, right_df : GeoDataFrames
@@ -23,13 +26,58 @@ def sjoin(
           left_df geometry column
     op : string, default 'intersects'
         Binary predicate. Valid values are determined by the spatial index used.
-        You can check the valid values in `left_df` or `right_df` as
-        `left_df.sindex.valid_query_predicates` or
-        `right_df.sindex.valid_query_predicates`
+        You can check the valid values in left_df or right_df as
+        ``left_df.sindex.valid_query_predicates`` or
+        ``right_df.sindex.valid_query_predicates``
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+
+    Examples
+    --------
+    >>> countries = geopandas.read_file(geopandas.datasets.get_\
+path("naturalearth_lowres"))
+    >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
+    >>> countries.head()
+        pop_est      continent                      name \
+iso_a3  gdp_md_est                                           geometry
+    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
+GON (((180.00000 -16.06713, 180.00000...
+    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
+(33.90371 -0.95000, 34.07262 -1.05982...
+    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
+(-8.66559 27.65643, -8.66512 27.58948...
+    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
+GON (((-122.84000 49.00000, -122.9742...
+    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
+GON (((-122.84000 49.00000, -120.0000...
+    >>> cities.head()
+            name                   geometry
+    0  Vatican City  POINT (12.45339 41.90328)
+    1    San Marino  POINT (12.44177 43.93610)
+    2         Vaduz   POINT (9.51667 47.13372)
+    3    Luxembourg   POINT (6.13000 49.61166)
+    4       Palikir  POINT (158.14997 6.91664)
+
+    >>> cities_w_country_data = geopandas.sjoin(cities, countries)
+    >>> cities_w_country_data.head()
+            name_left                   geometry  index_right   pop_est continent name_\
+right iso_a3  gdp_md_est
+    0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe      \
+Italy    ITA   2221000.0
+    1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe      \
+Italy    ITA   2221000.0
+    192          Rome  POINT (12.48131 41.89790)          141  62137802    Europe      \
+Italy    ITA   2221000.0
+    2           Vaduz   POINT (9.51667 47.13372)          114   8754413    Europe    Au\
+stria    AUT    416600.0
+    184        Vienna  POINT (16.36469 48.20196)          114   8754413    Europe    Au\
+stria    AUT    416600.0
+
+    See also
+    --------
+    overlay : overlay operation resulting in a new geometry
     """
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 

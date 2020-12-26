@@ -119,6 +119,10 @@ class GeoPandasBase(object):
         3     0.0
         4     0.0
         dtype: float64
+
+        See also
+        --------
+        GeoSeries.length : measure length
         """
         return _delegate_property("area", self)
 
@@ -149,6 +153,11 @@ class GeoPandasBase(object):
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
+
+        See also
+        --------
+        GeoSeries.set_crs : assing CRS
+        GeoSeries.to_crs : re-project to another CRS
         """
         return self.geometry.values.crs
 
@@ -186,6 +195,8 @@ class GeoPandasBase(object):
     def length(self):
         """Returns a ``Series`` containing the length of each geometry.
 
+        In case of (Multi)Polygon measures the length if its exterior (i.e. perimeter).
+
         Examples
         --------
 
@@ -219,6 +230,10 @@ GeometryCollection
         4     0.000000
         5    16.180340
         dtype: float64
+
+        See also
+        --------
+        GeoSeries.area : measure area of a polygon
         """
         return _delegate_property("length", self)
 
@@ -411,6 +426,10 @@ GeometryCollection
         2                             GEOMETRYCOLLECTION EMPTY
         dtype: geometry
 
+        See also
+        --------
+        GeoSeries.exterior : outer boundary
+
         """
         return _delegate_property("boundary", self)
 
@@ -443,6 +462,10 @@ GeometryCollection
         1    POINT (0.70711 0.50000)
         2    POINT (0.00000 0.00000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.representative_point : point guaranteed to be within each geometry
         """
         return _delegate_property("centroid", self)
 
@@ -485,6 +508,10 @@ GeometryCollection
         4                              POINT (0.00000 0.00000)
         dtype: geometry
 
+        See also
+        --------
+        GeoSeries.envelope : bounding rectangle geometry
+
         """
         return _delegate_property("convex_hull", self)
 
@@ -522,6 +549,10 @@ GeometryCollection
         2    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
         3                              POINT (0.00000 0.00000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_property("envelope", self)
 
@@ -555,6 +586,11 @@ GeometryCollection
         1    LINEARRING (1.00000 0.00000, 2.00000 1.00000, ...
         2                                                 None
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.boundary : complete set-theoretic boundary
+        GeoSeries.interiors : list of inner rings of each polygon
         """
         # TODO: return empty geometry for non-polygons
         return _delegate_property("exterior", self)
@@ -593,6 +629,10 @@ GeometryCollection
         0    [LINEARRING (1 1, 2 1, 1 2, 1 1), LINEARRING (...
         1                                                   []
         dtype: object
+
+        See also
+        --------
+        GeoSeries.exterior : outer boundary
         """
         return _delegate_property("interiors", self)
 
@@ -622,6 +662,10 @@ GeometryCollection
         1    POINT (1.00000 1.00000)
         2    POINT (0.00000 0.00000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.centroid : geometric centroid
         """
         return _delegate_geo_method("representative_point", self)
 
