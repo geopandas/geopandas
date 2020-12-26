@@ -78,6 +78,11 @@ stria    AUT    416600.0
     See also
     --------
     overlay : overlay operation resulting in a new geometry
+
+    Notes
+    ------
+    Every operation in GeoPandas is planar, i.e. the potential third
+    dimension is not taken into account.
     """
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 

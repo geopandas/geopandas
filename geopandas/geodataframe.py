@@ -956,6 +956,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         >>> gdf.to_file('dataframe.gpkg', driver='GPKG', layer='name')  # doctest: +SKIP
 
         >>> gdf.to_file('dataframe.geojson', driver='GeoJSON')  # doctest: +SKIP
+
+        With selected drivers you can also append to a file with `mode="a"`:
+
+        >>> gdf.to_file('dataframe.shp', mode="a")
         """
         from geopandas.io.file import _to_file
 

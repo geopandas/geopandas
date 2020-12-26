@@ -89,7 +89,7 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
-        ``GeoSeries``.
+        ``GeoSeries`` expressed in the units of the CRS.
 
         Examples
         --------
@@ -123,6 +123,14 @@ class GeoPandasBase(object):
         See also
         --------
         GeoSeries.length : measure length
+
+        Notes
+        -----
+        Area may be invalid for a geographic CRS; use ``to_crs`` to project
+        geometries to a planar CRS before using this function.
+
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
         """
         return _delegate_property("area", self)
 
@@ -193,7 +201,8 @@ class GeoPandasBase(object):
 
     @property
     def length(self):
-        """Returns a ``Series`` containing the length of each geometry.
+        """Returns a ``Series`` containing the length of each geometry
+        expressed in the units of the CRS.
 
         In case of (Multi)Polygon measures the length if its exterior (i.e. perimeter).
 
@@ -234,6 +243,15 @@ GeometryCollection
         See also
         --------
         GeoSeries.area : measure area of a polygon
+
+        Notes
+        -----
+        Length may be invalid for a geographic CRS; use ``to_crs`` to project
+        geometries to a planar CRS before using this function.
+
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+
         """
         return _delegate_property("length", self)
 
@@ -338,6 +356,11 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed.
 
+        When constructing a LinearRing, the sequence of coordinates may be
+        explicitly closed by passing identical values in the first and last indices.
+        Otherwise, the sequence will be implicitly closed by copying the first tuple
+        to the last index.
+
         Examples
         --------
         >>> from shapely.geometry import LineString, LinearRing
@@ -354,11 +377,6 @@ GeometryCollection
         2    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
         dtype: geometry
 
-        Note: When constructing a LinearRing, the sequence of coordinates may be
-        explicitly closed by passing identical values in the first and last indices.
-        Otherwise, the sequence will be implicitly closed by copying the first tuple
-        to the last index.
-
         >>> s.is_ring
         0    False
         1     True
@@ -372,6 +390,11 @@ GeometryCollection
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component.
+
+        Notes
+        ------
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
 
         Examples
         --------
