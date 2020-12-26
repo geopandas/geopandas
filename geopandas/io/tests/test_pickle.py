@@ -70,13 +70,13 @@ def test_round_trip_current(tmpdir, current_pickle_data):
         assert isinstance(result.has_sindex, bool)
 
 
-@pytest.mark.skipif(not compat.USE_PYGEOS, reason="requires pygeos to test #1745")
+@pytest.mark.skipif(not compat.HAS_PYGEOS, reason="requires pygeos to test #1745")
 def test_pygeos_switch(tmpdir, with_use_pygeos_false):
     gdf_crs = geopandas.GeoDataFrame(
         {"a": [0.1, 0.2, 0.3], "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)]},
         crs="EPSG:4326",
     )
-    path = str(tmpdir / "{}.pickle".format(gdf_crs))
+    path = str(tmpdir / "gdf_crs.pickle")
     gdf_crs.to_pickle(path)
     result = pd.read_pickle(path)
     assert_geodataframe_equal(result, gdf_crs)
