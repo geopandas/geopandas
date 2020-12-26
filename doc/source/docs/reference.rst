@@ -11,5 +11,6 @@ Reference
   GeoDataFrame <reference/geodataframe>
   Input/output <reference/io>
   Tools <reference/tools>
+  Spatial index <reference/sindex>
   Testing <reference/testing>
 

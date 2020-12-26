@@ -30,6 +30,7 @@ dependencies:
 - libgdal=3.0.4
 - proj=6.3.0
 - geos=3.8.0
+- pygeos
 - pip:
   - myst-nb
   - sphinx-toggleprompt

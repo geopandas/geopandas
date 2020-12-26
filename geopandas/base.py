@@ -962,6 +962,60 @@ GeometryCollection
 
     @property
     def sindex(self):
+        """Generate the spatial index
+
+        Creates R-tree spatial index based on ``pygeos.STRtree`` or
+        ``rtree.index.Index``.
+
+        Note that the  spatial index may not be fully
+        initialized until the first use.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        Query a single geometry against the spatial index based on the bounding box:
+
+        >>> s.sindex.query(box(1, 1, 3, 3))
+        array([1, 2, 3])
+
+        Query a single geometry against the spatial index based on the predicate:
+
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="contains")
+        array([2])
+
+        Query an array of geometries against the spatial index based on the bounding
+        box:
+
+        >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
+        >>> s2
+        0    POLYGON ((4.00000 2.00000, 4.00000 4.00000, 2....
+        1    POLYGON ((6.00000 5.00000, 6.00000 6.00000, 5....
+        dtype: geometry
+
+        >>> s.sindex.query_bulk(s2)
+        array([[0, 0, 0, 1, 1],
+               [2, 3, 4, 5, 6]])
+
+        Query an array of geometries against the spatial index based on the predicate:
+
+        >>> s.sindex.query_bulk(s2, predicate="contains")
+        array([[0],
+                [3]])
+        """
         return self.geometry.values.sindex
 
     @property
