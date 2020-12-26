@@ -1301,6 +1301,31 @@ GeometryCollection
         ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
         must include a comma separating x and y slices. That is, ``.cx[:, :]``
         will return the full series/frame, but ``.cx[:]`` is not implemented.
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [Point(0, 0), Point(1, 2), Point(3, 3), LineString([(0, 0), (3, 3)])]
+        ... )
+        >>> s
+        0                          POINT (0.00000 0.00000)
+        1                          POINT (1.00000 2.00000)
+        2                          POINT (3.00000 3.00000)
+        3    LINESTRING (0.00000 0.00000, 3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.cx[0:1, 0:1]
+        0                          POINT (0.00000 0.00000)
+        3    LINESTRING (0.00000 0.00000, 3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.cx[:, 1:]
+        1                          POINT (1.00000 2.00000)
+        2                          POINT (3.00000 3.00000)
+        3    LINESTRING (0.00000 0.00000, 3.00000 3.00000)
+        dtype: geometry
+
         """
         return _CoordinateIndexer(self)
 
