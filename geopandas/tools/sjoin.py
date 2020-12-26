@@ -61,7 +61,7 @@ GON (((-122.84000 49.00000, -120.0000...
     4       Palikir  POINT (158.14997 6.91664)
 
     >>> cities_w_country_data = geopandas.sjoin(cities, countries)
-    >>> cities_w_country_data.head()
+    >>> cities_w_country_data.head()  # doctest: +SKIP
             name_left                   geometry  index_right   pop_est continent name_\
 right iso_a3  gdp_md_est
     0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe      \

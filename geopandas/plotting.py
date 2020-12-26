@@ -591,7 +591,7 @@ def plot_dataframe(
     Examples
     --------
     >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-    >>> df.head()
+    >>> df.head()  # doctest: +SKIP
         pop_est      continent                      name iso_a3  \
 gdp_md_est                                           geometry
     0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\

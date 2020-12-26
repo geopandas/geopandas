@@ -959,7 +959,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         With selected drivers you can also append to a file with `mode="a"`:
 
-        >>> gdf.to_file('dataframe.shp', mode="a")
+        >>> gdf.to_file('dataframe.shp', mode="a")  # doctest: +SKIP
         """
         from geopandas.io.file import _to_file
 
