@@ -736,7 +736,6 @@ def plot_dataframe(
                 fmt = legend_kwds.pop("fmt")
 
             categories = binning.get_legend_classes(fmt)
-            show_interval = True
             if legend_kwds is not None and "interval" in legend_kwds:
                 show_interval = legend_kwds.pop("interval")
                 if not show_interval:
