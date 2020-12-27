@@ -1543,6 +1543,22 @@ def test_column_values():
         ax = df.plot(column=np.array([1, 2, 3]))
 
 
+def test_polygon_patch():
+    # test adapted from descartes by Sean Gillies
+    # (BSD license, https://pypi.org/project/descartes).
+    from geopandas.plotting import _PolygonPatch
+    from matplotlib.patches import PathPatch
+
+    polygon = (
+        Point(0, 0).buffer(10.0).difference(MultiPoint([(-5, 0), (5, 0)]).buffer(3.0))
+    )
+
+    patch = _PolygonPatch(polygon)
+    assert isinstance(patch, PathPatch)
+    path = patch.get_path()
+    assert len(path.vertices) == len(path.codes) == 198
+
+
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
     """
     Asserts that the members of `collection` match the `expected_colors`
