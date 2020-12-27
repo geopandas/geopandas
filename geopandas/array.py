@@ -262,11 +262,11 @@ def points_from_xy(x, y, z=None, crs=None):
 
     >>> df = pd.DataFrame({'longitude': [-140, 0, 123], 'latitude': [-65, 1, 48]})
     >>> df
-    longitude  latitude
+       longitude  latitude
     0       -140       -65
     1          0         1
     2        123        48
-    >>> geometry = geopandas.points_from_xy(df.longitude, df.latitude, crs=4326)
+    >>> geometry = geopandas.points_from_xy(df.longitude, df.latitude, crs="EPSG:4326")
 
     Returns
     -------

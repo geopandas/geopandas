@@ -124,8 +124,9 @@ class GeoPandasBase(object):
 
         Notes
         -----
-        Area may be invalid for a geographic CRS; use ``to_crs`` to project
-        geometries to a planar CRS before using this function.
+        Area may be invalid for a geographic CRS using degrees as units;
+        use :meth:`GeoSeries.to_crs` to project geometries to a planar
+        CRS before using this function.
 
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
@@ -162,7 +163,7 @@ class GeoPandasBase(object):
 
         See also
         --------
-        GeoSeries.set_crs : assing CRS
+        GeoSeries.set_crs : assign CRS
         GeoSeries.to_crs : re-project to another CRS
         """
         return self.geometry.values.crs
@@ -244,8 +245,9 @@ GeometryCollection
 
         Notes
         -----
-        Length may be invalid for a geographic CRS; use ``to_crs`` to project
-        geometries to a planar CRS before using this function.
+        Length may be invalid for a geographic CRS using degrees as units;
+        use :meth:`GeoSeries.to_crs` to project geometries to a planar
+        CRS before using this function.
 
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
@@ -355,7 +357,7 @@ GeometryCollection
         features that are closed.
 
         When constructing a LinearRing, the sequence of coordinates may be
-        explicitly closed by passing identical values in the first and last indices.
+        explicitly closed by passign identical values in the first and last indices.
         Otherwise, the sequence will be implicitly closed by copying the first tuple
         to the last index.
 
@@ -449,7 +451,7 @@ GeometryCollection
 
         See also
         --------
-        GeoSeries.exterior : outer boundary
+        GeoSeries.exterior : outer boundary (without interior rings)
 
         """
         return _delegate_property("boundary", self)

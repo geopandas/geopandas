@@ -861,7 +861,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-        GeoSeries.set_crs : assing CRS
+        GeoSeries.set_crs : assign CRS
 
         """
         if self.crs is None:

@@ -366,7 +366,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         See also
         --------
-        GeoDataFrame.set_crs : assing CRS
+        GeoDataFrame.set_crs : assign CRS
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
@@ -1130,7 +1130,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         See also
         --------
-        GeoDataFrame.set_crs : assing CRS without re-projection
+        GeoDataFrame.set_crs : assign CRS without re-projection
         """
         if inplace:
             df = self

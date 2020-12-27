@@ -21,7 +21,7 @@ def get_path(dataset):
     Examples
     --------
     >>> geopandas.datasets.get_path("naturalearth_lowres")  # doctest: +SKIP
-    '/opt/miniconda3/envs/geo_env/lib/python3.8/site-packages/geopandas/datasets/\
+    '.../python3.8/site-packages/geopandas/datasets/\
 naturalearth_lowres/naturalearth_lowres.shp'
 
     """
