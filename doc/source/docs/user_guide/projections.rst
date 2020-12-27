@@ -71,7 +71,7 @@ the :attr:`GeoSeries.crs` attribute):
 
 .. sourcecode:: python
 
-    my_geoseries = my_geoseries.set_crs("EPSG:4326"})
+    my_geoseries = my_geoseries.set_crs("EPSG:4326")
     my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 

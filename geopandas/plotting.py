@@ -45,7 +45,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom.type.startswith(prefix):
+        if geom.type.startswith(prefix) and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
@@ -94,6 +94,32 @@ def _expand_kwargs(kwargs, multiindex):
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
+def _PolygonPatch(polygon, **kwargs):
+    """Constructs a matplotlib patch from a Polygon geometry
+
+    The `kwargs` are those supported by the matplotlib.patches.PathPatch class
+    constructor. Returns an instance of matplotlib.patches.PathPatch.
+
+    Example (using Shapely Point and a matplotlib axes)::
+
+        b = shapely.geometry.Point(0, 0).buffer(1.0)
+        patch = _PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
+        ax.add_patch(patch)
+
+    GeoPandas originally relied on the descartes package by Sean Gillies
+    (BSD license, https://pypi.org/project/descartes) for PolygonPatch, but
+    this dependency was removed in favor of the below matplotlib code.
+    """
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path
+
+    path = Path.make_compound_path(
+        Path(np.asarray(polygon.exterior.coords)[:, :2]),
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors]
+    )
+    return PathPatch(path, **kwargs)
+
+
 def _plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -123,15 +149,6 @@ def _plot_polygon_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-
-    try:
-        from descartes.patch import PolygonPatch
-    except ImportError:
-        raise ImportError(
-            "The descartes package is required for plotting polygons in geopandas. "
-            "You can install it using 'conda install -c conda-forge descartes' or "
-            "'pip install descartes'."
-        )
     from matplotlib.collections import PatchCollection
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
@@ -151,7 +168,9 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
+    collection = PatchCollection(
+        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
+    )
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -380,6 +399,14 @@ def plot_series(
         warnings.warn(
             "The GeoSeries you are attempting to plot is "
             "empty. Nothing has been displayed.",
+            UserWarning,
+        )
+        return ax
+
+    if s.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
             UserWarning,
         )
         return ax
