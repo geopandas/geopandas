@@ -800,7 +800,7 @@ class TestGeomMethods:
                     MultiPoint([(2, 1), (0, 0)]),
                 ],
             },
-            crs=4326
+            crs=4326,
         )
 
         # Test with column provided as arg

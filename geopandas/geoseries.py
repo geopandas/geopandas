@@ -623,6 +623,10 @@ class GeoSeries(GeoPandasBase, Series):
            2    POINT (4.00000 4.00000)
         dtype: geometry
 
+        See also
+        --------
+        GeoDataFrame.explode
+
         """
         index = []
         geometries = []
