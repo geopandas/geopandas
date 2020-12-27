@@ -91,6 +91,47 @@ class GeoSeries(GeoPandasBase, Series):
     2    POINT (3.00000 3.00000)
     dtype: geometry
 
+    >>> s = geopandas.GeoSeries(
+    ...     [Point(1, 1), Point(2, 2), Point(3, 3)], crs="EPSG:3857"
+    ... )
+    >>> s.crs  # doctest: +SKIP
+    <Projected CRS: EPSG:3857>
+    Name: WGS 84 / Pseudo-Mercator
+    Axis Info [cartesian]:
+    - X[east]: Easting (metre)
+    - Y[north]: Northing (metre)
+    Area of Use:
+    - name: World - 85°S to 85°N
+    - bounds: (-180.0, -85.06, 180.0, 85.06)
+    Coordinate Operation:
+    - name: Popular Visualisation Pseudo-Mercator
+    - method: Popular Visualisation Pseudo Mercator
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
+    >>> s = geopandas.GeoSeries(
+    ...    [Point(1, 1), Point(2, 2), Point(3, 3)], index=["a", "b", "c"], crs=4326
+    ... )
+    >>> s
+    a    POINT (1.00000 1.00000)
+    b    POINT (2.00000 2.00000)
+    c    POINT (3.00000 3.00000)
+    dtype: geometry
+
+    >>> s.crs
+    <Geographic 2D CRS: EPSG:4326>
+    Name: WGS 84
+    Axis Info [ellipsoidal]:
+    - Lat[north]: Geodetic latitude (degree)
+    - Lon[east]: Geodetic longitude (degree)
+    Area of Use:
+    - name: World
+    - bounds: (-180.0, -90.0, 180.0, 90.0)
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
     See Also
     --------
     GeoDataFrame

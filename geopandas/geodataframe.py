@@ -578,11 +578,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
+        PostGIS
+
+        >>> from sqlalchemy import create_engine  # doctest: +SKIP
+        >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydb"
+        >>> con = create_engine(db_connection_url)  # doctest: +SKIP
         >>> sql = "SELECT geom, highway FROM roads"
+        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
 
         SpatiaLite
+
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
+
+        The recommended method of reading from PostGIS is
+        :func:`geopandas.read_postgis`:
+
+        >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
+
+        See also
+        --------
+        geopandas.read_postgis
+
         """
 
         df = geopandas.io.sql._read_postgis(
