@@ -26,6 +26,7 @@ import pytest
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
+
     MPL_DECORATORS = True
 except ImportError:
     MPL_DECORATORS = False
@@ -33,6 +34,7 @@ except ImportError:
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa
+
 
 @pytest.fixture(autouse=True)
 def close_figures(request):
@@ -1439,7 +1441,9 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
         ax.cla()
 
+
 if MPL_DECORATORS:
+
     @pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
     class TestGeoplotAccessor:
         def setup_method(self):
