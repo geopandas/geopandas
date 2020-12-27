@@ -227,8 +227,8 @@ Pandas Plots
 -----------------
 
 Plotting methods also allows for different plot styles from pandas
-along with the default ``geo`` plot. These methods can be provided as
-the ``kind`` keyword argument to :meth:`~GeoDataFrame.plot`, and include:
+along with the default ``geo`` plot. These methods can be accessed using
+the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 
 * ``geo`` for mapping
 * ``line`` for line plots
@@ -254,7 +254,7 @@ You can also create these other plots using the methods ``GeoDataFrame.plot.<kin
     @savefig pandas_bar_plot.png
     gdf.plot.bar()
 
-More information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
 
 
 Other Resources
