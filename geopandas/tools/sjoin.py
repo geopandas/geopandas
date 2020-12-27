@@ -39,7 +39,7 @@ def sjoin(
     >>> countries = geopandas.read_file(geopandas.datasets.get_\
 path("naturalearth_lowres"))
     >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
-    >>> countries.head()
+    >>> countries.head()  # doctest: +SKIP
         pop_est      continent                      name \
 iso_a3  gdp_md_est                                           geometry
     0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
