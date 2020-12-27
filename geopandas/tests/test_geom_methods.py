@@ -11,6 +11,7 @@ from shapely.ops import unary_union
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
+from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -691,7 +692,8 @@ class TestGeomMethods:
 
     def test_explode_geoseries(self):
         s = GeoSeries(
-            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
+            crs=4326,
         )
         s.index.name = "test_index_name"
         expected_index_name = ["test_index_name", None]
@@ -699,6 +701,7 @@ class TestGeomMethods:
         expected = GeoSeries(
             [Point(0, 0), Point(1, 1), Point(2, 2), Point(3, 3), Point(4, 4)],
             index=MultiIndex.from_tuples(index, names=expected_index_name),
+            crs=4326,
         )
         assert_geoseries_equal(expected, s.explode())
 
@@ -738,6 +741,75 @@ class TestGeomMethods:
         )
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_025,
+        reason="pandas explode introduced in pandas 0.25",
+    )
+    def test_explode_pandas_fallback(self):
+        d = {
+            "col1": [["name1", "name2"], ["name3", "name4"]],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        }
+        gdf = GeoDataFrame(d, crs=4326)
+        expected_df = GeoDataFrame(
+            {
+                "col1": ["name1", "name2", "name3", "name4"],
+                "geometry": [
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                ],
+            },
+            index=[0, 0, 1, 1],
+            crs=4326,
+        )
+
+        # Test with column provided as arg
+        exploded_df = gdf.explode("col1")
+        assert_geodataframe_equal(exploded_df, expected_df)
+
+        # Test with column provided as kwarg
+        exploded_df = gdf.explode(column="col1")
+        assert_geodataframe_equal(exploded_df, expected_df)
+
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_11,
+        reason="ignore_index keyword introduced in pandas 1.1.0",
+    )
+    def test_explode_pandas_fallback_ignore_index(self):
+        d = {
+            "col1": [["name1", "name2"], ["name3", "name4"]],
+            "geometry": [
+                MultiPoint([(1, 2), (3, 4)]),
+                MultiPoint([(2, 1), (0, 0)]),
+            ],
+        }
+        gdf = GeoDataFrame(d, crs=4326)
+        expected_df = GeoDataFrame(
+            {
+                "col1": ["name1", "name2", "name3", "name4"],
+                "geometry": [
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(1, 2), (3, 4)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                    MultiPoint([(2, 1), (0, 0)]),
+                ],
+            },
+            crs=4326,
+        )
+
+        # Test with column provided as arg
+        exploded_df = gdf.explode("col1", ignore_index=True)
+        assert_geodataframe_equal(exploded_df, expected_df)
+
+        # Test with column provided as kwarg
+        exploded_df = gdf.explode(column="col1", ignore_index=True)
+        assert_geodataframe_equal(exploded_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'

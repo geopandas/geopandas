@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series
+from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS, Transformer
@@ -15,6 +15,7 @@ from geopandas.plotting import plot_series
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from . import _vectorized as vectorized
+from ._compat import ignore_shapely2_warnings
 
 
 _SERIES_WARNING_MSG = """\
@@ -85,10 +86,51 @@ class GeoSeries(GeoPandasBase, Series):
     >>> from shapely.geometry import Point
     >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
     >>> s
-    0    POINT (1 1)
-    1    POINT (2 2)
-    2    POINT (3 3)
+    0    POINT (1.00000 1.00000)
+    1    POINT (2.00000 2.00000)
+    2    POINT (3.00000 3.00000)
     dtype: geometry
+
+    >>> s = geopandas.GeoSeries(
+    ...     [Point(1, 1), Point(2, 2), Point(3, 3)], crs="EPSG:3857"
+    ... )
+    >>> s.crs  # doctest: +SKIP
+    <Projected CRS: EPSG:3857>
+    Name: WGS 84 / Pseudo-Mercator
+    Axis Info [cartesian]:
+    - X[east]: Easting (metre)
+    - Y[north]: Northing (metre)
+    Area of Use:
+    - name: World - 85°S to 85°N
+    - bounds: (-180.0, -85.06, 180.0, 85.06)
+    Coordinate Operation:
+    - name: Popular Visualisation Pseudo-Mercator
+    - method: Popular Visualisation Pseudo Mercator
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
+    >>> s = geopandas.GeoSeries(
+    ...    [Point(1, 1), Point(2, 2), Point(3, 3)], index=["a", "b", "c"], crs=4326
+    ... )
+    >>> s
+    a    POINT (1.00000 1.00000)
+    b    POINT (2.00000 2.00000)
+    c    POINT (3.00000 3.00000)
+    dtype: geometry
+
+    >>> s.crs
+    <Geographic 2D CRS: EPSG:4326>
+    Name: WGS 84
+    Axis Info [ellipsoidal]:
+    - Lat[north]: Geodetic latitude (degree)
+    - Lon[east]: Geodetic longitude (degree)
+    Area of Use:
+    - name: World
+    - bounds: (-180.0, -90.0, 180.0, 90.0)
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
 
     See Also
     --------
@@ -155,7 +197,8 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            s = pd.Series(data, index=index, name=name, **kwargs)
+            with ignore_shapely2_warnings():
+                s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
                 if s.empty:
@@ -193,12 +236,56 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def x(self):
-        """Return the x location of point geometries in a GeoSeries"""
+        """Return the x location of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.x
+        0    1.0
+        1    2.0
+        2    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.y
+
+        """
         return _delegate_property("x", self)
 
     @property
     def y(self):
-        """Return the y location of point geometries in a GeoSeries"""
+        """Return the y location of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.y
+        0    1.0
+        1    2.0
+        2    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.x
+
+        """
         return _delegate_property("y", self)
 
     @classmethod
@@ -207,6 +294,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Can load a ``GeoSeries`` from a file from any format recognized by
         `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
+        From a file with attributes loads only geometry column. Note that to do
+        that, GeoPandas first loads the whole GeoDataFrame.
 
         Parameters
         ----------
@@ -218,6 +307,19 @@ class GeoSeries(GeoPandasBase, Series):
             These arguments are passed to fiona.open, and can be used to
             access multi-layer data, data stored within archives (zip files),
             etc.
+
+        Examples
+        --------
+
+        >>> path = geopandas.datasets.get_path('nybb')
+        >>> s = geopandas.GeoSeries.from_file(path)
+        >>> s
+        0    MULTIPOLYGON (((970217.022 145643.332, 970227....
+        1    MULTIPOLYGON (((1029606.077 156073.814, 102957...
+        2    MULTIPOLYGON (((1021176.479 151374.797, 102100...
+        3    MULTIPOLYGON (((981219.056 188655.316, 980940....
+        4    MULTIPOLYGON (((1012821.806 229228.265, 101278...
+        Name: geometry, dtype: geometry
         """
         from geopandas import GeoDataFrame
 
@@ -233,6 +335,20 @@ class GeoSeries(GeoPandasBase, Series):
         represents the ``GeoSeries`` as a GeoJSON-like ``FeatureCollection``.
         Note that the features will have an empty ``properties`` dict as they
         don't have associated attributes (geometry only).
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.__geo_interface__
+        {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', \
+'properties': {}, 'geometry': {'type': 'Point', 'coordinates': (1.0, 1.0)}, \
+'bbox': (1.0, 1.0, 1.0, 1.0)}, {'id': '1', 'type': 'Feature', \
+'properties': {}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 2.0)}, \
+'bbox': (2.0, 2.0, 2.0, 2.0)}, {'id': '2', 'type': 'Feature', 'properties': \
+{}, 'geometry': {'type': 'Point', 'coordinates': (3.0, 3.0)}, 'bbox': (3.0, \
+3.0, 3.0, 3.0)}], 'bbox': (1.0, 1.0, 3.0, 3.0)}
         """
         from geopandas import GeoDataFrame
 
@@ -268,6 +384,15 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
         GeoDataFrame.to_file
+
+        Examples
+        --------
+
+        >>> s.to_file('series.shp')  # doctest: +SKIP
+
+        >>> s.to_file('series.gpkg', driver='GPKG', layer='name1')  # doctest: +SKIP
+
+        >>> s.to_file('series.geojson', driver='GeoJSON')  # doctest: +SKIP
         """
         from geopandas import GeoDataFrame
 
@@ -313,8 +438,8 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @inherit_doc(pd.Series)
-    def apply(self, func, args=(), **kwargs):
-        result = super().apply(func, args=args, **kwargs)
+    def apply(self, func, convert_dtype=True, args=(), **kwargs):
+        result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
             if self.crs is not None:
                 result.set_crs(self.crs, inplace=True)
@@ -341,6 +466,24 @@ class GeoSeries(GeoPandasBase, Series):
         -------
         A boolean pandas Series of the same size as the GeoSeries,
         True where a value is NA.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                                                 None
+        2                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        >>> s.isna()
+        0    False
+        1     True
+        2    False
+        dtype: bool
 
         See Also
         --------
@@ -383,6 +526,24 @@ class GeoSeries(GeoPandasBase, Series):
         A boolean pandas Series of the same size as the GeoSeries,
         False where a value is NA.
 
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                                                 None
+        2                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        >>> s.notna()
+        0     True
+        1    False
+        2     True
+        dtype: bool
+
         See Also
         --------
         GeoSeries.isna : inverse of notna
@@ -412,6 +573,35 @@ class GeoSeries(GeoPandasBase, Series):
         """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         None,
+        ...         Polygon([(0, 0), (-1, 1), (0, -1)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                                                 None
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
+        >>> s.fillna()
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                             GEOMETRYCOLLECTION EMPTY
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
+        >>> s.fillna(Polygon([(0, 1), (2, 1), (1, 2)]))
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((0.00000 1.00000, 2.00000 1.00000, 1....
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
         """
         if value is None:
             value = BaseGeometry()
@@ -440,6 +630,58 @@ class GeoSeries(GeoPandasBase, Series):
         return plot_series(self, *args, **kwargs)
 
     plot.__doc__ = plot_series.__doc__
+
+    def explode(self):
+        """
+        Explode multi-part geometries into multiple single geometries.
+
+        Single rows can become multiple rows.
+        This is analogous to PostGIS's ST_Dump(). The 'path' index is the
+        second level of the returned MultiIndex
+
+        Returns
+        ------
+        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
+        original index and a zero-based integer index that counts the
+        number of single geometries within a multi-part geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        ... )
+        >>> s
+        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
+        dtype: geometry
+
+        >>> s.explode()
+        0  0    POINT (0.00000 0.00000)
+           1    POINT (1.00000 1.00000)
+        1  0    POINT (2.00000 2.00000)
+           1    POINT (3.00000 3.00000)
+           2    POINT (4.00000 4.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoDataFrame.explode
+
+        """
+        index = []
+        geometries = []
+        for idx, s in self.geometry.iteritems():
+            if s.type.startswith("Multi") or s.type == "GeometryCollection":
+                geoms = s.geoms
+                idxs = [(idx, i) for i in range(len(geoms))]
+            else:
+                geoms = [s]
+                idxs = [(idx, 0)]
+            index.extend(idxs)
+            geometries.extend(geoms)
+        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
     # Additional methods
@@ -471,6 +713,46 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+
+        Setting CRS to a GeoSeries without one:
+
+        >>> s.crs is None
+        True
+
+        >>> s = s.set_crs('epsg:3857')
+        >>> s.crs  # doctest: +SKIP
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        Overriding existing CRS:
+
+        >>> s = s.set_crs(4326, allow_override=True)
+
+        Without ``allow_override=True``, ``set_crs`` returns an error if you try to
+        override CRS.
+
         """
         if crs is not None:
             crs = CRS.from_user_input(crs)
@@ -519,6 +801,51 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)], crs=4326)
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+        >>> s.crs  # doctest: +SKIP
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        >>> s = s.to_crs(3857)
+        >>> s
+        0    POINT (111319.491 111325.143)
+        1    POINT (222638.982 222684.209)
+        2    POINT (333958.472 334111.171)
+        dtype: geometry
+        >>> s.crs  # doctest: +SKIP
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
         """
         if self.crs is None:
             raise ValueError(
@@ -543,6 +870,79 @@ class GeoSeries(GeoPandasBase, Series):
             GeometryArray(new_data), crs=crs, index=self.index, name=self.name
         )
 
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.geometry.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        try:
+            from pyproj.aoi import AreaOfInterest
+            from pyproj.database import query_utm_crs_info
+        except ImportError:
+            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
+
+        if not self.crs:
+            raise RuntimeError("crs must be set to estimate UTM CRS.")
+
+        minx, miny, maxx, maxy = self.total_bounds
+        # ensure using geographic coordinates
+        if not self.crs.is_geographic:
+            lon, lat = Transformer.from_crs(
+                self.crs, "EPSG:4326", always_xy=True
+            ).transform((minx, maxx, minx, maxx), (miny, miny, maxy, maxy))
+            x_center = np.mean(lon)
+            y_center = np.mean(lat)
+        else:
+            x_center = np.mean([minx, maxx])
+            y_center = np.mean([miny, maxy])
+
+        utm_crs_list = query_utm_crs_info(
+            datum_name=datum_name,
+            area_of_interest=AreaOfInterest(
+                west_lon_degree=x_center,
+                south_lat_degree=y_center,
+                east_lon_degree=x_center,
+                north_lat_degree=y_center,
+            ),
+        )
+        try:
+            return CRS.from_epsg(utm_crs_list[0].code)
+        except IndexError:
+            raise RuntimeError("Unable to determine UTM CRS")
+
     def to_json(self, **kwargs):
         """
         Returns a GeoJSON string representation of the GeoSeries.
@@ -550,6 +950,28 @@ class GeoSeries(GeoPandasBase, Series):
         Parameters
         ----------
         *kwargs* that will be passed to json.dumps().
+
+        Returns
+        -------
+        JSON string
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.to_json()
+        '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", "pr\
+operties": {}, "geometry": {"type": "Point", "coordinates": [1.0, 1.0]}, "bbox": [1.0,\
+ 1.0, 1.0, 1.0]}, {"id": "1", "type": "Feature", "properties": {}, "geometry": {"type"\
+: "Point", "coordinates": [2.0, 2.0]}, "bbox": [2.0, 2.0, 2.0, 2.0]}, {"id": "2", "typ\
+e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3.0, 3.\
+0]}, "bbox": [3.0, 3.0, 3.0, 3.0]}], "bbox": [1.0, 1.0, 3.0, 3.0]}'
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 

@@ -11,4 +11,4 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  - codecov
+  - pytest-xdist

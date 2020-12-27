@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import json
 import os
 import random
@@ -8,6 +9,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
 
+from pyproj import CRS
 from shapely.geometry import (
     LineString,
     MultiLineString,
@@ -17,6 +19,7 @@ from shapely.geometry import (
     Polygon,
 )
 from shapely.geometry.base import BaseGeometry
+import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.array import GeometryArray, GeometryDtype
@@ -24,6 +27,9 @@ from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
 import pytest
+
+
+PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 
 
 class TestSeries:
@@ -181,6 +187,32 @@ class TestSeries:
             self.g1.to_crs(epsg=4326)
         with pytest.raises(ValueError):
             self.landmarks.to_crs(crs=None, epsg=None)
+
+    def test_estimate_utm_crs__geographic(self):
+        if PYPROJ_LT_3:
+            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
+                self.landmarks.estimate_utm_crs()
+        else:
+            assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
+            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    def test_estimate_utm_crs__projected(self):
+        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
+            "EPSG:32618"
+        )
+
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    def test_estimate_utm_crs__out_of_bounds(self):
+        with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
+            GeoSeries(
+                [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
+            ).estimate_utm_crs()
+
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    def test_estimate_utm_crs__missing_crs(self):
+        with pytest.raises(RuntimeError, match="crs must be set"):
+            GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
 
     def test_fillna(self):
         # default is to fill with empty geometry

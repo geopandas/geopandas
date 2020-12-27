@@ -138,7 +138,7 @@ First, we load the countries and cities example datasets and select :
     world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
     capitals = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
-    # Select South Amarica and some columns
+    # Select South America and some columns
     countries = world[world['continent'] == "South America"]
     countries = countries[['geometry', 'name']]
 

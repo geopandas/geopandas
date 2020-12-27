@@ -35,6 +35,8 @@ extensions = [
     "sphinx.ext.autodoc",
     "myst_nb",
     "numpydoc",
+    'sphinx_toggleprompt',
+    "matplotlib.sphinxext.plot_directive"
 ]
 
 # continue doc build and only print warnings/errors in examples

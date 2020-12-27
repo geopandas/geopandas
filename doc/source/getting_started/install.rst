@@ -156,7 +156,6 @@ Further, optional dependencies are:
 For plotting, these additional packages may be used:
 
 - `matplotlib`_ (>= 2.2.0)
-- `descartes`_
 - `mapclassify`_ (>= 2.2.0)
 
 
@@ -213,8 +212,6 @@ More specifically, whether the speedups are used or not is determined by:
 
 .. _fiona: https://fiona.readthedocs.io
 
-.. _Descartes: https://pypi.python.org/pypi/descartes
-
 .. _matplotlib: http://matplotlib.org
 
 .. _geopy: https://github.com/geopy/geopy
@@ -230,8 +227,6 @@ More specifically, whether the speedups are used or not is determined by:
 .. _rtree: https://github.com/Toblerity/rtree
 
 .. _libspatialindex: https://github.com/libspatialindex/libspatialindex
-
-.. _Travis CI: https://travis-ci.org/geopandas/geopandas
 
 .. _conda: https://conda.io/en/latest/
 

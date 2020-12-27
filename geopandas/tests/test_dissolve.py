@@ -99,3 +99,32 @@ def test_reset_index(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx", as_index=False)
     comparison = first.reset_index()
     assert_frame_equal(comparison, test, check_column_type=False)
+
+
+def test_dissolve_none(nybb_polydf):
+    test = nybb_polydf.dissolve(by=None)
+    expected = GeoDataFrame(
+        {
+            nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
+            "BoroName": ["Staten Island"],
+            "BoroCode": [5],
+            "manhattan_bronx": [5],
+        },
+        geometry=nybb_polydf.geometry.name,
+        crs=nybb_polydf.crs,
+    )
+    assert_frame_equal(expected, test, check_column_type=False)
+
+
+def test_dissolve_none_mean(nybb_polydf):
+    test = nybb_polydf.dissolve(aggfunc="mean")
+    expected = GeoDataFrame(
+        {
+            nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
+            "BoroCode": [3.0],
+            "manhattan_bronx": [5.4],
+        },
+        geometry=nybb_polydf.geometry.name,
+        crs=nybb_polydf.crs,
+    )
+    assert_frame_equal(expected, test, check_column_type=False)

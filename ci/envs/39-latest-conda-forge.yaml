@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.9
   # required
   - pandas
   - shapely
@@ -12,7 +12,7 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  - codecov
+  - pytest-xdist
   - fsspec
   # optional
   - rtree
@@ -20,6 +20,12 @@ dependencies:
   - descartes
   - mapclassify
   - geopy
+  # installed in tests.yaml, because not available on windows
+  # - postgis
   - SQLalchemy
+  - psycopg2
   - libspatialite
+  - geoalchemy2
   - pyarrow
+  # doctest testing
+  - pytest-doctestplus

@@ -114,7 +114,7 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses `descartes`_ to generate a `matplotlib`_ plot. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`_ for plotting. To generate a plot of our GeoSeries, use:
 
 .. sourcecode:: python
 
@@ -222,7 +222,6 @@ borough that are in the holes:
     5    0.558075
     dtype: float64
 
-.. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://fiona.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy

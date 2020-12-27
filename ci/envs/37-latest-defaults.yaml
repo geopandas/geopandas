@@ -2,29 +2,26 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.6
+  - python=3.7.3
   # required
-  - pandas=0.25
+  - pandas
   - shapely
   - fiona
-  #- pyproj
+  - pyproj
   - geos
   # testing
   - pytest
   - pytest-cov
+  - pytest-xdist
   - fsspec
-  #- codecov
   # optional
   - rtree
   - matplotlib
-  - descartes
   #- geopy
   - SQLalchemy
   - libspatialite
   - pyarrow
   - pip:
-      - pyproj==2.3.1
-      - codecov
       - geopy
-      - mapclassify==2.2.0
-      - git+https://github.com/pygeos/pygeos.git
+      - mapclassify
+      - pygeos
