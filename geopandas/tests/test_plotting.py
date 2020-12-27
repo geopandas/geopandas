@@ -1442,36 +1442,36 @@ class TestPlotCollections:
         ax.cla()
 
 
-if MPL_DECORATORS:
+@pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
+class TestGeoplotAccessor:
+    def setup_method(self):
+        geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
+        x = [1, 2]
+        y = [10, 20]
+        self.gdf = GeoDataFrame({"geometry": geometries, "x": x, "y": y})
+        self.df = pd.DataFrame({"x": x, "y": y})
 
-    @pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
-    class TestGeoplotAccessor:
-        def setup_method(self):
-            geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
-            x = [1, 2]
-            y = [10, 20]
-            self.gdf = GeoDataFrame({"geometry": geometries, "x": x, "y": y})
-            self.df = pd.DataFrame({"x": x, "y": y})
+    def compare_figures(self, kind, fig_test, fig_ref, kwargs):
+        """Compare Figures."""
+        ax_pandas_1 = self.df.plot(kind=kind, **kwargs)
+        ax_geopandas_1 = self.gdf.plot(kind=kind, **kwargs)
+        fig_test.subplots().plot(
+            ax=ax_pandas_1,
+        )
+        fig_ref.subplots().plot(ax=ax_geopandas_1)
 
-        def compare_figures(self, kind, fig_test, fig_ref, kwargs):
-            """Compare Figures."""
-            ax_pandas_1 = self.df.plot(kind=kind, **kwargs)
-            ax_geopandas_1 = self.gdf.plot(kind=kind, **kwargs)
-            fig_test.subplots().plot(
-                ax=ax_pandas_1,
-            )
-            fig_ref.subplots().plot(ax=ax_geopandas_1)
+        ax_pandas_2 = getattr(self.df.plot, kind)(**kwargs)
+        ax_geopandas_2 = getattr(self.gdf.plot, kind)(**kwargs)
+        fig_test.subplots().plot(ax=ax_pandas_2)
+        fig_ref.subplots().plot(ax=ax_geopandas_2)
 
-            ax_pandas_2 = getattr(self.df.plot, kind)(**kwargs)
-            ax_geopandas_2 = getattr(self.gdf.plot, kind)(**kwargs)
-            fig_test.subplots().plot(ax=ax_pandas_2)
-            fig_ref.subplots().plot(ax=ax_geopandas_2)
+    _pandas_kinds = []
+    if compat.PANDAS_GE_025:
+        from geopandas.plotting import GeoplotAccessor
 
-        _pandas_kinds = []
-        if compat.PANDAS_GE_025:
-            from geopandas.plotting import GeoplotAccessor
+        _pandas_kinds = GeoplotAccessor._pandas_kinds
 
-            _pandas_kinds = GeoplotAccessor._pandas_kinds
+    if MPL_DECORATORS:
 
         @pytest.mark.parametrize("kind", _pandas_kinds)
         @check_figures_equal(extensions=["png", "pdf"])
@@ -1504,15 +1504,15 @@ if MPL_DECORATORS:
             fig_test.subplots().plot(ax=ax1)
             fig_ref.subplots().plot(ax=ax2)
 
-        def test_invalid_kind(self):
-            """Test invalid kinds."""
-            with pytest.raises(ValueError, match="error is not a valid plot kind"):
-                self.gdf.plot(kind="error")
-            with pytest.raises(
-                AttributeError,
-                match="'GeoplotAccessor' object has no attribute 'error'",
-            ):
-                self.gdf.plot.error()
+    def test_invalid_kind(self):
+        """Test invalid kinds."""
+        with pytest.raises(ValueError, match="error is not a valid plot kind"):
+            self.gdf.plot(kind="error")
+        with pytest.raises(
+            AttributeError,
+            match="'GeoplotAccessor' object has no attribute 'error'",
+        ):
+            self.gdf.plot.error()
 
 
 def test_column_values():
