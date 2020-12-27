@@ -17,7 +17,6 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   - mapclassify
   - geopy
   # installed in tests.yaml, because not available on windows

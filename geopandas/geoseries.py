@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series
+from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS, Transformer
@@ -90,6 +90,47 @@ class GeoSeries(GeoPandasBase, Series):
     1    POINT (2.00000 2.00000)
     2    POINT (3.00000 3.00000)
     dtype: geometry
+
+    >>> s = geopandas.GeoSeries(
+    ...     [Point(1, 1), Point(2, 2), Point(3, 3)], crs="EPSG:3857"
+    ... )
+    >>> s.crs  # doctest: +SKIP
+    <Projected CRS: EPSG:3857>
+    Name: WGS 84 / Pseudo-Mercator
+    Axis Info [cartesian]:
+    - X[east]: Easting (metre)
+    - Y[north]: Northing (metre)
+    Area of Use:
+    - name: World - 85°S to 85°N
+    - bounds: (-180.0, -85.06, 180.0, 85.06)
+    Coordinate Operation:
+    - name: Popular Visualisation Pseudo-Mercator
+    - method: Popular Visualisation Pseudo Mercator
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
+    >>> s = geopandas.GeoSeries(
+    ...    [Point(1, 1), Point(2, 2), Point(3, 3)], index=["a", "b", "c"], crs=4326
+    ... )
+    >>> s
+    a    POINT (1.00000 1.00000)
+    b    POINT (2.00000 2.00000)
+    c    POINT (3.00000 3.00000)
+    dtype: geometry
+
+    >>> s.crs
+    <Geographic 2D CRS: EPSG:4326>
+    Name: WGS 84
+    Axis Info [ellipsoidal]:
+    - Lat[north]: Geodetic latitude (degree)
+    - Lon[east]: Geodetic longitude (degree)
+    Area of Use:
+    - name: World
+    - bounds: (-180.0, -90.0, 180.0, 90.0)
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
 
     See Also
     --------
@@ -589,6 +630,58 @@ class GeoSeries(GeoPandasBase, Series):
         return plot_series(self, *args, **kwargs)
 
     plot.__doc__ = plot_series.__doc__
+
+    def explode(self):
+        """
+        Explode multi-part geometries into multiple single geometries.
+
+        Single rows can become multiple rows.
+        This is analogous to PostGIS's ST_Dump(). The 'path' index is the
+        second level of the returned MultiIndex
+
+        Returns
+        ------
+        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
+        original index and a zero-based integer index that counts the
+        number of single geometries within a multi-part geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        ... )
+        >>> s
+        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
+        dtype: geometry
+
+        >>> s.explode()
+        0  0    POINT (0.00000 0.00000)
+           1    POINT (1.00000 1.00000)
+        1  0    POINT (2.00000 2.00000)
+           1    POINT (3.00000 3.00000)
+           2    POINT (4.00000 4.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoDataFrame.explode
+
+        """
+        index = []
+        geometries = []
+        for idx, s in self.geometry.iteritems():
+            if s.type.startswith("Multi") or s.type == "GeometryCollection":
+                geoms = s.geoms
+                idxs = [(idx, i) for i in range(len(geoms))]
+            else:
+                geoms = [s]
+                idxs = [(idx, 0)]
+            index.extend(idxs)
+            geometries.extend(geoms)
+        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
     # Additional methods

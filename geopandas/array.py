@@ -417,20 +417,20 @@ class GeometryArray(ExtensionArray):
         #             "and CRS of existing geometries."
         #         )
 
-    if compat.USE_PYGEOS:
-
-        def __getstate__(self):
+    def __getstate__(self):
+        if compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
+        else:
+            return self.__dict__
 
-        def __setstate__(self, state):
+    def __setstate__(self, state):
+        if compat.USE_PYGEOS:
             geoms = pygeos.from_wkb(state[0])
             self._crs = state[1]
+            self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
-
-    else:
-
-        def __setstate__(self, state):
+        else:
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
