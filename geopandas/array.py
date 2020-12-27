@@ -1099,7 +1099,11 @@ class GeometryArray(ExtensionArray):
         Return for `item in self`.
         """
         if pd.api.types.is_scalar(item) and pd.core.dtypes.missing.isna(item):
-            if item is self.dtype.na_value or isinstance(item, self.dtype.type):
+            if (
+                item is self.dtype.na_value
+                or isinstance(item, self.dtype.type)
+                or item is None
+            ):
                 return self.isna().any()
             else:
                 return False
