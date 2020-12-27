@@ -27,7 +27,7 @@ import pytest
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa
-from matplotlib.testing.decorators import check_figures_equal  # noqa
+import matplotlib.testing.decorators as decorators  # noqa
 
 
 @pytest.fixture(autouse=True)
@@ -1466,7 +1466,7 @@ class TestGeoplotAccessor:
         _pandas_kinds = GeoplotAccessor._pandas_kinds
 
     @pytest.mark.parametrize("kind", _pandas_kinds)
-    @check_figures_equal(extensions=["png", "pdf"])
+    @decorators.check_figures_equal(extensions=["png", "pdf"])
     def test_pandas_kind(self, kind, fig_test, fig_ref):
         """Test Pandas kind."""
         import importlib
@@ -1488,7 +1488,7 @@ class TestGeoplotAccessor:
 
         self.compare_figures(kind, fig_test, fig_ref, kwargs)
 
-    @check_figures_equal(extensions=["png", "pdf"])
+    @decorators.check_figures_equal(extensions=["png", "pdf"])
     def test_geo_kind(self, fig_test, fig_ref):
         """Test Geo kind."""
         ax1 = self.gdf.plot()
