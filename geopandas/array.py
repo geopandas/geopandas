@@ -1077,7 +1077,7 @@ class GeometryArray(ExtensionArray):
     def nbytes(self):
         return self.data.nbytes
 
-    def shift(self, periods: int = 1, fill_value: object = None) -> "GeometryArray":
+    def shift(self, periods=1, fill_value=None):
         """
         Shift values by desired number.
 
@@ -1090,7 +1090,7 @@ class GeometryArray(ExtensionArray):
             The number of periods to shift. Negative values are allowed
             for shifting backwards.
 
-        fill_value : object, optional
+        fill_value : object, optional (default None)
             The scalar value to use for newly introduced missing values.
             The default is ``self.dtype.na_value``.
 
