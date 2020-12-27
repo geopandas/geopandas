@@ -106,10 +106,16 @@ def _read_postgis(
     Examples
     --------
     PostGIS
-    >>> sql = "SELECT geom, kind FROM polygons"
+
+    >>> from sqlalchemy import create_engine  # doctest: +SKIP
+    >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydatabase"
+    >>> con = create_engine(db_connection_url)  # doctest: +SKIP
+    >>> sql = "SELECT geom, highway FROM roads"
+    >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
 
     SpatiaLite
-    >>> sql = "SELECT ST_AsBinary(geom) AS geom, kind FROM polygons"
+
+    >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
