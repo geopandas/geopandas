@@ -115,7 +115,7 @@ def _PolygonPatch(polygon, **kwargs):
 
     path = Path.make_compound_path(
         Path(np.asarray(polygon.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors]
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
     )
     return PathPatch(path, **kwargs)
 
