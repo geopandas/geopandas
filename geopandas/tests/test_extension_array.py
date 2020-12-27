@@ -287,7 +287,20 @@ class TestDtype(extension_tests.BaseDtypeTests):
 
 
 class TestInterface(extension_tests.BaseInterfaceTests):
-    pass
+    def test_contains(self, data, data_missing):
+        # overrided due to the inconsistency between
+        # GeometryDtype.na_value = np.nan
+        # and None being used as NA in array
+
+        # ensure data without missing values
+        data = data[~data.isna()]
+
+        # first elements are non-missing
+        assert data[0] in data
+        assert data_missing[0] in data_missing
+
+        assert None in data_missing
+        assert None not in data
 
 
 class TestConstructors(extension_tests.BaseConstructorsTests):
