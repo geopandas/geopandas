@@ -16,8 +16,8 @@ dependencies:
     - geopy
 
     # plotting
-    - descartes>=1.0
     - matplotlib>=2.2
+    - mapclassify
 
     # testing
     - pytest>=3.1.0

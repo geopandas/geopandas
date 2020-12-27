@@ -604,11 +604,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
+        PostGIS
+
+        >>> from sqlalchemy import create_engine  # doctest: +SKIP
+        >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydb"
+        >>> con = create_engine(db_connection_url)  # doctest: +SKIP
         >>> sql = "SELECT geom, highway FROM roads"
+        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
 
         SpatiaLite
+
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
+
+        The recommended method of reading from PostGIS is
+        :func:`geopandas.read_postgis`:
+
+        >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
+
+        See also
+        --------
+        geopandas.read_postgis
+
         """
 
         df = geopandas.io.sql._read_postgis(
@@ -1314,8 +1331,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return aggregated
 
-    # overrides GeoPandasBase method
-    def explode(self):
+    # overrides the pandas native explode method to break up features geometrically
+    def explode(self, column=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1359,6 +1376,15 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
         """
+
+        # If no column is specified then default to the active geometry column
+        if column is None:
+            column = self.geometry.name
+        # If the specified column is not a geometry dtype use pandas explode
+        if not isinstance(self[column].dtype, GeometryDtype):
+            return super(GeoDataFrame, self).explode(column, **kwargs)
+            # TODO: make sure index behaviour is consistent
+
         df_copy = self.copy()
 
         if "level_1" in df_copy.columns:  # GH1393
