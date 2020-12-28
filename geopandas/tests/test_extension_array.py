@@ -301,6 +301,7 @@ class TestInterface(extension_tests.BaseInterfaceTests):
 
         assert None in data_missing
         assert None not in data
+        assert pd.NaT not in data_missing
 
 
 class TestConstructors(extension_tests.BaseConstructorsTests):
