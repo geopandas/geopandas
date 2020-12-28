@@ -17,9 +17,15 @@ First we'll load in the data using GeoPandas.
 import geopandas
 import geoplot
 
-world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-boroughs = geopandas.read_file(geoplot.datasets.get_path("nyc_boroughs"))
-collisions = geopandas.read_file(geoplot.datasets.get_path("nyc_injurious_collisions"))
+world = geopandas.read_file(
+    geopandas.datasets.get_path('naturalearth_lowres')
+)
+boroughs = geopandas.read_file(
+    geoplot.datasets.get_path('nyc_boroughs')
+)
+collisions = geopandas.read_file(
+    geoplot.datasets.get_path('nyc_injurious_collisions')
+)
 
 ###############################################################################
 # Plotting with Geoplot
@@ -34,7 +40,9 @@ geoplot.polyplot(world, figsize=(8, 4))
 # `here <http://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_).
 
 # use the Orthographic map projection (e.g. a world globe)
-ax = geoplot.polyplot(world, projection=geoplot.crs.Orthographic(), figsize=(8, 4))
+ax = geoplot.polyplot(
+    world, projection=geoplot.crs.Orthographic(), figsize=(8, 4)
+)
 ax.outline_patch.set_visible(True)
 
 ###############################################################################
@@ -45,13 +53,13 @@ ax.outline_patch.set_visible(True)
 # library.
 
 import mapclassify
-
-gpd_per_person = world["gdp_md_est"] / world["pop_est"]
+gpd_per_person = world['gdp_md_est'] / world['pop_est']
 scheme = mapclassify.Quantiles(gpd_per_person, k=5)
 
 # Note: this code sample requires geoplot>=0.4.0.
 geoplot.choropleth(
-    world, hue=gpd_per_person, scheme=scheme, cmap="Greens", figsize=(8, 4)
+    world, hue=gpd_per_person, scheme=scheme,
+    cmap='Greens', figsize=(8, 4)
 )
 
 ###############################################################################
@@ -60,21 +68,19 @@ geoplot.choropleth(
 
 africa = world.query('continent == "Africa"')
 ax = geoplot.cartogram(
-    africa, scale="pop_est", limits=(0.2, 1), edgecolor="None", figsize=(7, 8)
+    africa, scale='pop_est', limits=(0.2, 1),
+    edgecolor='None', figsize=(7, 8)
 )
-geoplot.polyplot(africa, edgecolor="gray", ax=ax)
+geoplot.polyplot(africa, edgecolor='gray', ax=ax)
 
 ###############################################################################
 # If we have data in the shape of points in space, we may generate a
 # three-dimensional heatmap on it using ``kdeplot``.
 
 ax = geoplot.kdeplot(
-    collisions.head(1000),
-    clip=boroughs.geometry,
-    shade=True,
-    cmap="Reds",
-    projection=geoplot.crs.AlbersEqualArea(),
-)
+    collisions.head(1000), clip=boroughs.geometry,
+    shade=True, cmap='Reds',
+    projection=geoplot.crs.AlbersEqualArea())
 geoplot.polyplot(boroughs, ax=ax, zorder=1)
 
 ###############################################################################
@@ -83,15 +89,13 @@ geoplot.polyplot(boroughs, ax=ax, zorder=1)
 # or not a certain data column is spatially correlated.
 
 ax = geoplot.voronoi(
-    collisions.head(1000),
-    projection=geoplot.crs.AlbersEqualArea(),
+    collisions.head(1000), projection=geoplot.crs.AlbersEqualArea(),
     clip=boroughs.simplify(0.001),
-    hue="NUMBER OF PERSONS INJURED",
-    cmap="Reds",
+    hue='NUMBER OF PERSONS INJURED', cmap='Reds',
     legend=True,
-    edgecolor="white",
+    edgecolor='white'
 )
-geoplot.polyplot(boroughs, edgecolor="black", zorder=1, ax=ax)
+geoplot.polyplot(boroughs, edgecolor='black', zorder=1, ax=ax)
 
 ###############################################################################
 # These are just some of the plots you can make with Geoplot. There are
