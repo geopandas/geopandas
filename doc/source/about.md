@@ -1,0 +1,38 @@
+# About GeoPandas
+
+```{toctree}
+:maxdepth: 2
+:caption: About
+:hidden:
+
+Roadmap <about/roadmap>
+Team <about/team>
+Citing <about/citing>
+Logo <about/logo>
+```
+
+
+GeoPandas is a project to add support for geographic data to pandas objects.
+It currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses
+of `pandas.Series` and `pandas.DataFrame` respectively. GeoPandas objects can act
+on `shapely` geometry objects and perform geometric operations.
+
+```{container} button
+
+{doc}`Project Roadmap <about/roadmap>` {doc}`Team <about/team>`
+{doc}`Citing <about/citing>` {doc}`Logo <about/logo>`
+```
+
+## Project history
+
+Kelsey Jordahl founded GeoPandas project in 2013 and released a version 0.1.0 in July 2014. In 2016, Joris Van den Bossche took the lead and became the maintainer of the project. Since the beginning, GeoPandas is a BSD-licensed open-source project supported by a [community of contributors](https://github.com/geopandas/geopandas/graphs/contributors) from around the world.
+
+In 2020 GeoPandas became [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects) and received two [Small Development Grants](https://numfocus.org/programs/sustainability) to support its development.
+
+## Timeline
+
+- **2013**: Beginning of the development
+- **2014**: GeoPandas 0.1.0 released
+- **2020**: GeoPandas became [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects)
+
+
