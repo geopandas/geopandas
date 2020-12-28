@@ -240,7 +240,7 @@ For example, instead of:
 
    gdf.crs = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 
-we recommenend to do:
+we recommend to do:
 
 .. code-block:: python
 
