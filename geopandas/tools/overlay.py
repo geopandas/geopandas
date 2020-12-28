@@ -234,6 +234,11 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
             exploded = exploded.loc[exploded.geom_type.isin(points)]
         else:
             raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
+
+        # level_0 created with above reset_index operation
+        # and represents the original geometry collections
+        result = exploded.dissolve(by="level_0")[key_order]
+
         if result.shape[0] != orig_num_geoms:
             num_dropped = orig_num_geoms - result.shape[0]
             warnings.warn(
@@ -244,10 +249,6 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
                 UserWarning,
                 stacklevel=2,
             )
-
-        # level_0 created with above reset_index operation
-        # and represents the original geometry collections
-        result = exploded.dissolve(by="level_0")[key_order]
 
     result.reset_index(drop=True, inplace=True)
     result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
