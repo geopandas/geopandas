@@ -68,3 +68,4 @@ geopandas.egg-info
 geopandas/version.py
 
 .asv
+doc/source/getting_started/my_file.geojson
