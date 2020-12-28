@@ -529,12 +529,6 @@ class TestMethods(extension_tests.BaseMethodsTests):
     def test_argmax_argmin_no_skipna_notimplemented(self):
         pass
 
-    def test_shift_has_crs(self, data):
-        data.crs = 4326
-        assert data.shift(1).crs == data.crs
-        assert data.shift(0).crs == data.crs
-        assert data.shift(-1).crs == data.crs
-
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass

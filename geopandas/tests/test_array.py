@@ -886,6 +886,14 @@ def test_isna_pdNA():
     assert t1[0] is None
 
 
+def test_shift_has_crs():
+    t = T.copy()
+    t.crs = 4326
+    assert t.shift(1).crs == t.crs
+    assert t.shift(0).crs == t.crs
+    assert t.shift(-1).crs == t.crs
+
+
 class TestEstimateUtmCrs:
     def setup_method(self):
         self.esb = shapely.geometry.Point(-73.9847, 40.7484)
