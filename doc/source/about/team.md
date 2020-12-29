@@ -1,7 +1,5 @@
 # Team
 
-The team.
-
 ## Core developers
 - Joris Van den Bossche - **maintainer** | [@jorisvandenbossche](https://github.com/jorisvandenbossche)
 - Martin Fleischmann | [@martinfleis](https://github.com/martinfleis)

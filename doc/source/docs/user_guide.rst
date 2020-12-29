@@ -1,7 +1,7 @@
 User Guide
 ==========
 
-The User Guide covers different parts of basic usage of GeoPandas. Each page focuses on a single topic and outlines how is it implemented in GeoPandas, with reproducible examples.
+The User Guide covers different parts of basic usage of GeoPandas. Each page focuses on a single topic and outlines how it is implemented in GeoPandas, with reproducible examples.
 
 If you don't know anything about GeoPandas, start with the :doc:`Introduction to GeoPandas <../getting_started/introduction>`.
 
