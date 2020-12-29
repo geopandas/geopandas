@@ -85,6 +85,9 @@ Various packages are built on top of GeoPandas addressing specific geospatial da
 #### [contextily](https://github.com/geopandas/contextily)
 `contextily` is a small Python 3 (3.6 and above) package to retrieve tile maps from the internet. It can add those tiles as basemap to `matplotlib` figures or write tile maps to disk into geospatial raster files. Bounding boxes can be passed in both WGS84 (EPSG:4326) and Spheric Mercator (EPSG:3857).
 
+#### [cartopy](https://github.com/SciTools/cartopy)
+`Cartopy` is a Python package designed to make drawing maps for data analysis and visualisation easy. It features: object oriented projection definitions; point, line, polygon and image transformations between projections; integration to expose advanced mapping in `Matplotlib` with a simple and intuitive interface; powerful vector data handling by integrating shapefile reading with `Shapely` capabilities.
+
 #### [bokeh](https://github.com/bokeh/bokeh)
 `Bokeh` is an interactive visualization library for modern web browsers. It provides elegant, concise construction of versatile graphics, and affords high-performance interactivity over large or streaming datasets. `Bokeh` can help anyone who would like to quickly and easily make interactive plots, dashboards, and data applications.
 
