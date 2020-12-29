@@ -13,7 +13,7 @@ between GeoPandas and CartoPy.
 
 First we'll load in the data using GeoPandas.
 """
-sphinx_gallery_thumbnail_number = 7
+# sphinx_gallery_thumbnail_number = 7
 import matplotlib.pyplot as plt
 import geopandas
 from cartopy import crs as ccrs
