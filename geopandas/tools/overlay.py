@@ -137,7 +137,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=True):
+def overlay(df1, df2, how="intersection", keep_geom_type=None):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -154,7 +154,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
         'identity', 'symmetric_difference' or 'difference'.
     keep_geom_type : bool
         If True, return only geometries of the same geometry type as df1 has,
-        if False, return all resulting gemetries.
+        if False, return all resulting geometries. Default is None,
+        which will set keep_geom_type to True but warn upon dropping
+        geometries.
 
     Returns
     -------
@@ -184,6 +186,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
 
     if not _check_crs(df1, df2):
         _crs_mismatch_warn(df1, df2, stacklevel=3)
+
+    if keep_geom_type is None:
+        keep_geom_type = True
+        keep_geom_type_warning = True
+    else:
+        keep_geom_type_warning = False
 
     polys = ["Polygon", "MultiPolygon"]
     lines = ["LineString", "MultiLineString", "LinearRing"]
@@ -239,7 +247,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
         # and represents the original geometry collections
         result = exploded.dissolve(by="level_0")[key_order]
 
-        if result.shape[0] != orig_num_geoms:
+        if (result.shape[0] != orig_num_geoms) and keep_geom_type_warning:
             num_dropped = orig_num_geoms - result.shape[0]
             warnings.warn(
                 "`keep_geom_type=True` in overlay resulted in {} dropped "
