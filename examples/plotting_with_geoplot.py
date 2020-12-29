@@ -88,14 +88,14 @@ geoplot.polyplot(boroughs, ax=ax, zorder=1)
 # using Voronoi tessellation. This is a good way of visually verifying whether
 # or not a certain data column is spatially correlated.
 
-# ax = geoplot.voronoi(
-#     collisions.head(1000), projection=geoplot.crs.AlbersEqualArea(),
-#     clip=boroughs.simplify(0.001),
-#     hue='NUMBER OF PERSONS INJURED', cmap='Reds',
-#     legend=True,
-#     edgecolor='white'
-# )
-# geoplot.polyplot(boroughs, edgecolor='black', zorder=1, ax=ax)
+ax = geoplot.voronoi(
+    collisions.head(1000), projection=geoplot.crs.AlbersEqualArea(),
+    clip=boroughs.simplify(0.001),
+    hue='NUMBER OF PERSONS INJURED', cmap='Reds',
+    legend=True,
+    edgecolor='white'
+)
+geoplot.polyplot(boroughs, edgecolor='black', zorder=1, ax=ax)
 
 ###############################################################################
 # These are just some of the plots you can make with Geoplot. There are
