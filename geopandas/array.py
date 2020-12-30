@@ -144,7 +144,7 @@ def _shapely_to_geom(geom):
 
 def _is_scalar_geometry(geom):
     if compat.USE_PYGEOS:
-        return isinstance(geom, pygeos.Geometry)
+        return isinstance(geom, (pygeos.Geometry, BaseGeometry))
     else:
         return isinstance(geom, BaseGeometry)
 
@@ -1076,7 +1076,9 @@ class GeometryArray(ExtensionArray):
 
     def _binop(self, other, op):
         def convert_values(param):
-            if isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param):
+            if not _is_scalar_geometry(param) and (
+                isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param)
+            ):
                 ovalues = param
             else:  # Assume its an object
                 ovalues = [param] * len(self)
@@ -1104,3 +1106,18 @@ class GeometryArray(ExtensionArray):
 
     def __ne__(self, other):
         return self._binop(other, operator.ne)
+
+    def __contains__(self, item):
+        """
+        Return for `item in self`.
+        """
+        if _isna(item):
+            if (
+                item is self.dtype.na_value
+                or isinstance(item, self.dtype.type)
+                or item is None
+            ):
+                return self.isna().any()
+            else:
+                return False
+        return (self == item).any()
