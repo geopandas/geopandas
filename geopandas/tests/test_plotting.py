@@ -1495,6 +1495,7 @@ class TestGeoplotAccessor:
                 kwargs = {"x": "x", "y": "y"}
 
             self.compare_figures(kind, fig_test, fig_ref, kwargs)
+            plt.close("all")
 
         @check_figures_equal(extensions=["png", "pdf"])
         def test_geo_kind(self, fig_test, fig_ref):
@@ -1503,6 +1504,7 @@ class TestGeoplotAccessor:
             ax2 = getattr(self.gdf.plot, "geo")()
             fig_test.subplots().plot(ax=ax1)
             fig_ref.subplots().plot(ax=ax2)
+            plt.close("all")
 
     def test_invalid_kind(self):
         """Test invalid kinds."""
