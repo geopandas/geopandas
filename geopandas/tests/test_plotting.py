@@ -323,13 +323,13 @@ class TestPointPlotting:
         _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
 
         ax = self.df2.plot(column="values")
-        cmap = plt.get_cmap()
+        cmap = plt.get_cmap(lut=2)
         expected_colors = [cmap(0)] * self.N + [cmap(1)] * self.N
-        _check_colors(2, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(20, ax.collections[0].get_facecolors(), expected_colors)
 
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
-        _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
+        _check_colors(20, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
     def test_multipoints_alpha(self):
         ax = self.df2.plot(alpha=0.7)
