@@ -79,6 +79,22 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     --------
     >>> df = geopandas.read_file("nybb.shp")  # doctest: +SKIP
 
+    Specifying layer of GPKG:
+
+    >>> df = geopandas.read_file("file.gpkg", layer='cities')  # doctest: +SKIP
+
+    Reading only first 10 rows:
+
+    >>> df = geopandas.read_file("nybb.shp", rows=10)  # doctest: +SKIP
+
+    Reading only geometries intersecting ``mask``:
+
+    >>> df = geopandas.read_file("nybb.shp", mask=polygon)  # doctest: +SKIP
+
+    Reading only geometries intersecting ``bbox``:
+
+    >>> df = geopandas.read_file("nybb.shp", bbox=(0, 10, 0, 20))  # doctest: +SKIP
+
     Returns
     -------
     :obj:`geopandas.GeoDataFrame` or :obj:`pandas.DataFrame` :
