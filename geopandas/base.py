@@ -357,7 +357,7 @@ GeometryCollection
         features that are closed.
 
         When constructing a LinearRing, the sequence of coordinates may be
-        explicitly closed by passign identical values in the first and last indices.
+        explicitly closed by passing identical values in the first and last indices.
         Otherwise, the sequence will be implicitly closed by copying the first tuple
         to the last index.
 
