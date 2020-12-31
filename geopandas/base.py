@@ -203,7 +203,8 @@ class GeoPandasBase(object):
         """Returns a ``Series`` containing the length of each geometry
         expressed in the units of the CRS.
 
-        In case of (Multi)Polygon measures the length if its exterior (i.e. perimeter).
+        In the case of a (Multi)Polygon it measures the length
+        of its exterior (i.e. perimeter).
 
         Examples
         --------
