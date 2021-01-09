@@ -310,7 +310,7 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
 
-        GeoSeries.x and GeoSeries.x
+        GeoSeries.x and GeoSeries.y
 
         """
         return _delegate_property("z", self)
