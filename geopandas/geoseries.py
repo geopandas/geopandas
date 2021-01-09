@@ -290,7 +290,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def z(self):
-        """Return the y location of point geometries in a GeoSeries
+        """Return the z location of point geometries in a GeoSeries
 
         Returns
         -------
@@ -310,7 +310,7 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
 
-        GeoSeries.x and GeoSeries.y
+        GeoSeries.y
 
         """
         return _delegate_property("z", self)
