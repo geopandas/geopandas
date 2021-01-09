@@ -288,6 +288,33 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return _delegate_property("y", self)
 
+    @property
+    def z(self):
+        """Return the y location of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s.z
+        0    1.0
+        1    2.0
+        2    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.x and GeoSeries.x
+
+        """
+        return _delegate_property("z", self)
+
     @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoSeries`` from a file.

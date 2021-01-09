@@ -868,6 +868,13 @@ def get_y(data):
         return _unary_op("y", data, null_value=np.nan)
 
 
+def get_z(data):
+    if compat.USE_PYGEOS:
+        return pygeos.get_z(data)
+    else:
+        return _unary_op("z", data, null_value=np.nan)
+
+
 def bounds(data):
     if compat.USE_PYGEOS:
         return pygeos.bounds(data)
