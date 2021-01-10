@@ -325,7 +325,7 @@ class TestConstructor:
         check_geoseries(s)
 
     def test_single_geom_constructor(self):
-        p = Point(1, 2, 3)
+        p = Point(1, 2)
         line = LineString([(2, 3), (4, 5), (5, 6)])
         poly = Polygon(
             [(0, 0), (1, 0), (1, 1), (0, 1)], [[(0.1, 0.1), (0.9, 0.1), (0.9, 0.9)]]
