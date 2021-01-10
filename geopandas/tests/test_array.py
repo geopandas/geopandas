@@ -35,7 +35,8 @@ triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
-    shapely.geometry.Point(random.random(), random.random()) for _ in range(20)
+    shapely.geometry.Point(random.random(), random.random(), random.random())
+    for _ in range(20)
 ]
 points = points_no_missing + [None]
 P = from_shapely(points)
@@ -54,14 +55,16 @@ def equal_geometries(result, expected):
 def test_points():
     x = np.arange(10).astype(np.float)
     y = np.arange(10).astype(np.float) ** 2
+    z = np.arange(10).astype(np.float) ** 4
 
-    points = points_from_xy(x, y)
+    points = points_from_xy(x, y, z)
     assert isinstance(points, GeometryArray)
 
     for i in range(10):
         assert isinstance(points[i], shapely.geometry.Point)
         assert points[i].x == x[i]
         assert points[i].y == y[i]
+        assert points[i].z == z[i]
 
 
 def test_points_from_xy():
@@ -108,17 +111,24 @@ def test_from_shapely():
 
 def test_from_shapely_geo_interface():
     class Point:
-        def __init__(self, x, y):
+        def __init__(self, x, y, z):
             self.x = x
             self.y = y
+            self.z = z
 
         @property
         def __geo_interface__(self):
-            return {"type": "Point", "coordinates": (self.x, self.y)}
+            return {"type": "Point", "coordinates": (self.x, self.y, self.z)}
 
-    result = from_shapely([Point(1.0, 2.0), Point(3.0, 4.0)])
+    result = from_shapely(
+        [Point(1.0, 2.0, 3.0), Point(4.0, 5.0, 6.0), Point(7.0, 8.0, 9.0)]
+    )
     expected = from_shapely(
-        [shapely.geometry.Point(1.0, 2.0), shapely.geometry.Point(3.0, 4.0)]
+        [
+            shapely.geometry.Point(1.0, 2.0, 3.0),
+            shapely.geometry.Point(4.0, 5.0, 6.0),
+            shapely.geometry.Point(7.0, 8.0, 9.0),
+        ]
     )
     assert all(v.equals(t) for v, t in zip(result, expected))
 
@@ -677,7 +687,7 @@ def test_affinity_methods(attr, arg):
 #     assert L == [tuple(t.exterior.coords) for t in triangles]
 
 
-def test_coords_x_y():
+def test_coords_x_y_z():
     na_value = np.nan
     result = P.x
     expected = [p.x if p is not None else na_value for p in points]
@@ -685,6 +695,10 @@ def test_coords_x_y():
 
     result = P.y
     expected = [p.y if p is not None else na_value for p in points]
+    np.testing.assert_allclose(result, expected)
+
+    result = P.z
+    expected = [p.z if p is not None else na_value for p in points]
     np.testing.assert_allclose(result, expected)
 
 

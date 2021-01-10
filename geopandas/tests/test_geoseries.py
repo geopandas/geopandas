@@ -321,11 +321,11 @@ def check_geoseries(s):
 
 class TestConstructor:
     def test_constructor(self):
-        s = GeoSeries([Point(x, x) for x in range(3)])
+        s = GeoSeries([Point(x, x, x) for x in range(3)])
         check_geoseries(s)
 
     def test_single_geom_constructor(self):
-        p = Point(1, 2)
+        p = Point(1, 2, 3)
         line = LineString([(2, 3), (4, 5), (5, 6)])
         poly = Polygon(
             [(0, 0), (1, 0), (1, 1), (0, 1)], [[(0.1, 0.1), (0.9, 0.1), (0.9, 0.9)]]

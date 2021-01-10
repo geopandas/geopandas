@@ -30,7 +30,10 @@ class TestGeomMethods:
         self.t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         self.t2 = Polygon([(0, 0), (1, 1), (0, 1)])
         self.t3 = Polygon([(2, 0), (3, 0), (3, 1)])
+        self.tz = Polygon([(1, 1, 1), (2, 2, 2), (3, 3, 3)])
+        self.tz1 = Polygon([(2, 2, 2), (1, 1, 1), (3, 3, 3)])
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        self.sqz = Polygon([(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)])
         self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
         self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
         self.inner_sq = Polygon(
@@ -53,6 +56,7 @@ class TestGeomMethods:
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
         self.g3 = GeoSeries([self.t1, self.t2])
+        self.gz = GeoSeries([self.tz, self.sqz, self.tz1])
         self.g3.crs = "epsg:4326"
         self.g4 = GeoSeries([self.t2, self.t1])
         self.g4.crs = "epsg:4326"
@@ -63,8 +67,8 @@ class TestGeomMethods:
         self.a1.index = ["A", "B"]
         self.a2 = self.g2.copy()
         self.a2.index = ["B", "C"]
-        self.esb = Point(-73.9847, 40.7484)
-        self.sol = Point(-74.0446, 40.6893)
+        self.esb = Point(-73.9847, 40.7484, 30.3244)
+        self.sol = Point(-74.0446, 40.6893, 31.2344)
         self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
@@ -91,6 +95,9 @@ class TestGeomMethods:
         )
         self.gdf3 = GeoDataFrame(
             {"geometry": self.g3, "col3": [4, 5], "col4": ["rand", "string"]}
+        )
+        self.gdfz = GeoDataFrame(
+            {"geometry": self.gz, "col3": [4, 5, 6], "col4": ["rand", "string", "geo"]}
         )
 
     def _test_unary_real(self, op, expected, a):
@@ -464,20 +471,25 @@ class TestGeomMethods:
         expected = Series([False, True], self.g_3d.index)
         self._test_unary_real("has_z", expected, self.g_3d)
 
-    def test_xy_points(self):
+    def test_xyz_points(self):
         expected_x = [-73.9847, -74.0446]
         expected_y = [40.7484, 40.6893]
+        expected_z = [30.3244, 31.2344]
 
         assert_array_dtype_equal(expected_x, self.landmarks.geometry.x)
         assert_array_dtype_equal(expected_y, self.landmarks.geometry.y)
+        assert_array_dtype_equal(expected_z, self.landmarks.geometry.z)
 
-    def test_xy_polygons(self):
+    def test_xyz_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
         with pytest.raises(ValueError):
             _ = self.gdf1.geometry.x
         # and same for accessing y attribute in polygon geoseries
         with pytest.raises(ValueError):
             _ = self.gdf1.geometry.y
+        # and same for accessing z attribute in polygon geoseries
+        with pytest.raises(ValueError):
+            _ = self.gdfz.geometry.z
 
     def test_centroid(self):
         polygon = Polygon([(-1, -1), (1, -1), (1, 1), (-1, 1)])

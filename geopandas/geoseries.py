@@ -257,6 +257,7 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         GeoSeries.y
+        GeoSeries.z
 
         """
         return _delegate_property("x", self)
@@ -284,6 +285,7 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         GeoSeries.x
+        GeoSeries.z
 
         """
         return _delegate_property("y", self)
@@ -300,7 +302,7 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s = geopandas.GeoSeries([Point(1, 1, 1), Point(2, 2, 2), Point(3, 3, 3)])
         >>> s.z
         0    1.0
         1    2.0
@@ -310,6 +312,7 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
 
+        GeoSeries.x
         GeoSeries.y
 
         """
