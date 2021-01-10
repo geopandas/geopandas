@@ -321,7 +321,7 @@ def check_geoseries(s):
 
 class TestConstructor:
     def test_constructor(self):
-        s = GeoSeries([Point(x, x, x) for x in range(3)])
+        s = GeoSeries([Point(x, x) for x in range(3)])
         check_geoseries(s)
 
     def test_single_geom_constructor(self):
