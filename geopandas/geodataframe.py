@@ -577,7 +577,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         sql : string
-        con : DB connection object or SQLAlchemy engine
+        con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         geom_col : string, default 'geom'
             column name to convert to shapely geometries
         crs : optional
@@ -1455,7 +1455,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         name : str
             Name of the target table.
-        con : sqlalchemy.engine.Engine
+        con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
             Active connection to the PostGIS database.
         if_exists : {'fail', 'replace', 'append'}, default 'fail'
             How to behave if the table already exists:
