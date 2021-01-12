@@ -4,15 +4,25 @@ import warnings
 import numpy as np
 import pandas as pd
 
-import fiona
 import pyproj
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 try:
+    import fiona
+
+    fiona_import_error = None
+except ImportError as err:
+    fiona = None
+    fiona_import_error = str(err)
+
+try:
     from fiona import Env as fiona_env
 except ImportError:
-    from fiona import drivers as fiona_env
+    try:
+        from fiona import drivers as fiona_env
+    except ImportError:
+        fiona_env = None
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -25,6 +35,14 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+
+def _check_fiona(func):
+    if fiona is None:
+        raise ImportError(
+            f"the {func} requires the fiona package, but it is not installed or does "
+            f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
+        )
 
 
 def _is_url(url):
@@ -90,6 +108,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _check_fiona("'read_file' function")
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
@@ -205,7 +224,7 @@ def _to_file(
     index=None,
     mode="w",
     crs=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Write this GeoDataFrame to an OGR data source
@@ -256,6 +275,7 @@ def _to_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _check_fiona("'to_file' method")
     if index is None:
         # Determine if index attribute(s) should be saved to file
         index = list(df.index.names) != [None] or type(df.index) not in (
