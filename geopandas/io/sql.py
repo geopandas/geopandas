@@ -1,4 +1,5 @@
 import warnings
+from contextlib import contextmanager
 
 import pandas as pd
 
@@ -7,6 +8,35 @@ import shapely.wkb
 from geopandas import GeoDataFrame
 
 from .. import _compat as compat
+
+
+@contextmanager
+def _get_conn(conn_or_engine):
+    """
+    Yield a connection within a transaction context.
+
+    Engine.begin() returns a Connection with an implicit Transaction while
+    Connection.begin() returns the Transaction. This helper will always return a
+    Connection with an implicit (possibly nested) Transaction.
+
+    Parameters
+    ----------
+    conn_or_engine : Connection or Engine
+        A sqlalchemy Connection or Engine instance
+    Returns
+    -------
+    Connection
+    """
+    from sqlalchemy.engine.base import Engine, Connection
+
+    if isinstance(conn_or_engine, Connection):
+        with conn_or_engine.begin():
+            yield conn_or_engine
+    elif isinstance(conn_or_engine, Engine):
+        with conn_or_engine.begin() as conn:
+            yield conn
+    else:
+        raise ValueError(f"Unknown Connectable: {conn_or_engine}")
 
 
 def _df_to_geodf(df, geom_col="geom", crs=None):
@@ -83,7 +113,7 @@ def _read_postgis(
     sql : string
         SQL query to execute in selecting entries from database, or name
         of the table to read from the database.
-    con : DB connection object or SQLAlchemy engine
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Active connection to the database to query.
     geom_col : string, default 'geom'
         column name to convert to shapely geometries
@@ -301,7 +331,7 @@ def _write_postgis(
     ----------
     name : str
         Name of the target table.
-    con : sqlalchemy.engine.Engine
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Active connection to the PostGIS database.
     if_exists : {'fail', 'replace', 'append'}, default 'fail'
         How to behave if the table already exists:
@@ -371,14 +401,14 @@ def _write_postgis(
 
     if if_exists == "append":
         # Check that the geometry srid matches with the current GeoDataFrame
-        with con.begin() as connection:
+        with _get_conn(con) as connection:
             if schema is not None:
                 schema_name = schema
             else:
                 schema_name = "public"
 
             # Only check SRID if table exists
-            if connection.run_callable(connection.dialect.has_table, name, schema):
+            if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
                     "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                         schema=schema_name, table=name, geom_col=geom_name
@@ -394,7 +424,7 @@ def _write_postgis(
                     )
                     raise ValueError(msg)
 
-    with con.begin() as connection:
+    with _get_conn(con) as connection:
 
         gdf.to_sql(
             name,
