@@ -15,7 +15,6 @@ dependencies:
   - fsspec
   # optional
   - rtree
-  - descartes
   #- geopy
   - SQLalchemy
   - libspatialite

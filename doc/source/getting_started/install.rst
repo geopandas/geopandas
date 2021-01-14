@@ -94,14 +94,13 @@ as well::
 
     - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
       but not for Windows.
-    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
+    - `pyproj`_, `rtree`_, and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
-    - `rtree`_ does not provide wheels.
     - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
       can be found at `Christopher Gohlke's website
       <https://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
 
-    So depending on your platform, you might need to compile and install their
+    Depending on your platform, you might need to compile and install their
     C dependencies manually. We refer to the individual packages for more
     details on installing those.
     Using conda (see above) avoids the need to compile the dependencies yourself.
@@ -156,7 +155,6 @@ Further, optional dependencies are:
 For plotting, these additional packages may be used:
 
 - `matplotlib`_ (>= 2.2.0)
-- `descartes`_
 - `mapclassify`_ (>= 2.2.0)
 
 
@@ -212,8 +210,6 @@ More specifically, whether the speedups are used or not is determined by:
 .. _shapely: https://shapely.readthedocs.io
 
 .. _fiona: https://fiona.readthedocs.io
-
-.. _Descartes: https://pypi.python.org/pypi/descartes
 
 .. _matplotlib: http://matplotlib.org
 
