@@ -23,7 +23,7 @@ dependencies:
     - geopy
     - mapclassify>=2.2.0
     # dev versions of packages
-    - git+https://github.com/numpy/numpy.git@master
+    - numpy --pre --upgrade
     - git+https://github.com/pydata/pandas.git@master
     - git+https://github.com/matplotlib/matplotlib.git@master
     - git+https://github.com/Toblerity/Shapely.git@master
