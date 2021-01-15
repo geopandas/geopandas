@@ -894,6 +894,9 @@ def test_shift_has_crs():
     assert t.shift(-1).crs == t.crs
 
 
+@pytest.mark.skipif(
+    not compat.PANDAS_GE_115, reason="crs only preserved in unique after pandas 1.1.5"
+)
 def test_unique_has_crs():
     t = T.copy()
     t.crs = 4326
