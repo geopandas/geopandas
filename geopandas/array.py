@@ -1150,7 +1150,7 @@ class GeometryArray(ExtensionArray):
         pandas.factorize
         ExtensionArray.factorize
         """
-        return from_wkb(values)
+        return from_wkb(values, crs=original.crs)
 
     def _values_for_argsort(self):
         # type: () -> np.ndarray
