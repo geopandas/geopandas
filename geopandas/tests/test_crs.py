@@ -392,7 +392,7 @@ class TestGeometryArrayCRS:
         assert df.column1.crs == self.wgs
         assert df.column1.values.crs == self.wgs
 
-    def test_to_crs(self):
+    def test_geoseries_to_crs(self):
         s = GeoSeries(self.geoms, crs=27700)
         s = s.to_crs(4326)
         assert s.crs == self.wgs
@@ -408,6 +408,25 @@ class TestGeometryArrayCRS:
         # make sure that only active geometry is transformed
         arr = from_shapely(self.geoms, crs=4326)
         df["col1"] = arr
+        df = df.to_crs(3857)
+        assert df.col1.crs == self.wgs
+        assert df.col1.values.crs == self.wgs
+
+    def test_array_to_crs(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        arr = arr.to_crs(4326)
+        assert arr.crs == self.wgs
+
+        df = GeoDataFrame(geometry=arr)
+        assert df.crs == self.wgs
+        df = df.to_crs(27700)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # make sure that only active geometry is transformed
+        arr1 = from_shapely(self.geoms, crs=4326)
+        df["col1"] = arr1
         df = df.to_crs(3857)
         assert df.col1.crs == self.wgs
         assert df.col1.values.crs == self.wgs

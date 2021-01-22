@@ -18,7 +18,7 @@ import shapely.geometry
 from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
-from pyproj import CRS
+from pyproj import CRS, Transformer
 
 try:
     import pygeos
@@ -707,6 +707,168 @@ class GeometryArray(ExtensionArray):
             ),
             crs=self.crs,
         )
+
+    def to_crs(self, crs=None, epsg=None):
+        """Returns a ``GeometryArray`` with all geometries transformed to a new
+        coordinate reference system.
+
+        Transform all geometries in a GeometryArray to a different coordinate
+        reference system.  The ``crs`` attribute on the current GeometryArray must
+        be set.  Either ``crs`` or ``epsg`` may be specified for output.
+
+        This method will transform all points in all objects.  It has no notion
+        or projecting entire geometries.  All segments joining points are
+        assumed to be lines in the current projection, not geodesics.  Objects
+        crossing the dateline (or other projection boundary) will have
+        undesirable behavior.
+
+        Parameters
+        ----------
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying output projection.
+
+        Returns
+        -------
+        GeometryArray
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> from geopandas.array import from_shapely, to_wkt
+        >>> a = from_shapely([Point(1, 1), Point(2, 2), Point(3, 3)], crs=4326)
+        >>> to_wkt(a)
+        array(['POINT (1 1)', 'POINT (2 2)', 'POINT (3 3)'], dtype=object)
+        >>> a.crs  # doctest: +SKIP
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        >>> a = a.to_crs(3857)
+        >>> to_wkt(a)
+        array(['POINT (111319 111325)', 'POINT (222639 222684)',
+               'POINT (333958 334111)'], dtype=object)
+        >>> a.crs  # doctest: +SKIP
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        """
+        if self.crs is None:
+            raise ValueError(
+                "Cannot transform naive geometries.  "
+                "Please set a crs on the object first."
+            )
+        if crs is not None:
+            crs = CRS.from_user_input(crs)
+        elif epsg is not None:
+            crs = CRS.from_epsg(epsg)
+        else:
+            raise ValueError("Must pass either crs or epsg.")
+
+        # skip if the input CRS and output CRS are the exact same
+        if self.crs.is_exact_same(crs):
+            return self
+
+        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
+
+        new_data = vectorized.transform(self.data, transformer.transform)
+        return GeometryArray(new_data, crs=crs)
+
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.geometry.values.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        try:
+            from pyproj.aoi import AreaOfInterest
+            from pyproj.database import query_utm_crs_info
+        except ImportError:
+            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
+
+        if not self.crs:
+            raise RuntimeError("crs must be set to estimate UTM CRS.")
+
+        minx, miny, maxx, maxy = self.total_bounds
+        # ensure using geographic coordinates
+        if not self.crs.is_geographic:
+            lon, lat = Transformer.from_crs(
+                self.crs, "EPSG:4326", always_xy=True
+            ).transform((minx, maxx, minx, maxx), (miny, miny, maxy, maxy))
+            x_center = np.mean(lon)
+            y_center = np.mean(lat)
+        else:
+            x_center = np.mean([minx, maxx])
+            y_center = np.mean([miny, maxy])
+
+        utm_crs_list = query_utm_crs_info(
+            datum_name=datum_name,
+            area_of_interest=AreaOfInterest(
+                west_lon_degree=x_center,
+                south_lat_degree=y_center,
+                east_lon_degree=x_center,
+                north_lat_degree=y_center,
+            ),
+        )
+        try:
+            return CRS.from_epsg(utm_crs_list[0].code)
+        except IndexError:
+            raise RuntimeError("Unable to determine UTM CRS")
 
     #
     # Coordinate related properties
