@@ -35,7 +35,7 @@ triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
-    shapely.geometry.Point(random.random(), random.random()) for _ in range(20)
+    shapely.geometry.Point(random.random(), random.random(), random.random()) for _ in range(20)
 ]
 points = points_no_missing + [None]
 P = from_shapely(points)
@@ -677,7 +677,7 @@ def test_affinity_methods(attr, arg):
 #     assert L == [tuple(t.exterior.coords) for t in triangles]
 
 
-def test_coords_x_y():
+def test_coords_x_y_z():
     na_value = np.nan
     result = P.x
     expected = [p.x if p is not None else na_value for p in points]
@@ -685,6 +685,10 @@ def test_coords_x_y():
 
     result = P.y
     expected = [p.y if p is not None else na_value for p in points]
+    np.testing.assert_allclose(result, expected)
+
+    result = P.z
+    expected = [p.z if p is not None else na_value for p in points]
     np.testing.assert_allclose(result, expected)
 
 
