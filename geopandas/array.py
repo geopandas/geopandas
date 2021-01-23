@@ -718,6 +718,15 @@ class GeometryArray(ExtensionArray):
             raise ValueError(message)
 
     @property
+    def z(self):
+        """Return the z location of point geometries in a GeoSeries"""
+        if (self.geom_type[~self.isna()] == "Point").all():
+            return vectorized.get_z(self.data)
+        else:
+            message = "z attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
     def bounds(self):
         return vectorized.bounds(self.data)
 
