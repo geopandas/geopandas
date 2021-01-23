@@ -35,7 +35,8 @@ triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
-    shapely.geometry.Point(random.random(), random.random(), random.random()) for _ in range(20)
+    shapely.geometry.Point(random.random(), random.random(), random.random())
+    for _ in range(20)
 ]
 points = points_no_missing + [None]
 P = from_shapely(points)

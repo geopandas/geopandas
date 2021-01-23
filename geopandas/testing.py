@@ -197,10 +197,7 @@ def assert_geodataframe_equal(
         "GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n"
         "Left columns: {lcols!r}, right columns: {rcols!r}"
     ).format(
-        lshape=left.shape,
-        rshape=right.shape,
-        lcols=left.columns,
-        rcols=right.columns,
+        lshape=left.shape, rshape=right.shape, lcols=left.columns, rcols=right.columns,
     )
 
     if check_like:

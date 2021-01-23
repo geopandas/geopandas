@@ -114,8 +114,7 @@ def test_prepare_geocode_result_when_result_is(geocode_result):
 
     result = {0: geocode_result}
     expected_output = GeoDataFrame(
-        {"geometry": [Point()], "address": [None]},
-        crs="EPSG:4326",
+        {"geometry": [Point()], "address": [None]}, crs="EPSG:4326",
     )
 
     output = _prepare_geocode_result(result)

@@ -302,21 +302,9 @@ class TestPygeosInterface:
                 box(10, 10, 20, 20),
                 [5],
             ),  # contains but does not contains_properly
-            (
-                "covers",
-                box(-0.5, -0.5, 1, 1),
-                [0, 1],
-            ),  # covers (0, 0) and (1, 1)
-            (
-                "covers",
-                box(0.001, 0.001, 0.99, 0.99),
-                [],
-            ),  # does not cover any
-            (
-                "covers",
-                box(0, 0, 1, 1),
-                [0, 1],
-            ),  # covers but does not contain
+            ("covers", box(-0.5, -0.5, 1, 1), [0, 1],),  # covers (0, 0) and (1, 1)
+            ("covers", box(0.001, 0.001, 0.99, 0.99), [],),  # does not cover any
+            ("covers", box(0, 0, 1, 1), [0, 1],),  # covers but does not contain
             (
                 "contains_properly",
                 box(0, 0, 1, 1),
@@ -482,11 +470,7 @@ class TestPygeosInterface:
                 [(-0.5, -0.5, 1, 1)],
                 [[0, 0], [0, 1]],
             ),  # covers (0, 0) and (1, 1)
-            (
-                "covers",
-                [(0.001, 0.001, 0.99, 0.99)],
-                [[], []],
-            ),  # does not cover any
+            ("covers", [(0.001, 0.001, 0.99, 0.99)], [[], []],),  # does not cover any
             (
                 "covers",
                 [(0, 0, 1, 1)],

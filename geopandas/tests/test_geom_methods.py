@@ -743,16 +743,12 @@ class TestGeomMethods:
         assert_frame_equal(test_df, expected_df)
 
     @pytest.mark.skipif(
-        not compat.PANDAS_GE_025,
-        reason="pandas explode introduced in pandas 0.25",
+        not compat.PANDAS_GE_025, reason="pandas explode introduced in pandas 0.25",
     )
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)]),],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -784,10 +780,7 @@ class TestGeomMethods:
     def test_explode_pandas_fallback_ignore_index(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)]),],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
