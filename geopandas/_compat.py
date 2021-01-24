@@ -37,6 +37,11 @@ try:
     if str(pygeos.__version__) >= LooseVersion("0.8"):
         HAS_PYGEOS = True
     else:
+        warnings.warn(
+            "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
+            " and thus GeoPandas will not use PyGEOS.".format(pygeos.__version__),
+            UserWarning,
+        )
         HAS_PYGEOS = False
 except ImportError:
     HAS_PYGEOS = False
