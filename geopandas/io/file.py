@@ -40,7 +40,7 @@ _VALID_URLS.discard("")
 def _check_fiona(func):
     if fiona is None:
         raise ImportError(
-            f"the {func} requires the fiona package, but it is not installed or does "
+            f"the {func} requires the 'fiona' package, but it is not installed or does "
             f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
         )
 
