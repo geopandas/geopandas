@@ -33,7 +33,11 @@ PYGEOS_SHAPELY_COMPAT = None
 try:
     import pygeos  # noqa
 
-    HAS_PYGEOS = True
+    # only automatically use pygeos if version is high enough
+    if str(pygeos.__version__) >= LooseVersion("0.8"):
+        HAS_PYGEOS = True
+    else:
+        HAS_PYGEOS = False
 except ImportError:
     HAS_PYGEOS = False
 
@@ -68,7 +72,7 @@ def set_use_pygeos(val=None):
             import pygeos  # noqa
 
             # validate the pygeos version
-            if not str(pygeos.__version__) >= LooseVersion("0.6"):
+            if not str(pygeos.__version__) >= LooseVersion("0.8"):
                 raise ImportError(
                     "PyGEOS >= 0.6 is required, version {0} is installed".format(
                         pygeos.__version__
