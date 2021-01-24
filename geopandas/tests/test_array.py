@@ -769,6 +769,15 @@ def test_equality_ops():
     res = a1 != a2
     assert res.tolist() == [False, True, False]
 
+    # check the correct expansion of list-like geometry
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    a3 = from_shapely([points[1], points[2], points[3], multi_poly])
+
+    res = a3 == multi_poly
+    assert res.tolist() == [False, False, False, True]
+
 
 def test_dir():
     assert "contains" in dir(P)
