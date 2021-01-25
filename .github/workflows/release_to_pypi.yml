@@ -8,7 +8,7 @@ on:
 jobs:
   build-n-publish:
     name: Build and publish geopandas to PyPI
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@master
