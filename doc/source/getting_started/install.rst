@@ -176,9 +176,9 @@ experimental speedups by installing PyGEOS. This can be done with conda
 
 More specifically, whether the speedups are used or not is determined by:
 
-- If PyGEOS is installed, it will be used by default (but installing GeoPandas
-  will not yet automatically install PyGEOS as dependency, you need to do this
-  manually).
+- If PyGEOS >= 0.8 is installed, it will be used by default (but installing
+  GeoPandas will not yet automatically install PyGEOS as dependency, you need
+  to do this manually).
 
 - You can still toggle the use of PyGEOS when it is available, by:
 
