@@ -44,7 +44,7 @@ jobs:
 
       - name: Get Asset name
         run: |
-          export PKG=$(ls dist/)
+          export PKG=$(ls dist/ | grep tar)
           set -- $PKG
           echo "name=$1" >> $GITHUB_ENV
 
