@@ -21,8 +21,8 @@ jobs:
     needs: Linting
     name: ${{ matrix.os }}, ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
-    fail-fast: false
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         postgis: [false]
