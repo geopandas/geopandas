@@ -37,7 +37,7 @@ try:
     import pygeos  # noqa
 
     HAS_PYGEOS = True
-    PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9.0")
+    PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
 
 except ImportError:
     HAS_PYGEOS = False

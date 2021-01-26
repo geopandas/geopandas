@@ -15,7 +15,7 @@ from geopandas.plotting import plot_series
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from . import _vectorized as vectorized
-from ._compat import ignore_shapely2_warnings
+from ._compat import ignore_shapely2_warnings, PYGEOS_GE_09, USE_PYGEOS
 
 
 _SERIES_WARNING_MSG = """\
@@ -669,6 +669,39 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
+
+        if USE_PYGEOS and PYGEOS_GE_09:
+            import pygeos  # noqa
+
+            geometries, outer_idx = pygeos.get_parts(
+                self.values.data, return_index=True
+            )
+
+            if len(outer_idx):
+                # Generate inner index as a range per value of outer_idx
+                # 1. identify the start of each run of values in outer_idx
+                # 2. count number of values per run
+                # 3. use cumulative sums to create an incremental range
+                #    starting at 0 in each run
+                run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+                counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+                inner_index = (~run_start).cumsum()
+                inner_index -= np.repeat(inner_index[run_start], counts)
+
+            else:
+                inner_index = []
+
+            # extract original index values based on integer index
+            outer_index = self.index.take(outer_idx)
+
+            index = MultiIndex.from_arrays(
+                [outer_index, inner_index], names=self.index.names + [None]
+            )
+
+            return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
+
+        # else PyGEOS is not available or version <= 0.8
+
         index = []
         geometries = []
         for idx, s in self.geometry.iteritems():

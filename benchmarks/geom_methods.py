@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 from geopandas import GeoSeries
-from shapely.geometry import Point, LineString, Polygon, MultiPolygon
+from shapely.geometry import Point, Polygon, MultiPolygon
 
 
 def with_attributes(**attrs):
