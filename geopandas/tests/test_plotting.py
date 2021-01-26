@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from shapely import wkt
 from shapely.affinity import rotate
 from shapely.geometry import (
     MultiPolygon,
@@ -19,6 +20,7 @@ from shapely.geometry import (
 
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
+import geopandas._compat as compat
 
 import pytest
 
@@ -146,7 +148,7 @@ class TestPointPlotting:
         # colors
         ax = self.points.plot(cmap=plt.get_cmap("Set1", lut=5))
         cmap = plt.get_cmap("Set1", lut=5)
-        exp_colors = cmap(list(range(5)) * 3)
+        exp_colors = cmap(list(range(5)) * 2)
         _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
     def test_single_color(self):
@@ -277,6 +279,11 @@ class TestPointPlotting:
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
     def test_empty_plot(self):
+
+        s = GeoSeries([Polygon()])
+        with pytest.warns(UserWarning):
+            ax = s.plot()
+        assert len(ax.collections) == 0
         s = GeoSeries([])
         with pytest.warns(UserWarning):
             ax = s.plot()
@@ -286,6 +293,20 @@ class TestPointPlotting:
             ax = df.plot()
         assert len(ax.collections) == 0
 
+    def test_empty_geometry(self):
+
+        if compat.USE_PYGEOS:
+            s = GeoSeries([wkt.loads("POLYGON EMPTY")])
+            s = GeoSeries(
+                [Polygon([(0, 0), (1, 0), (1, 1)]), wkt.loads("POLYGON EMPTY")]
+            )
+            ax = s.plot()
+            assert len(ax.collections) == 1
+        if not compat.USE_PYGEOS:
+            s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
+            ax = s.plot()
+            assert len(ax.collections) == 1
+
     def test_multipoints(self):
 
         # MultiPoints
@@ -293,13 +314,13 @@ class TestPointPlotting:
         _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
 
         ax = self.df2.plot(column="values")
-        cmap = plt.get_cmap()
+        cmap = plt.get_cmap(lut=2)
         expected_colors = [cmap(0)] * self.N + [cmap(1)] * self.N
-        _check_colors(2, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(20, ax.collections[0].get_facecolors(), expected_colors)
 
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
-        _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
+        _check_colors(20, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
     def test_multipoints_alpha(self):
         ax = self.df2.plot(alpha=0.7)
@@ -520,17 +541,17 @@ class TestLineStringPlotting:
         # MultiLineStrings
         ax = self.df2.plot()
         assert len(ax.collections[0].get_paths()) == 4
-        _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
+        _check_colors(4, ax.collections[0].get_edgecolors(), [MPL_DFT_COLOR] * 4)
 
         ax = self.df2.plot("values")
         cmap = plt.get_cmap(lut=2)
         # colors are repeated for all components within a MultiLineString
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
-        _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(4, ax.collections[0].get_edgecolors(), expected_colors)
 
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiLineString
-        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
+        _check_colors(4, ax.collections[0].get_edgecolors(), ["r", "r", "b", "b"])
 
 
 class TestPolygonPlotting:
@@ -556,11 +577,11 @@ class TestPolygonPlotting:
         ax = self.polys.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
         # color only sets facecolor
-        _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
+        assert len(ax.collections[0].get_edgecolors()) == 0
 
         ax = self.df.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
-        _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
+        assert len(ax.collections[0].get_edgecolors()) == 0
 
         # check rgba tuple GH1178
         ax = self.df.plot(color=(0.5, 0.5, 0.5))
@@ -824,17 +845,23 @@ class TestGeometryCollectionPlotting:
     def test_colors(self):
         # default uniform color
         ax = self.series.plot()
-        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])  # poly
-        _check_colors(2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])  # line
-        _check_colors(2, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
+        _check_colors(
+            2, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 2
+        )  # poly
+        _check_colors(
+            2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR] * 2
+        )  # line
+        _check_colors(1, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
 
     def test_values(self):
         ax = self.df.plot("values")
         cmap = plt.get_cmap()
-        exp_colors = cmap(np.arange(2) / 1)
-        _check_colors(1, ax.collections[0].get_facecolors(), exp_colors)  # poly
-        _check_colors(2, ax.collections[1].get_edgecolors(), [exp_colors[0]])  # line
-        _check_colors(2, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
+        exp_colors = cmap([0.0, 1.0])
+        _check_colors(2, ax.collections[0].get_facecolors(), exp_colors)  # poly
+        _check_colors(
+            2, ax.collections[1].get_edgecolors(), [exp_colors[0]] * 2
+        )  # line
+        _check_colors(1, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
 
 
 class TestNonuniformGeometryPlotting:
@@ -1304,8 +1331,8 @@ class TestPlotCollections:
         coll = _plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        expected_colors = cmap([0])
-        _check_colors(self.N, coll.get_color(), expected_colors)
+        expected_colors = [cmap(0)]
+        _check_colors(self.N, coll.get_color(), expected_colors * 3)
         ax.cla()
 
     def test_polygons(self):
@@ -1320,7 +1347,7 @@ class TestPlotCollections:
         # default: single default matplotlib color
         coll = _plot_polygon_collection(ax, self.polygons)
         _check_colors(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N)
-        _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
+        assert len(coll.get_edgecolor()) == 0
         ax.cla()
 
         # default: color sets both facecolor and edgecolor
@@ -1355,7 +1382,7 @@ class TestPlotCollections:
         # only setting facecolor keeps default for edgecolor
         coll = _plot_polygon_collection(ax, self.polygons, facecolor="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
-        _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
+        assert len(coll.get_edgecolor()) == 0
         ax.cla()
 
         # custom facecolor and edgecolor
@@ -1398,8 +1425,8 @@ class TestPlotCollections:
         coll = _plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        exp_colors = cmap([0])
-        _check_colors(self.N, coll.get_facecolor(), exp_colors)
+        exp_colors = [cmap(0)]
+        _check_colors(self.N, coll.get_facecolor(), exp_colors * 3)
         ax.cla()
 
         # override edgecolor
@@ -1448,6 +1475,22 @@ def test_column_values():
         ax = df.plot(column=np.array([1, 2, 3]))
 
 
+def test_polygon_patch():
+    # test adapted from descartes by Sean Gillies
+    # (BSD license, https://pypi.org/project/descartes).
+    from geopandas.plotting import _PolygonPatch
+    from matplotlib.patches import PathPatch
+
+    polygon = (
+        Point(0, 0).buffer(10.0).difference(MultiPoint([(-5, 0), (5, 0)]).buffer(3.0))
+    )
+
+    patch = _PolygonPatch(polygon)
+    assert isinstance(patch, PathPatch)
+    path = patch.get_path()
+    assert len(path.vertices) == len(path.codes) == 198
+
+
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
     """
     Asserts that the members of `collection` match the `expected_colors`
@@ -1477,6 +1520,10 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     # Convert 2D numpy array to a list of RGBA tuples.
     actual_colors = map(tuple, actual_colors)
     all_actual_colors = list(itertools.islice(itertools.cycle(actual_colors), N))
+
+    assert len(all_actual_colors) == len(expected_colors), (
+        "Different " "lengths of actual and expected colors!"
+    )
 
     for actual, expected in zip(all_actual_colors, expected_colors):
         assert actual == conv.to_rgba(expected, alpha=alpha), "{} != {}".format(

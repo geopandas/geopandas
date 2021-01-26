@@ -17,7 +17,6 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   #- geopy
   - SQLalchemy
   - libspatialite
@@ -26,4 +25,3 @@ dependencies:
       - pyproj==2.3.1
       - geopy
       - mapclassify==2.2.0
-      - pygeos

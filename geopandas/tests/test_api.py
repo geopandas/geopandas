@@ -11,8 +11,9 @@ def test_no_additional_imports():
         "pytest",
         "py",
         "ipython",
+        # fiona actually gets imported if installed (but error suppressed until used)
+        # "fiona",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
-        "descartes",
         "mapclassify",
         # 'rtree',  # rtree actually gets imported if installed
         "sqlalchemy",

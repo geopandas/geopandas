@@ -144,7 +144,7 @@ def _shapely_to_geom(geom):
 
 def _is_scalar_geometry(geom):
     if compat.USE_PYGEOS:
-        return isinstance(geom, pygeos.Geometry)
+        return isinstance(geom, (pygeos.Geometry, BaseGeometry))
     else:
         return isinstance(geom, BaseGeometry)
 
@@ -417,20 +417,20 @@ class GeometryArray(ExtensionArray):
         #             "and CRS of existing geometries."
         #         )
 
-    if compat.USE_PYGEOS:
-
-        def __getstate__(self):
+    def __getstate__(self):
+        if compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
+        else:
+            return self.__dict__
 
-        def __setstate__(self, state):
+    def __setstate__(self, state):
+        if compat.USE_PYGEOS:
             geoms = pygeos.from_wkb(state[0])
             self._crs = state[1]
+            self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
-
-    else:
-
-        def __setstate__(self, state):
+        else:
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -1005,7 +1005,9 @@ class GeometryArray(ExtensionArray):
             if precision is None:
                 # dummy heuristic based on 10 first geometries that should
                 # work in most cases
-                xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
                 if (
                     (-180 <= xmin <= 180)
                     and (-180 <= xmax <= 180)
@@ -1061,7 +1063,9 @@ class GeometryArray(ExtensionArray):
 
     def _binop(self, other, op):
         def convert_values(param):
-            if isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param):
+            if not _is_scalar_geometry(param) and (
+                isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param)
+            ):
                 ovalues = param
             else:  # Assume its an object
                 ovalues = [param] * len(self)
@@ -1089,3 +1093,18 @@ class GeometryArray(ExtensionArray):
 
     def __ne__(self, other):
         return self._binop(other, operator.ne)
+
+    def __contains__(self, item):
+        """
+        Return for `item in self`.
+        """
+        if _isna(item):
+            if (
+                item is self.dtype.na_value
+                or isinstance(item, self.dtype.type)
+                or item is None
+            ):
+                return self.isna().any()
+            else:
+                return False
+        return (self == item).any()
