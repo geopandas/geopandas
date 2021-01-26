@@ -15,7 +15,7 @@ from geopandas.plotting import plot_series
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from . import _vectorized as vectorized
-from ._compat import ignore_shapely2_warnings, PYGEOS_GE_09, USE_PYGEOS
+from . import _compat as compat
 
 
 _SERIES_WARNING_MSG = """\
@@ -197,7 +197,7 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            with ignore_shapely2_warnings():
+            with compat.ignore_shapely2_warnings():
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
@@ -670,7 +670,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         """
 
-        if USE_PYGEOS and PYGEOS_GE_09:
+        if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa
 
             geometries, outer_idx = pygeos.get_parts(
