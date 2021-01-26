@@ -16,6 +16,7 @@ expected to be available to pytest by the inherited pandas tests).
 import operator
 
 import numpy as np
+from numpy.testing import assert_array_equal
 import pandas as pd
 from pandas.tests.extension import base as extension_tests
 
@@ -46,7 +47,8 @@ def dtype():
 
 
 def make_data():
-    a = np.array([shapely.geometry.Point(i, i) for i in range(100)], dtype=object)
+    a = np.empty(100, dtype=object)
+    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
     ga = from_shapely(a)
     return ga
 
@@ -287,6 +289,19 @@ class TestDtype(extension_tests.BaseDtypeTests):
 
 
 class TestInterface(extension_tests.BaseInterfaceTests):
+    def test_array_interface(self, data):
+        # we are overriding this base test because the creation of `expected`
+        # potentionally doesn't work for shapely geometries
+        # TODO can be removed with Shapely 2.0
+        result = np.array(data)
+        assert result[0] == data[0]
+
+        result = np.array(data, dtype=object)
+        # expected = np.array(list(data), dtype=object)
+        expected = np.empty(len(data), dtype=object)
+        expected[:] = list(data)
+        assert_array_equal(result, expected)
+
     def test_contains(self, data, data_missing):
         # overrided due to the inconsistency between
         # GeometryDtype.na_value = np.nan

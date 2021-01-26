@@ -783,7 +783,9 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
         # self.data[idx] = value
-        self.data[idx] = np.array([value], dtype=object)
+        value_arr = np.empty(1, dtype=object)
+        value_arr[:] = [value]
+        self.data[idx] = value_arr
         return self
 
     def fillna(self, value=None, method=None, limit=None):
