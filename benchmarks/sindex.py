@@ -1,8 +1,14 @@
-from geopandas import read_file, datasets
-from geopandas.sindex import VALID_QUERY_PREDICATES
+from shapely.geometry import Point
+
+from geopandas import read_file, datasets, GeoSeries
+from geopandas.sindex import _get_sindex_class
 
 
-predicates = sorted(VALID_QUERY_PREDICATES, key=lambda x: (x is None, x))
+# Derive list of valid query predicates based on underlying index backend;
+# we have to create a non-empty instance of the index to get these
+index = _get_sindex_class()(GeoSeries([Point(0, 0)]).values.data)
+predicates = sorted(p for p in index.valid_query_predicates if p is not None)
+
 geom_types = ("mixed", "points", "polygons")
 
 
