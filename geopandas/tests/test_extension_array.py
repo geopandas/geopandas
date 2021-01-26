@@ -525,6 +525,10 @@ class TestMethods(extension_tests.BaseMethodsTests):
     def test_argreduce_series(self):
         pass
 
+    @no_sorting
+    def test_argmax_argmin_no_skipna_notimplemented(self):
+        pass
+
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass
