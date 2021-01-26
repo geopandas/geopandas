@@ -8,9 +8,6 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
 
-import geopandas as gpd
-
-from . import _compat as compat
 from .array import GeometryArray, GeometryDtype
 
 
@@ -1200,98 +1197,6 @@ GeometryCollection
         return _delegate_geo_method(
             "skew", self, xs, ys, origin=origin, use_radians=use_radians
         )
-
-    def explode(self):
-        """
-        Explode multi-part geometries into multiple single geometries.
-
-        Single rows can become multiple rows.
-        This is analogous to PostGIS's ST_Dump(). The 'path' index is the
-        second level of the returned MultiIndex
-
-        Returns
-        ------
-        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
-        original index and a zero-based integer index that counts the
-        number of single geometries within a multi-part geometry.
-
-        Examples
-        --------
-        >>> from shapely.geometry import MultiPoint
-        >>> s = geopandas.GeoSeries(
-        ...     [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
-        ... )
-        >>> s
-        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
-        1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
-        dtype: geometry
-
-        >>> s.explode()
-        0  0    POINT (0.00000 0.00000)
-           1    POINT (1.00000 1.00000)
-        1  0    POINT (2.00000 2.00000)
-           1    POINT (3.00000 3.00000)
-           2    POINT (4.00000 4.00000)
-        dtype: geometry
-
-        """
-
-        # TODO: use version check instead of hasattr below
-        # if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
-        if compat.USE_PYGEOS:
-            import pygeos  # noqa
-
-            if hasattr(pygeos, "get_parts"):
-
-                geometries, outer_idx = pygeos.get_parts(
-                    self.values.data, return_index=True
-                )
-
-                if len(outer_idx):
-                    # generate inner index as a range per value of outer_idx
-
-                    # identify the start of each run of values in outer_idx
-                    run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
-
-                    # count the number of values in each run
-                    counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
-
-                    # increment values for each value in each run after run start
-                    inner_index = (~run_start).cumsum()
-                    # decrement these so that each run is a range that starts at 0
-                    inner_index -= np.repeat(inner_index[run_start], counts)
-
-                else:
-                    inner_index = []
-
-                # extract original index values based on integer index
-                outer_index = self.index.take(outer_idx)
-
-                index = MultiIndex.from_arrays(
-                    [outer_index, inner_index], names=self.index.names + [None]
-                )
-
-                return gpd.GeoSeries(
-                    geometries, index=index, crs=self.crs
-                ).__finalize__(self)
-
-        # else PyGEOS is not available or version <= 0.8
-
-        index = []
-        geometries = []
-        for idx, s in self.geometry.iteritems():
-            if s.type.startswith("Multi") or s.type == "GeometryCollection":
-                geoms = s.geoms
-                idxs = [(idx, i) for i in range(len(geoms))]
-            else:
-                geoms = [s]
-                idxs = [(idx, 0)]
-            index.extend(idxs)
-            geometries.extend(geoms)
-
-        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-
-        return gpd.GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     @property
     def cx(self):
