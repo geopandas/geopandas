@@ -1,8 +1,8 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=3.7.3
+  - python=3.8
   - cython
   # required
   - fiona
