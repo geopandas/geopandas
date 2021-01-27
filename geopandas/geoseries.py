@@ -670,19 +670,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         """
 
-        # FIXME: debug only
-        print(
-            "DEBUG: use pygeos?",
-            compat.USE_PYGEOS,
-            "version >= 3.9?",
-            compat.PYGEOS_GE_09,
-        )
-
         if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa
-
-            # FIXME: debug only
-            print("DEBUG: use pygeos accelerated explode")
 
             geometries, outer_idx = pygeos.get_parts(
                 self.values.data, return_index=True
