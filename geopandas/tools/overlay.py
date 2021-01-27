@@ -204,11 +204,15 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True, make_valid=True):
     def preprocess(df):
         df = df.copy()
         if df.geom_type.isin(polys).all():
-            valid_mask = df.geometry.is_valid
+            mask = ~df.geometry.is_valid
+            col = df._geometry_column_name
             if make_valid:
-                df.loc[valid_mask, df._geometry_column_name] = df.loc[valid_mask, df._geometry_column_name].buffer(0)
-            elif not mask.all():
-                raise ValueError(f"You have passed make_valid=False along with {mask.sum()} invalid input geometries")
+                df.loc[mask, col] = df.loc[mask, col].buffer(0)
+            elif mask.any():
+                raise ValueError(
+                    "You have passed make_valid=False along with "
+                    f"{mask.sum()} invalid input geometries"
+                )
         return df
         
     df1 = preprocess(df1)
