@@ -214,7 +214,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True, make_valid=True):
                     f"{mask.sum()} invalid input geometries"
                 )
         return df
-        
+
     df1 = preprocess(df1)
     df2 = preprocess(df2)
 
