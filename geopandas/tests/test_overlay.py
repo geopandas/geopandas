@@ -545,7 +545,9 @@ def test_overlap_make_valid(make_valid):
     assert fixed_bowtie.is_valid
 
     df1 = GeoDataFrame({"col1": ["region"], "geometry": GeoSeries([box(0, 0, 10, 10)])})
-    df_bowtie = GeoDataFrame({"col1": ["invalid", "valid"], "geometry": GeoSeries([bowtie, fixed_bowtie])})
+    df_bowtie = GeoDataFrame(
+        {"col1": ["invalid", "valid"], "geometry": GeoSeries([bowtie, fixed_bowtie])}
+    )
 
     if make_valid:
         df_overlay_bowtie = overlay(df1, df_bowtie, make_valid=make_valid)
