@@ -137,7 +137,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=True):
+def overlay(df1, df2, how="intersection", keep_geom_type=True, make_valid=True):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -155,6 +155,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
     keep_geom_type : bool
         If True, return only geometries of the same geometry type as df1 has,
         if False, return all resulting gemetries.
+    make_valid : bool
+        If True, any invalid input geometries are corrected with a call to `buffer(0)`,
+        if False, a `ValueError` is raised if any input geometries are invalid.
 
     Returns
     -------
@@ -198,12 +201,18 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
             )
 
     # Computations
-    df1 = df1.copy()
-    df2 = df2.copy()
-    if df1.geom_type.isin(polys).all():
-        df1[df1._geometry_column_name] = df1.geometry.buffer(0)
-    if df2.geom_type.isin(polys).all():
-        df2[df2._geometry_column_name] = df2.geometry.buffer(0)
+    def preprocess(df):
+        df = df.copy()
+        if df.geom_type.isin(polys).all():
+            valid_mask = df.geometry.is_valid
+            if make_valid:
+                df.loc[valid_mask, df._geometry_column_name] = df.loc[valid_mask, df._geometry_column_name].buffer(0)
+            elif not mask.all():
+                raise ValueError(f"You have passed make_valid=False along with {mask.sum()} invalid input geometries")
+        return df
+        
+    df1 = preprocess(df1)
+    df2 = preprocess(df2)
 
     with warnings.catch_warnings():  # CRS checked above, supress array-level warning
         warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
