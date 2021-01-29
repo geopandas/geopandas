@@ -50,9 +50,12 @@ def geom_almost_equals(this, that):
     this, that : arrays of Geo objects (or anything that has an `is_empty`
                  property)
     """
-
+    # First test `geom_equals` as the assumption is that if two geometries are equal,
+    # then it should hold they are also almost equal
+    # see https://github.com/geopandas/geopandas/pull/1802#issuecomment-769680359
     return (
-        this.geom_almost_equals(that)
+        this.geom_equals(that)
+        | this.geom_almost_equals(that)
         | (this.is_empty & that.is_empty)
         | (_isna(this) & _isna(that))
     ).all()

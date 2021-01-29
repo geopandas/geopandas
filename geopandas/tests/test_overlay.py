@@ -554,6 +554,5 @@ def test_overlap_make_valid(make_valid):
         assert df_overlay_bowtie.at[0, "geometry"].equals(fixed_bowtie)
         assert df_overlay_bowtie.at[1, "geometry"].equals(fixed_bowtie)
     else:
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValueError, match="1 invalid input geometries"):
             overlay(df1, df_bowtie, make_valid=make_valid)
-        assert "1 invalid input geometries" in str(e)

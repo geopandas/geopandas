@@ -201,7 +201,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True, make_valid=True):
             )
 
     # Computations
-    def preprocess(df):
+    def _make_valid(df):
         df = df.copy()
         if df.geom_type.isin(polys).all():
             mask = ~df.geometry.is_valid
@@ -211,12 +211,14 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True, make_valid=True):
             elif mask.any():
                 raise ValueError(
                     "You have passed make_valid=False along with "
-                    f"{mask.sum()} invalid input geometries"
+                    f"{mask.sum()} invalid input geometries. "
+                    "Use make_valid=True or make sure that all geometries "
+                    "are valid before using overlay."
                 )
         return df
 
-    df1 = preprocess(df1)
-    df2 = preprocess(df2)
+    df1 = _make_valid(df1)
+    df2 = _make_valid(df2)
 
     with warnings.catch_warnings():  # CRS checked above, supress array-level warning
         warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
