@@ -26,9 +26,12 @@ SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
 SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
 SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
 
+
 HAS_PYGEOS = None
 USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
+
+PYGEOS_GE_09 = None
 
 try:
     import pygeos  # noqa
@@ -36,6 +39,7 @@ try:
     # only automatically use pygeos if version is high enough
     if str(pygeos.__version__) >= LooseVersion("0.8"):
         HAS_PYGEOS = True
+        PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"

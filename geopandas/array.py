@@ -144,7 +144,7 @@ def _shapely_to_geom(geom):
 
 def _is_scalar_geometry(geom):
     if compat.USE_PYGEOS:
-        return isinstance(geom, pygeos.Geometry)
+        return isinstance(geom, (pygeos.Geometry, BaseGeometry))
     else:
         return isinstance(geom, BaseGeometry)
 
@@ -417,20 +417,20 @@ class GeometryArray(ExtensionArray):
         #             "and CRS of existing geometries."
         #         )
 
-    if compat.USE_PYGEOS:
-
-        def __getstate__(self):
+    def __getstate__(self):
+        if compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
+        else:
+            return self.__dict__
 
-        def __setstate__(self, state):
+    def __setstate__(self, state):
+        if compat.USE_PYGEOS:
             geoms = pygeos.from_wkb(state[0])
             self._crs = state[1]
+            self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
-
-    else:
-
-        def __setstate__(self, state):
+        else:
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -783,7 +783,9 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
         # self.data[idx] = value
-        self.data[idx] = np.array([value], dtype=object)
+        value_arr = np.empty(1, dtype=object)
+        value_arr[:] = [value]
+        self.data[idx] = value_arr
         return self
 
     def fillna(self, value=None, method=None, limit=None):
@@ -1063,7 +1065,9 @@ class GeometryArray(ExtensionArray):
 
     def _binop(self, other, op):
         def convert_values(param):
-            if isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param):
+            if not _is_scalar_geometry(param) and (
+                isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param)
+            ):
                 ovalues = param
             else:  # Assume its an object
                 ovalues = [param] * len(self)
@@ -1091,3 +1095,18 @@ class GeometryArray(ExtensionArray):
 
     def __ne__(self, other):
         return self._binop(other, operator.ne)
+
+    def __contains__(self, item):
+        """
+        Return for `item in self`.
+        """
+        if _isna(item):
+            if (
+                item is self.dtype.na_value
+                or isinstance(item, self.dtype.type)
+                or item is None
+            ):
+                return self.isna().any()
+            else:
+                return False
+        return (self == item).any()

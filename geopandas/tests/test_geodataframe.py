@@ -7,7 +7,6 @@ from distutils.version import LooseVersion
 import numpy as np
 import pandas as pd
 
-import fiona
 import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
@@ -479,7 +478,18 @@ class TestDataFrame:
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
 
+    def test_from_dict(self):
+        data = {"A": [1], "geometry": [Point(0.0, 0.0)]}
+        df = GeoDataFrame.from_dict(data, crs=3857)
+        assert df.crs == "epsg:3857"
+        assert df._geometry_column_name == "geometry"
+
+        data = {"B": [1], "location": [Point(0.0, 0.0)]}
+        df = GeoDataFrame.from_dict(data, geometry="location")
+        assert df._geometry_column_name == "location"
+
     def test_from_features(self):
+        fiona = pytest.importorskip("fiona")
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)

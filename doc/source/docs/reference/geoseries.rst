@@ -96,13 +96,14 @@ Affine transformations
    GeoSeries.skew
    GeoSeries.translate
 
-Aggregating methods
--------------------
+Aggregating and exploding
+-------------------------
 
 .. autosummary::
    :toctree: api/
 
    GeoSeries.unary_union
+   GeoSeries.explode
 
 Reading and writing files
 -------------------------
