@@ -250,11 +250,15 @@ def points_from_xy(x, y, z=None):
 
     if compat.USE_PYGEOS:
         if z is not None:
-            nans = np.argwhere([np.isnan(x),np.isnan(y),np.isnan(z)])[:,1]
-            clean_x, clean_y, clean_z = np.delete(x, nans),np.delete(y, nans),np.delete(z, nans),
+            nans = np.argwhere([np.isnan(x), np.isnan(y), np.isnan(z)])[:, 1]
+            clean_x, clean_y, clean_z = (
+                np.delete(x, nans),
+                np.delete(y, nans),
+                np.delete(z, nans),
+            )
             pts = pygeos.points(clean_x, clean_y, clean_z)
         else:
-            nans = np.argwhere([np.isnan(x),np.isnan(y)])[:,1]
+            nans = np.argwhere([np.isnan(x), np.isnan(y)])[:, 1]
             clean_x, clean_y = np.delete(x, nans), np.delete(y, nans)
             pts = pygeos.points(clean_x, clean_y, z)
         return np.insert(pts, np.unique(nans), None)
