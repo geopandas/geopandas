@@ -12,10 +12,17 @@ Logo <about/logo>
 ```
 
 
-GeoPandas is a project to add support for geographic data to pandas objects. It
+GeoPandas is an open source project to add support for geographic data to pandas objects. It
 currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses of
 `pandas.Series` and `pandas.DataFrame` respectively. GeoPandas objects can act on
 `shapely` geometry objects and perform geometric operations.
+
+GeoPandas is a community-led project written, used and supported by a wide range of
+people from all around of world of a large variety of backgrounds. Want to get involved
+in the community? See our [community guidelines](community).
+
+GeoPandas will always be 100% open source software, free for all to use and released
+under the liberal terms of the BSD-3-Clause license.
 
 ```{container} button
 
