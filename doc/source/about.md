@@ -12,10 +12,10 @@ Logo <about/logo>
 ```
 
 
-GeoPandas is a project to add support for geographic data to pandas objects.
-It currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses
-of `pandas.Series` and `pandas.DataFrame` respectively. GeoPandas objects can act
-on `shapely` geometry objects and perform geometric operations.
+GeoPandas is a project to add support for geographic data to pandas objects. It
+currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses of
+`pandas.Series` and `pandas.DataFrame` respectively. GeoPandas objects can act on
+`shapely` geometry objects and perform geometric operations.
 
 ```{container} button
 
@@ -25,14 +25,23 @@ on `shapely` geometry objects and perform geometric operations.
 
 ## Project history
 
-Kelsey Jordahl founded GeoPandas project in 2013 and released a version 0.1.0 in July 2014. In 2016, Joris Van den Bossche took the lead and became the maintainer of the project. Since the beginning, GeoPandas is a BSD-licensed open-source project supported by a [community of contributors](https://github.com/geopandas/geopandas/graphs/contributors) from around the world.
+Kelsey Jordahl founded GeoPandas project in 2013 during the Scipy Conference and
+released a version 0.1.0 in July 2014. In 2016, Joris Van den Bossche took the lead and
+became the maintainer of the project. Since the beginning, GeoPandas is a BSD-licensed
+open-source project supported by a [community of
+contributors](https://github.com/geopandas/geopandas/graphs/contributors) from around
+the world and is now maintained by a [team](about/team) of core developers.
 
-In 2020 GeoPandas became [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects) and received two [Small Development Grants](https://numfocus.org/programs/sustainability) to support its development.
+In 2020 GeoPandas became [NumFOCUS Affiliated
+Project](https://numfocus.org/sponsored-projects/affiliated-projects) and received two
+[Small Development Grants](https://numfocus.org/programs/sustainability) to support its
+development.
 
 ## Timeline
 
 - **2013**: Beginning of the development
 - **2014**: GeoPandas 0.1.0 released
-- **2020**: GeoPandas became [NumFOCUS Affiliated Project](https://numfocus.org/sponsored-projects/affiliated-projects)
+- **2020**: GeoPandas became [NumFOCUS Affiliated
+  Project](https://numfocus.org/sponsored-projects/affiliated-projects)
 
 
