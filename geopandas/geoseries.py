@@ -320,6 +320,10 @@ class GeoSeries(GeoPandasBase, Series):
         3    MULTIPOLYGON (((981219.056 188655.316, 980940....
         4    MULTIPOLYGON (((1012821.806 229228.265, 101278...
         Name: geometry, dtype: geometry
+
+        See Also
+        --------
+        read_file : read file to GeoDataFame
         """
         from geopandas import GeoDataFrame
 
@@ -383,7 +387,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-        GeoDataFrame.to_file
+        GeoDataFrame.to_file : write GeoDataFrame to file
+        read_file : read file to GeoDataFame
 
         Examples
         --------
@@ -602,6 +607,10 @@ class GeoSeries(GeoPandasBase, Series):
         1    POLYGON ((0.00000 1.00000, 2.00000 1.00000, 1....
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
+
+        See Also
+        --------
+        GeoSeries.isna : detect missing values
         """
         if value is None:
             value = BaseGeometry()
@@ -786,6 +795,10 @@ class GeoSeries(GeoPandasBase, Series):
         Without ``allow_override=True``, ``set_crs`` returns an error if you try to
         override CRS.
 
+        See Also
+        --------
+        GeoSeries.to_crs : re-project to another CRS
+
         """
         if crs is not None:
             crs = CRS.from_user_input(crs)
@@ -878,6 +891,10 @@ class GeoSeries(GeoPandasBase, Series):
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
+
+        See Also
+        --------
+        GeoSeries.set_crs : assign CRS
 
         """
         if self.crs is None:
@@ -1005,6 +1022,10 @@ operties": {}, "geometry": {"type": "Point", "coordinates": [1.0, 1.0]}, "bbox":
 : "Point", "coordinates": [2.0, 2.0]}, "bbox": [2.0, 2.0, 2.0, 2.0]}, {"id": "2", "typ\
 e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3.0, 3.\
 0]}, "bbox": [3.0, 3.0, 3.0, 3.0]}], "bbox": [1.0, 1.0, 3.0, 3.0]}'
+
+        See Also
+        --------
+        GeoSeries.to_file : write GeoSeries to file
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 

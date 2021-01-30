@@ -18,6 +18,12 @@ def get_path(dataset):
         The name of the dataset. See ``geopandas.datasets.available`` for
         all options.
 
+    Examples
+    --------
+    >>> geopandas.datasets.get_path("naturalearth_lowres")  # doctest: +SKIP
+    '.../python3.8/site-packages/geopandas/datasets/\
+naturalearth_lowres/naturalearth_lowres.shp'
+
     """
     if dataset in _available_dir:
         return os.path.abspath(os.path.join(_module_path, dataset, dataset + ".shp"))
