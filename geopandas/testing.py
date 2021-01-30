@@ -131,14 +131,18 @@ def assert_geoseries_equal(
 def check_equality(left, right, check_less_precise):
     if check_less_precise:
         unequal_geoms = left[left.geom_almost_equals(right)]
-        raise AssertionError(f"{len(unequal_geoms)} out of {len(left)} geometries"
-                             f" are not almost equal. These geometries are "
-                             f"not almost equal: {unequal_geoms}")
+        raise AssertionError(
+            f"{len(unequal_geoms)} out of {len(left)} geometries"
+            f" are not almost equal. These geometries are "
+            f"not almost equal: {unequal_geoms}"
+        )
     else:
         unequal_geoms = left[left.geom_equals(right)]
-        raise AssertionError(f"{len(unequal_geoms)} out of {len(left)} geometries"
-                             f" are not almost equal. These geometries are "
-                             f"not almost equal: {unequal_geoms}")
+        raise AssertionError(
+            f"{len(unequal_geoms)} out of {len(left)} geometries"
+            f" are not almost equal. These geometries are "
+            f"not almost equal: {unequal_geoms}"
+        )
 
 
 def assert_geodataframe_equal(
@@ -204,10 +208,7 @@ def assert_geodataframe_equal(
         "GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n"
         "Left columns: {lcols!r}, right columns: {rcols!r}"
     ).format(
-        lshape=left.shape,
-        rshape=right.shape,
-        lcols=left.columns,
-        rcols=right.columns,
+        lshape=left.shape, rshape=right.shape, lcols=left.columns, rcols=right.columns
     )
 
     if check_like:
