@@ -136,7 +136,7 @@ def check_equality(left, right, check_less_precise):
                 f"{len(unequal_geoms)} out of {len(left)} geometries"
                 f" are not almost equal. These geometries are "
                 f"not almost equal: {unequal_geoms}"
-        )
+            )
     else:
         if not geom_equals(left, right):
             unequal_geoms = left[left.geom_equals(right)]
