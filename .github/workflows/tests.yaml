@@ -51,7 +51,7 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/37-dev.yaml
+          - env: ci/envs/38-dev.yaml
             os: ubuntu-latest
             dev: true
 

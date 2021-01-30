@@ -7,7 +7,6 @@ from distutils.version import LooseVersion
 import numpy as np
 import pandas as pd
 
-import fiona
 import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
@@ -490,6 +489,7 @@ class TestDataFrame:
         assert df._geometry_column_name == "location"
 
     def test_from_features(self):
+        fiona = pytest.importorskip("fiona")
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)
