@@ -41,7 +41,6 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 	-rm -rf source/reference/*
-	-rm -rf source/gallery/*
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
