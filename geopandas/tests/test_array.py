@@ -79,13 +79,24 @@ def test_points_from_xy():
     assert list(geometry2) == gsz
 
     # using Series or numpy arrays or lists
-    for s in [pd.Series(range(10)), np.arange(10), list(range(10))]:
+    iters = [pd.Series(range(10)), np.arange(10, dtype=np.float), list(range(10))]
+    for s in iters:
         geometry1 = geopandas.points_from_xy(s, s)
         geometry2 = geopandas.points_from_xy(s, s, s)
         assert isinstance(geometry1, GeometryArray)
         assert isinstance(geometry2, GeometryArray)
         assert list(geometry1) == gs
         assert list(geometry2) == gsz
+
+    # Null values should not return Point geometries
+    for s in iters:
+        s[4] = None
+        geometry1 = geopandas.points_from_xy(s, s)
+        geometry2 = geopandas.points_from_xy(s, s, s)
+        assert isinstance(geometry1, GeometryArray)
+        assert isinstance(geometry2, GeometryArray)
+        assert geometry1[4] == None
+        assert geometry2[4] == None
 
     # using different lengths should throw error
     arr_10 = np.arange(10)
