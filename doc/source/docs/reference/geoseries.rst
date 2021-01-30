@@ -154,6 +154,14 @@ Spatial index
    GeoSeries.sindex
    GeoSeries.has_sindex
 
+Indexing
+--------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.cx
+
 Interface
 ---------
 
