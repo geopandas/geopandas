@@ -11,7 +11,7 @@ import pandas as pd
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
-from geopandas.io.sql import _write_postgis as write_postgis
+from geopandas.io.sql import _get_conn as get_conn, _write_postgis as write_postgis
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
@@ -111,11 +111,11 @@ def connection_spatialite():
     con.close()
 
 
-def drop_table_if_exists(engine, table):
+def drop_table_if_exists(conn_or_engine, table):
     sqlalchemy = pytest.importorskip("sqlalchemy")
 
-    if engine.has_table(table):
-        metadata = sqlalchemy.MetaData(engine)
+    if conn_or_engine.dialect.has_table(conn_or_engine, table):
+        metadata = sqlalchemy.MetaData(conn_or_engine)
         metadata.reflect()
         table = metadata.tables.get(table)
         if table is not None:
@@ -188,6 +188,19 @@ def df_3D_geoms():
 
 
 class TestIO:
+    def test_get_conn(self, engine_postgis):
+        Connection = pytest.importorskip("sqlalchemy.engine.base").Connection
+
+        engine = engine_postgis
+        with get_conn(engine) as output:
+            assert isinstance(output, Connection)
+        with engine.connect() as conn:
+            with get_conn(conn) as output:
+                assert isinstance(output, Connection)
+        with pytest.raises(ValueError):
+            with get_conn(object()):
+                pass
+
     def test_read_postgis_default(self, connection_postgis, df_nybb):
         con = connection_postgis
         create_postgis(con, df_nybb)
@@ -330,6 +343,21 @@ class TestIO:
         sql = "SELECT * FROM {table};".format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
+
+    def test_write_postgis_sqlalchemy_connection(self, engine_postgis, df_nybb):
+        """Tests that GeoDataFrame can be written to PostGIS with defaults."""
+        with engine_postgis.begin() as con:
+            table = "nybb_con"
+
+            # If table exists, delete it before trying to write with defaults
+            drop_table_if_exists(con, table)
+
+            # Write to db
+            write_postgis(df_nybb, con=con, name=table, if_exists="fail")
+            # Validate
+            sql = "SELECT * FROM {table};".format(table=table)
+            df = read_postgis(sql, con, geom_col="geometry")
+            validate_boro_df(df)
 
     def test_write_postgis_fail_when_table_exists(self, engine_postgis, df_nybb):
         """
