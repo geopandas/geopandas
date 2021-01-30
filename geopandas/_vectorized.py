@@ -249,7 +249,15 @@ def points_from_xy(x, y, z=None):
         z = np.asarray(z, dtype="float64")
 
     if compat.USE_PYGEOS:
-        return pygeos.points(x, y, z)
+        if z is not None:
+            nans = np.argwhere([np.isnan(x),np.isnan(y),np.isnan(z)])[:,1]
+            clean_x, clean_y, clean_z = np.delete(x, nans),np.delete(y, nans),np.delete(z, nans),
+            pts = pygeos.points(clean_x, clean_y, clean_z)
+        else:
+            nans = np.argwhere([np.isnan(x),np.isnan(y)])[:,1]
+            clean_x, clean_y = np.delete(x, nans), np.delete(y, nans)
+            pts = pygeos.points(clean_x, clean_y, z)
+        return np.insert(pts, np.unique(nans), None)
     else:
         out = _points_from_xy(x, y, z)
         aout = np.empty(len(x), dtype=object)
