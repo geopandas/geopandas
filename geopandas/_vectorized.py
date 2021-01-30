@@ -229,9 +229,15 @@ def _points_from_xy(x, y, z=None):
     if z is not None:
         if not len(z) == len(x):
             raise ValueError("z array must be same length as x and y.")
-        geom = [shapely.geometry.Point(i, j, k) for i, j, k in zip(x, y, z)]
+        geom = [
+            shapely.geometry.Point(i, j, k) if not np.isnan([i, j, k]).any() else None
+            for i, j, k in zip(x, y, z)
+        ]
     else:
-        geom = [shapely.geometry.Point(i, j) for i, j in zip(x, y)]
+        geom = [
+            shapely.geometry.Point(i, j) if not np.isnan([i, j]).any() else None
+            for i, j in zip(x, y)
+        ]
     return geom
 
 
