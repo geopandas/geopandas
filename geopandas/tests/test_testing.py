@@ -56,6 +56,20 @@ df5 = GeoDataFrame(
 )
 
 
+def _buf_envelope(s, buf):
+    """
+    Helper function for `check_less_precise` which requires a difference less
+    than 6 decimals. Note: this function assumes all shapes are rectangular.
+
+    Parameters
+    ----------
+    s : GeoSeries to buffer and envelope
+    buf : Control the size of the buffer. `buf=1e-7` should return geometries that
+        are equal, while `buf=1e-5` geometries should evaluate as not equal.
+    """
+    return s.apply(lambda x: x.buffer(buf).envelope)
+
+
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_geoseries():
     assert_geoseries_equal(s1, s2)
@@ -63,15 +77,22 @@ def test_geoseries():
     assert_geoseries_equal(s3, s2, check_series_type=False, check_dtype=False)
     assert_geoseries_equal(s1, s4, check_series_type=False)
 
+    assert_geoseries_equal(s1, s2, check_less_precise=True)
+    assert_geoseries_equal(s1, _buf_envelope(s1, 1e-7), check_less_precise=True)
     with pytest.raises(AssertionError):
-        assert_geoseries_equal(s1, s2, check_less_precise=True)
+        assert_geoseries_equal(s1, _buf_envelope(s1, 1e-5), check_less_precise=True)
 
 
 def test_geodataframe():
     assert_geodataframe_equal(df1, df2)
 
+    assert_geodataframe_equal(df1, df2, check_less_precise=True)
+    df1_buf = df1.copy()
+    df1_buf["geometry"] = _buf_envelope(df1["geometry"], 1e-7)
+    assert_geodataframe_equal(df1, df1_buf, check_less_precise=True)
     with pytest.raises(AssertionError):
-        assert_geodataframe_equal(df1, df2, check_less_precise=True)
+        df1_buf["geometry"] = _buf_envelope(df1["geometry"], 1e-5)
+        assert_geodataframe_equal(df1, df1_buf, check_less_precise=True)
 
     with pytest.raises(AssertionError):
         assert_geodataframe_equal(df1, df2[["geometry", "col1"]])

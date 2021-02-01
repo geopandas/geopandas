@@ -86,7 +86,8 @@ def assert_geoseries_equal(
         Check that both are same type (*and* are GeoSeries). If False,
         will attempt to convert both into GeoSeries.
     check_less_precise : bool, default False
-        If True, use geom_almost_equals. if False, use geom_equals.
+        If True, use geom_equals and geom_almost_equals combined. if False,
+        use geom_equals only.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
@@ -165,7 +166,8 @@ def assert_geodataframe_equal(
     check_like : bool, default False
         If true, ignore the order of rows & columns
     check_less_precise : bool, default False
-        If True, use geom_almost_equals. if False, use geom_equals.
+        If True, use geom_equals and geom_almost_equals combined. if False,
+        use geom_equals only.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
