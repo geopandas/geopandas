@@ -234,7 +234,9 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", cmap="RdYlGn", legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
+        cbar_colors = (
+            ax.get_figure().get_children()[-1].collections[-1].get_facecolors()
+        )
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -257,7 +259,9 @@ class TestPointPlotting:
         )
         ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
+        cbar_colors = (
+            ax.get_figure().get_children()[-1].collections[-1].get_facecolors()
+        )
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -710,8 +714,9 @@ class TestPolygonPlotting:
             legend=True,
             legend_kwds={"label": label_txt},
         )
-
-        assert ax.get_figure().axes[1].get_ylabel() == label_txt
+        # ax.get_figure().axes switched order in mpl 3.4
+        cax = ax.get_figure().get_children()[-1]
+        assert cax.get_ylabel() == label_txt
 
         ax = self.df.plot(
             column="values",
@@ -720,7 +725,8 @@ class TestPolygonPlotting:
             legend_kwds={"label": label_txt, "orientation": "horizontal"},
         )
 
-        assert ax.get_figure().axes[1].get_xlabel() == label_txt
+        cax = ax.get_figure().get_children()[-1]
+        assert cax.get_xlabel() == label_txt
 
     def test_fmt_ignore(self):
         # test if fmt is removed if scheme is not passed (it would raise Error)
