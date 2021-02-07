@@ -1560,7 +1560,7 @@ def _get_ax(fig, label):
         if label == "<colorbar>":
             return fig.axes[1]
         elif label == "":
-            return fix.axes[0]
+            return fig.axes[0]
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax
