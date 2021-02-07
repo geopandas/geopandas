@@ -376,6 +376,10 @@ class TestConstructor:
         s = GeoSeries()
         check_geoseries(s)
 
+    def test_data_is_none(self):
+        s = GeoSeries(index=range(3))
+        check_geoseries(s)
+
     def test_from_series(self):
         shapes = [
             Polygon([(random.random(), random.random()) for _ in range(3)])

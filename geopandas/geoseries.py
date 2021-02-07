@@ -201,7 +201,7 @@ class GeoSeries(GeoPandasBase, Series):
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty:
+                if s.empty or data is None:
                     s = s.astype(object)
                 else:
                     warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
