@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import itertools
 import warnings
 
@@ -1555,6 +1556,11 @@ def _get_ax(fig, label):
     Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
     and the colorbar ax was first and subplot ax second.
     """
+    if matplotlib.__version__ < LooseVersion("3.0.0"):
+        if label == "<colorbar>":
+            return fig.axes[1]
+        elif label == "":
+            return fix.axes[0]
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax
