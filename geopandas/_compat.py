@@ -137,7 +137,7 @@ if shapely_warning is not None and not SHAPELY_GE_20:
     def ignore_shapely2_warnings():
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", "Iteration|The array interface", shapely_warning
+                "ignore", "Iteration|The array interface|__len__", shapely_warning
             )
             yield
 
