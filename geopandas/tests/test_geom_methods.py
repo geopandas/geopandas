@@ -672,7 +672,8 @@ class TestGeomMethods:
             # do not warn for 0
             self.g4.buffer(0)
 
-        assert len(record) == 0
+        for r in record:
+            assert "Geometry is in a geographic CRS." not in str(r.message)
 
     def test_envelope(self):
         e = self.g3.envelope
