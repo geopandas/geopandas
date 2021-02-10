@@ -129,21 +129,42 @@ def assert_geoseries_equal(
 
 
 def check_equality(left, right, check_less_precise):
+    assert_error_message = (
+        "{} out of {} geometries are not equal.\n"
+        "Indeces where geometries are not equal: {} \n"
+        "The first not {}equal geometry:\n"
+        "Left: {}\n"
+        "Right: {}\n"
+    )
     if check_less_precise:
+        precise = "almost "
         if not geom_almost_equals(left, right):
-            unequal_geoms = left[left.geom_almost_equals(right)]
+            unequal_left_geoms = left[~left.geom_almost_equals(right)]
+            unequal_right_geoms = right[~left.geom_almost_equals(right)]
             raise AssertionError(
-                f"{len(unequal_geoms)} out of {len(left)} geometries"
-                f" are not almost equal. These geometries are "
-                f"not almost equal: {unequal_geoms}"
+                assert_error_message.format(
+                    len(unequal_left_geoms),
+                    len(left),
+                    unequal_left_geoms.index.to_list(),
+                    precise,
+                    unequal_left_geoms.iloc[0],
+                    unequal_right_geoms.iloc[0],
+                )
             )
     else:
+        precise = ""
         if not geom_equals(left, right):
-            unequal_geoms = left[left.geom_equals(right)]
+            unequal_left_geoms = left[~left.geom_almost_equals(right)]
+            unequal_right_geoms = right[~left.geom_almost_equals(right)]
             raise AssertionError(
-                f"{len(unequal_geoms)} out of {len(left)} geometries"
-                f" are not almost equal. These geometries are "
-                f"not almost equal: {unequal_geoms}"
+                assert_error_message.format(
+                    len(unequal_left_geoms),
+                    len(left),
+                    unequal_left_geoms.index.to_list(),
+                    precise,
+                    unequal_left_geoms.iloc[0],
+                    unequal_right_geoms.iloc[0],
+                )
             )
 
 
