@@ -889,7 +889,7 @@ GON (((-122.84000 49.00000, -120.0000...
     return ax
 
 
-def _mapclassify_choro(values, scheme, **classification_kwds):
+def mapclassify.classify(values, scheme, **classification_kwds):
     """
     Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
