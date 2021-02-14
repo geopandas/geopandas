@@ -303,10 +303,9 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     s_buf.seek(0)
 
     columns = ", ".join('"{}"'.format(k) for k in keys)
-
     dbapi_conn = conn.connection
     with dbapi_conn.cursor() as cur:
-        sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
+        sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(tbl.table.fullname, columns)
         cur.copy_expert(sql=sql, file=s_buf)
 
 
