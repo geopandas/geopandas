@@ -7,6 +7,7 @@ from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
+import geopandas._compat as compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -186,9 +187,20 @@ def test_overlay_nybb(how):
         result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
     )
 
-    # now drop multipolygons
-    result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
-    expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
+    if compat.GEOS_GE_390:
+        # When using GEOS 3.9+, the overlay result is slightly different and we
+        # cannot compare it to the expected result files
+        return
+
+    # There are two cases where the multipolygon have a different number
+    # of sub-geometries -> not solved by normalize (and thus drop for now)
+    if how == "symmetric_difference":
+        expected.loc[9, "geometry"] = None
+        result.loc[9, "geometry"] = None
+
+    if how == "union":
+        expected.loc[24, "geometry"] = None
+        result.loc[24, "geometry"] = None
 
     assert_geodataframe_equal(
         result,
