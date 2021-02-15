@@ -191,7 +191,12 @@ def test_overlay_nybb(how):
     expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
 
     assert_geodataframe_equal(
-        result, expected, check_crs=False, check_column_type=False
+        result,
+        expected,
+        normalize=True,
+        check_crs=False,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -244,7 +249,11 @@ def test_overlay_overlap(how):
         result = result.sort_values(["col1", "col2"]).reset_index(drop=True)
 
     assert_geodataframe_equal(
-        result, expected, check_column_type=False, check_less_precise=True
+        result,
+        expected,
+        normalize=True,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -469,6 +478,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         assert_geodataframe_equal(
             result,
             expected,
+            normalize=True,
             check_column_type=False,
             check_less_precise=True,
             check_crs=False,
