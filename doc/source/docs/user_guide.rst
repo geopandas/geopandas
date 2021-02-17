@@ -1,9 +1,14 @@
 User Guide
 ==========
 
+The User Guide covers different parts of basic usage of GeoPandas. Each page focuses on a single topic and outlines how it is implemented in GeoPandas, with reproducible examples.
+
+If you don't know anything about GeoPandas, start with the :doc:`Introduction to GeoPandas <../getting_started/introduction>`.
+
+Advanced topics can be found in the :doc:`Advanced Guide <advanced_guide>` and further specification in the :doc:`API Reference <reference>`.
+
 .. toctree::
   :maxdepth: 2
-  :caption: User Guide
 
   Data Structures <user_guide/data_structures>
   Reading and Writing Files <user_guide/io>
@@ -15,4 +20,3 @@ User Guide
   Aggregation with dissolve <user_guide/aggregation_with_dissolve>
   Merging Data <user_guide/mergingdata>
   Geocoding <user_guide/geocoding>
-  user_guide/missing_empty

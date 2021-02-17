@@ -31,22 +31,24 @@ such as PostGIS.
    Documentation <docs>
    Community <community>
 
-Get in touch
+.. container:: button
+
+    :doc:`Getting started <getting_started>` :doc:`Documentation <docs>`
+    :doc:`About GeoPandas <about>` :doc:`Community <community>`
+
+Useful links
 ------------
 
-- Ask usage questions ("How do I?") on `StackOverflow`_ or `GIS StackExchange`_.
-- Report bugs, suggest features or view the source code `on GitHub`_.
-- For a quick question about a bug report or feature request, or Pull Request,
-  head over to the `gitter channel`_.
-- For less well defined questions or ideas, or to announce other projects of
-  interest to GeoPandas users, ... use the `mailing list`_.
+`Binary Installers (PyPI) <https://pypi.org/project/geopandas/>`_ | `Source Repository (GitHub) <https://github.com/geopandas/geopandas>`_ | `Issues & Ideas <https://github.com/geopandas/geopandas/issues>`_ | `Q&A Support <https://stackoverflow.com/questions/tagged/geopandas>`_
 
-.. _StackOverflow: https://stackoverflow.com/questions/tagged/geopandas
-.. _GIS StackExchange: https://gis.stackexchange.com/questions/tagged/geopandas
-.. _on GitHub: https://github.com/geopandas/geopandas
-.. _gitter channel: https://gitter.im/geopandas/geopandas
-.. _mailing list: https://groups.google.com/forum/#!forum/geopandas
 
+Supported by
+------------
+
+.. image:: https://numfocus.org/wp-content/uploads/2017/07/NumFocus_LRG.png
+    :alt: numfocus
+    :width: 400
+    :target: https://numfocus.org
 
 Indices and tables
 ------------------
