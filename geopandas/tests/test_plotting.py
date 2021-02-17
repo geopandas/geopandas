@@ -1490,7 +1490,10 @@ def test_polygon_patch():
     patch = _PolygonPatch(polygon)
     assert isinstance(patch, PathPatch)
     path = patch.get_path()
-    assert len(path.vertices) == len(path.codes) == 198
+    if compat.GEOS_GE_390:
+        assert len(path.vertices) == len(path.codes) == 195
+    else:
+        assert len(path.vertices) == len(path.codes) == 198
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
