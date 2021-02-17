@@ -15,7 +15,7 @@ from geopandas.plotting import plot_series
 from .array import GeometryArray, GeometryDtype, from_shapely
 from .base import is_geometry_type
 from . import _vectorized as vectorized
-from ._compat import ignore_shapely2_warnings
+from . import _compat as compat
 
 
 _SERIES_WARNING_MSG = """\
@@ -197,7 +197,7 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            with ignore_shapely2_warnings():
+            with compat.ignore_shapely2_warnings():
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
@@ -320,6 +320,10 @@ class GeoSeries(GeoPandasBase, Series):
         3    MULTIPOLYGON (((981219.056 188655.316, 980940....
         4    MULTIPOLYGON (((1012821.806 229228.265, 101278...
         Name: geometry, dtype: geometry
+
+        See Also
+        --------
+        read_file : read file to GeoDataFame
         """
         from geopandas import GeoDataFrame
 
@@ -383,7 +387,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-        GeoDataFrame.to_file
+        GeoDataFrame.to_file : write GeoDataFrame to file
+        read_file : read file to GeoDataFame
 
         Examples
         --------
@@ -602,6 +607,10 @@ class GeoSeries(GeoPandasBase, Series):
         1    POLYGON ((0.00000 1.00000, 2.00000 1.00000, 1....
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
+
+        See Also
+        --------
+        GeoSeries.isna : detect missing values
         """
         if value is None:
             value = BaseGeometry()
@@ -669,6 +678,39 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
+
+        if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
+            import pygeos  # noqa
+
+            geometries, outer_idx = pygeos.get_parts(
+                self.values.data, return_index=True
+            )
+
+            if len(outer_idx):
+                # Generate inner index as a range per value of outer_idx
+                # 1. identify the start of each run of values in outer_idx
+                # 2. count number of values per run
+                # 3. use cumulative sums to create an incremental range
+                #    starting at 0 in each run
+                run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+                counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+                inner_index = (~run_start).cumsum()
+                inner_index -= np.repeat(inner_index[run_start], counts)
+
+            else:
+                inner_index = []
+
+            # extract original index values based on integer index
+            outer_index = self.index.take(outer_idx)
+
+            index = MultiIndex.from_arrays(
+                [outer_index, inner_index], names=self.index.names + [None]
+            )
+
+            return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
+
+        # else PyGEOS is not available or version <= 0.8
+
         index = []
         geometries = []
         for idx, s in self.geometry.iteritems():
@@ -752,6 +794,10 @@ class GeoSeries(GeoPandasBase, Series):
 
         Without ``allow_override=True``, ``set_crs`` returns an error if you try to
         override CRS.
+
+        See Also
+        --------
+        GeoSeries.to_crs : re-project to another CRS
 
         """
         if crs is not None:
@@ -845,6 +891,10 @@ class GeoSeries(GeoPandasBase, Series):
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
+
+        See Also
+        --------
+        GeoSeries.set_crs : assign CRS
 
         """
         if self.crs is None:
@@ -972,6 +1022,10 @@ operties": {}, "geometry": {"type": "Point", "coordinates": [1.0, 1.0]}, "bbox":
 : "Point", "coordinates": [2.0, 2.0]}, "bbox": [2.0, 2.0, 2.0, 2.0]}, {"id": "2", "typ\
 e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3.0, 3.\
 0]}, "bbox": [3.0, 3.0, 3.0, 3.0]}], "bbox": [1.0, 1.0, 3.0, 3.0]}'
+
+        See Also
+        --------
+        GeoSeries.to_file : write GeoSeries to file
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 

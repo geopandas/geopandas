@@ -8,7 +8,7 @@ dependencies:
   - numpy=1.15
   - pandas==0.24
   - shapely=1.6
-  - fiona=1.8
+  - fiona=1.8.13
   #- pyproj
   # testing
   - pytest

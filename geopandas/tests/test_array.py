@@ -52,8 +52,8 @@ def equal_geometries(result, expected):
 
 
 def test_points():
-    x = np.arange(10).astype(np.float)
-    y = np.arange(10).astype(np.float) ** 2
+    x = np.arange(10).astype(np.float64)
+    y = np.arange(10).astype(np.float64) ** 2
 
     points = points_from_xy(x, y)
     assert isinstance(points, GeometryArray)
@@ -500,7 +500,7 @@ def test_unary_float(attr):
     na_value = np.nan
     result = getattr(T, attr)
     assert isinstance(result, np.ndarray)
-    assert result.dtype == np.float
+    assert result.dtype == np.dtype("float64")
     expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
     np.testing.assert_allclose(result, expected)
 

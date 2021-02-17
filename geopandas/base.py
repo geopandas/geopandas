@@ -87,7 +87,7 @@ class GeoPandasBase(object):
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
-        ``GeoSeries``.
+        ``GeoSeries`` expressed in the units of the CRS.
 
         Examples
         --------
@@ -117,6 +117,19 @@ class GeoPandasBase(object):
         3     0.0
         4     0.0
         dtype: float64
+
+        See also
+        --------
+        GeoSeries.length : measure length
+
+        Notes
+        -----
+        Area may be invalid for a geographic CRS using degrees as units;
+        use :meth:`GeoSeries.to_crs` to project geometries to a planar
+        CRS before using this function.
+
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
         """
         return _delegate_property("area", self)
 
@@ -147,6 +160,11 @@ class GeoPandasBase(object):
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
+
+        See also
+        --------
+        GeoSeries.set_crs : assign CRS
+        GeoSeries.to_crs : re-project to another CRS
         """
         return self.geometry.values.crs
 
@@ -182,7 +200,11 @@ class GeoPandasBase(object):
 
     @property
     def length(self):
-        """Returns a ``Series`` containing the length of each geometry.
+        """Returns a ``Series`` containing the length of each geometry
+        expressed in the units of the CRS.
+
+        In the case of a (Multi)Polygon it measures the length
+        of its exterior (i.e. perimeter).
 
         Examples
         --------
@@ -217,6 +239,20 @@ GeometryCollection
         4     0.000000
         5    16.180340
         dtype: float64
+
+        See also
+        --------
+        GeoSeries.area : measure area of a polygon
+
+        Notes
+        -----
+        Length may be invalid for a geographic CRS using degrees as units;
+        use :meth:`GeoSeries.to_crs` to project geometries to a planar
+        CRS before using this function.
+
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+
         """
         return _delegate_property("length", self)
 
@@ -321,6 +357,11 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed.
 
+        When constructing a LinearRing, the sequence of coordinates may be
+        explicitly closed by passing identical values in the first and last indices.
+        Otherwise, the sequence will be implicitly closed by copying the first tuple
+        to the last index.
+
         Examples
         --------
         >>> from shapely.geometry import LineString, LinearRing
@@ -337,11 +378,6 @@ GeometryCollection
         2    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
         dtype: geometry
 
-        Note: When constructing a LinearRing, the sequence of coordinates may be
-        explicitly closed by passing identical values in the first and last indices.
-        Otherwise, the sequence will be implicitly closed by copying the first tuple
-        to the last index.
-
         >>> s.is_ring
         0    False
         1     True
@@ -355,6 +391,11 @@ GeometryCollection
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component.
+
+        Notes
+        ------
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
 
         Examples
         --------
@@ -409,6 +450,10 @@ GeometryCollection
         2                             GEOMETRYCOLLECTION EMPTY
         dtype: geometry
 
+        See also
+        --------
+        GeoSeries.exterior : outer boundary (without interior rings)
+
         """
         return _delegate_property("boundary", self)
 
@@ -441,6 +486,10 @@ GeometryCollection
         1    POINT (0.70711 0.50000)
         2    POINT (0.00000 0.00000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.representative_point : point guaranteed to be within each geometry
         """
         return _delegate_property("centroid", self)
 
@@ -483,6 +532,10 @@ GeometryCollection
         4                              POINT (0.00000 0.00000)
         dtype: geometry
 
+        See also
+        --------
+        GeoSeries.envelope : bounding rectangle geometry
+
         """
         return _delegate_property("convex_hull", self)
 
@@ -520,6 +573,10 @@ GeometryCollection
         2    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
         3                              POINT (0.00000 0.00000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_property("envelope", self)
 
@@ -553,6 +610,11 @@ GeometryCollection
         1    LINEARRING (1.00000 0.00000, 2.00000 1.00000, ...
         2                                                 None
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.boundary : complete set-theoretic boundary
+        GeoSeries.interiors : list of inner rings of each polygon
         """
         # TODO: return empty geometry for non-polygons
         return _delegate_property("exterior", self)
@@ -591,6 +653,10 @@ GeometryCollection
         0    [LINEARRING (1 1, 2 1, 1 2, 1 1), LINEARRING (...
         1                                                   []
         dtype: object
+
+        See also
+        --------
+        GeoSeries.exterior : outer boundary
         """
         return _delegate_property("interiors", self)
 
@@ -620,6 +686,10 @@ GeometryCollection
         1    POINT (1.00000 1.00000)
         2    POINT (0.00000 0.00000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.centroid : geometric centroid
         """
         return _delegate_geo_method("representative_point", self)
 
@@ -1441,6 +1511,31 @@ GeometryCollection
         ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
         must include a comma separating x and y slices. That is, ``.cx[:, :]``
         will return the full series/frame, but ``.cx[:]`` is not implemented.
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [Point(0, 0), Point(1, 2), Point(3, 3), LineString([(0, 0), (3, 3)])]
+        ... )
+        >>> s
+        0                          POINT (0.00000 0.00000)
+        1                          POINT (1.00000 2.00000)
+        2                          POINT (3.00000 3.00000)
+        3    LINESTRING (0.00000 0.00000, 3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.cx[0:1, 0:1]
+        0                          POINT (0.00000 0.00000)
+        3    LINESTRING (0.00000 0.00000, 3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.cx[:, 1:]
+        1                          POINT (1.00000 2.00000)
+        2                          POINT (3.00000 3.00000)
+        3    LINESTRING (0.00000 0.00000, 3.00000 3.00000)
+        dtype: geometry
+
         """
         return _CoordinateIndexer(self)
 
