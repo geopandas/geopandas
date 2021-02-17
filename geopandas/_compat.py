@@ -6,6 +6,8 @@ import warnings
 
 import pandas as pd
 import shapely
+import shapely.geos
+
 
 # -----------------------------------------------------------------------------
 # pandas compat
@@ -25,6 +27,8 @@ PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
 SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
 SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
+
+GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
 
 
 HAS_PYGEOS = None
