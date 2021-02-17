@@ -414,7 +414,7 @@ class TestPygeosInterface:
         res = tree_df.sindex.query(test_geo, sort=sort)
 
         # asserting the same elements
-        assert set(res) == set(expected)
+        assert sorted(res) == sorted(expected)
         # asserting the exact array can fail if sort=False
         try:
             assert_array_equal(res, expected)
@@ -655,8 +655,8 @@ class TestPygeosInterface:
         res = tree_df.sindex.query_bulk(test_df.geometry, sort=sort)
 
         # asserting the same elements
-        assert set(res[0]) == set(expected[0])
-        assert set(res[1]) == set(expected[1])
+        assert sorted(res[0]) == sorted(expected[0])
+        assert sorted(res[1]) == sorted(expected[1])
         # asserting the exact array can fail if sort=False
         try:
             assert_array_equal(res, expected)
