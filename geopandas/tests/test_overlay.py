@@ -7,7 +7,6 @@ from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-import geopandas._compat as compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -108,19 +107,23 @@ def test_overlay(dfs_index, how):
 def test_overlay_nybb(how):
     polydf = read_file(geopandas.datasets.get_path("nybb"))
 
-    # construct circles dataframe
-    N = 10
-    b = [int(x) for x in polydf.total_bounds]
-    polydf2 = GeoDataFrame(
-        [
-            {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
-            for x, y in zip(
-                range(b[0], b[2], int((b[2] - b[0]) / N)),
-                range(b[1], b[3], int((b[3] - b[1]) / N)),
-            )
-        ],
-        crs=polydf.crs,
-    )
+    # The circles have been constructed and saved at the time the expected
+    # results were created (exact output of buffer algorithm can slightly
+    # change over time -> use saved ones)
+    # # construct circles dataframe
+    # N = 10
+    # b = [int(x) for x in polydf.total_bounds]
+    # polydf2 = GeoDataFrame(
+    #     [
+    #         {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
+    #         for x, y in zip(
+    #             range(b[0], b[2], int((b[2] - b[0]) / N)),
+    #             range(b[1], b[3], int((b[3] - b[1]) / N)),
+    #         )
+    #     ],
+    #     crs=polydf.crs,
+    # )
+    polydf2 = read_file(os.path.join(DATA, "nybb_qgis", "polydf2.shp"))
 
     result = overlay(polydf, polydf2, how=how)
 
@@ -186,11 +189,6 @@ def test_overlay_nybb(how):
     pd.testing.assert_frame_equal(
         result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
     )
-
-    if compat.GEOS_GE_390:
-        # When using GEOS 3.9+, the overlay result is slightly different and we
-        # cannot compare it to the expected result files
-        return
 
     # There are two cases where the multipolygon have a different number
     # of sub-geometries -> not solved by normalize (and thus drop for now)
