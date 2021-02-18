@@ -1,5 +1,5 @@
-GeoPandas |version|
-===================
+GeoPandas
+=========
 
 GeoPandas is an open source project to make working with geospatial
 data in python easier.  GeoPandas extends the datatypes used by
