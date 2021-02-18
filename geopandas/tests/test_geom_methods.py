@@ -70,6 +70,8 @@ class TestGeomMethods:
         self.esb = Point(-73.9847, 40.7484, 30.3244)
         self.sol = Point(-74.0446, 40.6893, 31.2344)
         self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
+        self.pt2d = Point(-73.9847, 40.7484)
+        self.landmarks_mixed = GeoSeries([self.esb, self.sol, self.pt2d], crs=4326)
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -479,6 +481,10 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected_x, self.landmarks.geometry.x)
         assert_array_dtype_equal(expected_y, self.landmarks.geometry.y)
         assert_array_dtype_equal(expected_z, self.landmarks.geometry.z)
+
+        # mixed dimensions
+        expected_z = [30.3244, 31.2344, np.nan]
+        assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
 
     def test_xyz_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
