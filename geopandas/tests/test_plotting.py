@@ -308,6 +308,19 @@ class TestPointPlotting:
             ax = s.plot()
             assert len(ax.collections) == 1
 
+        # more complex case with GEOMETRYCOLLECTION EMPTY, POINT EMPTY and NONE
+        poly = Polygon([(-1, -1), (-1, 2), (2, 2), (2, -1), (-1, -1)])
+        point = Point(0, 1)
+        point_ = Point(10, 10)
+        empty_point = Point()
+        none_point = Point()
+
+        gdf = GeoDataFrame(geometry=[point, empty_point, point_, none_point])
+        gdf["geometry"] = gdf.intersection(poly)
+        gdf["geometry"].loc[3] = None
+        ax = gdf.plot()
+        assert len(ax.collections) == 1
+
     def test_multipoints(self):
 
         # MultiPoints
