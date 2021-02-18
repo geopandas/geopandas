@@ -27,7 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
-from .sindex import get_sindex_class
+from .sindex import _get_sindex_class
 
 
 class GeometryDtype(ExtensionDtype):
@@ -144,7 +144,7 @@ def _shapely_to_geom(geom):
 
 def _is_scalar_geometry(geom):
     if compat.USE_PYGEOS:
-        return isinstance(geom, pygeos.Geometry)
+        return isinstance(geom, (pygeos.Geometry, BaseGeometry))
     else:
         return isinstance(geom, BaseGeometry)
 
@@ -233,6 +233,9 @@ def points_from_xy(x, y, z=None, crs=None):
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
+    In case of geographic coordinates, it is assumed that longitude is captured by
+    ``x`` coordinates and latitude by ``y``.
+
     Parameters
     ----------
     x, y, z : iterable
@@ -254,6 +257,16 @@ def points_from_xy(x, y, z=None, crs=None):
     >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
     >>> gdf = geopandas.GeoDataFrame(
     ...     df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+
+    Having geographic coordinates:
+
+    >>> df = pd.DataFrame({'longitude': [-140, 0, 123], 'latitude': [-65, 1, 48]})
+    >>> df
+       longitude  latitude
+    0       -140       -65
+    1          0         1
+    2        123        48
+    >>> geometry = geopandas.points_from_xy(df.longitude, df.latitude, crs="EPSG:4326")
 
     Returns
     -------
@@ -293,8 +306,32 @@ class GeometryArray(ExtensionArray):
     @property
     def sindex(self):
         if self._sindex is None:
-            self._sindex = get_sindex_class()(self.data)
+            self._sindex = _get_sindex_class()(self.data)
         return self._sindex
+
+    @property
+    def has_sindex(self):
+        """Check the existence of the spatial index without generating it.
+
+        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
+        to generate a spatial index if it does not yet exist,
+        which may take considerable time based on the underlying index
+        implementation.
+
+        Note that the underlying spatial index may not be fully
+        initialized until the first use.
+
+        See Also
+        ---------
+        GeoDataFrame.has_sindex
+
+        Returns
+        -------
+        bool
+            `True` if the spatial index has been generated or
+            `False` if not.
+        """
+        return self._sindex is not None
 
     @property
     def crs(self):
@@ -393,20 +430,20 @@ class GeometryArray(ExtensionArray):
         #             "and CRS of existing geometries."
         #         )
 
-    if compat.USE_PYGEOS:
-
-        def __getstate__(self):
+    def __getstate__(self):
+        if compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
+        else:
+            return self.__dict__
 
-        def __setstate__(self, state):
+    def __setstate__(self, state):
+        if compat.USE_PYGEOS:
             geoms = pygeos.from_wkb(state[0])
             self._crs = state[1]
+            self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
-
-    else:
-
-        def __setstate__(self, state):
+        else:
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -759,7 +796,9 @@ class GeometryArray(ExtensionArray):
                 "Value should be either a BaseGeometry or None, got %s" % str(value)
             )
         # self.data[idx] = value
-        self.data[idx] = np.array([value], dtype=object)
+        value_arr = np.empty(1, dtype=object)
+        value_arr[:] = [value]
+        self.data[idx] = value_arr
         return self
 
     def fillna(self, value=None, method=None, limit=None):
@@ -981,7 +1020,9 @@ class GeometryArray(ExtensionArray):
             if precision is None:
                 # dummy heuristic based on 10 first geometries that should
                 # work in most cases
-                xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
                 if (
                     (-180 <= xmin <= 180)
                     and (-180 <= xmax <= 180)
@@ -1037,7 +1078,9 @@ class GeometryArray(ExtensionArray):
 
     def _binop(self, other, op):
         def convert_values(param):
-            if isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param):
+            if not _is_scalar_geometry(param) and (
+                isinstance(param, ExtensionArray) or pd.api.types.is_list_like(param)
+            ):
                 ovalues = param
             else:  # Assume its an object
                 ovalues = [param] * len(self)
@@ -1065,3 +1108,18 @@ class GeometryArray(ExtensionArray):
 
     def __ne__(self, other):
         return self._binop(other, operator.ne)
+
+    def __contains__(self, item):
+        """
+        Return for `item in self`.
+        """
+        if _isna(item):
+            if (
+                item is self.dtype.na_value
+                or isinstance(item, self.dtype.type)
+                or item is None
+            ):
+                return self.isna().any()
+            else:
+                return False
+        return (self == item).any()

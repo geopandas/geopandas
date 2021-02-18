@@ -122,10 +122,7 @@ def from_shapely(data):
             else:
                 out.append(geom)
         elif hasattr(geom, "__geo_interface__"):
-            geom = shapely.geometry.asShape(geom)
-            # asShape returns GeometryProxy -> trigger actual materialization
-            # with one of its methods
-            geom.wkb
+            geom = shapely.geometry.shape(geom)
             if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:
@@ -827,6 +824,34 @@ def simplify(data, tolerance, preserve_topology=True):
             out[:] = [
                 geom.simplify(tolerance, preserve_topology=preserve_topology)
                 for geom in data
+            ]
+        return out
+
+
+def _shapely_normalize(geom):
+    """
+    Small helper function for now because it is not yet available in Shapely.
+    """
+    from shapely.geos import lgeos
+    from shapely.geometry.base import geom_factory
+    from ctypes import c_void_p, c_int
+
+    lgeos._lgeos.GEOSNormalize_r.restype = c_int
+    lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
+
+    geom_cloned = lgeos.GEOSGeom_clone(geom._geom)
+    lgeos._lgeos.GEOSNormalize_r(lgeos.geos_handle, geom_cloned)
+    return geom_factory(geom_cloned)
+
+
+def normalize(data):
+    if compat.USE_PYGEOS:
+        return pygeos.normalize(data)
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                _shapely_normalize(geom) if geom is not None else None for geom in data
             ]
         return out
 

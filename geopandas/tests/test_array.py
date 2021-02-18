@@ -52,8 +52,8 @@ def equal_geometries(result, expected):
 
 
 def test_points():
-    x = np.arange(10).astype(np.float)
-    y = np.arange(10).astype(np.float) ** 2
+    x = np.arange(10).astype(np.float64)
+    y = np.arange(10).astype(np.float64) ** 2
 
     points = points_from_xy(x, y)
     assert isinstance(points, GeometryArray)
@@ -500,7 +500,7 @@ def test_unary_float(attr):
     na_value = np.nan
     result = getattr(T, attr)
     assert isinstance(result, np.ndarray)
-    assert result.dtype == np.float
+    assert result.dtype == np.dtype("float64")
     expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
     np.testing.assert_allclose(result, expected)
 
@@ -768,6 +768,15 @@ def test_equality_ops():
 
     res = a1 != a2
     assert res.tolist() == [False, True, False]
+
+    # check the correct expansion of list-like geometry
+    multi_poly = shapely.geometry.MultiPolygon(
+        [shapely.geometry.box(0, 0, 1, 1), shapely.geometry.box(3, 3, 4, 4)]
+    )
+    a3 = from_shapely([points[1], points[2], points[3], multi_poly])
+
+    res = a3 == multi_poly
+    assert res.tolist() == [False, False, False, True]
 
 
 def test_dir():

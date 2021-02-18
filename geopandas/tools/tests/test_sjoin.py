@@ -6,15 +6,13 @@ import pandas as pd
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
-from geopandas import GeoDataFrame, GeoSeries, read_file, sindex, sjoin
+from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin
 
 from pandas.testing import assert_frame_equal
 import pytest
 
 
-pytestmark = pytest.mark.skipif(
-    not sindex.has_sindex(), reason="sjoin requires spatial index"
-)
+pytestmark = pytest.mark.skip_no_sindex
 
 
 @pytest.fixture()

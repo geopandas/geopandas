@@ -78,15 +78,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     col1          object
     geometry    geometry
     dtype: object
+
+    See also
+    --------
+    GeoSeries : Series object designed to store shapely geometry objects
     """
 
     _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, **kwargs):
-        crs = kwargs.pop("crs", None)
-        geometry = kwargs.pop("geometry", None)
+    def __init__(self, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
             super(GeoDataFrame, self).__init__(*args, **kwargs)
 
@@ -232,10 +234,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         1    POLYGON ((4.00000 1.00000, 3.99037 0.80397, 3....
         Name: buffered, dtype: geometry
 
-
         Returns
         -------
         GeoDataFrame
+
+        See also
+        --------
+        GeoDataFrame.rename_geometry : rename an active geometry column
         """
         # Most of the code here is taken from DataFrame.set_index()
         if inplace:
@@ -315,6 +320,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Returns
         -------
         geodataframe : GeoDataFrame
+
+        See also
+        --------
+        GeoDataFrame.set_geometry : set the active geometry
         """
         geometry_col = self.geometry.name
         if col in self.columns:
@@ -354,6 +363,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
+
+        See also
+        --------
+        GeoDataFrame.set_crs : assign CRS
+        GeoDataFrame.to_crs : re-project to another CRS
 
         """
         return self._crs
@@ -400,6 +414,32 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             pass
 
     @classmethod
+    def from_dict(cls, data, geometry=None, crs=None, **kwargs):
+        """
+        Construct GeoDataFrame from dict of array-like or dicts by
+        overiding DataFrame.from_dict method with geometry and crs
+
+        Parameters
+        ----------
+        data : dict
+            Of the form {field : array-like} or {field : dict}.
+        geometry : str or array (optional)
+            If str, column to use as geometry. If array, will be set as 'geometry'
+            column on GeoDataFrame.
+        crs : str or dict (optional)
+            Coordinate reference system to set on the resulting frame.
+        kwargs : key-word arguments
+            These arguments are passed to DataFrame.from_dict
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        dataframe = super().from_dict(data, **kwargs)
+        return GeoDataFrame(dataframe, geometry=geometry, crs=crs)
+
+    @classmethod
     def from_file(cls, filename, **kwargs):
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
@@ -444,7 +484,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         See also
         --------
-        read_file
+        read_file : read file to GeoDataFame
+        GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
         return geopandas.io.file._read_file(filename, **kwargs)
@@ -553,7 +594,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Parameters
         ----------
         sql : string
-        con : DB connection object or SQLAlchemy engine
+        con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         geom_col : string, default 'geom'
             column name to convert to shapely geometries
         crs : optional
@@ -580,11 +621,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
+        PostGIS
+
+        >>> from sqlalchemy import create_engine  # doctest: +SKIP
+        >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydb"
+        >>> con = create_engine(db_connection_url)  # doctest: +SKIP
         >>> sql = "SELECT geom, highway FROM roads"
+        >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
 
         SpatiaLite
+
         >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
+
+        The recommended method of reading from PostGIS is
+        :func:`geopandas.read_postgis`:
+
+        >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
+
+        See also
+        --------
+        geopandas.read_postgis : read PostGIS database to GeoDataFrame
         """
 
         df = geopandas.io.sql._read_postgis(
@@ -640,6 +697,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 "properties": {"col1": "name1"}, "geometry": {"type": "Point", "coordinates": [1.0,\
  2.0]}}, {"id": "1", "type": "Feature", "properties": {"col1": "name2"}, "geometry"\
 : {"type": "Point", "coordinates": [2.0, 1.0]}}]}'
+
+        Alternatively, you can write GeoJSON to file:
+
+        >>> gdf.to_file(path, driver="GeoJSON")  # doctest: +SKIP
+
+        See also
+        --------
+        GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
         return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
@@ -815,6 +880,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         --------
 
         >>> gdf.to_parquet('data.parquet')  # doctest: +SKIP
+
+        See also
+        --------
+        GeoDataFrame.to_feather : write GeoDataFrame to feather
+        GeoDataFrame.to_file : write GeoDataFrame to file
         """
 
         from geopandas.io.arrow import _to_parquet
@@ -858,6 +928,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         --------
 
         >>> gdf.to_feather('data.feather')  # doctest: +SKIP
+
+        See also
+        --------
+        GeoDataFrame.to_parquet : write GeoDataFrame to parquet
+        GeoDataFrame.to_file : write GeoDataFrame to file
         """
 
         from geopandas.io.arrow import _to_feather
@@ -907,6 +982,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         See Also
         --------
         GeoSeries.to_file
+        GeoDataFrame.to_postgis : write GeoDataFrame to PostGIS database
+        GeoDataFrame.to_parquet : write GeoDataFrame to parquet
+        GeoDataFrame.to_feather : write GeoDataFrame to feather
 
         Examples
         --------
@@ -916,6 +994,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         >>> gdf.to_file('dataframe.gpkg', driver='GPKG', layer='name')  # doctest: +SKIP
 
         >>> gdf.to_file('dataframe.geojson', driver='GeoJSON')  # doctest: +SKIP
+
+        With selected drivers you can also append to a file with `mode="a"`:
+
+        >>> gdf.to_file('dataframe.shp', mode="a")  # doctest: +SKIP
         """
         from geopandas.io.file import _to_file
 
@@ -985,6 +1067,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         Without ``allow_override=True``, ``set_crs`` returns an error if you try to
         override CRS.
+
+        See also
+        --------
+        GeoDataFrame.to_crs : re-project to another CRS
+
         """
         if not inplace:
             df = self.copy()
@@ -1066,6 +1153,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
+
+        See also
+        --------
+        GeoDataFrame.set_crs : assign CRS without re-projection
         """
         if inplace:
             df = self
@@ -1076,6 +1167,46 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         df.crs = geom.crs
         if not inplace:
             return df
+
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        return self.geometry.estimate_utm_crs(datum_name=datum_name)
 
     def __getitem__(self, key):
         """
@@ -1188,7 +1319,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Parameters
         ----------
         by : string, default None
-            Column whose values define groups to be dissolved
+            Column whose values define groups to be dissolved. If None,
+            whole GeoDataFrame is considered a single group.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
@@ -1220,7 +1352,14 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         name1  MULTIPOINT (0.00000 1.00000, 1.00000 2.00000)
         name2                        POINT (2.00000 1.00000)
 
+        See also
+        --------
+        GeoDataFrame.explode : explode muti-part geometries into single geometries
+
         """
+
+        if by is None:
+            by = np.zeros(len(self), dtype="int64")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -1246,8 +1385,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return aggregated
 
-    # overrides GeoPandasBase method
-    def explode(self):
+    # overrides the pandas native explode method to break up features geometrically
+    def explode(self, column=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1290,7 +1429,21 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
           1  name1  POINT (3.00000 4.00000)
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
+
+        See also
+        --------
+        GeoDataFrame.dissolve : dissolve geometries into a single observation.
+
         """
+
+        # If no column is specified then default to the active geometry column
+        if column is None:
+            column = self.geometry.name
+        # If the specified column is not a geometry dtype use pandas explode
+        if not isinstance(self[column].dtype, GeometryDtype):
+            return super(GeoDataFrame, self).explode(column, **kwargs)
+            # TODO: make sure index behaviour is consistent
+
         df_copy = self.copy()
 
         if "level_1" in df_copy.columns:  # GH1393
@@ -1361,7 +1514,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         name : str
             Name of the target table.
-        con : sqlalchemy.engine.Engine
+        con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
             Active connection to the PostGIS database.
         if_exists : {'fail', 'replace', 'append'}, default 'fail'
             How to behave if the table already exists:
@@ -1393,6 +1546,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
 /mydatabase")  # doctest: +SKIP
         >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
+
+        See also
+        --------
+        GeoDataFrame.to_file : write GeoDataFrame to file
+        read_postgis : read PostGIS database to GeoDataFrame
+
         """
         geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
