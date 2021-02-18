@@ -379,7 +379,7 @@ def test_warn_on_keep_geom_type(dfs):
     )
     df3 = GeoDataFrame({"geometry": polys3})
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="`keep_geom_type=True` in overlay"):
         overlay(df2, df3, keep_geom_type=None)
 
 
