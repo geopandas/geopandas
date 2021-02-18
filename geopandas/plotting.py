@@ -761,8 +761,8 @@ GON (((-122.84000 49.00000, -120.0000...
                 show_interval = legend_kwds.pop("interval", False)
             else:
                 show_interval = False
-                if not show_interval:
-                    categories = [c[1:-1] for c in categories]
+            if not show_interval:
+                categories = [c[1:-1] for c in categories]
         values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
