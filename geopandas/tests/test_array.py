@@ -52,8 +52,8 @@ def equal_geometries(result, expected):
 
 
 def test_points():
-    x = np.arange(10).astype(np.float)
-    y = np.arange(10).astype(np.float) ** 2
+    x = np.arange(10).astype(np.float64)
+    y = np.arange(10).astype(np.float64) ** 2
 
     points = points_from_xy(x, y)
     assert isinstance(points, GeometryArray)
@@ -117,9 +117,11 @@ def test_from_shapely_geo_interface():
             return {"type": "Point", "coordinates": (self.x, self.y)}
 
     result = from_shapely([Point(1.0, 2.0), Point(3.0, 4.0)])
+
     expected = from_shapely(
         [shapely.geometry.Point(1.0, 2.0), shapely.geometry.Point(3.0, 4.0)]
     )
+
     assert all(v.equals(t) for v, t in zip(result, expected))
 
 
@@ -500,7 +502,7 @@ def test_unary_float(attr):
     na_value = np.nan
     result = getattr(T, attr)
     assert isinstance(result, np.ndarray)
-    assert result.dtype == np.float
+    assert result.dtype == np.dtype("float64")
     expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
     np.testing.assert_allclose(result, expected)
 

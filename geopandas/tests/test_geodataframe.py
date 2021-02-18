@@ -7,7 +7,6 @@ from distutils.version import LooseVersion
 import numpy as np
 import pandas as pd
 
-import fiona
 import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
@@ -41,7 +40,9 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+        self.df3 = read_file(
+            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -490,6 +491,7 @@ class TestDataFrame:
         assert df._geometry_column_name == "location"
 
     def test_from_features(self):
+        fiona = pytest.importorskip("fiona")
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)
