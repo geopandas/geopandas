@@ -107,19 +107,23 @@ def test_overlay(dfs_index, how):
 def test_overlay_nybb(how):
     polydf = read_file(geopandas.datasets.get_path("nybb"))
 
-    # construct circles dataframe
-    N = 10
-    b = [int(x) for x in polydf.total_bounds]
-    polydf2 = GeoDataFrame(
-        [
-            {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
-            for x, y in zip(
-                range(b[0], b[2], int((b[2] - b[0]) / N)),
-                range(b[1], b[3], int((b[3] - b[1]) / N)),
-            )
-        ],
-        crs=polydf.crs,
-    )
+    # The circles have been constructed and saved at the time the expected
+    # results were created (exact output of buffer algorithm can slightly
+    # change over time -> use saved ones)
+    # # construct circles dataframe
+    # N = 10
+    # b = [int(x) for x in polydf.total_bounds]
+    # polydf2 = GeoDataFrame(
+    #     [
+    #         {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
+    #         for x, y in zip(
+    #             range(b[0], b[2], int((b[2] - b[0]) / N)),
+    #             range(b[1], b[3], int((b[3] - b[1]) / N)),
+    #         )
+    #     ],
+    #     crs=polydf.crs,
+    # )
+    polydf2 = read_file(os.path.join(DATA, "nybb_qgis", "polydf2.shp"))
 
     result = overlay(polydf, polydf2, how=how)
 
@@ -186,12 +190,23 @@ def test_overlay_nybb(how):
         result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
     )
 
-    # now drop multipolygons
-    result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
-    expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
+    # There are two cases where the multipolygon have a different number
+    # of sub-geometries -> not solved by normalize (and thus drop for now)
+    if how == "symmetric_difference":
+        expected.loc[9, "geometry"] = None
+        result.loc[9, "geometry"] = None
+
+    if how == "union":
+        expected.loc[24, "geometry"] = None
+        result.loc[24, "geometry"] = None
 
     assert_geodataframe_equal(
-        result, expected, check_crs=False, check_column_type=False
+        result,
+        expected,
+        normalize=True,
+        check_crs=False,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -244,7 +259,11 @@ def test_overlay_overlap(how):
         result = result.sort_values(["col1", "col2"]).reset_index(drop=True)
 
     assert_geodataframe_equal(
-        result, expected, check_column_type=False, check_less_precise=True
+        result,
+        expected,
+        normalize=True,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -469,6 +488,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         assert_geodataframe_equal(
             result,
             expected,
+            normalize=True,
             check_column_type=False,
             check_less_precise=True,
             check_crs=False,

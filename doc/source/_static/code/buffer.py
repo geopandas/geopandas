@@ -18,7 +18,7 @@ s = geopandas.GeoSeries(
 )
 
 fix, axs = plt.subplots(
-    3, 2, figsize=(12, 12), sharex=True, sharey=True, bbox_inches="tight"
+    3, 2, figsize=(12, 12), sharex=True, sharey=True
 )
 for ax in axs.flatten():
     s.plot(ax=ax)

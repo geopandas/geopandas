@@ -159,7 +159,6 @@ def test_to_file_types(tmpdir, df_points):
     """ Test various integer type columns (GH#93) """
     tempfilename = os.path.join(str(tmpdir), "int.shp")
     int_types = [
-        np.int,
         np.int8,
         np.int16,
         np.int32,
@@ -169,7 +168,6 @@ def test_to_file_types(tmpdir, df_points):
         np.uint16,
         np.uint32,
         np.uint64,
-        np.long,
     ]
     geometry = df_points.geometry
     data = dict(

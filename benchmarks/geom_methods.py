@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 from geopandas import GeoSeries
-from shapely.geometry import Point, LineString, Polygon
+from shapely.geometry import Point, Polygon, MultiPolygon
 
 
 def with_attributes(**attrs):
@@ -25,10 +25,15 @@ class Bench:
         triangles3 = GeoSeries([Polygon([(random.random(), random.random())
                                          for _ in range(3)])
                                 for _ in range(10000)])
+        triangles4 = GeoSeries([
+            MultiPolygon([
+                Polygon([(random.random(), random.random()) for _ in range(3)])
+            ]) for _ in range(10000)])
         triangle = Polygon([(random.random(), random.random())
                             for _ in range(3)])
         self.triangles, self.triangles2 = triangles, triangles2
         self.triangles_big = triangles3
+        self.multi_triangles = triangles4
         self.triangle = triangle
 
     @with_attributes(param_names=['op'],
@@ -98,7 +103,10 @@ class Bench:
     def time_buffer(self, *args):
         self.points.buffer(2)
 
+    def time_explode(self, *args):
+        self.multi_triangles.explode()
+
 
 # TODO
-# project, interpolate, affine_transform, translate, rotate, scale, skew, explode
+# project, interpolate, affine_transform, translate, rotate, scale, skew
 # cx indexer
