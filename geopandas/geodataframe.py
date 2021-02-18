@@ -694,7 +694,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             * keep: output the missing entries as NaN
         show_bbox : bool, optional
             Include bbox (bounds) in the geojson. Default False.
-        drop_id : bool, optional
+        drop_id : bool, default: False
             Whether to retain the index of the GeoDataFrame as the id property
             in the generated GeoJSON. Default is False, but may want True
             if the index is just arbitrary row numbers.
