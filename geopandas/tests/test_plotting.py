@@ -313,11 +313,10 @@ class TestPointPlotting:
         point = Point(0, 1)
         point_ = Point(10, 10)
         empty_point = Point()
-        none_point = Point()
 
-        gdf = GeoDataFrame(geometry=[point, empty_point, point_, none_point])
+        gdf = GeoDataFrame(geometry=[point, empty_point, point_])
         gdf["geometry"] = gdf.intersection(poly)
-        gdf["geometry"].loc[3] = None
+        gdf.loc[3] = [None]
         ax = gdf.plot()
         assert len(ax.collections) == 1
 
