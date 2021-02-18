@@ -894,7 +894,7 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
         """
-        return _binary_geo("covers", self, other)
+        return _binary_op("covers", self, other)
 
     def covered_by(self, other):
         """
@@ -913,7 +913,7 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
         """
-        return _binary_geo("covered_by", self, other)
+        return _binary_op("covered_by", self, other)
 
     def distance(self, other):
         """Returns a ``Series`` containing the distance to `other`.
