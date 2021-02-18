@@ -27,6 +27,7 @@ General methods and attributes
    GeoSeries.interiors
    GeoSeries.x
    GeoSeries.y
+   GeoSeries.z
 
 Unary predicates
 ----------------
