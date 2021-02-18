@@ -658,9 +658,12 @@ class TestGeomMethods:
         expected = Series([1.0, 0.5], index=self.g5.index)
         self._test_binary_real("project", expected, self.g5, p, normalized=True)
 
-        if compat.USE_PYGEOS:  # shapely  supports only linear types in this operation
-            assert len(self.g0.project(self.g9, align=True) == 8)
-            assert len(self.g0.project(self.g9, align=False) == 7)
+        s = GeoSeries([Point(2, 2), Point(0.5, 0.5)], index=[1, 2])
+        expected = Series([np.nan, 2.0, np.nan])
+        assert_series_equal(self.g5.project(s), expected)
+
+        expected = Series([2.0, 0.5], index=self.g5.index)
+        assert_series_equal(self.g5.project(s, align=False), expected)
 
     def test_affine_transform(self):
         # 45 degree reflection matrix
