@@ -17,6 +17,7 @@ General methods and attributes
    :toctree: api/
 
    GeoSeries.area
+   GeoSeries.boundary
    GeoSeries.bounds
    GeoSeries.total_bounds
    GeoSeries.length
@@ -27,6 +28,7 @@ General methods and attributes
    GeoSeries.interiors
    GeoSeries.x
    GeoSeries.y
+   GeoSeries.z
 
 Unary predicates
 ----------------

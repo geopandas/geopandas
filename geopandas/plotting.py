@@ -45,7 +45,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom.type.startswith(prefix) and not geom.is_empty:
+        if geom is not None and geom.type.startswith(prefix) and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
@@ -283,8 +283,8 @@ def _plot_point_collection(
     geoms, multiindex = _flatten_multi_geoms(geoms)
     # values are expanded below as kwargs["c"]
 
-    x = [p.x for p in geoms]
-    y = [p.y for p in geoms]
+    x = [p.x if not p.is_empty else None for p in geoms]
+    y = [p.y if not p.is_empty else None for p in geoms]
 
     # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:

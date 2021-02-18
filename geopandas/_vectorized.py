@@ -896,6 +896,14 @@ def get_y(data):
         return _unary_op("y", data, null_value=np.nan)
 
 
+def get_z(data):
+    if compat.USE_PYGEOS:
+        return pygeos.get_z(data)
+    else:
+        data = [geom.z if geom.has_z else np.nan for geom in data]
+        return np.array(data, dtype=np.dtype(float))
+
+
 def bounds(data):
     if compat.USE_PYGEOS:
         return pygeos.bounds(data)
