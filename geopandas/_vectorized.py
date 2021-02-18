@@ -900,7 +900,8 @@ def get_z(data):
     if compat.USE_PYGEOS:
         return pygeos.get_z(data)
     else:
-        return _unary_op("z", data, null_value=np.nan)
+        data = [geom.z if geom.has_z else np.nan for geom in data]
+        return np.array(data, dtype=np.dtype(float))
 
 
 def bounds(data):
