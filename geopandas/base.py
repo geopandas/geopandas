@@ -792,6 +792,21 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries contains a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> point = Point(0, 1)
+        >>> s.contains(point)
+        0    False
+        1     True
+        2    False
+        3     True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -814,24 +829,10 @@ GeometryCollection
         4     True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries contains a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> point = Point(0, 1)
-        >>> s.contains(point)
-        0    False
-        1     True
-        2    False
-        3     True
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries ``contains`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``contains`` *any* element of the other one.
 
         See also
         --------
@@ -900,6 +901,21 @@ GeometryCollection
         4        LINESTRING (0.00000 0.00000, 0.00000 2.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries contains a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
+        >>> s.geom_equals(polygon)
+        0     True
+        1    False
+        2    False
+        3    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -922,24 +938,10 @@ GeometryCollection
         3    False
         dtype: bool
 
-        We can also check if each geometry of GeoSeries contains a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
-        >>> s.geom_equals(polygon)
-        0     True
-        1    False
-        2    False
-        3    False
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries is equal to `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is equal to *any* element of the other one.
 
         See also
         --------
@@ -1007,8 +1009,8 @@ GeometryCollection
 
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries is equal to `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is equal to *any* element of the other one.
 
         See also
         --------
@@ -1075,8 +1077,8 @@ GeometryCollection
 
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries is equal to `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is equal to *any* element of the other one.
 
         See also
         --------
@@ -1148,6 +1150,21 @@ GeometryCollection
         4                          POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries crosses a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> line = LineString([(-1, 1), (3, 1)])
+        >>> s.crosses(line)
+        0     True
+        1     True
+        2     True
+        3    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1172,24 +1189,10 @@ GeometryCollection
 
         Notice that a line does not cross a point that it contains.
 
-        We can also check if each geometry of GeoSeries crosses a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> line = LineString([(-1, 1), (3, 1)])
-        >>> s.crosses(line)
-        0     True
-        1     True
-        2     True
-        3    False
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries ``crosses`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``crosses`` *any* element of the other one.
 
         See also
         --------
@@ -1258,6 +1261,21 @@ GeometryCollection
         3                              POINT (0.00000 0.00000)
         dtype: geometry
 
+        We can check each geometry of GeoSeries to a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> line = LineString([(0, 0), (2, 0)])
+        >>> s.disjoint(line)
+        0    False
+        1    False
+        2    False
+        3     True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1272,24 +1290,10 @@ GeometryCollection
         3     True
         dtype: bool
 
-        We can also check each geometry of GeoSeries to a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> line = LineString([(0, 0), (2, 0)])
-        >>> s.disjoint(line)
-        0    False
-        1    False
-        2    False
-        3     True
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries is equal to `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is equal to *any* element of the other one.
 
         See also
         --------
@@ -1359,6 +1363,21 @@ GeometryCollection
         4                          POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries crosses a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> line = LineString([(-1, 1), (3, 1)])
+        >>> s.intersects(line)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1381,24 +1400,10 @@ GeometryCollection
         3    True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries crosses a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> line = LineString([(-1, 1), (3, 1)])
-        >>> s.intersects(line)
-        0    True
-        1    True
-        2    True
-        3    True
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries ``crosses`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``crosses`` *any* element of the other one.
 
         See also
         --------
@@ -1470,6 +1475,21 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries overlaps a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        >>> s.overlaps(polygon)
+        0     True
+        1     True
+        2    False
+        3    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1492,24 +1512,10 @@ GeometryCollection
         3    False
         dtype: bool
 
-        We can also check if each geometry of GeoSeries overlaps a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-        >>> s.overlaps(polygon)
-        0     True
-        1     True
-        2    False
-        3    False
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries ``overlaps`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``overlaps`` *any* element of the other one.
 
         See also
         --------
@@ -1580,6 +1586,22 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries touches a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+
+        >>> line = LineString([(0, 0), (-1, -2)])
+        >>> s.touches(line)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1602,25 +1624,10 @@ GeometryCollection
         3    False
         dtype: bool
 
-        We can also check if each geometry of GeoSeries touches a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-
-        >>> line = LineString([(0, 0), (-1, -2)])
-        >>> s.touches(line)
-        0    True
-        1    True
-        2    True
-        3    True
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries ``touches`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``touches`` *any* element of the other one.
 
         See also
         --------
@@ -1696,6 +1703,21 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries is within a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
+        >>> s.within(polygon)
+        0     True
+        1     True
+        2    False
+        3    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1718,24 +1740,10 @@ GeometryCollection
         4     True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries is within a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
-        >>> s.within(polygon)
-        0     True
-        1     True
-        2    False
-        3    False
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries is ``within`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is ``within`` *any* element of the other one.
 
         See also
         --------
@@ -1807,6 +1815,21 @@ GeometryCollection
         4                              POINT (0.00000 0.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries covers a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
+        >>> s.covers(poly)
+        0     True
+        1    False
+        2    False
+        3    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1829,24 +1852,10 @@ GeometryCollection
         3     True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries covers a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
-        >>> s.covers(poly)
-        0     True
-        1    False
-        2    False
-        3    False
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries ``covers`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``covers`` *any* element of the other one.
 
         See also
         --------
@@ -1919,6 +1928,21 @@ GeometryCollection
         4                              POINT (0.00000 0.00000)
         dtype: geometry
 
+        We can check if each geometry of GeoSeries is covered by a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
+        >>> s.covered_by(poly)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -1941,24 +1965,10 @@ GeometryCollection
         3     True
         dtype: bool
 
-        We can also check if each geometry of GeoSeries is covered by a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> poly = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
-        >>> s.covered_by(poly)
-        0    True
-        1    True
-        2    True
-        3    True
-        dtype: bool
-
         Notes
         -----
-        This method works in a row-wise manner. It does not check if element
-        of one GeoSeries is ``covered_by`` `any` element of the other one.
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is ``covered_by`` *any* element of the other one.
 
         See also
         --------
@@ -2024,6 +2034,21 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can check the distance of each geometry of GeoSeries to a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> point = Point(-1, 0)
+        >>> s.distance(point)
+        0    1.0
+        1    0.0
+        2    1.0
+        3    1.0
+        dtype: float64
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and use elements with the same index using
         ``align=True`` or ignore index and use elements based on their matching
@@ -2044,20 +2069,6 @@ GeometryCollection
         1    3.162278
         2    0.707107
         3    1.000000
-        dtype: float64
-
-        We can also check the distance of each geometry of GeoSeries to a single
-        geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> point = Point(-1, 0)
-        >>> s.distance(point)
-        0    1.0
-        1    0.0
-        2    1.0
-        3    1.0
         dtype: float64
         """
         return _binary_op("distance", self, other, align)
@@ -2130,6 +2141,21 @@ GeometryCollection
         5                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can do difference of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.difference(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        2        LINESTRING (1.00000 1.00000, 2.00000 2.00000)
+        3    MULTILINESTRING ((2.00000 0.00000, 1.00000 1.0...
+        4                                          POINT EMPTY
+        dtype: geometry
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -2151,20 +2177,6 @@ GeometryCollection
         1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
-        4                                          POINT EMPTY
-        dtype: geometry
-
-        We can also do difference of each geometry and a single
-        shapely geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> s.difference(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        2        LINESTRING (1.00000 1.00000, 2.00000 2.00000)
-        3    MULTILINESTRING ((2.00000 0.00000, 1.00000 1.0...
         4                                          POINT EMPTY
         dtype: geometry
 
@@ -2244,6 +2256,21 @@ GeometryCollection
         5                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can do symmetric difference of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.symmetric_difference(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
+        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
+        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        dtype: geometry
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -2266,20 +2293,6 @@ GeometryCollection
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4                                          POINT EMPTY
-        dtype: geometry
-
-        We can also do symmetric difference of each geometry and a single
-        shapely geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> s.symmetric_difference(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
-        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
-        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
         dtype: geometry
 
         See Also
@@ -2355,6 +2368,21 @@ GeometryCollection
         5                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can do union of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.union(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
+        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
+        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        dtype: geometry
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -2377,20 +2405,6 @@ GeometryCollection
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4                              POINT (0.00000 1.00000)
-        dtype: geometry
-
-        We can also do union of each geometry and a single
-        shapely geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> s.union(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
-        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
-        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
         dtype: geometry
 
 
@@ -2467,6 +2481,21 @@ GeometryCollection
         5                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can also do intersection of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.intersection(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (1.00000 1.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -2487,20 +2516,6 @@ GeometryCollection
         0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
         1        LINESTRING (1.00000 1.00000, 1.00000 2.00000)
         2                              POINT (1.00000 1.00000)
-        3                              POINT (1.00000 1.00000)
-        4                              POINT (0.00000 1.00000)
-        dtype: geometry
-
-        We can also do intersection of each geometry and a single
-        shapely geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> s.intersection(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
         3                              POINT (1.00000 1.00000)
         4                              POINT (0.00000 1.00000)
         dtype: geometry
@@ -2757,6 +2772,21 @@ GeometryCollection
         5                              POINT (0.00000 1.00000)
         dtype: geometry
 
+        We can relate each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.relate(Polygon([(0, 0), (1, 1), (0, 1)]))
+        0    212F11FF2
+        1    212F11FF2
+        2    F11F00212
+        3    F01FF0212
+        4    F0FFFF212
+        dtype: object
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
         ``align=True`` or ignore index and compare elements based on their matching
@@ -2779,20 +2809,6 @@ GeometryCollection
         2    0F1FF0102
         3    0F1FF0FF2
         4    0FFFFFFF2
-        dtype: object
-
-        We can also relate each geometry and a single
-        shapely geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> s.relate(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    212F11FF2
-        1    212F11FF2
-        2    F11F00212
-        3    F01FF0212
-        4    F0FFFF212
         dtype: object
 
         """
@@ -2856,6 +2872,19 @@ GeometryCollection
         3    POINT (2.00000 1.00000)
         dtype: geometry
 
+        We can project each geometry on a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.project(Point(1, 0))
+        0   -1.000000
+        1    0.707107
+        2    0.707107
+        dtype: float64
+
+        We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and project elements with the same index using
         ``align=True`` or ignore index and project elements based on their matching
@@ -2871,18 +2900,6 @@ GeometryCollection
         dtype: float64
 
         >>> s.project(s2, align=False)
-        0   -1.000000
-        1    0.707107
-        2    0.707107
-        dtype: float64
-
-        We can also project each geometry on a single
-        shapely geometry:
-
-        .. image:: ../../../_static/binary_op-03.svg
-           :align: center
-
-        >>> s.project(Point(1, 0))
         0   -1.000000
         1    0.707107
         2    0.707107
