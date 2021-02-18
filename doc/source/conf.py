@@ -33,7 +33,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
-    "myst_nb",
+    "myst_parser",
+    "nbsphinx",
     "numpydoc",
     'sphinx_toggleprompt',
     "matplotlib.sphinxext.plot_directive"
