@@ -18,6 +18,7 @@ dependencies:
   - pillow=8.1.0
   - mock=4.0.3
   - cartopy=0.18.0
+  - pyepsg=0.4.0
   - contextily=1.1.0
   - rasterio=1.2.0
   - geoplot=0.4.1
@@ -35,6 +36,7 @@ dependencies:
   - myst-parser=0.13.5
   - folium=0.12.0
   - libpysal=4.4.0
+  - pygeos=0.9
   - pip
   - pip:
       - sphinx-toggleprompt

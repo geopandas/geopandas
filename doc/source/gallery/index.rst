@@ -7,6 +7,5 @@ The following examples show off the functionality in GeoPandas. They highlight m
 .. nbgallery::
     :name: nbshpinx-gallery
     :glob:
-    :reversed:
 
     ./*
