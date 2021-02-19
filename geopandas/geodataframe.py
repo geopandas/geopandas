@@ -658,7 +658,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, **kwargs):
+    def to_json(self, na="null", show_bbox=False, drop_id=False, **kwargs):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -669,6 +669,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             See below.
         show_bbox : bool, optional, default: False
             Include bbox (bounds) in the geojson
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated GeoJSON. Default is False, but may want True
+            if the index is just arbitrary row numbers.
 
         Notes
         -----
@@ -707,7 +711,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
-        return json.dumps(self._to_geo(na=na, show_bbox=show_bbox), **kwargs)
+        return json.dumps(
+            self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
+        )
 
     @property
     def __geo_interface__(self):
@@ -740,24 +746,29 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
 
         """
-        return self._to_geo(na="null", show_bbox=True)
+        return self._to_geo(na="null", show_bbox=True, drop_id=False)
 
-    def iterfeatures(self, na="null", show_bbox=False):
+    def iterfeatures(self, na="null", show_bbox=False, drop_id=False):
         """
         Returns an iterator that yields feature dictionaries that comply with
         __geo_interface__
 
         Parameters
         ----------
-        na : {'null', 'drop', 'keep'}, default 'null'
+        na : str, optional
+            Options are {'null', 'drop', 'keep'}, default 'null'.
             Indicates how to output missing (NaN) values in the GeoDataFrame
             * null: ouput the missing entries as JSON null
             * drop: remove the property from the feature. This applies to
                     each feature individually so that features may have
                     different properties
             * keep: output the missing entries as NaN
-
-        show_bbox : include bbox (bounds) in the geojson. default False
+        show_bbox : bool, optional
+            Include bbox (bounds) in the geojson. Default False.
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated GeoJSON. Default is False, but may want True
+            if the index is just arbitrary row numbers.
 
         Examples
         --------
@@ -805,27 +816,35 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 else:
                     properties_items = {k: v for k, v in zip(properties_cols, row)}
 
-                feature = {
-                    "id": str(ids[i]),
-                    "type": "Feature",
-                    "properties": properties_items,
-                    "geometry": mapping(geom) if geom else None,
-                }
+                if drop_id:
+                    feature = {}
+                else:
+                    feature = {"id": str(ids[i])}
+
+                feature["type"] = "Feature"
+                feature["properties"] = properties_items
+                feature["geometry"] = mapping(geom) if geom else None
 
                 if show_bbox:
                     feature["bbox"] = geom.bounds if geom else None
+
                 yield feature
 
         else:
             for fid, geom in zip(ids, geometries):
-                feature = {
-                    "id": str(fid),
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": mapping(geom) if geom else None,
-                }
+
+                if drop_id:
+                    feature = {}
+                else:
+                    feature = {"id": str(fid)}
+
+                feature["type"] = "Feature"
+                feature["properties"] = {}
+                feature["geometry"] = mapping(geom) if geom else None
+
                 if show_bbox:
                     feature["bbox"] = geom.bounds if geom else None
+
                 yield feature
 
     def _to_geo(self, **kwargs):
