@@ -64,7 +64,6 @@ templates_path = ["_templates"]
 autosummary_generate = True
 
 nbsphinx_execute = "auto"
-nbsphinx_kernel_name = "geopandas_docs"
 nbsphinx_allow_errors = True
 
 # connect docs in other projects
