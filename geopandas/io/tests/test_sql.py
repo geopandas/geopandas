@@ -347,7 +347,7 @@ class TestIO:
     def test_write_postgis_uppercase_tablename(self, engine_postgis, df_nybb):
         """Tests writing GeoDataFrame to PostGIS with uppercase tablename."""
         engine = engine_postgis
-        table = "Nybb"
+        table = "aTestTable"
 
         # If table exists, delete it before trying to write with defaults
         drop_table_if_exists(engine, table)
