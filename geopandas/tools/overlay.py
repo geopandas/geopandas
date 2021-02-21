@@ -137,13 +137,15 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=True):
+def overlay(df1, df2, how="intersection", keep_geom_type=None):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
     i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
     combination of (Multi)LineString and LinearRing shapes.
     Implements several methods that are all effectively subsets of the union.
+
+    See the User Guide page :doc:`../../user_guide/set_operations` for details.
 
     Parameters
     ----------
@@ -154,7 +156,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
         'identity', 'symmetric_difference' or 'difference'.
     keep_geom_type : bool
         If True, return only geometries of the same geometry type as df1 has,
-        if False, return all resulting gemetries.
+        if False, return all resulting geometries. Default is None,
+        which will set keep_geom_type to True but warn upon dropping
+        geometries.
 
     Returns
     -------
@@ -162,6 +166,60 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
         GeoDataFrame with new set of polygons and attributes
         resulting from the overlay
 
+    Examples
+    --------
+    >>> from shapely.geometry import Polygon
+    >>> polys1 = geopandas.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
+    ...                               Polygon([(2,2), (4,2), (4,4), (2,4)])])
+    >>> polys2 = geopandas.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
+    ...                               Polygon([(3,3), (5,3), (5,5), (3,5)])])
+    >>> df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1_data':[1,2]})
+    >>> df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
+
+    >>> geopandas.overlay(df1, df2, how='union')
+       df1_data  df2_data                                           geometry
+    0       1.0       1.0  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....
+    1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    2       2.0       2.0  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....
+    3       1.0       NaN  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+    4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+    5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+    6       NaN       2.0  POLYGON ((3.00000 4.00000, 3.00000 5.00000, 5....
+
+    >>> geopandas.overlay(df1, df2, how='intersection')
+       df1_data  df2_data                                           geometry
+    0         1         1  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....
+    1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    2         2         2  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....
+
+    >>> geopandas.overlay(df1, df2, how='symmetric_difference')
+       df1_data  df2_data                                           geometry
+    0       1.0       NaN  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+    1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+    2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+    3       NaN       2.0  POLYGON ((3.00000 4.00000, 3.00000 5.00000, 5....
+
+    >>> geopandas.overlay(df1, df2, how='difference')
+                                                geometry  df1_data
+    0  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....         1
+    1  MULTIPOLYGON (((2.00000 3.00000, 2.00000 4.000...         2
+
+    >>> geopandas.overlay(df1, df2, how='identity')
+       df1_data  df2_data                                           geometry
+    0       1.0       1.0  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....
+    1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    2       2.0       2.0  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....
+    3       1.0       NaN  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+    4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+
+    See also
+    --------
+    sjoin : spatial join
+
+    Notes
+    ------
+    Every operation in GeoPandas is planar, i.e. the potential third
+    dimension is not taken into account.
     """
     # Allowed operations
     allowed_hows = [
@@ -184,6 +242,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
 
     if not _check_crs(df1, df2):
         _crs_mismatch_warn(df1, df2, stacklevel=3)
+
+    if keep_geom_type is None:
+        keep_geom_type = True
+        keep_geom_type_warning = True
+    else:
+        keep_geom_type_warning = False
 
     polys = ["Polygon", "MultiPolygon"]
     lines = ["LineString", "MultiLineString", "LinearRing"]
@@ -224,19 +288,31 @@ def overlay(df1, df2, how="intersection", keep_geom_type=True):
         exploded = result.reset_index(drop=True).explode()
         exploded = exploded.reset_index(level=0)
 
-        type = df1.geom_type.iloc[0]
-        if type in polys:
+        orig_num_geoms = result.shape[0]
+        geom_type = df1.geom_type.iloc[0]
+        if geom_type in polys:
             exploded = exploded.loc[exploded.geom_type.isin(polys)]
-        elif type in lines:
+        elif geom_type in lines:
             exploded = exploded.loc[exploded.geom_type.isin(lines)]
-        elif type in points:
+        elif geom_type in points:
             exploded = exploded.loc[exploded.geom_type.isin(points)]
         else:
-            raise TypeError("`keep_geom_type` does not support {}.".format(type))
+            raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
 
         # level_0 created with above reset_index operation
         # and represents the original geometry collections
         result = exploded.dissolve(by="level_0")[key_order]
+
+        if (result.shape[0] != orig_num_geoms) and keep_geom_type_warning:
+            num_dropped = orig_num_geoms - result.shape[0]
+            warnings.warn(
+                "`keep_geom_type=True` in overlay resulted in {} dropped "
+                "geometries of different geometry types than df1 has. "
+                "Set `keep_geom_type=False` to retain all "
+                "geometries".format(num_dropped),
+                UserWarning,
+                stacklevel=2,
+            )
 
     result.reset_index(drop=True, inplace=True)
     result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
