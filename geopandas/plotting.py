@@ -560,6 +560,9 @@ def plot_dataframe(
             A list of legend labels to override the auto-generated labels.
             Needs to have the same number of elements as the number of
             classes (`k`).
+        interval : boolean (default False)
+            An option to control brackets from mapclassify legend.
+            If True, open/closed interval brackets are shown in the legend.
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
@@ -752,7 +755,14 @@ GON (((-122.84000 49.00000, -120.0000...
             fmt = "{:.2f}"
             if legend_kwds is not None and "fmt" in legend_kwds:
                 fmt = legend_kwds.pop("fmt")
+
             categories = binning.get_legend_classes(fmt)
+            if legend_kwds is not None:
+                show_interval = legend_kwds.pop("interval", False)
+            else:
+                show_interval = False
+            if not show_interval:
+                categories = [c[1:-1] for c in categories]
         values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
