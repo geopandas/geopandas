@@ -226,7 +226,7 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
 Pandas Plots
 -----------------
 
-Plotting methods also allows for different plot styles from pandas
+Plotting methods also allow for different plot styles from pandas
 along with the default ``geo`` plot. These methods can be accessed using
 the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 
@@ -247,7 +247,7 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
     @savefig pandas_line_plot.png
     gdf.plot(kind='line')
 
-You can also create these other plots using the methods ``GeoDataFrame.plot.<kind>`` instead of providing the ``kind`` keyword argument.
+You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
 
 .. ipython:: python
 

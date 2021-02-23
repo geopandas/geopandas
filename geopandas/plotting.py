@@ -508,6 +508,21 @@ def plot_dataframe(
         If np.array or pd.Series are used then it must have same length as
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
+    kind: str
+        The kind of plots to produce:
+         - 'geo': Map (default)
+         Pandas Kinds
+         - 'line' : line plot
+         - 'bar' : vertical bar plot
+         - 'barh' : horizontal bar plot
+         - 'hist' : histogram
+         - 'box' : BoxPlot
+         - 'kde' : Kernel Density Estimation plot
+         - 'density' : same as 'kde'
+         - 'area' : area plot
+         - 'pie' : pie plot
+         - 'scatter' : scatter plot
+         - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -872,23 +887,8 @@ if geopandas._compat.PANDAS_GE_025:
     from pandas.plotting import PlotAccessor
 
     class GeoplotAccessor(PlotAccessor):
-        """Extend Pandas PlotAccessor to plot GeoDataFrames.
-        The different kinds of plots :
-         - 'geo': Map (default)
-         Pandas Kinds
-         - 'line' : line plot
-         - 'bar' : vertical bar plot
-         - 'barh' : horizontal bar plot
-         - 'hist' : histogram
-         - 'box' : BoxPlot
-         - 'kde' : Kernel Density Estimation plot
-         - 'density' : same as 'kde'
-         - 'area' : area plot
-         - 'pie' : pie plot
-         - 'scatter' : scatter plot
-         - 'hexbin' : hexbin plot.
-        """
 
+        __doc__ = plot_dataframe.__doc__
         _pandas_kinds = PlotAccessor._all_kinds
 
         def __call__(self, *args, **kwargs):

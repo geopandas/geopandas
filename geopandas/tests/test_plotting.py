@@ -1453,17 +1453,15 @@ class TestGeoplotAccessor:
 
     def compare_figures(self, kind, fig_test, fig_ref, kwargs):
         """Compare Figures."""
-        ax_pandas_1 = self.df.plot(kind=kind, **kwargs)
-        ax_geopandas_1 = self.gdf.plot(kind=kind, **kwargs)
-        fig_test.subplots().plot(
-            ax=ax_pandas_1,
-        )
-        fig_ref.subplots().plot(ax=ax_geopandas_1)
+        ax_pandas_1 = fig_test.subplots()
+        self.df.plot(kind=kind, ax=ax_pandas_1, **kwargs)
+        ax_geopandas_1 = fig_ref.subplots()
+        self.gdf.plot(kind=kind, ax=ax_geopandas_1, **kwargs)
 
-        ax_pandas_2 = getattr(self.df.plot, kind)(**kwargs)
-        ax_geopandas_2 = getattr(self.gdf.plot, kind)(**kwargs)
-        fig_test.subplots().plot(ax=ax_pandas_2)
-        fig_ref.subplots().plot(ax=ax_geopandas_2)
+        ax_pandas_2 = fig_test.subplots()
+        getattr(self.df.plot, kind)(ax=ax_pandas_2, **kwargs)
+        ax_geopandas_2 = fig_ref.subplots()
+        getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
 
     _pandas_kinds = []
     if compat.PANDAS_GE_025:
@@ -1500,10 +1498,10 @@ class TestGeoplotAccessor:
         @check_figures_equal(extensions=["png", "pdf"])
         def test_geo_kind(self, fig_test, fig_ref):
             """Test Geo kind."""
-            ax1 = self.gdf.plot()
-            ax2 = getattr(self.gdf.plot, "geo")()
-            fig_test.subplots().plot(ax=ax1)
-            fig_ref.subplots().plot(ax=ax2)
+            ax1 = fig_test.subplots()
+            self.gdf.plot(ax=ax1)
+            ax2 = fig_ref.subplots()
+            getattr(self.gdf.plot, "geo")(ax=ax2)
             plt.close("all")
 
     def test_invalid_kind(self):
