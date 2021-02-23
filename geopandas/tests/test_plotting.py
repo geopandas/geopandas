@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import itertools
 import warnings
 
@@ -234,7 +235,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", cmap="RdYlGn", legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
+        cbar_colors = _get_colorbar_ax(ax.get_figure()).collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -257,7 +258,7 @@ class TestPointPlotting:
         )
         ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[-1].get_facecolors()
+        cbar_colors = _get_colorbar_ax(ax.get_figure()).collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -306,6 +307,18 @@ class TestPointPlotting:
             s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
             ax = s.plot()
             assert len(ax.collections) == 1
+
+        # more complex case with GEOMETRYCOLLECTION EMPTY, POINT EMPTY and NONE
+        poly = Polygon([(-1, -1), (-1, 2), (2, 2), (2, -1), (-1, -1)])
+        point = Point(0, 1)
+        point_ = Point(10, 10)
+        empty_point = Point()
+
+        gdf = GeoDataFrame(geometry=[point, empty_point, point_])
+        gdf["geometry"] = gdf.intersection(poly)
+        gdf.loc[3] = [None]
+        ax = gdf.plot()
+        assert len(ax.collections) == 1
 
     def test_multipoints(self):
 
@@ -710,8 +723,8 @@ class TestPolygonPlotting:
             legend=True,
             legend_kwds={"label": label_txt},
         )
-
-        assert ax.get_figure().axes[1].get_ylabel() == label_txt
+        cax = _get_colorbar_ax(ax.get_figure())
+        assert cax.get_ylabel() == label_txt
 
         ax = self.df.plot(
             column="values",
@@ -720,7 +733,8 @@ class TestPolygonPlotting:
             legend_kwds={"label": label_txt, "orientation": "horizontal"},
         )
 
-        assert ax.get_figure().axes[1].get_xlabel() == label_txt
+        cax = _get_colorbar_ax(ax.get_figure())
+        assert cax.get_xlabel() == label_txt
 
     def test_fmt_ignore(self):
         # test if fmt is removed if scheme is not passed (it would raise Error)
@@ -1040,9 +1054,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"[       140.00,    5217064.00]",
-            u"(   5217064.00,   19532732.33]",
-            u"(  19532732.33, 1379302771.00]",
+            u"       140.00,    5217064.00",
+            u"   5217064.00,   19532732.33",
+            u"  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -1075,7 +1089,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1088,7 +1102,20 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
+        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        assert labels == expected
+
+    def test_interval(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"interval": True},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -1111,7 +1138,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
+        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1141,21 +1168,21 @@ class TestMapclassifyPlotting:
         # base case
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             ax = self.df.plot(column="pop_est", cmap="OrRd", legend=True)
-        plot_height = ax.get_figure().get_axes()[0].get_position().height
-        legend_height = ax.get_figure().get_axes()[1].get_position().height
+        plot_height = _get_ax(ax.get_figure(), "").get_position().height
+        legend_height = _get_ax(ax.get_figure(), "<colorbar>").get_position().height
         assert abs(plot_height - legend_height) >= 1e-6
         # fix heights with cax argument
-        ax2 = plt.axes()
+        fig, ax2 = plt.subplots()
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
         divider = make_axes_locatable(ax2)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
+        cax = divider.append_axes("right", size="5%", pad=0.1, label="fixed_colorbar")
         with warnings.catch_warnings(record=True) as _:
             ax2 = self.df.plot(
                 column="pop_est", cmap="OrRd", legend=True, cax=cax, ax=ax2
             )
-        plot_height = ax2.get_figure().get_axes()[0].get_position().height
-        legend_height = ax2.get_figure().get_axes()[1].get_position().height
+        plot_height = _get_ax(fig, "").get_position().height
+        legend_height = _get_ax(fig, "fixed_colorbar").get_position().height
         assert abs(plot_height - legend_height) < 1e-6
 
 
@@ -1488,7 +1515,10 @@ def test_polygon_patch():
     patch = _PolygonPatch(polygon)
     assert isinstance(patch, PathPatch)
     path = patch.get_path()
-    assert len(path.vertices) == len(path.codes) == 198
+    if compat.GEOS_GE_390:
+        assert len(path.vertices) == len(path.codes) == 195
+    else:
+        assert len(path.vertices) == len(path.codes) == 198
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
@@ -1546,3 +1576,25 @@ def _style_to_vertices(markerstyle):
     # TODO: Vertices values are twice the actual path; unclear, why.
     path = matplotlib.markers.MarkerStyle(markerstyle).get_path()
     return path.vertices / 2
+
+
+def _get_ax(fig, label):
+    """
+    Helper function to not rely on the order of `fig.axes`.
+    Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
+    and the colorbar ax was first and subplot ax second.
+    """
+    if matplotlib.__version__ < LooseVersion("3.0.0"):
+        if label == "<colorbar>":
+            return fig.axes[1]
+        elif label == "":
+            return fig.axes[0]
+    for ax in fig.axes:
+        if ax.get_label() == label:
+            return ax
+    else:
+        raise ValueError("no ax found with label {0}".format(label))
+
+
+def _get_colorbar_ax(fig):
+    return _get_ax(fig, "<colorbar>")

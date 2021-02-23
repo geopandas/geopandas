@@ -98,6 +98,7 @@ def _get_deps_info():
         "psycopg2",
         "geoalchemy2",
         "pyarrow",
+        "pygeos",
     ]
 
     def get_version(module):

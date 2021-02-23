@@ -40,7 +40,9 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+        self.df3 = read_file(
+            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -363,6 +365,7 @@ class TestDataFrame:
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
 
     def test_to_json_geom_col(self):
         df = self.df.copy()
@@ -374,6 +377,12 @@ class TestDataFrame:
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
+
+    def test_to_json_only_geom_column(self):
+        text = self.df[["geometry"]].to_json()
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
@@ -433,6 +442,20 @@ class TestDataFrame:
             elif props["BoroName"] == "Bronx":
                 assert np.isnan(props["Shape_Leng"])
                 assert "Shape_Area" in props
+
+    def test_to_json_drop_id(self):
+        text = self.df.to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
+
+    def test_to_json_drop_id_only_geom_column(self):
+        text = self.df[["geometry"]].to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
 
     def test_copy(self):
         df2 = self.df.copy()
