@@ -128,3 +128,66 @@ def test_dissolve_none_mean(nybb_polydf):
         crs=nybb_polydf.crs,
     )
     assert_frame_equal(expected, test, check_column_type=False)
+
+
+def test_dissolve_categorical():
+    df = pd.DataFrame(
+        {
+            "cat": ["a", "a", "b", "b"],
+            "noncat": [1, 1, 1, 2],
+            "to_agg": [1, 2, 3, 4],
+            "geometry": ["POINT (0 0)", "POINT (1 1)", "POINT (2 2)", "POINT (3 3)"],
+        }
+    ).astype({"cat": "category"})
+    gdf = geopandas.GeoDataFrame(
+        df, geometry=geopandas.array.from_wkt(df["geometry"].values)
+    )
+
+    # when observed=False we get an additional observation
+    # that wasn't in the original data
+    expected_df_observed_false = (
+        pd.DataFrame(
+            {
+                "cat": ["a", "a", "b", "b"],
+                "noncat": [1, 2, 1, 2],
+                "geometry": [
+                    "MULTIPOINT (0 0, 1 1)",
+                    None,
+                    "POINT (2 2)",
+                    "POINT (3 3)",
+                ],
+                "to_agg": [1, None, 3, 4],
+            }
+        )
+        .astype({"cat": "category"})
+        .set_index(["cat", "noncat"])
+    )
+    expected_gdf_observed_false = geopandas.GeoDataFrame(
+        expected_df_observed_false,
+        geometry=geopandas.array.from_wkt(
+            expected_df_observed_false["geometry"].values
+        ),
+    )
+
+    # when observed=True we do not get any additional observations
+    expected_df_observed_true = (
+        pd.DataFrame(
+            {
+                "cat": ["a", "b", "b"],
+                "noncat": [1, 1, 2],
+                "geometry": ["MULTIPOINT (0 0, 1 1)", "POINT (2 2)", "POINT (3 3)"],
+                "to_agg": [1, 3, 4],
+            }
+        )
+        .astype({"cat": "category"})
+        .set_index(["cat", "noncat"])
+    )
+    expected_gdf_observed_true = geopandas.GeoDataFrame(
+        expected_df_observed_true,
+        geometry=geopandas.array.from_wkt(expected_df_observed_true["geometry"].values),
+    )
+
+    assert_frame_equal(expected_gdf_observed_false, gdf.dissolve(["cat", "noncat"]))
+    assert_frame_equal(
+        expected_gdf_observed_true, gdf.dissolve(["cat", "noncat"], observed=True)
+    )
