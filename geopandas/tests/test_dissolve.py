@@ -3,6 +3,7 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
+from geopandas._compat import PANDAS_GE_025
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -130,6 +131,9 @@ def test_dissolve_none_mean(nybb_polydf):
     assert_frame_equal(expected, test, check_column_type=False)
 
 
+@pytest.mark.skipif(
+    not PANDAS_GE_025, "'observed' param behavior changed in pandas 0.25.0"
+)
 def test_dissolve_categorical():
     df = pd.DataFrame(
         {
