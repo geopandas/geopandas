@@ -132,7 +132,7 @@ def test_dissolve_none_mean(nybb_polydf):
 
 
 @pytest.mark.skipif(
-    not PANDAS_GE_025, "'observed' param behavior changed in pandas 0.25.0"
+    not PANDAS_GE_025, reason="'observed' param behavior changed in pandas 0.25.0"
 )
 def test_dissolve_categorical():
     df = pd.DataFrame(
