@@ -1336,7 +1336,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             If True: only show observed values for categorical groupers.
             If False: show all values for categorical groupers.
 
-            .. versionchanged:: 0.9.0
+            .. versionadded:: 0.9.0
 
         Returns
         -------
