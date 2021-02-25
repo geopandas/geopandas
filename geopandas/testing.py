@@ -133,15 +133,58 @@ def assert_geoseries_equal(
     if not check_crs:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "CRS mismatch", UserWarning)
-            if check_less_precise:
-                assert geom_almost_equals(left, right)
-            else:
-                assert geom_equals(left, right)
+            _check_equality(left, right, check_less_precise)
     else:
-        if check_less_precise:
-            assert geom_almost_equals(left, right)
-        else:
-            assert geom_equals(left, right)
+        _check_equality(left, right, check_less_precise)
+
+
+def _truncated_string(geom):
+    """Truncated WKT repr of geom"""
+    s = str(geom)
+    if len(s) > 100:
+        return s[:100] + "..."
+    else:
+        return s
+
+
+def _check_equality(left, right, check_less_precise):
+    assert_error_message = (
+        "{0} out of {1} geometries are not {3}equal.\n"
+        "Indices where geometries are not {3}equal: {2} \n"
+        "The first not {3}equal geometry:\n"
+        "Left: {4}\n"
+        "Right: {5}\n"
+    )
+    if check_less_precise:
+        precise = "almost "
+        if not geom_almost_equals(left, right):
+            unequal_left_geoms = left[~left.geom_almost_equals(right)]
+            unequal_right_geoms = right[~left.geom_almost_equals(right)]
+            raise AssertionError(
+                assert_error_message.format(
+                    len(unequal_left_geoms),
+                    len(left),
+                    unequal_left_geoms.index.to_list(),
+                    precise,
+                    _truncated_string(unequal_left_geoms.iloc[0]),
+                    _truncated_string(unequal_right_geoms.iloc[0]),
+                )
+            )
+    else:
+        precise = ""
+        if not geom_equals(left, right):
+            unequal_left_geoms = left[~left.geom_almost_equals(right)]
+            unequal_right_geoms = right[~left.geom_almost_equals(right)]
+            raise AssertionError(
+                assert_error_message.format(
+                    len(unequal_left_geoms),
+                    len(left),
+                    unequal_left_geoms.index.to_list(),
+                    precise,
+                    _truncated_string(unequal_left_geoms.iloc[0]),
+                    _truncated_string(unequal_right_geoms.iloc[0]),
+                )
+            )
 
 
 def assert_geodataframe_equal(
@@ -212,10 +255,7 @@ def assert_geodataframe_equal(
         "GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n"
         "Left columns: {lcols!r}, right columns: {rcols!r}"
     ).format(
-        lshape=left.shape,
-        rshape=right.shape,
-        lcols=left.columns,
-        rcols=right.columns,
+        lshape=left.shape, rshape=right.shape, lcols=left.columns, rcols=right.columns
     )
 
     if check_like:
