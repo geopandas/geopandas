@@ -51,6 +51,7 @@ def geom_almost_equals(this, that):
     this, that : arrays of Geo objects (or anything that has an `is_empty`
                  property)
     """
+
     return (
         this.geom_almost_equals(that)
         | (this.is_empty & that.is_empty)
