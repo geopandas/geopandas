@@ -412,10 +412,14 @@ class TestPygeosInterface:
 
         test_geo = test_df.geometry.values.data[0]
         res = tree_df.sindex.query(test_geo, sort=sort)
+
+        # asserting the same elements
+        assert sorted(res) == sorted(expected)
+        # asserting the exact array can fail if sort=False
         try:
             assert_array_equal(res, expected)
         except AssertionError as e:
-            if not compat.USE_PYGEOS and sort is False:
+            if sort is False:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
@@ -649,10 +653,15 @@ class TestPygeosInterface:
         test_df = geopandas.GeoDataFrame(geometry=test_polys)
 
         res = tree_df.sindex.query_bulk(test_df.geometry, sort=sort)
+
+        # asserting the same elements
+        assert sorted(res[0]) == sorted(expected[0])
+        assert sorted(res[1]) == sorted(expected[1])
+        # asserting the exact array can fail if sort=False
         try:
             assert_array_equal(res, expected)
         except AssertionError as e:
-            if not compat.USE_PYGEOS and sort is False:
+            if sort is False:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"

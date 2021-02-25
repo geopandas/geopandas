@@ -47,7 +47,7 @@ Do you prefer ``pip install`` or installation from source? Or specific version? 
 
 ```{container} button
 
-{doc}`Installation <getting_started/install>` {doc}`Tutorial <getting_started/introduction>`
+{doc}`Installation <getting_started/install>` {doc}`Introduction <getting_started/introduction>`
 {doc}`User Guide <docs/user_guide>` {doc}`API Reference <docs/reference>`
 ```
 

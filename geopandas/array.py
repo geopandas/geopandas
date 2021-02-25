@@ -233,6 +233,9 @@ def points_from_xy(x, y, z=None, crs=None):
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
+    In case of geographic coordinates, it is assumed that longitude is captured by
+    ``x`` coordinates and latitude by ``y``.
+
     Parameters
     ----------
     x, y, z : iterable
@@ -254,6 +257,16 @@ def points_from_xy(x, y, z=None, crs=None):
     >>> geometry = geopandas.points_from_xy(df['x'], df['y'], df['z'])
     >>> gdf = geopandas.GeoDataFrame(
     ...     df, geometry=geopandas.points_from_xy(df['x'], df['y']))
+
+    Having geographic coordinates:
+
+    >>> df = pd.DataFrame({'longitude': [-140, 0, 123], 'latitude': [-65, 1, 48]})
+    >>> df
+       longitude  latitude
+    0       -140       -65
+    1          0         1
+    2        123        48
+    >>> geometry = geopandas.points_from_xy(df.longitude, df.latitude, crs="EPSG:4326")
 
     Returns
     -------
@@ -715,6 +728,15 @@ class GeometryArray(ExtensionArray):
             return vectorized.get_y(self.data)
         else:
             message = "y attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
+    def z(self):
+        """Return the z location of point geometries in a GeoSeries"""
+        if (self.geom_type[~self.isna()] == "Point").all():
+            return vectorized.get_z(self.data)
+        else:
+            message = "z attribute access only provided for Point geometries"
             raise ValueError(message)
 
     @property

@@ -17,6 +17,7 @@ General methods and attributes
    :toctree: api/
 
    GeoSeries.area
+   GeoSeries.boundary
    GeoSeries.bounds
    GeoSeries.total_bounds
    GeoSeries.length
@@ -27,6 +28,7 @@ General methods and attributes
    GeoSeries.interiors
    GeoSeries.x
    GeoSeries.y
+   GeoSeries.z
 
 Unary predicates
 ----------------
@@ -47,11 +49,12 @@ Binary Predicates
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.geom_almost_equals
    GeoSeries.contains
    GeoSeries.crosses
    GeoSeries.disjoint
    GeoSeries.geom_equals
+   GeoSeries.geom_almost_equals
+   GeoSeries.geom_equals_exact
    GeoSeries.intersects
    GeoSeries.overlaps
    GeoSeries.touches
@@ -153,6 +156,14 @@ Spatial index
 
    GeoSeries.sindex
    GeoSeries.has_sindex
+
+Indexing
+--------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.cx
 
 Interface
 ---------

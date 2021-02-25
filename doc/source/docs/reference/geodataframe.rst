@@ -75,6 +75,14 @@ Spatial index
    GeoDataFrame.sindex
    GeoDataFrame.has_sindex
 
+Indexing
+--------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoDataFrame.cx
+
 Interface
 ---------
 
