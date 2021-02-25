@@ -51,12 +51,8 @@ def geom_almost_equals(this, that):
     this, that : arrays of Geo objects (or anything that has an `is_empty`
                  property)
     """
-    # First test `geom_equals` as the assumption is that if two geometries are equal,
-    # then it should hold they are also almost equal
-    # see https://github.com/geopandas/geopandas/pull/1802#issuecomment-769680359
     return (
-        this.geom_equals(that)
-        | this.geom_almost_equals(that)
+        this.geom_almost_equals(that)
         | (this.is_empty & that.is_empty)
         | (_isna(this) & _isna(that))
     ).all()
@@ -88,8 +84,7 @@ def assert_geoseries_equal(
         Check that both are same type (*and* are GeoSeries). If False,
         will attempt to convert both into GeoSeries.
     check_less_precise : bool, default False
-        If True, use geom_equals and geom_almost_equals combined. if False,
-        use geom_equals only.
+        If True, use geom_almost_equals. if False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
@@ -177,8 +172,7 @@ def assert_geodataframe_equal(
     check_like : bool, default False
         If true, ignore the order of rows & columns
     check_less_precise : bool, default False
-        If True, use geom_equals and geom_almost_equals combined. if False,
-        use geom_equals only.
+        If True, use geom_almost_equals. if False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
