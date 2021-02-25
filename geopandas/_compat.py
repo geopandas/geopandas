@@ -5,6 +5,7 @@ import os
 import warnings
 
 import pandas as pd
+import pyproj
 import shapely
 import shapely.geos
 
@@ -202,3 +203,9 @@ try:
     HAS_RTREE = True
 except ImportError:
     HAS_RTREE = False
+
+# -----------------------------------------------------------------------------
+# pyproj compat
+# -----------------------------------------------------------------------------
+
+PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")

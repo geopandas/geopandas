@@ -1,4 +1,3 @@
-from distutils.version import LooseVersion
 import json
 import os
 import random
@@ -19,17 +18,14 @@ from shapely.geometry import (
     Polygon,
 )
 from shapely.geometry.base import BaseGeometry
-import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame
+from geopandas._compat import PYPROJ_LT_3
 from geopandas.array import GeometryArray, GeometryDtype
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
 import pytest
-
-
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 
 
 class TestSeries:
