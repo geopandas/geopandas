@@ -130,11 +130,11 @@ def assert_geoseries_equal(
 
 def check_equality(left, right, check_less_precise):
     assert_error_message = (
-        "{} out of {} geometries are not equal.\n"
-        "Indices where geometries are not equal: {} \n"
-        "The first not {}equal geometry:\n"
-        "Left: {}\n"
-        "Right: {}\n"
+        "{0} out of {1} geometries are not {3}equal.\n"
+        "Indices where geometries are not {3}equal: {2} \n"
+        "The first not {3}equal geometry:\n"
+        "Left: {4}\n"
+        "Right: {5}\n"
     )
     if check_less_precise:
         precise = "almost "
