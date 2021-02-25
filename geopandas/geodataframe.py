@@ -11,7 +11,7 @@ from shapely.geometry.base import BaseGeometry
 
 from pyproj import CRS
 
-from geopandas.array import GeometryArray, from_shapely, GeometryDtype
+from geopandas.array import GeometryArray, from_shapely, GeometryDtype, CRSLocal
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
@@ -84,7 +84,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     GeoSeries : Series object designed to store shapely geometry objects
     """
 
-    _metadata = ["_crs", "_geometry_column_name"]
+    _metadata = ["_crs_wkt", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
@@ -94,7 +94,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
-        self._crs = CRS.from_user_input(crs) if crs else None
+        self._crs_wkt = CRS.from_user_input(crs).to_wkt() if crs else None
+        self._local = CRSLocal()
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -272,7 +273,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if not crs:
             level_crs = getattr(level, "crs", None)
-            crs = level_crs if level_crs is not None else self._crs
+            crs = level_crs if level_crs is not None else self._crs_wkt
 
         if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
@@ -370,11 +371,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
-        return self._crs
+        if self._local.crs is None and self._crs_wkt is not None:
+            self._local.crs = CRS.from_user_input(self._crs_wkt)
+        return self._local.crs
 
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
+        self._local.crs = None  # set to None to be re-loaded
         if self._geometry_column_name not in self:
             warnings.warn(
                 "Assigning CRS to a GeoDataFrame without a geometry column is now "
@@ -382,27 +386,51 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 FutureWarning,
                 stacklevel=4,
             )
-            self._crs = None if not value else CRS.from_user_input(value)
+            self._crs_wkt = None if not value else CRS.from_user_input(value).to_wkt()
         else:
             if hasattr(self.geometry.values, "crs"):
                 self.geometry.values.crs = value
-                self._crs = self.geometry.values.crs
+                self._crs_wkt = (
+                    None
+                    if not self.geometry.values.crs
+                    else self.geometry.values.crs.to_wkt()
+                )
             else:
                 # column called 'geometry' without geometry
-                self._crs = None if not value else CRS.from_user_input(value)
+                self._crs_wkt = (
+                    None if not value else CRS.from_user_input(value).to_wkt()
+                )
+
+    def __getstate__(self):
+        state = super().__getstate__().copy()
+        state.pop("_local", None)
+        return state
 
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
         if isinstance(state, dict):
             if "_metadata" in state and "crs" in state["_metadata"]:
                 metadata = state["_metadata"]
-                metadata[metadata.index("crs")] = "_crs"
-            if "crs" in state and "_crs" not in state:
+                metadata[metadata.index("crs")] = "_crs_wkt"
+            if "_metadata" in state and "_crs" in state["_metadata"]:
+                metadata = state["_metadata"]
+                metadata[metadata.index("_crs")] = "_crs_wkt"
+            if "crs" in state and "_crs_wkt" not in state:
                 crs = state.pop("crs")
-                state["_crs"] = CRS.from_user_input(crs) if crs is not None else crs
+                state["_crs_wkt"] = (
+                    CRS.from_user_input(crs).to_wkt() if crs is not None else None
+                )
+            if "_crs" in state and "_crs_wkt" not in state:
+                crs = state.pop("_crs")
+                state["_crs_wkt"] = (
+                    CRS.from_user_input(crs).to_wkt() if crs is not None else None
+                )
+            if "_crs_wkt" not in state:
+                state["_crs_wkt"] = None
 
         super().__setstate__(state)
 
+        self._local = CRSLocal()
         # for some versions that didn't yet have CRS at array level -> crs is set
         # at GeoDataFrame level with '_crs' (and not 'crs'), so without propagating
         # to the GeoSeries/GeometryArray

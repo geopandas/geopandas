@@ -3,6 +3,7 @@ import numbers
 import operator
 import warnings
 import inspect
+import threading
 
 import numpy as np
 import pandas as pd
@@ -28,6 +29,11 @@ except ImportError:
 from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
+
+
+class CRSLocal(threading.local):
+    def __init__(self):
+        self.crs = None  # Initialises in each thread
 
 
 class GeometryDtype(ExtensionDtype):
@@ -299,7 +305,8 @@ class GeometryArray(ExtensionArray):
             )
         self.data = data
 
-        self._crs = None
+        self._local = CRSLocal()
+        self._crs_wkt = None
         self.crs = crs
         self._sindex = None
 
@@ -345,12 +352,15 @@ class GeometryArray(ExtensionArray):
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
         """
-        return self._crs
+        if self._local.crs is None and self._crs_wkt is not None:
+            self._local.crs = CRS.from_user_input(self._crs_wkt)
+        return self._local.crs
 
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self._crs = None if not value else CRS.from_user_input(value)
+        self._crs_wkt = None if not value else CRS.from_user_input(value).to_wkt()
+        self._local.crs = None  # set to None to be re-loaded
 
     def check_geographic_crs(self, stacklevel):
         """Check CRS and warn if the planar operation is done in a geographic CRS"""
@@ -432,21 +442,24 @@ class GeometryArray(ExtensionArray):
 
     def __getstate__(self):
         if compat.USE_PYGEOS:
-            return (pygeos.to_wkb(self.data), self._crs)
+            return (pygeos.to_wkb(self.data), self._crs_wkt)
         else:
-            return self.__dict__
+            state = self.__dict__.copy()
+            state.pop("_local", None)
+            return state
 
     def __setstate__(self, state):
         if compat.USE_PYGEOS:
             geoms = pygeos.from_wkb(state[0])
-            self._crs = state[1]
+            self._crs_wkt = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
         else:
-            if "_crs" not in state:
-                state["_crs"] = None
+            if "_crs_wkt" not in state:
+                state["_crs_wkt"] = None
             self.__dict__.update(state)
+        self._local = CRSLocal()
 
     # -------------------------------------------------------------------------
     # Geometry related methods
@@ -777,7 +790,7 @@ class GeometryArray(ExtensionArray):
 
     def copy(self, *args, **kwargs):
         # still taking args/kwargs for compat with pandas 0.24
-        return GeometryArray(self.data.copy(), crs=self._crs)
+        return GeometryArray(self.data.copy(), crs=self._crs_wkt)
 
     def take(self, indices, allow_fill=False, fill_value=None):
         from pandas.api.extensions import take

@@ -144,7 +144,6 @@ class GeoSeries(GeoPandasBase, Series):
     def __new__(cls, data=None, index=None, crs=None, **kwargs):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
-
         if hasattr(data, "crs") and crs:
             if not data.crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
