@@ -7,6 +7,7 @@ import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import GeometryDtype
+from geopandas import _vectorized
 
 
 def _isna(this):
@@ -70,6 +71,7 @@ def assert_geoseries_equal(
     check_less_precise=False,
     check_geom_type=False,
     check_crs=True,
+    normalize=False,
 ):
     """
     Test util for checking that two GeoSeries are equal.
@@ -93,6 +95,10 @@ def assert_geoseries_equal(
     check_crs: bool, default True
         If `check_series_type` is True, then also check that the
         crs matches.
+    normalize: bool, default False
+        If True, normalize the geometries before comparing equality.
+        Typically useful with ``check_less_precise=True``, which uses
+        ``geom_almost_equals`` and requires exact coordinate order.
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
@@ -124,6 +130,10 @@ def assert_geoseries_equal(
             right.type,
         )
 
+    if normalize:
+        left = GeoSeries(_vectorized.normalize(left.array.data))
+        right = GeoSeries(_vectorized.normalize(right.array.data))
+
     if not check_crs:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "CRS mismatch", UserWarning)
@@ -149,6 +159,7 @@ def assert_geodataframe_equal(
     check_less_precise=False,
     check_geom_type=False,
     check_crs=True,
+    normalize=False,
 ):
     """
     Check that two GeoDataFrames are equal/
@@ -173,6 +184,10 @@ def assert_geodataframe_equal(
     check_crs: bool, default True
         If `check_frame_type` is True, then also check that the
         crs matches.
+    normalize: bool, default False
+        If True, normalize the geometries before comparing equality.
+        Typically useful with ``check_less_precise=True``, which uses
+        ``geom_almost_equals`` and requires exact coordinate order.
     """
     try:
         # added from pandas 0.20
@@ -222,6 +237,7 @@ def assert_geodataframe_equal(
             assert_geoseries_equal(
                 left[col],
                 right[col],
+                normalize=normalize,
                 check_dtype=check_dtype,
                 check_less_precise=check_less_precise,
                 check_geom_type=check_geom_type,

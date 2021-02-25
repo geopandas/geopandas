@@ -308,6 +308,18 @@ class TestPointPlotting:
             ax = s.plot()
             assert len(ax.collections) == 1
 
+        # more complex case with GEOMETRYCOLLECTION EMPTY, POINT EMPTY and NONE
+        poly = Polygon([(-1, -1), (-1, 2), (2, 2), (2, -1), (-1, -1)])
+        point = Point(0, 1)
+        point_ = Point(10, 10)
+        empty_point = Point()
+
+        gdf = GeoDataFrame(geometry=[point, empty_point, point_])
+        gdf["geometry"] = gdf.intersection(poly)
+        gdf.loc[3] = [None]
+        ax = gdf.plot()
+        assert len(ax.collections) == 1
+
     def test_multipoints(self):
 
         # MultiPoints
@@ -1042,9 +1054,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"[       140.00,    5217064.00]",
-            u"(   5217064.00,   19532732.33]",
-            u"(  19532732.33, 1379302771.00]",
+            u"       140.00,    5217064.00",
+            u"   5217064.00,   19532732.33",
+            u"  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -1077,7 +1089,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1090,7 +1102,20 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
+        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        assert labels == expected
+
+    def test_interval(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"interval": True},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -1113,7 +1138,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
+        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1490,7 +1515,10 @@ def test_polygon_patch():
     patch = _PolygonPatch(polygon)
     assert isinstance(patch, PathPatch)
     path = patch.get_path()
-    assert len(path.vertices) == len(path.codes) == 198
+    if compat.GEOS_GE_390:
+        assert len(path.vertices) == len(path.codes) == 195
+    else:
+        assert len(path.vertices) == len(path.codes) == 198
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
