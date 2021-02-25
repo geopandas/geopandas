@@ -133,12 +133,21 @@ def assert_geoseries_equal(
     if not check_crs:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "CRS mismatch", UserWarning)
-            check_equality(left, right, check_less_precise)
+            _check_equality(left, right, check_less_precise)
     else:
-        check_equality(left, right, check_less_precise)
+        _check_equality(left, right, check_less_precise)
 
 
-def check_equality(left, right, check_less_precise):
+def _truncated_string(geom):
+    """Truncated WKT repr of geom"""
+    s = str(geom)
+    if len(s) > 100:
+        return s[:100] + "..."
+    else:
+        return s
+
+
+def _check_equality(left, right, check_less_precise):
     assert_error_message = (
         "{0} out of {1} geometries are not {3}equal.\n"
         "Indices where geometries are not {3}equal: {2} \n"
@@ -157,8 +166,8 @@ def check_equality(left, right, check_less_precise):
                     len(left),
                     unequal_left_geoms.index.to_list(),
                     precise,
-                    unequal_left_geoms.iloc[0],
-                    unequal_right_geoms.iloc[0],
+                    _truncated_string(unequal_left_geoms.iloc[0]),
+                    _truncated_string(unequal_right_geoms.iloc[0]),
                 )
             )
     else:
@@ -172,8 +181,8 @@ def check_equality(left, right, check_less_precise):
                     len(left),
                     unequal_left_geoms.index.to_list(),
                     precise,
-                    unequal_left_geoms.iloc[0],
-                    unequal_right_geoms.iloc[0],
+                    _truncated_string(unequal_left_geoms.iloc[0]),
+                    _truncated_string(unequal_right_geoms.iloc[0]),
                 )
             )
 
