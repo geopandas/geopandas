@@ -1362,6 +1362,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
 
+            This parameter is not supported for pandas < 1.1.0.
+            A warning will be emitted for earlier pandas versions
+            if a non-default value is given for this parameter.
+
             .. versionadded:: 0.9.0
 
         Returns
@@ -1398,25 +1402,27 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
+        groupby_kwargs = dict(
+            by=by, level=level, sort=sort, observed=observed, dropna=dropna
+        )
+        if not compat.PANDAS_GE_11:
+            groupby_kwargs.pop("dropna")
+
+            if not dropna:  # If they passed a non-default dropna value
+                warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
+
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(
-            by=by, level=level, sort=sort, observed=observed, dropna=dropna
-        ).agg(aggfunc)
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
 
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(
-            by=by,
-            group_keys=False,
-            level=level,
-            sort=sort,
-            observed=observed,
-            dropna=dropna,
-        )[self.geometry.name].agg(merge_geometries)
+        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
+            merge_geometries
+        )
 
         # Aggregate
         aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)

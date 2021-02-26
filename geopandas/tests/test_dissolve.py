@@ -3,7 +3,7 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_025
+from geopandas import _compat as compat
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -202,7 +202,8 @@ def test_dissolve_sort():
 
 
 @pytest.mark.skipif(
-    not PANDAS_GE_025, reason="'observed' param behavior changed in pandas 0.25.0"
+    not compat.PANDAS_GE_025,
+    reason="'observed' param behavior changed in pandas 0.25.0",
 )
 def test_dissolve_categorical():
     gdf = geopandas.GeoDataFrame(
@@ -252,6 +253,9 @@ def test_dissolve_categorical():
     )
 
 
+@pytest.mark.skipif(
+    not compat.PANDAS_GE_11, reason="dropna groupby kwarg added in pandas 1.1.0"
+)
 def test_dissolve_dropna():
     gdf = geopandas.GeoDataFrame(
         {
@@ -279,3 +283,17 @@ def test_dissolve_dropna():
 
     assert_frame_equal(expected_with_na, gdf.dissolve("a", dropna=False))
     assert_frame_equal(expected_no_na, gdf.dissolve("a"))
+
+
+@pytest.mark.skipif(
+    compat.PANDAS_GE_11, reason="dropna warning is only emitted if pandas < 1.1.0"
+)
+def test_dissolve_dropna_warn(nybb_polydf):
+    # No warning with default params
+    _ = nybb_polydf.dissolve()
+
+    # Warning is emitted with non-default dropna value
+    with pytest.warns(
+        UserWarning, match="dropna kwarg is not supported for pandas < 1.1.0"
+    ):
+        nybb_polydf.dissolve(dropna=False)
