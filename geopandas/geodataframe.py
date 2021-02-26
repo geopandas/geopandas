@@ -1313,7 +1313,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return self
 
     def dissolve(
-        self, by=None, aggfunc="first", as_index=True, sort=True, observed=False
+        self,
+        by=None,
+        aggfunc="first",
+        as_index=True,
+        sort=True,
+        observed=False,
+        dropna=True,
     ):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1343,6 +1349,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             This only applies if any of the groupers are Categoricals.
             If True: only show observed values for categorical groupers.
             If False: show all values for categorical groupers.
+
+            .. versionadded:: 0.9.0
+        dropna : bool, default True
+            If True, and if group keys contain NA values, NA values
+            together with row/column will be dropped. If False, NA
+            values will also be treated as the key in groups.
 
             .. versionadded:: 0.9.0
 
@@ -1382,16 +1394,18 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(by=by, sort=sort, observed=observed).agg(aggfunc)
+        aggregated_data = data.groupby(
+            by=by, sort=sort, observed=observed, dropna=dropna
+        ).agg(aggfunc)
 
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(by=by, group_keys=False, sort=sort, observed=observed)[
-            self.geometry.name
-        ].agg(merge_geometries)
+        g = self.groupby(
+            by=by, group_keys=False, sort=sort, observed=observed, dropna=dropna
+        )[self.geometry.name].agg(merge_geometries)
 
         # Aggregate
         aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)

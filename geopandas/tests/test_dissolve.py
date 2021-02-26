@@ -204,3 +204,32 @@ def test_dissolve_categorical():
     assert_frame_equal(
         expected_gdf_observed_true, gdf.dissolve(["cat", "noncat"], observed=True)
     )
+
+
+def test_dissolve_dropna():
+    gdf = geopandas.GeoDataFrame(
+        {
+            "a": [1, 1, None],
+            "geometry": geopandas.array.from_wkt(
+                ["POINT (0 0)", "POINT (1 1)", "POINT (2 2)"]
+            ),
+        }
+    )
+
+    expected_with_na = geopandas.GeoDataFrame(
+        {
+            "a": [1.0, np.nan],
+            "geometry": geopandas.array.from_wkt(
+                ["MULTIPOINT (0 0, 1 1)", "POINT (2 2)"]
+            ),
+        }
+    ).set_index("a")
+    expected_no_na = geopandas.GeoDataFrame(
+        {
+            "a": [1.0],
+            "geometry": geopandas.array.from_wkt(["MULTIPOINT (0 0, 1 1)"]),
+        }
+    ).set_index("a")
+
+    assert_frame_equal(expected_with_na, gdf.dissolve("a", dropna=False))
+    assert_frame_equal(expected_no_na, gdf.dissolve("a"))
