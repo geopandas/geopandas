@@ -131,6 +131,30 @@ def test_dissolve_none_mean(nybb_polydf):
     assert_frame_equal(expected, test, check_column_type=False)
 
 
+def test_dissolve_sort():
+    gdf = geopandas.GeoDataFrame(
+        {
+            "a": [2, 1, 1],
+            "geometry": geopandas.array.from_wkt(
+                ["POINT (0 0)", "POINT (1 1)", "POINT (2 2)"]
+            ),
+        }
+    )
+
+    expected_unsorted = geopandas.GeoDataFrame(
+        {
+            "a": [2, 1],
+            "geometry": geopandas.array.from_wkt(
+                ["POINT (0 0)", "MULTIPOINT (1 1, 2 2)"]
+            ),
+        }
+    ).set_index("a")
+    expected_sorted = expected_unsorted.sort_index()
+
+    assert_frame_equal(expected_sorted, gdf.dissolve("a"))
+    assert_frame_equal(expected_unsorted, gdf.dissolve("a", sort=False))
+
+
 @pytest.mark.skipif(
     not PANDAS_GE_025, reason="'observed' param behavior changed in pandas 0.25.0"
 )

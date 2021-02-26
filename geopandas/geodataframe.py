@@ -1312,7 +1312,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return self
 
-    def dissolve(self, by=None, aggfunc="first", as_index=True, observed=False):
+    def dissolve(
+        self, by=None, aggfunc="first", as_index=True, sort=True, observed=False
+    ):
         """
         Dissolve geometries within `groupby` into single observation.
         This is accomplished by applying the `unary_union` method
@@ -1331,6 +1333,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             with each group. Passed to pandas `groupby.agg` method.
         as_index : boolean, default True
             If true, groupby columns become index of result.
+        sort : bool, default True
+            Sort group keys. Get better performance by turning this off.
+            Note this does not influence the order of observations within
+            each group. Groupby preserves the order of rows within each group.
+
+            .. versionadded:: 0.9.0
         observed : bool, default False
             This only applies if any of the groupers are Categoricals.
             If True: only show observed values for categorical groupers.
@@ -1374,14 +1382,14 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(by=by, observed=observed).agg(aggfunc)
+        aggregated_data = data.groupby(by=by, sort=sort, observed=observed).agg(aggfunc)
 
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(by=by, group_keys=False, observed=observed)[
+        g = self.groupby(by=by, group_keys=False, sort=sort, observed=observed)[
             self.geometry.name
         ].agg(merge_geometries)
 
