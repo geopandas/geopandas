@@ -30,12 +30,6 @@ from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
 
-class class_or_instancemethod(classmethod):
-    def __get__(self, instance, type_):
-        descr_get = super().__get__ if instance is None else self.__func__.__get__
-        return descr_get(instance, type_)
-
-
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = "geometry"
@@ -1083,12 +1077,47 @@ class GeometryArray(ExtensionArray):
     def nbytes(self):
         return self.data.nbytes
 
+    def shift(self, periods=1, fill_value=None):
+        """
+        Shift values by desired number.
+
+        Newly introduced missing values are filled with
+        ``self.dtype.na_value``.
+
+        Parameters
+        ----------
+        periods : int, default 1
+            The number of periods to shift. Negative values are allowed
+            for shifting backwards.
+
+        fill_value : object, optional (default None)
+            The scalar value to use for newly introduced missing values.
+            The default is ``self.dtype.na_value``.
+
+        Returns
+        -------
+        GeometryArray
+            Shifted.
+
+        Notes
+        -----
+        If ``self`` is empty or ``periods`` is 0, a copy of ``self`` is
+        returned.
+
+        If ``periods > len(self)``, then an array of size
+        len(self) is returned, with all values filled with
+        ``self.dtype.na_value``.
+        """
+        shifted = super(GeometryArray, self).shift(periods, fill_value)
+        shifted.crs = self.crs
+        return shifted
+
     # -------------------------------------------------------------------------
     # ExtensionArray specific
     # -------------------------------------------------------------------------
 
-    @class_or_instancemethod
-    def _from_sequence(cls_or_self, scalars, dtype=None, copy=False):
+    @classmethod
+    def _from_sequence(cls, scalars, dtype=None, copy=False):
         """
         Construct a new ExtensionArray from a sequence of scalars.
 
@@ -1110,9 +1139,7 @@ class GeometryArray(ExtensionArray):
         # GH 1413
         if isinstance(scalars, BaseGeometry):
             scalars = [scalars]
-
-        crs = None if isinstance(cls_or_self, type) else cls_or_self.crs
-        return from_shapely(scalars, crs=crs)
+        return from_shapely(scalars)
 
     def _values_for_factorize(self):
         # type: () -> Tuple[np.ndarray, Any]
