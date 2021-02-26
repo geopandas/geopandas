@@ -1317,6 +1317,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         by=None,
         aggfunc="first",
         as_index=True,
+        level=None,
         sort=True,
         observed=False,
         dropna=True,
@@ -1339,6 +1340,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             with each group. Passed to pandas `groupby.agg` method.
         as_index : boolean, default True
             If true, groupby columns become index of result.
+        level: int or str or sequence of int or sequence of str, default None
+            If the axis is a MultiIndex (hierarchical), group by a
+            particular level or levels.
+
+            .. versionadded:: 0.9.0
         sort : bool, default True
             Sort group keys. Get better performance by turning this off.
             Note this does not influence the order of observations within
@@ -1389,13 +1395,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         """
 
-        if by is None:
+        if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(
-            by=by, sort=sort, observed=observed, dropna=dropna
+            by=by, level=level, sort=sort, observed=observed, dropna=dropna
         ).agg(aggfunc)
 
         # Process spatial component
@@ -1404,7 +1410,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             return merged_geom
 
         g = self.groupby(
-            by=by, group_keys=False, sort=sort, observed=observed, dropna=dropna
+            by=by,
+            group_keys=False,
+            level=level,
+            sort=sort,
+            observed=observed,
+            dropna=dropna,
         )[self.geometry.name].agg(merge_geometries)
 
         # Aggregate
