@@ -248,7 +248,7 @@ install *GeoPandas*) by typing::
 -----------------------------
 
 *GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are made by
-modifying the appropriate file in the `source` folder within ``doc``. *GeoPandas* docs use
+modifying the appropriate file in the ``source`` folder within ``doc``. *GeoPandas* docs use
 mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
@@ -273,7 +273,7 @@ specification in the ``doc`` folder. You may need to register Jupyter kernel as
     python -m ipykernel install --user --name geopandas_docs
     make html
 
-For minor updates, you can skip whole ``make html`` part as reStructuredText and MyST
+For minor updates, you can skip the ``make html`` part as reStructuredText and MyST
 syntax are usually quite straightforward.
 
 
