@@ -245,7 +245,7 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 
     gdf = world.head(10)
     @savefig pandas_line_plot.png
-    gdf.plot(kind='line')
+    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est")
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
 
