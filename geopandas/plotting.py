@@ -115,7 +115,7 @@ def _PolygonPatch(polygon, **kwargs):
 
     path = Path.make_compound_path(
         Path(np.asarray(polygon.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors]
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
     )
     return PathPatch(path, **kwargs)
 
@@ -254,7 +254,7 @@ def _plot_point_collection(
     vmax=None,
     marker="o",
     markersize=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -488,7 +488,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
-    **style_kwds
+    **style_kwds,
 ):
     """
     Plot a GeoDataFrame.
@@ -508,6 +508,21 @@ def plot_dataframe(
         If np.array or pd.Series are used then it must have same length as
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
+    kind: str
+        The kind of plots to produce:
+         - 'geo': Map (default)
+         Pandas Kinds
+         - 'line' : line plot
+         - 'bar' : vertical bar plot
+         - 'barh' : horizontal bar plot
+         - 'hist' : histogram
+         - 'box' : BoxPlot
+         - 'kde' : Kernel Density Estimation plot
+         - 'density' : same as 'kde'
+         - 'area' : area plot
+         - 'pie' : pie plot
+         - 'scatter' : scatter plot
+         - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -683,7 +698,7 @@ GON (((-122.84000 49.00000, -120.0000...
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
-            **style_kwds
+            **style_kwds,
         )
 
     # To accept pd.Series and np.arrays as column
@@ -820,7 +835,7 @@ GON (((-122.84000 49.00000, -120.0000...
             vmax=mx,
             markersize=markersize,
             cmap=cmap,
-            **style_kwds
+            **style_kwds,
         )
 
     if missing_kwds is not None and not expl_series[nan_idx].empty:
@@ -897,6 +912,30 @@ GON (((-122.84000 49.00000, -120.0000...
 
     plt.draw()
     return ax
+
+
+if geopandas._compat.PANDAS_GE_025:
+    from pandas.plotting import PlotAccessor
+
+    class GeoplotAccessor(PlotAccessor):
+
+        __doc__ = plot_dataframe.__doc__
+        _pandas_kinds = PlotAccessor._all_kinds
+
+        def __call__(self, *args, **kwargs):
+            data = self._parent.copy()
+            kind = kwargs.pop("kind", "geo")
+            if kind == "geo":
+                return plot_dataframe(data, *args, **kwargs)
+            if kind in self._pandas_kinds:
+                # Access pandas plots
+                return PlotAccessor(data)(kind=kind, **kwargs)
+            else:
+                # raise error
+                raise ValueError(f"{kind} is not a valid plot kind")
+
+        def geo(self, *args, **kwargs):
+            return self(kind="geo", *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):

@@ -1312,20 +1312,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return self
 
-    def plot(self, *args, **kwargs):
-        """Generate a plot of the geometries in the ``GeoDataFrame``.
-
-        If the ``column`` parameter is given, colors plot according to values
-        in that column, otherwise calls ``GeoSeries.plot()`` on the
-        ``geometry`` column.
-
-        Wraps the ``plot_dataframe()`` function, and documentation is copied
-        from there.
-        """
-        return plot_dataframe(self, *args, **kwargs)
-
-    plot.__doc__ = plot_dataframe.__doc__
-
     def dissolve(self, by=None, aggfunc="first", as_index=True):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1616,6 +1602,24 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             stacklevel=2,
         )
         return self.geometry.difference(other)
+
+    if compat.PANDAS_GE_025:
+        from pandas.core.accessor import CachedAccessor
+
+        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+    else:
+
+        def plot(self, *args, **kwargs):
+            """Generate a plot of the geometries in the ``GeoDataFrame``.
+            If the ``column`` parameter is given, colors plot according to values
+            in that column, otherwise calls ``GeoSeries.plot()`` on the
+            ``geometry`` column.
+            Wraps the ``plot_dataframe()`` function, and documentation is copied
+            from there.
+            """
+            return plot_dataframe(self, *args, **kwargs)
+
+    plot.__doc__ = plot_dataframe.__doc__
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
