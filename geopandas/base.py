@@ -2578,6 +2578,55 @@ GeometryCollection
 
     @property
     def sindex(self):
+        """Generate the spatial index
+
+        Creates R-tree spatial index based on ``pygeos.STRtree`` or
+        ``rtree.index.Index``.
+
+        Note that the  spatial index may not be fully
+        initialized until the first use.
+
+        Examples
+        --------
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(5), range(5)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        dtype: geometry
+
+        Query the spatial index with a single geometry based on the bounding box:
+
+        >>> s.sindex.query(box(1, 1, 3, 3))
+        array([1, 2, 3])
+
+        Query the spatial index with a single geometry based on the predicate:
+
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="contains")
+        array([2])
+
+        Query the spatial index with an array of geometries based on the bounding
+        box:
+
+        >>> s2 = geopandas.GeoSeries([box(1, 1, 3, 3), box(4, 4, 5, 5)])
+        >>> s2
+        0    POLYGON ((3.00000 1.00000, 3.00000 3.00000, 1....
+        1    POLYGON ((5.00000 4.00000, 5.00000 5.00000, 4....
+        dtype: geometry
+
+        >>> s.sindex.query_bulk(s2)
+        array([[0, 0, 0, 1],
+               [1, 2, 3, 4]])
+
+        Query the spatial index with an array of geometries based on the predicate:
+
+        >>> s.sindex.query_bulk(s2, predicate="contains")
+        array([[0],
+               [2]])
+        """
         return self.geometry.values.sindex
 
     @property
