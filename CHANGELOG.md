@@ -12,6 +12,10 @@ New features and improvements:
 - The `geopandas.read_file` function now accepts more general
   file-like objects (e.g. `fsspec` open file objects). It will now also
   automatically recognize zipped files (#1535).
+- The `GeoDataFrame.plot()` method now provides access to the pandas plotting
+  functionality for the non-geometry columns, either using the `kind` keyword
+  or the accessor method (e.g. `gdf.plot(kind="bar")` or `gdf.plot.bar()`)
+  (#1465).
 - New `GeoSeries.z` attribute to access the z-coordinates of Point geometries
   (similar to the existing `.x` and `.y` attributes) (#1773).
 - The `to_crs()` method now handles missing values (#1618).
@@ -30,8 +34,13 @@ New features and improvements:
   the PyGEOS backend (#1693).
 - The binary operation and predicate methods (eg `intersection()`,
   `intersects()`) have a new `align` keyword which allows optionally not
-  aligning on the index before performing the operation wth `align=False`
+  aligning on the index before performing the operation with `align=False`
   (#1668).
+- The `GeoDataFrame.dissolve()` method now supports all relevant keywords of
+  `groupby()`, i.e. the `level`, `sort`, `observed` and `dropna` keywords
+  (#1845).
+- The `geopandas.overlay()` function now accepts `make_valid=False` to skip
+  the step to ensure the input geometries are valid using `buffer(0)` (#1802).
 - The `GeoDataFrame.to_json()` method gained a `drop_id` keyword to
   optionally not write the GeoDataFrame's index as the "id" field in the
   resulting JSON (#1637).
@@ -48,7 +57,8 @@ New features and improvements:
   if a spatial index has already been initialized (#1627).
 - The `geopandas.testing.assert_geoseries_equal()` and `assert_geodataframe_equal()`
   testing utilities now have a `normalize` keyword (False by default) to
-  normalize geometries before comparing for equality (#1826).
+  normalize geometries before comparing for equality (#1826). Those functions
+  now also give a more informative error message when failing (#1808).
 
 Deprecations and compatibility notes:
 
@@ -84,6 +94,10 @@ Bug fixes:
 - Fix the `GeoSeries.apply()` method to again accept the `convert_dtype`
   keyword to be consistent with pandas (#1636).
 - Fix bug in containment test as `geom in geoseries` (#1753).
+- The `shift()` method of a GeoSeries/GeoDataFrame now preserves the CRS
+  (#1744).
+- The PostGIS IO functionality now quotes table names to ensure it works with
+  case-sensitive names (#1825).
 
 Notes on (optional) dependencies:
 
