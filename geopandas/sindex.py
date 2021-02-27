@@ -50,10 +50,8 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         """Return the index of all geometries in the tree with extents that
         intersect the envelope of the input geometry.
 
-        Compatibility layer for pygeos-based ``sindex.query``.
-
-        This is not a vectorized function, if speed is important,
-        please use PyGEOS.
+        When using the ``rtree`` package, this is not a vectorized function.
+        If speed is important, please use PyGEOS.
 
         Parameters
         ----------
@@ -108,11 +106,15 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         the tree where the envelope of each input geometry intersects with
         the envelope of a tree geometry.
 
-        Compatibility layer for pygeos-based ``sindex.query_bulk``.
+        In the context of a spatial join, input geometries are the “left”
+        geometries that determine the order of the results, and tree geometries
+        are “right” geometries that are joined against the left geometries.
+        This effectively performs an inner join, where only those combinations
+        of geometries that can be joined based on envelope overlap or optional
+        predicate are returned.
 
-        Iterates over ``geometry`` and queries index.
-        This operation is not vectorized and may be slow.
-        Use PyGEOS with ``query_bulk`` for speed.
+        When using the ``rtree`` package, this is not a vectorized function
+        and may be slow. If speed is important, please use PyGEOS.
 
         Parameters
         ----------
@@ -171,7 +173,8 @@ class SpatialIndex(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def intersection(self, coordinates):
-        """Wrapper for rtree.index.Index.intersection.
+        """Compatibility wrapper for rtree.index.Index.intersection,
+        use ``query`` intead.
 
         Parameters
         ----------
