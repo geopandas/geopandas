@@ -306,7 +306,9 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
 
     dbapi_conn = conn.connection
     with dbapi_conn.cursor() as cur:
-        sql = "COPY {} ({}) FROM STDIN WITH CSV".format(tbl.table.fullname, columns)
+        sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
+            tbl.table.schema, tbl.table.name, columns
+        )
         cur.copy_expert(sql=sql, file=s_buf)
 
 
@@ -399,14 +401,14 @@ def _write_postgis(
     # Convert geometries to EWKB
     gdf = _convert_to_ewkb(gdf, geom_name, srid)
 
+    if schema is not None:
+        schema_name = schema
+    else:
+        schema_name = "public"
+
     if if_exists == "append":
         # Check that the geometry srid matches with the current GeoDataFrame
         with _get_conn(con) as connection:
-            if schema is not None:
-                schema_name = schema
-            else:
-                schema_name = "public"
-
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
@@ -429,7 +431,7 @@ def _write_postgis(
         gdf.to_sql(
             name,
             connection,
-            schema=schema,
+            schema=schema_name,
             if_exists=if_exists,
             index=index,
             index_label=index_label,
