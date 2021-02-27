@@ -17,6 +17,7 @@ import shapely.geos
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
 PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
 PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
+PANDAS_GE_115 = str(pd.__version__) >= LooseVersion("1.1.5")
 PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 
 
