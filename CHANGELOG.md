@@ -98,6 +98,7 @@ Bug fixes:
   (#1744).
 - The PostGIS IO functionality now quotes table names to ensure it works with
   case-sensitive names (#1825).
+- Fix the `GeoSeries` constructor without passing data but only an index (#1798).
 
 Notes on (optional) dependencies:
 
