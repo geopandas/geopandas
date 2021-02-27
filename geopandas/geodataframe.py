@@ -1340,7 +1340,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             with each group. Passed to pandas `groupby.agg` method.
         as_index : boolean, default True
             If true, groupby columns become index of result.
-        level: int or str or sequence of int or sequence of str, default None
+        level : int or str or sequence of int or sequence of str, default None
             If the axis is a MultiIndex (hierarchical), group by a
             particular level or levels.
 
