@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, from_shapely, GeometryDtype
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries
+from geopandas.geoseries import GeoSeries, inherit_doc
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 from . import _compat as compat
@@ -1291,6 +1291,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result._geometry_column_name = geo_col
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
+        return result
+
+    @inherit_doc(pd.DataFrame)
+    def apply(self, func, axis=0, raw=False, result_type=None, args=(), **kwargs):
+        result = super().apply(
+            func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
+        )
+        if isinstance(result, GeoDataFrame):
+            if self.crs is not None and result.crs is None:
+                result.set_crs(self.crs, inplace=True)
         return result
 
     @property
