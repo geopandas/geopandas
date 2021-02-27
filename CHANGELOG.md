@@ -9,33 +9,33 @@ a new logo (#1564, #1579, #1617, #1668, #1731, #1750, #1757, #1759).
 
 New features and improvements:
 
-- The `geopandas.read_file` function does now also accept more general
+- The `geopandas.read_file` function now accepts more general
   file-like objects (e.g. `fsspec` open file objects). It will now also
   automatically recognize zipped files (#1535).
 - New `GeoSeries.z` attribute to access the z-coordinates of Point geometries
-  (similarly as the existing `.x` and `.y` attributes) (#1773).
+  (similar to the existing `.x` and `.y` attributes) (#1773).
 - The `to_crs()` method now handles missing values (#1618).
 - Support for pandas' new `.attrs` functionality (#1658).
-- The `dissolve()` method now allows to dissolve by no column (`by=None`) to
-  union the geometries to a single one (single-row GeoDataFrame) (#1568).
+- The `dissolve()` method now allows dissolving by no column (`by=None`) to
+  create a union of all geometries (single-row GeoDataFrame) (#1568).
 - New `estimate_utm_crs()` method on GeoSeries/GeoDataFrame to determine the
   UTM CRS based on the bounds (#1646).
 - `GeoDataFrame.from_dict()` now accepts `geometry` and `crs` keywords
   (#1619).
 - `GeoDataFrame.to_postgis()` and `geopandas.read_postgis()` now supports
   both sqlalchemy engine and connection objects (#1638).
-- The `GeoDataFrame.explode()` method now allows to explode based on a
+- The `GeoDataFrame.explode()` method now allows exploding based on a
   non-geometry column, using the pandas implementation (#1720).
 - Performance improvement in `GeoDataFrame/GeoSeries.explode()` when using
   the PyGEOS backend (#1693).
 - The binary operation and predicate methods (eg `intersection()`,
-  `intersects()`) have a new `align` keyword which allows to optionally not
-  align on the index before performing the operation wth `align=False`
+  `intersects()`) have a new `align` keyword which allows optionally not
+  aligning on the index before performing the operation wth `align=False`
   (#1668).
 - The `GeoDataFrame.to_json()` method gained a `drop_id` keyword to
   optionally not write the GeoDataFrame's index as the "id" field in the
   resulting JSON (#1637).
-- A new `aspect` keyword in the plotting methods to optionally allow to keep
+- A new `aspect` keyword in the plotting methods to optionally allow retaining
   the original aspect (#1512)
 - A new `interval` keyword in the `legend_kwds` group of the `plot()` method
   to control the appearance of the legend labels when using a classification
