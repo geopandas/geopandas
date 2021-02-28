@@ -1,6 +1,128 @@
 Changelog
 =========
 
+Version 0.9.0 (February ??, 2021)
+---------------------------------
+
+Many documentation improvements and a restyled and restructured website with
+a new logo (#1564, #1579, #1617, #1668, #1731, #1750, #1757, #1759).
+
+New features and improvements:
+
+- The `geopandas.read_file` function now accepts more general
+  file-like objects (e.g. `fsspec` open file objects). It will now also
+  automatically recognize zipped files (#1535).
+- The `GeoDataFrame.plot()` method now provides access to the pandas plotting
+  functionality for the non-geometry columns, either using the `kind` keyword
+  or the accessor method (e.g. `gdf.plot(kind="bar")` or `gdf.plot.bar()`)
+  (#1465).
+- New `from_wkt()`, `from_wkb()`, `to_wkt()`, `to_wkb()` methods for
+  GeoSeries to construct a GeoSeries from geometries in WKT or WKB
+  representation, or to convert a GeoSeries to a pandas Seriew with WKT or WKB
+  values (#1710).
+- New `GeoSeries.z` attribute to access the z-coordinates of Point geometries
+  (similar to the existing `.x` and `.y` attributes) (#1773).
+- The `to_crs()` method now handles missing values (#1618).
+- Support for pandas' new `.attrs` functionality (#1658).
+- The `dissolve()` method now allows dissolving by no column (`by=None`) to
+  create a union of all geometries (single-row GeoDataFrame) (#1568).
+- New `estimate_utm_crs()` method on GeoSeries/GeoDataFrame to determine the
+  UTM CRS based on the bounds (#1646).
+- `GeoDataFrame.from_dict()` now accepts `geometry` and `crs` keywords
+  (#1619).
+- `GeoDataFrame.to_postgis()` and `geopandas.read_postgis()` now supports
+  both sqlalchemy engine and connection objects (#1638).
+- The `GeoDataFrame.explode()` method now allows exploding based on a
+  non-geometry column, using the pandas implementation (#1720).
+- Performance improvement in `GeoDataFrame/GeoSeries.explode()` when using
+  the PyGEOS backend (#1693).
+- The binary operation and predicate methods (eg `intersection()`,
+  `intersects()`) have a new `align` keyword which allows optionally not
+  aligning on the index before performing the operation with `align=False`
+  (#1668).
+- The `GeoDataFrame.dissolve()` method now supports all relevant keywords of
+  `groupby()`, i.e. the `level`, `sort`, `observed` and `dropna` keywords
+  (#1845).
+- The `geopandas.overlay()` function now accepts `make_valid=False` to skip
+  the step to ensure the input geometries are valid using `buffer(0)` (#1802).
+- The `GeoDataFrame.to_json()` method gained a `drop_id` keyword to
+  optionally not write the GeoDataFrame's index as the "id" field in the
+  resulting JSON (#1637).
+- A new `aspect` keyword in the plotting methods to optionally allow retaining
+  the original aspect (#1512)
+- A new `interval` keyword in the `legend_kwds` group of the `plot()` method
+  to control the appearance of the legend labels when using a classification
+  scheme (#1605).
+- The spatial index of a GeoSeries (accessed with the `sindex` attribute) is
+  now stored on the underlying array. This ensures that the spatial index is
+  preserved in more operations where possible, and that multiple geometry
+  columns of a GeoDataFrame can each have a spatial index (#1444).
+- Addition of a `has_sindex` attribute on the GeoSeries/GeoDataFrame to check
+  if a spatial index has already been initialized (#1627).
+- The `geopandas.testing.assert_geoseries_equal()` and `assert_geodataframe_equal()`
+  testing utilities now have a `normalize` keyword (False by default) to
+  normalize geometries before comparing for equality (#1826). Those functions
+  now also give a more informative error message when failing (#1808).
+
+Deprecations and compatibility notes:
+
+- The `is_ring` attribute currently returns True for Polygons. In the future,
+  this will be False (#1631). In addition, start to check it for LineStrings
+  and LinearRings (instead of always returning False).
+- The deprecated `objects` keyword in the `intersection()` method of the
+  `GeoDataFrame/GeoSeries.sindex` spatial index object has been removed
+  (#1444).
+
+Bug fixes:
+
+- Fix regression in the `plot()` method raising an error with empty
+  geometries (#1702, #1828).
+- Fix `geopandas.overlay()` to preserve geometries of the correct type which
+  are nested withing a GeometryCollection as a result of the overlay
+  operation (#1582). In addition, a warning will now be raised if geometries
+  of different type are dropped from the result (#1554).
+- Fix the repr of an empty GeoSeries to not show spurious warnings (#1673).
+- Fix the `.crs` for empty GeoDataFrames (#1560).
+- Fix `geopandas.clip` to preserve the correct geometry column name (#1566). 
+- Fix bug in `plot()` method when using `legend_kwds` with multiple subplots
+  (#1583)
+- Fix spurious warning with `missing_kwds` keyword of the `plot()` method
+  when there are no areas with missing data (#1600).
+- Fix the `plot()` method to correctly align values passed to the `column`
+  keyword as a pandas Series (#1670).
+- Fix bug in plotting MultiPoints when passing values to determine the color
+  (#1694)
+- The `rename_geometry()` method now raises a more informative error message
+  when a duplicate column name is used (#1602).
+- Fix `explode()` method to preserve the CRS (#1655)
+- Fix the `GeoSeries.apply()` method to again accept the `convert_dtype`
+  keyword to be consistent with pandas (#1636).
+- Fix `GeoDataFrame.apply()` to preserve the CRS when possible (#1848).
+- Fix bug in containment test as `geom in geoseries` (#1753).
+- The `shift()` method of a GeoSeries/GeoDataFrame now preserves the CRS
+  (#1744).
+- The PostGIS IO functionality now quotes table names to ensure it works with
+  case-sensitive names (#1825).
+- Fix the `GeoSeries` constructor without passing data but only an index (#1798).
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.9.0 dropped support for Python 3.5. Further, the minimum
+  required versions are pandas 0.24, numpy 1.15 and shapely 1.6 and fiona 1.8.
+- The `descartes` package is no longer required for plotting polygons. This
+  functionality is now included by default in GeoPandas itself, when
+  matplotlib is available (#1677).
+- Fiona is now only imported when used in `read_file`/`to_file`. This means
+  you can now force geopandas to install without fiona installed (although it
+  is still a default requirement) (#1775).
+- Compatibility with the upcoming Shapely 1.8 (#1659, #1662, #1819).
+
+
+Version 0.8.2 (January 25, 2021)
+--------------------------------
+
+Small bug-fix release for compatibility with PyGEOS 0.9.
+
 
 Version 0.8.1 (July 15, 2020)
 -----------------------------
