@@ -1364,7 +1364,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if (
             isinstance(result, GeoDataFrame)
             and self._geometry_column_name in result.columns
-            and any(t == "geometry" for t in result.dtypes)
+            and any(isinstance(t, GeometryDtype) for t in result.dtypes)
         ):
             if self.crs is not None and result.crs is None:
                 result.set_crs(self.crs, inplace=True)
