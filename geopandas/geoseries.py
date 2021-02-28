@@ -453,6 +453,8 @@ class GeoSeries(GeoPandasBase, Series):
         if isinstance(data, Series):
             if index is not None:
                 data = data.reindex(index)
+            else:
+                index = data.index
             data = data.values
         return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 

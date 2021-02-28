@@ -287,29 +287,31 @@ class TestSeries:
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
 
     def test_from_wkb_series(self):
-        assert_geoseries_equal(
-            self.g1, GeoSeries.from_wkb(pd.Series([self.t1.wkb, self.sq.wkb]))
-        )
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s))
 
     def test_from_wkb_series_with_index(self):
         index = [0]
-        s = pd.Series([self.t1.wkb])
-        gs = self.g1.reindex(index)
-        assert_geoseries_equal(gs, GeoSeries.from_wkb(s, index=index))
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
 
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
 
     def test_from_wkt_series(self):
-        assert_geoseries_equal(
-            self.g1, GeoSeries.from_wkt(pd.Series([self.t1.wkt, self.sq.wkt]))
-        )
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s))
 
     def test_from_wkt_series_with_index(self):
         index = [0]
-        s = pd.Series([self.t1.wkt])
-        gs = self.g1.reindex(index)
-        assert_geoseries_equal(gs, GeoSeries.from_wkt(s, index=index))
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
 
     def test_to_wkb(self):
         assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
