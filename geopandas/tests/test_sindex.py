@@ -720,7 +720,7 @@ class TestPygeosInterface:
         assert res.shape == expected_shape
 
 
-@pytest.mark.skip_no_sindex
+@pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
 def test_old_spatial_index_deprecated():
     t1 = Polygon([(0, 0), (1, 0), (1, 1)])
     t2 = Polygon([(0, 0), (1, 1), (0, 1)])
