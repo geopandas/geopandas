@@ -16,6 +16,10 @@ New features and improvements:
   functionality for the non-geometry columns, either using the `kind` keyword
   or the accessor method (e.g. `gdf.plot(kind="bar")` or `gdf.plot.bar()`)
   (#1465).
+- New `from_wkt()`, `from_wkb()`, `to_wkt()`, `to_wkb()` methods for
+  GeoSeries to construct a GeoSeries from geometries in WKT or WKB
+  representation, or to convert a GeoSeries to a pandas Seriew with WKT or WKB
+  values (#1710).
 - New `GeoSeries.z` attribute to access the z-coordinates of Point geometries
   (similar to the existing `.x` and `.y` attributes) (#1773).
 - The `to_crs()` method now handles missing values (#1618).
@@ -93,6 +97,7 @@ Bug fixes:
 - Fix `explode()` method to preserve the CRS (#1655)
 - Fix the `GeoSeries.apply()` method to again accept the `convert_dtype`
   keyword to be consistent with pandas (#1636).
+- Fix `GeoDataFrame.apply()` to preserve the CRS when possible (#1848).
 - Fix bug in containment test as `geom in geoseries` (#1753).
 - The `shift()` method of a GeoSeries/GeoDataFrame now preserves the CRS
   (#1744).
