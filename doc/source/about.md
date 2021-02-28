@@ -5,7 +5,6 @@
 :caption: About
 :hidden:
 
-Roadmap <about/roadmap>
 Team <about/team>
 Citing <about/citing>
 Logo <about/logo>
@@ -26,7 +25,7 @@ under the liberal terms of the BSD-3-Clause license.
 
 ```{container} button
 
-{doc}`Project Roadmap <about/roadmap>` {doc}`Team <about/team>`
+{doc}`Team <about/team>`
 {doc}`Citing <about/citing>` {doc}`Logo <about/logo>`
 ```
 
