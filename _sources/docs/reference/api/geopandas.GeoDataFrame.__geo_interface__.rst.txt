@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.\_\_geo\_interface\_\_
+=============================================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoDataFrame.__geo_interface__

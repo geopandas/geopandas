@@ -1,0 +1,1179 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>geopandas.GeoSeries &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="geopandas.GeoSeries.area" href="geopandas.GeoSeries.area.html" />
+    <link rel="prev" title="GeoSeries" href="../geoseries.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../../index.html">
+    
+      <img src="../../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="../../user_guide.html">User Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+  
+                <li class="active">
+                    <a href="../../reference.html">API reference</a>
+                    <ul>
+                    
+                        <li class="active">
+                            <a href="../geoseries.html">GeoSeries</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../geodataframe.html">GeoDataFrame</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../io.html">Input/output</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../tools.html">Tools</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../sindex.html">Spatial index</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../testing.html">Testing</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="geopandas-geoseries">
+<h1>geopandas.GeoSeries<a class="headerlink" href="#geopandas-geoseries" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="geopandas.GeoSeries">
+<em class="property">class </em><code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">GeoSeries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">crs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Series object designed to store shapely geometry objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like, dict, scalar value</span></dt><dd><p>The geometries to store in the GeoSeries.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">array-like or Index</span></dt><dd><p>The index for the GeoSeries.</p>
+</dd>
+<dt><strong>crs</strong><span class="classifier">value (optional)</span></dt><dd><p>Coordinate Reference System of the geometry objects. Can be anything accepted by
+<a class="reference external" href="https://pyproj4.github.io/pyproj/stable/api/crs/crs.html#pyproj.crs.CRS.from_user_input" title="(in pyproj v3.0.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyproj.CRS.from_user_input()</span></code></a>,
+such as an authority string (eg “EPSG:4326”) or a WKT string.</p>
+</dd>
+<dt><strong>kwargs</strong></dt><dd><dl class="simple">
+<dt>Additional arguments passed to the Series constructor,</dt><dd><p>e.g. <code class="docutils literal notranslate"><span class="pre">name</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas.Series</span></code></dt><dd></dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">0    POINT (1.00000 1.00000)</span>
+<span class="go">1    POINT (2.00000 2.00000)</span>
+<span class="go">2    POINT (3.00000 3.00000)</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[</span><span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span> <span class="n">crs</span><span class="o">=</span><span class="s2">&quot;EPSG:3857&quot;</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">crs</span>  
+<span class="go">&lt;Projected CRS: EPSG:3857&gt;</span>
+<span class="go">Name: WGS 84 / Pseudo-Mercator</span>
+<span class="go">Axis Info [cartesian]:</span>
+<span class="go">- X[east]: Easting (metre)</span>
+<span class="go">- Y[north]: Northing (metre)</span>
+<span class="go">Area of Use:</span>
+<span class="go">- name: World - 85°S to 85°N</span>
+<span class="go">- bounds: (-180.0, -85.06, 180.0, 85.06)</span>
+<span class="go">Coordinate Operation:</span>
+<span class="go">- name: Popular Visualisation Pseudo-Mercator</span>
+<span class="go">- method: Popular Visualisation Pseudo Mercator</span>
+<span class="go">Datum: World Geodetic System 1984</span>
+<span class="go">- Ellipsoid: WGS 84</span>
+<span class="go">- Prime Meridian: Greenwich</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span>
+<span class="gp">... </span>   <span class="p">[</span><span class="n">Point</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span> <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>
+<span class="go">a    POINT (1.00000 1.00000)</span>
+<span class="go">b    POINT (2.00000 2.00000)</span>
+<span class="go">c    POINT (3.00000 3.00000)</span>
+<span class="go">dtype: geometry</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">crs</span>
+<span class="go">&lt;Geographic 2D CRS: EPSG:4326&gt;</span>
+<span class="go">Name: WGS 84</span>
+<span class="go">Axis Info [ellipsoidal]:</span>
+<span class="go">- Lat[north]: Geodetic latitude (degree)</span>
+<span class="go">- Lon[east]: Geodetic longitude (degree)</span>
+<span class="go">Area of Use:</span>
+<span class="go">- name: World</span>
+<span class="go">- bounds: (-180.0, -90.0, 180.0, 90.0)</span>
+<span class="go">Datum: World Geodetic System 1984</span>
+<span class="go">- Ellipsoid: WGS 84</span>
+<span class="go">- Prime Meridian: Greenwich</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt id="geopandas.GeoSeries.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoSeries.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#geopandas.GeoSeries.__init__" title="geopandas.GeoSeries.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">abs</span></code>()</p></td>
+<td><p>Return a Series/DataFrame with absolute numeric value of each element.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Addition of series and other, element-wise (binary operator <cite>add</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_prefix</span></code>(prefix)</p></td>
+<td><p>Prefix labels with string <cite>prefix</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_suffix</span></code>(suffix)</p></td>
+<td><p>Suffix labels with string <cite>suffix</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.affine_transform.html#geopandas.GeoSeries.affine_transform" title="geopandas.GeoSeries.affine_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">affine_transform</span></code></a>(matrix)</p></td>
+<td><p>Return a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with translated geometries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">agg</span></code>([func, axis])</p></td>
+<td><p>Aggregate using one or more operations over the specified axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">aggregate</span></code>([func, axis])</p></td>
+<td><p>Aggregate using one or more operations over the specified axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">align</span></code>(other[, join, axis, level, copy, …])</p></td>
+<td><p>Align two objects on their axes with the specified join method.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">all</span></code>([axis, bool_only, skipna, level])</p></td>
+<td><p>Return whether all elements are True, potentially over an axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">any</span></code>([axis, bool_only, skipna, level])</p></td>
+<td><p>Return whether any element is True, potentially over an axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code>(*args, **kwargs)</p></td>
+<td><p>Concatenate two or more Series.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply</span></code>(func[, convert_dtype, args])</p></td>
+<td><p>Invoke function on values of Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">argmax</span></code>([axis, skipna])</p></td>
+<td><p>Return int position of the largest value in the Series.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">argmin</span></code>([axis, skipna])</p></td>
+<td><p>Return int position of the smallest value in the Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">argsort</span></code>([axis, kind, order])</p></td>
+<td><p>Return the integer indices that would sort the Series values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">asfreq</span></code>(freq[, method, how, normalize, …])</p></td>
+<td><p>Convert TimeSeries to specified frequency.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">asof</span></code>(where[, subset])</p></td>
+<td><p>Return the last row(s) without any NaNs before <cite>where</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">astype</span></code>(dtype[, copy, errors])</p></td>
+<td><p>Cast a pandas object to a specified dtype <code class="docutils literal notranslate"><span class="pre">dtype</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_time</span></code>(time[, asof, axis])</p></td>
+<td><p>Select values at particular time of day (e.g., 9:30AM).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocorr</span></code>([lag])</p></td>
+<td><p>Compute the lag-N autocorrelation.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">backfill</span></code>([axis, inplace, limit, downcast])</p></td>
+<td><p>Synonym for <code class="xref py py-meth docutils literal notranslate"><span class="pre">DataFrame.fillna()</span></code> with <code class="docutils literal notranslate"><span class="pre">method='bfill'</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">between</span></code>(left, right[, inclusive])</p></td>
+<td><p>Return boolean Series equivalent to left &lt;= series &lt;= right.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">between_time</span></code>(start_time, end_time[, …])</p></td>
+<td><p>Select values between particular times of the day (e.g., 9:00-9:30 AM).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">bfill</span></code>([axis, inplace, limit, downcast])</p></td>
+<td><p>Synonym for <code class="xref py py-meth docutils literal notranslate"><span class="pre">DataFrame.fillna()</span></code> with <code class="docutils literal notranslate"><span class="pre">method='bfill'</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">bool</span></code>()</p></td>
+<td><p>Return the bool of a single element Series or DataFrame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.buffer.html#geopandas.GeoSeries.buffer" title="geopandas.GeoSeries.buffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">buffer</span></code></a>(distance[, resolution])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing all points within a given <code class="docutils literal notranslate"><span class="pre">distance</span></code> of each geometric object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clip</span></code>([lower, upper, axis, inplace])</p></td>
+<td><p>Trim values at input threshold(s).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine</span></code>(other, func[, fill_value])</p></td>
+<td><p>Combine the Series with a Series or scalar according to <cite>func</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_first</span></code>(other)</p></td>
+<td><p>Combine Series values, choosing the calling Series’s values first.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare</span></code>(other[, align_axis, keep_shape, …])</p></td>
+<td><p>Compare to another Series and show the differences.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.contains.html#geopandas.GeoSeries.contains" title="geopandas.GeoSeries.contains"><code class="xref py py-obj docutils literal notranslate"><span class="pre">contains</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that contains <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_dtypes</span></code>([infer_objects, …])</p></td>
+<td><p>Convert columns to best possible dtypes using dtypes supporting <code class="docutils literal notranslate"><span class="pre">pd.NA</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>([deep])</p></td>
+<td><p>Make a copy of this object’s indices and data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">corr</span></code>(other[, method, min_periods])</p></td>
+<td><p>Compute correlation with <cite>other</cite> Series, excluding missing values.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>([level])</p></td>
+<td><p>Return number of non-NA/null observations in the Series.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cov</span></code>(other[, min_periods, ddof])</p></td>
+<td><p>Compute covariance with Series, excluding missing values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.covered_by.html#geopandas.GeoSeries.covered_by" title="geopandas.GeoSeries.covered_by"><code class="xref py py-obj docutils literal notranslate"><span class="pre">covered_by</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that is entirely covered by <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.covers.html#geopandas.GeoSeries.covers" title="geopandas.GeoSeries.covers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">covers</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that is entirely covering <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.crosses.html#geopandas.GeoSeries.crosses" title="geopandas.GeoSeries.crosses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crosses</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that cross <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cummax</span></code>([axis, skipna])</p></td>
+<td><p>Return cumulative maximum over a DataFrame or Series axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cummin</span></code>([axis, skipna])</p></td>
+<td><p>Return cumulative minimum over a DataFrame or Series axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cumprod</span></code>([axis, skipna])</p></td>
+<td><p>Return cumulative product over a DataFrame or Series axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cumsum</span></code>([axis, skipna])</p></td>
+<td><p>Return cumulative sum over a DataFrame or Series axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">describe</span></code>([percentiles, include, exclude, …])</p></td>
+<td><p>Generate descriptive statistics.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">diff</span></code>([periods])</p></td>
+<td><p>First discrete difference of element.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.difference.html#geopandas.GeoSeries.difference" title="geopandas.GeoSeries.difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">difference</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the points in each aligned geometry that are not in <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.disjoint.html#geopandas.GeoSeries.disjoint" title="geopandas.GeoSeries.disjoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disjoint</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry disjoint to <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.distance.html#geopandas.GeoSeries.distance" title="geopandas.GeoSeries.distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">distance</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> containing the distance to aligned <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">div</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Floating division of series and other, element-wise (binary operator <cite>truediv</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">divide</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Floating division of series and other, element-wise (binary operator <cite>truediv</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">divmod</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Integer division and modulo of series and other, element-wise (binary operator <cite>divmod</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dot</span></code>(other)</p></td>
+<td><p>Compute the dot product between the Series and the columns of other.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop</span></code>([labels, axis, index, columns, level, …])</p></td>
+<td><p>Return Series with specified index labels removed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_duplicates</span></code>([keep, inplace])</p></td>
+<td><p>Return Series with duplicate values removed.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">droplevel</span></code>(level[, axis])</p></td>
+<td><p>Return DataFrame with requested index / column level(s) removed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dropna</span></code>([axis, inplace, how])</p></td>
+<td><p>Return a new Series with missing values removed.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">duplicated</span></code>([keep])</p></td>
+<td><p>Indicate duplicate Series values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">eq</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Equal to of series and other, element-wise (binary operator <cite>eq</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">equals</span></code>(other)</p></td>
+<td><p>Test whether two objects contain the same elements.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.estimate_utm_crs.html#geopandas.GeoSeries.estimate_utm_crs" title="geopandas.GeoSeries.estimate_utm_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">estimate_utm_crs</span></code></a>([datum_name])</p></td>
+<td><p>Returns the estimated UTM CRS based on the bounds of the dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ewm</span></code>([com, span, halflife, alpha, …])</p></td>
+<td><p>Provide exponential weighted (EW) functions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">expanding</span></code>([min_periods, center, axis])</p></td>
+<td><p>Provide expanding transformations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.explode.html#geopandas.GeoSeries.explode" title="geopandas.GeoSeries.explode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">explode</span></code></a>()</p></td>
+<td><p>Explode multi-part geometries into multiple single geometries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">factorize</span></code>([sort, na_sentinel])</p></td>
+<td><p>Encode the object as an enumerated type or categorical variable.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ffill</span></code>([axis, inplace, limit, downcast])</p></td>
+<td><p>Synonym for <code class="xref py py-meth docutils literal notranslate"><span class="pre">DataFrame.fillna()</span></code> with <code class="docutils literal notranslate"><span class="pre">method='ffill'</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.fillna.html#geopandas.GeoSeries.fillna" title="geopandas.GeoSeries.fillna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fillna</span></code></a>([value, method, inplace])</p></td>
+<td><p>Fill NA values with a geometry (empty polygon by default).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter</span></code>([items, like, regex, axis])</p></td>
+<td><p>Subset the dataframe rows or columns according to the specified index labels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">first</span></code>(offset)</p></td>
+<td><p>Select initial periods of time series data based on a date offset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">first_valid_index</span></code>()</p></td>
+<td><p>Return index for first non-NA/null value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">floordiv</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Integer division of series and other, element-wise (binary operator <cite>floordiv</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.from_file.html#geopandas.GeoSeries.from_file" title="geopandas.GeoSeries.from_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_file</span></code></a>(filename, **kwargs)</p></td>
+<td><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_wkb</span></code>(data[, index, crs])</p></td>
+<td><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a list or array of WKB objects</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_wkt</span></code>(data[, index, crs])</p></td>
+<td><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a list or array of WKT objects</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ge</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Greater than or equal to of series and other, element-wise (binary operator <cite>ge</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.geom_almost_equals.html#geopandas.GeoSeries.geom_almost_equals" title="geopandas.GeoSeries.geom_almost_equals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_almost_equals</span></code></a>(other[, decimal, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> if each aligned geometry is approximately equal to <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.geom_equals.html#geopandas.GeoSeries.geom_equals" title="geopandas.GeoSeries.geom_equals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_equals</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry equal to <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.geom_equals_exact.html#geopandas.GeoSeries.geom_equals_exact" title="geopandas.GeoSeries.geom_equals_exact"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_equals_exact</span></code></a>(other, tolerance[, align])</p></td>
+<td><p>Return True for all geometries that equal aligned <em>other</em> to a given tolerance, else False.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code>(key[, default])</p></td>
+<td><p>Get item from object for given key (ex: DataFrame column).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">groupby</span></code>([by, axis, level, as_index, sort, …])</p></td>
+<td><p>Group Series using a mapper or by a Series of columns.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gt</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Greater than of series and other, element-wise (binary operator <cite>gt</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">head</span></code>([n])</p></td>
+<td><p>Return the first <cite>n</cite> rows.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">hist</span></code>([by, ax, grid, xlabelsize, xrot, …])</p></td>
+<td><p>Draw histogram of the input series using matplotlib.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">idxmax</span></code>([axis, skipna])</p></td>
+<td><p>Return the row label of the maximum value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">idxmin</span></code>([axis, skipna])</p></td>
+<td><p>Return the row label of the minimum value.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">infer_objects</span></code>()</p></td>
+<td><p>Attempt to infer better dtypes for object columns.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate</span></code>(distance[, normalized])</p></td>
+<td><p>Return a point at the specified distance along each geometry</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.intersection.html#geopandas.GeoSeries.intersection" title="geopandas.GeoSeries.intersection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersection</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the intersection of points in each aligned geometry with <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.intersects.html#geopandas.GeoSeries.intersects" title="geopandas.GeoSeries.intersects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersects</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that intersects <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isin</span></code>(values)</p></td>
+<td><p>Whether elements in Series are contained in <cite>values</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.isna.html#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isna</span></code></a>()</p></td>
+<td><p>Detect missing values.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">isnull</span></code>()</p></td>
+<td><p>Alias for <cite>isna</cite> method.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">item</span></code>()</p></td>
+<td><p>Return the first element of the underlying data as a Python scalar.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">items</span></code>()</p></td>
+<td><p>Lazily iterate over (index, value) tuples.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iteritems</span></code>()</p></td>
+<td><p>Lazily iterate over (index, value) tuples.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">keys</span></code>()</p></td>
+<td><p>Return alias for index.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kurt</span></code>([axis, skipna, level, numeric_only])</p></td>
+<td><p>Return unbiased kurtosis over requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kurtosis</span></code>([axis, skipna, level, numeric_only])</p></td>
+<td><p>Return unbiased kurtosis over requested axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">last</span></code>(offset)</p></td>
+<td><p>Select final periods of time series data based on a date offset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">last_valid_index</span></code>()</p></td>
+<td><p>Return index for last non-NA/null value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">le</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Less than or equal to of series and other, element-wise (binary operator <cite>le</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">lt</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Less than of series and other, element-wise (binary operator <cite>lt</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mad</span></code>([axis, skipna, level])</p></td>
+<td><p>Return the mean absolute deviation of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">map</span></code>(arg[, na_action])</p></td>
+<td><p>Map values of Series according to input correspondence.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask</span></code>(cond[, other, inplace, axis, level, …])</p></td>
+<td><p>Replace values where the condition is True.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">max</span></code>([axis, skipna, level, numeric_only])</p></td>
+<td><p>Return the maximum of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean</span></code>([axis, skipna, level, numeric_only])</p></td>
+<td><p>Return the mean of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">median</span></code>([axis, skipna, level, numeric_only])</p></td>
+<td><p>Return the median of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">memory_usage</span></code>([index, deep])</p></td>
+<td><p>Return the memory usage of the Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">min</span></code>([axis, skipna, level, numeric_only])</p></td>
+<td><p>Return the minimum of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mod</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Modulo of series and other, element-wise (binary operator <cite>mod</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mode</span></code>([dropna])</p></td>
+<td><p>Return the mode(s) of the Series.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mul</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Multiplication of series and other, element-wise (binary operator <cite>mul</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">multiply</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Multiplication of series and other, element-wise (binary operator <cite>mul</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ne</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Not equal to of series and other, element-wise (binary operator <cite>ne</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nlargest</span></code>([n, keep])</p></td>
+<td><p>Return the largest <cite>n</cite> elements.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.notna.html#geopandas.GeoSeries.notna" title="geopandas.GeoSeries.notna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">notna</span></code></a>()</p></td>
+<td><p>Detect non-missing values.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">notnull</span></code>()</p></td>
+<td><p>Alias for <cite>notna</cite> method.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nsmallest</span></code>([n, keep])</p></td>
+<td><p>Return the smallest <cite>n</cite> elements.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nunique</span></code>([dropna])</p></td>
+<td><p>Return number of unique elements in the object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.overlaps.html#geopandas.GeoSeries.overlaps" title="geopandas.GeoSeries.overlaps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overlaps</span></code></a>(other[, align])</p></td>
+<td><p>Returns True for all aligned geometries that overlap <em>other</em>, else False.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad</span></code>([axis, inplace, limit, downcast])</p></td>
+<td><p>Synonym for <code class="xref py py-meth docutils literal notranslate"><span class="pre">DataFrame.fillna()</span></code> with <code class="docutils literal notranslate"><span class="pre">method='ffill'</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pct_change</span></code>([periods, fill_method, limit, freq])</p></td>
+<td><p>Percentage change between the current and a prior element.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pipe</span></code>(func, *args, **kwargs)</p></td>
+<td><p>Apply func(self, *args, **kwargs).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.plot.html#geopandas.GeoSeries.plot" title="geopandas.GeoSeries.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Plot a GeoSeries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code>(item)</p></td>
+<td><p>Return item and drops from series.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pow</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Exponential power of series and other, element-wise (binary operator <cite>pow</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prod</span></code>([axis, skipna, level, numeric_only, …])</p></td>
+<td><p>Return the product of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">product</span></code>([axis, skipna, level, numeric_only, …])</p></td>
+<td><p>Return the product of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">project</span></code>(other[, normalized, align])</p></td>
+<td><p>Return the distance along each geometry nearest to <em>other</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">quantile</span></code>([q, interpolation])</p></td>
+<td><p>Return value at the given quantile.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">radd</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Addition of series and other, element-wise (binary operator <cite>radd</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rank</span></code>([axis, method, numeric_only, …])</p></td>
+<td><p>Compute numerical data ranks (1 through n) along axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ravel</span></code>([order])</p></td>
+<td><p>Return the flattened underlying data as an ndarray.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rdiv</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Floating division of series and other, element-wise (binary operator <cite>rtruediv</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rdivmod</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Integer division and modulo of series and other, element-wise (binary operator <cite>rdivmod</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reindex</span></code>([index])</p></td>
+<td><p>Conform Series to new index with optional filling logic.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reindex_like</span></code>(other[, method, copy, limit, …])</p></td>
+<td><p>Return an object with matching indices as other object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">relate</span></code>(other[, align])</p></td>
+<td><p>Returns the DE-9IM intersection matrices for the geometries</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code>([index, axis, copy, inplace, level, …])</p></td>
+<td><p>Alter Series index labels or name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename_axis</span></code>([mapper, index, columns, axis, …])</p></td>
+<td><p>Set the name of the axis for the index or columns.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reorder_levels</span></code>(order)</p></td>
+<td><p>Rearrange index levels using input order.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">repeat</span></code>(repeats[, axis])</p></td>
+<td><p>Repeat elements of a Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">replace</span></code>([to_replace, value, inplace, limit, …])</p></td>
+<td><p>Replace values given in <cite>to_replace</cite> with <cite>value</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.representative_point.html#geopandas.GeoSeries.representative_point" title="geopandas.GeoSeries.representative_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">representative_point</span></code></a>()</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of (cheaply computed) points that are guaranteed to be within each geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">resample</span></code>(rule[, axis, closed, label, …])</p></td>
+<td><p>Resample time-series data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset_index</span></code>([level, drop, name, inplace])</p></td>
+<td><p>Generate a new DataFrame or Series with the index reset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rfloordiv</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Integer division of series and other, element-wise (binary operator <cite>rfloordiv</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmod</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Modulo of series and other, element-wise (binary operator <cite>rmod</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmul</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Multiplication of series and other, element-wise (binary operator <cite>rmul</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rolling</span></code>(window[, min_periods, center, …])</p></td>
+<td><p>Provide rolling window calculations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.rotate.html#geopandas.GeoSeries.rotate" title="geopandas.GeoSeries.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(angle[, origin, use_radians])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with rotated geometries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">round</span></code>([decimals])</p></td>
+<td><p>Round each value in a Series to the given number of decimals.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rpow</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Exponential power of series and other, element-wise (binary operator <cite>rpow</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rsub</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Subtraction of series and other, element-wise (binary operator <cite>rsub</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rtruediv</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Floating division of series and other, element-wise (binary operator <cite>rtruediv</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample</span></code>([n, frac, replace, weights, …])</p></td>
+<td><p>Return a random sample of items from an axis of object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.scale.html#geopandas.GeoSeries.scale" title="geopandas.GeoSeries.scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale</span></code></a>([xfact, yfact, zfact, origin])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with scaled geometries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">searchsorted</span></code>(value[, side, sorter])</p></td>
+<td><p>Find indices where elements should be inserted to maintain order.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">select</span></code>(*args, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sem</span></code>([axis, skipna, level, ddof, numeric_only])</p></td>
+<td><p>Return unbiased standard error of the mean over requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_axis</span></code>(labels[, axis, inplace])</p></td>
+<td><p>Assign desired index to given axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.set_crs.html#geopandas.GeoSeries.set_crs" title="geopandas.GeoSeries.set_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_crs</span></code></a>([crs, epsg, inplace, allow_override])</p></td>
+<td><p>Set the Coordinate Reference System (CRS) of a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_flags</span></code>(*[, copy, allows_duplicate_labels])</p></td>
+<td><p>Return a new object with updated flags.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift</span></code>([periods, freq, axis, fill_value])</p></td>
+<td><p>Shift index by desired number of periods with an optional time <cite>freq</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.simplify.html#geopandas.GeoSeries.simplify" title="geopandas.GeoSeries.simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simplify</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> containing a simplified representation of each geometry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.skew.html#geopandas.GeoSeries.skew" title="geopandas.GeoSeries.skew"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skew</span></code></a>([xs, ys, origin, use_radians])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with skewed geometries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slice_shift</span></code>([periods, axis])</p></td>
+<td><p>Equivalent to <cite>shift</cite> without copying data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sort_index</span></code>(*args, **kwargs)</p></td>
+<td><p>Sort Series by index labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sort_values</span></code>([axis, ascending, inplace, …])</p></td>
+<td><p>Sort by the values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">squeeze</span></code>([axis])</p></td>
+<td><p>Squeeze 1 dimensional axis objects into scalars.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">std</span></code>([axis, skipna, level, ddof, numeric_only])</p></td>
+<td><p>Return sample standard deviation over requested axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sub</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Subtraction of series and other, element-wise (binary operator <cite>sub</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subtract</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Subtraction of series and other, element-wise (binary operator <cite>sub</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum</span></code>([axis, skipna, level, numeric_only, …])</p></td>
+<td><p>Return the sum of the values over the requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">swapaxes</span></code>(axis1, axis2[, copy])</p></td>
+<td><p>Interchange axes and swap values axes appropriately.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">swaplevel</span></code>([i, j, copy])</p></td>
+<td><p>Swap levels i and j in a <code class="xref py py-class docutils literal notranslate"><span class="pre">MultiIndex</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.symmetric_difference.html#geopandas.GeoSeries.symmetric_difference" title="geopandas.GeoSeries.symmetric_difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">symmetric_difference</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the symmetric difference of points in each aligned geometry with <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tail</span></code>([n])</p></td>
+<td><p>Return the last <cite>n</cite> rows.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">take</span></code>(*args, **kwargs)</p></td>
+<td><p>Return the elements in the given <em>positional</em> indices along an axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_clipboard</span></code>([excel, sep])</p></td>
+<td><p>Copy object to the system clipboard.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.to_crs.html#geopandas.GeoSeries.to_crs" title="geopandas.GeoSeries.to_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_crs</span></code></a>([crs, epsg])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with all geometries transformed to a new coordinate reference system.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_csv</span></code>([path_or_buf, sep, na_rep, …])</p></td>
+<td><p>Write object to a comma-separated values (csv) file.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_dict</span></code>([into])</p></td>
+<td><p>Convert Series to {label -&gt; value} dict or dict-like object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_excel</span></code>(excel_writer[, sheet_name, na_rep, …])</p></td>
+<td><p>Write object to an Excel sheet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.to_file.html#geopandas.GeoSeries.to_file" title="geopandas.GeoSeries.to_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_file</span></code></a>(filename[, driver, index])</p></td>
+<td><p>Write the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> to a file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_frame</span></code>([name])</p></td>
+<td><p>Convert Series to DataFrame.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_hdf</span></code>(path_or_buf, key[, mode, complevel, …])</p></td>
+<td><p>Write the contained data to an HDF5 file using HDFStore.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.to_json.html#geopandas.GeoSeries.to_json" title="geopandas.GeoSeries.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a>(**kwargs)</p></td>
+<td><p>Returns a GeoJSON string representation of the GeoSeries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_latex</span></code>([buf, columns, col_space, header, …])</p></td>
+<td><p>Render object to a LaTeX tabular, longtable, or nested table/tabular.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_list</span></code>()</p></td>
+<td><p>Return a list of the values.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_markdown</span></code>([buf, mode, index, storage_options])</p></td>
+<td><p>Print Series in Markdown-friendly format.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_numpy</span></code>([dtype, copy, na_value])</p></td>
+<td><p>A NumPy ndarray representing the values in this Series or Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_period</span></code>([freq, copy])</p></td>
+<td><p>Convert Series from DatetimeIndex to PeriodIndex.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pickle</span></code>(path[, compression, protocol, …])</p></td>
+<td><p>Pickle (serialize) object to file.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_sql</span></code>(name, con[, schema, if_exists, …])</p></td>
+<td><p>Write records stored in a DataFrame to a SQL database.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_string</span></code>([buf, na_rep, float_format, …])</p></td>
+<td><p>Render a string representation of the Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_timestamp</span></code>([freq, how, copy])</p></td>
+<td><p>Cast to DatetimeIndex of Timestamps, at <em>beginning</em> of period.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_wkb</span></code>([hex])</p></td>
+<td><p>Convert GeoSeries geometries to WKB</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_wkt</span></code>(**kwargs)</p></td>
+<td><p>Convert GeoSeries geometries to WKT</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_xarray</span></code>()</p></td>
+<td><p>Return an xarray object from the pandas object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tolist</span></code>()</p></td>
+<td><p>Return a list of the values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.touches.html#geopandas.GeoSeries.touches" title="geopandas.GeoSeries.touches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">touches</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that touches <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform</span></code>(func[, axis])</p></td>
+<td><p>Call <code class="docutils literal notranslate"><span class="pre">func</span></code> on self producing a Series with transformed values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.translate.html#geopandas.GeoSeries.translate" title="geopandas.GeoSeries.translate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">translate</span></code></a>([xoff, yoff, zoff])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with translated geometries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose</span></code>(*args, **kwargs)</p></td>
+<td><p>Return the transpose, which is by definition self.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">truediv</span></code>(other[, level, fill_value, axis])</p></td>
+<td><p>Return Floating division of series and other, element-wise (binary operator <cite>truediv</cite>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">truncate</span></code>([before, after, axis, copy])</p></td>
+<td><p>Truncate a Series or DataFrame before and after some index value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tshift</span></code>([periods, freq, axis])</p></td>
+<td><p>Shift the time index, using the index’s frequency if available.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tz_convert</span></code>(tz[, axis, level, copy])</p></td>
+<td><p>Convert tz-aware axis to target time zone.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tz_localize</span></code>(tz[, axis, level, copy, …])</p></td>
+<td><p>Localize tz-naive index of a Series or DataFrame to target time zone.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.union.html#geopandas.GeoSeries.union" title="geopandas.GeoSeries.union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">union</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the union of points in each aligned geometry with <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">unique</span></code>()</p></td>
+<td><p>Return unique values of Series object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">unstack</span></code>([level, fill_value])</p></td>
+<td><p>Unstack, also known as pivot, Series with MultiIndex to produce DataFrame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>(other)</p></td>
+<td><p>Modify Series in place using values from passed Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">value_counts</span></code>([normalize, sort, ascending, …])</p></td>
+<td><p>Return a Series containing counts of unique values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">var</span></code>([axis, skipna, level, ddof, numeric_only])</p></td>
+<td><p>Return unbiased variance over requested axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code>([dtype])</p></td>
+<td><p>Create a new view of the Series.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">where</span></code>(cond[, other, inplace, axis, level, …])</p></td>
+<td><p>Replace values where the condition is False.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.within.html#geopandas.GeoSeries.within" title="geopandas.GeoSeries.within"><code class="xref py py-obj docutils literal notranslate"><span class="pre">within</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that is within <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">xs</span></code>(key[, axis, level, drop_level])</p></td>
+<td><p>Return cross-section from the Series/DataFrame.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code></p></td>
+<td><p>Return the transpose, which is by definition self.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.area.html#geopandas.GeoSeries.area" title="geopandas.GeoSeries.area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">area</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> containing the area of each geometry in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> expressed in the units of the CRS.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">array</span></code></p></td>
+<td><p>The ExtensionArray of the data backing this Series or Index.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">at</span></code></p></td>
+<td><p>Access a single value for a row/column label pair.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">attrs</span></code></p></td>
+<td><p>Dictionary of global attributes of this dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">axes</span></code></p></td>
+<td><p>Return a list of the row axis labels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.boundary.html#geopandas.GeoSeries.boundary" title="geopandas.GeoSeries.boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">boundary</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of lower dimensional objects representing each geometries’s set-theoretic <cite>boundary</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.bounds.html#geopandas.GeoSeries.bounds" title="geopandas.GeoSeries.bounds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bounds</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> with columns <code class="docutils literal notranslate"><span class="pre">minx</span></code>, <code class="docutils literal notranslate"><span class="pre">miny</span></code>, <code class="docutils literal notranslate"><span class="pre">maxx</span></code>, <code class="docutils literal notranslate"><span class="pre">maxy</span></code> values containing the bounds for each geometry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cascaded_union</span></code></p></td>
+<td><p>Deprecated: Return the unary_union of all geometries</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.centroid.html#geopandas.GeoSeries.centroid" title="geopandas.GeoSeries.centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">centroid</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of points representing the centroid of each geometry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.convex_hull.html#geopandas.GeoSeries.convex_hull" title="geopandas.GeoSeries.convex_hull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convex_hull</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing the convex hull of each geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.crs.html#geopandas.GeoSeries.crs" title="geopandas.GeoSeries.crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crs</span></code></a></p></td>
+<td><p>The Coordinate Reference System (CRS) represented as a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.cx.html#geopandas.GeoSeries.cx" title="geopandas.GeoSeries.cx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cx</span></code></a></p></td>
+<td><p>Coordinate based indexer to select by intersection with bounding box.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtype</span></code></p></td>
+<td><p>Return the dtype object of the underlying data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtypes</span></code></p></td>
+<td><p>Return the dtype object of the underlying data.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">empty</span></code></p></td>
+<td><p>Indicator whether DataFrame is empty.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.envelope.html#geopandas.GeoSeries.envelope" title="geopandas.GeoSeries.envelope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">envelope</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing the envelope of each geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.exterior.html#geopandas.GeoSeries.exterior" title="geopandas.GeoSeries.exterior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exterior</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of LinearRings representing the outer boundary of each polygon in the GeoSeries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flags</span></code></p></td>
+<td><p>Get the properties associated with this pandas object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.geom_type.html#geopandas.GeoSeries.geom_type" title="geopandas.GeoSeries.geom_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_type</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of strings specifying the <cite>Geometry Type</cite> of each object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">geometry</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.has_sindex.html#geopandas.GeoSeries.has_sindex" title="geopandas.GeoSeries.has_sindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_sindex</span></code></a></p></td>
+<td><p>Check the existence of the spatial index without generating it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.has_z.html#geopandas.GeoSeries.has_z" title="geopandas.GeoSeries.has_z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_z</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for features that have a z-component.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">hasnans</span></code></p></td>
+<td><p>Return if I have any nans; enables various perf speedups.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iat</span></code></p></td>
+<td><p>Access a single value for a row/column pair by integer position.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iloc</span></code></p></td>
+<td><p>Purely integer-location based indexing for selection by position.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code></p></td>
+<td><p>The index (axis labels) of the Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.interiors.html#geopandas.GeoSeries.interiors" title="geopandas.GeoSeries.interiors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interiors</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of List representing the inner rings of each polygon in the GeoSeries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.is_empty.html#geopandas.GeoSeries.is_empty" title="geopandas.GeoSeries.is_empty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_empty</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for empty geometries.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_monotonic</span></code></p></td>
+<td><p>Return boolean if values in the object are monotonic_increasing.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_monotonic_decreasing</span></code></p></td>
+<td><p>Return boolean if values in the object are monotonic_decreasing.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_monotonic_increasing</span></code></p></td>
+<td><p>Alias for is_monotonic.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.is_ring.html#geopandas.GeoSeries.is_ring" title="geopandas.GeoSeries.is_ring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_ring</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for features that are closed.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.is_simple.html#geopandas.GeoSeries.is_simple" title="geopandas.GeoSeries.is_simple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_simple</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for geometries that do not cross themselves.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_unique</span></code></p></td>
+<td><p>Return boolean if values in the object are unique.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.is_valid.html#geopandas.GeoSeries.is_valid" title="geopandas.GeoSeries.is_valid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_valid</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for geometries that are valid.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.length.html#geopandas.GeoSeries.length" title="geopandas.GeoSeries.length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">length</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> containing the length of each geometry expressed in the units of the CRS.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">loc</span></code></p></td>
+<td><p>Access a group of rows and columns by label(s) or a boolean array.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>Return the name of the Series.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nbytes</span></code></p></td>
+<td><p>Return the number of bytes in the underlying data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></p></td>
+<td><p>Number of dimensions of the underlying data, by definition 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shape</span></code></p></td>
+<td><p>Return a tuple of the shape of the underlying data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.sindex.html#geopandas.GeoSeries.sindex" title="geopandas.GeoSeries.sindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sindex</span></code></a></p></td>
+<td><p>Generate the spatial index</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<td><p>Return the number of elements in the underlying data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.total_bounds.html#geopandas.GeoSeries.total_bounds" title="geopandas.GeoSeries.total_bounds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">total_bounds</span></code></a></p></td>
+<td><p>Returns a tuple containing <code class="docutils literal notranslate"><span class="pre">minx</span></code>, <code class="docutils literal notranslate"><span class="pre">miny</span></code>, <code class="docutils literal notranslate"><span class="pre">maxx</span></code>, <code class="docutils literal notranslate"><span class="pre">maxy</span></code> values for the bounds of the series as a whole.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">type</span></code></p></td>
+<td><p>Return the geometry type of each geometry in the GeoSeries</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.unary_union.html#geopandas.GeoSeries.unary_union" title="geopandas.GeoSeries.unary_union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unary_union</span></code></a></p></td>
+<td><p>Returns a geometry containing the union of all geometries in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code></p></td>
+<td><p>Return Series as ndarray or ndarray-like depending on the dtype.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.x.html#geopandas.GeoSeries.x" title="geopandas.GeoSeries.x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">x</span></code></a></p></td>
+<td><p>Return the x location of point geometries in a GeoSeries</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="geopandas.GeoSeries.y.html#geopandas.GeoSeries.y" title="geopandas.GeoSeries.y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code></a></p></td>
+<td><p>Return the y location of point geometries in a GeoSeries</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="geopandas.GeoSeries.z.html#geopandas.GeoSeries.z" title="geopandas.GeoSeries.z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">z</span></code></a></p></td>
+<td><p>Return the z location of point geometries in a GeoSeries</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="../geoseries.html" title="previous page">GeoSeries</a>
+    <a class='right-next' id="next-link" href="geopandas.GeoSeries.area.html" title="next page">geopandas.GeoSeries.area</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

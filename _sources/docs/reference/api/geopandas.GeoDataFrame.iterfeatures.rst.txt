@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.iterfeatures
+===================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.iterfeatures

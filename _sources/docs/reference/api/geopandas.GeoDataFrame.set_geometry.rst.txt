@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.set\_geometry
+====================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.set_geometry

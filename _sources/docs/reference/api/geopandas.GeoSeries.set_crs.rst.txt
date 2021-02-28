@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.set\_crs
+============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.set_crs

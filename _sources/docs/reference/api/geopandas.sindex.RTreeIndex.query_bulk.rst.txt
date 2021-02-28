@@ -1,0 +1,6 @@
+﻿geopandas.sindex.RTreeIndex.query\_bulk
+=======================================
+
+.. currentmodule:: geopandas.sindex
+
+.. automethod:: RTreeIndex.query_bulk

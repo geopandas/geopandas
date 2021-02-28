@@ -1,0 +1,351 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>geopandas.overlay &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="geopandas.clip" href="geopandas.clip.html" />
+    <link rel="prev" title="geopandas.sjoin" href="geopandas.sjoin.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../../index.html">
+    
+      <img src="../../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="../../user_guide.html">User Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+  
+                <li class="active">
+                    <a href="../../reference.html">API reference</a>
+                    <ul>
+                    
+                        <li class="">
+                            <a href="../geoseries.html">GeoSeries</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../geodataframe.html">GeoDataFrame</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../io.html">Input/output</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="../tools.html">Tools</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../sindex.html">Spatial index</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../testing.html">Testing</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="geopandas-overlay">
+<h1>geopandas.overlay<a class="headerlink" href="#geopandas-overlay" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="geopandas.overlay">
+<code class="sig-prename descclassname">geopandas.</code><code class="sig-name descname">overlay</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df1</span></em>, <em class="sig-param"><span class="n">df2</span></em>, <em class="sig-param"><span class="n">how</span><span class="o">=</span><span class="default_value">'intersection'</span></em>, <em class="sig-param"><span class="n">keep_geom_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">make_valid</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.overlay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform spatial overlay between two GeoDataFrames.</p>
+<p>Currently only supports data GeoDataFrames with uniform geometry types,
+i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
+combination of (Multi)LineString and LinearRing shapes.
+Implements several methods that are all effectively subsets of the union.</p>
+<p>See the User Guide page <a class="reference internal" href="../../user_guide/set_operations.html"><span class="doc">Set-Operations with Overlay</span></a> for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>df1</strong><span class="classifier">GeoDataFrame</span></dt><dd></dd>
+<dt><strong>df2</strong><span class="classifier">GeoDataFrame</span></dt><dd></dd>
+<dt><strong>how</strong><span class="classifier">string</span></dt><dd><p>Method of spatial overlay: ‘intersection’, ‘union’,
+‘identity’, ‘symmetric_difference’ or ‘difference’.</p>
+</dd>
+<dt><strong>keep_geom_type</strong><span class="classifier">bool</span></dt><dd><p>If True, return only geometries of the same geometry type as df1 has,
+if False, return all resulting geometries. Default is None,
+which will set keep_geom_type to True but warn upon dropping
+geometries.</p>
+</dd>
+<dt><strong>make_valid</strong><span class="classifier">bool, default True</span></dt><dd><p>If True, any invalid input geometries are corrected with a call to <cite>buffer(0)</cite>,
+if False, a <cite>ValueError</cite> is raised if any input geometries are invalid.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>df</strong><span class="classifier">GeoDataFrame</span></dt><dd><p>GeoDataFrame with new set of polygons and attributes
+resulting from the overlay</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="geopandas.sjoin.html#geopandas.sjoin" title="geopandas.sjoin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sjoin</span></code></a></dt><dd><p>spatial join</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Notes</p>
+<p>Every operation in GeoPandas is planar, i.e. the potential third
+dimension is not taken into account.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">polys1</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)]),</span>
+<span class="gp">... </span>                              <span class="n">Polygon</span><span class="p">([(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)])])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">polys2</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">([</span><span class="n">Polygon</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)]),</span>
+<span class="gp">... </span>                              <span class="n">Polygon</span><span class="p">([(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)])])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">polys1</span><span class="p">,</span> <span class="s1">&#39;df1_data&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="n">polys2</span><span class="p">,</span> <span class="s1">&#39;df2_data&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;union&#39;</span><span class="p">)</span>
+<span class="go">   df1_data  df2_data                                           geometry</span>
+<span class="go">0       1.0       1.0  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....</span>
+<span class="go">1       2.0       1.0  POLYGON ((3.00000 2.00000, 2.00000 2.00000, 2....</span>
+<span class="go">2       2.0       2.0  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....</span>
+<span class="go">3       1.0       NaN  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....</span>
+<span class="go">4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...</span>
+<span class="go">5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...</span>
+<span class="go">6       NaN       2.0  POLYGON ((3.00000 4.00000, 3.00000 5.00000, 5....</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
+<span class="go">   df1_data  df2_data                                           geometry</span>
+<span class="go">0         1         1  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....</span>
+<span class="go">1         2         1  POLYGON ((3.00000 2.00000, 2.00000 2.00000, 2....</span>
+<span class="go">2         2         2  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;symmetric_difference&#39;</span><span class="p">)</span>
+<span class="go">   df1_data  df2_data                                           geometry</span>
+<span class="go">0       1.0       NaN  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....</span>
+<span class="go">1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...</span>
+<span class="go">2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...</span>
+<span class="go">3       NaN       2.0  POLYGON ((3.00000 4.00000, 3.00000 5.00000, 5....</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;difference&#39;</span><span class="p">)</span>
+<span class="go">                                            geometry  df1_data</span>
+<span class="go">0  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....         1</span>
+<span class="go">1  MULTIPOLYGON (((2.00000 3.00000, 2.00000 4.000...         2</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">)</span>
+<span class="go">   df1_data  df2_data                                           geometry</span>
+<span class="go">0       1.0       1.0  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....</span>
+<span class="go">1       2.0       1.0  POLYGON ((3.00000 2.00000, 2.00000 2.00000, 2....</span>
+<span class="go">2       2.0       2.0  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....</span>
+<span class="go">3       1.0       NaN  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....</span>
+<span class="go">4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="geopandas.sjoin.html" title="previous page">geopandas.sjoin</a>
+    <a class='right-next' id="next-link" href="geopandas.clip.html" title="next page">geopandas.clip</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,189 +1,194 @@
 
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>GeoPandas 0.8.0 &mdash; GeoPandas 0.8.0 documentation</title>
-  
 
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoPandas 0.9.0 &#8212; GeoPandas 0.9.0 documentation</title>
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+  <link rel="stylesheet" href="_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
 
     
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    
+      
+  <link rel="stylesheet"
+    href="_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="install.html" /> 
-</head>
-
-<body class="wy-body-for-nav">
-
-   
-  <div class="wy-grid-for-nav">
+    <link rel="next" title="About GeoPandas" href="about.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
     
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-          
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
 
-          
-            <a href="#" class="icon icon-home"> GeoPandas
-          
+    <a class="navbar-brand" href="#">
+    
+      <img src="_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 
-          
-          </a>
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="community.html">Community</a>
+        </li>
+        
+        
+      </ul>
 
-          
-            
-            
-              <div class="version">
-                0.8.0
-              </div>
-            
-          
-
-          
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
-</ul>
-<p class="caption"><span class="caption-text">User Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
-<li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
-<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Reference Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Developer</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
-</ul>
-
-            
-          
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+
+      <ul class="navbar-nav">
         
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">GeoPandas</a>
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
         
-      </nav>
-
-
-      <div class="wy-nav-content">
         
-        <div class="rst-content">
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
         
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
-  <ul class="wy-breadcrumbs">
-    
-      <li><a href="#">Docs</a> &raquo;</li>
-        
-      <li>GeoPandas 0.8.0</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-            
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
-          
-        
-      </li>
-    
-  </ul>
-
-  
-  <hr/>
+      </ul>
+    </div>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-            
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+          
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#description" class="nav-link">Description</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#useful-links" class="nav-link">Useful links</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#supported-by" class="nav-link">Supported by</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#indices-and-tables" class="nav-link">Indices and tables</a>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
   <div class="section" id="geopandas-version">
-<h1>GeoPandas 0.8.0<a class="headerlink" href="#geopandas-version" title="Permalink to this headline">¶</a></h1>
+<h1>GeoPandas 0.9.0<a class="headerlink" href="#geopandas-version" title="Permalink to this headline">¶</a></h1>
 <p>GeoPandas is an open source project to make working with geospatial
 data in python easier.  GeoPandas extends the datatypes used by
 <a class="reference external" href="http://pandas.pydata.org">pandas</a> to allow spatial operations on geometric types.  Geometric
 operations are performed by <a class="reference external" href="https://shapely.readthedocs.io">shapely</a>.  Geopandas further depends on
-<a class="reference external" href="https://fiona.readthedocs.io">fiona</a> for file access and <a class="reference external" href="https://pypi.python.org/pypi/descartes">descartes</a> and <a class="reference external" href="http://matplotlib.org">matplotlib</a> for plotting.</p>
+<a class="reference external" href="https://fiona.readthedocs.io">fiona</a> for file access and <a class="reference external" href="http://matplotlib.org">matplotlib</a> for plotting.</p>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The goal of GeoPandas is to make working with geospatial data in
@@ -193,53 +198,19 @@ to multiple geometries to shapely.  GeoPandas enables you to easily do
 operations in python that would otherwise require a spatial database
 such as PostGIS.</p>
 <div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Examples Gallery</a></li>
-</ul>
 </div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">User Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">Reading and Writing Files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="indexing.html">Indexing and Selecting Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mapping.html">Making Maps</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projections.html">Managing Projections</a></li>
-<li class="toctree-l1"><a class="reference internal" href="geometric_manipulations.html">Geometric Manipulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="set_operations.html">Set Operations with overlay</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aggregation_with_dissolve.html">Aggregation with dissolve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mergingdata.html">Merging Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="geocoding.html">Geocoding</a></li>
-<li class="toctree-l1"><a class="reference internal" href="missing_empty.html">Missing and empty geometries</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Reference Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference to All Attributes and Methods</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Developer</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to GeoPandas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="code_of_conduct.html">Code of Conduct</a></li>
-</ul>
+<div class="button docutils container">
+<p><a class="reference internal" href="getting_started.html"><span class="doc">Getting started</span></a> <a class="reference internal" href="docs.html"><span class="doc">Documentation</span></a>
+<a class="reference internal" href="about.html"><span class="doc">About GeoPandas</span></a> <a class="reference internal" href="community.html"><span class="doc">Community</span></a></p>
 </div>
 </div>
-<div class="section" id="get-in-touch">
-<h2>Get in touch<a class="headerlink" href="#get-in-touch" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>Ask usage questions (“How do I?”) on <a class="reference external" href="https://stackoverflow.com/questions/tagged/geopandas">StackOverflow</a> or <a class="reference external" href="https://gis.stackexchange.com/questions/tagged/geopandas">GIS StackExchange</a>.</p></li>
-<li><p>Report bugs, suggest features or view the source code <a class="reference external" href="https://github.com/geopandas/geopandas">on GitHub</a>.</p></li>
-<li><p>For a quick question about a bug report or feature request, or Pull Request,
-head over to the <a class="reference external" href="https://gitter.im/geopandas/geopandas">gitter channel</a>.</p></li>
-<li><p>For less well defined questions or ideas, or to announce other projects of
-interest to GeoPandas users, … use the <a class="reference external" href="https://groups.google.com/forum/#!forum/geopandas">mailing list</a>.</p></li>
-</ul>
+<div class="section" id="useful-links">
+<h2>Useful links<a class="headerlink" href="#useful-links" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://pypi.org/project/geopandas/">Binary Installers (PyPI)</a> | <a class="reference external" href="https://github.com/geopandas/geopandas">Source Repository (GitHub)</a> | <a class="reference external" href="https://github.com/geopandas/geopandas/issues">Issues &amp; Ideas</a> | <a class="reference external" href="https://stackoverflow.com/questions/tagged/geopandas">Q&amp;A Support</a></p>
+</div>
+<div class="section" id="supported-by">
+<h2>Supported by<a class="headerlink" href="#supported-by" title="Permalink to this headline">¶</a></h2>
+<a class="reference external image-reference" href="https://numfocus.org"><img alt="numfocus" src="https://numfocus.org/wp-content/uploads/2017/07/NumFocus_LRG.png" style="width: 400px;" /></a>
 </div>
 <div class="section" id="indices-and-tables">
 <h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
@@ -252,50 +223,32 @@ interest to GeoPandas users, … use the <a class="reference external" href="htt
 </div>
 
 
-           </div>
-           
-          </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='right-next' id="next-link" href="about.html" title="next page">About GeoPandas</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
     </div>
-  
 
-  <hr/>
+    
+  <script src="_static/js/index.d3f166471bb80abb5163.js"></script>
 
-  <div role="contentinfo">
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
     <p>
-        &copy; Copyright 2013–2019, GeoPandas developers
-
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
-
 </footer>
-
-        </div>
-      </div>
-
-    </section>
-
-  </div>
-  
-
-
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
-
-  
-  
-    
-   
-
-</body>
+  </body>
 </html>

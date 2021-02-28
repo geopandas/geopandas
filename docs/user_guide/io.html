@@ -1,0 +1,530 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reading and Writing Files &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Indexing and Selecting Data" href="indexing.html" />
+    <link rel="prev" title="Data Structures" href="data_structures.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../index.html">
+    
+      <img src="../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+  
+                <li class="active">
+                    <a href="../user_guide.html">User Guide</a>
+                    <ul>
+                    
+                        <li class="">
+                            <a href="data_structures.html">Data Structures</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="">Reading and Writing Files</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="indexing.html">Indexing and Selecting Data</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="mapping.html">Making Maps and plots</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="projections.html">Managing Projections</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="geometric_manipulations.html">Geometric Manipulations</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="set_operations.html">Set Operations with overlay</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="aggregation_with_dissolve.html">Aggregation with dissolve</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="mergingdata.html">Merging Data</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="geocoding.html">Geocoding</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../reference.html">API reference</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#reading-spatial-data" class="nav-link">Reading Spatial Data</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#reading-subsets-of-the-data" class="nav-link">Reading subsets of the data</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geometry-filter" class="nav-link">Geometry Filter</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#bounding-box-filter" class="nav-link">Bounding Box Filter</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#row-filter" class="nav-link">Row Filter</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#field-column-filters" class="nav-link">Field/Column Filters</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#writing-spatial-data" class="nav-link">Writing Spatial Data</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#spatial-databases" class="nav-link">Spatial databases</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#apache-parquet-and-feather-file-formats" class="nav-link">Apache Parquet and Feather file formats</a>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="reading-and-writing-files">
+<span id="io"></span><h1>Reading and Writing Files<a class="headerlink" href="#reading-and-writing-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="reading-spatial-data">
+<h2>Reading Spatial Data<a class="headerlink" href="#reading-spatial-data" title="Permalink to this headline">¶</a></h2>
+<p><em>geopandas</em> can read almost any vector-based spatial data format including ESRI
+shapefile, GeoJSON files and more using the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>which returns a GeoDataFrame object. This is possible because <em>geopandas</em> makes
+use of the great <a class="reference external" href="http://fiona.readthedocs.io/en/latest/manual.html">fiona</a>
+library, which in turn makes use of a massive open-source program called
+<a class="reference external" href="http://www.gdal.org/">GDAL/OGR</a> designed to facilitate spatial data
+transformations.</p>
+<p>Any arguments passed to <a class="reference internal" href="../reference/api/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a> after the file name will be
+passed directly to <code class="docutils literal notranslate"><span class="pre">fiona.open</span></code>, which does the actual data importation. In
+general, <a class="reference internal" href="../reference/api/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a> is pretty smart and should do what you want
+without extra arguments, but for more help, type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">fiona</span><span class="p">;</span> <span class="n">help</span><span class="p">(</span><span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Among other things, one can explicitly set the driver (shapefile, GeoJSON) with
+the <code class="docutils literal notranslate"><span class="pre">driver</span></code> keyword, or pick a single layer from a multi-layered file with
+the <code class="docutils literal notranslate"><span class="pre">layer</span></code> keyword:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;countries&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Where supported in <code class="docutils literal notranslate"><span class="pre">fiona</span></code>, <em>geopandas</em> can also load resources directly from
+a web URL, for example for GeoJSON files from <a class="reference external" href="http://geojson.xyz/">geojson.xyz</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson&quot;</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also load ZIP files that contain your data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/cb_2017_us_state_500k.zip&quot;</span>
+<span class="n">states</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">zipfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the dataset is in a folder in the ZIP file, you have to append its name:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data&quot;</span>
+</pre></div>
+</div>
+<p>If there are multiple datasets in a folder in the ZIP file, you also have to
+specify the filename:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zipfile</span> <span class="o">=</span> <span class="s2">&quot;zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data/gadm36_AFG_1.shp&quot;</span>
+</pre></div>
+</div>
+<p>It is also possible to read any file-like objects with a <code class="docutils literal notranslate"><span class="pre">read()</span></code> method, such
+as a file handler (e.g. via built-in <code class="docutils literal notranslate"><span class="pre">open</span></code> function) or <code class="docutils literal notranslate"><span class="pre">StringIO</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;test.geojson&quot;</span>
+<span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>File-like objects from <a class="reference external" href="https://filesystem-spec.readthedocs.io/en/latest">fsspec</a>
+can also be used to read data, allowing for any combination of storage backends and caching
+supported by that project:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;simplecache::http://download.geofabrik.de/antarctica-latest-free.shp.zip&quot;</span>
+<span class="k">with</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also read path objects:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="n">path_object</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">path_object</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="reading-subsets-of-the-data">
+<h3>Reading subsets of the data<a class="headerlink" href="#reading-subsets-of-the-data" title="Permalink to this headline">¶</a></h3>
+<p>Since geopandas is powered by Fiona, which is powered by GDAL, you can take advantage of
+pre-filtering when loading in larger datasets. This can be done geospatially with a geometry
+or bounding box. You can also filter rows loaded with a slice. Read more at <a class="reference internal" href="../reference/api/geopandas.read_file.html#geopandas.read_file" title="geopandas.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_file()</span></code></a>.</p>
+<div class="section" id="geometry-filter">
+<h4>Geometry Filter<a class="headerlink" href="#geometry-filter" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7.0.</span></p>
+</div>
+<p>The geometry filter only loads data that intersects with the geometry.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf_mask</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_cities&quot;</span><span class="p">),</span>
+    <span class="n">mask</span><span class="o">=</span><span class="n">gdf_mask</span><span class="p">[</span><span class="n">gdf_mask</span><span class="o">.</span><span class="n">continent</span><span class="o">==</span><span class="s2">&quot;Africa&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="bounding-box-filter">
+<h4>Bounding Box Filter<a class="headerlink" href="#bounding-box-filter" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<p>The bounding box filter only loads data that intersects with the bounding box.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bbox</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="mf">1031051.7879884212</span><span class="p">,</span> <span class="mf">224272.49231459625</span><span class="p">,</span> <span class="mf">1047224.3104931959</span><span class="p">,</span> <span class="mf">244317.30894023244</span>
+<span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;nybb&quot;</span><span class="p">),</span>
+    <span class="n">bbox</span><span class="o">=</span><span class="n">bbox</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="row-filter">
+<h4>Row Filter<a class="headerlink" href="#row-filter" title="Permalink to this headline">¶</a></h4>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.7.0.</span></p>
+</div>
+<p>Filter the rows loaded in from the file using an integer (for the first n rows)
+or a slice object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">rows</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">rows</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="field-column-filters">
+<h4>Field/Column Filters<a class="headerlink" href="#field-column-filters" title="Permalink to this headline">¶</a></h4>
+<p>Load in a subset of fields from the file:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Requires Fiona 1.8+</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">ignore_fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;iso_a3&quot;</span><span class="p">,</span> <span class="s2">&quot;gdp_md_est&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Skip loading geometry from the file:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Requires Fiona 1.8+</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Returns <code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code></p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pdf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span>
+    <span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">),</span>
+    <span class="n">ignore_geometry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="writing-spatial-data">
+<h2>Writing Spatial Data<a class="headerlink" href="#writing-spatial-data" title="Permalink to this headline">¶</a></h2>
+<p>GeoDataFrames can be exported to many different standard formats using the
+<a class="reference internal" href="../reference/api/geopandas.GeoDataFrame.to_file.html#geopandas.GeoDataFrame.to_file" title="geopandas.GeoDataFrame.to_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame.to_file()</span></code></a> method.
+For a full list of supported formats, type <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">fiona;</span> <span class="pre">fiona.supported_drivers</span></code>.</p>
+<p>In addition, GeoDataFrames can be uploaded to <a class="reference external" href="https://postgis.net/">PostGIS</a> database (starting with GeoPandas 0.8)
+by using the <a class="reference internal" href="../reference/api/geopandas.GeoDataFrame.to_postgis.html#geopandas.GeoDataFrame.to_postgis" title="geopandas.GeoDataFrame.to_postgis"><code class="xref py py-meth docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame.to_postgis()</span></code></a> method.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>GeoDataFrame can contain more field types than supported by most of the file formats. For example tuples or lists
+can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
+Before saving to a file, they need to be converted to a format supported by a selected driver.</p>
+</div>
+<p><strong>Writing to Shapefile</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;countries.shp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Writing to GeoJSON</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;countries.geojson&quot;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GeoJSON&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Writing to GeoPackage</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;countries&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+<span class="n">cities_gdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;package.gpkg&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;cities&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GPKG&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="spatial-databases">
+<h2>Spatial databases<a class="headerlink" href="#spatial-databases" title="Permalink to this headline">¶</a></h2>
+<p><em>geopandas</em> can also get data from a PostGIS database using the
+<a class="reference internal" href="../reference/api/geopandas.read_postgis.html#geopandas.read_postgis" title="geopandas.read_postgis"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_postgis()</span></code></a> command.</p>
+<p>Writing to PostGIS:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
+<span class="n">db_connection_url</span> <span class="o">=</span> <span class="s2">&quot;postgres://myusername:mypassword@myhost:5432/mydatabase&quot;</span><span class="p">;</span>
+<span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">db_connection_url</span><span class="p">)</span>
+<span class="n">countries_gdf</span><span class="o">.</span><span class="n">to_postgis</span><span class="p">(</span><span class="s2">&quot;countries_table&quot;</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="apache-parquet-and-feather-file-formats">
+<h2>Apache Parquet and Feather file formats<a class="headerlink" href="#apache-parquet-and-feather-file-formats" title="Permalink to this headline">¶</a></h2>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.8.0.</span></p>
+</div>
+<p>GeoPandas supports writing and reading the Apache Parquet and Feather file
+formats.</p>
+<p><a class="reference external" href="https://parquet.apache.org/">Apache Parquet</a> is an efficient, columnar
+storage format (originating from the Hadoop ecosystem). It is a widely used
+binary file format for tabular data. The Feather file format is the on-disk
+representation of the <a class="reference external" href="https://arrow.apache.org/">Apache Arrow</a> memory
+format, an open standard for in-memory columnar data.</p>
+<p>The <a class="reference internal" href="../reference/api/geopandas.read_parquet.html#geopandas.read_parquet" title="geopandas.read_parquet"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_parquet()</span></code></a>, <a class="reference internal" href="../reference/api/geopandas.read_feather.html#geopandas.read_feather" title="geopandas.read_feather"><code class="xref py py-func docutils literal notranslate"><span class="pre">geopandas.read_feather()</span></code></a>,
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoDataFrame.to_parquet()</span></code> and <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeoDataFrame.to_feather()</span></code> methods
+enable fast roundtrip from GeoPandas to those binary file formats, preserving
+the spatial information.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is an initial implementation of Parquet file support and
+associated metadata. This is tracking version 0.1.0 of the metadata
+specification at:
+<a class="reference external" href="https://github.com/geopandas/geo-arrow-spec">https://github.com/geopandas/geo-arrow-spec</a></p>
+<p>This metadata specification does not yet make stability promises. As such,
+we do not yet recommend using this in a production setting unless you are
+able to rewrite your Parquet or Feather files.</p>
+</div>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="data_structures.html" title="previous page">Data Structures</a>
+    <a class='right-next' id="next-link" href="indexing.html" title="next page">Indexing and Selecting Data</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

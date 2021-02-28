@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Guide &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Structures" href="user_guide/data_structures.html" />
+    <link rel="prev" title="Documentation" href="../docs.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../index.html">
+    
+      <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+  
+                <li class="active">
+                    <a href="">User Guide</a>
+                    <ul>
+                    
+                        <li class="">
+                            <a href="user_guide/data_structures.html">Data Structures</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/io.html">Reading and Writing Files</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/indexing.html">Indexing and Selecting Data</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/mapping.html">Making Maps and plots</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/projections.html">Managing Projections</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/geometric_manipulations.html">Geometric Manipulations</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/set_operations.html">Set Operations with overlay</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/aggregation_with_dissolve.html">Aggregation with dissolve</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/mergingdata.html">Merging Data</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="user_guide/geocoding.html">Geocoding</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="reference.html">API reference</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="user-guide">
+<h1>User Guide<a class="headerlink" href="#user-guide" title="Permalink to this headline">¶</a></h1>
+<p>The User Guide covers different parts of basic usage of GeoPandas. Each page focuses on a single topic and outlines how it is implemented in GeoPandas, with reproducible examples.</p>
+<p>If you don’t know anything about GeoPandas, start with the <a class="reference internal" href="../getting_started/introduction.html"><span class="doc">Introduction to GeoPandas</span></a>.</p>
+<p>Advanced topics can be found in the <a class="reference internal" href="advanced_guide.html"><span class="doc">Advanced Guide</span></a> and further specification in the <a class="reference internal" href="reference.html"><span class="doc">API Reference</span></a>.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/data_structures.html">Data Structures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/data_structures.html#geoseries">GeoSeries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/data_structures.html#geodataframe">GeoDataFrame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/data_structures.html#display-options">Display options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/io.html">Reading and Writing Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/io.html#reading-spatial-data">Reading Spatial Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/io.html#writing-spatial-data">Writing Spatial Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/io.html#spatial-databases">Spatial databases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/io.html#apache-parquet-and-feather-file-formats">Apache Parquet and Feather file formats</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/indexing.html">Indexing and Selecting Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/mapping.html">Making Maps and plots</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mapping.html#choropleth-maps">Choropleth Maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mapping.html#maps-with-layers">Maps with Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mapping.html#pandas-plots">Pandas Plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mapping.html#other-resources">Other Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/projections.html">Managing Projections</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/projections.html#coordinate-reference-systems">Coordinate Reference Systems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/projections.html#what-is-the-best-format-to-store-the-crs-information">What is the best format to store the CRS information?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/projections.html#setting-a-projection">Setting a Projection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/projections.html#re-projecting">Re-Projecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/projections.html#projection-for-multiple-geometry-columns">Projection for multiple geometry columns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/projections.html#upgrading-to-geopandas-0-7-with-pyproj-2-2-and-proj-6">Upgrading to GeoPandas 0.7 with pyproj &gt; 2.2 and PROJ &gt; 6</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/geometric_manipulations.html">Geometric Manipulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/geometric_manipulations.html#constructive-methods">Constructive Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/geometric_manipulations.html#affine-transformations">Affine transformations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/set_operations.html">Set Operations with overlay</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/set_operations.html#the-different-overlay-operations">The different Overlay operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/set_operations.html#overlay-countries-example">Overlay Countries Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/set_operations.html#keep-geom-type-keyword">keep_geom_type keyword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/set_operations.html#more-examples">More Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/aggregation_with_dissolve.html">Aggregation with dissolve</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/aggregation_with_dissolve.html#dissolve-example"><code class="docutils literal notranslate"><span class="pre">dissolve</span></code> Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/aggregation_with_dissolve.html#dissolve-arguments">Dissolve Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/mergingdata.html">Merging Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mergingdata.html#appending">Appending</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mergingdata.html#attribute-joins">Attribute Joins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/mergingdata.html#spatial-joins">Spatial Joins</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/geocoding.html">Geocoding</a></li>
+</ul>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="../docs.html" title="previous page">Documentation</a>
+    <a class='right-next' id="next-link" href="user_guide/data_structures.html" title="next page">Data Structures</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

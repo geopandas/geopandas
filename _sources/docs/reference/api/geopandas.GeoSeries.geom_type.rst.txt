@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.geom\_type
+==============================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.geom_type

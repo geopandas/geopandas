@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.explode
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.explode

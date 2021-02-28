@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.to\_json
+============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.to_json

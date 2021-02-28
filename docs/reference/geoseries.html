@@ -1,0 +1,676 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoSeries &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="geopandas.GeoSeries" href="api/geopandas.GeoSeries.html" />
+    <link rel="prev" title="API Reference" href="../reference.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../index.html">
+    
+      <img src="../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="../user_guide.html">User Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+  
+                <li class="active">
+                    <a href="../reference.html">API reference</a>
+                    <ul>
+                    
+                        <li class="active">
+                            <a href="">GeoSeries</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="geodataframe.html">GeoDataFrame</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="io.html">Input/output</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="tools.html">Tools</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="sindex.html">Spatial index</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="testing.html">Testing</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#constructor" class="nav-link">Constructor</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#general-methods-and-attributes" class="nav-link">General methods and attributes</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#unary-predicates" class="nav-link">Unary predicates</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#binary-predicates" class="nav-link">Binary Predicates</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#set-theoretic-methods" class="nav-link">Set-theoretic Methods</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#constructive-methods-and-attributes" class="nav-link">Constructive Methods and Attributes</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#affine-transformations" class="nav-link">Affine transformations</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#aggregating-and-exploding" class="nav-link">Aggregating and exploding</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#reading-and-writing-files" class="nav-link">Reading and writing files</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#projection-handling" class="nav-link">Projection handling</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#missing-values" class="nav-link">Missing values</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#plotting" class="nav-link">Plotting</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#spatial-index" class="nav-link">Spatial index</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#indexing" class="nav-link">Indexing</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#interface" class="nav-link">Interface</a>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="geoseries">
+<h1>GeoSeries<a class="headerlink" href="#geoseries" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="constructor">
+<h2>Constructor<a class="headerlink" href="#constructor" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.html#geopandas.GeoSeries" title="geopandas.GeoSeries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries</span></code></a>([data, index, crs])</p></td>
+<td><p>A Series object designed to store shapely geometry objects.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="general-methods-and-attributes">
+<h2>General methods and attributes<a class="headerlink" href="#general-methods-and-attributes" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.area.html#geopandas.GeoSeries.area" title="geopandas.GeoSeries.area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.area</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> containing the area of each geometry in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> expressed in the units of the CRS.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.boundary.html#geopandas.GeoSeries.boundary" title="geopandas.GeoSeries.boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.boundary</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of lower dimensional objects representing each geometries’s set-theoretic <cite>boundary</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.bounds.html#geopandas.GeoSeries.bounds" title="geopandas.GeoSeries.bounds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.bounds</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> with columns <code class="docutils literal notranslate"><span class="pre">minx</span></code>, <code class="docutils literal notranslate"><span class="pre">miny</span></code>, <code class="docutils literal notranslate"><span class="pre">maxx</span></code>, <code class="docutils literal notranslate"><span class="pre">maxy</span></code> values containing the bounds for each geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.total_bounds.html#geopandas.GeoSeries.total_bounds" title="geopandas.GeoSeries.total_bounds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.total_bounds</span></code></a></p></td>
+<td><p>Returns a tuple containing <code class="docutils literal notranslate"><span class="pre">minx</span></code>, <code class="docutils literal notranslate"><span class="pre">miny</span></code>, <code class="docutils literal notranslate"><span class="pre">maxx</span></code>, <code class="docutils literal notranslate"><span class="pre">maxy</span></code> values for the bounds of the series as a whole.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.length.html#geopandas.GeoSeries.length" title="geopandas.GeoSeries.length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.length</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> containing the length of each geometry expressed in the units of the CRS.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.geom_type.html#geopandas.GeoSeries.geom_type" title="geopandas.GeoSeries.geom_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.geom_type</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of strings specifying the <cite>Geometry Type</cite> of each object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.distance.html#geopandas.GeoSeries.distance" title="geopandas.GeoSeries.distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.distance</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> containing the distance to aligned <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.representative_point.html#geopandas.GeoSeries.representative_point" title="geopandas.GeoSeries.representative_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.representative_point</span></code></a>()</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of (cheaply computed) points that are guaranteed to be within each geometry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.exterior.html#geopandas.GeoSeries.exterior" title="geopandas.GeoSeries.exterior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.exterior</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of LinearRings representing the outer boundary of each polygon in the GeoSeries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.interiors.html#geopandas.GeoSeries.interiors" title="geopandas.GeoSeries.interiors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.interiors</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of List representing the inner rings of each polygon in the GeoSeries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.x.html#geopandas.GeoSeries.x" title="geopandas.GeoSeries.x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.x</span></code></a></p></td>
+<td><p>Return the x location of point geometries in a GeoSeries</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.y.html#geopandas.GeoSeries.y" title="geopandas.GeoSeries.y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.y</span></code></a></p></td>
+<td><p>Return the y location of point geometries in a GeoSeries</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.z.html#geopandas.GeoSeries.z" title="geopandas.GeoSeries.z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.z</span></code></a></p></td>
+<td><p>Return the z location of point geometries in a GeoSeries</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="unary-predicates">
+<h2>Unary predicates<a class="headerlink" href="#unary-predicates" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.is_empty.html#geopandas.GeoSeries.is_empty" title="geopandas.GeoSeries.is_empty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.is_empty</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for empty geometries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.is_ring.html#geopandas.GeoSeries.is_ring" title="geopandas.GeoSeries.is_ring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.is_ring</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for features that are closed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.is_simple.html#geopandas.GeoSeries.is_simple" title="geopandas.GeoSeries.is_simple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.is_simple</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for geometries that do not cross themselves.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.is_valid.html#geopandas.GeoSeries.is_valid" title="geopandas.GeoSeries.is_valid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.is_valid</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for geometries that are valid.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.has_z.html#geopandas.GeoSeries.has_z" title="geopandas.GeoSeries.has_z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.has_z</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for features that have a z-component.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="binary-predicates">
+<h2>Binary Predicates<a class="headerlink" href="#binary-predicates" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.contains.html#geopandas.GeoSeries.contains" title="geopandas.GeoSeries.contains"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.contains</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that contains <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.crosses.html#geopandas.GeoSeries.crosses" title="geopandas.GeoSeries.crosses"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.crosses</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that cross <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.disjoint.html#geopandas.GeoSeries.disjoint" title="geopandas.GeoSeries.disjoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.disjoint</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry disjoint to <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.geom_equals.html#geopandas.GeoSeries.geom_equals" title="geopandas.GeoSeries.geom_equals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.geom_equals</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry equal to <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.geom_almost_equals.html#geopandas.GeoSeries.geom_almost_equals" title="geopandas.GeoSeries.geom_almost_equals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.geom_almost_equals</span></code></a>(other[, …])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> if each aligned geometry is approximately equal to <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.geom_equals_exact.html#geopandas.GeoSeries.geom_equals_exact" title="geopandas.GeoSeries.geom_equals_exact"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.geom_equals_exact</span></code></a>(other, tolerance)</p></td>
+<td><p>Return True for all geometries that equal aligned <em>other</em> to a given tolerance, else False.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.intersects.html#geopandas.GeoSeries.intersects" title="geopandas.GeoSeries.intersects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.intersects</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that intersects <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.overlaps.html#geopandas.GeoSeries.overlaps" title="geopandas.GeoSeries.overlaps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.overlaps</span></code></a>(other[, align])</p></td>
+<td><p>Returns True for all aligned geometries that overlap <em>other</em>, else False.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.touches.html#geopandas.GeoSeries.touches" title="geopandas.GeoSeries.touches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.touches</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that touches <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.within.html#geopandas.GeoSeries.within" title="geopandas.GeoSeries.within"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.within</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that is within <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.covers.html#geopandas.GeoSeries.covers" title="geopandas.GeoSeries.covers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.covers</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that is entirely covering <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.covered_by.html#geopandas.GeoSeries.covered_by" title="geopandas.GeoSeries.covered_by"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.covered_by</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">Series</span></code> of <code class="docutils literal notranslate"><span class="pre">dtype('bool')</span></code> with value <code class="docutils literal notranslate"><span class="pre">True</span></code> for each aligned geometry that is entirely covered by <cite>other</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="set-theoretic-methods">
+<h2>Set-theoretic Methods<a class="headerlink" href="#set-theoretic-methods" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.difference.html#geopandas.GeoSeries.difference" title="geopandas.GeoSeries.difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.difference</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the points in each aligned geometry that are not in <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.intersection.html#geopandas.GeoSeries.intersection" title="geopandas.GeoSeries.intersection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.intersection</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the intersection of points in each aligned geometry with <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.symmetric_difference.html#geopandas.GeoSeries.symmetric_difference" title="geopandas.GeoSeries.symmetric_difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.symmetric_difference</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the symmetric difference of points in each aligned geometry with <cite>other</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.union.html#geopandas.GeoSeries.union" title="geopandas.GeoSeries.union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.union</span></code></a>(other[, align])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of the union of points in each aligned geometry with <cite>other</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="constructive-methods-and-attributes">
+<h2>Constructive Methods and Attributes<a class="headerlink" href="#constructive-methods-and-attributes" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.buffer.html#geopandas.GeoSeries.buffer" title="geopandas.GeoSeries.buffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.buffer</span></code></a>(distance[, resolution])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing all points within a given <code class="docutils literal notranslate"><span class="pre">distance</span></code> of each geometric object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.boundary.html#geopandas.GeoSeries.boundary" title="geopandas.GeoSeries.boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.boundary</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of lower dimensional objects representing each geometries’s set-theoretic <cite>boundary</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.centroid.html#geopandas.GeoSeries.centroid" title="geopandas.GeoSeries.centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.centroid</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of points representing the centroid of each geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.convex_hull.html#geopandas.GeoSeries.convex_hull" title="geopandas.GeoSeries.convex_hull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.convex_hull</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing the convex hull of each geometry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.envelope.html#geopandas.GeoSeries.envelope" title="geopandas.GeoSeries.envelope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.envelope</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> of geometries representing the envelope of each geometry.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.simplify.html#geopandas.GeoSeries.simplify" title="geopandas.GeoSeries.simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.simplify</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> containing a simplified representation of each geometry.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="affine-transformations">
+<h2>Affine transformations<a class="headerlink" href="#affine-transformations" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.affine_transform.html#geopandas.GeoSeries.affine_transform" title="geopandas.GeoSeries.affine_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.affine_transform</span></code></a>(matrix)</p></td>
+<td><p>Return a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with translated geometries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.rotate.html#geopandas.GeoSeries.rotate" title="geopandas.GeoSeries.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.rotate</span></code></a>(angle[, origin, use_radians])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with rotated geometries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.scale.html#geopandas.GeoSeries.scale" title="geopandas.GeoSeries.scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.scale</span></code></a>([xfact, yfact, zfact, origin])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with scaled geometries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.skew.html#geopandas.GeoSeries.skew" title="geopandas.GeoSeries.skew"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.skew</span></code></a>([xs, ys, origin, use_radians])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with skewed geometries.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.translate.html#geopandas.GeoSeries.translate" title="geopandas.GeoSeries.translate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.translate</span></code></a>([xoff, yoff, zoff])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with translated geometries.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="aggregating-and-exploding">
+<h2>Aggregating and exploding<a class="headerlink" href="#aggregating-and-exploding" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.unary_union.html#geopandas.GeoSeries.unary_union" title="geopandas.GeoSeries.unary_union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.unary_union</span></code></a></p></td>
+<td><p>Returns a geometry containing the union of all geometries in the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.explode.html#geopandas.GeoSeries.explode" title="geopandas.GeoSeries.explode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.explode</span></code></a>()</p></td>
+<td><p>Explode multi-part geometries into multiple single geometries.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="reading-and-writing-files">
+<h2>Reading and writing files<a class="headerlink" href="#reading-and-writing-files" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.from_file.html#geopandas.GeoSeries.from_file" title="geopandas.GeoSeries.from_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.from_file</span></code></a>(filename, **kwargs)</p></td>
+<td><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> from a file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.to_file.html#geopandas.GeoSeries.to_file" title="geopandas.GeoSeries.to_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.to_file</span></code></a>(filename[, driver, index])</p></td>
+<td><p>Write the <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> to a file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.to_json.html#geopandas.GeoSeries.to_json" title="geopandas.GeoSeries.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.to_json</span></code></a>(**kwargs)</p></td>
+<td><p>Returns a GeoJSON string representation of the GeoSeries.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="projection-handling">
+<h2>Projection handling<a class="headerlink" href="#projection-handling" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.crs.html#geopandas.GeoSeries.crs" title="geopandas.GeoSeries.crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.crs</span></code></a></p></td>
+<td><p>The Coordinate Reference System (CRS) represented as a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.set_crs.html#geopandas.GeoSeries.set_crs" title="geopandas.GeoSeries.set_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.set_crs</span></code></a>([crs, epsg, inplace, …])</p></td>
+<td><p>Set the Coordinate Reference System (CRS) of a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.to_crs.html#geopandas.GeoSeries.to_crs" title="geopandas.GeoSeries.to_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.to_crs</span></code></a>([crs, epsg])</p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> with all geometries transformed to a new coordinate reference system.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.estimate_utm_crs.html#geopandas.GeoSeries.estimate_utm_crs" title="geopandas.GeoSeries.estimate_utm_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.estimate_utm_crs</span></code></a>([datum_name])</p></td>
+<td><p>Returns the estimated UTM CRS based on the bounds of the dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="missing-values">
+<h2>Missing values<a class="headerlink" href="#missing-values" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.fillna.html#geopandas.GeoSeries.fillna" title="geopandas.GeoSeries.fillna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.fillna</span></code></a>([value, method, inplace])</p></td>
+<td><p>Fill NA values with a geometry (empty polygon by default).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.isna.html#geopandas.GeoSeries.isna" title="geopandas.GeoSeries.isna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.isna</span></code></a>()</p></td>
+<td><p>Detect missing values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.notna.html#geopandas.GeoSeries.notna" title="geopandas.GeoSeries.notna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.notna</span></code></a>()</p></td>
+<td><p>Detect non-missing values.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="plotting">
+<h2>Plotting<a class="headerlink" href="#plotting" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.plot.html#geopandas.GeoSeries.plot" title="geopandas.GeoSeries.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.plot</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Plot a GeoSeries.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="spatial-index">
+<h2>Spatial index<a class="headerlink" href="#spatial-index" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.sindex.html#geopandas.GeoSeries.sindex" title="geopandas.GeoSeries.sindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.sindex</span></code></a></p></td>
+<td><p>Generate the spatial index</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.has_sindex.html#geopandas.GeoSeries.has_sindex" title="geopandas.GeoSeries.has_sindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.has_sindex</span></code></a></p></td>
+<td><p>Check the existence of the spatial index without generating it.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="indexing">
+<h2>Indexing<a class="headerlink" href="#indexing" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.cx.html#geopandas.GeoSeries.cx" title="geopandas.GeoSeries.cx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.cx</span></code></a></p></td>
+<td><p>Coordinate based indexer to select by intersection with bounding box.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="interface">
+<h2>Interface<a class="headerlink" href="#interface" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoSeries.__geo_interface__.html#geopandas.GeoSeries.__geo_interface__" title="geopandas.GeoSeries.__geo_interface__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoSeries.__geo_interface__</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> as a python feature collection.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Methods of pandas <code class="docutils literal notranslate"><span class="pre">Series</span></code> objects are also available, although not
+all are applicable to geometric objects and some may return a
+<code class="docutils literal notranslate"><span class="pre">Series</span></code> rather than a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> result when appropriate. The methods
+<code class="docutils literal notranslate"><span class="pre">isna()</span></code> and <code class="docutils literal notranslate"><span class="pre">fillna()</span></code> have been
+implemented specifically for <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> and are expected to work
+correctly.</p>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="../reference.html" title="previous page">API Reference</a>
+    <a class='right-next' id="next-link" href="api/geopandas.GeoSeries.html" title="next page">geopandas.GeoSeries</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

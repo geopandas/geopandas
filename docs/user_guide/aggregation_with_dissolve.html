@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aggregation with dissolve &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Merging Data" href="mergingdata.html" />
+    <link rel="prev" title="Set-Operations with Overlay" href="set_operations.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../index.html">
+    
+      <img src="../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+  
+                <li class="active">
+                    <a href="../user_guide.html">User Guide</a>
+                    <ul>
+                    
+                        <li class="">
+                            <a href="data_structures.html">Data Structures</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="io.html">Reading and Writing Files</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="indexing.html">Indexing and Selecting Data</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="mapping.html">Making Maps and plots</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="projections.html">Managing Projections</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="geometric_manipulations.html">Geometric Manipulations</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="set_operations.html">Set Operations with overlay</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="">Aggregation with dissolve</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="mergingdata.html">Merging Data</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="geocoding.html">Geocoding</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../reference.html">API reference</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#dissolve-example" class="nav-link">dissolve Example</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#dissolve-arguments" class="nav-link">Dissolve Arguments</a>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="aggregation-with-dissolve">
+<h1>Aggregation with dissolve<a class="headerlink" href="#aggregation-with-dissolve" title="Permalink to this headline">¶</a></h1>
+<p>Spatial data are often more granular than we need. For example, we might have data on sub-national units, but we’re actually interested in studying patterns at the level of countries.</p>
+<p>In a non-spatial setting, when all we need are summary statistics of the data, we aggregate our data using the <code class="docutils literal notranslate"><span class="pre">groupby</span></code> function. But for spatial data, we sometimes also need to aggregate geometric features. In the <em>geopandas</em> library, we can aggregate geometric features using the <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> function.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dissolve</span></code> can be thought of as doing three things: (a) it dissolves all the geometries within a given group together into a single geometric feature (using the <code class="docutils literal notranslate"><span class="pre">unary_union</span></code> method), and (b) it aggregates all the rows of data in a group using <code class="docutils literal notranslate"><span class="pre">groupby.aggregate()</span></code>, and (c) it combines those two results.</p>
+<div class="section" id="dissolve-example">
+<h2><code class="docutils literal notranslate"><span class="pre">dissolve</span></code> Example<a class="headerlink" href="#dissolve-example" title="Permalink to this headline">¶</a></h2>
+<p>Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in <em>geopandas</em>. We can easily convert this to a continent-level dataset.</p>
+<p>First, let’s look at the most simple case where we just want continent shapes and names. By default, <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> will pass <code class="docutils literal notranslate"><span class="pre">'first'</span></code> to <code class="docutils literal notranslate"><span class="pre">groupby.aggregate</span></code>.</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [1]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+
+<span class="gp">In [2]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span>
+
+<span class="gp">In [3]: </span><span class="n">continents</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">dissolve</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;continent&#39;</span><span class="p">)</span>
+
+<span class="gp">In [4]: </span><span class="n">continents</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+
+<span class="gp">In [5]: </span><span class="n">continents</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[5]: </span><span class="go"></span>
+<span class="go">                                                        geometry</span>
+<span class="go">continent                                                       </span>
+<span class="go">Africa         MULTIPOLYGON (((-16.714 13.595, -17.126 14.374...</span>
+<span class="go">Antarctica     MULTIPOLYGON (((-180.000 -84.713, -179.942 -84...</span>
+<span class="go">Asia           MULTIPOLYGON (((27.192 40.691, 26.358 40.152, ...</span>
+<span class="go">Europe         MULTIPOLYGON (((-177.664 71.133, -178.694 70.8...</span>
+<span class="go">North America  MULTIPOLYGON (((-169.529 62.977, -170.291 63.1...</span>
+</pre></div>
+</div>
+<img alt="../../_images/continents1.png" src="../../_images/continents1.png" />
+<p>If we are interested in aggregate populations, however, we can pass different functions to the <code class="docutils literal notranslate"><span class="pre">dissolve</span></code> method to aggregate populations using the <code class="docutils literal notranslate"><span class="pre">aggfunc</span> <span class="pre">=</span></code> argument:</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="gp">In [6]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;naturalearth_lowres&#39;</span><span class="p">))</span>
+
+<span class="gp">In [7]: </span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span><span class="p">[[</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="s1">&#39;pop_est&#39;</span><span class="p">]]</span>
+
+<span class="gp">In [8]: </span><span class="n">continents</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">dissolve</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;continent&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
+
+<span class="gp">In [9]: </span><span class="n">continents</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span> <span class="o">=</span> <span class="s1">&#39;pop_est&#39;</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;quantiles&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;YlOrRd&#39;</span><span class="p">);</span>
+
+<span class="gp">In [10]: </span><span class="n">continents</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="gh">Out[10]: </span><span class="go"></span>
+<span class="go">                                                        geometry     pop_est</span>
+<span class="go">continent                                                                   </span>
+<span class="go">Africa         MULTIPOLYGON (((-16.714 13.595, -17.126 14.374...  1219176238</span>
+<span class="go">Antarctica     MULTIPOLYGON (((-180.000 -84.713, -179.942 -84...        4050</span>
+<span class="go">Asia           MULTIPOLYGON (((27.192 40.691, 26.358 40.152, ...  4389144868</span>
+<span class="go">Europe         MULTIPOLYGON (((-177.664 71.133, -178.694 70.8...   746398461</span>
+<span class="go">North America  MULTIPOLYGON (((-169.529 62.977, -170.291 63.1...   573042112</span>
+</pre></div>
+</div>
+<img alt="../../_images/continents2.png" src="../../_images/continents2.png" />
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="dissolve-arguments">
+<h2>Dissolve Arguments<a class="headerlink" href="#dissolve-arguments" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">aggfunc</span> <span class="pre">=</span></code> argument defaults to ‘first’ which means that the first row of attributes values found in the dissolve routine will be assigned to the resultant dissolved geodataframe.
+However it also accepts other summary statistic options as allowed by <code class="docutils literal notranslate"><span class="pre">pandas.groupby()</span></code> including:</p>
+<ul class="simple">
+<li><p>‘first’</p></li>
+<li><p>‘last’</p></li>
+<li><p>‘min’</p></li>
+<li><p>‘max’</p></li>
+<li><p>‘sum’</p></li>
+<li><p>‘mean’</p></li>
+<li><p>‘median’</p></li>
+</ul>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="set_operations.html" title="previous page">Set-Operations with Overlay</a>
+    <a class='right-next' id="next-link" href="mergingdata.html" title="next page">Merging Data</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

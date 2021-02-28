@@ -1,0 +1,6 @@
+﻿geopandas.sindex.PyGEOSSTRTreeIndex.size
+========================================
+
+.. currentmodule:: geopandas.sindex
+
+.. autoproperty:: PyGEOSSTRTreeIndex.size

@@ -1,0 +1,6 @@
+﻿geopandas.datasets.available
+============================
+
+.. currentmodule:: geopandas.datasets
+
+.. autodata:: available

@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.set\_crs
+===============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.set_crs

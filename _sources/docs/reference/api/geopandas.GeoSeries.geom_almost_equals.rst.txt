@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.geom\_almost\_equals
+========================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.geom_almost_equals

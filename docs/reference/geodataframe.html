@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoDataFrame &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="geopandas.GeoDataFrame" href="api/geopandas.GeoDataFrame.html" />
+    <link rel="prev" title="geopandas.GeoSeries.__geo_interface__" href="api/geopandas.GeoSeries.__geo_interface__.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../index.html">
+    
+      <img src="../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="../user_guide.html">User Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+  
+                <li class="active">
+                    <a href="../reference.html">API reference</a>
+                    <ul>
+                    
+                        <li class="">
+                            <a href="geoseries.html">GeoSeries</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="">GeoDataFrame</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="io.html">Input/output</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="tools.html">Tools</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="sindex.html">Spatial index</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="testing.html">Testing</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#constructor" class="nav-link">Constructor</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#reading-and-writing-files" class="nav-link">Reading and writing files</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#projection-handling" class="nav-link">Projection handling</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#active-geometry-handling" class="nav-link">Active geometry handling</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#aggregating-and-exploding" class="nav-link">Aggregating and exploding</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#plotting" class="nav-link">Plotting</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#spatial-index" class="nav-link">Spatial index</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#indexing" class="nav-link">Indexing</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#interface" class="nav-link">Interface</a>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="geodataframe">
+<h1>GeoDataFrame<a class="headerlink" href="#geodataframe" title="Permalink to this headline">¶</a></h1>
+<p>A <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> is a tabular data structure that contains a column
+which contains a <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> storing geometry.</p>
+<div class="section" id="constructor">
+<h2>Constructor<a class="headerlink" href="#constructor" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.html#geopandas.GeoDataFrame" title="geopandas.GeoDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame</span></code></a>(*args[, geometry, crs])</p></td>
+<td><p>A GeoDataFrame object is a pandas.DataFrame that has a column with geometry.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="reading-and-writing-files">
+<h2>Reading and writing files<a class="headerlink" href="#reading-and-writing-files" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.from_file.html#geopandas.GeoDataFrame.from_file" title="geopandas.GeoDataFrame.from_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.from_file</span></code></a>(filename, **kwargs)</p></td>
+<td><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> from a file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.from_features.html#geopandas.GeoDataFrame.from_features" title="geopandas.GeoDataFrame.from_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.from_features</span></code></a>(features[, crs, …])</p></td>
+<td><p>Alternate constructor to create GeoDataFrame from an iterable of features or a feature collection.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.from_postgis.html#geopandas.GeoDataFrame.from_postgis" title="geopandas.GeoDataFrame.from_postgis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.from_postgis</span></code></a>(sql, con[, …])</p></td>
+<td><p>Alternate constructor to create a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> from a sql query containing a geometry column in WKB representation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.to_file.html#geopandas.GeoDataFrame.to_file" title="geopandas.GeoDataFrame.to_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_file</span></code></a>(filename[, driver, …])</p></td>
+<td><p>Write the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> to a file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.to_json.html#geopandas.GeoDataFrame.to_json" title="geopandas.GeoDataFrame.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_json</span></code></a>([na, show_bbox, drop_id])</p></td>
+<td><p>Returns a GeoJSON representation of the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> as a string.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.to_parquet.html#geopandas.GeoDataFrame.to_parquet" title="geopandas.GeoDataFrame.to_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_parquet</span></code></a>(path[, index, …])</p></td>
+<td><p>Write a GeoDataFrame to the Parquet format.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.to_feather.html#geopandas.GeoDataFrame.to_feather" title="geopandas.GeoDataFrame.to_feather"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_feather</span></code></a>(path[, index, …])</p></td>
+<td><p>Write a GeoDataFrame to the Feather format.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.to_postgis.html#geopandas.GeoDataFrame.to_postgis" title="geopandas.GeoDataFrame.to_postgis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_postgis</span></code></a>(name, con[, schema, …])</p></td>
+<td><p>Upload GeoDataFrame into PostGIS database.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="projection-handling">
+<h2>Projection handling<a class="headerlink" href="#projection-handling" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.crs.html#geopandas.GeoDataFrame.crs" title="geopandas.GeoDataFrame.crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.crs</span></code></a></p></td>
+<td><p>The Coordinate Reference System (CRS) represented as a <code class="docutils literal notranslate"><span class="pre">pyproj.CRS</span></code> object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.set_crs.html#geopandas.GeoDataFrame.set_crs" title="geopandas.GeoDataFrame.set_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.set_crs</span></code></a>([crs, epsg, inplace, …])</p></td>
+<td><p>Set the Coordinate Reference System (CRS) of the <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.to_crs.html#geopandas.GeoDataFrame.to_crs" title="geopandas.GeoDataFrame.to_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.to_crs</span></code></a>([crs, epsg, inplace])</p></td>
+<td><p>Transform geometries to a new coordinate reference system.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.estimate_utm_crs.html#geopandas.GeoDataFrame.estimate_utm_crs" title="geopandas.GeoDataFrame.estimate_utm_crs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.estimate_utm_crs</span></code></a>([datum_name])</p></td>
+<td><p>Returns the estimated UTM CRS based on the bounds of the dataset.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="active-geometry-handling">
+<h2>Active geometry handling<a class="headerlink" href="#active-geometry-handling" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.rename_geometry.html#geopandas.GeoDataFrame.rename_geometry" title="geopandas.GeoDataFrame.rename_geometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.rename_geometry</span></code></a>(col[, inplace])</p></td>
+<td><p>Renames the GeoDataFrame geometry column to the specified name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.set_geometry.html#geopandas.GeoDataFrame.set_geometry" title="geopandas.GeoDataFrame.set_geometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.set_geometry</span></code></a>(col[, drop, …])</p></td>
+<td><p>Set the GeoDataFrame geometry using either an existing column or the specified input.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="aggregating-and-exploding">
+<h2>Aggregating and exploding<a class="headerlink" href="#aggregating-and-exploding" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.dissolve.html#geopandas.GeoDataFrame.dissolve" title="geopandas.GeoDataFrame.dissolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.dissolve</span></code></a>([by, aggfunc, …])</p></td>
+<td><p>Dissolve geometries within <cite>groupby</cite> into single observation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.explode.html#geopandas.GeoDataFrame.explode" title="geopandas.GeoDataFrame.explode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.explode</span></code></a>([column])</p></td>
+<td><p>Explode muti-part geometries into multiple single geometries.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="plotting">
+<h2>Plotting<a class="headerlink" href="#plotting" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.plot.html#geopandas.GeoDataFrame.plot" title="geopandas.GeoDataFrame.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.plot</span></code></a></p></td>
+<td><p>alias of <a class="reference internal" href="api/geopandas.plotting.GeoplotAccessor.html#geopandas.plotting.GeoplotAccessor" title="geopandas.plotting.GeoplotAccessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">geopandas.plotting.GeoplotAccessor</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="spatial-index">
+<h2>Spatial index<a class="headerlink" href="#spatial-index" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.sindex.html#geopandas.GeoDataFrame.sindex" title="geopandas.GeoDataFrame.sindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.sindex</span></code></a></p></td>
+<td><p>Generate the spatial index</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.has_sindex.html#geopandas.GeoDataFrame.has_sindex" title="geopandas.GeoDataFrame.has_sindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.has_sindex</span></code></a></p></td>
+<td><p>Check the existence of the spatial index without generating it.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="indexing">
+<h2>Indexing<a class="headerlink" href="#indexing" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.cx.html#geopandas.GeoDataFrame.cx" title="geopandas.GeoDataFrame.cx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.cx</span></code></a></p></td>
+<td><p>Coordinate based indexer to select by intersection with bounding box.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="interface">
+<h2>Interface<a class="headerlink" href="#interface" title="Permalink to this headline">¶</a></h2>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.__geo_interface__.html#geopandas.GeoDataFrame.__geo_interface__" title="geopandas.GeoDataFrame.__geo_interface__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.__geo_interface__</span></code></a></p></td>
+<td><p>Returns a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code> as a python feature collection.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/geopandas.GeoDataFrame.iterfeatures.html#geopandas.GeoDataFrame.iterfeatures" title="geopandas.GeoDataFrame.iterfeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeoDataFrame.iterfeatures</span></code></a>([na, show_bbox, …])</p></td>
+<td><p>Returns an iterator that yields feature dictionaries that comply with __geo_interface__</p></td>
+</tr>
+</tbody>
+</table>
+<p>All pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> methods are also available, although they may
+not operate in a meaningful way on the <code class="docutils literal notranslate"><span class="pre">geometry</span></code> column. All methods
+listed in <a class="reference external" href="geoseries">GeoSeries</a> work directly on an active geometry column of GeoDataFrame.</p>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="api/geopandas.GeoSeries.__geo_interface__.html" title="previous page">geopandas.GeoSeries.__geo_interface__</a>
+    <a class='right-next' id="next-link" href="api/geopandas.GeoDataFrame.html" title="next page">geopandas.GeoDataFrame</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

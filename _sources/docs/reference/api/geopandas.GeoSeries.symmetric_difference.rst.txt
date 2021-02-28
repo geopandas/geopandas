@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.symmetric\_difference
+=========================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.symmetric_difference

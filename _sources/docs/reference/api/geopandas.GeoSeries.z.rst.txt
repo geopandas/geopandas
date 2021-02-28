@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.z
+=====================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.z

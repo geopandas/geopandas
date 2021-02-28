@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.sindex
+=============================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoDataFrame.sindex

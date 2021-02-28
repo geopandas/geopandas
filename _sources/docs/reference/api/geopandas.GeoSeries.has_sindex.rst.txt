@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.has\_sindex
+===============================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.has_sindex

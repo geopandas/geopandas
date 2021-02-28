@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.exterior
+============================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.exterior

@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.representative\_point
+=========================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.representative_point

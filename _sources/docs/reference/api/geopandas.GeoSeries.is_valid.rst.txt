@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.is\_valid
+=============================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.is_valid

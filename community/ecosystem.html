@@ -1,0 +1,734 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecosystem &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="GeoPandas Project Code of Conduct" href="code_of_conduct.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../index.html">
+    
+      <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="contributing.html">Contributing</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="code_of_conduct.html">Code of Conduct</a>
+                </li>
+            
+          
+            
+                <li class="active">
+                    <a href="">Ecosystem</a>
+                </li>
+            
+          
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#geopandas-dependencies" class="nav-link">GeoPandas dependencies</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#required-dependencies" class="nav-link">Required dependencies</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pandas" class="nav-link">pandas</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#shapely" class="nav-link">Shapely</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#fiona" class="nav-link">Fiona</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pyproj" class="nav-link">pyproj</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#optional-dependencies" class="nav-link">Optional dependencies</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#rtree" class="nav-link">rtree</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pygeos" class="nav-link">PyGEOS</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#mapclassify" class="nav-link">mapclassify</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geopy" class="nav-link">geopy</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#matplotlib" class="nav-link">matplotlib</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#geopandas-ecosystem" class="nav-link">GeoPandas ecosystem</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#spatial-analysis-and-machine-learning" class="nav-link">Spatial analysis and Machine Learning</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pysal" class="nav-link">PySAL</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h5">
+            <a href="#libpysal" class="nav-link">libpysal</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h5">
+            <a href="#esda" class="nav-link">esda</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h5">
+            <a href="#segregation" class="nav-link">segregation</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h5">
+            <a href="#mgwr" class="nav-link">mgwr</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h5">
+            <a href="#tobler" class="nav-link">tobler</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#movingpandas" class="nav-link">movingpandas</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#momepy" class="nav-link">momepy</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geosnap" class="nav-link">geosnap</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#mesa-geo" class="nav-link">mesa-geo</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pyspatialml" class="nav-link">Pyspatialml</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pygmi" class="nav-link">PyGMI</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#visualization" class="nav-link">Visualization</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#contextily" class="nav-link">contextily</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#cartopy" class="nav-link">cartopy</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#bokeh" class="nav-link">bokeh</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#folium" class="nav-link">folium</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#kepler-gl" class="nav-link">kepler.gl</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geoplot" class="nav-link">geoplot</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geoviews" class="nav-link">GeoViews</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#earthpy" class="nav-link">EarthPy</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#splot" class="nav-link">splot</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#legendgram" class="nav-link">legendgram</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#geometry-manipulation" class="nav-link">Geometry manipulation</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#topojson" class="nav-link">TopoJSON</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geocube" class="nav-link">geocube</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h3">
+            <a href="#data-retrieval" class="nav-link">Data retrieval</a><ul class="nav section-nav flex-column">
+                
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#osmnx" class="nav-link">OSMnx</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#pyrosm" class="nav-link">pyrosm</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#geobr" class="nav-link">geobr</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h4">
+            <a href="#cenpy" class="nav-link">cenpy</a>
+        </li>
+    
+            </ul>
+        </li>
+    
+            </ul>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="ecosystem">
+<h1>Ecosystem<a class="headerlink" href="#ecosystem" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="geopandas-dependencies">
+<h2>GeoPandas dependencies<a class="headerlink" href="#geopandas-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>GeoPandas brings together the full capability of <code class="docutils literal notranslate"><span class="pre">pandas</span></code> and open-source geospatial
+tools <code class="docutils literal notranslate"><span class="pre">Shapely</span></code>, which brings manipulation and analysis of geometric objects backed by
+<a class="reference external" href="https://trac.osgeo.org/geos"><code class="docutils literal notranslate"><span class="pre">GEOS</span></code></a> library, <code class="docutils literal notranslate"><span class="pre">Fiona</span></code>, allowing us to read and write
+geographic data files using <a class="reference external" href="https://gdal.org"><code class="docutils literal notranslate"><span class="pre">GDAL</span></code></a>, and <code class="docutils literal notranslate"><span class="pre">pyproj</span></code>, a library for
+cartographic projections and coordinate transformations, which is a Python interface of
+<a class="reference external" href="https://proj.org"><code class="docutils literal notranslate"><span class="pre">PROJ</span></code></a>.</p>
+<p>Furthermore, GeoPandas has several optional dependencies as <code class="docutils literal notranslate"><span class="pre">rtree</span></code>, <code class="docutils literal notranslate"><span class="pre">pygeos</span></code>,
+<code class="docutils literal notranslate"><span class="pre">mapclassify</span></code>, or <code class="docutils literal notranslate"><span class="pre">geopy</span></code>.</p>
+<div class="section" id="required-dependencies">
+<h3>Required dependencies<a class="headerlink" href="#required-dependencies" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="pandas">
+<h4><a class="reference external" href="https://github.com/pandas-dev/pandas">pandas</a><a class="headerlink" href="#pandas" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">pandas</span></code> is a Python package that provides fast, flexible, and expressive data
+structures designed to make working with structured (tabular, multidimensional,
+potentially heterogeneous) and time series data both easy and intuitive. It aims to be
+the fundamental high-level building block for doing practical, real world data analysis
+in Python. Additionally, it has the broader goal of becoming the most powerful and
+flexible open source data analysis / manipulation tool available in any language. It is
+already well on its way toward this goal.</p>
+</div>
+<div class="section" id="shapely">
+<h4><a class="reference external" href="https://github.com/Toblerity/Shapely">Shapely</a><a class="headerlink" href="#shapely" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Shapely</span></code> is a BSD-licensed Python package for manipulation and analysis of planar
+geometric objects. It is based on the widely deployed <code class="docutils literal notranslate"><span class="pre">GEOS</span></code> (the engine of PostGIS) and
+<code class="docutils literal notranslate"><span class="pre">JTS</span></code> (from which <code class="docutils literal notranslate"><span class="pre">GEOS</span></code> is ported) libraries. <code class="docutils literal notranslate"><span class="pre">Shapely</span></code> is not concerned with data
+formats or coordinate systems, but can be readily integrated with packages that are.</p>
+</div>
+<div class="section" id="fiona">
+<h4><a class="reference external" href="https://github.com/Toblerity/Fiona">Fiona</a><a class="headerlink" href="#fiona" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Fiona</span></code> is <code class="docutils literal notranslate"><span class="pre">GDAL’s</span></code> neat and nimble vector API for Python programmers. Fiona is designed
+to be simple and dependable. It focuses on reading and writing data in standard Python
+IO style and relies upon familiar Python types and protocols such as files,
+dictionaries, mappings, and iterators instead of classes specific to <code class="docutils literal notranslate"><span class="pre">OGR</span></code>. Fiona can
+read and write real-world data using multi-layered GIS formats and zipped virtual file
+systems and integrates readily with other Python GIS packages such as <code class="docutils literal notranslate"><span class="pre">pyproj</span></code>, <code class="docutils literal notranslate"><span class="pre">Rtree</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">Shapely</span></code>.</p>
+</div>
+<div class="section" id="pyproj">
+<h4><a class="reference external" href="https://github.com/pyproj4/pyproj">pyproj</a><a class="headerlink" href="#pyproj" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">pyproj</span></code> is a Python interface to <code class="docutils literal notranslate"><span class="pre">PROJ</span></code> (cartographic projections and coordinate
+transformations library). GeoPandas uses <code class="docutils literal notranslate"><span class="pre">pyproj.crs.CRS</span></code> object to keep track of a
+projection of each <code class="docutils literal notranslate"><span class="pre">GeoSeries</span></code> and its <code class="docutils literal notranslate"><span class="pre">Transformer</span></code> object to manage re-projections.</p>
+</div>
+</div>
+<div class="section" id="optional-dependencies">
+<h3>Optional dependencies<a class="headerlink" href="#optional-dependencies" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="rtree">
+<h4><a class="reference external" href="https://github.com/Toblerity/rtree">rtree</a><a class="headerlink" href="#rtree" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Rtree</span></code> is a ctypes Python wrapper of <code class="docutils literal notranslate"><span class="pre">libspatialindex</span></code> that provides a number of
+advanced spatial indexing features for the spatially curious Python user.</p>
+</div>
+<div class="section" id="pygeos">
+<h4><a class="reference external" href="https://github.com/pygeos/pygeos">PyGEOS</a><a class="headerlink" href="#pygeos" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">PyGEOS</span></code> is a C/Python library with vectorized geometry functions. The geometry
+operations are done in the open-source geometry library <code class="docutils literal notranslate"><span class="pre">GEOS</span></code>. PyGEOS wraps these
+operations in <code class="docutils literal notranslate"><span class="pre">NumPy</span></code> ufuncs providing a performance improvement when operating on
+arrays of geometries.</p>
+</div>
+<div class="section" id="mapclassify">
+<h4><a class="reference external" href="https://github.com/pysal/mapclassify">mapclassify</a><a class="headerlink" href="#mapclassify" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">mapclassify</span></code> provides functionality for Choropleth map classification. Currently,
+fifteen different classification schemes are available, including a highly-optimized
+implementation of Fisher-Jenks optimal classification. Each scheme inherits a common
+structure that ensures computations are scalable and supports applications in streaming
+contexts.</p>
+</div>
+<div class="section" id="geopy">
+<h4><a class="reference external" href="https://github.com/geopy/geopy">geopy</a><a class="headerlink" href="#geopy" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">geopy</span></code> is a Python client for several popular geocoding web services. <code class="docutils literal notranslate"><span class="pre">geopy</span></code> makes it
+easy for Python developers to locate the coordinates of addresses, cities, countries,
+and landmarks across the globe using third-party geocoders and other data sources.</p>
+</div>
+<div class="section" id="matplotlib">
+<h4><a class="reference external" href="https://github.com/matplotlib/matplotlib">matplotlib</a><a class="headerlink" href="#matplotlib" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Matplotlib</span></code> is a comprehensive library for creating static, animated, and interactive
+visualizations in Python. Matplotlib produces publication-quality figures in a variety
+of hardcopy formats and interactive environments across platforms. Matplotlib can be
+used in Python scripts, the Python and IPython shell, web application servers, and
+various graphical user interface toolkits.</p>
+</div>
+</div>
+</div>
+<div class="section" id="geopandas-ecosystem">
+<h2>GeoPandas ecosystem<a class="headerlink" href="#geopandas-ecosystem" title="Permalink to this headline">¶</a></h2>
+<p>Various packages are built on top of GeoPandas addressing specific geospatial data
+processing needs, analysis, and visualization. Below is an incomplete list (in no
+particular order) of tools which form GeoPandas related Python ecosystem.</p>
+<div class="section" id="spatial-analysis-and-machine-learning">
+<h3>Spatial analysis and Machine Learning<a class="headerlink" href="#spatial-analysis-and-machine-learning" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="pysal">
+<h4><a class="reference external" href="https://github.com/pysal/pysal">PySAL</a><a class="headerlink" href="#pysal" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">PySAL</span></code>, the Python spatial analysis library, is an open source cross-platform library
+for geospatial data science with an emphasis on geospatial vector data written in
+Python. <code class="docutils literal notranslate"><span class="pre">PySAL</span></code> is a family of packages, some of which are listed below.</p>
+<div class="section" id="libpysal">
+<h5><a class="reference external" href="https://github.com/pysal/libpysal">libpysal</a><a class="headerlink" href="#libpysal" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">libpysal</span></code> provides foundational algorithms and data structures that support the rest of
+the library. This currently includes the following modules: input/output (<code class="docutils literal notranslate"><span class="pre">io</span></code>), which
+provides readers and writers for common geospatial file formats; weights (<code class="docutils literal notranslate"><span class="pre">weights</span></code>),
+which provides the main class to store spatial weights matrices, as well as several
+utilities to manipulate and operate on them; computational geometry (<code class="docutils literal notranslate"><span class="pre">cg</span></code>), with several
+algorithms, such as Voronoi tessellations or alpha shapes that efficiently process
+geometric shapes; and an additional module with example data sets (<code class="docutils literal notranslate"><span class="pre">examples</span></code>).</p>
+</div>
+<div class="section" id="esda">
+<h5><a class="reference external" href="https://github.com/pysal/esda">esda</a><a class="headerlink" href="#esda" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">esda</span></code> implements methods for the analysis of both global (map-wide) and local (focal)
+spatial autocorrelation, for both continuous and binary data. In addition, the package
+increasingly offers cutting-edge statistics about boundary strength and measures of
+aggregation error in statistical analyses.</p>
+</div>
+<div class="section" id="segregation">
+<h5><a class="reference external" href="https://github.com/pysal/segregation">segregation</a><a class="headerlink" href="#segregation" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">segregation</span></code> package calculates over 40 different segregation indices and provides a
+suite of additional features for measurement, visualization, and hypothesis testing that
+together represent the state-of-the-art in quantitative segregation analysis.</p>
+</div>
+<div class="section" id="mgwr">
+<h5><a class="reference external" href="https://github.com/pysal/mgwr">mgwr</a><a class="headerlink" href="#mgwr" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">mgwr</span></code> provides scalable algorithms for estimation, inference, and prediction using
+single- and multi-scale geographically-weighted regression models in a variety of
+generalized linear model frameworks, as well model diagnostics tools.</p>
+</div>
+<div class="section" id="tobler">
+<h5><a class="reference external" href="https://github.com/pysal/tobler">tobler</a><a class="headerlink" href="#tobler" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">tobler</span></code> provides functionality for for areal interpolation and dasymetric mapping.
+<code class="docutils literal notranslate"><span class="pre">tobler</span></code> includes functionality for interpolating data using area-weighted approaches,
+regression model-based approaches that leverage remotely-sensed raster data as auxiliary
+information, and hybrid approaches.</p>
+</div>
+</div>
+<div class="section" id="movingpandas">
+<h4><a class="reference external" href="https://github.com/anitagraser/movingpandas">movingpandas</a><a class="headerlink" href="#movingpandas" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">MovingPandas</span></code> is a package for dealing with movement data. <code class="docutils literal notranslate"><span class="pre">MovingPandas</span></code> implements a
+<code class="docutils literal notranslate"><span class="pre">Trajectory</span></code> class and corresponding methods based on GeoPandas. A trajectory has a
+time-ordered series of point geometries. These points and associated attributes are
+stored in a <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>. <code class="docutils literal notranslate"><span class="pre">MovingPandas</span></code> implements spatial and temporal data access
+and analysis functions as well as plotting functions.</p>
+</div>
+<div class="section" id="momepy">
+<h4><a class="reference external" href="https://github.com/martinfleis/momepy">momepy</a><a class="headerlink" href="#momepy" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">momepy</span></code> is a library for quantitative analysis of urban form - urban morphometrics. It
+is built on top of <code class="docutils literal notranslate"><span class="pre">GeoPandas</span></code>, <code class="docutils literal notranslate"><span class="pre">PySAL</span></code> and <code class="docutils literal notranslate"><span class="pre">networkX</span></code>. <code class="docutils literal notranslate"><span class="pre">momepy</span></code> aims to provide a wide
+range of tools for a systematic and exhaustive analysis of urban form. It can work with
+a wide range of elements, while focused on building footprints and street networks.</p>
+</div>
+<div class="section" id="geosnap">
+<h4><a class="reference external" href="https://github.com/spatialucr/geosnap">geosnap</a><a class="headerlink" href="#geosnap" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">geosnap</span></code> makes it easier to explore, model, analyze, and visualize the social and
+spatial dynamics of neighborhoods. <code class="docutils literal notranslate"><span class="pre">geosnap</span></code> provides a suite of tools for creating
+socio-spatial datasets, harmonizing those datasets into consistent set of time-static
+boundaries, modeling bespoke neighborhoods and prototypical neighborhood types, and
+modeling neighborhood change using classic and spatial statistical methods. It also
+provides a set of static and interactive visualization tools to help you display and
+understand the critical information at each step of the process.</p>
+</div>
+<div class="section" id="mesa-geo">
+<h4><a class="reference external" href="https://github.com/Corvince/mesa-geo">mesa-geo</a><a class="headerlink" href="#mesa-geo" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">mesa-geo</span></code> implements a GeoSpace that can host GIS-based GeoAgents, which are like
+normal Agents, except they have a shape attribute that is a <code class="docutils literal notranslate"><span class="pre">Shapely</span></code> object. You can
+use <code class="docutils literal notranslate"><span class="pre">Shapely</span></code> directly to create arbitrary shapes, but in most cases you will want to
+import your shapes from a file. Mesa-geo allows you to create GeoAgents from any vector
+data file (e.g. shapefiles), valid GeoJSON objects or a GeoPandas <code class="docutils literal notranslate"><span class="pre">GeoDataFrame</span></code>.</p>
+</div>
+<div class="section" id="pyspatialml">
+<h4><a class="reference external" href="https://github.com/stevenpawley/Pyspatialml">Pyspatialml</a><a class="headerlink" href="#pyspatialml" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Pyspatialml</span></code> is a Python module for applying <code class="docutils literal notranslate"><span class="pre">scikit-learn</span></code> machine learning models to
+‘stacks’ of raster datasets. Pyspatialml includes functions and classes for working with
+multiple raster datasets and performing a typical machine learning workflow consisting
+of extracting training data and applying the predict or <code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> methods of
+<code class="docutils literal notranslate"><span class="pre">scikit-learn</span></code> estimators to a stack of raster datasets. Pyspatialml is built upon the
+<code class="docutils literal notranslate"><span class="pre">rasterio</span></code> Python module for all of the heavy lifting, and is also designed for working
+with vector data using the <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> module.</p>
+</div>
+<div class="section" id="pygmi">
+<h4><a class="reference external" href="https://github.com/Patrick-Cole/pygmi">PyGMI</a><a class="headerlink" href="#pygmi" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">PyGMI</span></code> stands for Python Geoscience Modelling and Interpretation. It is a modelling and
+interpretation suite aimed at magnetic, gravity and other datasets.</p>
+</div>
+</div>
+<div class="section" id="visualization">
+<h3>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="contextily">
+<h4><a class="reference external" href="https://github.com/geopandas/contextily">contextily</a><a class="headerlink" href="#contextily" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">contextily</span></code> is a small Python 3 (3.6 and above) package to retrieve tile maps from the
+internet. It can add those tiles as basemap to <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> figures or write tile maps
+to disk into geospatial raster files. Bounding boxes can be passed in both WGS84
+(EPSG:4326) and Spheric Mercator (EPSG:3857).</p>
+</div>
+<div class="section" id="cartopy">
+<h4><a class="reference external" href="https://github.com/SciTools/cartopy">cartopy</a><a class="headerlink" href="#cartopy" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Cartopy</span></code> is a Python package designed to make drawing maps for data analysis and
+visualisation easy. It features: object oriented projection definitions; point, line,
+polygon and image transformations between projections; integration to expose advanced
+mapping in <code class="docutils literal notranslate"><span class="pre">Matplotlib</span></code> with a simple and intuitive interface; powerful vector data
+handling by integrating shapefile reading with <code class="docutils literal notranslate"><span class="pre">Shapely</span></code> capabilities.</p>
+</div>
+<div class="section" id="bokeh">
+<h4><a class="reference external" href="https://github.com/bokeh/bokeh">bokeh</a><a class="headerlink" href="#bokeh" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Bokeh</span></code> is an interactive visualization library for modern web browsers. It provides
+elegant, concise construction of versatile graphics, and affords high-performance
+interactivity over large or streaming datasets. <code class="docutils literal notranslate"><span class="pre">Bokeh</span></code> can help anyone who would like
+to quickly and easily make interactive plots, dashboards, and data applications.</p>
+</div>
+<div class="section" id="folium">
+<h4><a class="reference external" href="https://github.com/python-visualization/folium">folium</a><a class="headerlink" href="#folium" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">folium</span></code> builds on the data wrangling strengths of the Python ecosystem and the mapping
+strengths of the <code class="docutils literal notranslate"><span class="pre">Leaflet.js</span></code> library. Manipulate your data in Python, then visualize it
+in a <code class="docutils literal notranslate"><span class="pre">Leaflet</span></code> map via <code class="docutils literal notranslate"><span class="pre">folium</span></code>.</p>
+</div>
+<div class="section" id="kepler-gl">
+<h4><a class="reference external" href="https://github.com/keplergl/kepler.gl">kepler.gl</a><a class="headerlink" href="#kepler-gl" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Kepler.gl</span></code> is a data-agnostic, high-performance web-based application for visual
+exploration of large-scale geolocation data sets. Built on top of Mapbox GL and
+<code class="docutils literal notranslate"><span class="pre">deck.gl</span></code>, <code class="docutils literal notranslate"><span class="pre">kepler.gl</span></code> can render millions of points representing thousands of trips and
+perform spatial aggregations on the fly.</p>
+</div>
+<div class="section" id="geoplot">
+<h4><a class="reference external" href="https://github.com/ResidentMario/geoplot">geoplot</a><a class="headerlink" href="#geoplot" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">geoplot</span></code> is a high-level Python geospatial plotting library. It’s an extension to
+<code class="docutils literal notranslate"><span class="pre">cartopy</span></code> and <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> which makes mapping easy: like <code class="docutils literal notranslate"><span class="pre">seaborn</span></code> for geospatial. It
+comes with the high-level plotting API, native projection support and compatibility with
+<code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>.</p>
+</div>
+<div class="section" id="geoviews">
+<h4><a class="reference external" href="https://github.com/holoviz/geoviews">GeoViews</a><a class="headerlink" href="#geoviews" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">GeoViews</span></code> is a Python library that makes it easy to explore and visualize any data that
+includes geographic locations. It has particularly powerful support for multidimensional
+meteorological and oceanographic datasets, such as those used in weather, climate, and
+remote sensing research, but is useful for almost anything that you would want to plot
+on a map!</p>
+</div>
+<div class="section" id="earthpy">
+<h4><a class="reference external" href="https://github.com/earthlab/earthpy">EarthPy</a><a class="headerlink" href="#earthpy" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">EarthPy</span></code> is a python package that makes it easier to plot and work with spatial raster
+and vector data using open source tools. <code class="docutils literal notranslate"><span class="pre">Earthpy</span></code> depends upon <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> which has a
+focus on vector data and <code class="docutils literal notranslate"><span class="pre">rasterio</span></code> with facilitates input and output of raster data
+files. It also requires <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> for plotting operations. <code class="docutils literal notranslate"><span class="pre">EarthPy’s</span></code> goal is to
+make working with spatial data easier for scientists.</p>
+</div>
+<div class="section" id="splot">
+<h4><a class="reference external" href="https://github.com/pysal/splot">splot</a><a class="headerlink" href="#splot" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">splot</span></code> provides statistical visualizations for spatial analysis. It methods for
+visualizing global and local spatial autocorrelation (through Moran scatterplots and
+cluster maps), temporal analysis of cluster dynamics (through heatmaps and rose
+diagrams), and multivariate choropleth mapping (through value-by-alpha maps). A high
+level API supports the creation of publication-ready visualizations</p>
+</div>
+<div class="section" id="legendgram">
+<h4><a class="reference external" href="https://github.com/pysal/legendgram">legendgram</a><a class="headerlink" href="#legendgram" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">legendgram</span></code> is a small package that provides “legendgrams” legends that visualize the
+distribution of observations by color in a given map. These distributional
+visualizations for map classification schemes assist in analytical cartography and
+spatial data visualization.</p>
+</div>
+</div>
+<div class="section" id="geometry-manipulation">
+<h3>Geometry manipulation<a class="headerlink" href="#geometry-manipulation" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="topojson">
+<h4><a class="reference external" href="https://github.com/mattijn/topojson">TopoJSON</a><a class="headerlink" href="#topojson" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Topojson</span></code> is a library that is capable of creating a topojson encoded format of merely
+any geographical object in Python. With topojson it is possible to reduce the size of
+your geographical data. Mostly by orders of magnitude. It is able to do so through:
+eliminating redundancy through computation of a topology; fixed-precision integer
+encoding of coordinates and simplification and quantization of arcs.</p>
+</div>
+<div class="section" id="geocube">
+<h4><a class="reference external" href="https://github.com/corteva/geocube">geocube</a><a class="headerlink" href="#geocube" title="Permalink to this headline">¶</a></h4>
+<p>Tool to convert geopandas vector data into rasterized <code class="docutils literal notranslate"><span class="pre">xarray</span></code> data.</p>
+</div>
+</div>
+<div class="section" id="data-retrieval">
+<h3>Data retrieval<a class="headerlink" href="#data-retrieval" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="osmnx">
+<h4><a class="reference external" href="https://github.com/gboeing/osmnx">OSMnx</a><a class="headerlink" href="#osmnx" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">OSMnx</span></code> is a Python package that lets you download spatial data from OpenStreetMap and
+model, project, visualize, and analyze real-world street networks. You can download and
+model walkable, drivable, or bikeable urban networks with a single line of Python code
+then easily analyze and visualize them. You can just as easily download and work with
+other infrastructure types, amenities/points of interest, building footprints, elevation
+data, street bearings/orientations, and speed/travel time.</p>
+</div>
+<div class="section" id="pyrosm">
+<h4><a class="reference external" href="https://github.com/HTenkanen/pyrosm">pyrosm</a><a class="headerlink" href="#pyrosm" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Pyrosm</span></code> is a Python library for reading OpenStreetMap data from Protocolbuffer Binary
+Format -files (<code class="docutils literal notranslate"><span class="pre">*.osm.pbf</span></code>) into Geopandas <code class="docutils literal notranslate"><span class="pre">GeoDataFrames</span></code>. Pyrosm makes it easy to
+extract various datasets from OpenStreetMap pbf-dumps including e.g. road networks,
+buildings, Points of Interest (POI), landuse and natural elements. Also fully customized
+queries are supported which makes it possible to parse the data from OSM with more
+specific filters.</p>
+</div>
+<div class="section" id="geobr">
+<h4><a class="reference external" href="https://github.com/ipeaGIT/geobr">geobr</a><a class="headerlink" href="#geobr" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">geobr</span></code> is a computational package to download official spatial data sets of Brazil. The
+package includes a wide range of geospatial data in geopackage format (like shapefiles
+but better), available at various geographic scales and for various years with
+harmonized attributes, projection and topology.</p>
+</div>
+<div class="section" id="cenpy">
+<h4><a class="reference external" href="https://github.com/cenpy-devs/cenpy">cenpy</a><a class="headerlink" href="#cenpy" title="Permalink to this headline">¶</a></h4>
+<p>An interface to explore and query the US Census API and return Pandas <code class="docutils literal notranslate"><span class="pre">Dataframes</span></code>. This
+package is intended for exploratory data analysis and draws inspiration from
+sqlalchemy-like interfaces and <code class="docutils literal notranslate"><span class="pre">acs.R</span></code>. With separate APIs for application developers
+and folks who only want to get their data quickly &amp; painlessly, <code class="docutils literal notranslate"><span class="pre">cenpy</span></code> should meet the
+needs of most who aim to get US Census Data from Python.</p>
+<div class="admonition-expand-this-page admonition">
+<p class="admonition-title">Expand this page</p>
+<p>Do know a package which should be here? <a class="reference external" href="https://github.com/geopandas/geopandas/issues">Let us
+know</a> or <a class="reference internal" href="contributing.html"><span class="doc std std-doc">add it by
+yourself</span></a>!</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="code_of_conduct.html" title="previous page">GeoPandas Project Code of Conduct</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

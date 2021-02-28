@@ -1,0 +1,6 @@
+﻿geopandas.sindex.SpatialIndex.valid\_query\_predicates
+======================================================
+
+.. currentmodule:: geopandas.sindex
+
+.. autoproperty:: SpatialIndex.valid_query_predicates

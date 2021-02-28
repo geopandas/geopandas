@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.from\_features
+=====================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.from_features

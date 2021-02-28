@@ -1,0 +1,6 @@
+﻿geopandas.sindex.SpatialIndex.query
+===================================
+
+.. currentmodule:: geopandas.sindex
+
+.. automethod:: SpatialIndex.query

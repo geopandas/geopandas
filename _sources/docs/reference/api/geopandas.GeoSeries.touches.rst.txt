@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.touches
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.touches

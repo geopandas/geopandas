@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.from\_postgis
+====================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.from_postgis

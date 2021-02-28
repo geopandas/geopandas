@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.to\_json
+===============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.to_json

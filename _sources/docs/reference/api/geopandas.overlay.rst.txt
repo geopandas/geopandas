@@ -1,0 +1,6 @@
+﻿geopandas.overlay
+=================
+
+.. currentmodule:: geopandas
+
+.. autofunction:: overlay

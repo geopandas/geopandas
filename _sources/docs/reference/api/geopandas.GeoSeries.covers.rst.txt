@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.covers
+==========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.covers

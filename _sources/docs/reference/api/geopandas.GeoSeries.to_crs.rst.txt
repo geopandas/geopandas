@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.to\_crs
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.to_crs

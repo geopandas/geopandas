@@ -1,0 +1,389 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>geopandas.GeoDataFrame.plot &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../../../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../../../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../../../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../../../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="geopandas.GeoDataFrame.sindex" href="geopandas.GeoDataFrame.sindex.html" />
+    <link rel="prev" title="geopandas.GeoDataFrame.explode" href="geopandas.GeoDataFrame.explode.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../../../index.html">
+    
+      <img src="../../../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../../../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../../../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="../../user_guide.html">User Guide</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../../advanced_guide.html">Advanced Guide</a>
+                </li>
+            
+          
+            
+  
+                <li class="active">
+                    <a href="../../reference.html">API reference</a>
+                    <ul>
+                    
+                        <li class="">
+                            <a href="../geoseries.html">GeoSeries</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="../geodataframe.html">GeoDataFrame</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../io.html">Input/output</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../tools.html">Tools</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../sindex.html">Spatial index</a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="../testing.html">Testing</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="../../changelog.html">Changelog</a>
+                </li>
+            
+          
+        
+        
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="geopandas-geodataframe-plot">
+<h1>geopandas.GeoDataFrame.plot<a class="headerlink" href="#geopandas-geodataframe-plot" title="Permalink to this headline">¶</a></h1>
+<dl class="py method">
+<dt id="geopandas.GeoDataFrame.plot">
+<code class="sig-prename descclassname">GeoDataFrame.</code><code class="sig-name descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geopandas.GeoDataFrame.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a GeoDataFrame.</p>
+<p>Generate a plot of a GeoDataFrame with matplotlib.  If a
+column is specified, the plot coloring will be based on values
+in that column.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>column</strong><span class="classifier">str, np.array, pd.Series (default None)</span></dt><dd><p>The name of the dataframe column, np.array, or pd.Series to be plotted.
+If np.array or pd.Series are used then it must have same length as
+dataframe. Values are used to color the plot. Ignored if <cite>color</cite> is
+also set.</p>
+</dd>
+<dt><strong>kind: str</strong></dt><dd><dl>
+<dt>The kind of plots to produce:</dt><dd><ul class="simple">
+<li><p>‘geo’: Map (default)</p></li>
+</ul>
+<p>Pandas Kinds
+- ‘line’ : line plot
+- ‘bar’ : vertical bar plot
+- ‘barh’ : horizontal bar plot
+- ‘hist’ : histogram
+- ‘box’ : BoxPlot
+- ‘kde’ : Kernel Density Estimation plot
+- ‘density’ : same as ‘kde’
+- ‘area’ : area plot
+- ‘pie’ : pie plot
+- ‘scatter’ : scatter plot
+- ‘hexbin’ : hexbin plot.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>cmap</strong><span class="classifier">str (default None)</span></dt><dd><p>The name of a colormap recognized by matplotlib.</p>
+</dd>
+<dt><strong>color</strong><span class="classifier">str (default None)</span></dt><dd><p>If specified, all objects will be colored uniformly.</p>
+</dd>
+<dt><strong>ax</strong><span class="classifier">matplotlib.pyplot.Artist (default None)</span></dt><dd><p>axes on which to draw the plot</p>
+</dd>
+<dt><strong>cax</strong><span class="classifier">matplotlib.pyplot Artist (default None)</span></dt><dd><p>axes on which to draw the legend in case of color map.</p>
+</dd>
+<dt><strong>categorical</strong><span class="classifier">bool (default False)</span></dt><dd><p>If False, cmap will reflect numerical values of the
+column being plotted.  For non-numerical columns, this
+will be set to True.</p>
+</dd>
+<dt><strong>legend</strong><span class="classifier">bool (default False)</span></dt><dd><p>Plot a legend. Ignored if no <cite>column</cite> is given, or if <cite>color</cite> is given.</p>
+</dd>
+<dt><strong>scheme</strong><span class="classifier">str (default None)</span></dt><dd><p>Name of a choropleth classification scheme (requires mapclassify).
+A mapclassify.MapClassifier object will be used
+under the hood. Supported are all schemes provided by mapclassify (e.g.
+‘BoxPlot’, ‘EqualInterval’, ‘FisherJenks’, ‘FisherJenksSampled’,
+‘HeadTailBreaks’, ‘JenksCaspall’, ‘JenksCaspallForced’,
+‘JenksCaspallSampled’, ‘MaxP’, ‘MaximumBreaks’,
+‘NaturalBreaks’, ‘Quantiles’, ‘Percentiles’, ‘StdMean’,
+‘UserDefined’). Arguments can be passed in classification_kwds.</p>
+</dd>
+<dt><strong>k</strong><span class="classifier">int (default 5)</span></dt><dd><p>Number of classes (ignored if scheme is None)</p>
+</dd>
+<dt><strong>vmin</strong><span class="classifier">None or float (default None)</span></dt><dd><p>Minimum value of cmap. If None, the minimum data value
+in the column to be plotted is used.</p>
+</dd>
+<dt><strong>vmax</strong><span class="classifier">None or float (default None)</span></dt><dd><p>Maximum value of cmap. If None, the maximum data value
+in the column to be plotted is used.</p>
+</dd>
+<dt><strong>markersize</strong><span class="classifier">str or float or sequence (default None)</span></dt><dd><p>Only applies to point geometries within a frame.
+If a str, will use the values in the column of the frame specified
+by markersize to set the size of markers. Otherwise can be a value
+to apply to all points, or a sequence of the same length as the
+number of points.</p>
+</dd>
+<dt><strong>figsize</strong><span class="classifier">tuple of integers (default None)</span></dt><dd><p>Size of the resulting matplotlib.figure.Figure. If the argument
+axes is given explicitly, figsize is ignored.</p>
+</dd>
+<dt><strong>legend_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments to pass to matplotlib.pyplot.legend() or
+matplotlib.pyplot.colorbar().
+Additional accepted keywords when <cite>scheme</cite> is specified:</p>
+<dl class="simple">
+<dt>fmt<span class="classifier">string</span></dt><dd><p>A formatting specification for the bin edges of the classes in the
+legend. For example, to have no decimals: <code class="docutils literal notranslate"><span class="pre">{&quot;fmt&quot;:</span> <span class="pre">&quot;{:.0f}&quot;}</span></code>.</p>
+</dd>
+<dt>labels<span class="classifier">list-like</span></dt><dd><p>A list of legend labels to override the auto-generated labels.
+Needs to have the same number of elements as the number of
+classes (<cite>k</cite>).</p>
+</dd>
+<dt>interval<span class="classifier">boolean (default False)</span></dt><dd><p>An option to control brackets from mapclassify legend.
+If True, open/closed interval brackets are shown in the legend.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>categories</strong><span class="classifier">list-like</span></dt><dd><p>Ordered list-like object of categories to be used for categorical plot.</p>
+</dd>
+<dt><strong>classification_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments to pass to mapclassify</p>
+</dd>
+<dt><strong>missing_kwds</strong><span class="classifier">dict (default None)</span></dt><dd><p>Keyword arguments specifying color options (as style_kwds)
+to be passed on to geometries with missing values in addition to
+or overwriting other style kwds. If None, geometries with missing
+values are not plotted.</p>
+</dd>
+<dt><strong>aspect</strong><span class="classifier">‘auto’, ‘equal’, None or float (default ‘auto’)</span></dt><dd><p>Set aspect of axis. If ‘auto’, the default aspect for map plots is ‘equal’; if
+however data are not projected (coordinates are long/lat), the aspect is by
+default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
+the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
+square appears square in the middle of the plot. This implies an
+Equirectangular projection. If None, the aspect of <cite>ax</cite> won’t be changed. It can
+also be set manually (float) as the ratio of y-unit to x-unit.</p>
+</dd>
+<dt><strong>**style_kwds</strong><span class="classifier">dict</span></dt><dd><p>Style options to be passed on to the actual plot function, such
+as <code class="docutils literal notranslate"><span class="pre">edgecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">facecolor</span></code>, <code class="docutils literal notranslate"><span class="pre">linewidth</span></code>, <code class="docutils literal notranslate"><span class="pre">markersize</span></code>,
+<code class="docutils literal notranslate"><span class="pre">alpha</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>ax</strong><span class="classifier">matplotlib axes instance</span></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">geopandas</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;naturalearth_lowres&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>  
+<span class="go">    pop_est      continent                      name iso_a3  gdp_md_est                                           geometry</span>
+<span class="go">0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLYGON (((180.00000 -16.06713, 180.00000...</span>
+<span class="go">1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON ((33.90371 -0.95000, 34.07262 -1.05982...</span>
+<span class="go">2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON ((-8.66559 27.65643, -8.66512 27.58948...</span>
+<span class="go">3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLYGON (((-122.84000 49.00000, -122.9742...</span>
+<span class="go">4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLYGON (((-122.84000 49.00000, -120.0000...</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s2">&quot;pop_est&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Blues&quot;</span><span class="p">)</span>  
+</pre></div>
+</div>
+<p>See the User Guide page <a class="reference internal" href="../../user_guide/mapping.html"><span class="doc">Mapping and Plotting Tools</span></a> for details.</p>
+</dd></dl>
+
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="geopandas.GeoDataFrame.explode.html" title="previous page">geopandas.GeoDataFrame.explode</a>
+    <a class='right-next' id="next-link" href="geopandas.GeoDataFrame.sindex.html" title="next page">geopandas.GeoDataFrame.sindex</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../../../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

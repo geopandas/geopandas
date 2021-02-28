@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.is\_ring
+============================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.is_ring

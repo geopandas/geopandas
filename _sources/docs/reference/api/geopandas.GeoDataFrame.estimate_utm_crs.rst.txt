@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.estimate\_utm\_crs
+=========================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.estimate_utm_crs

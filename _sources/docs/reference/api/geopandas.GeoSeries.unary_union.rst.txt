@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.unary\_union
+================================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.unary_union

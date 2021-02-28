@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.from\_file
+==============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.from_file

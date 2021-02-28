@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.cx
+======================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.cx

@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.fillna
+==========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.fillna

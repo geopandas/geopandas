@@ -1,0 +1,6 @@
+﻿geopandas.sindex.RTreeIndex.valid\_query\_predicates
+====================================================
+
+.. currentmodule:: geopandas.sindex
+
+.. autoproperty:: RTreeIndex.valid_query_predicates

@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.dissolve
+===============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.dissolve

@@ -1,0 +1,6 @@
+﻿geopandas.sindex.PyGEOSSTRTreeIndex.query
+=========================================
+
+.. currentmodule:: geopandas.sindex
+
+.. automethod:: PyGEOSSTRTreeIndex.query

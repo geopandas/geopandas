@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.translate
+=============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.translate

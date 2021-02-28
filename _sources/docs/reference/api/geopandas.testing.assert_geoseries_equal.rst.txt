@@ -1,0 +1,6 @@
+﻿geopandas.testing.assert\_geoseries\_equal
+==========================================
+
+.. currentmodule:: geopandas.testing
+
+.. autofunction:: assert_geoseries_equal

@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoPandas Project Code of Conduct &#8212; GeoPandas 0.9.0 documentation</title>
+    
+  <link rel="stylesheet" href="../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="../_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="../_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/toggleprompt.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ecosystem" href="ecosystem.html" />
+    <link rel="prev" title="Contributing to GeoPandas" href="contributing.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
+<div class="container-xl">
+
+    <a class="navbar-brand" href="../index.html">
+    
+      <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
+      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
+        
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../index.html">Home</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../about.html">About</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../getting_started.html">Getting started</a>
+        </li>
+        
+        <li class="nav-item ">
+            <a class="nav-link" href="../docs.html">Documentation</a>
+        </li>
+        
+        <li class="nav-item active">
+            <a class="nav-link" href="../community.html">Community</a>
+        </li>
+        
+        
+      </ul>
+
+
+      
+
+      <ul class="navbar-nav">
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-github-square"></i></span>
+            </a>
+          </li>
+        
+        
+          <li class="nav-item">
+            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
+              <span><i class="fab fa-twitter-square"></i></span>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+
+    <div class="bd-toc-item active">
+    
+  
+    <ul class="nav bd-sidenav">
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          
+            
+                <li class="">
+                    <a href="contributing.html">Contributing</a>
+                </li>
+            
+          
+            
+                <li class="active">
+                    <a href="">Code of Conduct</a>
+                </li>
+            
+          
+            
+                <li class="">
+                    <a href="ecosystem.html">Ecosystem</a>
+                </li>
+            
+          
+        
+        
+      </ul>
+  
+  </nav>
+          </div>
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+              
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="nav section-nav flex-column">
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#reporting" class="nav-link">Reporting</a>
+        </li>
+    
+        <li class="nav-item toc-entry toc-h2">
+            <a href="#enforcement" class="nav-link">Enforcement</a>
+        </li>
+    
+    </ul>
+</nav>
+
+
+              
+          </div>
+          
+
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="geopandas-project-code-of-conduct">
+<h1>GeoPandas Project Code of Conduct<a class="headerlink" href="#geopandas-project-code-of-conduct" title="Permalink to this headline">¶</a></h1>
+<p>Behind the GeoPandas Project is an engaged and respectful community made up of
+people from all over the world and with a wide range of backgrounds.
+Naturally, this implies diversity of ideas and perspectives on often
+complex problems. Disagreement and healthy discussion of conflicting
+viewpoints is welcome: the best solutions to hard problems rarely come from a single
+angle. But disagreement is not an excuse for aggression: humans tend to take
+disagreement personally and easily drift into behavior that ultimately
+degrades a community. This is particularly acute with online communication
+across language and cultural gaps, where many cues of human behavior are
+unavailable. We are outlining here a set of principles and processes to support a
+healthy community in the face of these challenges.</p>
+<p>Fundamentally, we are committed to fostering a productive, harassment-free
+environment for everyone. Rather than considering this code an exhaustive list
+of things that you can’t do, take it in the spirit it is intended - a guide to
+make it easier to enrich all of us and the communities in which we participate.</p>
+<p>Importantly: as a member of our community, <em>you are also a steward of these
+values</em>. Not all problems need to be resolved via formal processes, and often
+a quick, friendly but clear word on an online forum or in person can help
+resolve a misunderstanding and de-escalate things.</p>
+<p>However, sometimes these informal processes may be inadequate: they fail to
+work, there is urgency or risk to someone, nobody is intervening publicly and
+you don’t feel comfortable speaking in public, etc. For these or other
+reasons, structured follow-up may be necessary and here we provide the means
+for that: we welcome reports by emailing
+<a class="reference external" href="mailto:geopandas-conduct&#37;&#52;&#48;googlegroups&#46;com">geopandas-conduct<span>&#64;</span>googlegroups<span>&#46;</span>com</a> or by filling out <a class="reference external" href="https://docs.google.com/forms/d/e/1FAIpQLSd8Tbi2zNl1i2N9COX0yavHEqTGFIPQ1_cLcy1A3JgVc1OrAQ/viewform">this
+form</a>.</p>
+<p>This code applies equally to founders, developers, mentors and new community
+members, in all spaces managed by the GeoPandas Project. This
+includes the mailing lists, our GitHub organization, our chat room, in-person
+events, and any other forums created by the project team. In addition,
+violations of this code outside these spaces may affect a person’s ability to
+participate within them.</p>
+<p>By embracing the following principles, guidelines and actions to follow or
+avoid, you will help us make Jupyter a welcoming and productive community. Feel
+free to contact the Code of Conduct Committee at
+<a class="reference external" href="mailto:geopandas-conduct&#37;&#52;&#48;googlegroups&#46;com">geopandas-conduct<span>&#64;</span>googlegroups<span>&#46;</span>com</a> with any questions.</p>
+<ol class="arabic simple">
+<li><p><strong>Be friendly and patient</strong>.</p></li>
+<li><p><strong>Be welcoming</strong>. We strive to be a community that welcomes and supports
+people of all backgrounds and identities. This includes, but is not limited
+to, members of any race, ethnicity, culture, national origin, color,
+immigration status, social and economic class, educational level, sex, sexual
+orientation, gender identity and expression, age, physical appearance, family
+status, technological or professional choices, academic
+discipline, religion, mental ability, and physical ability.</p></li>
+<li><p><strong>Be considerate</strong>. Your work will be used by other people, and you in turn
+will depend on the work of others. Any decision you take will affect users
+and colleagues, and you should take those consequences into account when
+making decisions. Remember that we’re a world-wide community. You may be
+communicating with someone with a different primary language or cultural
+background.</p></li>
+<li><p><strong>Be respectful</strong>. Not all of us will agree all the time, but disagreement is
+no excuse for poor behavior or poor manners. We might all experience some
+frustration now and then, but we cannot allow that frustration to turn into a
+personal attack. It’s important to remember that a community where people
+feel uncomfortable or threatened is not a productive one.</p></li>
+<li><p><strong>Be careful in the words that you choose</strong>. Be kind to others. Do not insult
+or put down other community members. Harassment and other exclusionary
+behavior are not acceptable. This includes, but is not limited to:</p>
+<ul class="simple">
+<li><p>Violent threats or violent language directed against another person</p></li>
+<li><p>Discriminatory jokes and language</p></li>
+<li><p>Posting sexually explicit or violent material</p></li>
+<li><p>Posting (or threatening to post) other people’s personally identifying information (“doxing”)</p></li>
+<li><p>Personal insults, especially those using racist, sexist, and xenophobic terms</p></li>
+<li><p>Unwelcome sexual attention</p></li>
+<li><p>Advocating for, or encouraging, any of the above behavior</p></li>
+<li><p>Repeated harassment of others. In general, if someone asks you to stop, then stop</p></li>
+</ul>
+</li>
+<li><p><strong>Moderate your expectations</strong>. Please respect that community members choose
+how they spend their time in the project. A thoughtful question about your
+expectations is preferable to demands for another person’s time.</p></li>
+<li><p><strong>When we disagree, try to understand why</strong>. Disagreements, both social and
+technical, happen all the time and the GeoPandas Project is no exception. Try to
+understand where others are coming from, as seeing a question from their
+viewpoint may help find a new path forward. And don’t forget that it is
+human to err: blaming each other doesn’t get us anywhere, while we can learn
+from mistakes to find better solutions.</p></li>
+<li><p><strong>A simple apology can go a long way</strong>. It can often de-escalate a situation,
+and telling someone that you are sorry is an act of empathy that doesn’t
+automatically imply an admission of guilt.</p></li>
+</ol>
+<div class="section" id="reporting">
+<h2>Reporting<a class="headerlink" href="#reporting" title="Permalink to this headline">¶</a></h2>
+<p>If you believe someone is violating the code of conduct, please report this in
+a timely manner. Code of conduct violations reduce the value of the community
+for everyone and we take them seriously.</p>
+<p>You can file a report by emailing
+<a class="reference external" href="mailto:geopandas-conduct&#37;&#52;&#48;googlegroups&#46;com">geopandas-conduct<span>&#64;</span>googlegroups<span>&#46;</span>com</a> or by filing out
+<a class="reference external" href="https://docs.google.com/forms/d/e/1FAIpQLSd8Tbi2zNl1i2N9COX0yavHEqTGFIPQ1_cLcy1A3JgVc1OrAQ/viewform">this form</a>.</p>
+<p>The online form gives you the option to keep your report anonymous or request
+that we follow up with you directly. While we cannot follow up on an anonymous
+report, we will take appropriate action.</p>
+<p>Messages sent to the e-mail address or through the form will be sent
+only to the Code of Conduct Committee, which currently consists of:</p>
+<ul class="simple">
+<li><p>Hannah Aizenman</p></li>
+<li><p>Joris Van den Bossche</p></li>
+<li><p>Martin Fleischmann</p></li>
+</ul>
+</div>
+<div class="section" id="enforcement">
+<h2>Enforcement<a class="headerlink" href="#enforcement" title="Permalink to this headline">¶</a></h2>
+<p>Enforcement procedures within the GeoPandas Project follow Project Jupyter’s <a class="reference external" href="https://github.com/jupyter/governance/blob/master/conduct/enforcement.md">Enforcement
+Manual</a>.
+For information on enforcement, please view the <a class="reference external" href="https://github.com/jupyter/governance/blob/master/conduct/enforcement.md">original
+manual</a>.</p>
+<p>Original text courtesy of the <a class="reference external" href="http://web.archive.org/web/20141109123859/http://speakup.io/coc.html">Speak
+Up!</a>,
+<a class="reference external" href="https://www.djangoproject.com/conduct">Django</a> and
+<a class="reference external" href="https://github.com/jupyter/governance/blob/master/conduct/code_of_conduct.md">Jupyter</a>
+Projects, modified by the GeoPandas Project. We are grateful to those projects for
+contributing these materials under open licensing terms for us to easily reuse.</p>
+<p>All content on this page is licensed under a <a class="reference external" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons
+Attribution</a> license.</p>
+</div>
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="contributing.html" title="previous page">Contributing to GeoPandas</a>
+    <a class='right-next' id="next-link" href="ecosystem.html" title="next page">Ecosystem</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+
+    
+  <script src="../_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    <p>
+          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

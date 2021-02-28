@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.crs
+=======================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.crs

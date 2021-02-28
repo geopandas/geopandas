@@ -1,0 +1,6 @@
+﻿geopandas.sindex.SpatialIndex.intersection
+==========================================
+
+.. currentmodule:: geopandas.sindex
+
+.. automethod:: SpatialIndex.intersection

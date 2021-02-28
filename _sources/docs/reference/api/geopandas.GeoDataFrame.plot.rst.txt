@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.plot
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.plot

@@ -1,0 +1,201 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# An example of polygon plotting with folium  \n",
+    "We are going to demonstrate polygon plotting in this example with the help of folium"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import geopandas as gpd\n",
+    "import folium\n",
+    "import matplotlib.pyplot as plt"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We make use of nybb dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "path = gpd.datasets.get_path('nybb')\n",
+    "df = gpd.read_file(path)\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Plot from the original dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": [
+     "nbsphinx-thumbnail"
+    ]
+   },
+   "outputs": [],
+   "source": [
+    "df.plot(figsize=(6, 6))\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "One thing to notice is that the values of the geometry do not directly represent the values of latitude of longitude in geographic coordinate system\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(df.crs)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "As folium(i.e. leaflet.js) by default takes input of values of latitude and longitude, we need to project the geometry first"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = df.to_crs(epsg=4326)\n",
+    "print(df.crs)\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df.plot(figsize=(6, 6))\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Initialize folium map object"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "m = folium.Map(location=[40.70, -73.94], zoom_start=10, tiles='CartoDB positron')\n",
+    "m"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Overlay the boundaries of boroughs on map with borough name as popup"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "for _, r in df.iterrows():\n",
+    "    #without simplifying the representation of each borough, the map might not be displayed \n",
+    "    #sim_geo = gpd.GeoSeries(r['geometry'])\n",
+    "    sim_geo = gpd.GeoSeries(r['geometry']).simplify(tolerance=0.001)\n",
+    "    geo_j = sim_geo.to_json()\n",
+    "    geo_j = folium.GeoJson(data=geo_j,\n",
+    "                           style_function=lambda x: {'fillColor': 'orange'})\n",
+    "    folium.Popup(r['BoroName']).add_to(geo_j)\n",
+    "    geo_j.add_to(m)\n",
+    "m"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Add marker showing the area and length of each borough"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df['lat'] = df.centroid.y\n",
+    "df['lon'] = df.centroid.x\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "for _, r in df.iterrows():\n",
+    "    folium.Marker(location=[r['lat'], r['lon']], popup='length: {} <br> area: {}'.format(r['Shape_Leng'], r['Shape_Area'])).add_to(m)\n",
+    "    \n",
+    "m"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

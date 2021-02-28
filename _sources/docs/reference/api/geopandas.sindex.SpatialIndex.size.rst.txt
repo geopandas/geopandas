@@ -1,0 +1,6 @@
+﻿geopandas.sindex.SpatialIndex.size
+==================================
+
+.. currentmodule:: geopandas.sindex
+
+.. autoproperty:: SpatialIndex.size

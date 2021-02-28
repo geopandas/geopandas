@@ -1,0 +1,6 @@
+﻿geopandas.tools.reverse\_geocode
+================================
+
+.. currentmodule:: geopandas.tools
+
+.. autofunction:: reverse_geocode

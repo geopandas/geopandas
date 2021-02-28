@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.plot
+========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.plot

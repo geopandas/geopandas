@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.crosses
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.crosses

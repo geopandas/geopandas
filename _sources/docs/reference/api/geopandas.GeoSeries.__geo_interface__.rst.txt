@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.\_\_geo\_interface\_\_
+==========================================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoSeries.__geo_interface__

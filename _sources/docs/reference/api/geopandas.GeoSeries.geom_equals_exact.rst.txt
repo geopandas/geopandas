@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.geom\_equals\_exact
+=======================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.geom_equals_exact

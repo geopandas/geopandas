@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.cx
+=========================
+
+.. currentmodule:: geopandas
+
+.. autoproperty:: GeoDataFrame.cx
