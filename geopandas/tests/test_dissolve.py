@@ -292,9 +292,9 @@ def test_dissolve_dropna_warn(nybb_polydf):
     # No warning with default params
     with pytest.warns(None) as record:
         nybb_polydf.dissolve()
-        
+
     for r in record:
-         assert "dropna kwarg is not supported" not in str(r.message)
+        assert "dropna kwarg is not supported" not in str(r.message)
 
     # Warning is emitted with non-default dropna value
     with pytest.warns(
