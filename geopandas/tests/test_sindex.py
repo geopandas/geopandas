@@ -718,3 +718,15 @@ class TestPygeosInterface:
 
         res = world.sindex.query_bulk(capitals.geometry, predicate)
         assert res.shape == expected_shape
+
+
+def test_old_spatial_index_deprecated():
+    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+
+    stream = ((i, item.bounds, None) for i, item in enumerate([t1, t2]))
+
+    with pytest.warns(FutureWarning):
+        idx = geopandas.sindex.SpatialIndex(stream)
+
+    assert list(idx.intersection((0, 0, 1, 1))) == [0, 1]

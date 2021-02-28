@@ -1,5 +1,5 @@
-import abc
 from textwrap import dedent
+import warnings
 
 from shapely.geometry.base import BaseGeometry
 import pandas as pd
@@ -24,9 +24,8 @@ def _get_sindex_class():
     )
 
 
-class SpatialIndex(metaclass=abc.ABCMeta):
+class BaseSpatialIndex:
     @property
-    @abc.abstractmethod
     def valid_query_predicates(self):
         """Returns valid predicates for this spatial index.
 
@@ -43,9 +42,8 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         {'contains', 'crosses', 'intersects', 'within', 'touches', \
 'overlaps', None, 'covers', 'contains_properly'}
         """
-        pass
+        raise NotImplementedError
 
-    @abc.abstractmethod
     def query(self, geometry, predicate=None, sort=False):
         """Return the index of all geometries in the tree with extents that
         intersect the envelope of the input geometry.
@@ -97,9 +95,8 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         >>> s.sindex.query(box(1, 1, 3, 3), predicate="contains")
         array([2])
         """
-        pass
+        raise NotImplementedError
 
-    @abc.abstractmethod
     def query_bulk(self, geometry, predicate=None, sort=False):
         """
         Returns all combinations of each input geometry and geometries in
@@ -169,9 +166,8 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         array([[0],
                 [3]])
         """
-        pass
+        raise NotImplementedError
 
-    @abc.abstractmethod
     def intersection(self, coordinates):
         """Compatibility wrapper for rtree.index.Index.intersection,
         use ``query`` intead.
@@ -208,10 +204,9 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         array([1, 2, 3])
 
         """
-        pass
+        raise NotImplementedError
 
     @property
-    @abc.abstractmethod
     def size(self):
         """Size of the spatial index
 
@@ -237,10 +232,9 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         >>> s.sindex.size
         10
         """
-        pass
+        raise NotImplementedError
 
     @property
-    @abc.abstractmethod
     def is_empty(self):
         """Check if the spatial index is empty
 
@@ -268,7 +262,7 @@ class SpatialIndex(metaclass=abc.ABCMeta):
         >>> s2.sindex.is_empty
         True
         """
-        pass
+        raise NotImplementedError
 
 
 def doc(docstring):
@@ -289,16 +283,29 @@ if compat.HAS_RTREE:
     from rtree.core import RTreeError  # noqa
     from shapely.prepared import prep  # noqa
 
-    class SpatialIndex2(rtree.index.Index):
+    class SpatialIndex(rtree.index.Index, BaseSpatialIndex):
         """Original rtree wrapper, kept for backwards compatibility."""
 
         def __init__(self, *args):
-            super().__init__(self, *args)
+            warnings.warn(
+                "Directly using SpatialIndex is deprecated, and the class will be "
+                "removed in a future version. Access the spatial index through the "
+                "`GeoSeries.sindex` attribute, or use `rtree.index.Index` directly.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            super().__init__(*args)
 
+        @doc(BaseSpatialIndex.intersection)
+        def intersection(self, coordinates, *args, **kwargs):
+            return super().intersection(coordinates, *args, **kwargs)
+
+        @doc(BaseSpatialIndex.size)
         @property
         def size(self):
             return len(self.leaves()[0][1])
 
+        @doc(BaseSpatialIndex.is_empty)
         @property
         def is_empty(self):
             if len(self.leaves()) > 1:
@@ -336,7 +343,7 @@ if compat.HAS_RTREE:
                 [None] * self.geometries.size, dtype=object
             )
 
-        @doc(SpatialIndex.valid_query_predicates)
+        @doc(BaseSpatialIndex.valid_query_predicates)
         @property
         def valid_query_predicates(self):
             return {
@@ -351,7 +358,7 @@ if compat.HAS_RTREE:
                 "contains_properly",
             }
 
-        @doc(SpatialIndex.query)
+        @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False):
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
@@ -431,7 +438,7 @@ if compat.HAS_RTREE:
             # unsorted
             return np.array(tree_idx, dtype=np.intp)
 
-        @doc(SpatialIndex.query_bulk)
+        @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
             # Iterates over geometry, applying func.
             tree_index = []
@@ -443,11 +450,11 @@ if compat.HAS_RTREE:
                 input_geometry_index.extend([i] * len(res))
             return np.vstack([input_geometry_index, tree_index])
 
-        @doc(SpatialIndex.intersection)
+        @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
             return super().intersection(coordinates, objects=False)
 
-        @doc(SpatialIndex.size)
+        @doc(BaseSpatialIndex.size)
         @property
         def size(self):
             if hasattr(self, "_size"):
@@ -460,7 +467,7 @@ if compat.HAS_RTREE:
                 self._size = size
             return size
 
-        @doc(SpatialIndex.is_empty)
+        @doc(BaseSpatialIndex.is_empty)
         @property
         def is_empty(self):
             return self.geometries.size == 0 or self.size == 0
@@ -516,7 +523,7 @@ if compat.HAS_PYGEOS:
             """
             return pygeos.strtree.VALID_PREDICATES | set([None])
 
-        @doc(SpatialIndex.query)
+        @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False):
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -536,7 +543,7 @@ if compat.HAS_PYGEOS:
 
             return matches
 
-        @doc(SpatialIndex.query_bulk)
+        @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -561,7 +568,7 @@ if compat.HAS_PYGEOS:
 
             return res
 
-        @doc(SpatialIndex.intersection)
+        @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
             # convert bounds to geometry
             # the old API uses tuples of bound, but pygeos uses geometries
@@ -591,12 +598,12 @@ if compat.HAS_PYGEOS:
 
             return indexes
 
-        @doc(SpatialIndex.size)
+        @doc(BaseSpatialIndex.size)
         @property
         def size(self):
             return len(self)
 
-        @doc(SpatialIndex.is_empty)
+        @doc(BaseSpatialIndex.is_empty)
         @property
         def is_empty(self):
             return len(self) == 0
