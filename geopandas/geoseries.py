@@ -13,7 +13,6 @@ from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
 from .array import (
-    GeometryArray,
     GeometryDtype,
     from_shapely,
     from_wkb,
