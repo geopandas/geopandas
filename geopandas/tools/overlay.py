@@ -159,7 +159,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         if False, return all resulting geometries. Default is None,
         which will set keep_geom_type to True but warn upon dropping
         geometries.
-    make_valid : bool
+    make_valid : bool, default True
         If True, any invalid input geometries are corrected with a call to `buffer(0)`,
         if False, a `ValueError` is raised if any input geometries are invalid.
 
