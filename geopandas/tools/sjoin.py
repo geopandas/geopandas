@@ -86,6 +86,24 @@ stria    AUT    416600.0
     """
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
+    box_left_gdf = left_df.total_bounds
+    box_right_gdf = right_df.total_bounds
+
+    if not (
+        (
+            (box_left_gdf[0] <= box_right_gdf[2])
+            and (box_right_gdf[0] <= box_left_gdf[2])
+        )
+        and (
+            (box_left_gdf[1] <= box_right_gdf[3])
+            and (box_right_gdf[1] <= box_left_gdf[3])
+        )
+    ):
+        copy_df = left_df.copy(deep=True)
+        copy_df["index_left"] = 0
+        copy_df["index_right"] = 0
+        return copy_df.iloc[:0]
+
     indices = _geom_predicate_query(left_df, right_df, op)
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
