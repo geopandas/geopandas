@@ -34,6 +34,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+result_images
 
 # Sphinx documentation
 doc/_build/

@@ -29,6 +29,13 @@ matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa
 
+try:  # skipif and importorskip do not work for decorators
+    from matplotlib.testing.decorators import check_figures_equal
+
+    MPL_DECORATORS = True
+except ImportError:
+    MPL_DECORATORS = False
+
 
 @pytest.fixture(autouse=True)
 def close_figures(request):
@@ -41,6 +48,8 @@ try:
     MPL_DFT_COLOR = cycle["color"][0]
 except KeyError:
     MPL_DFT_COLOR = matplotlib.rcParams["axes.color_cycle"][0]
+
+plt.rcParams.update({"figure.max_open_warning": 0})
 
 
 class TestPointPlotting:
@@ -1054,9 +1063,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"[       140.00,    5217064.00]",
-            u"(   5217064.00,   19532732.33]",
-            u"(  19532732.33, 1379302771.00]",
+            u"       140.00,    5217064.00",
+            u"   5217064.00,   19532732.33",
+            u"  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -1089,7 +1098,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1102,7 +1111,20 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
+        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        assert labels == expected
+
+    def test_interval(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"interval": True},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -1125,7 +1147,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
+        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1451,6 +1473,79 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
         ax.cla()
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
+class TestGeoplotAccessor:
+    def setup_method(self):
+        geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
+        x = [1, 2]
+        y = [10, 20]
+        self.gdf = GeoDataFrame({"geometry": geometries, "x": x, "y": y})
+        self.df = pd.DataFrame({"x": x, "y": y})
+
+    def compare_figures(self, kind, fig_test, fig_ref, kwargs):
+        """Compare Figures."""
+        ax_pandas_1 = fig_test.subplots()
+        self.df.plot(kind=kind, ax=ax_pandas_1, **kwargs)
+        ax_geopandas_1 = fig_ref.subplots()
+        self.gdf.plot(kind=kind, ax=ax_geopandas_1, **kwargs)
+
+        ax_pandas_2 = fig_test.subplots()
+        getattr(self.df.plot, kind)(ax=ax_pandas_2, **kwargs)
+        ax_geopandas_2 = fig_ref.subplots()
+        getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
+
+    _pandas_kinds = []
+    if compat.PANDAS_GE_025:
+        from geopandas.plotting import GeoplotAccessor
+
+        _pandas_kinds = GeoplotAccessor._pandas_kinds
+
+    if MPL_DECORATORS:
+
+        @pytest.mark.parametrize("kind", _pandas_kinds)
+        @check_figures_equal(extensions=["png", "pdf"])
+        def test_pandas_kind(self, kind, fig_test, fig_ref):
+            """Test Pandas kind."""
+            import importlib
+
+            _scipy_dependent_kinds = ["kde", "density"]  # Needs scipy
+            _y_kinds = ["pie"]  # Needs y
+            _xy_kinds = ["scatter", "hexbin"]  # Needs x & y
+            kwargs = {}
+            if kind in _scipy_dependent_kinds:
+                if not importlib.util.find_spec("scipy"):
+                    with pytest.raises(
+                        ModuleNotFoundError, match="No module named 'scipy'"
+                    ):
+                        self.gdf.plot(kind=kind)
+            elif kind in _y_kinds:
+                kwargs = {"y": "y"}
+            elif kind in _xy_kinds:
+                kwargs = {"x": "x", "y": "y"}
+
+            self.compare_figures(kind, fig_test, fig_ref, kwargs)
+            plt.close("all")
+
+        @check_figures_equal(extensions=["png", "pdf"])
+        def test_geo_kind(self, fig_test, fig_ref):
+            """Test Geo kind."""
+            ax1 = fig_test.subplots()
+            self.gdf.plot(ax=ax1)
+            ax2 = fig_ref.subplots()
+            getattr(self.gdf.plot, "geo")(ax=ax2)
+            plt.close("all")
+
+    def test_invalid_kind(self):
+        """Test invalid kinds."""
+        with pytest.raises(ValueError, match="error is not a valid plot kind"):
+            self.gdf.plot(kind="error")
+        with pytest.raises(
+            AttributeError,
+            match="'GeoplotAccessor' object has no attribute 'error'",
+        ):
+            self.gdf.plot.error()
 
 
 def test_column_values():

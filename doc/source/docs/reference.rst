@@ -15,5 +15,6 @@ The API Reference provides an overview of all public objects, functions and meth
   GeoDataFrame <reference/geodataframe>
   Input/output <reference/io>
   Tools <reference/tools>
+  Spatial index <reference/sindex>
   Testing <reference/testing>
 

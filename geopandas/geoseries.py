@@ -6,7 +6,7 @@ import pandas as pd
 from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
 
-from pyproj import CRS, Transformer
+from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
@@ -22,7 +22,6 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
-from . import _vectorized as vectorized
 from . import _compat as compat
 
 
@@ -209,7 +208,7 @@ class GeoSeries(GeoPandasBase, Series):
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty:
+                if s.empty or data is None:
                     s = s.astype(object)
                 else:
                     warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
@@ -1024,27 +1023,8 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.set_crs : assign CRS
 
         """
-        if self.crs is None:
-            raise ValueError(
-                "Cannot transform naive geometries.  "
-                "Please set a crs on the object first."
-            )
-        if crs is not None:
-            crs = CRS.from_user_input(crs)
-        elif epsg is not None:
-            crs = CRS.from_epsg(epsg)
-        else:
-            raise ValueError("Must pass either crs or epsg.")
-
-        # skip if the input CRS and output CRS are the exact same
-        if self.crs.is_exact_same(crs):
-            return self
-
-        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
-
-        new_data = vectorized.transform(self.values.data, transformer.transform)
         return GeoSeries(
-            GeometryArray(new_data), crs=crs, index=self.index, name=self.name
+            self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )
 
     def estimate_utm_crs(self, datum_name="WGS 84"):
@@ -1085,40 +1065,7 @@ class GeoSeries(GeoPandasBase, Series):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
-        try:
-            from pyproj.aoi import AreaOfInterest
-            from pyproj.database import query_utm_crs_info
-        except ImportError:
-            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
-
-        if not self.crs:
-            raise RuntimeError("crs must be set to estimate UTM CRS.")
-
-        minx, miny, maxx, maxy = self.total_bounds
-        # ensure using geographic coordinates
-        if not self.crs.is_geographic:
-            lon, lat = Transformer.from_crs(
-                self.crs, "EPSG:4326", always_xy=True
-            ).transform((minx, maxx, minx, maxx), (miny, miny, maxy, maxy))
-            x_center = np.mean(lon)
-            y_center = np.mean(lat)
-        else:
-            x_center = np.mean([minx, maxx])
-            y_center = np.mean([miny, maxy])
-
-        utm_crs_list = query_utm_crs_info(
-            datum_name=datum_name,
-            area_of_interest=AreaOfInterest(
-                west_lon_degree=x_center,
-                south_lat_degree=y_center,
-                east_lon_degree=x_center,
-                north_lat_degree=y_center,
-            ),
-        )
-        try:
-            return CRS.from_epsg(utm_crs_list[0].code)
-        except IndexError:
-            raise RuntimeError("Unable to determine UTM CRS")
+        return self.values.estimate_utm_crs(datum_name)
 
     def to_json(self, **kwargs):
         """

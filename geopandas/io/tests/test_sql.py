@@ -344,6 +344,21 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    def test_write_postgis_uppercase_tablename(self, engine_postgis, df_nybb):
+        """Tests writing GeoDataFrame to PostGIS with uppercase tablename."""
+        engine = engine_postgis
+        table = "aTestTable"
+
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        # Write to db
+        write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        # Validate
+        sql = 'SELECT * FROM "{table}";'.format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
     def test_write_postgis_sqlalchemy_connection(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         with engine_postgis.begin() as con:
