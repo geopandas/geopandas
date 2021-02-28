@@ -78,7 +78,7 @@ Bug fixes:
 - Fix regression in the `plot()` method raising an error with empty
   geometries (#1702, #1828).
 - Fix `geopandas.overlay()` to preserve geometries of the correct type which
-  are nested withing a GeometryCollection as a result of the overlay
+  are nested within a GeometryCollection as a result of the overlay
   operation (#1582). In addition, a warning will now be raised if geometries
   of different type are dropped from the result (#1554).
 - Fix the repr of an empty GeoSeries to not show spurious warnings (#1673).
