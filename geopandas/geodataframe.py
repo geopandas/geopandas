@@ -1322,7 +1322,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return self
 
-    def dissolve(self, by=None, aggfunc="first", as_index=True):
+    def dissolve(
+        self,
+        by=None,
+        aggfunc="first",
+        as_index=True,
+        level=None,
+        sort=True,
+        observed=False,
+        dropna=True,
+    ):
         """
         Dissolve geometries within `groupby` into single observation.
         This is accomplished by applying the `unary_union` method
@@ -1341,6 +1350,33 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             with each group. Passed to pandas `groupby.agg` method.
         as_index : boolean, default True
             If true, groupby columns become index of result.
+        level : int or str or sequence of int or sequence of str, default None
+            If the axis is a MultiIndex (hierarchical), group by a
+            particular level or levels.
+
+            .. versionadded:: 0.9.0
+        sort : bool, default True
+            Sort group keys. Get better performance by turning this off.
+            Note this does not influence the order of observations within
+            each group. Groupby preserves the order of rows within each group.
+
+            .. versionadded:: 0.9.0
+        observed : bool, default False
+            This only applies if any of the groupers are Categoricals.
+            If True: only show observed values for categorical groupers.
+            If False: show all values for categorical groupers.
+
+            .. versionadded:: 0.9.0
+        dropna : bool, default True
+            If True, and if group keys contain NA values, NA values
+            together with row/column will be dropped. If False, NA
+            values will also be treated as the key in groups.
+
+            This parameter is not supported for pandas < 1.1.0.
+            A warning will be emitted for earlier pandas versions
+            if a non-default value is given for this parameter.
+
+            .. versionadded:: 0.9.0
 
         Returns
         -------
@@ -1373,19 +1409,28 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         """
 
-        if by is None:
+        if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
+
+        groupby_kwargs = dict(
+            by=by, level=level, sort=sort, observed=observed, dropna=dropna
+        )
+        if not compat.PANDAS_GE_11:
+            groupby_kwargs.pop("dropna")
+
+            if not dropna:  # If they passed a non-default dropna value
+                warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(by=by).agg(aggfunc)
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
 
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(
+        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
             merge_geometries
         )
 
