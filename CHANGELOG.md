@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.9.0 (February ??, 2021)
+Version 0.9.0 (February 28, 2021)
 ---------------------------------
 
 Many documentation improvements and a restyled and restructured website with
