@@ -177,9 +177,9 @@ def from_wkb(data):
     return aout
 
 
-def to_wkb(data, hex=False):
+def to_wkb(data, hex=False, **kwargs):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data, hex=hex)
+        return pygeos.to_wkb(data, hex=hex, **kwargs)
     else:
         if hex:
             out = [geom.wkb_hex if geom is not None else None for geom in data]

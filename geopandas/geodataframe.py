@@ -11,7 +11,7 @@ from shapely.geometry.base import BaseGeometry
 
 from pyproj import CRS
 
-from geopandas.array import GeometryArray, from_shapely, GeometryDtype
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries, inherit_doc
 import geopandas.io
@@ -78,6 +78,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     col1          object
     geometry    geometry
     dtype: object
+
+    Constructing GeoDataFrame from a pandas DataFrame with a column of WKT geometries:
+
+    >>> import pandas as pd
+    >>> d = {'col1': ['name1', 'name2'], 'wkt': ['POINT (1 2)', 'POINT (2 1)']}
+    >>> df = pd.DataFrame(d)
+    >>> gs = geopandas.GeoSeries.from_wkt(df['wkt'])
+    >>> gdf = geopandas.GeoDataFrame(df, geometry=gs, crs="EPSG:4326")
+    >>> gdf
+        col1          wkt                 geometry
+    0  name1  POINT (1 2)  POINT (1.00000 2.00000)
+    1  name2  POINT (2 1)  POINT (2.00000 1.00000)
 
     See also
     --------
@@ -862,6 +874,57 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             geo["bbox"] = tuple(self.total_bounds)
 
         return geo
+
+    def to_wkb(self, hex=False, **kwargs):
+        """
+        Encode all geometry columns in the GeoDataFrame to WKB.
+
+        Parameters
+        ----------
+        hex : bool
+            If true, export the WKB as a hexadecimal string.
+            The default is to return a binary bytes object.
+        kwargs
+            Additional keyword args will be passed to
+            :func:`pygeos.to_wkb` if pygeos is installed.
+
+        Returns
+        -------
+        DataFrame
+            geometry columns are encoded to WKB
+        """
+
+        df = DataFrame(self.copy())
+
+        # Encode all geometry columns to WKB
+        for col in df.columns[df.dtypes == "geometry"]:
+            df[col] = to_wkb(df[col].values, hex=hex, **kwargs)
+
+        return df
+
+    def to_wkt(self, **kwargs):
+        """
+        Encode all geometry columns in the GeoDataFrame to WKT.
+
+        Parameters
+        ----------
+        kwargs
+            Keyword args will be passed to :func:`pygeos.to_wkt`
+            if pygeos is installed.
+
+        Returns
+        -------
+        DataFrame
+            geometry columns are encoded to WKT
+        """
+
+        df = DataFrame(self.copy())
+
+        # Encode all geometry columns to WKT
+        for col in df.columns[df.dtypes == "geometry"]:
+            df[col] = to_wkt(df[col].values, **kwargs)
+
+        return df
 
     def to_parquet(self, path, index=None, compression="snappy", **kwargs):
         """Write a GeoDataFrame to the Parquet format.
