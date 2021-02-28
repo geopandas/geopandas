@@ -581,6 +581,16 @@ class TestGeometryArrayCRS:
         result = s.apply(lambda x: x.centroid)
         assert result.crs == 27700
 
+    def test_apply_geodataframe(self):
+        df = GeoDataFrame({"col1": [0, 1]}, geometry=self.geoms, crs=27700)
+        assert df.crs == 27700
+
+        # apply preserves the CRS if the result is a GeoDataFrame
+        result = df.apply(lambda col: col, axis=0)
+        assert result.crs == 27700
+        result = df.apply(lambda row: row, axis=1)
+        assert result.crs == 27700
+
 
 class TestSetCRS:
     @pytest.mark.parametrize(
