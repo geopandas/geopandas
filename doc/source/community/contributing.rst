@@ -109,7 +109,7 @@ the upstream (main project) *GeoPandas* repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
 submitted. The test suite will also autmatically run on your branch so you can
-check it  prior to submitting the pull request.
+check it prior to submitting the pull request.
 
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
