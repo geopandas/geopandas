@@ -20,6 +20,29 @@ def _isna(this):
         return pd.isnull(this)
 
 
+def geom_equals_mask(this, that):
+    """
+    Test for geometric equality. Empty or missing geometries are considered
+    equal.
+
+    Parameters
+    ----------
+    this, that : arrays of Geo objects (or anything that has an `is_empty`
+                 attribute)
+
+    Returns
+    -------
+    Series
+        boolean Series, True if geometries in left equal geometries in right
+    """
+
+    return (
+        this.geom_equals(that)
+        | (this.is_empty & that.is_empty)
+        | (_isna(this) & _isna(that))
+    )
+
+
 def geom_equals(this, that):
     """
     Test for geometric equality. Empty or missing geometries are considered
@@ -29,13 +52,40 @@ def geom_equals(this, that):
     ----------
     this, that : arrays of Geo objects (or anything that has an `is_empty`
                  attribute)
+
+    Returns
+    -------
+    bool
+        True if all geometries in left equal geometries in right
+    """
+
+    return geom_equals_mask(this, that).all()
+
+
+def geom_almost_equals_mask(this, that):
+    """
+    Test for 'almost' geometric equality. Empty or missing geometries
+    considered equal.
+
+    This method allows small difference in the coordinates, but this
+    requires coordinates be in the same order for all components of a geometry.
+
+    Parameters
+    ----------
+    this, that : arrays of Geo objects (or anything that has an `is_empty`
+                 property)
+
+    Returns
+    -------
+    Series
+        boolean Series, True if geometries in left almost equal geometries in right
     """
 
     return (
-        this.geom_equals(that)
+        this.geom_almost_equals(that)
         | (this.is_empty & that.is_empty)
         | (_isna(this) & _isna(that))
-    ).all()
+    )
 
 
 def geom_almost_equals(this, that):
@@ -50,13 +100,14 @@ def geom_almost_equals(this, that):
     ----------
     this, that : arrays of Geo objects (or anything that has an `is_empty`
                  property)
+
+    Returns
+    -------
+    bool
+        True if all geometries in left almost equal geometries in right
     """
 
-    return (
-        this.geom_almost_equals(that)
-        | (this.is_empty & that.is_empty)
-        | (_isna(this) & _isna(that))
-    ).all()
+    return geom_almost_equals_mask(this, that).all()
 
 
 def assert_geoseries_equal(
@@ -157,34 +208,24 @@ def _check_equality(left, right, check_less_precise):
     )
     if check_less_precise:
         precise = "almost "
-        if not geom_almost_equals(left, right):
-            unequal_left_geoms = left[~left.geom_almost_equals(right)]
-            unequal_right_geoms = right[~left.geom_almost_equals(right)]
-            raise AssertionError(
-                assert_error_message.format(
-                    len(unequal_left_geoms),
-                    len(left),
-                    unequal_left_geoms.index.to_list(),
-                    precise,
-                    _truncated_string(unequal_left_geoms.iloc[0]),
-                    _truncated_string(unequal_right_geoms.iloc[0]),
-                )
-            )
+        equal = geom_almost_equals_mask(left, right)
     else:
         precise = ""
-        if not geom_equals(left, right):
-            unequal_left_geoms = left[~left.geom_almost_equals(right)]
-            unequal_right_geoms = right[~left.geom_almost_equals(right)]
-            raise AssertionError(
-                assert_error_message.format(
-                    len(unequal_left_geoms),
-                    len(left),
-                    unequal_left_geoms.index.to_list(),
-                    precise,
-                    _truncated_string(unequal_left_geoms.iloc[0]),
-                    _truncated_string(unequal_right_geoms.iloc[0]),
-                )
+        equal = geom_equals_mask(left, right)
+
+    if not equal.all():
+        unequal_left_geoms = left[~equal]
+        unequal_right_geoms = right[~equal]
+        raise AssertionError(
+            assert_error_message.format(
+                len(unequal_left_geoms),
+                len(left),
+                unequal_left_geoms.index.to_list(),
+                precise,
+                _truncated_string(unequal_left_geoms.iloc[0]),
+                _truncated_string(unequal_right_geoms.iloc[0]),
             )
+        )
 
 
 def assert_geodataframe_equal(
