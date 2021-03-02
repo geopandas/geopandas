@@ -12,6 +12,15 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 
+MIN_PYGEOS_VERSION_FOR_NEAREST = "0.9+13.gff0f970"
+try:
+    import pygeos
+
+    PYGEOS_HAS_NEAREST = LooseVersion(pygeos.__version__) >= LooseVersion()
+except ImportError:
+    PYGEOS_HAS_NEAREST = False
+
+
 pytestmark = pytest.mark.skip_no_sindex
 
 
@@ -490,6 +499,10 @@ class TestSpatialJoinNaturalEarth:
         assert cities_with_country.shape == (172, 4)
 
 
+@pytest.mark.skipif(
+    not PYGEOS_HAS_NEAREST,
+    f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST} is required for nearest functionality",
+)
 class TestNearest:
     def setup_method(self):
         pass
