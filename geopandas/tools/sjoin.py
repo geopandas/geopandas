@@ -309,3 +309,37 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
             joined.index.name = right_index_name
 
     return joined
+
+
+def _nearest_query(left_df: GeoDataFrame, right_df: GeoDataFrame, max_distance):
+    if left_df.has_sindex:
+        sindex = left_df.sindex
+        input_geoms = right_df.geometry
+    else:
+        sindex = right_df.sindex
+        input_geoms = left_df.geometry
+    if not hasattr(sindex, "nearest_all"):
+        raise AttributeError(
+            f"Expected the spatial index to implement `nearest_all`,"
+            f" but {type(sindex)} does not implement this method."
+            " Currently, only PyGEOS supports `nearest_all`."
+        )
+    if sindex:
+        l_idx, r_idx = sindex.nearest_all(input_geoms, max_distance=max_distance)
+        indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+    else:
+        # when sindex is empty / has no valid geometries
+        indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+    return indices
+
+
+def sjoin_nearest(
+    left_df, right_df, how="inner", max_distance=None, lsuffix="left", rsuffix="right"
+):
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+
+    indices = _nearest_query(left_df, right_df, max_distance)
+
+    joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
+
+    return joined

@@ -6,7 +6,7 @@ import pandas as pd
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
-from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin
+from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -488,3 +488,19 @@ class TestSpatialJoinNaturalEarth:
             self.cities, countries, how="inner", op="intersects"
         )
         assert cities_with_country.shape == (172, 4)
+
+
+class TestNearest:
+    def setup_method(self):
+        pass
+
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
+    def test_nearest(self, dfs):
+        _, df1, df2, _ = dfs
+        joined = sjoin_nearest(df1, df2)
+        for idx_left in np.unique(joined["df1"]):
+            distances = df2.geometry.distance(df1.loc[idx_left, "geometry"])
+            actual_mins_idxs = np.where(distances == distances.min())[0]
+            actual_mins = df2.loc[actual_mins_idxs, "df2"].values
+            got_mins = joined.loc[joined["df1"] == idx_left, "df2"].values
+            assert list(actual_mins) == list(got_mins)
