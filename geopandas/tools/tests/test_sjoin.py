@@ -16,7 +16,9 @@ MIN_PYGEOS_VERSION_FOR_NEAREST = "0.9+13.gff0f970"
 try:
     import pygeos
 
-    PYGEOS_HAS_NEAREST = LooseVersion(pygeos.__version__) >= LooseVersion()
+    PYGEOS_HAS_NEAREST = LooseVersion(pygeos.__version__) >= LooseVersion(
+        MIN_PYGEOS_VERSION_FOR_NEAREST
+    )
 except ImportError:
     PYGEOS_HAS_NEAREST = False
 
@@ -501,7 +503,10 @@ class TestSpatialJoinNaturalEarth:
 
 @pytest.mark.skipif(
     not PYGEOS_HAS_NEAREST,
-    f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST} is required for nearest functionality",
+    reason=(
+        f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
+        " is required for nearest functionality"
+    ),
 )
 class TestNearest:
     def setup_method(self):
