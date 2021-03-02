@@ -520,6 +520,21 @@ def test_apply_convert_dtypes_keyword(s):
     assert_geoseries_equal(res, s)
 
 
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_apply_no_geometry_result(df, crs):
+    if crs:
+        df = df.set_crs(crs)
+    result = df.apply(lambda col: col.astype(str), axis=0)
+    # TODO this should actually not return a GeoDataFrame
+    assert isinstance(result, GeoDataFrame)
+    expected = df.astype(str)
+    assert_frame_equal(result, expected)
+
+    result = df.apply(lambda col: col.astype(str), axis=1)
+    assert isinstance(result, GeoDataFrame)
+    assert_frame_equal(result, expected)
+
+
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654

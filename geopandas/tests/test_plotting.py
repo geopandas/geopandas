@@ -1481,7 +1481,9 @@ class TestGeoplotAccessor:
         geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
         x = [1, 2]
         y = [10, 20]
-        self.gdf = GeoDataFrame({"geometry": geometries, "x": x, "y": y})
+        self.gdf = GeoDataFrame(
+            {"geometry": geometries, "x": x, "y": y}, crs="EPSG:4326"
+        )
         self.df = pd.DataFrame({"x": x, "y": y})
 
     def compare_figures(self, kind, fig_test, fig_ref, kwargs):

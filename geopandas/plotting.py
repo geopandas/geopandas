@@ -499,10 +499,6 @@ def plot_dataframe(
 
     Parameters
     ----------
-    df : GeoDataFrame
-        The GeoDataFrame to be plotted.  Currently Polygon,
-        MultiPolygon, LineString, MultiLineString and Point
-        geometries can be plotted.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
         If np.array or pd.Series are used then it must have same length as
