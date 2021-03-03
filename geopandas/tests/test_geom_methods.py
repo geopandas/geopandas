@@ -2,7 +2,7 @@ import string
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
@@ -872,17 +872,29 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("index_name", [None, "test"])
+    def test_explode_geodataframe_no_multiindex(self, index_name):
+        # GH1393
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
+        df.index.name = index_name
+
+        test_df = df.explode(add_multiindex=False)
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
+
+        expected_index = Index([0, 0, 1], names=[index_name])
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
     @pytest.mark.skipif(
-        not compat.PANDAS_GE_025,
-        reason="pandas explode introduced in pandas 0.25",
+        not compat.PANDAS_GE_025, reason="pandas explode introduced in pandas 0.25"
     )
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -914,10 +926,7 @@ class TestGeomMethods:
     def test_explode_pandas_fallback_ignore_index(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(

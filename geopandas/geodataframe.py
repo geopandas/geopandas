@@ -1401,7 +1401,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, add_multiindex=True, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1456,7 +1456,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super(GeoDataFrame, self).explode(column, **kwargs)
+            return super(GeoDataFrame, self).explode(column, ignore_index)
             # TODO: make sure index behaviour is consistent
 
         df_copy = self.copy()
@@ -1464,21 +1464,33 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if "level_1" in df_copy.columns:  # GH1393
             df_copy = df_copy.rename(columns={"level_1": "__level_1"})
 
-        exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
-        exploded_index = exploded_geom.columns[0]
+        if add_multiindex:
+            exploded_geom = df_copy.geometry.explode()
+            exploded_index = exploded_geom.index
+            exploded_geom = exploded_geom.reset_index(level=-1).drop('level_1', axis=1)
+        else:
+            exploded_geom = df_copy.geometry.explode().reset_index(level=-1).drop('level_1', axis=1)
+            exploded_index = exploded_geom.index
 
         df = pd.concat(
             [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
         )
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
-        df.set_index(exploded_index, append=True, inplace=True)
-        df.index.names = list(self.index.names) + [None]
-
+        # df.set_index(exploded_index, append=True, inplace=True)
+        df.index = exploded_index
+        if add_multiindex:
+            df.index.names = list(self.index.names) + [None]
+        else:
+            df.index.names = self.index.names
         if "__level_1" in df.columns:
             df = df.rename(columns={"__level_1": "level_1"})
 
         geo_df = df.set_geometry(self._geometry_column_name)
+
+        if ignore_index:
+            geo_df.reset_index(inplace=True, drop=True)
+
         return geo_df
 
     # overrides the pandas astype method to ensure the correct return type

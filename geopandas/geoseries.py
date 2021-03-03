@@ -669,7 +669,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     plot.__doc__ = plot_series.__doc__
 
-    def explode(self):
+    def explode(self, add_multiindex=True):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -731,10 +731,12 @@ class GeoSeries(GeoPandasBase, Series):
 
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
-
-            index = MultiIndex.from_arrays(
-                [outer_index, inner_index], names=self.index.names + [None]
-            )
+            if add_multiindex:
+                index = MultiIndex.from_arrays(
+                    [outer_index, inner_index], names=self.index.names + [None]
+                )
+            else:
+                index = inner_index
 
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
@@ -751,7 +753,12 @@ class GeoSeries(GeoPandasBase, Series):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
-        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+
+        if add_multiindex:
+            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        else:
+            index = [idx for idx, _ in index]
+
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
