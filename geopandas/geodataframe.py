@@ -1467,9 +1467,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if add_multiindex:
             exploded_geom = df_copy.geometry.explode()
             exploded_index = exploded_geom.index
-            exploded_geom = exploded_geom.reset_index(level=-1).drop('level_1', axis=1)
+            exploded_geom = exploded_geom.reset_index(level=-1).drop("level_1", axis=1)
         else:
-            exploded_geom = df_copy.geometry.explode().reset_index(level=-1).drop('level_1', axis=1)
+            exploded_geom = (
+                df_copy.geometry.explode().reset_index(level=-1).drop("level_1", axis=1)
+            )
             exploded_index = exploded_geom.index
 
         df = pd.concat(
