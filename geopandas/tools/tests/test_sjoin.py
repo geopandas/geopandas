@@ -6,6 +6,7 @@ import pandas as pd
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
 
 from pandas.testing import assert_frame_equal
@@ -508,6 +509,7 @@ class TestSpatialJoinNaturalEarth:
         " is required for nearest functionality"
     ),
 )
+@pytest.mark.skipif(not compat.USE_PYGEOS, reason="PyGEOS is required for this test.")
 class TestNearest:
     def setup_method(self):
         pass
