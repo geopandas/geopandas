@@ -2,11 +2,11 @@
 
 ## GeoPandas dependencies
 
-GeoPandas brings together the full capability of `pandas` and open-source geospatial
+GeoPandas brings together the full capability of `pandas` and the open-source geospatial
 tools `Shapely`, which brings manipulation and analysis of geometric objects backed by
 [`GEOS`](https://trac.osgeo.org/geos) library, `Fiona`, allowing us to read and write
 geographic data files using [`GDAL`](https://gdal.org), and `pyproj`, a library for
-cartographic projections and coordinate transformations, which is a Python interface of
+cartographic projections and coordinate transformations, which is a Python interface to
 [`PROJ`](https://proj.org).
 
 Furthermore, GeoPandas has several optional dependencies as `rtree`, `pygeos`,
@@ -40,7 +40,7 @@ and `Shapely`.
 
 #### [pyproj](https://github.com/pyproj4/pyproj)
 `pyproj` is a Python interface to `PROJ` (cartographic projections and coordinate
-transformations library). GeoPandas uses `pyproj.crs.CRS` object to keep track of a
+transformations library). GeoPandas uses a `pyproj.crs.CRS` object to keep track of the
 projection of each `GeoSeries` and its `Transformer` object to manage re-projections.
 
 ### Optional dependencies
@@ -78,7 +78,7 @@ various graphical user interface toolkits.
 
 Various packages are built on top of GeoPandas addressing specific geospatial data
 processing needs, analysis, and visualization. Below is an incomplete list (in no
-particular order) of tools which form GeoPandas related Python ecosystem.
+particular order) of tools which form the GeoPandas-related Python ecosystem.
 
 ### Spatial analysis and Machine Learning
 
@@ -105,19 +105,18 @@ aggregation error in statistical analyses.
 ##### [segregation](https://github.com/pysal/segregation)
 `segregation` package calculates over 40 different segregation indices and provides a
 suite of additional features for measurement, visualization, and hypothesis testing that
-together represent the state-of-the-art in quantitative segregation analysis.
+together represent the state of the art in quantitative segregation analysis.
 
 ##### [mgwr](https://github.com/pysal/mgwr)
 `mgwr` provides scalable algorithms for estimation, inference, and prediction using
-single- and multi-scale geographically-weighted regression models in a variety of
-generalized linear model frameworks, as well model diagnostics tools.
+single- and multi-scale geographically weighted regression models in a variety of
+generalized linear model frameworks, as well as model diagnostics tools.
 
 ##### [tobler](https://github.com/pysal/tobler)
-`tobler` provides functionality for for areal interpolation and dasymetric mapping.
+`tobler` provides functionality for areal interpolation and dasymetric mapping.
 `tobler` includes functionality for interpolating data using area-weighted approaches,
 regression model-based approaches that leverage remotely-sensed raster data as auxiliary
 information, and hybrid approaches.
-
 
 #### [movingpandas](https://github.com/anitagraser/movingpandas)
 `MovingPandas` is a package for dealing with movement data. `MovingPandas` implements a
@@ -163,6 +162,13 @@ interpretation suite aimed at magnetic, gravity and other datasets.
 
 ### Visualization
 
+#### [hvPlot](https://hvplot.holoviz.org/user_guide/Geographic_Data.html#Geopandas)
+`hvPlot` provides interactive Bokeh-based plotting for GeoPandas
+dataframes and series using the same API as the Matplotlib `.plot()`
+support that comes with GeoPandas. hvPlot makes it simple to pan and zoom into
+your plots, use widgets to explore multidimensional data, and render even the
+largest datasets in web browsers using [Datashader](https://datashader.org).
+
 #### [contextily](https://github.com/geopandas/contextily)
 `contextily` is a small Python 3 (3.6 and above) package to retrieve tile maps from the
 internet. It can add those tiles as basemap to `matplotlib` figures or write tile maps
@@ -200,11 +206,13 @@ comes with the high-level plotting API, native projection support and compatibil
 `matplotlib`.
 
 #### [GeoViews](https://github.com/holoviz/geoviews)
-`GeoViews` is a Python library that makes it easy to explore and visualize any data that
-includes geographic locations. It has particularly powerful support for multidimensional
-meteorological and oceanographic datasets, such as those used in weather, climate, and
-remote sensing research, but is useful for almost anything that you would want to plot
-on a map!
+`GeoViews` is a Python library that makes it easy to explore and
+visualize any data that includes geographic locations, with native
+support for GeoPandas dataframes and series objects.  It has
+particularly powerful support for multidimensional meteorological and
+oceanographic datasets, such as those used in weather, climate, and
+remote sensing research, but is useful for almost anything that you
+would want to plot on a map!
 
 #### [EarthPy](https://github.com/earthlab/earthpy)
 `EarthPy` is a python package that makes it easier to plot and work with spatial raster
@@ -229,11 +237,11 @@ spatial data visualization.
 ### Geometry manipulation
 
 #### [TopoJSON](https://github.com/mattijn/topojson)
-`Topojson` is a library that is capable of creating a topojson encoded format of merely
-any geographical object in Python. With topojson it is possible to reduce the size of
-your geographical data. Mostly by orders of magnitude. It is able to do so through:
-eliminating redundancy through computation of a topology; fixed-precision integer
-encoding of coordinates and simplification and quantization of arcs.
+`topojson` is a library for creating a TopoJSON encoding of nearly any 
+geographical object in Python. With topojson it is possible to reduce the size of
+your geographical data, typically by orders of magnitude. It is able to do so through
+eliminating redundancy through computation of a topology, fixed-precision integer
+encoding of coordinates, and simplification and quantization of arcs.
 
 #### [geocube](https://github.com/corteva/geocube)
 Tool to convert geopandas vector data into rasterized `xarray` data.
@@ -244,7 +252,7 @@ Tool to convert geopandas vector data into rasterized `xarray` data.
 `OSMnx` is a Python package that lets you download spatial data from OpenStreetMap and
 model, project, visualize, and analyze real-world street networks. You can download and
 model walkable, drivable, or bikeable urban networks with a single line of Python code
-then easily analyze and visualize them. You can just as easily download and work with
+and then easily analyze and visualize them. You can just as easily download and work with
 other infrastructure types, amenities/points of interest, building footprints, elevation
 data, street bearings/orientations, and speed/travel time.
 
@@ -267,7 +275,7 @@ An interface to explore and query the US Census API and return Pandas `Dataframe
 package is intended for exploratory data analysis and draws inspiration from
 sqlalchemy-like interfaces and `acs.R`. With separate APIs for application developers
 and folks who only want to get their data quickly & painlessly, `cenpy` should meet the
-needs of most who aim to get US Census Data from Python.
+needs of most who aim to get US Census Data into Python.
 
 ```{admonition} Expand this page
 Do know a package which should be here? [Let us

@@ -521,7 +521,7 @@ if compat.HAS_PYGEOS:
             {'contains', 'crosses', 'covered_by', None, 'intersects', 'within', \
 'touches', 'overlaps', 'contains_properly', 'covers'}
             """
-            return pygeos.strtree.VALID_PREDICATES | set([None])
+            return {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
 
         @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False):
