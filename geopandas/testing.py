@@ -20,7 +20,7 @@ def _isna(this):
         return pd.isnull(this)
 
 
-def geom_equals_mask(this, that):
+def _geom_equals_mask(this, that):
     """
     Test for geometric equality. Empty or missing geometries are considered
     equal.
@@ -59,10 +59,10 @@ def geom_equals(this, that):
         True if all geometries in left equal geometries in right
     """
 
-    return geom_equals_mask(this, that).all()
+    return _geom_equals_mask(this, that).all()
 
 
-def geom_almost_equals_mask(this, that):
+def _geom_almost_equals_mask(this, that):
     """
     Test for 'almost' geometric equality. Empty or missing geometries
     considered equal.
@@ -107,7 +107,7 @@ def geom_almost_equals(this, that):
         True if all geometries in left almost equal geometries in right
     """
 
-    return geom_almost_equals_mask(this, that).all()
+    return _geom_almost_equals_mask(this, that).all()
 
 
 def assert_geoseries_equal(
@@ -208,10 +208,10 @@ def _check_equality(left, right, check_less_precise):
     )
     if check_less_precise:
         precise = "almost "
-        equal = geom_almost_equals_mask(left, right)
+        equal = _geom_almost_equals_mask(left, right)
     else:
         precise = ""
-        equal = geom_equals_mask(left, right)
+        equal = _geom_equals_mask(left, right)
 
     if not equal.all():
         unequal_left_geoms = left[~equal]
