@@ -108,8 +108,8 @@ This creates the directory `geopandas-yourname` and connects your repository to
 the upstream (main project) *GeoPandas* repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
-submitted. The test suite will also autmatically run on your branch so you can 
-check it  prior to submitting the pull request.
+submitted. The test suite will also autmatically run on your branch so you can
+check it prior to submitting the pull request.
 
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
@@ -247,8 +247,8 @@ install *GeoPandas*) by typing::
 6) Updating the Documentation
 -----------------------------
 
-*GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are make by
-modifying the appropriate file in the `source` folder within ``doc``. *GeoPandas* docs use
+*GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are made by
+modifying the appropriate file in the ``source`` folder within ``doc``. *GeoPandas* docs use
 mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
@@ -273,7 +273,7 @@ specification in the ``doc`` folder. You may need to register Jupyter kernel as
     python -m ipykernel install --user --name geopandas_docs
     make html
 
-For minor updates, you can skip whole ``make html`` part as reStructuredText and MyST
+For minor updates, you can skip the ``make html`` part as reStructuredText and MyST
 syntax are usually quite straightforward.
 
 
@@ -347,4 +347,3 @@ is fine, but the former is generally preferred:
 Now you can commit your changes in your local repository::
 
     git commit -m
-    

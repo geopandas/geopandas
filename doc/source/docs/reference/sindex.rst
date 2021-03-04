@@ -18,9 +18,13 @@ Constructor
 
     GeoSeries.sindex
 
-PyGEOS STRtree
---------------
-.. currentmodule:: geopandas.sindex.PyGEOSSTRTreeIndex
+Spatial Index object
+--------------------
+
+The spatial index object returned from :attr:`GeoSeries.sindex` has the following
+methods:
+
+.. currentmodule:: geopandas.sindex.SpatialIndex
 .. autosummary::
    :toctree: api/
 
@@ -31,20 +35,11 @@ PyGEOS STRtree
     size
     valid_query_predicates
 
-rtree Rtree
------------
-.. currentmodule:: geopandas.sindex.RTreeIndex
-.. autosummary::
-   :toctree: api/
+The concrete implementations currently available are
+``geopandas.sindex.PyGEOSSTRTreeIndex`` and ``geopandas.sindex.RTreeIndex``.
 
-    intersection
-    is_empty
-    query
-    query_bulk
-    size
-    valid_query_predicates
-
-Furthermore, the ``rtree``-based spatial index offers full capability of
+In addition to the methods listed above, the ``rtree``-based spatial index
+(``geopandas.sindex.RTreeIndex``) offers the full capability of
 ``rtree.index.Index`` - see the full API in the `rtree documentation`_.
 
 .. _rtree documentation: https://rtree.readthedocs.io/en/stable/class.html

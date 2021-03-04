@@ -137,7 +137,7 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=None):
+def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -159,6 +159,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None):
         if False, return all resulting geometries. Default is None,
         which will set keep_geom_type to True but warn upon dropping
         geometries.
+    make_valid : bool, default True
+        If True, any invalid input geometries are corrected with a call to `buffer(0)`,
+        if False, a `ValueError` is raised if any input geometries are invalid.
 
     Returns
     -------
@@ -179,9 +182,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None):
     >>> geopandas.overlay(df1, df2, how='union')
        df1_data  df2_data                                           geometry
     0       1.0       1.0  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....
-    1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    1       2.0       1.0  POLYGON ((3.00000 2.00000, 2.00000 2.00000, 2....
     2       2.0       2.0  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....
-    3       1.0       NaN  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+    3       1.0       NaN  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....
     4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
     5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
     6       NaN       2.0  POLYGON ((3.00000 4.00000, 3.00000 5.00000, 5....
@@ -189,27 +192,27 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None):
     >>> geopandas.overlay(df1, df2, how='intersection')
        df1_data  df2_data                                           geometry
     0         1         1  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....
-    1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    1         2         1  POLYGON ((3.00000 2.00000, 2.00000 2.00000, 2....
     2         2         2  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....
 
     >>> geopandas.overlay(df1, df2, how='symmetric_difference')
        df1_data  df2_data                                           geometry
-    0       1.0       NaN  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+    0       1.0       NaN  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....
     1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
     2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
     3       NaN       2.0  POLYGON ((3.00000 4.00000, 3.00000 5.00000, 5....
 
     >>> geopandas.overlay(df1, df2, how='difference')
                                                 geometry  df1_data
-    0  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....         1
+    0  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....         1
     1  MULTIPOLYGON (((2.00000 3.00000, 2.00000 4.000...         2
 
     >>> geopandas.overlay(df1, df2, how='identity')
        df1_data  df2_data                                           geometry
     0       1.0       1.0  POLYGON ((1.00000 2.00000, 2.00000 2.00000, 2....
-    1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    1       2.0       1.0  POLYGON ((3.00000 2.00000, 2.00000 2.00000, 2....
     2       2.0       2.0  POLYGON ((3.00000 4.00000, 4.00000 4.00000, 4....
-    3       1.0       NaN  POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+    3       1.0       NaN  POLYGON ((2.00000 1.00000, 2.00000 0.00000, 0....
     4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
 
     See also
@@ -262,12 +265,24 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None):
             )
 
     # Computations
-    df1 = df1.copy()
-    df2 = df2.copy()
-    if df1.geom_type.isin(polys).all():
-        df1[df1._geometry_column_name] = df1.geometry.buffer(0)
-    if df2.geom_type.isin(polys).all():
-        df2[df2._geometry_column_name] = df2.geometry.buffer(0)
+    def _make_valid(df):
+        df = df.copy()
+        if df.geom_type.isin(polys).all():
+            mask = ~df.geometry.is_valid
+            col = df._geometry_column_name
+            if make_valid:
+                df.loc[mask, col] = df.loc[mask, col].buffer(0)
+            elif mask.any():
+                raise ValueError(
+                    "You have passed make_valid=False along with "
+                    f"{mask.sum()} invalid input geometries. "
+                    "Use make_valid=True or make sure that all geometries "
+                    "are valid before using overlay."
+                )
+        return df
+
+    df1 = _make_valid(df1)
+    df2 = _make_valid(df2)
 
     with warnings.catch_warnings():  # CRS checked above, supress array-level warning
         warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")

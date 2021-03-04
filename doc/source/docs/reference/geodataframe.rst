@@ -62,6 +62,7 @@ Plotting
 
 .. autosummary::
    :toctree: api/
+   :template: accessor_callable.rst
 
    GeoDataFrame.plot
 
