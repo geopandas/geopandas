@@ -462,7 +462,7 @@ if compat.HAS_PYGEOS:
             {'contains', 'crosses', 'covered_by', None, 'intersects', 'within', \
 'touches', 'overlaps', 'contains_properly', 'covers'}
             """
-            return {e.name for e in pygeos.strtree.BinaryPredicate} | set([None])
+            return {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
 
         def query(self, geometry, predicate=None, sort=False):
             """
