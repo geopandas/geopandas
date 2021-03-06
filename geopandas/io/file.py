@@ -136,6 +136,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     _check_fiona("'read_file' function")
+    filename = _expand_user(filename)
+
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
@@ -303,6 +305,8 @@ def _to_file(
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     _check_fiona("'to_file' method")
+    filename = _expand_user(filename)
+
     if index is None:
         # Determine if index attribute(s) should be saved to file
         index = list(df.index.names) != [None] or type(df.index) not in (

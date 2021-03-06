@@ -8,7 +8,7 @@ from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb, to_wkb
 from geopandas import GeoDataFrame
 import geopandas
-
+from geopandas.io.file import _expand_user
 
 METADATA_VERSION = "0.1.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
@@ -257,6 +257,7 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
+    path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
@@ -304,6 +305,7 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     if pyarrow.__version__ < LooseVersion("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
+    path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index)
     feather.write_feather(table, path, compression=compression, **kwargs)
 
@@ -411,6 +413,7 @@ def _read_parquet(path, columns=None, **kwargs):
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
+    path = _expand_user(path)
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, **kwargs)
 
@@ -472,5 +475,6 @@ def _read_feather(path, columns=None, **kwargs):
     if pyarrow.__version__ < LooseVersion("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
+    path = _expand_user(path)
     table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table)
