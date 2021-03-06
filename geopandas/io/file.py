@@ -1,6 +1,9 @@
+import os
 from distutils.version import LooseVersion
 
 import warnings
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -35,6 +38,14 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+
+def _expand_user(path):
+    if isinstance(path, str):
+        path = os.path.expanduser(path)
+    elif isinstance(path, Path):
+        path = path.expanduser()
+    return path
 
 
 def _check_fiona(func):
