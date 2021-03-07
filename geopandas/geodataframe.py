@@ -1456,8 +1456,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super(GeoDataFrame, self).explode(column, ignore_index)
-            # TODO: make sure index behaviour is consistent
+            if compat.PANDAS_GE_11:
+                return super(GeoDataFrame, self).explode(column, ignore_index)
+            else:
+                return super(GeoDataFrame, self).explode(column)
 
         df_copy = self.copy()
 
