@@ -33,7 +33,11 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    MPL_DECORATORS = True
+    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+
+        MPL_DECORATORS = True
+    else:
+        MPL_DECORATORS = False
 except ImportError:
     MPL_DECORATORS = False
 
