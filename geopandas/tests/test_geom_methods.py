@@ -884,7 +884,7 @@ class TestGeomMethods:
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
 
-        expected_index = Index([0, 0, 1], names=[index_name])
+        expected_index = Index([0, 0, 1], name=index_name)
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
