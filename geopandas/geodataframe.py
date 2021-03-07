@@ -1401,7 +1401,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, add_multiindex=True, **kwargs):
+    def explode(self, column=None, ignore_index=False, add_multiindex=True):
         """
         Explode muti-part geometries into multiple single geometries.
 
