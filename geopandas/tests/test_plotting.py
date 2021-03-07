@@ -22,6 +22,7 @@ from shapely.geometry import (
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
 import geopandas._compat as compat
+from geopandas.plotting import GeoplotAccessor
 
 import pytest
 
@@ -1475,7 +1476,6 @@ class TestPlotCollections:
         ax.cla()
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
 class TestGeoplotAccessor:
     def setup_method(self):
         geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
@@ -1499,10 +1499,8 @@ class TestGeoplotAccessor:
         getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
 
     _pandas_kinds = []
-    if compat.PANDAS_GE_025:
-        from geopandas.plotting import GeoplotAccessor
 
-        _pandas_kinds = GeoplotAccessor._pandas_kinds
+    _pandas_kinds = GeoplotAccessor._pandas_kinds
 
     if MPL_DECORATORS:
 
