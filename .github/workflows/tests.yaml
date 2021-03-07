@@ -27,9 +27,8 @@ jobs:
         postgis: [false]
         dev: [false]
         env:
-          - ci/envs/36-minimal.yaml
+          - ci/envs/37-minimal.yaml
           - ci/envs/38-no-optional-deps.yaml
-          - ci/envs/36-pd025.yaml
           - ci/envs/37-latest-defaults.yaml
           - ci/envs/37-latest-conda-forge.yaml
           - ci/envs/38-latest-conda-forge.yaml
