@@ -8,7 +8,7 @@ from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb, to_wkb
 from geopandas import GeoDataFrame
 import geopandas
-from geopandas.io.file import _expand_user
+from .file import _expand_user
 
 METADATA_VERSION = "0.1.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
