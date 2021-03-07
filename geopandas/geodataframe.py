@@ -1409,10 +1409,21 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
 
-        The index of the input geodataframe is no longer unique and is
-        replaced with a multi-index (original index with additional level
-        indicating the multiple geometries: a new zero-based index for each
-        single part geometry per multi-part geometry).
+
+        Parameters
+        ----------
+        column : string, default None
+            If None, MultiGeometries in geometry column are converted to Single ones.
+            Else, explode another column following pandas behaviour.
+        ignore_index : bool, default False
+            If true, reset index to 0..n-1. Pandas > 1.1.0 needed for this argument.
+        add_multiindex : boolean, default True
+            If true, the index of the input geodataframe is no longer unique and is
+            replaced with a multi-index (original index with additional level
+            indicating the multiple geometries: a new zero-based index for each
+            single part geometry per multi-part geometry).
+            Else, following pandas behaviour returns the original index with
+            duplicated elements.
 
         Returns
         -------
@@ -1437,13 +1448,29 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         0  name1  MULTIPOINT (1.00000 2.00000, 3.00000 4.00000)
         1  name2  MULTIPOINT (2.00000 1.00000, 0.00000 0.00000)
 
-        >>> exploded = gdf.explode()
+        >>> exploded = gdf.explode(add_multiindex=True)
         >>> exploded
               col1                 geometry
         0 0  name1  POINT (1.00000 2.00000)
           1  name1  POINT (3.00000 4.00000)
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
+
+        >>> exploded = gdf.explode(add_multiindex=False)
+        >>> exploded
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        0  name1  POINT (3.00000 4.00000)
+        1  name2  POINT (2.00000 1.00000)
+        1  name2  POINT (0.00000 0.00000)
+        >>> exploded = gdf.explode(ignore_index=True)
+        >>> exploded
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name1  POINT (3.00000 4.00000)
+        2  name2  POINT (2.00000 1.00000)
+        3  name2  POINT (0.00000 0.00000)
+
 
         See also
         --------
