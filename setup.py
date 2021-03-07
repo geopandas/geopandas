@@ -67,7 +67,7 @@ setup(
         "geopandas.tools.tests",
     ],
     package_data={"geopandas": data_files},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=INSTALL_REQUIRES,
     cmdclass=versioneer.get_cmdclass(),
 )
