@@ -41,6 +41,7 @@ _VALID_URLS.discard("")
 
 
 def _expand_user(path):
+    """Expand paths that use ~."""
     if isinstance(path, str):
         path = os.path.expanduser(path)
     elif isinstance(path, Path):
