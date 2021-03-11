@@ -1478,6 +1478,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         """
 
+        warnings.warn(
+            "add_multiindex defaults to True to be consistent with old behaviour. "
+            "In the future will default to False to be consistent with Pandas.",
+            FutureWarning,
+            stacklevel=2,
+        )
+
         # If no column is specified then default to the active geometry column
         if column is None:
             column = self.geometry.name
