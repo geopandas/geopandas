@@ -500,7 +500,8 @@ def test_write_read_parquet():
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
     test_file = "~/test_file.parquet"
     gdf.to_parquet(test_file)
-    geopandas.read_parquet(test_file)
+    pq_df = geopandas.read_parquet(test_file)
+    assert_geodataframe_equal(df, pq_df, check_crs=True)
     os.remove(os.path.expanduser(test_file))
 
 
