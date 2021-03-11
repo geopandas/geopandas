@@ -273,8 +273,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     ):
         return GeoDataFrame(
             [],
-            columns=df1.drop("geometry", axis=1).columns.to_list()
-            + df2.drop("geometry", axis=1).columns.to_list()
+            columns=list(
+                set(
+                    df1.drop("geometry", axis=1).columns.to_list()
+                    + df2.drop("geometry", axis=1).columns.to_list()
+                )
+            )
             + ["geometry"],
         )
 

@@ -594,13 +594,13 @@ def test_overlap_make_valid(make_valid):
             overlay(df1, df_bowtie, make_valid=make_valid)
 
 
-def test_empty_overlay_return_duplicated_columns():
+def test_empty_overlay_return_non_duplicated_columns():
 
     nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
     nybb2 = nybb.copy()
-    nybb2.geometry = nybb2.translate(20)
+    nybb2.geometry = nybb2.translate(20000000)
 
     result = geopandas.overlay(nybb, nybb2)
 
-    assert "BoroCode_1" in result.columns
-    assert "BoroCode_2" in result.columns
+    assert all(result.columns.isin(nybb.columns))
+    assert len(result.columns) == len(nybb.columns)
