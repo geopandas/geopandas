@@ -7,6 +7,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+from shapely.geometry import box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -493,3 +494,19 @@ def test_feather_arrow_version(tmpdir):
         ImportError, match="pyarrow >= 0.17 required for Feather support"
     ):
         df.to_feather(filename)
+
+
+def test_write_read_parquet():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.parquet"
+    gdf.to_parquet(test_file)
+    geopandas.read_parquet(test_file)
+    os.remove(os.path.expanduser(test_file))
+
+
+def test_write_read_feather():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.feather"
+    gdf.to_feather(test_file)
+    geopandas.read_feather(test_file)
+    os.remove(os.path.expanduser(test_file))

@@ -779,3 +779,11 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
     # named DatetimeIndex
     df.index.name = "datetime"
     do_checks(df, index_is_used=True)
+
+
+def test_write_read_file():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs=_CRS)
+    test_file = pathlib.Path("~/test_file.geojson")
+    gdf.to_file(test_file, driver="GeoJSON")
+    geopandas.read_file(test_file)
+    test_file.expanduser().unlink()
