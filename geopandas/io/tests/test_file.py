@@ -780,6 +780,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
     df.index.name = "datetime"
     do_checks(df, index_is_used=True)
 
+
 @pytest.mark.parametrize(
     "test_file", [(pathlib.Path("~/test_file.geojson")), "~/test_file.geojson"]
 )
@@ -789,5 +790,3 @@ def test_write_read_file(test_file):
     df_json = geopandas.read_file(test_file)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
-
-
