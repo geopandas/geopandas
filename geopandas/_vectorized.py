@@ -122,10 +122,7 @@ def from_shapely(data):
             else:
                 out.append(geom)
         elif hasattr(geom, "__geo_interface__"):
-            geom = shapely.geometry.asShape(geom)
-            # asShape returns GeometryProxy -> trigger actual materialization
-            # with one of its methods
-            geom.wkb
+            geom = shapely.geometry.shape(geom)
             if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:
@@ -180,9 +177,9 @@ def from_wkb(data):
     return aout
 
 
-def to_wkb(data, hex=False):
+def to_wkb(data, hex=False, **kwargs):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data, hex=hex)
+        return pygeos.to_wkb(data, hex=hex, **kwargs)
     else:
         if hex:
             out = [geom.wkb_hex if geom is not None else None for geom in data]
@@ -831,6 +828,34 @@ def simplify(data, tolerance, preserve_topology=True):
         return out
 
 
+def _shapely_normalize(geom):
+    """
+    Small helper function for now because it is not yet available in Shapely.
+    """
+    from shapely.geos import lgeos
+    from shapely.geometry.base import geom_factory
+    from ctypes import c_void_p, c_int
+
+    lgeos._lgeos.GEOSNormalize_r.restype = c_int
+    lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
+
+    geom_cloned = lgeos.GEOSGeom_clone(geom._geom)
+    lgeos._lgeos.GEOSNormalize_r(lgeos.geos_handle, geom_cloned)
+    return geom_factory(geom_cloned)
+
+
+def normalize(data):
+    if compat.USE_PYGEOS:
+        return pygeos.normalize(data)
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                _shapely_normalize(geom) if geom is not None else None for geom in data
+            ]
+        return out
+
+
 def project(data, other, normalized=False):
     if compat.USE_PYGEOS:
         return pygeos.line_locate_point(data, other, normalize=normalized)
@@ -869,6 +894,14 @@ def get_y(data):
         return pygeos.get_y(data)
     else:
         return _unary_op("y", data, null_value=np.nan)
+
+
+def get_z(data):
+    if compat.USE_PYGEOS:
+        return pygeos.get_z(data)
+    else:
+        data = [geom.z if geom.has_z else np.nan for geom in data]
+        return np.array(data, dtype=np.dtype(float))
 
 
 def bounds(data):

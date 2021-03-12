@@ -29,13 +29,15 @@ import warnings
 extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
-    "sphinx_gallery.gen_gallery",
+    "sphinx_gallery.load_style",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
-    "myst_nb",
+    "myst_parser",
+    "nbsphinx",
     "numpydoc",
     'sphinx_toggleprompt',
+    "matplotlib.sphinxext.plot_directive"
 ]
 
 # continue doc build and only print warnings/errors in examples
@@ -61,20 +63,9 @@ templates_path = ["_templates"]
 
 autosummary_generate = True
 
-# Sphinx gallery configuration
-sphinx_gallery_conf = {
-    "examples_dirs": ["../../examples"],
-    "filename_pattern": "^((?!sgskip).)*$",
-    "gallery_dirs": ["gallery"],
-    "doc_module": ("geopandas",),
-    "reference_url": {
-        "matplotlib": "http://matplotlib.org",
-        "numpy": "http://docs.scipy.org/doc/numpy",
-        "scipy": "http://docs.scipy.org/doc/scipy/reference",
-        "geopandas": None,
-    },
-    "backreferences_dir": "reference",
-}
+nbsphinx_execute = "always"
+nbsphinx_allow_errors = True
+
 # connect docs in other projects
 intersphinx_mapping = {"pyproj": ("http://pyproj4.github.io/pyproj/stable/", None)}
 # suppress matplotlib warning in examples
@@ -96,7 +87,7 @@ master_doc = "index"
 
 # General information about the project.
 project = u"GeoPandas"
-copyright = u"2013–2019, GeoPandas developers"
+copyright = u"2013–2021, GeoPandas developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -324,3 +315,19 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 # texinfo_show_urls = 'footnote'
+
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. note::
+
+        | This page was generated from `{{ docname }}`__.
+        | Interactive online version: :raw-html:`<a href="https://mybinder.org/v2/gh/geopandas/geopandas/master?urlpath=lab/tree/doc/source/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+
+        __ https://github.com/geopandas/geopandas/blob/master/doc/source/{{ docname }}
+"""
