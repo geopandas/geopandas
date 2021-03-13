@@ -568,14 +568,16 @@ if compat.HAS_PYGEOS:
 
             return res
 
-        def nearest_all(self, geometry, max_distance=None):
+        def nearest_all(self, geometry, max_distance=None, return_distance=False):
             if isinstance(geometry, geoseries.GeoSeries):
                 geometry = geometry.values.data
             elif isinstance(geometry, array.GeometryArray):
                 geometry = geometry.data
             elif not isinstance(geometry, np.ndarray):
                 geometry = np.asarray(geometry)
-            return super().nearest_all(geometry, max_distance=max_distance)
+            return super().nearest_all(
+                geometry, max_distance=max_distance, return_distance=return_distance
+            )
 
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):

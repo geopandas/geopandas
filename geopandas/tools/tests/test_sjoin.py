@@ -1,4 +1,5 @@
 from distutils.version import LooseVersion
+from geopandas.testing import assert_geodataframe_equal
 
 import numpy as np
 import pandas as pd
@@ -511,16 +512,52 @@ class TestSpatialJoinNaturalEarth:
 )
 @pytest.mark.skipif(not compat.USE_PYGEOS, reason="PyGEOS is required for this test.")
 class TestNearest:
-    def setup_method(self):
-        pass
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    def test_nearest(self, dfs, how):
+        _, df1, df2, _ = dfs
+        joined = sjoin_nearest(df1, df2, how=how)
+        if how == "right":
+            for df2_idx, geom in zip(joined["df2"], joined["geometry"]):
+                distances = df1.geometry.distance(geom)
+                actual_mins_idxs = np.where(distances == distances.min())[0]
+                expected_df1_idxs = df1.loc[actual_mins_idxs, "df1"]
+                got_df1_idxs = joined.loc[joined["df2"] == df2_idx, "df1"]
+                assert list(expected_df1_idxs) == list(got_df1_idxs)
+        else:
+            for df1_idx, geom in zip(joined["df1"], joined["geometry"]):
+                distances = df2.geometry.distance(geom)
+                actual_mins_idxs = np.where(distances == distances.min())[0]
+                expected_df2_idxs = df2.loc[actual_mins_idxs, "df2"]
+                got_df2_idxs = joined.loc[joined["df1"] == df1_idx, "df2"]
+                assert list(expected_df2_idxs) == list(got_df2_idxs)
 
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    def test_nearest(self, dfs):
+    def test_nearest_max_distance(self, dfs):
         _, df1, df2, _ = dfs
-        joined = sjoin_nearest(df1, df2)
-        for idx_left in np.unique(joined["df1"]):
-            distances = df2.geometry.distance(df1.loc[idx_left, "geometry"])
-            actual_mins_idxs = np.where(distances == distances.min())[0]
-            actual_mins = df2.loc[actual_mins_idxs, "df2"].values
-            got_mins = joined.loc[joined["df1"] == idx_left, "df2"].values
-            assert list(actual_mins) == list(got_mins)
+        joined_nearest = sjoin_nearest(df1, df2, how="inner", max_distance=0.0000001)
+        joined_intersection = sjoin(df1, df2, how="inner", op="intersects")
+        assert_geodataframe_equal(joined_nearest, joined_intersection)
+
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    def test_include_distances(self, dfs, how):
+        _, df1, df2, _ = dfs
+        df1_orig = df1.copy(deep=True)
+        df2_orig = df2.copy(deep=True)
+        joined = sjoin_nearest(df1, df2, how=how, distance_col="distances")
+        assert_geodataframe_equal(df1, df1_orig)
+        assert_geodataframe_equal(df2, df2_orig)
+        for df1_idx, df2_idx, distance in zip(
+            joined["df1"], joined["df2"], joined["distances"]
+        ):
+            df1_geom = df1.geometry[df1["df1"] == df1_idx].iloc[0]
+            df2_geom = df2.geometry[df2["df2"] == df2_idx].iloc[0]
+            assert distance == df1_geom.distance(df2_geom)
+
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
+    @pytest.mark.parametrize("distance_col_name", ["dist_1", "dist_2"])
+    def test_include_distances_col_name(self, dfs, distance_col_name):
+        _, df1, df2, _ = dfs
+        joined = sjoin_nearest(df1, df2, how="inner", distance_col=distance_col_name)
+        assert distance_col_name in joined

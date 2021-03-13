@@ -1,3 +1,6 @@
+from typing import Optional
+from pandas.core.frame import DataFrame
+from geopandas.geoseries import GeoSeries
 import warnings
 
 import pandas as pd
@@ -312,15 +315,19 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
 
 
 def _nearest_query(
-    left_df: GeoDataFrame, right_df: GeoDataFrame, max_distance: float, how: str
+    left_df: GeoDataFrame,
+    right_df: GeoDataFrame,
+    max_distance: float,
+    how: str,
+    return_distance: bool,
 ):
     if how == "inner":
         # use whichever input is largest for the index, and the smallest for querying
-        use_left = len(left_df) > len(right_df)
+        use_left_as_sindex = len(left_df) > len(right_df)
     else:
         # otherwise, use the opposite of the join direction for the index
-        use_left = how == "right"
-    if use_left:
+        use_left_as_sindex = how == "right"
+    if use_left_as_sindex:
         sindex = left_df.sindex
         query = right_df.geometry
     else:
@@ -333,20 +340,78 @@ def _nearest_query(
             " Currently, only PyGEOS supports `nearest_all`."
         )
     if sindex:
-        l_idx, r_idx = sindex.nearest_all(query, max_distance=max_distance)
+        res = sindex.nearest_all(
+            query, max_distance=max_distance, return_distance=return_distance
+        )
+        if return_distance:
+            (input_idx, tree_idx), distances = res
+        else:
+            (input_idx, tree_idx), distances = res, None
+        if use_left_as_sindex:
+            l_idx, r_idx = tree_idx, input_idx
+        else:
+            l_idx, r_idx = input_idx, tree_idx
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
         indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-    return indices
+        distances = None
+    return indices, distances
+
+
+def _add_nearest_distances(
+    left_df: DataFrame,
+    right_df: DataFrame,
+    distances: GeoSeries,
+    indices: DataFrame,
+    how: str,
+    distance_col: str,
+):
+    if distance_col in left_df:
+        distances_in = "left_df"
+    elif distance_col in right_df:
+        distances_in = "right_df"
+    else:
+        distances_in = None
+    if distances_in:
+        raise ValueError(
+            f"Unable to add distances because `{distances_in}`"
+            f" already has a column named {distance_col}"
+        )
+    if how == "right":
+        add_to_left = False
+    else:
+        add_to_left = True
+    if add_to_left:
+        left_df = left_df.assign(**{distance_col: None})
+        left_df[distance_col].iloc[indices["_key_left"]] = distances
+    else:
+        right_df = right_df.assign(**{distance_col: None})
+        right_df[distance_col].iloc[indices["_key_right"]] = distances
+    return left_df, right_df
 
 
 def sjoin_nearest(
-    left_df, right_df, how="inner", max_distance=None, lsuffix="left", rsuffix="right"
+    left_df,
+    right_df,
+    how="inner",
+    max_distance=None,
+    lsuffix="left",
+    rsuffix="right",
+    distance_col: Optional[str] = None,
 ):
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
-    indices = _nearest_query(left_df, right_df, max_distance, how)
+    return_distance = distance_col is not None
+
+    indices, distances = _nearest_query(
+        left_df, right_df, max_distance, how, return_distance
+    )
+
+    if return_distance:
+        left_df, right_df = _add_nearest_distances(
+            left_df, right_df, distances, indices, how, distance_col
+        )
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
