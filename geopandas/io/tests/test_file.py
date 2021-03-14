@@ -33,12 +33,14 @@ def df_nybb():
 
 @pytest.fixture
 def df_null():
-    return read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+    return read_file(
+        os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
+    )
 
 
 @pytest.fixture
 def file_path():
-    return os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson")
+    return os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
 
 
 @pytest.fixture
@@ -159,7 +161,6 @@ def test_to_file_types(tmpdir, df_points):
     """ Test various integer type columns (GH#93) """
     tempfilename = os.path.join(str(tmpdir), "int.shp")
     int_types = [
-        np.int,
         np.int8,
         np.int16,
         np.int32,
@@ -169,7 +170,6 @@ def test_to_file_types(tmpdir, df_points):
         np.uint16,
         np.uint32,
         np.uint64,
-        np.long,
     ]
     geometry = df_points.geometry
     data = dict(
@@ -298,7 +298,7 @@ def test_read_file(df_nybb):
 def test_read_file_remote_geojson_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/examples/null_geom.geojson"
+        "master/geopandas/tests/data/null_geom.geojson"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)

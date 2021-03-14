@@ -392,7 +392,7 @@ class TestGeometryArrayCRS:
         assert df.column1.crs == self.wgs
         assert df.column1.values.crs == self.wgs
 
-    def test_to_crs(self):
+    def test_geoseries_to_crs(self):
         s = GeoSeries(self.geoms, crs=27700)
         s = s.to_crs(4326)
         assert s.crs == self.wgs
@@ -411,6 +411,11 @@ class TestGeometryArrayCRS:
         df = df.to_crs(3857)
         assert df.col1.crs == self.wgs
         assert df.col1.values.crs == self.wgs
+
+    def test_array_to_crs(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        arr = arr.to_crs(4326)
+        assert arr.crs == self.wgs
 
     def test_from_shapely(self):
         arr = from_shapely(self.geoms, crs=27700)
@@ -574,6 +579,16 @@ class TestGeometryArrayCRS:
 
         # apply preserves the CRS if the result is a GeoSeries
         result = s.apply(lambda x: x.centroid)
+        assert result.crs == 27700
+
+    def test_apply_geodataframe(self):
+        df = GeoDataFrame({"col1": [0, 1]}, geometry=self.geoms, crs=27700)
+        assert df.crs == 27700
+
+        # apply preserves the CRS if the result is a GeoDataFrame
+        result = df.apply(lambda col: col, axis=0)
+        assert result.crs == 27700
+        result = df.apply(lambda row: row, axis=1)
         assert result.crs == 27700
 
 

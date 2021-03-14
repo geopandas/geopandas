@@ -1,3 +1,4 @@
+files: 'geopandas\/'
 repos:
 -   repo: https://github.com/python/black
     rev: 20.8b1

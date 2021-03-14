@@ -3,7 +3,7 @@
 Geometric Manipulations
 ========================
 
-*geopandas* makes available all the tools for geometric manipulations in the `*shapely* library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
+*geopandas* makes available all the tools for geometric manipulations in the `shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
 Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
 
@@ -114,7 +114,7 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses `descartes`_ to generate a `matplotlib`_ plot. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`_ for plotting. To generate a plot of our GeoSeries, use:
 
 .. sourcecode:: python
 
@@ -130,20 +130,20 @@ GeoPandas also implements alternate constructors that can read any data format r
     >>> boros.sort_index(inplace=True)
     >>> boros
                    BoroName     Shape_Leng    Shape_Area  \
-    BoroCode                                               
-    1             Manhattan  359299.096471  6.364715e+08   
-    2                 Bronx  464392.991824  1.186925e+09   
-    3              Brooklyn  741080.523166  1.937479e+09   
-    4                Queens  896344.047763  3.045213e+09   
-    5         Staten Island  330470.010332  1.623820e+09   
-    
-                                                       geometry  
-    BoroCode                                                     
-    1         MULTIPOLYGON (((981219.0557861328 188655.31579...  
-    2         MULTIPOLYGON (((1012821.805786133 229228.26458...  
-    3         MULTIPOLYGON (((1021176.479003906 151374.79699...  
-    4         MULTIPOLYGON (((1029606.076599121 156073.81420...  
-    5         MULTIPOLYGON (((970217.0223999023 145643.33221...  
+    BoroCode
+    1             Manhattan  359299.096471  6.364715e+08
+    2                 Bronx  464392.991824  1.186925e+09
+    3              Brooklyn  741080.523166  1.937479e+09
+    4                Queens  896344.047763  3.045213e+09
+    5         Staten Island  330470.010332  1.623820e+09
+
+                                                       geometry
+    BoroCode
+    1         MULTIPOLYGON (((981219.0557861328 188655.31579...
+    2         MULTIPOLYGON (((1012821.805786133 229228.26458...
+    3         MULTIPOLYGON (((1021176.479003906 151374.79699...
+    4         MULTIPOLYGON (((1029606.076599121 156073.81420...
+    5         MULTIPOLYGON (((970217.0223999023 145643.33221...
 
 .. image:: ../../_static/nyc.png
 
@@ -222,7 +222,6 @@ borough that are in the holes:
     5    0.558075
     dtype: float64
 
-.. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://fiona.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy

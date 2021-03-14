@@ -2,11 +2,13 @@ import json
 import os
 import shutil
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
 
-import fiona
+import pyproj
+from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point
 
@@ -18,6 +20,9 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
+
+
+PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 
 
 class TestDataFrame:
@@ -35,7 +40,9 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+        self.df3 = read_file(
+            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -209,6 +216,13 @@ class TestDataFrame:
         assert df2 is None
         assert self.df.geometry.name == "new_name"
 
+        # existing column error
+        msg = "Column named Shape_Area already exists"
+        with pytest.raises(ValueError, match=msg):
+            df2 = self.df.rename_geometry("Shape_Area")
+        with pytest.raises(ValueError, match=msg):
+            self.df.rename_geometry("Shape_Area", inplace=True)
+
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
@@ -351,6 +365,7 @@ class TestDataFrame:
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
 
     def test_to_json_geom_col(self):
         df = self.df.copy()
@@ -362,6 +377,12 @@ class TestDataFrame:
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
+
+    def test_to_json_only_geom_column(self):
+        text = self.df[["geometry"]].to_json()
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
@@ -422,6 +443,20 @@ class TestDataFrame:
                 assert np.isnan(props["Shape_Leng"])
                 assert "Shape_Area" in props
 
+    def test_to_json_drop_id(self):
+        text = self.df.to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
+
+    def test_to_json_drop_id_only_geom_column(self):
+        text = self.df[["geometry"]].to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
+
     def test_copy(self):
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
@@ -466,7 +501,18 @@ class TestDataFrame:
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
 
+    def test_from_dict(self):
+        data = {"A": [1], "geometry": [Point(0.0, 0.0)]}
+        df = GeoDataFrame.from_dict(data, crs=3857)
+        assert df.crs == "epsg:3857"
+        assert df._geometry_column_name == "geometry"
+
+        data = {"B": [1], "location": [Point(0.0, 0.0)]}
+        df = GeoDataFrame.from_dict(data, geometry="location")
+        assert df._geometry_column_name == "location"
+
     def test_from_features(self):
+        fiona = pytest.importorskip("fiona")
         nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)
@@ -550,7 +596,7 @@ class TestDataFrame:
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
-            {"A": range(len(self.df)), "location": list(self.df.geometry)},
+            {"A": range(len(self.df)), "location": np.array(self.df.geometry)},
             index=self.df.index,
         )
         gf = df.set_geometry("location", crs=self.df.crs)
@@ -651,6 +697,52 @@ class TestDataFrame:
         unpickled = pd.read_pickle(filename)
         assert_frame_equal(self.df, unpickled)
         assert self.df.crs == unpickled.crs
+
+    def test_estimate_utm_crs(self):
+        if PYPROJ_LT_3:
+            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
+                self.df.estimate_utm_crs()
+        else:
+            assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
+            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+
+    def test_to_wkb(self):
+        wkbs0 = [
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ),  # POINT (0 0)
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
+            ),  # POINT (1 1)
+        ]
+        wkbs1 = [
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
+            ),  # POINT (2 2)
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
+            ),  # POINT (3 3)
+        ]
+        gs0 = GeoSeries.from_wkb(wkbs0)
+        gs1 = GeoSeries.from_wkb(wkbs1)
+        gdf = GeoDataFrame({"geom_col0": gs0, "geom_col1": gs1})
+
+        expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
+        assert_frame_equal(expected_df, gdf.to_wkb())
+
+    def test_to_wkt(self):
+        wkts0 = ["POINT (0 0)", "POINT (1 1)"]
+        wkts1 = ["POINT (2 2)", "POINT (3 3)"]
+        gs0 = GeoSeries.from_wkt(wkts0)
+        gs1 = GeoSeries.from_wkt(wkts1)
+        gdf = GeoDataFrame({"gs0": gs0, "gs1": gs1})
+
+        expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
+        assert_frame_equal(expected_df, gdf.to_wkt())
 
 
 def check_geodataframe(df, geometry_column="geometry"):

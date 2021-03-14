@@ -1,3 +1,6 @@
+from textwrap import dedent
+import warnings
+
 from shapely.geometry.base import BaseGeometry
 import pandas as pd
 import numpy as np
@@ -5,27 +8,7 @@ import numpy as np
 from . import _compat as compat
 
 
-VALID_QUERY_PREDICATES = {
-    None,
-    "intersects",
-    "within",
-    "contains",
-    "overlaps",
-    "crosses",
-    "touches",
-}
-
-
-def has_sindex():
-    """Dynamically checks for ability to generate spatial index."""
-    try:
-        get_sindex_class()
-        return True
-    except ImportError:
-        return False
-
-
-def get_sindex_class():
+def _get_sindex_class():
     """Dynamically chooses a spatial indexing backend.
 
     Required to comply with _compat.USE_PYGEOS.
@@ -41,22 +24,288 @@ def get_sindex_class():
     )
 
 
+class BaseSpatialIndex:
+    @property
+    def valid_query_predicates(self):
+        """Returns valid predicates for this spatial index.
+
+        Returns
+        -------
+        set
+            Set of valid predicates for this spatial index.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
+        >>> s.sindex.valid_query_predicates  # doctest: +SKIP
+        {'contains', 'crosses', 'intersects', 'within', 'touches', \
+'overlaps', None, 'covers', 'contains_properly'}
+        """
+        raise NotImplementedError
+
+    def query(self, geometry, predicate=None, sort=False):
+        """Return the index of all geometries in the tree with extents that
+        intersect the envelope of the input geometry.
+
+        When using the ``rtree`` package, this is not a vectorized function.
+        If speed is important, please use PyGEOS.
+
+        Parameters
+        ----------
+        geometry : shapely geometry
+            A single shapely geometry to query against the spatial index.
+        predicate : {None, 'intersects', 'within', 'contains', \
+'overlaps', 'crosses', 'touches'}, optional
+            If predicate is provided, the input geometry is
+            tested using the predicate function against each item
+            in the tree whose extent intersects the envelope of the
+            input geometry: predicate(input_geometry, tree_geometry).
+            If possible, prepared geometries are used to help
+            speed up the predicate operation.
+        sort : bool, default False
+            If True, the results will be sorted in ascending order.
+            If False, results are often sorted but there is no guarantee.
+
+        Returns
+        -------
+        matches : ndarray of shape (n_results, )
+            Integer indices for matching geometries from the spatial index.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.query(box(1, 1, 3, 3))
+        array([1, 2, 3])
+
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="contains")
+        array([2])
+        """
+        raise NotImplementedError
+
+    def query_bulk(self, geometry, predicate=None, sort=False):
+        """
+        Returns all combinations of each input geometry and geometries in
+        the tree where the envelope of each input geometry intersects with
+        the envelope of a tree geometry.
+
+        In the context of a spatial join, input geometries are the “left”
+        geometries that determine the order of the results, and tree geometries
+        are “right” geometries that are joined against the left geometries.
+        This effectively performs an inner join, where only those combinations
+        of geometries that can be joined based on envelope overlap or optional
+        predicate are returned.
+
+        When using the ``rtree`` package, this is not a vectorized function
+        and may be slow. If speed is important, please use PyGEOS.
+
+        Parameters
+        ----------
+        geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
+            Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
+            or a numpy array of PyGEOS geometries.
+        predicate : {None, 'intersects', 'within', 'contains', 'overlaps', \
+'crosses', 'touches'}, optional
+            If predicate is provided, the input geometries are tested using
+            the predicate function against each item in the tree whose extent
+            intersects the envelope of the each input geometry:
+            predicate(input_geometry, tree_geometry).  If possible, prepared
+            geometries are used to help speed up the predicate operation.
+        sort : bool, default False
+            If True, results sorted lexicographically using
+            geometry's indexes as the primary key and the sindex's indexes as the
+            secondary key. If False, no additional sorting is applied.
+
+        Returns
+        -------
+        ndarray with shape (2, n)
+            The first subarray contains input geometry integer indexes.
+            The second subarray contains tree geometry integer indexes.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+        >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
+        >>> s2
+        0    POLYGON ((4.00000 2.00000, 4.00000 4.00000, 2....
+        1    POLYGON ((6.00000 5.00000, 6.00000 6.00000, 5....
+        dtype: geometry
+
+        >>> s.sindex.query_bulk(s2)
+        array([[0, 0, 0, 1, 1],
+                [2, 3, 4, 5, 6]])
+
+        >>> s.sindex.query_bulk(s2, predicate="contains")
+        array([[0],
+                [3]])
+        """
+        raise NotImplementedError
+
+    def intersection(self, coordinates):
+        """Compatibility wrapper for rtree.index.Index.intersection,
+        use ``query`` intead.
+
+        Parameters
+        ----------
+        coordinates : sequence or array
+            Sequence of the form (min_x, min_y, max_x, max_y)
+            to query a rectangle or (x, y) to query a point.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.intersection(box(1, 1, 3, 3).bounds)
+        array([1, 2, 3])
+
+        Alternatively, you can use ``query``:
+
+        >>> s.sindex.query(box(1, 1, 3, 3))
+        array([1, 2, 3])
+
+        """
+        raise NotImplementedError
+
+    @property
+    def size(self):
+        """Size of the spatial index
+
+        Number of leaves (input geometries) in the index.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.size
+        10
+        """
+        raise NotImplementedError
+
+    @property
+    def is_empty(self):
+        """Check if the spatial index is empty
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.is_empty
+        False
+
+        >>> s2 = geopandas.GeoSeries()
+        >>> s2.sindex.is_empty
+        True
+        """
+        raise NotImplementedError
+
+
+def doc(docstring):
+    """
+    A decorator take docstring from passed object and it to decorated one.
+    """
+
+    def decorator(decorated):
+        decorated.__doc__ = dedent(docstring.__doc__ or "")
+        return decorated
+
+    return decorator
+
+
 if compat.HAS_RTREE:
 
     import rtree.index  # noqa
     from rtree.core import RTreeError  # noqa
     from shapely.prepared import prep  # noqa
 
-    class SpatialIndex(rtree.index.Index):
+    class SpatialIndex(rtree.index.Index, BaseSpatialIndex):
         """Original rtree wrapper, kept for backwards compatibility."""
 
         def __init__(self, *args):
-            super().__init__(self, *args)
+            warnings.warn(
+                "Directly using SpatialIndex is deprecated, and the class will be "
+                "removed in a future version. Access the spatial index through the "
+                "`GeoSeries.sindex` attribute, or use `rtree.index.Index` directly.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            super().__init__(*args)
 
+        @doc(BaseSpatialIndex.intersection)
+        def intersection(self, coordinates, *args, **kwargs):
+            return super().intersection(coordinates, *args, **kwargs)
+
+        @doc(BaseSpatialIndex.size)
         @property
         def size(self):
             return len(self.leaves()[0][1])
 
+        @doc(BaseSpatialIndex.is_empty)
         @property
         def is_empty(self):
             if len(self.leaves()) > 1:
@@ -71,10 +320,6 @@ if compat.HAS_RTREE:
         geometry : np.array of Shapely geometries
             Geometries from which to build the spatial index.
         """
-
-        # set of valid predicates for this spatial index
-        # by default, the global set
-        valid_query_predicates = VALID_QUERY_PREDICATES
 
         def __init__(self, geometry):
             stream = (
@@ -98,34 +343,23 @@ if compat.HAS_RTREE:
                 [None] * self.geometries.size, dtype=object
             )
 
+        @doc(BaseSpatialIndex.valid_query_predicates)
+        @property
+        def valid_query_predicates(self):
+            return {
+                None,
+                "intersects",
+                "within",
+                "contains",
+                "overlaps",
+                "crosses",
+                "touches",
+                "covers",
+                "contains_properly",
+            }
+
+        @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False):
-            """Compatibility layer for pygeos.query.
-
-            This is not a vectorized function, if speed is important,
-            please use PyGEOS.
-
-            Parameters
-            ----------
-            geometry : shapely geometry
-                A single shapely geometry to query against the spatial index.
-            predicate : {None, 'intersects', 'within', 'contains', \
-'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is
-                tested using the predicate function against each item
-                in the tree whose extent intersects the envelope of the
-                input geometry: predicate(input_geometry, tree_geometry).
-                If possible, prepared geometries are used to help
-                speed up the predicate operation.
-            sort : bool, default False
-                If True, the results will be sorted in ascending order.
-                If False, results are often sorted but there is no guarantee.
-
-            Returns
-            -------
-            matches : ndarray of shape (n_results, )
-                Integer indices for matching geometries from the spatial index.
-            """
-
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -182,7 +416,12 @@ if compat.HAS_RTREE:
             elif predicate is not None:
                 # For the remaining predicates,
                 # we compare input_geom.predicate(tree_geom)
-                if predicate in ("contains", "intersects"):
+                if predicate in (
+                    "contains",
+                    "intersects",
+                    "covers",
+                    "contains_properly",
+                ):
                     # prepare this input geometry
                     geometry = prep(geometry)
                 tree_idx = [
@@ -199,36 +438,8 @@ if compat.HAS_RTREE:
             # unsorted
             return np.array(tree_idx, dtype=np.intp)
 
+        @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
-            """Compatibility layer for pygeos.query_bulk.
-
-            Iterates over `geometry` and queries index.
-            This operation is not vectorized and may be slow.
-            Use PyGEOS with `query_bulk` for speed.
-
-            Parameters
-            ----------
-            geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
-                Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-                or a numpy array of PyGEOS geometries.
-            predicate : {None, 'intersects', 'within', 'contains', 'overlaps', \
-'crosses', 'touches'}, optional
-                If predicate is provided, the input geometries are tested using
-                the predicate function against each item in the tree whose extent
-                intersects the envelope of the each input geometry:
-                predicate(input_geometry, tree_geometry).  If possible, prepared
-                geometries are used to help speed up the predicate operation.
-            sort : bool, default False
-                If True, results sorted lexicographically using
-                geometry's indexes as the primary key and the sindex's indexes as the
-                secondary key. If False, no additional sorting is applied.
-
-            Returns
-            -------
-            ndarray with shape (2, n)
-                The first subarray contains input geometry integer indexes.
-                The second subarray contains tree geometry integer indexes.
-            """
             # Iterates over geometry, applying func.
             tree_index = []
             input_geometry_index = []
@@ -239,24 +450,27 @@ if compat.HAS_RTREE:
                 input_geometry_index.extend([i] * len(res))
             return np.vstack([input_geometry_index, tree_index])
 
+        @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
-            """Wrapper for rtree.index.Index.intersection.
-
-            Parameters
-            ----------
-            coordinates : sequence or array
-                Sequence of the form (min_x, min_y, max_x, max_y)
-                to query a rectangle or (x, y) to query a point.
-            """
             return super().intersection(coordinates, objects=False)
 
+        @doc(BaseSpatialIndex.size)
         @property
         def size(self):
-            return len(self.leaves()[0][1])
+            if hasattr(self, "_size"):
+                size = self._size
+            else:
+                # self.leaves are lists of tuples of (int, lists...)
+                # index [0][1] always has an element, even for empty sindex
+                # for an empty index, it will be an empty list
+                size = len(self.leaves()[0][1])
+                self._size = size
+            return size
 
+        @doc(BaseSpatialIndex.is_empty)
         @property
         def is_empty(self):
-            return self.size == 0
+            return self.geometries.size == 0 or self.size == 0
 
         def __len__(self):
             return self.size
@@ -278,10 +492,6 @@ if compat.HAS_PYGEOS:
             Geometries from which to build the spatial index.
         """
 
-        # set of valid predicates for this spatial index
-        # by default, the global set
-        valid_query_predicates = VALID_QUERY_PREDICATES
-
         def __init__(self, geometry):
             # set empty geometries to None to avoid segfault on GEOS <= 3.6
             # see:
@@ -294,34 +504,27 @@ if compat.HAS_PYGEOS:
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
 
-        def query(self, geometry, predicate=None, sort=False):
-            """Wrapper for pygeos.query.
-
-            This also ensures a deterministic (sorted) order for the results.
-
-            Parameters
-            ----------
-            geometry : single PyGEOS or shapely geometry
-            predicate : {None, 'intersects', 'within', 'contains', \
-'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is tested
-                using the predicate function against each item in the
-                tree whose extent intersects the envelope of the input
-                geometry: predicate(input_geometry, tree_geometry).
-            sort : bool, default False
-                If True, the results will be sorted in ascending order.
-                If False, results are often sorted but there is no guarantee.
+        @property
+        def valid_query_predicates(self):
+            """Returns valid predicates for the used spatial index.
 
             Returns
             -------
-            matches : ndarray of shape (n_results, )
-                Integer indices for matching geometries from the spatial index.
+            set
+                Set of valid predicates for this spatial index.
 
-            See also
+            Examples
             --------
-            See PyGEOS.strtree documentation for more information.
+            >>> from shapely.geometry import Point
+            >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
+            >>> s.sindex.valid_query_predicates  # doctest: +SKIP
+            {'contains', 'crosses', 'covered_by', None, 'intersects', 'within', \
+'touches', 'overlaps', 'contains_properly', 'covers'}
             """
+            return {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
 
+        @doc(BaseSpatialIndex.query)
+        def query(self, geometry, predicate=None, sort=False):
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
                     "Got `predicate` = `{}`; ".format(predicate)
@@ -340,39 +543,8 @@ if compat.HAS_PYGEOS:
 
             return matches
 
+        @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
-            """Wrapper to expose underlaying pygeos objects to pygeos.query_bulk.
-
-            This also allows a deterministic (sorted) order for the results.
-
-
-            Parameters
-            ----------
-            geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
-                Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-                or a numpy array of PyGEOS geometries.
-            predicate : {None, 'intersects', 'within', 'contains', \
-'overlaps', 'crosses', 'touches'}, optional
-                If predicate is provided, the input geometry is tested
-                using the predicate function against each item in the
-                index whose extent intersects the envelope of the input geometry:
-                predicate(input_geometry, tree_geometry).
-            sort : bool, default False
-                If True, results sorted lexicographically using
-                geometry's indexes as the primary key and the sindex's indexes as the
-                secondary key. If False, no additional sorting is applied.
-
-            Returns
-            -------
-            ndarray with shape (2, n)
-                The first subarray contains input geometry integer indexes.
-                The second subarray contains tree geometry integer indexes.
-
-            See also
-            --------
-            See PyGEOS.strtree documentation for more information.
-            """
-
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
                     "Got `predicate` = `{}`, `predicate` must be one of {}".format(
@@ -396,15 +568,8 @@ if compat.HAS_PYGEOS:
 
             return res
 
+        @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
-            """Wrapper for pygeos.query that uses the RTree API.
-
-            Parameters
-            ----------
-            coordinates : sequence or array
-                Sequence of the form (min_x, min_y, max_x, max_y)
-                to query a rectangle or (x, y) to query a point.
-            """
             # convert bounds to geometry
             # the old API uses tuples of bound, but pygeos uses geometries
             try:
@@ -433,10 +598,12 @@ if compat.HAS_PYGEOS:
 
             return indexes
 
+        @doc(BaseSpatialIndex.size)
         @property
         def size(self):
             return len(self)
 
+        @doc(BaseSpatialIndex.is_empty)
         @property
         def is_empty(self):
             return len(self) == 0

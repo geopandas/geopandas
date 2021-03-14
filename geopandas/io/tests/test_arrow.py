@@ -16,7 +16,6 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
-    _encode_wkb,
     _validate_dataframe,
     _validate_metadata,
     METADATA_VERSION,
@@ -172,20 +171,6 @@ def test_validate_metadata_valid():
 def test_validate_metadata_invalid(metadata, error):
     with pytest.raises(ValueError, match=error):
         _validate_metadata(metadata)
-
-
-def test_encode_wkb():
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
-
-    encoded = _encode_wkb(df)
-
-    # make sure original is not modified
-    assert isinstance(df, GeoDataFrame)
-    assert (
-        encoded.geometry.iloc[0][:16]
-        == b"\x01\x06\x00\x00\x00\x03\x00\x00\x00\x01\x03\x00\x00\x00\x01\x00"
-    )
 
 
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data

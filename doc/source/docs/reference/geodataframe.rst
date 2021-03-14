@@ -37,6 +37,7 @@ Projection handling
    GeoDataFrame.crs
    GeoDataFrame.set_crs
    GeoDataFrame.to_crs
+   GeoDataFrame.estimate_utm_crs
 
 Active geometry handling
 ------------------------
@@ -61,6 +62,7 @@ Plotting
 
 .. autosummary::
    :toctree: api/
+   :template: accessor_callable.rst
 
    GeoDataFrame.plot
 
@@ -72,6 +74,15 @@ Spatial index
    :toctree: api/
 
    GeoDataFrame.sindex
+   GeoDataFrame.has_sindex
+
+Indexing
+--------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoDataFrame.cx
 
 Interface
 ---------
@@ -80,6 +91,7 @@ Interface
    :toctree: api/
 
    GeoDataFrame.__geo_interface__
+   GeoDataFrame.iterfeatures
 
 All pandas ``DataFrame`` methods are also available, although they may
 not operate in a meaningful way on the ``geometry`` column. All methods
