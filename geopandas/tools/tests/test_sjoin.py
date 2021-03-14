@@ -98,12 +98,41 @@ class TestSpatialJoin:
         with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
             sjoin(df1, df2)
 
-    @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_deprecated_op_param(self, dfs, op):
-        index, df1, df2, expected = dfs
-        with pytest.warns(UserWarning, match="`op` parameter is is deprecated"):
+        _, df1, df2, _ = dfs
+        match = "`op` parameter is deprecated"
+        with pytest.warns(FutureWarning, match=match):
             sjoin(df1, df2, op=op)
+
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
+    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize("predicate", ["contains", "within"])
+    def test_deprecated_op_param_nondefault_predicate(self, dfs, op, predicate):
+        _, df1, df2, _ = dfs
+        match = "use the `predicate` parameter instead"
+        if op != predicate:
+            warntype = UserWarning
+            match = (
+                "`predicate` will be overriden by the value of `op`"
+                + r"(.|\s)*"
+                + match
+            )
+        else:
+            warntype = FutureWarning
+        with pytest.warns(warntype, match=match):
+            sjoin(df1, df2, predicate=predicate, op=op)
+
+    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
+    def test_unknown_kwargs(self, dfs):
+        _, df1, df2, _ = dfs
+        match = (
+            "keyword arguments were passed but are not recognized by `sjoin`:"
+            ' {"extra_param", "other_extra"}'
+        )
+        with pytest.raises(ValueError, match=match):
+            sjoin(df1, df2, extra_param="test", other_extra="test2")
 
     @pytest.mark.parametrize(
         "dfs",

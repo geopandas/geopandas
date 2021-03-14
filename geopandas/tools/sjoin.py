@@ -13,7 +13,7 @@ def sjoin(
     predicate="intersects",
     lsuffix="left",
     rsuffix="right",
-    **kwargs
+    **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
 
@@ -42,13 +42,31 @@ def sjoin(
         `predicate`.
     """
     if "op" in kwargs:
-        warnings.warn(
-            "The `op` parameter is is deprecated and will be removed"
+        op = kwargs.pop("op")
+        deprectation_message = (
+            "The `op` parameter is deprecated and will be removed"
             " in a future release. Please use the `predicate` parameter"
-            " instead.",
-            stacklevel=4,
+            " instead."
         )
-        predicate = kwargs["op"]
+        if predicate != "intersects" and op != predicate:
+            override_message = (
+                "A non-default value for `predicate` was passed"
+                f' (got `predicate="{predicate}"`'
+                f' in combination with `op` (got `op="{op}"`).'
+                " The value of `predicate` will be overriden by the value of `op`,"
+                " , which may result in unexpected behavior."
+                f"\n{deprectation_message}"
+            )
+            warnings.warn(override_message, UserWarning, stacklevel=4)
+        else:
+            warnings.warn(deprectation_message, FutureWarning, stacklevel=4)
+    if kwargs:
+        msg = (
+            "The following keyword arguments were passed"
+            " but are not recognized by `sjoin`:"
+            " {" + ", ".join([f'"{k}"' for k in kwargs.keys()]) + "}"
+        )
+        raise ValueError(msg)
 
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
