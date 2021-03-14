@@ -84,22 +84,22 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 
    # Execute spatial join
 
-   cities_with_country = geopandas.sjoin(cities, countries, how="inner", op='intersects')
+   cities_with_country = geopandas.sjoin(cities, countries, how="inner", predicate='intersects')
    cities_with_country.head()
 
 
 Sjoin Arguments
 ~~~~~~~~~~~~~~~~
 
-``sjoin()`` has two core arguments: ``how`` and ``op``.
+``sjoin()`` has two core arguments: ``how`` and ``predicate``.
 
-**op**
+**predicate**
 
-The ``op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another, based on their geometric relationship.
+The ``predicate`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one object to another, based on their geometric relationship.
 
-The values for ``op`` correspond to the names of geometric binary predicates and depend on the spatial index implementation.
+The values for ``predicate`` correspond to the names of geometric binary predicates and depend on the spatial index implementation.
 
-The default spatial index in GeoPandas currently supports the following values for ``op``:
+The default spatial index in GeoPandas currently supports the following values for ``predicate``:
 
 * `intersects`
 * `contains`
