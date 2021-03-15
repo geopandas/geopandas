@@ -7,6 +7,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import shapely.geometry
 import shapely.geos
@@ -200,7 +201,7 @@ def from_wkt(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if pd.notna(geom) and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
             geom = shapely.wkt.loads(geom)
