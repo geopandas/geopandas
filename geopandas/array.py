@@ -1108,7 +1108,7 @@ class GeometryArray(ExtensionArray):
         len(self) is returned, with all values filled with
         ``self.dtype.na_value``.
         """
-        shifted = super(GeometryArray, self).shift(periods, fill_value)
+        shifted = super().shift(periods, fill_value)
         shifted.crs = self.crs
         return shifted
 

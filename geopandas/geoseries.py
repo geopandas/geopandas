@@ -548,7 +548,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
-        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
+        val = getattr(super(), mtd)(*args, **kwargs)
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
@@ -637,7 +637,7 @@ class GeoSeries(GeoPandasBase, Series):
                 stacklevel=2,
             )
 
-        return super(GeoSeries, self).isna()
+        return super().isna()
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -695,7 +695,7 @@ class GeoSeries(GeoPandasBase, Series):
                 UserWarning,
                 stacklevel=2,
             )
-        return super(GeoSeries, self).notna()
+        return super().notna()
 
     def notnull(self):
         """Alias for `notna` method. See `notna` for more detail."""
@@ -741,9 +741,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(
-            value=value, method=method, inplace=inplace, **kwargs
-        )
+        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
