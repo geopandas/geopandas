@@ -27,6 +27,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
+from ._util import isna
 from .sindex import _get_sindex_class
 
 
@@ -54,23 +55,6 @@ class GeometryDtype(ExtensionDtype):
 
 
 register_extension_dtype(GeometryDtype)
-
-
-def _isna(value):
-    """
-    Check if scalar value is NA-like (None, np.nan or pd.NA).
-
-    Custom version that only works for scalars (returning True or False),
-    as `pd.isna` also works for array-like input returning a boolean array.
-    """
-    if value is None:
-        return True
-    elif isinstance(value, float) and np.isnan(value):
-        return True
-    elif compat.PANDAS_GE_10 and value is pd.NA:
-        return True
-    else:
-        return False
 
 
 def _check_crs(left, right, allow_none=False):
@@ -398,8 +382,8 @@ class GeometryArray(ExtensionArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
-        elif isinstance(value, BaseGeometry) or _isna(value):
-            if _isna(value):
+        elif isinstance(value, BaseGeometry) or isna(value):
+            if isna(value):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
@@ -1005,7 +989,7 @@ class GeometryArray(ExtensionArray):
 
         if mask.any():
             # fill with value
-            if _isna(value):
+            if isna(value):
                 value = None
             elif not isinstance(value, BaseGeometry):
                 raise NotImplementedError(
@@ -1326,7 +1310,7 @@ class GeometryArray(ExtensionArray):
         """
         Return for `item in self`.
         """
-        if _isna(item):
+        if isna(item):
             if (
                 item is self.dtype.na_value
                 or isinstance(item, self.dtype.type)

@@ -16,6 +16,7 @@ import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
+from ._util import isna
 
 try:
     import pygeos
@@ -42,21 +43,6 @@ if compat.USE_PYGEOS:
     geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
-
-
-def _isna(value):
-    """
-    Check if scalar value is NA-like (None or np.nan).
-
-    Custom version that only works for scalars (returning True or False),
-    as `pd.isna` also works for array-like input returning a boolean array.
-    """
-    if value is None:
-        return True
-    elif isinstance(value, float) and np.isnan(value):
-        return True
-    else:
-        return False
 
 
 def _pygeos_to_shapely(geom):
@@ -127,7 +113,7 @@ def from_shapely(data):
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
-        elif _isna(geom):
+        elif isna(geom):
             out.append(None)
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
@@ -941,7 +927,7 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            if _isna(geom):
+            if isna(geom):
                 result[i] = geom
             else:
                 result[i] = transform(func, geom)
