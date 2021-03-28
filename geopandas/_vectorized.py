@@ -168,9 +168,9 @@ def to_wkb(data, hex=False, **kwargs):
         return pygeos.to_wkb(data, hex=hex, **kwargs)
     else:
         if hex:
-            out = [geom.wkb_hex if geom is not None else None for geom in data]
+            out = [geom.wkb_hex if not isna(geom) else None for geom in data]
         else:
-            out = [geom.wkb if geom is not None else None for geom in data]
+            out = [geom.wkb if not isna(geom) else None for geom in data]
         return np.array(out, dtype=object)
 
 
@@ -204,7 +204,7 @@ def to_wkt(data, **kwargs):
     if compat.USE_PYGEOS:
         return pygeos.to_wkt(data, **kwargs)
     else:
-        out = [geom.wkt if geom is not None else None for geom in data]
+        out = [geom.wkt if not isna(geom) else None for geom in data]
         return np.array(out, dtype=object)
 
 
