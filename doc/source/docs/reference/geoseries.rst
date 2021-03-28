@@ -108,15 +108,19 @@ Aggregating and exploding
    GeoSeries.unary_union
    GeoSeries.explode
 
-Reading and writing files
--------------------------
+Serialization / IO / conversion
+-------------------------------
 
 .. autosummary::
    :toctree: api/
 
    GeoSeries.from_file
+   GeoSeries.from_wkb
+   GeoSeries.from_wkt
    GeoSeries.to_file
    GeoSeries.to_json
+   GeoSeries.to_wkb
+   GeoSeries.to_wkt
 
 Projection handling
 -------------------
