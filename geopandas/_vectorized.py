@@ -151,7 +151,7 @@ def from_wkb(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             geom = shapely.wkb.loads(geom)
         else:
             geom = None
@@ -186,7 +186,7 @@ def from_wkt(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
             geom = shapely.wkt.loads(geom)
