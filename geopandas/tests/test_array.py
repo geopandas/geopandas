@@ -171,17 +171,9 @@ def test_to_wkb():
     np.testing.assert_array_equal(res, exp)
 
     # missing values
-    missing_values = [None]
-    # TODO(pygeos) does not support np.nan, or pd.NA
-    if not compat.USE_PYGEOS:
-        missing_values.append(np.nan)
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
-
-    a = from_shapely(missing_values)
+    a = from_shapely([None, points_no_missing[0]])
     res = to_wkb(a)
-    np.testing.assert_array_equal(res, np.full(len(missing_values), None))
+    assert res[0] is None
 
 
 @pytest.mark.parametrize("string_type", ["str", "bytes"])
@@ -238,17 +230,9 @@ def test_to_wkt():
     np.testing.assert_array_equal(res, exp)
 
     # missing values
-    missing_values = [None]
-    # TODO(pygeos) does not support np.nan, or pd.NA
-    if not compat.USE_PYGEOS:
-        missing_values.append(np.nan)
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
-
-    a = from_shapely(missing_values)
+    a = from_shapely([None, points_no_missing[0]])
     res = to_wkt(a)
-    np.testing.assert_array_equal(res, np.full(len(missing_values), None))
+    assert res[0] is None
 
 
 @pytest.mark.parametrize(
