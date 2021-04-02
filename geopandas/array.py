@@ -1224,23 +1224,30 @@ class GeometryArray(ExtensionArray):
 
             precision = geopandas.options.display_precision
             if precision is None:
-                # dummy heuristic based on 10 first geometries that should
-                # work in most cases
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
-                if (
-                    (-180 <= xmin <= 180)
-                    and (-180 <= xmax <= 180)
-                    and (-90 <= ymin <= 90)
-                    and (-90 <= ymax <= 90)
-                ):
-                    # geographic coordinates
-                    precision = 5
+                if self.crs:
+                    if self.crs.is_projected:
+                        precision = 3
+                    else:
+                        precision = 5
                 else:
-                    # typically projected coordinates
-                    # (in case of unit meter: mm precision)
-                    precision = 3
+                    # fallback
+                    # dummy heuristic based on 10 first geometries that should
+                    # work in most cases
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
+                        xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                    if (
+                        (-180 <= xmin <= 180)
+                        and (-180 <= xmax <= 180)
+                        and (-90 <= ymin <= 90)
+                        and (-90 <= ymax <= 90)
+                    ):
+                        # geographic coordinates
+                        precision = 5
+                    else:
+                        # typically projected coordinates
+                        # (in case of unit meter: mm precision)
+                        precision = 3
             return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
         return repr
 
