@@ -27,7 +27,6 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
-from ._util import isna
 from .sindex import _get_sindex_class
 
 
@@ -382,8 +381,8 @@ class GeometryArray(ExtensionArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
-        elif isinstance(value, BaseGeometry) or isna(value):
-            if isna(value):
+        elif isinstance(value, BaseGeometry) or vectorized.isna(value):
+            if vectorized.isna(value):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
@@ -989,7 +988,7 @@ class GeometryArray(ExtensionArray):
 
         if mask.any():
             # fill with value
-            if isna(value):
+            if vectorized.isna(value):
                 value = None
             elif not isinstance(value, BaseGeometry):
                 raise NotImplementedError(
@@ -1310,7 +1309,7 @@ class GeometryArray(ExtensionArray):
         """
         Return for `item in self`.
         """
-        if isna(item):
+        if vectorized.isna(item):
             if (
                 item is self.dtype.na_value
                 or isinstance(item, self.dtype.type)

@@ -7,6 +7,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import shapely.geometry
 import shapely.geos
@@ -16,7 +17,6 @@ import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
-from ._util import isna
 
 try:
     import pygeos
@@ -43,6 +43,23 @@ if compat.USE_PYGEOS:
     geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
+
+
+def isna(value):
+    """
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
+
+    Custom version that only works for scalars (returning True or False),
+    as `pd.isna` also works for array-like input returning a boolean array.
+    """
+    if value is None:
+        return True
+    elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
+        return True
+    else:
+        return False
 
 
 def _pygeos_to_shapely(geom):
