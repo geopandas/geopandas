@@ -1224,8 +1224,11 @@ class GeometryArray(ExtensionArray):
 
             precision = geopandas.options.display_precision
             if precision is None:
-                if self.crs and self.crs.is_projected:
-                    precision = 3
+                if self.crs:
+                    if self.crs.is_projected:
+                        precision = 3
+                    else:
+                        precision = 5
                 else:
                     # fallback
                     # dummy heuristic based on 10 first geometries that should
