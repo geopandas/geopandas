@@ -810,6 +810,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ids = np.array(self.index, copy=False)
         geometries = np.array(self[self._geometry_column_name], copy=False)
 
+        if not self.columns.is_unique:
+            raise ValueError("DataFrame columns must be unique")
+
         properties_cols = self.columns.difference([self._geometry_column_name])
 
         if len(properties_cols) > 0:

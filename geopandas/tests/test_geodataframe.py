@@ -457,6 +457,13 @@ class TestDataFrame:
         for f in data["features"]:
             assert "id" not in f.keys()
 
+    def test_to_json_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(ValueError, match="DataFrame columns must be unique"):
+            df.to_json()
+
     def test_copy(self):
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
@@ -484,6 +491,14 @@ class TestDataFrame:
         df2.to_file(tempfilename, crs=2263)
         df = GeoDataFrame.from_file(tempfilename)
         assert df.crs == "epsg:2263"
+
+    def test_to_file_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(ValueError, match="DataFrame columns must be unique"):
+            tempfilename = os.path.join(self.tempdir, "crs.shp")
+            df.to_file(tempfilename)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
