@@ -461,7 +461,9 @@ class TestDataFrame:
         df = GeoDataFrame(
             data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
         )
-        with pytest.raises(ValueError, match="DataFrame columns must be unique"):
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
             df.to_json()
 
     def test_copy(self):
@@ -496,7 +498,9 @@ class TestDataFrame:
         df = GeoDataFrame(
             data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
         )
-        with pytest.raises(ValueError, match="DataFrame columns must be unique"):
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
             tempfilename = os.path.join(self.tempdir, "crs.shp")
             df.to_file(tempfilename)
 
@@ -680,6 +684,14 @@ class TestDataFrame:
         # keep
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
+
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df_with_duplicate_columns = df[
+                ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
+            ]
+            list(df_with_duplicate_columns.iterfeatures())
 
         # geometry not set
         df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
