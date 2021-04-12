@@ -7,6 +7,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import shapely.geometry
 import shapely.geos
@@ -44,9 +45,9 @@ else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
 
 
-def _isna(value):
+def isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -54,6 +55,8 @@ def _isna(value):
     if value is None:
         return True
     elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
         return True
     else:
         return False
@@ -127,7 +130,7 @@ def from_shapely(data):
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
-        elif _isna(geom):
+        elif isna(geom):
             out.append(None)
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
@@ -165,7 +168,7 @@ def from_wkb(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             geom = shapely.wkb.loads(geom)
         else:
             geom = None
@@ -200,7 +203,7 @@ def from_wkt(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
             geom = shapely.wkt.loads(geom)
@@ -941,7 +944,7 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            if _isna(geom):
+            if isna(geom):
                 result[i] = geom
             else:
                 result[i] = transform(func, geom)
