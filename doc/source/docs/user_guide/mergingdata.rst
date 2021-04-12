@@ -88,8 +88,15 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
    cities_with_country.head()
 
 
-Sjoin Arguments
-~~~~~~~~~~~~~~~~
+GeoPandas provides two spatial-join functions:
+
+- ``sjoin()``: joins based on binary predicates (intersects, contains, etc.)
+- ``sjoin_nearest()``: joins based on proximity, with the ability to set a maximum search radius.
+
+Binary Predicate Joins
+~~~~~~~~~~~~~~~~~~~~~~
+
+Binary predicte joins are available via ``sjoin()``.
 
 ``sjoin()`` has two core arguments: ``how`` and ``op``.
 
@@ -119,3 +126,22 @@ The `how` argument specifies the type of join that will occur and which geometry
 * ``inner``: use intersection of index values from both geodataframes; retain only the `left_df` geometry column
 
 Note more complicated spatial relationships can be studied by combining geometric operations with spatial join. To find all polygons within a given distance of a point, for example, one can first use the ``buffer`` method to expand each point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.
+
+
+Nearest Joins
+~~~~~~~~~~~~~
+
+Proximity based joins can be done via ``sjoin_nearest()``.
+
+``sjoin_nearest()`` shares the ``how`` argument with ``sjoin()``, however it does not support an ``op`` argument since no binary predicates are applied.
+
+``sjoin_nearest()`` does introduce two additional arguments: ``max_distance`` and ``distance_col``.
+
+**max_distance**
+
+The ``max_distance`` argument specifies a maximum search radius for matching geometries. This can have a considerable performance impact in some cases.
+If you can, it is highly recommended that you use this parameter.
+
+**distance_col**
+
+If set, a column containing the computed distances for matching geometries will be inserted into the resultant joined GeoDataFrame under the given name.
