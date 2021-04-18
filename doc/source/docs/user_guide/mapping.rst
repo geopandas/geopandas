@@ -45,7 +45,7 @@ Choropleth Maps
 
 .. ipython:: python
 
-    # Plot by GDP per capta
+    # Plot by GDP per capita
     world = world[(world.pop_est>0) & (world.name!="Antarctica")]
     world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
     @savefig world_gdp_per_cap.png
@@ -153,6 +153,16 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
             "label": "Missing values",
         },
     );
+
+Other map customizations
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Maps usually do not have to have axis labels. You can turn them off by ``ax.set_axis_off()`` or ``ax.axis("off")``.
+
+.. ipython:: python
+
+    @savefig set_axis_off.png
+    world.plot().set_axis_off();
 
 Maps with Layers
 -----------------
