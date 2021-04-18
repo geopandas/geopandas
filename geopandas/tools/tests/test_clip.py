@@ -5,7 +5,14 @@ import warnings
 import numpy as np
 
 import shapely
-from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCollection
+from shapely.geometry import (
+    Polygon,
+    Point,
+    LineString,
+    LinearRing,
+    GeometryCollection,
+    MultiPoint,
+)
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
@@ -282,6 +289,15 @@ def test_clip_multipoint(single_rectangle_gdf, multi_point):
     assert clipped.geom_type[0] == "MultiPoint"
     assert hasattr(clipped, "attr")
     # All points should intersect the clip geom
+    assert len(clipped) == 2
+    clipped_mutltipoint = MultiPoint(
+        [
+            Point(2, 2),
+            Point(3, 4),
+            Point(9, 8),
+        ]
+    )
+    assert clipped.iloc[0].geometry.wkt == clipped_mutltipoint.wkt
     assert all(clipped.intersects(single_rectangle_gdf.unary_union))
 
 
