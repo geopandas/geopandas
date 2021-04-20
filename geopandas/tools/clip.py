@@ -20,6 +20,16 @@ _POLYGON_TYPES = ["Polygon", "MultiPolygon"]
 _GEOMETRY_TYPES = [_POINT_TYPES, _LINE_TYPES, _POLYGON_TYPES]
 
 
+def _intersect_non_point_geometries_with_poly(gdf, poly):
+    if isinstance(gdf, GeoDataFrame):
+        clipped = gdf.copy()
+        clipped.geometry = gdf.intersection(poly)
+    else:
+        # GeoSeries
+        clipped = gdf.intersection(poly)
+    return clipped
+
+
 def _clip_gdf_with_polygon(gdf, poly):
     """Clip geometry to the polygon extent.
 
@@ -40,17 +50,14 @@ def _clip_gdf_with_polygon(gdf, poly):
         The returned GeoDataFrame is a subset of gdf that intersects
         with poly.
     """
-    gdf_sub = gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
+    clipping_candidates = gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
+    point_indices = clipping_candidates.geom_type == "Point"
+    # For performance reasons points don't need to be intersected with poly
+    points = clipping_candidates[point_indices]
 
-    # Clip the data with the polygon
-    if isinstance(gdf_sub, GeoDataFrame):
-        clipped = gdf_sub.copy()
-        clipped[gdf.geometry.name] = gdf_sub.intersection(poly)
-    else:
-        # GeoSeries
-        clipped = gdf_sub.intersection(poly)
-
-    return clipped
+    non_points = clipping_candidates[~point_indices]
+    non_points_intersected = _intersect_non_point_geometries_with_poly(non_points, poly)
+    return pd.concat([points, non_points_intersected])
 
 
 def _validate_input_gdf(gdf):
