@@ -162,7 +162,8 @@ Maps usually do not have to have axis labels. You can turn them off by ``ax.set_
 .. ipython:: python
 
     @savefig set_axis_off.png
-    world.plot().set_axis_off();
+    ax = world.plot()
+    ax.set_axis_off();
 
 Maps with Layers
 -----------------
