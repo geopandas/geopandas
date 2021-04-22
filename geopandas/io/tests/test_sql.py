@@ -64,7 +64,7 @@ def engine_postgis():
 
     try:
         con = sqlalchemy.create_engine(
-            URL(
+            URL.create(
                 drivername="postgresql+psycopg2",
                 username=user,
                 database=dbname,
@@ -114,7 +114,7 @@ def connection_spatialite():
 def drop_table_if_exists(conn_or_engine, table):
     sqlalchemy = pytest.importorskip("sqlalchemy")
 
-    if conn_or_engine.dialect.has_table(conn_or_engine, table):
+    if sqlalchemy.inspect(conn_or_engine).has_table(table):
         metadata = sqlalchemy.MetaData(conn_or_engine)
         metadata.reflect()
         table = metadata.tables.get(table)
