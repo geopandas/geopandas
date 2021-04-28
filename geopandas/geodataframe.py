@@ -20,6 +20,10 @@ from . import _compat as compat
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
+JSON_SERIALIZATION_MAP = {
+    pd.Timestamp: lambda x: (x - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'),
+    BaseGeometry: lambda x: x.wkb_hex
+}
 
 
 def _ensure_geometry(data, crs=None):
@@ -670,7 +674,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, drop_id=False, **kwargs):
+    def to_json(self, na="null", show_bbox=False, drop_id=False, date_format="iso", extra_geom_format="wkb", **kwargs):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -830,6 +834,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                     }
                 else:
                     properties_items = {k: v for k, v in zip(properties_cols, row)}
+
+                if pd.Timestamp in set(type(v) for v in properties_items.values()):
+                    properties_items = {k: (properties_items[k] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s') if type(properties_items[k]) == pd.Timestamp else properties_items[k] for k in properties_items}
+                if True in set(isinstance(v, BaseGeometry) for v in properties_items.values()):
+                    properties_items = {k: properties_items[k].wkb_hex if isinstance(properties_items[k], BaseGeometry) else properties_items[k] for k in properties_items}
+
+                # properties_items = {k: JSON_SERIALIZATION_MAP.get(type(properties_items[k]), lambda x: x)(properties_items[k]) for k in properties_items}
 
                 if drop_id:
                     feature = {}
