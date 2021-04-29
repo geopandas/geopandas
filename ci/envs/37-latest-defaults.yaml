@@ -20,7 +20,7 @@ dependencies:
   #- geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow
   - pip:
       - geopy
       - mapclassify
+      - pyarrow
