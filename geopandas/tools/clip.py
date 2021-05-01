@@ -60,35 +60,20 @@ def _clip_gdf_with_polygon(gdf, poly):
     return pd.concat([points, non_points_intersected])
 
 
-def _validate_input_gdf(gdf):
+def _validate_inputs(gdf, mask):
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
         raise TypeError(
             "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
         )
 
-
-def _validate_input_mask(mask):
     if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries or"
             "(Multi)Polygon, got {}".format(type(mask))
         )
-
-
-def _validate_inputs(gdf, mask):
-    _validate_input_gdf(gdf)
-    _validate_input_mask(mask)
-    _warn_if_crs_mismatch(gdf, mask)
-
-
-def _warn_if_crs_mismatch(gdf, mask):
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         if not _check_crs(gdf, mask):
             _crs_mismatch_warn(gdf, mask, stacklevel=3)
-
-
-def _contains_geometrycollection(gdf):
-    return (gdf.geom_type == "GeometryCollection").any()
 
 
 def _get_number_of_unique_geometry_types(gdf):
@@ -96,7 +81,8 @@ def _get_number_of_unique_geometry_types(gdf):
 
 
 def _keeping_geometry_type_is_possible(gdf):
-    if _contains_geometrycollection(gdf):
+    df_contains_geometry_collection = (gdf.geom_type == "GeometryCollection").any()
+    if df_contains_geometry_collection:
         warnings.warn(
             "keep_geom_type can not be called on a GeoDataFrame with "
             "GeometryCollection."
@@ -109,24 +95,15 @@ def _keeping_geometry_type_is_possible(gdf):
     return True
 
 
-def _get_mask_bounding_box(mask):
+def _input_bounding_boxes_intersect(gdf, mask):
+    box_gdf = gdf.total_bounds
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         box_mask = mask.total_bounds
     else:
         box_mask = mask.bounds
-    return box_mask
-
-
-def _input_bounding_boxes_intersect(gdf, mask):
-    box_gdf = gdf.total_bounds
-    box_mask = _get_mask_bounding_box(mask)
     x_overlaps = (box_mask[0] <= box_gdf[2]) and (box_gdf[0] <= box_mask[2])
     y_overlaps = (box_mask[1] <= box_gdf[3]) and (box_gdf[1] <= box_mask[3])
     return x_overlaps and y_overlaps
-
-
-def _empty_from_gdf(gdf):
-    return gdf.iloc[:0]
 
 
 def _create_mask_polygon(mask):
@@ -209,12 +186,12 @@ def clip(gdf, mask, keep_geom_type=False):
     """
     _validate_inputs(gdf, mask)
     if not _input_bounding_boxes_intersect(gdf, mask):
-        return _empty_from_gdf(gdf)
+        return gdf.iloc[:0]
 
     mask_polygon = _create_mask_polygon(mask)
     clipped_gdf = _clip_gdf_with_polygon(gdf, mask_polygon)
     if clipped_gdf.empty:
-        return _empty_from_gdf(gdf)
+        return gdf.iloc[:0]
 
     keeping_geometry_type_is_possible = (
         keep_geom_type and _keeping_geometry_type_is_possible(gdf)
