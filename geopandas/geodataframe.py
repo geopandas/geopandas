@@ -671,7 +671,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, drop_id=False, date_format="iso", extra_geom_format="wkb", **kwargs):
+    def to_json(self, na="null", show_bbox=False, drop_id=False, date_format=None, extra_geom_format=None, **kwargs):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -725,6 +725,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
 
+        if date_format not in {"epoch", "iso", None}:
+            raise ValueError("date_format must be one of 'epoch', 'iso' or None/omitted (default 'epoch')")
+        if date_format not in {"epoch", "iso", None}:
+            raise ValueError("extra_geom_format must be or one of 'wkb', 'wkt' or None/omitted (default 'wkb')")
+
+        if date_format is None:
+            date_format = "epoch"
+        if extra_geom_format is None:
+            extra_geom_format = "wkb"
+
         # Detect columns with problematic datatypes and handle them accordingly
         problem_cols = []
         for col in self.columns:
@@ -733,13 +743,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 # self.assign(newcol=(self[col] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'))
                 problem_cols.append(col)
                 self.rename(columns={col: f"__ORIGINAL__{col}"}, inplace=True)
-                self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: (x - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'))
-                continue
-            if type(self[col][0]).__base__ == BaseGeometry and col != self.geometry.name:
+                if date_format == "epoch":
+                    self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: (x - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'))
+                elif date_format == "iso":
+                    self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: x.isoformat())
+            elif type(self[col][0]).__base__ == BaseGeometry and col != self.geometry.name:
                 # self[col].dtype returns object, is there no other way to check the type than to sniff the first record?
                 problem_cols.append(col)
                 self.rename(columns={col: f"__ORIGINAL__{col}"}, inplace=True)
-                self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: x.wkb_hex)
+                if extra_geom_format == "wkb":
+                    self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: x.wkb_hex)
+                elif extra_geom_format == "wkt":
+                    self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: x.wkt)
 
         out_json = json.dumps(
             self.drop([col for col in self.columns if "__ORIGINAL__" in col], axis="columns")._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
