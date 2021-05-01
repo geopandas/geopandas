@@ -157,7 +157,7 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
 Other map customizations
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Maps usually do not have to have axis labels. You can turn them off by ``ax.set_axis_off()`` or ``ax.axis("off")``.
+Maps usually do not have to have axis labels. You can turn them off using ``set_axis_off()`` or ``axis("off")`` axis methods.
 
 .. ipython:: python
 
