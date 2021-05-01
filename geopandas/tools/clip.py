@@ -76,10 +76,6 @@ def _validate_inputs(gdf, mask):
             _crs_mismatch_warn(gdf, mask, stacklevel=3)
 
 
-def _get_number_of_unique_geometry_types(gdf):
-    return sum(gdf.geom_type.isin(geom_type).any() for geom_type in _GEOMETRY_TYPES)
-
-
 def _keeping_geometry_type_is_possible(gdf):
     df_contains_geometry_collection = (gdf.geom_type == "GeometryCollection").any()
     if df_contains_geometry_collection:
@@ -88,7 +84,9 @@ def _keeping_geometry_type_is_possible(gdf):
             "GeometryCollection."
         )
         return False
-    number_of_unique_geometry_types = _get_number_of_unique_geometry_types(gdf)
+    number_of_unique_geometry_types = sum(
+        gdf.geom_type.isin(geom_type).any() for geom_type in _GEOMETRY_TYPES
+    )
     if number_of_unique_geometry_types > 1:
         warnings.warn("keep_geom_type can not be called on a mixed type GeoDataFrame.")
         return False
@@ -116,7 +114,9 @@ def _create_mask_polygon(mask):
 
 def _keep_only_original_geom_type(clipped_gdf, original_type):
     new_collections_were_created = (clipped_gdf.geom_type == "GeometryCollection").any()
-    unique_geom_count_clipped = _get_number_of_unique_geometry_types(clipped_gdf)
+    unique_geom_count_clipped = sum(
+        clipped_gdf.geom_type.isin(geom_type).any() for geom_type in _GEOMETRY_TYPES
+    )
     type_count_has_increased = unique_geom_count_clipped > 1
     if new_collections_were_created or type_count_has_increased:
         if new_collections_were_created:
