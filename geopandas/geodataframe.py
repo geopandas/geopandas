@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.api.types import is_datetime64_any_dtype
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -20,10 +21,6 @@ from . import _compat as compat
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
-JSON_SERIALIZATION_MAP = {
-    pd.Timestamp: lambda x: (x - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'),
-    BaseGeometry: lambda x: x.wkb_hex
-}
 
 
 def _ensure_geometry(data, crs=None):
@@ -727,9 +724,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
-        return json.dumps(
-            self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
+
+        # Detect columns with problematic datatypes and handle them accordingly
+        problem_cols = []
+        for col in self.columns:
+            if is_datetime64_any_dtype(self[col].dtype):
+                # Can't get a virtual column to work!
+                # self.assign(newcol=(self[col] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'))
+                problem_cols.append(col)
+                self.rename(columns={col: f"__ORIGINAL__{col}"}, inplace=True)
+                self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: (x - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s'))
+                continue
+            if type(self[col][0]).__base__ == BaseGeometry and col != self.geometry.name:
+                # self[col].dtype returns object, is there no other way to check the type than to sniff the first record?
+                problem_cols.append(col)
+                self.rename(columns={col: f"__ORIGINAL__{col}"}, inplace=True)
+                self[col] = self[f"__ORIGINAL__{col}"].apply(lambda x: x.wkb_hex)
+
+        out_json = json.dumps(
+            self.drop([col for col in self.columns if "__ORIGINAL__" in col], axis="columns")._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
         )
+        self.drop([col for col in self.columns if col in problem_cols], axis="columns", inplace=True)
+        self.rename(columns={col: col[len("__ORIGINAL__"):] for col in self.columns if col[len("__ORIGINAL__"):] in problem_cols}, inplace=True)
+        return out_json
 
     @property
     def __geo_interface__(self):
@@ -834,13 +851,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                     }
                 else:
                     properties_items = {k: v for k, v in zip(properties_cols, row)}
-
-                if pd.Timestamp in set(type(v) for v in properties_items.values()):
-                    properties_items = {k: (properties_items[k] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s') if type(properties_items[k]) == pd.Timestamp else properties_items[k] for k in properties_items}
-                if True in set(isinstance(v, BaseGeometry) for v in properties_items.values()):
-                    properties_items = {k: properties_items[k].wkb_hex if isinstance(properties_items[k], BaseGeometry) else properties_items[k] for k in properties_items}
-
-                # properties_items = {k: JSON_SERIALIZATION_MAP.get(type(properties_items[k]), lambda x: x)(properties_items[k]) for k in properties_items}
 
                 if drop_id:
                     feature = {}
