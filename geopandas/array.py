@@ -565,7 +565,9 @@ class GeometryArray(ExtensionArray):
     #
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
-        return vectorized.clip_by_rect(self, xmin, ymin, xmax, ymax)
+        return GeometryArray(
+            vectorized.clip_by_rect(self.data, xmin, ymin, xmax, ymax), crs=self.crs
+        )
 
     def difference(self, other):
         return GeometryArray(
