@@ -2536,6 +2536,13 @@ GeometryCollection
         """
         return _binary_geo("intersection", self, other, align)
 
+    def clip_by_rect(self, rectangle):
+        from .geoseries import GeoSeries
+
+        geometry_array = GeometryArray(self.geometry.values)
+        clipped_geometry = geometry_array.clip_by_rect(rectangle)
+        return GeoSeries(clipped_geometry.data, index=self.index, crs=self.crs)
+
     #
     # Other operations
     #
