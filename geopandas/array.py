@@ -564,6 +564,11 @@ class GeometryArray(ExtensionArray):
     # Binary operations that return new geometries
     #
 
+    def clip_by_rect(self, rectangle):
+        return GeometryArray(
+            self._binary_method("clip_by_rect", self, rectangle), crs=self.crs
+        )
+
     def difference(self, other):
         return GeometryArray(
             self._binary_method("difference", self, other), crs=self.crs
