@@ -729,20 +729,15 @@ def almost_equals(self, other, decimal):
 #
 
 
-def clip_by_rect(data, rectangle):
-    rectangle_is_tuple = isinstance(rectangle, tuple)
-    if not rectangle_is_tuple or len(rectangle) != 4:
-        raise ValueError(
-            f"Clipping rectangle should be a tuple (minx, miny, maxx, maxy) "
-            f"but is: {rectangle}"
-        )
-
+def clip_by_rect(data, xmin, ymin, xmax, ymax):
     if compat.USE_PYGEOS:
-        return pygeos.clip_by_rect(data, *rectangle)
+        return pygeos.clip_by_rect(data, xmin, ymin, xmax, ymax)
     else:
         clipped_geometries = np.empty(len(data), dtype=object)
         clipped_geometries[:] = [
-            shapely.ops.clip_by_rect(s, *rectangle) if s is not None else None
+            shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
+            if s is not None
+            else None
             for s in data
         ]
         return clipped_geometries

@@ -259,16 +259,13 @@ class TestGeomMethods:
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
     def test_clip_by_rect(self):
-        self._test_binary_topological("clip_by_rect", self.g1, self.g10, self.sq.bounds)
+        self._test_binary_topological(
+            "clip_by_rect", self.g1, self.g10, *self.sq.bounds
+        )
         # self.g1 and self.t3.bounds do not intersect
         self._test_binary_topological(
-            "clip_by_rect", self.all_geometry_collection_empty, self.g1, self.t3.bounds
+            "clip_by_rect", self.all_geometry_collection_empty, self.g1, *self.t3.bounds
         )
-
-    def test_clip_by_rect_raises_error_on_incorrect_rectangle(self):
-        with pytest.raises(ValueError, match="Clipping rectangle should be a tuple .*"):
-            self._test_binary_topological("clip_by_rect", self.g1, self.g10, "aa")
-            self._test_binary_topological("clip_by_rect", self.g1, self.g10, (1.0, 2.0))
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
