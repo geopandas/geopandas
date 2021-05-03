@@ -202,7 +202,7 @@ and to get the area outside of the holes:
 
 .. image:: ../../_static/boros_with_holes.png
 
-Note that this can be simplified a bit, since :attr:`~geopandas.GeoDataFrame.geometry` is
+Note that this can be simplified a bit, since ``geometry`` is
 available as an attribute on a :class:`~geopandas.GeoDataFrame`, and the
 :meth:`~geopandas.GeoSeries.intersection` and :meth:`~geopandas.GeoSeries.difference` methods are implemented with the
 "&" and "-" operators, respectively.  For example, the latter could
