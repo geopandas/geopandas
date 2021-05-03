@@ -130,5 +130,5 @@ The `how` argument specifies the type of join that will occur and which geometry
 * ``inner``: use intersection of index values from both :class:`GeoDataFrame`; retain only the `left_df` geometry column
 
 Note more complicated spatial relationships can be studied by combining geometric operations with spatial join.
-To find all polygons within a given distance of a point, for example, one can first use the :meth:`~object.buffer` method to expand each
+To find all polygons within a given distance of a point, for example, one can first use the :meth:`~geopandas.GeoSeries.buffer` method to expand each
 point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.
