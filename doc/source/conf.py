@@ -390,11 +390,10 @@ intersphinx_mapping = {
         "https://rasterio.readthedocs.io/en/latest/",
         "https://rasterio.readthedocs.io/en/latest/objects.inv"
     ),
-    # Access denied error
-    # "geoplot": (
-    #     "https://docs.faculty.ai/libraries/geoplot/index.html",
-    #     "https://docs.faculty.ai/libraries/geoplot/objects.inv"
-    # ),
+    "geoplot": (
+        "https://residentmario.github.io/geoplot/index.html",
+        "https://residentmario.github.io/geoplot/objects.inv"
+    ),
     "folium": (
         "https://python-visualization.github.io/folium/",
         "https://python-visualization.github.io/folium/objects.inv"
