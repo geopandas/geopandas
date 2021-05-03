@@ -347,16 +347,16 @@ intersphinx_mapping = {
         "https://shapely.readthedocs.io/en/stable/objects.inv",
     ),
     "fiona": (
-        "https://fiona.readthedocs.io/en/latest/",
-        "https://fiona.readthedocs.io/en/latest/objects.inv",
+        "https://fiona.readthedocs.io/en/stable/",
+        "https://fiona.readthedocs.io/en/stable/objects.inv",
     ),
     "pygeos": (
         "https://pygeos.readthedocs.io/en/latest/",
         "https://pygeos.readthedocs.io/en/latest/objects.inv",
     ),
     "rtree": (
-      "https://rtree.readthedocs.io/en/latest/",
-      "https://rtree.readthedocs.io/en/latest/objects.inv",
+      "https://rtree.readthedocs.io/en/stable/",
+      "https://rtree.readthedocs.io/en/stable/objects.inv",
     ),
     "mapclassify": (
         "https://pysal.org/mapclassify/",
@@ -379,16 +379,16 @@ intersphinx_mapping = {
         "https://scitools.org.uk/cartopy/docs/latest/objects.inv"
     ),
     "pyepsg": (
-        "https://pyepsg.readthedocs.io/en/latest/",
-        "https://pyepsg.readthedocs.io/en/latest/objects.inv"
+        "https://pyepsg.readthedocs.io/en/stable/",
+        "https://pyepsg.readthedocs.io/en/stable/objects.inv"
     ),
     "contextily": (
-        "https://contextily.readthedocs.io/en/latest/",
-        "https://contextily.readthedocs.io/en/latest/objects.inv"
+        "https://contextily.readthedocs.io/en/stable/",
+        "https://contextily.readthedocs.io/en/stable/objects.inv"
     ),
     "rasterio": (
-        "https://rasterio.readthedocs.io/en/latest/",
-        "https://rasterio.readthedocs.io/en/latest/objects.inv"
+        "https://rasterio.readthedocs.io/en/stable/",
+        "https://rasterio.readthedocs.io/en/stable/objects.inv"
     ),
     "geoplot": (
         "https://residentmario.github.io/geoplot/index.html",
