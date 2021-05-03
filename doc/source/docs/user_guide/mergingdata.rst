@@ -54,7 +54,7 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
 Attribute Joins
 ----------------
 
-Attribute joins are accomplished using the :func:`pandas.merge` method. In general, it is recommended
+Attribute joins are accomplished using the :meth:`~pandas.DataFrame.merge` method. In general, it is recommended
 to use the ``merge()`` method called from the spatial dataset. With that said, the stand-alone
 :func:`pandas.merge` function will work if the :class:`GeoDataFrame` is in the ``left`` argument;
 if a :class:`~pandas.DataFrame` is in the ``left`` argument and a :class:`GeoDataFrame`
