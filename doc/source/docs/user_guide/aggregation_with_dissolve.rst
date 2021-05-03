@@ -16,7 +16,7 @@ In a non-spatial setting, when all we need are summary statistics of the data, w
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
-(a) it dissolves all the geometries within a given group together into a single geometric feature (using the :meth:`~geopandas.GeoSeries.unary_union` method), and
+(a) it dissolves all the geometries within a given group together into a single geometric feature (using the :attr:`~geopandas.GeoSeries.unary_union` method), and
 (b) it aggregates all the rows of data in a group using :ref:`groupby.aggregate <groupby.aggregate>`, and
 (c) it combines those two results.
 
