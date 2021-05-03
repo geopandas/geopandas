@@ -9,7 +9,7 @@
 Indexing and Selecting Data
 ===========================
 
-GeoPandas inherits the standard pandas_ methods for indexing/selecting data. This includes label based indexing with :meth:`~pandas.DataFrame.loc` and integer position based indexing with :meth:`~pandas.DataFrame.iloc`, which apply to both :class:`GeoSeries` and :class:`GeoDataFrame` objects. For more information on indexing/selecting, see the pandas_ documentation.
+GeoPandas inherits the standard pandas_ methods for indexing/selecting data. This includes label based indexing with :attr:`~pandas.DataFrame.loc` and integer position based indexing with :attr:`~pandas.DataFrame.iloc`, which apply to both :class:`GeoSeries` and :class:`GeoDataFrame` objects. For more information on indexing/selecting, see the pandas_ documentation.
 
 .. _pandas: http://pandas.pydata.org/pandas-docs/stable/indexing.html
 
@@ -27,4 +27,3 @@ countries whose boundaries extend into the southern hemisphere.
    southern_world = world.cx[:, :0]
    @savefig world_southern.png
    southern_world.plot(figsize=(10, 3));
-
