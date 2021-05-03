@@ -7,6 +7,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import shapely.geometry
 import shapely.geos
@@ -44,9 +45,9 @@ else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
 
 
-def _isna(value):
+def isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -54,6 +55,8 @@ def _isna(value):
     if value is None:
         return True
     elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
         return True
     else:
         return False
@@ -127,7 +130,7 @@ def from_shapely(data):
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
-        elif _isna(geom):
+        elif isna(geom):
             out.append(None)
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
@@ -165,7 +168,7 @@ def from_wkb(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             geom = shapely.wkb.loads(geom)
         else:
             geom = None
@@ -177,9 +180,9 @@ def from_wkb(data):
     return aout
 
 
-def to_wkb(data, hex=False):
+def to_wkb(data, hex=False, **kwargs):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data, hex=hex)
+        return pygeos.to_wkb(data, hex=hex, **kwargs)
     else:
         if hex:
             out = [geom.wkb_hex if geom is not None else None for geom in data]
@@ -200,7 +203,7 @@ def from_wkt(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
             geom = shapely.wkt.loads(geom)
@@ -828,6 +831,34 @@ def simplify(data, tolerance, preserve_topology=True):
         return out
 
 
+def _shapely_normalize(geom):
+    """
+    Small helper function for now because it is not yet available in Shapely.
+    """
+    from shapely.geos import lgeos
+    from shapely.geometry.base import geom_factory
+    from ctypes import c_void_p, c_int
+
+    lgeos._lgeos.GEOSNormalize_r.restype = c_int
+    lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
+
+    geom_cloned = lgeos.GEOSGeom_clone(geom._geom)
+    lgeos._lgeos.GEOSNormalize_r(lgeos.geos_handle, geom_cloned)
+    return geom_factory(geom_cloned)
+
+
+def normalize(data):
+    if compat.USE_PYGEOS:
+        return pygeos.normalize(data)
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                _shapely_normalize(geom) if geom is not None else None for geom in data
+            ]
+        return out
+
+
 def project(data, other, normalized=False):
     if compat.USE_PYGEOS:
         return pygeos.line_locate_point(data, other, normalize=normalized)
@@ -868,6 +899,14 @@ def get_y(data):
         return _unary_op("y", data, null_value=np.nan)
 
 
+def get_z(data):
+    if compat.USE_PYGEOS:
+        return pygeos.get_z(data)
+    else:
+        data = [geom.z if geom.has_z else np.nan for geom in data]
+        return np.array(data, dtype=np.dtype(float))
+
+
 def bounds(data):
     if compat.USE_PYGEOS:
         return pygeos.bounds(data)
@@ -905,7 +944,7 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            if _isna(geom):
+            if isna(geom):
                 result[i] = geom
             else:
                 result[i] = transform(func, geom)

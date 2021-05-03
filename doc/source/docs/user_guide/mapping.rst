@@ -11,7 +11,7 @@
    plt.close('all')
 
 
-Mapping Tools
+Mapping and Plotting Tools
 =========================================
 
 
@@ -45,7 +45,7 @@ Choropleth Maps
 
 .. ipython:: python
 
-    # Plot by GDP per capta
+    # Plot by GDP per capita
     world = world[(world.pop_est>0) & (world.name!="Antarctica")]
     world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
     @savefig world_gdp_per_cap.png
@@ -154,6 +154,17 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
         },
     );
 
+Other map customizations
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Maps usually do not have to have axis labels. You can turn them off using ``set_axis_off()`` or ``axis("off")`` axis methods.
+
+.. ipython:: python
+
+    ax = world.plot()
+    @savefig set_axis_off.png
+    ax.set_axis_off();
+
 Maps with Layers
 -----------------
 
@@ -221,6 +232,41 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
     ax = cities.plot(color='k', zorder=2)
     @savefig zorder_set.png
     world.plot(ax=ax, zorder=1);
+
+
+Pandas Plots
+-----------------
+
+Plotting methods also allow for different plot styles from pandas
+along with the default ``geo`` plot. These methods can be accessed using
+the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
+
+* ``geo`` for mapping
+* ``line`` for line plots
+* ``bar`` or ``barh`` for bar plots
+* ``hist`` for histogram
+* ``box`` for boxplot
+* ``kde`` or ``density`` for density plots
+* ``area``  for area plots
+* ``scatter`` for scatter plots
+* ``hexbin`` for hexagonal bin plots
+* ``pie`` for pie plots
+
+.. ipython:: python
+
+    gdf = world.head(10)
+    @savefig pandas_line_plot.png
+    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est")
+
+You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
+
+.. ipython:: python
+
+    @savefig pandas_bar_plot.png
+    gdf.plot.bar()
+
+For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+
 
 Other Resources
 -----------------

@@ -13,8 +13,8 @@ Constructor
 
    GeoDataFrame
 
-Reading and writing files
--------------------------
+Serialization / IO / conversion
+-------------------------------
 
 .. autosummary::
    :toctree: api/
@@ -27,6 +27,8 @@ Reading and writing files
    GeoDataFrame.to_parquet
    GeoDataFrame.to_feather
    GeoDataFrame.to_postgis
+   GeoDataFrame.to_wkb
+   GeoDataFrame.to_wkt
 
 Projection handling
 -------------------
@@ -37,6 +39,7 @@ Projection handling
    GeoDataFrame.crs
    GeoDataFrame.set_crs
    GeoDataFrame.to_crs
+   GeoDataFrame.estimate_utm_crs
 
 Active geometry handling
 ------------------------
@@ -61,6 +64,7 @@ Plotting
 
 .. autosummary::
    :toctree: api/
+   :template: accessor_callable.rst
 
    GeoDataFrame.plot
 
@@ -72,6 +76,15 @@ Spatial index
    :toctree: api/
 
    GeoDataFrame.sindex
+   GeoDataFrame.has_sindex
+
+Indexing
+--------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoDataFrame.cx
 
 Interface
 ---------

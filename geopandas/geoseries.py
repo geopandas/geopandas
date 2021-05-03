@@ -3,19 +3,25 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series
+from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
 
-from pyproj import CRS, Transformer
+from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
-from .array import GeometryArray, GeometryDtype, from_shapely
+from .array import (
+    GeometryDtype,
+    from_shapely,
+    from_wkb,
+    from_wkt,
+    to_wkb,
+    to_wkt,
+)
 from .base import is_geometry_type
-from . import _vectorized as vectorized
-from ._compat import ignore_shapely2_warnings
+from . import _compat as compat
 
 
 _SERIES_WARNING_MSG = """\
@@ -91,6 +97,47 @@ class GeoSeries(GeoPandasBase, Series):
     2    POINT (3.00000 3.00000)
     dtype: geometry
 
+    >>> s = geopandas.GeoSeries(
+    ...     [Point(1, 1), Point(2, 2), Point(3, 3)], crs="EPSG:3857"
+    ... )
+    >>> s.crs  # doctest: +SKIP
+    <Projected CRS: EPSG:3857>
+    Name: WGS 84 / Pseudo-Mercator
+    Axis Info [cartesian]:
+    - X[east]: Easting (metre)
+    - Y[north]: Northing (metre)
+    Area of Use:
+    - name: World - 85°S to 85°N
+    - bounds: (-180.0, -85.06, 180.0, 85.06)
+    Coordinate Operation:
+    - name: Popular Visualisation Pseudo-Mercator
+    - method: Popular Visualisation Pseudo Mercator
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
+    >>> s = geopandas.GeoSeries(
+    ...    [Point(1, 1), Point(2, 2), Point(3, 3)], index=["a", "b", "c"], crs=4326
+    ... )
+    >>> s
+    a    POINT (1.00000 1.00000)
+    b    POINT (2.00000 2.00000)
+    c    POINT (3.00000 3.00000)
+    dtype: geometry
+
+    >>> s.crs
+    <Geographic 2D CRS: EPSG:4326>
+    Name: WGS 84
+    Axis Info [ellipsoidal]:
+    - Lat[north]: Geodetic latitude (degree)
+    - Lon[east]: Geodetic longitude (degree)
+    Area of Use:
+    - name: World
+    - bounds: (-180.0, -90.0, 180.0, 90.0)
+    Datum: World Geodetic System 1984
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
     See Also
     --------
     GeoDataFrame
@@ -156,11 +203,11 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            with ignore_shapely2_warnings():
+            with compat.ignore_shapely2_warnings():
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty:
+                if s.empty or data is None:
                     s = s.astype(object)
                 else:
                     warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
@@ -216,6 +263,7 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         GeoSeries.y
+        GeoSeries.z
 
         """
         return _delegate_property("x", self)
@@ -243,9 +291,38 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         GeoSeries.x
+        GeoSeries.z
 
         """
         return _delegate_property("y", self)
+
+    @property
+    def z(self):
+        """Return the z location of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1, 1), Point(2, 2, 2), Point(3, 3, 3)])
+        >>> s.z
+        0    1.0
+        1    2.0
+        2    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.x
+        GeoSeries.y
+
+        """
+        return _delegate_property("z", self)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -279,12 +356,107 @@ class GeoSeries(GeoPandasBase, Series):
         3    MULTIPOLYGON (((981219.056 188655.316, 980940....
         4    MULTIPOLYGON (((1012821.806 229228.265, 101278...
         Name: geometry, dtype: geometry
+
+        See Also
+        --------
+        read_file : read file to GeoDataFame
         """
         from geopandas import GeoDataFrame
 
         df = GeoDataFrame.from_file(filename, **kwargs)
 
         return GeoSeries(df.geometry, crs=df.crs)
+
+    @classmethod
+    def from_wkb(cls, data, index=None, crs=None, **kwargs):
+        """
+        Alternate constructor to create a ``GeoSeries``
+        from a list or array of WKB objects
+
+        Parameters
+        ----------
+        data : array-like or Series
+            Series, list or array of WKB objects
+        index : array-like or Index
+            The index for the GeoSeries.
+        crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        kwargs
+            Additional arguments passed to the Series constructor,
+            e.g. ``name``.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkt
+
+        """
+        return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
+
+    @classmethod
+    def from_wkt(cls, data, index=None, crs=None, **kwargs):
+        """
+        Alternate constructor to create a ``GeoSeries``
+        from a list or array of WKT objects
+
+        Parameters
+        ----------
+        data : array-like, Series
+            Series, list, or array of WKT objects
+        index : array-like or Index
+            The index for the GeoSeries.
+        crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        kwargs
+            Additional arguments passed to the Series constructor,
+            e.g. ``name``.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkb
+
+        Examples
+        --------
+
+        >>> wkts = [
+        ... 'POINT (1 1)',
+        ... 'POINT (2 2)',
+        ... 'POINT (3 3)',
+        ... ]
+        >>> s = geopandas.GeoSeries.from_wkt(wkts)
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+        """
+        return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
+
+    @classmethod
+    def _from_wkb_or_wkb(
+        cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
+    ):
+        """Create a GeoSeries from either WKT or WKB values"""
+        if isinstance(data, Series):
+            if index is not None:
+                data = data.reindex(index)
+            else:
+                index = data.index
+            data = data.values
+        return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 
     @property
     def __geo_interface__(self):
@@ -342,7 +514,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-        GeoDataFrame.to_file
+        GeoDataFrame.to_file : write GeoDataFrame to file
+        read_file : read file to GeoDataFame
 
         Examples
         --------
@@ -561,6 +734,10 @@ class GeoSeries(GeoPandasBase, Series):
         1    POLYGON ((0.00000 1.00000, 2.00000 1.00000, 1....
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
+
+        See Also
+        --------
+        GeoSeries.isna : detect missing values
         """
         if value is None:
             value = BaseGeometry()
@@ -589,6 +766,91 @@ class GeoSeries(GeoPandasBase, Series):
         return plot_series(self, *args, **kwargs)
 
     plot.__doc__ = plot_series.__doc__
+
+    def explode(self):
+        """
+        Explode multi-part geometries into multiple single geometries.
+
+        Single rows can become multiple rows.
+        This is analogous to PostGIS's ST_Dump(). The 'path' index is the
+        second level of the returned MultiIndex
+
+        Returns
+        ------
+        A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
+        original index and a zero-based integer index that counts the
+        number of single geometries within a multi-part geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        ... )
+        >>> s
+        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
+        dtype: geometry
+
+        >>> s.explode()
+        0  0    POINT (0.00000 0.00000)
+           1    POINT (1.00000 1.00000)
+        1  0    POINT (2.00000 2.00000)
+           1    POINT (3.00000 3.00000)
+           2    POINT (4.00000 4.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoDataFrame.explode
+
+        """
+
+        if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
+            import pygeos  # noqa
+
+            geometries, outer_idx = pygeos.get_parts(
+                self.values.data, return_index=True
+            )
+
+            if len(outer_idx):
+                # Generate inner index as a range per value of outer_idx
+                # 1. identify the start of each run of values in outer_idx
+                # 2. count number of values per run
+                # 3. use cumulative sums to create an incremental range
+                #    starting at 0 in each run
+                run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+                counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+                inner_index = (~run_start).cumsum()
+                inner_index -= np.repeat(inner_index[run_start], counts)
+
+            else:
+                inner_index = []
+
+            # extract original index values based on integer index
+            outer_index = self.index.take(outer_idx)
+
+            index = MultiIndex.from_arrays(
+                [outer_index, inner_index], names=self.index.names + [None]
+            )
+
+            return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
+
+        # else PyGEOS is not available or version <= 0.8
+
+        index = []
+        geometries = []
+        for idx, s in self.geometry.iteritems():
+            if s.type.startswith("Multi") or s.type == "GeometryCollection":
+                geoms = s.geoms
+                idxs = [(idx, i) for i in range(len(geoms))]
+            else:
+                geoms = [s]
+                idxs = [(idx, 0)]
+            index.extend(idxs)
+            geometries.extend(geoms)
+        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
     # Additional methods
@@ -659,6 +921,10 @@ class GeoSeries(GeoPandasBase, Series):
 
         Without ``allow_override=True``, ``set_crs`` returns an error if you try to
         override CRS.
+
+        See Also
+        --------
+        GeoSeries.to_crs : re-project to another CRS
 
         """
         if crs is not None:
@@ -753,29 +1019,54 @@ class GeoSeries(GeoPandasBase, Series):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
 
+        See Also
+        --------
+        GeoSeries.set_crs : assign CRS
+
         """
-        if self.crs is None:
-            raise ValueError(
-                "Cannot transform naive geometries.  "
-                "Please set a crs on the object first."
-            )
-        if crs is not None:
-            crs = CRS.from_user_input(crs)
-        elif epsg is not None:
-            crs = CRS.from_epsg(epsg)
-        else:
-            raise ValueError("Must pass either crs or epsg.")
-
-        # skip if the input CRS and output CRS are the exact same
-        if self.crs.is_exact_same(crs):
-            return self
-
-        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
-
-        new_data = vectorized.transform(self.values.data, transformer.transform)
         return GeoSeries(
-            GeometryArray(new_data), crs=crs, index=self.index, name=self.name
+            self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )
+
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.geometry.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        return self.values.estimate_utm_crs(datum_name)
 
     def to_json(self, **kwargs):
         """
@@ -806,8 +1097,73 @@ operties": {}, "geometry": {"type": "Point", "coordinates": [1.0, 1.0]}, "bbox":
 : "Point", "coordinates": [2.0, 2.0]}, "bbox": [2.0, 2.0, 2.0, 2.0]}, {"id": "2", "typ\
 e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3.0, 3.\
 0]}, "bbox": [3.0, 3.0, 3.0, 3.0]}], "bbox": [1.0, 1.0, 3.0, 3.0]}'
+
+        See Also
+        --------
+        GeoSeries.to_file : write GeoSeries to file
         """
         return json.dumps(self.__geo_interface__, **kwargs)
+
+    def to_wkb(self, hex=False, **kwargs):
+        """
+        Convert GeoSeries geometries to WKB
+
+        Parameters
+        ----------
+        hex : bool
+            If true, export the WKB as a hexadecimal string.
+            The default is to return a binary bytes object.
+        kwargs
+            Additional keyword args will be passed to
+            :func:`pygeos.to_wkb` if pygeos is installed.
+
+        Returns
+        -------
+        Series
+            WKB representations of the geometries
+
+        See also
+        --------
+        GeoSeries.to_wkt
+        """
+        return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
+
+    def to_wkt(self, **kwargs):
+        """
+        Convert GeoSeries geometries to WKT
+
+        Parameters
+        ----------
+        kwargs
+            Keyword args will be passed to :func:`pygeos.to_wkt`
+            if pygeos is installed.
+
+        Returns
+        -------
+        Series
+            WKT representations of the geometries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.to_wkt()
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (3 3)
+        dtype: object
+
+        See also
+        --------
+        GeoSeries.to_wkb
+        """
+        return Series(to_wkt(self.array, **kwargs), index=self.index)
 
     #
     # Implement standard operators for GeoSeries

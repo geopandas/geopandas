@@ -46,11 +46,19 @@ def test_repr_boxed_display_precision():
     s1 = GeoSeries([p1, p2, None])
     assert "POINT (10.12346 50.12346)" in repr(s1)
 
+    # geographic coordinates 4326
+    s3 = GeoSeries([p1, p2], crs=4326)
+    assert "POINT (10.12346 50.12346)" in repr(s3)
+
     # projected coordinates
     p1 = Point(3000.123456789, 3000.123456789)
     p2 = Point(4000.123456789, 4000.123456789)
     s2 = GeoSeries([p1, p2, None])
     assert "POINT (3000.123 3000.123)" in repr(s2)
+
+    # projected geographic coordinate
+    s4 = GeoSeries([p1, p2], crs=3857)
+    assert "POINT (3000.123 3000.123)" in repr(s4)
 
     geopandas.options.display_precision = 1
     assert "POINT (10.1 50.1)" in repr(s1)
@@ -518,6 +526,21 @@ def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
     res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
+
+
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_apply_no_geometry_result(df, crs):
+    if crs:
+        df = df.set_crs(crs)
+    result = df.apply(lambda col: col.astype(str), axis=0)
+    # TODO this should actually not return a GeoDataFrame
+    assert isinstance(result, GeoDataFrame)
+    expected = df.astype(str)
+    assert_frame_equal(result, expected)
+
+    result = df.apply(lambda col: col.astype(str), axis=1)
+    assert isinstance(result, GeoDataFrame)
+    assert_frame_equal(result, expected)
 
 
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")

@@ -36,7 +36,7 @@ for all details. GeoPandas depends on the following packages:
 - ``fiona``
 - ``pyproj``
 
-Further, ``descartes`` and ``matplotlib`` are optional dependencies, required
+Further, ``matplotlib`` is an optional dependency, required
 for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
 dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
 
@@ -67,7 +67,7 @@ Examples
     2    POLYGON ((2 0, 3 0, 3 1, 2 1, 2 0))
     dtype: geometry
 
-![Example 1](examples/test.png)
+![Example 1](doc/source/gallery/test.png)
 
 Some geographic operations return normal pandas object.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
 
@@ -85,9 +85,11 @@ Other operations return GeoPandas objects:
     2    POLYGON ((1.5 0, 1.5 1, 1.502407636663901 1.04...
     dtype: geometry
 
-![Example 2](examples/test_buffer.png)
+![Example 2](doc/source/gallery/test_buffer.png)
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses [descartes](https://pypi.python.org/pypi/descartes) to generate a [matplotlib](http://matplotlib.org) plot. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves. GeoPandas uses
+[matplotlib](http://matplotlib.org) for plotting. To generate a plot of our
+GeoSeries, use:
 
     >>> g.plot()
 
@@ -99,22 +101,22 @@ GeoPandas also implements alternate constructors that can read any data format r
     >>> boros.sort_index(inplace=True)
     >>> boros
                    BoroName     Shape_Leng    Shape_Area  \
-    BoroCode                                               
-    1             Manhattan  359299.096471  6.364715e+08   
-    2                 Bronx  464392.991824  1.186925e+09   
-    3              Brooklyn  741080.523166  1.937479e+09   
-    4                Queens  896344.047763  3.045213e+09   
-    5         Staten Island  330470.010332  1.623820e+09   
-    
-                                                       geometry  
-    BoroCode                                                     
-    1         MULTIPOLYGON (((981219.0557861328 188655.31579...  
-    2         MULTIPOLYGON (((1012821.805786133 229228.26458...  
-    3         MULTIPOLYGON (((1021176.479003906 151374.79699...  
-    4         MULTIPOLYGON (((1029606.076599121 156073.81420...  
-    5         MULTIPOLYGON (((970217.0223999023 145643.33221...  
+    BoroCode
+    1             Manhattan  359299.096471  6.364715e+08
+    2                 Bronx  464392.991824  1.186925e+09
+    3              Brooklyn  741080.523166  1.937479e+09
+    4                Queens  896344.047763  3.045213e+09
+    5         Staten Island  330470.010332  1.623820e+09
 
-![New York City boroughs](examples/nyc.png)
+                                                       geometry
+    BoroCode
+    1         MULTIPOLYGON (((981219.0557861328 188655.31579...
+    2         MULTIPOLYGON (((1012821.805786133 229228.26458...
+    3         MULTIPOLYGON (((1021176.479003906 151374.79699...
+    4         MULTIPOLYGON (((1029606.076599121 156073.81420...
+    5         MULTIPOLYGON (((970217.0223999023 145643.33221...
+
+![New York City boroughs](doc/source/gallery/nyc.png)
 
     >>> boros['geometry'].convex_hull
     BoroCode
@@ -125,4 +127,4 @@ GeoPandas also implements alternate constructors that can read any data format r
     5    POLYGON ((915517.6877458114 120121.8812543372,...
     dtype: geometry
 
-![Convex hulls of New York City boroughs](examples/nyc_hull.png)
+![Convex hulls of New York City boroughs](doc/source/gallery/nyc_hull.png)

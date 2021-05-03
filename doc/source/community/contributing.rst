@@ -108,8 +108,8 @@ This creates the directory `geopandas-yourname` and connects your repository to
 the upstream (main project) *GeoPandas* repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
-submitted. The test suite will also autmatically run on your branch so you can 
-check it  prior to submitting the pull request.
+submitted. The test suite will also autmatically run on your branch so you can
+check it prior to submitting the pull request.
 
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
@@ -247,27 +247,39 @@ install *GeoPandas*) by typing::
 6) Updating the Documentation
 -----------------------------
 
-*GeoPandas* documentation resides in the `doc` folder. Changes to the docs are
-make by modifying the appropriate file in the `source` folder within `doc`.
-*GeoPandas* docs use reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_
-and the docstrings follow the `Numpy Docstring standard <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_.
+*GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are made by
+modifying the appropriate file in the ``source`` folder within ``doc``. *GeoPandas* docs use
+mixture of reStructuredText syntax for ``rst`` files, `which is explained here
+<http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
+files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
+The docstrings follow the `Numpy Docstring standard
+<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+and examples are Jupyter notebooks converted to docs using `nbsphinx
+<https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
 Once you have made your changes, you may try if they render correctly by
-building the docs using sphinx. To do so, you can navigate to the `doc` folder
+building the docs using sphinx. To do so, you can navigate to the `doc` folder::
+
+    cd doc
+
 and type::
 
     make html
 
-The resulting html pages will be located in `doc/build/html`. In case of any
-errors, you can try to use `make html` within a new environment based on
-environment.yml specification in the `doc` folder. Using conda::
+The resulting html pages will be located in ``doc/build/html``.
 
+In case of any errors, you can try to use ``make html`` within a new environment based on
+environment.yml specification in the ``doc`` folder. You may need to register Jupyter kernel as
+``geopandas_docs``. Using conda::
+
+    cd doc
     conda env create -f environment.yml
     conda activate geopandas_docs
+    python -m ipykernel install --user --name geopandas_docs
     make html
 
-For minor updates, you can skip whole `make html` part as reStructuredText syntax
-is usually quite straightforward.
+For minor updates, you can skip the ``make html`` part as reStructuredText and MyST
+syntax are usually quite straightforward.
 
 
 7) Submitting a Pull Request
@@ -340,4 +352,3 @@ is fine, but the former is generally preferred:
 Now you can commit your changes in your local repository::
 
     git commit -m
-    
