@@ -21,7 +21,7 @@ In a non-spatial setting, when all we need are summary statistics of the data, w
 (c) it combines those two results.
 
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in *geopandas*. We can easily convert this to a continent-level dataset.
 
