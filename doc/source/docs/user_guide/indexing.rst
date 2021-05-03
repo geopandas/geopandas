@@ -14,7 +14,7 @@ GeoPandas inherits the standard pandas_ methods for indexing/selecting data. Thi
 .. _pandas: http://pandas.pydata.org/pandas-docs/stable/indexing.html
 
 In addition to the standard pandas_ methods, GeoPandas also provides
-coordinate based indexing with the :meth:`~GeoDataFrame.cx` indexer, which slices using a bounding
+coordinate based indexing with the :attr:`~GeoDataFrame.cx` indexer, which slices using a bounding
 box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersect the
 bounding box will be returned.
 
