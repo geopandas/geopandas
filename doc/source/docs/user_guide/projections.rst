@@ -268,10 +268,10 @@ including their EPSG codes and proj4 string definitions.
 
 Next to the EPSG code mentioned above, there are also other ways to specify the
 CRS: an actual ``pyproj.CRS`` object, a WKT string, a PROJ JSON string, etc.
-Anything that is accepted by ``pyproj.CRS.from_user_input`` can by specified
+Anything that is accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>` can by specified
 to the ``crs`` keyword/attribute in GeoPandas.
 
-Also compatible CRS objects, such as from the ``rasterio`` package, can be
+Also compatible CRS objects, such as from the :mod:`rasterio` package, can be
 passed directly to GeoPandas.
 
 
