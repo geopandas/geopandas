@@ -73,12 +73,11 @@ def _validate_inputs(gdf, mask):
         )
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         if not _check_crs(gdf, mask):
-            _crs_mismatch_warn(gdf, mask, stacklevel=3)
+            _crs_mismatch_warn(gdf, mask, stacklevel=4)
 
 
 def _keeping_geometry_type_is_possible(gdf):
-    df_contains_geometry_collection = (gdf.geom_type == "GeometryCollection").any()
-    if df_contains_geometry_collection:
+    if (gdf.geom_type == "GeometryCollection").any():
         warnings.warn(
             "keep_geom_type can not be called on a GeoDataFrame with "
             "GeometryCollection."
