@@ -65,6 +65,7 @@ autosummary_generate = True
 
 nbsphinx_execute = "always"
 nbsphinx_allow_errors = True
+nbsphinx_kernel_name = 'python3'
 
 # connect docs in other projects
 intersphinx_mapping = {"pyproj": ("http://pyproj4.github.io/pyproj/stable/", None)}
