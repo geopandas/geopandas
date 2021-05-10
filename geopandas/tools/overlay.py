@@ -275,8 +275,8 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             [],
             columns=list(
                 set(
-                    df1.drop("geometry", axis=1).columns.to_list()
-                    + df2.drop("geometry", axis=1).columns.to_list()
+                    df1.drop(df1.geometry.name, axis=1).columns.to_list()
+                    + df2.drop(df2.geometry.name, axis=1).columns.to_list()
                 )
             )
             + ["geometry"],
