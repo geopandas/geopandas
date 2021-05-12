@@ -2737,8 +2737,9 @@ GeometryCollection
             `tolerance` distance from the original. It has the same units
             as the coordinate reference system of the GeoSeries.
             For example, using `tolerance=100` in the Mercator projection means
-            a distance of 100 meters in reality (this applies mainly for areas around the
-            equator because distance in this projection gets very distorted near the poles).
+            a distance of 100 meters in reality (this applies mainly for areas 
+            around the equator because distance in this projection gets very 
+            distorted near the poles).
         preserve_topology: bool (default True)
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
