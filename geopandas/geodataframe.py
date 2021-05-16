@@ -1582,9 +1582,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = pd.concat(
-            [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
-        ).__finalize__(self)
+        df = df_copy.drop(df_copy._geometry_column_name, axis=1).join(exploded_geom).__finalize__(self)
 
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.

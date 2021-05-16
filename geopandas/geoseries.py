@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
+from pandas.core.common import flatten
 
 from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
@@ -830,10 +831,13 @@ class GeoSeries(GeoPandasBase, Series):
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
 
-            index = MultiIndex.from_arrays(
-                [outer_index, inner_index], names=self.index.names + [None]
-            )
+            index = zip(outer_index, inner_index)
 
+            # if self.index is a MultiIndex then index is a list of nested tuples
+            if isinstance(self.index, MultiIndex):
+                index = [tuple(flatten(e)) for e in index]
+
+            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
@@ -849,6 +853,11 @@ class GeoSeries(GeoPandasBase, Series):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
+
+        # if self.index is a MultiIndex then index is a list of nested tuples
+        if isinstance(self.index, MultiIndex):
+            index = [tuple(flatten(e)) for e in index]
+
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
