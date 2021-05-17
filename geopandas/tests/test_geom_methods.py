@@ -941,9 +941,11 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
-    def test_explode_pandas_multi_index(self):
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(
-            [[1, 1, 1], [1, 2, 3]], names=("first", "second")
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
         )
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -965,7 +967,10 @@ class TestGeomMethods:
         )
         expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
         expected_index = MultiIndex.from_tuples(
-            [(1, 1, 0), (1, 1, 1), (1, 2, 0), (1, 2, 1), (1, 3, 0), (1, 3, 1)],
+            [
+                (outer_index, *pair)
+                for pair in [(1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+            ],
             names=["first", "second", None],
         )
         expected_df = expected_df.set_index(expected_index)
