@@ -78,7 +78,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     bbox : tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
-        or GeoDataFrame. Cannot be used with mask.
+        or GeoDataFrame. Tuple is (minx, miny, maxx, maxy) to match the
+        bounds property of shapely geometry objects. Cannot be used with mask.
     mask : dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.

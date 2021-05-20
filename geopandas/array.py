@@ -1030,7 +1030,7 @@ class GeometryArray(ExtensionArray):
                 pd_dtype = pd.api.types.pandas_dtype(dtype)
                 if isinstance(pd_dtype, pd.StringDtype):
                     # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype="string")
+                    return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)

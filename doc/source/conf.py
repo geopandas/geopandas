@@ -331,3 +331,12 @@ nbsphinx_prolog = r"""
 
         __ https://github.com/geopandas/geopandas/blob/master/doc/source/{{ docname }}
 """
+
+#  --Options for sphinx extensions -----------------------------------------------
+
+intersphinx_mapping = {
+    "pandas": (
+        "https://pandas.pydata.org/pandas-docs/stable/",
+        "https://pandas.pydata.org/pandas-docs/stable/objects.inv",
+    ),
+}
