@@ -14,7 +14,7 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 
-MIN_PYGEOS_VERSION_FOR_NEAREST = "0.10.0"
+MIN_PYGEOS_VERSION_FOR_NEAREST = "0.10"
 try:
     import pygeos
 
