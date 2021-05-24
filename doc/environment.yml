@@ -36,7 +36,7 @@ dependencies:
   - myst-parser=0.13.5
   - folium=0.12.0
   - libpysal=4.4.0
-  - pygeos=0.9
+  - pygeos=0.10
   - pip
   - pip:
       - sphinx-toggleprompt
