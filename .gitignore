@@ -34,6 +34,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+result_images
 
 # Sphinx documentation
 doc/_build/
@@ -59,11 +60,12 @@ doc/_build/
 
 examples/nybb_*.zip
 
-doc/source/gallery
 doc/source/savefig
 doc/source/reference
+doc/source/docs/reference/api/*.rst
 
 geopandas.egg-info
 geopandas/version.py
 
 .asv
+doc/source/getting_started/my_file.geojson

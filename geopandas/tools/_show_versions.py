@@ -36,21 +36,11 @@ def _get_C_info():
     except Exception:
         proj_version = None
     try:
-        # pyproj > 2.0
-        from pyproj.exceptions import DataDirError
+        import pyproj
 
-        try:
-            proj_dir = pyproj.datadir.get_data_dir()
-        except DataDirError:
-            proj_dir = None
+        proj_dir = pyproj.datadir.get_data_dir()
     except Exception:
-        try:
-            # pyproj 1.9.6
-            import pyproj
-
-            proj_dir = pyproj.pyproj_datadir
-        except Exception:
-            proj_dir = None
+        proj_dir = None
 
     try:
         import shapely._buildcfg
@@ -104,9 +94,11 @@ def _get_deps_info():
         "pyproj",
         "matplotlib",
         "mapclassify",
-        "pysal",
         "geopy",
         "psycopg2",
+        "geoalchemy2",
+        "pyarrow",
+        "pygeos",
     ]
 
     def get_version(module):
@@ -132,9 +124,12 @@ def show_versions():
     """
     Print system information and installed module versions.
 
-    Example
-    -------
-    > python -c "import geopandas; geopandas.show_versions()"
+    Examples
+    --------
+
+    ::
+
+        $ python -c "import geopandas; geopandas.show_versions()"
     """
     sys_info = _get_sys_info()
     deps_info = _get_deps_info()

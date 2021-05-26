@@ -3,6 +3,7 @@ from .geocoding import geocode, reverse_geocode
 from .overlay import overlay
 from .sjoin import sjoin
 from .util import collect
+from .clip import clip
 
 __all__ = [
     "collect",
@@ -11,4 +12,5 @@ __all__ = [
     "overlay",
     "reverse_geocode",
     "sjoin",
+    "clip",
 ]

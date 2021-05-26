@@ -9,8 +9,10 @@ from shapely.geometry import (
     Polygon,
 )
 
+import pandas as pd
+import numpy as np
 from geopandas import GeoDataFrame
-from geopandas.io.file import _FIONA18, infer_schema
+from geopandas.io.file import infer_schema
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
@@ -86,13 +88,10 @@ def test_infer_schema_points_and_multipoints():
         ]
     )
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": ["MultiPoint", "Point"],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {"geometry": "Point", "properties": OrderedDict()}
+    assert infer_schema(df) == {
+        "geometry": ["MultiPoint", "Point"],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_only_multipoints():
@@ -116,16 +115,10 @@ def test_infer_schema_only_linestrings():
 def test_infer_schema_linestrings_and_multilinestrings():
     df = GeoDataFrame(geometry=[MultiLineString(city_hall_walls), city_hall_walls[0]])
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": ["MultiLineString", "LineString"],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {
-            "geometry": "LineString",
-            "properties": OrderedDict(),
-        }
+    assert infer_schema(df) == {
+        "geometry": ["MultiLineString", "LineString"],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_only_multilinestrings():
@@ -151,13 +144,10 @@ def test_infer_schema_polygons_and_multipolygons():
         ]
     )
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": ["MultiPolygon", "Polygon"],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {"geometry": "Polygon", "properties": OrderedDict()}
+    assert infer_schema(df) == {
+        "geometry": ["MultiPolygon", "Polygon"],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_only_multipolygons():
@@ -178,23 +168,17 @@ def test_infer_schema_multiple_shape_types():
         ]
     )
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": [
-                "MultiPolygon",
-                "Polygon",
-                "MultiLineString",
-                "LineString",
-                "MultiPoint",
-                "Point",
-            ],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {
-            "geometry": ["Polygon", "LineString", "Point"],
-            "properties": OrderedDict(),
-        }
+    assert infer_schema(df) == {
+        "geometry": [
+            "MultiPolygon",
+            "Polygon",
+            "MultiLineString",
+            "LineString",
+            "MultiPoint",
+            "Point",
+        ],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_mixed_3D_shape_type():
@@ -210,36 +194,27 @@ def test_infer_schema_mixed_3D_shape_type():
         ]
     )
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": [
-                "3D Point",
-                "MultiPolygon",
-                "Polygon",
-                "MultiLineString",
-                "LineString",
-                "MultiPoint",
-                "Point",
-            ],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {
-            "geometry": ["3D Polygon", "3D LineString", "3D Point"],
-            "properties": OrderedDict(),
-        }
+    assert infer_schema(df) == {
+        "geometry": [
+            "3D Point",
+            "MultiPolygon",
+            "Polygon",
+            "MultiLineString",
+            "LineString",
+            "MultiPoint",
+            "Point",
+        ],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_mixed_3D_Point():
     df = GeoDataFrame(geometry=[city_hall_balcony, point_3D])
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": ["3D Point", "Point"],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {"geometry": "3D Point", "properties": OrderedDict()}
+    assert infer_schema(df) == {
+        "geometry": ["3D Point", "Point"],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_only_3D_Points():
@@ -251,16 +226,10 @@ def test_infer_schema_only_3D_Points():
 def test_infer_schema_mixed_3D_linestring():
     df = GeoDataFrame(geometry=[city_hall_walls[0], linestring_3D])
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": ["3D LineString", "LineString"],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {
-            "geometry": "3D LineString",
-            "properties": OrderedDict(),
-        }
+    assert infer_schema(df) == {
+        "geometry": ["3D LineString", "LineString"],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_only_3D_linestrings():
@@ -275,16 +244,10 @@ def test_infer_schema_only_3D_linestrings():
 def test_infer_schema_mixed_3D_Polygon():
     df = GeoDataFrame(geometry=[city_hall_boundaries, polygon_3D])
 
-    if _FIONA18:
-        assert infer_schema(df) == {
-            "geometry": ["3D Polygon", "Polygon"],
-            "properties": OrderedDict(),
-        }
-    else:
-        assert infer_schema(df) == {
-            "geometry": "3D Polygon",
-            "properties": OrderedDict(),
-        }
+    assert infer_schema(df) == {
+        "geometry": ["3D Polygon", "Polygon"],
+        "properties": OrderedDict(),
+    }
 
 
 def test_infer_schema_only_3D_Polygons():
@@ -313,3 +276,14 @@ def test_infer_schema_null_geometry_all():
     # None geometry type in then replaced by 'Unknown'
     # (default geometry type supported by Fiona)
     assert infer_schema(df) == {"geometry": "Unknown", "properties": OrderedDict()}
+
+
+def test_infer_schema_int64():
+    int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
+    df = GeoDataFrame(geometry=[city_hall_entrance, city_hall_balcony])
+    df["int64"] = int64col
+
+    assert infer_schema(df) == {
+        "geometry": "Point",
+        "properties": OrderedDict([("int64", "int")]),
+    }

@@ -1,13 +1,19 @@
 from distutils.version import LooseVersion
 
-import pyproj
 from shapely.geometry import LineString, MultiPoint, Point
+import pyproj
+from pyproj import CRS
 
 from geopandas import GeoSeries
 from geopandas.tools import collect
 from geopandas.tools.crs import epsg_from_crs, explicit_crs_from_epsg
 
 import pytest
+
+
+# pyproj 2.3.1 fixed a segfault for the case working in an environment with
+# 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
+PYPROJ_LT_231 = LooseVersion(pyproj.__version__) < LooseVersion("2.3.1")
 
 
 class TestTools:
@@ -54,24 +60,26 @@ class TestTools:
         with pytest.raises(ValueError):
             collect([self.mpc, self.mp1])
 
+    @pytest.mark.skipif(PYPROJ_LT_231, reason="segfault")
     def test_epsg_from_crs(self):
-        assert epsg_from_crs({"init": "epsg:4326"}) == 4326
-        assert epsg_from_crs({"init": "EPSG:4326"}) == 4326
-        assert epsg_from_crs("+init=epsg:4326") == 4326
+        with pytest.warns(FutureWarning):
+            assert epsg_from_crs({"init": "epsg:4326"}) == 4326
+            assert epsg_from_crs({"init": "EPSG:4326"}) == 4326
+            assert epsg_from_crs("+init=epsg:4326") == 4326
 
-    @pytest.mark.skipif(
-        LooseVersion(pyproj.__version__) >= LooseVersion("2.0.0"),
-        reason="explicit_crs_from_epsg depends on parsing data files of "
-        "proj.4 < 6 / pyproj < 2 ",
-    )
+    @pytest.mark.skipif(PYPROJ_LT_231, reason="segfault")
     def test_explicit_crs_from_epsg(self):
-        expected = {
-            "no_defs": True,
-            "proj": "longlat",
-            "datum": "WGS84",
-            "init": "epsg:4326",
-        }
-        assert explicit_crs_from_epsg(epsg=4326) == expected
-        assert explicit_crs_from_epsg(epsg="4326") == expected
-        assert explicit_crs_from_epsg(crs={"init": "epsg:4326"}) == expected
-        assert explicit_crs_from_epsg(crs="+init=epsg:4326") == expected
+        with pytest.warns(FutureWarning):
+            assert explicit_crs_from_epsg(epsg=4326) == CRS.from_epsg(4326)
+            assert explicit_crs_from_epsg(epsg="4326") == CRS.from_epsg(4326)
+            assert explicit_crs_from_epsg(crs={"init": "epsg:4326"}) == CRS.from_dict(
+                {"init": "epsg:4326"}
+            )
+            assert explicit_crs_from_epsg(crs="+init=epsg:4326") == CRS.from_proj4(
+                "+init=epsg:4326"
+            )
+
+    @pytest.mark.filterwarnings("ignore:explicit_crs_from_epsg:FutureWarning")
+    def test_explicit_crs_from_epsg__missing_input(self):
+        with pytest.raises(ValueError):
+            explicit_crs_from_epsg()

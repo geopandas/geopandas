@@ -1,5 +1,4 @@
 import os.path
-import sqlite3
 
 from pandas import Series
 
@@ -13,15 +12,6 @@ from geopandas.testing import (  # noqa
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
-
-
-try:
-    import psycopg2
-    from psycopg2 import OperationalError
-except ImportError:
-
-    class OperationalError(Exception):
-        pass
 
 
 # mock not used here, but the import from here is used in other modules
@@ -47,58 +37,11 @@ def validate_boro_df(df, case_sensitive=False):
     assert Series(df.geometry.type).dropna().eq("MultiPolygon").all()
 
 
-def connect(dbname, user=None, password=None, host=None, port=None):
-    """
-    Initiaties a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-
-    user = user or os.environ.get("PGUSER")
-    password = password or os.environ.get("PGPASSWORD")
-    host = host or os.environ.get("PGHOST")
-    port = port or os.environ.get("PGPORT")
-    try:
-        con = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port
-        )
-    except (NameError, OperationalError):
-        return None
-
-    return con
-
-
 def get_srid(df):
     """Return srid from `df.crs`."""
-    crs = df.crs
-    return (
-        int(crs["init"][5:]) if "init" in crs and crs["init"].startswith("epsg:") else 0
-    )
-
-
-def connect_spatialite():
-    """
-    Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
-
-    `The sqlite3 module must be built with loadable extension support
-    <https://docs.python.org/3/library/sqlite3.html#f1>`_ and
-    `SpatiaLite <https://www.gaia-gis.it/fossil/libspatialite/index>`_
-    must be available on the system as a SQLite module.
-    Packages available on Anaconda meet requirements.
-
-    Exceptions
-    ----------
-    ``AttributeError`` on missing support for loadable SQLite extensions
-    ``sqlite3.OperationalError`` on missing SpatiaLite
-    """
-    try:
-        with sqlite3.connect(":memory:") as con:
-            con.enable_load_extension(True)
-            con.load_extension("mod_spatialite")
-            con.execute("SELECT InitSpatialMetaData(TRUE)")
-    except Exception:
-        con.close()
-        raise
-    return con
+    if df.crs is not None:
+        return df.crs.to_epsg() or 0
+    return 0
 
 
 def create_spatialite(con, df):
@@ -144,10 +87,9 @@ def create_spatialite(con, df):
                 for row in df.itertuples(index=False)
             ),
         )
-    return con
 
 
-def create_postgis(df, srid=None, geom_col="geom"):
+def create_postgis(con, df, srid=None, geom_col="geom"):
     """
     Create a nybb table in the test_geopandas PostGIS database.
     Returns a boolean indicating whether the database table was successfully
@@ -159,10 +101,6 @@ def create_postgis(df, srid=None, geom_col="geom"):
     # 'test_geopandas' and enable postgis in it:
     # > createdb test_geopandas
     # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
-    con = connect("test_geopandas")
-    if con is None:
-        return False
-
     if srid is not None:
         geom_schema = "geometry(MULTIPOLYGON, {})".format(srid)
         geom_insert = "ST_SetSRID(ST_GeometryFromText(%s), {})".format(srid)
@@ -202,6 +140,3 @@ def create_postgis(df, srid=None, geom_col="geom"):
     finally:
         cursor.close()
         con.commit()
-        con.close()
-
-    return True

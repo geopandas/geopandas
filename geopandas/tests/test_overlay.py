@@ -2,7 +2,8 @@ import os
 
 import pandas as pd
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
+from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
@@ -11,6 +12,9 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
+
+
+pytestmark = pytest.mark.skip_no_sindex
 
 
 @pytest.fixture
@@ -51,19 +55,18 @@ def how(request):
 
 
 @pytest.fixture(params=[True, False])
-def use_sindex(request):
+def keep_geom_type(request):
     return request.param
 
 
-@pytest.mark.filterwarnings("ignore:'use_sindex':DeprecationWarning")
-def test_overlay(dfs_index, how, use_sindex):
+def test_overlay(dfs_index, how):
     """
     Basic overlay test with small dummy example dataframes (from docs).
     Results obtained using QGIS 2.16 (Vector -> Geoprocessing Tools ->
     Intersection / Union / ...), saved to GeoJSON
     """
     df1, df2 = dfs_index
-    result = overlay(df1, df2, how=how, use_sindex=use_sindex)
+    result = overlay(df1, df2, how=how)
 
     # construction of result
 
@@ -94,28 +97,33 @@ def test_overlay(dfs_index, how, use_sindex):
 
     # for difference also reversed
     if how == "difference":
-        result = overlay(df2, df1, how=how, use_sindex=use_sindex)
+        result = overlay(df2, df1, how=how)
         result = result.reset_index(drop=True)
         expected = _read("difference-inverse")
         assert_geodataframe_equal(result, expected, check_column_type=False)
 
 
+@pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
 def test_overlay_nybb(how):
     polydf = read_file(geopandas.datasets.get_path("nybb"))
 
-    # construct circles dataframe
-    N = 10
-    b = [int(x) for x in polydf.total_bounds]
-    polydf2 = GeoDataFrame(
-        [
-            {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
-            for x, y in zip(
-                range(b[0], b[2], int((b[2] - b[0]) / N)),
-                range(b[1], b[3], int((b[3] - b[1]) / N)),
-            )
-        ],
-        crs=polydf.crs,
-    )
+    # The circles have been constructed and saved at the time the expected
+    # results were created (exact output of buffer algorithm can slightly
+    # change over time -> use saved ones)
+    # # construct circles dataframe
+    # N = 10
+    # b = [int(x) for x in polydf.total_bounds]
+    # polydf2 = GeoDataFrame(
+    #     [
+    #         {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
+    #         for x, y in zip(
+    #             range(b[0], b[2], int((b[2] - b[0]) / N)),
+    #             range(b[1], b[3], int((b[3] - b[1]) / N)),
+    #         )
+    #     ],
+    #     crs=polydf.crs,
+    # )
+    polydf2 = read_file(os.path.join(DATA, "nybb_qgis", "polydf2.shp"))
 
     result = overlay(polydf, polydf2, how=how)
 
@@ -159,8 +167,46 @@ def test_overlay_nybb(how):
         assert len(result.columns) == len(expected.columns)
         result = result.reindex(columns=expected.columns)
 
+    # the ordering of the spatial index results causes slight deviations
+    # in the resultant geometries for multipolygons
+    # for more details on the discussion, see:
+    # https://github.com/geopandas/geopandas/pull/1338
+    # https://github.com/geopandas/geopandas/issues/1337
+
+    # Temporary workaround below:
+
+    # simplify multipolygon geometry comparison
+    # since the order of the constituent polygons depends on
+    # the ordering of spatial indexing results, we cannot
+    # compare symmetric_difference results directly when the
+    # resultant geometry is a multipolygon
+
+    # first, check that all bounds and areas are approx equal
+    # this is a very rough check for multipolygon equality
+    pd.testing.assert_series_equal(
+        result.geometry.area, expected.geometry.area, check_less_precise=True
+    )
+    pd.testing.assert_frame_equal(
+        result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
+    )
+
+    # There are two cases where the multipolygon have a different number
+    # of sub-geometries -> not solved by normalize (and thus drop for now)
+    if how == "symmetric_difference":
+        expected.loc[9, "geometry"] = None
+        result.loc[9, "geometry"] = None
+
+    if how == "union":
+        expected.loc[24, "geometry"] = None
+        result.loc[24, "geometry"] = None
+
     assert_geodataframe_equal(
-        result, expected, check_crs=False, check_column_type=False
+        result,
+        expected,
+        normalize=True,
+        check_crs=False,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -213,7 +259,11 @@ def test_overlay_overlap(how):
         result = result.sort_values(["col1", "col2"]).reset_index(drop=True)
 
     assert_geodataframe_equal(
-        result, expected, check_column_type=False, check_less_precise=True
+        result,
+        expected,
+        normalize=True,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -269,15 +319,6 @@ def test_bad_how(dfs):
         overlay(df1, df2, how="spandex")
 
 
-def test_raise_nonpoly(dfs):
-    polydf, _ = dfs
-    pointdf = polydf.copy()
-    pointdf["geometry"] = pointdf.geometry.centroid
-
-    with pytest.raises(TypeError):
-        overlay(pointdf, polydf, how="union")
-
-
 def test_duplicate_column_name(dfs):
     df1, df2 = dfs
     df2r = df2.rename(columns={"col2": "col1"})
@@ -296,11 +337,19 @@ def test_preserve_crs(dfs, how):
     df1, df2 = dfs
     result = overlay(df1, df2, how=how)
     assert result.crs is None
-    crs = {"init": "epsg:4326"}
+    crs = "epsg:4326"
     df1.crs = crs
     df2.crs = crs
     result = overlay(df1, df2, how=how)
     assert result.crs == crs
+
+
+def test_crs_mismatch(dfs, how):
+    df1, df2 = dfs
+    df1.crs = 4326
+    df2.crs = 3857
+    with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
+        overlay(df1, df2, how=how)
 
 
 def test_empty_intersection(dfs):
@@ -333,5 +382,213 @@ def test_correct_index(dfs):
     expected = GeoDataFrame(
         [[1, 1, i1], [3, 2, i2]], columns=["col3", "col2", "geometry"]
     )
-    result = overlay(df3, df2)
+    result = overlay(df3, df2, keep_geom_type=True)
     assert_geodataframe_equal(result, expected)
+
+
+def test_warn_on_keep_geom_type(dfs):
+
+    df1, df2 = dfs
+    polys3 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df3 = GeoDataFrame({"geometry": polys3})
+
+    with pytest.warns(UserWarning, match="`keep_geom_type=True` in overlay"):
+        overlay(df2, df3, keep_geom_type=None)
+
+
+@pytest.mark.parametrize(
+    "geom_types", ["polys", "poly_line", "poly_point", "line_poly", "point_poly"]
+)
+def test_overlay_strict(how, keep_geom_type, geom_types):
+    """
+    Test of mixed geometry types on input and output. Expected results initially
+    generated using following snippet.
+
+        polys1 = gpd.GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                                Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
+        df1 = gpd.GeoDataFrame({'col1': [1, 2], 'geometry': polys1})
+
+        polys2 = gpd.GeoSeries([Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                                Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+                                Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])])
+        df2 = gpd.GeoDataFrame({'geometry': polys2, 'col2': [1, 2, 3]})
+
+        lines1 = gpd.GeoSeries([LineString([(2, 0), (2, 4), (6, 4)]),
+                                LineString([(0, 3), (6, 3)])])
+        df3 = gpd.GeoDataFrame({'col3': [1, 2], 'geometry': lines1})
+        points1 = gpd.GeoSeries([Point((2, 2)),
+                                 Point((3, 3))])
+        df4 = gpd.GeoDataFrame({'col4': [1, 2], 'geometry': points1})
+
+        params=["union", "intersection", "difference", "symmetric_difference",
+                "identity"]
+        stricts = [True, False]
+
+        for p in params:
+            for s in stricts:
+                exp = gpd.overlay(df1, df2, how=p, keep_geom_type=s)
+                if not exp.empty:
+                    exp.to_file('polys_{p}_{s}.geojson'.format(p=p, s=s),
+                                driver='GeoJSON')
+
+        for p in params:
+            for s in stricts:
+                exp = gpd.overlay(df1, df3, how=p, keep_geom_type=s)
+                if not exp.empty:
+                    exp.to_file('poly_line_{p}_{s}.geojson'.format(p=p, s=s),
+                                driver='GeoJSON')
+        for p in params:
+            for s in stricts:
+                exp = gpd.overlay(df1, df4, how=p, keep_geom_type=s)
+                if not exp.empty:
+                    exp.to_file('poly_point_{p}_{s}.geojson'.format(p=p, s=s),
+                                driver='GeoJSON')
+    """
+    polys1 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
+
+    polys2 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df2 = GeoDataFrame({"geometry": polys2, "col2": [1, 2, 3]})
+    lines1 = GeoSeries(
+        [LineString([(2, 0), (2, 4), (6, 4)]), LineString([(0, 3), (6, 3)])]
+    )
+    df3 = GeoDataFrame({"col3": [1, 2], "geometry": lines1})
+    points1 = GeoSeries([Point((2, 2)), Point((3, 3))])
+    df4 = GeoDataFrame({"col4": [1, 2], "geometry": points1})
+
+    if geom_types == "polys":
+        result = overlay(df1, df2, how=how, keep_geom_type=keep_geom_type)
+    elif geom_types == "poly_line":
+        result = overlay(df1, df3, how=how, keep_geom_type=keep_geom_type)
+    elif geom_types == "poly_point":
+        result = overlay(df1, df4, how=how, keep_geom_type=keep_geom_type)
+    elif geom_types == "line_poly":
+        result = overlay(df3, df1, how=how, keep_geom_type=keep_geom_type)
+    elif geom_types == "point_poly":
+        result = overlay(df4, df1, how=how, keep_geom_type=keep_geom_type)
+
+    try:
+        expected = read_file(
+            os.path.join(
+                DATA,
+                "strict",
+                "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=keep_geom_type),
+            )
+        )
+
+        # the order depends on the spatial index used
+        # so we sort the resultant dataframes to get a consistent order
+        # independently of the spatial index implementation
+        assert all(expected.columns == result.columns), "Column name mismatch"
+        cols = list(set(result.columns) - set(["geometry"]))
+        expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
+        result = result.sort_values(cols, axis=0).reset_index(drop=True)
+
+        assert_geodataframe_equal(
+            result,
+            expected,
+            normalize=True,
+            check_column_type=False,
+            check_less_precise=True,
+            check_crs=False,
+            check_dtype=False,
+        )
+
+    except DriverError:  # fiona >= 1.8
+        assert result.empty
+
+    except OSError:  # fiona < 1.8
+        assert result.empty
+
+
+def test_mixed_geom_error():
+    polys1 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
+    mixed = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            LineString([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    dfmixed = GeoDataFrame({"col1": [1, 2], "geometry": mixed})
+    with pytest.raises(NotImplementedError):
+        overlay(df1, dfmixed, keep_geom_type=True)
+
+
+def test_keep_geom_type_error():
+    gcol = GeoSeries(
+        GeometryCollection(
+            [
+                Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+                LineString([(3, 3), (5, 3), (5, 5), (3, 5)]),
+            ]
+        )
+    )
+    dfcol = GeoDataFrame({"col1": [2], "geometry": gcol})
+    polys1 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": polys1})
+    with pytest.raises(TypeError):
+        overlay(dfcol, df1, keep_geom_type=True)
+
+
+def test_keep_geom_type_geometry_collection():
+    # GH 1581
+
+    df1 = read_file(os.path.join(DATA, "geom_type", "df1.geojson"))
+    df2 = read_file(os.path.join(DATA, "geom_type", "df2.geojson"))
+
+    intersection = overlay(df1, df2, keep_geom_type=True)
+    assert len(intersection) == 1
+    assert (intersection.geom_type == "Polygon").all()
+
+    intersection = overlay(df1, df2, keep_geom_type=False)
+    assert len(intersection) == 1
+    assert (intersection.geom_type == "GeometryCollection").all()
+
+
+@pytest.mark.parametrize("make_valid", [True, False])
+def test_overlap_make_valid(make_valid):
+    bowtie = Polygon([(1, 1), (9, 9), (9, 1), (1, 9), (1, 1)])
+    assert not bowtie.is_valid
+    fixed_bowtie = bowtie.buffer(0)
+    assert fixed_bowtie.is_valid
+
+    df1 = GeoDataFrame({"col1": ["region"], "geometry": GeoSeries([box(0, 0, 10, 10)])})
+    df_bowtie = GeoDataFrame(
+        {"col1": ["invalid", "valid"], "geometry": GeoSeries([bowtie, fixed_bowtie])}
+    )
+
+    if make_valid:
+        df_overlay_bowtie = overlay(df1, df_bowtie, make_valid=make_valid)
+        assert df_overlay_bowtie.at[0, "geometry"].equals(fixed_bowtie)
+        assert df_overlay_bowtie.at[1, "geometry"].equals(fixed_bowtie)
+    else:
+        with pytest.raises(ValueError, match="1 invalid input geometries"):
+            overlay(df1, df_bowtie, make_valid=make_valid)

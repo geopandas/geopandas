@@ -32,7 +32,7 @@ class TestMerging:
         self._check_metadata(res)
 
         # test that crs and other geometry name are preserved
-        self.gdf.crs = {"init": "epsg:4326"}
+        self.gdf.crs = "epsg:4326"
         self.gdf = self.gdf.rename(columns={"geometry": "points"}).set_geometry(
             "points"
         )

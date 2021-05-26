@@ -16,12 +16,12 @@ expected to be available to pytest by the inherited pandas tests).
 import operator
 
 import numpy as np
+from numpy.testing import assert_array_equal
 import pandas as pd
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 
-from geopandas._compat import PANDAS_GE_024
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -31,21 +31,8 @@ import pytest
 # -----------------------------------------------------------------------------
 
 
-if not PANDAS_GE_024:
-    # pandas 0.23.4 doesn't have those tests yet, so adding dummy classes
-    # to derive from here
-    extension_tests.BaseNoReduceTests = object
-    extension_tests.BaseArithmeticOpsTests = object
-    extension_tests.BaseComparisonOpsTests = object
-    extension_tests.BasePrintingTests = object
-    extension_tests.BaseParsingTests = object
-
-
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
-skip_pandas_below_024 = pytest.mark.skipif(
-    not PANDAS_GE_024, reason="Sorting not supported"
-)
 
 
 # -----------------------------------------------------------------------------
@@ -60,7 +47,8 @@ def dtype():
 
 
 def make_data():
-    a = np.array([shapely.geometry.Point(i, i) for i in range(100)], dtype=object)
+    a = np.empty(100, dtype=object)
+    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
     ga = from_shapely(a)
     return ga
 
@@ -292,7 +280,6 @@ class TestDtype(extension_tests.BaseDtypeTests):
     def test_array_type_with_arg(self, data, dtype):
         assert dtype.construct_array_type() is GeometryArray
 
-    @skip_pandas_below_024
     def test_registry(self, data, dtype):
         s = pd.Series(np.asarray(data), dtype=object)
         result = s.astype("geometry")
@@ -302,7 +289,34 @@ class TestDtype(extension_tests.BaseDtypeTests):
 
 
 class TestInterface(extension_tests.BaseInterfaceTests):
-    pass
+    def test_array_interface(self, data):
+        # we are overriding this base test because the creation of `expected`
+        # potentionally doesn't work for shapely geometries
+        # TODO can be removed with Shapely 2.0
+        result = np.array(data)
+        assert result[0] == data[0]
+
+        result = np.array(data, dtype=object)
+        # expected = np.array(list(data), dtype=object)
+        expected = np.empty(len(data), dtype=object)
+        expected[:] = list(data)
+        assert_array_equal(result, expected)
+
+    def test_contains(self, data, data_missing):
+        # overrided due to the inconsistency between
+        # GeometryDtype.na_value = np.nan
+        # and None being used as NA in array
+
+        # ensure data without missing values
+        data = data[~data.isna()]
+
+        # first elements are non-missing
+        assert data[0] in data
+        assert data_missing[0] in data_missing
+
+        assert None in data_missing
+        assert None not in data
+        assert pd.NaT not in data_missing
 
 
 class TestConstructors(extension_tests.BaseConstructorsTests):
@@ -350,6 +364,10 @@ class TestMissing(extension_tests.BaseMissingTests):
 
     @pytest.mark.skip("fillna method not supported")
     def test_fillna_series_method(self, data_missing, method):
+        pass
+
+    @pytest.mark.skip("fillna method not supported")
+    def test_fillna_no_op_returns_copy(self, data):
         pass
 
 
@@ -403,13 +421,11 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         expected = s.combine(other, op)
         self.assert_series_equal(result, expected)
 
-    @skip_pandas_below_024
     def test_compare_scalar(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
         self._compare_other(s, data, op_name, data[0])
 
-    @skip_pandas_below_024
     def test_compare_array(self, data, all_compare_operators):  # noqa
         op_name = all_compare_operators
         s = pd.Series(data)
@@ -418,9 +434,13 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @no_sorting
+    @not_yet_implemented
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
+        pass
+
+    @not_yet_implemented
+    def test_value_counts_with_normalize(self, data):
         pass
 
     @no_sorting
@@ -491,6 +511,26 @@ class TestMethods(extension_tests.BaseMethodsTests):
 
     @no_sorting
     def test_argsort_missing_array(self):
+        pass
+
+    @no_sorting
+    def test_argmin_argmax(self):
+        pass
+
+    @no_sorting
+    def test_argmin_argmax_empty_array(self):
+        pass
+
+    @no_sorting
+    def test_argmin_argmax_all_na(self):
+        pass
+
+    @no_sorting
+    def test_argreduce_series(self):
+        pass
+
+    @no_sorting
+    def test_argmax_argmin_no_skipna_notimplemented(self):
         pass
 
 

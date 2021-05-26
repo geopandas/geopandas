@@ -1,7 +1,5 @@
-import numpy as np
 import pandas as pd
 
-from fiona.crs import from_epsg
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -9,7 +7,8 @@ from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
 from geopandas.tests.util import assert_geoseries_equal, mock
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
+from geopandas.testing import assert_geodataframe_equal
 import pytest
 
 geopy = pytest.importorskip("geopy")
@@ -72,7 +71,7 @@ def test_prepare_result():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert from_epsg(4326) == df.crs
+    assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
@@ -94,13 +93,34 @@ def test_prepare_result_none():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert from_epsg(4326) == df.crs
+    assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
     row = df.loc["b"]
-    assert len(row["geometry"].coords) == 0
-    assert np.isnan(row["address"])
+    # The shapely.geometry.Point() is actually a GeometryCollection, and thus
+    # gets converted to that in conversion to pygeos. When converting back
+    # on access, you now get a GeometryCollection object instead of Point,
+    # which has no coords
+    # see https://github.com/Toblerity/Shapely/issues/742/#issuecomment-545296708
+    # TODO we should probably replace this with a missing value instead of point?
+    # assert len(row["geometry"].coords) == 0
+    assert row["geometry"].is_empty
+    assert row["address"] is None
+
+
+@pytest.mark.parametrize("geocode_result", (None, (None, None)))
+def test_prepare_geocode_result_when_result_is(geocode_result):
+
+    result = {0: geocode_result}
+    expected_output = GeoDataFrame(
+        {"geometry": [Point()], "address": [None]},
+        crs="EPSG:4326",
+    )
+
+    output = _prepare_geocode_result(result)
+
+    assert_geodataframe_equal(output, expected_output)
 
 
 def test_bad_provider_forward():
@@ -128,7 +148,7 @@ def test_forward(locations, points):
         n = len(locations)
         assert isinstance(g, GeoDataFrame)
         expected = GeoSeries(
-            [Point(float(x) + 0.5, float(x)) for x in range(n)], crs=from_epsg(4326)
+            [Point(float(x) + 0.5, float(x)) for x in range(n)], crs="EPSG:4326"
         )
         assert_geoseries_equal(expected, g["geometry"])
         assert_series_equal(g["address"], pd.Series(locations, name="address"))
@@ -144,7 +164,7 @@ def test_reverse(locations, points):
 
         assert isinstance(g, GeoDataFrame)
 
-        expected = GeoSeries(points, crs=from_epsg(4326))
+        expected = GeoSeries(points, crs="EPSG:4326")
         assert_geoseries_equal(expected, g["geometry"])
         address = pd.Series(
             ["address" + str(x) for x in range(len(points))], name="address"

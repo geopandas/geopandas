@@ -1,8 +1,6 @@
-import os
-import re
+import warnings
 
-import fiona.crs
-import pyproj
+from pyproj import CRS
 
 
 def explicit_crs_from_epsg(crs=None, epsg=None):
@@ -16,21 +14,17 @@ def explicit_crs_from_epsg(crs=None, epsg=None):
     epsg : string or int, default None
        The EPSG code to lookup
     """
-    if epsg is None and crs is not None:
-        epsg = epsg_from_crs(crs)
-    if epsg is None:
-        raise ValueError(
-            "No epsg code provided or epsg code could not be identified "
-            "from the provided crs."
-        )
-
-    _crs = re.search(r"\n<{}>\s*(.+?)\s*<>".format(epsg), get_epsg_file_contents())
-    if _crs is None:
-        raise ValueError('EPSG code "{}" not found.'.format(epsg))
-    _crs = fiona.crs.from_string(_crs.group(1))
-    # preserve the epsg code for future reference
-    _crs["init"] = "epsg:{}".format(epsg)
-    return _crs
+    warnings.warn(
+        "explicit_crs_from_epsg is deprecated. "
+        "You can set the epsg on the GeoDataFrame (gdf) using gdf.crs=epsg",
+        FutureWarning,
+        stacklevel=2,
+    )
+    if crs is not None:
+        return CRS.from_user_input(crs)
+    elif epsg is not None:
+        return CRS.from_epsg(epsg)
+    raise ValueError("Must pass either crs or epsg.")
 
 
 def epsg_from_crs(crs):
@@ -43,16 +37,21 @@ def epsg_from_crs(crs):
         A crs dict or Proj string
 
     """
-    if crs is None:
-        raise ValueError("No crs provided.")
-    if isinstance(crs, str):
-        crs = fiona.crs.from_string(crs)
-    if not crs:
-        raise ValueError("Empty or invalid crs provided")
-    if "init" in crs and crs["init"].lower().startswith("epsg:"):
-        return int(crs["init"].split(":")[1])
+    warnings.warn(
+        "epsg_from_crs is deprecated. "
+        "You can get the epsg code from GeoDataFrame (gdf) "
+        "using gdf.crs.to_epsg()",
+        FutureWarning,
+        stacklevel=2,
+    )
+    crs = CRS.from_user_input(crs)
+    if "init=epsg" in crs.to_string().lower():
+        epsg_code = crs.to_epsg(0)
+    else:
+        epsg_code = crs.to_epsg()
+    return epsg_code
 
 
 def get_epsg_file_contents():
-    with open(os.path.join(pyproj.pyproj_datadir, "epsg")) as f:
-        return f.read()
+    warnings.warn("get_epsg_file_contents is deprecated.", FutureWarning, stacklevel=2)
+    return ""
