@@ -3301,16 +3301,13 @@ class _CoordinateIndexer(object):
         # don't know how to handle step; should this raise?
         if xs.step is not None or ys.step is not None:
             warn("Ignoring step - full interval is used.")
-        xmin, ymin, xmax, ymax = obj.total_bounds
-        xmin, ymin, xmax, ymax = (
-            # bbox = box(
+        if xs.start is None or xs.stop is None or ys.start is None or ys.stop is None:
+            xmin, ymin, xmax, ymax = obj.total_bounds
+        bbox = box(
             xs.start if xs.start is not None else xmin,
             ys.start if ys.start is not None else ymin,
             xs.stop if xs.stop is not None else xmax,
             ys.stop if ys.stop is not None else ymax,
         )
-        idx = list(obj.sindex.intersection((xmin, ymin, xmax, ymax)))
-        subset = obj.iloc[idx]
-        bbox = box(xmin, ymin, xmax, ymax)
-        idx = subset.intersects(bbox)
-        return subset[idx]
+        idx = obj.sindex.query(bbox, predicate="intersects", sort=True)
+        return obj[idx]
