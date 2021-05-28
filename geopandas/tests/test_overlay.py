@@ -592,3 +592,15 @@ def test_overlap_make_valid(make_valid):
     else:
         with pytest.raises(ValueError, match="1 invalid input geometries"):
             overlay(df1, df_bowtie, make_valid=make_valid)
+
+
+def test_empty_overlay_return_non_duplicated_columns():
+
+    nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+    nybb2 = nybb.copy()
+    nybb2.geometry = nybb2.translate(20000000)
+
+    result = geopandas.overlay(nybb, nybb2)
+
+    assert all(result.columns.isin(nybb.columns))
+    assert len(result.columns) == len(nybb.columns)
