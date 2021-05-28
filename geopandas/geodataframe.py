@@ -1409,21 +1409,22 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
 
+        .. note:: ignore_index requires pandas 1.1.0 or newer.
 
         Parameters
         ----------
         column : string, default None
-            If None, MultiGeometries in geometry column are converted to Single ones.
-            Else, explode another column following pandas behaviour.
+            Column to explode.
+            In the case of GeoSeries, multi-part in geometries are converted to single-part.
+            If None, an active geometry column is used.
         ignore_index : bool, default False
-            If true, reset index to 0..n-1. Pandas > 1.1.0 needed for this argument.
+             If True, the resulting index will be labelled 0, 1, …, n - 1.
         add_multiindex : boolean, default True
-            If true, the index of the input geodataframe is no longer unique and is
-            replaced with a multi-index (original index with additional level
+            If True, the resulting index will be a multi-index
+            (original index with an additional level
             indicating the multiple geometries: a new zero-based index for each
             single part geometry per multi-part geometry).
-            Else, following pandas behaviour returns the original index with
-            duplicated elements.
+
 
         Returns
         -------
