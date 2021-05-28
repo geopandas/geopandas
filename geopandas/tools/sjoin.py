@@ -99,7 +99,7 @@ stria    AUT    416600.0
             and (box_right_gdf[1] <= box_left_gdf[3])
         )
     ):
-        copy_df = left_df.copy(deep=True)
+        copy_df = left_df.copy()
         copy_df["index_left"] = 0
         copy_df["index_right"] = 0
         indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
