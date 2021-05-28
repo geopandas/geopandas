@@ -1401,7 +1401,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, add_multiindex=True):
+    def explode(self, column=None, ignore_index=False, add_multiindex=True, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1492,9 +1492,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
             if compat.PANDAS_GE_11:
-                return super().explode(column, ignore_index)
+                return super().explode(column, ignore_index=ignore_index, **kwargs)
             else:
-                return super().explode(column)
+                return super().explode(column, **kwargs)
 
         df_copy = self.copy()
 
