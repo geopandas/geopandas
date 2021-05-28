@@ -3310,4 +3310,4 @@ class _CoordinateIndexer(object):
             ys.stop if ys.stop is not None else ymax,
         )
         idx = obj.sindex.query(bbox, predicate="intersects", sort=True)
-        return obj[idx]
+        return obj.iloc[idx]
