@@ -1415,10 +1415,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         column : string, default None
             Column to explode.
-            In the case of GeoSeries, multi-part in geometries are converted to single-part.
+            In the case of GeoSeries, multi-part in geometries are converted
+             to single-part.
             If None, an active geometry column is used.
         ignore_index : bool, default False
-             If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring add_multiindex.
+             If True, the resulting index will be labelled 0, 1, …, n - 1,
+              ignoring add_multiindex.
         add_multiindex : boolean, default True
             If True, the resulting index will be a multi-index
             (original index with an additional level
