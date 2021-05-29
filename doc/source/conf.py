@@ -66,8 +66,6 @@ autosummary_generate = True
 nbsphinx_execute = "always"
 nbsphinx_allow_errors = True
 
-# connect docs in other projects
-intersphinx_mapping = {"pyproj": ("http://pyproj4.github.io/pyproj/stable/", None)}
 # suppress matplotlib warning in examples
 warnings.filterwarnings(
     "ignore",
@@ -334,9 +332,74 @@ nbsphinx_prolog = r"""
 
 #  --Options for sphinx extensions -----------------------------------------------
 
+# connect docs in other projects
 intersphinx_mapping = {
+    "pyproj": (
+        "https://pyproj4.github.io/pyproj/stable/",
+        "https://pyproj4.github.io/pyproj/stable/objects.inv",
+    ),
     "pandas": (
         "https://pandas.pydata.org/pandas-docs/stable/",
         "https://pandas.pydata.org/pandas-docs/stable/objects.inv",
     ),
+    "shapely": (
+        "https://shapely.readthedocs.io/en/stable/",
+        "https://shapely.readthedocs.io/en/stable/objects.inv",
+    ),
+    "fiona": (
+        "https://fiona.readthedocs.io/en/stable/",
+        "https://fiona.readthedocs.io/en/stable/objects.inv",
+    ),
+    "pygeos": (
+        "https://pygeos.readthedocs.io/en/latest/",
+        "https://pygeos.readthedocs.io/en/latest/objects.inv",
+    ),
+    "rtree": (
+      "https://rtree.readthedocs.io/en/stable/",
+      "https://rtree.readthedocs.io/en/stable/objects.inv",
+    ),
+    "mapclassify": (
+        "https://pysal.org/mapclassify/",
+        "https://pysal.org/mapclassify/objects.inv"
+    ),
+    "libpysal": (
+        "https://pysal.org/libpysal/",
+        "https://pysal.org/libpysal/objects.inv"
+    ),
+    "matplotlib": (
+        "https://matplotlib.org/stable/",
+        "https://matplotlib.org/stable/objects.inv",
+    ),
+    "geopy": (
+        "https://geopy.readthedocs.io/en/stable/",
+        "https://geopy.readthedocs.io/en/stable/objects.inv",
+    ),
+    "cartopy": (
+        "https://scitools.org.uk/cartopy/docs/latest/",
+        "https://scitools.org.uk/cartopy/docs/latest/objects.inv"
+    ),
+    "pyepsg": (
+        "https://pyepsg.readthedocs.io/en/stable/",
+        "https://pyepsg.readthedocs.io/en/stable/objects.inv"
+    ),
+    "contextily": (
+        "https://contextily.readthedocs.io/en/stable/",
+        "https://contextily.readthedocs.io/en/stable/objects.inv"
+    ),
+    "rasterio": (
+        "https://rasterio.readthedocs.io/en/stable/",
+        "https://rasterio.readthedocs.io/en/stable/objects.inv"
+    ),
+    "geoplot": (
+        "https://residentmario.github.io/geoplot/index.html",
+        "https://residentmario.github.io/geoplot/objects.inv"
+    ),
+    "folium": (
+        "https://python-visualization.github.io/folium/",
+        "https://python-visualization.github.io/folium/objects.inv"
+    ),
+    "python": (
+        "https://docs.python.org/3",
+        "https://docs.python.org/3/objects.inv"
+    )
 }

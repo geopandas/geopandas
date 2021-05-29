@@ -3312,7 +3312,8 @@ class _CoordinateIndexer(object):
         # don't know how to handle step; should this raise?
         if xs.step is not None or ys.step is not None:
             warn("Ignoring step - full interval is used.")
-        xmin, ymin, xmax, ymax = obj.total_bounds
+        if xs.start is None or xs.stop is None or ys.start is None or ys.stop is None:
+            xmin, ymin, xmax, ymax = obj.total_bounds
         bbox = box(
             xs.start if xs.start is not None else xmin,
             ys.start if ys.start is not None else ymin,
