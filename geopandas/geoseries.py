@@ -11,6 +11,7 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
+from geopandas.explore import _explore_geoseries
 
 from .array import (
     GeometryDtype,
@@ -578,7 +579,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
@@ -766,6 +767,12 @@ class GeoSeries(GeoPandasBase, Series):
         return plot_series(self, *args, **kwargs)
 
     plot.__doc__ = plot_series.__doc__
+
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore_geoseries(self, *args, **kwargs)
+
+    explore.__doc__ = _explore_geoseries.__doc__
 
     def explode(self):
         """

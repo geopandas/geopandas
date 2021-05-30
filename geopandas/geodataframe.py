@@ -16,6 +16,7 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries, inherit_doc
 import geopandas.io
 from geopandas.plotting import plot_dataframe
+from geopandas.explore import _explore
 from . import _compat as compat
 
 
@@ -1378,7 +1379,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1748,6 +1749,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             return plot_dataframe(self, *args, **kwargs)
 
     plot.__doc__ = plot_dataframe.__doc__
+
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore(self, *args, **kwargs)
+
+    explore.__doc__ = _explore.__doc__
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

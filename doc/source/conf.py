@@ -398,6 +398,10 @@ intersphinx_mapping = {
         "https://python-visualization.github.io/folium/",
         "https://python-visualization.github.io/folium/objects.inv"
     ),
+    "branca": (
+        "https://python-visualization.github.io/branca/",
+        "https://python-visualization.github.io/branca/objects.inv"
+    ),
     "python": (
         "https://docs.python.org/3",
         "https://docs.python.org/3/objects.inv"

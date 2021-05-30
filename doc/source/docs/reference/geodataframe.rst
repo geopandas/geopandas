@@ -67,6 +67,7 @@ Plotting
    :template: accessor_callable.rst
 
    GeoDataFrame.plot
+   GeoDataFrame.explore
 
 
 Spatial index
