@@ -2721,14 +2721,23 @@ GeometryCollection
         """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
+        The algorithm (Douglas-Peucker) recursively splits the original line
+        into smaller parts and connects these parts’ endpoints
+        by a straight line. Then, it removes all points whose distance
+        to the straight line is smaller than `tolerance`. It does not
+        move any points and it always preserves endpoints of
+        the original line or polygon.
         See http://shapely.readthedocs.io/en/latest/manual.html#object.simplify
         for details
 
         Parameters
         ----------
         tolerance : float
-            All points in a simplified geometry will be no more than
-            `tolerance` distance from the original.
+            All parts of a simplified geometry will be no more than
+            `tolerance` distance from the original. It has the same units
+            as the coordinate reference system of the GeoSeries.
+            For example, using `tolerance=100` in a projected CRS with meters
+            as units means a distance of 100 meters in reality.
         preserve_topology: bool (default True)
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
