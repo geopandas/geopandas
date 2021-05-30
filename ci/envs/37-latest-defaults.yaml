@@ -17,6 +17,7 @@ dependencies:
   # optional
   - rtree
   - matplotlib
+  - folium
   #- geopy
   - SQLalchemy
   - libspatialite

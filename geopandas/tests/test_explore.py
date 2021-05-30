@@ -1,14 +1,19 @@
-import folium
 import geopandas as gpd
-import matplotlib.cm as cm
-import matplotlib.colors as colors
-from branca.colormap import StepColormap
-import contextily
 import numpy as np
 import pandas as pd
 import pytest
 
 from geopandas.explore import _explore
+
+folium = pytest.importorskip("folium")
+branca = pytest.importorskip("branca")
+matplotlib = pytest.importorskip("matplotlib")
+mapclassify = pytest.importorskip("mapclassify")
+
+import matplotlib.cm as cm  # noqa
+import matplotlib.colors as colors  # noqa
+from branca.colormap import StepColormap  # noqa
+
 
 nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
 world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
@@ -552,6 +557,8 @@ def test_colorbar():
 
 
 def test_providers():
+    contextily = pytest.importorskip("contextily")
+
     m = _explore(nybb, tiles=contextily.providers.CartoDB.PositronNoLabels)
     out_str = _fetch_map_string(m)
 

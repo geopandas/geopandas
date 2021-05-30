@@ -18,9 +18,10 @@ dependencies:
   - rtree
   - matplotlib
   - mapclassify
+  - folium
   - scipy
   - geopy
   - SQLalchemy
   - libspatialite
   - pyarrow
- 
+
