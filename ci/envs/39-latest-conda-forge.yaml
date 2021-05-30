@@ -17,7 +17,6 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   - mapclassify
   - folium
   - scipy
@@ -31,3 +30,5 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
+  - pip:
+    - git+https://github.com/geopandas/xyzservices.git@main

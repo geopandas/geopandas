@@ -544,9 +544,9 @@ class TestExplore:
         assert out_str.count("ccccccff") == 63
 
     def test_providers(self):
-        contextily = pytest.importorskip("contextily")
+        xyzservices = pytest.importorskip("xyzservices")
 
-        m = self.nybb.explore(tiles=contextily.providers.CartoDB.PositronNoLabels)
+        m = self.nybb.explore(tiles=xyzservices.providers.CartoDB.PositronNoLabels)
         out_str = self._fetch_map_string(m)
 
         assert (
