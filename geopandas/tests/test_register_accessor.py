@@ -7,9 +7,9 @@ import pandas._testing as tm
 
 
 my_wkts = [
-    'POINT (1 1)',
-    'POINT (2 2)',
-    'POINT (3 3)',
+    "POINT (1 1)",
+    "POINT (2 2)",
+    "POINT (3 3)",
 ]
 
 
@@ -45,8 +45,8 @@ class MyAccessor:
     "obj, registrar",
     [
         (gpd.GeoSeries, gpd.api.extensions.register_geoseries_accessor),
-        (gpd.GeoDataFrame, gpd.api.extensions.register_geodataframe_accessor)
-    ]
+        (gpd.GeoDataFrame, gpd.api.extensions.register_geodataframe_accessor),
+    ],
 )
 def test_register(obj, registrar):
     with ensure_removed(obj, "mine"):
