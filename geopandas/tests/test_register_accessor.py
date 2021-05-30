@@ -82,7 +82,7 @@ def test_overwrite_warns():
 
         assert "area" in msg
         assert "MyAccessor" in msg
-        assert "Series" in msg
+        assert "GeoSeries" in msg
 
     finally:
         gpd.GeoSeries.area = area
