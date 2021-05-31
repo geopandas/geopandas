@@ -12,6 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
+from . import _compat as compat
 from .array import (
     GeometryDtype,
     from_shapely,
@@ -21,7 +22,7 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
-from . import _compat as compat
+from .decorators import doc
 
 
 _SERIES_WARNING_MSG = """\
@@ -47,24 +48,6 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
-
-
-def inherit_doc(cls):
-    """
-    A decorator adding a docstring from an existing method.
-    """
-
-    def decorator(decorated):
-        original_method = getattr(cls, decorated.__name__, None)
-        if original_method:
-            doc = original_method.__doc__ or ""
-        else:
-            doc = ""
-
-        decorated.__doc__ = doc
-        return decorated
-
-    return decorator
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -557,19 +540,19 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method("__getitem__", key)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def apply(self, func, convert_dtype=True, args=(), **kwargs):
         result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
@@ -757,6 +740,7 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
+    @doc(plot_series)
     def plot(self, *args, **kwargs):
         """Generate a plot of the geometries in the ``GeoSeries``.
 
@@ -765,7 +749,6 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return plot_series(self, *args, **kwargs)
 
-    plot.__doc__ = plot_series.__doc__
 
     def explode(self):
         """

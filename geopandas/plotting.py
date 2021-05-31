@@ -7,6 +7,8 @@ import geopandas
 
 from distutils.version import LooseVersion
 
+from .decorators import doc
+
 
 def deprecated(new):
     """Helper to provide deprecation warning."""
@@ -913,9 +915,9 @@ GON (((-122.84000 49.00000, -120.0000...
 if geopandas._compat.PANDAS_GE_025:
     from pandas.plotting import PlotAccessor
 
+    @doc(plot_dataframe)
     class GeoplotAccessor(PlotAccessor):
 
-        __doc__ = plot_dataframe.__doc__
         _pandas_kinds = PlotAccessor._all_kinds
 
         def __call__(self, *args, **kwargs):
