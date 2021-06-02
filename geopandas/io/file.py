@@ -1,6 +1,7 @@
 from distutils.version import LooseVersion
 
 import warnings
+import math
 import numpy as np
 import pandas as pd
 
@@ -63,7 +64,7 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def _read_file(filename, bbox=None, mask=None, rows=None, chunksize=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -88,6 +89,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
+    chunksize : int, default None
+        Return an iterator yielding GeoDataFrames of up to `n` rows at a time.
     **kwargs :
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -181,12 +184,39 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 mask = mapping(mask.to_crs(crs).unary_union)
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
-            # setup the data loading filter
+            # restrict load to specific rows
             if rows is not None:
                 if isinstance(rows, int):
                     rows = slice(rows)
                 elif not isinstance(rows, slice):
                     raise TypeError("'rows' must be an integer or a slice.")
+            # setup the data loading filter
+            if chunksize:
+                # simple case, load all rows
+                if rows is None:
+                    chunk_filters = (
+                        features.filter(
+                            n * chunksize, ((n + 1) * chunksize), None, bbox=bbox, mask=mask
+                        )
+                        for n in range(0, math.ceil(len(features) / chunksize))
+                    )
+                # complex case, chunks must remain within specified rows,
+                # and potentially account for a step other than 1
+                else:
+                    start = rows.start or 0
+                    stop = rows.stop or len(features)
+                    step = rows.step or 1
+                    chunk_filters = (
+                        features.filter(
+                            start + (n * chunksize * step),
+                            min(start + ((n + 1) * chunksize * step), stop),
+                            rows.step,
+                            bbox=bbox,
+                            mask=mask,
+                        )
+                        for n in range(0, math.ceil((stop - start) / step / chunksize))
+                    )
+            elif rows is not None:
                 f_filt = features.filter(
                     rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
                 )
@@ -197,10 +227,23 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             # get list of columns
             columns = list(features.schema["properties"])
             if kwargs.get("ignore_geometry", False):
+                if chunksize:
+                    return (
+                        pd.DataFrame(
+                            [record["properties"] for record in f_filt], columns=columns
+                        )
+                        for f_filt in chunk_filters
+                    )
                 return pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
-
+            if chunksize:
+                return (
+                    GeoDataFrame.from_features(
+                        f_filt, crs=crs, columns=columns + ["geometry"]
+                    )
+                    for f_filt in chunk_filters
+                )
             return GeoDataFrame.from_features(
                 f_filt, crs=crs, columns=columns + ["geometry"]
             )
