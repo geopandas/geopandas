@@ -742,13 +742,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @doc(plot_series)
     def plot(self, *args, **kwargs):
-        """Generate a plot of the geometries in the ``GeoSeries``.
-
-        Wraps the ``plot_series()`` function, and documentation is copied from
-        there.
-        """
         return plot_series(self, *args, **kwargs)
-
 
     def explode(self):
         """
