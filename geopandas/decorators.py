@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 from textwrap import dedent
-from typing import Callable
+from typing import Callable, Union
 
 
-def doc(*docstrings: str | Callable, **params) -> Callable:
+def doc(*docstrings: Union[str, Callable], **params) -> Callable:
     """
     A decorator take docstring templates, concatenate them and perform string
     substitution on it.
@@ -25,7 +23,7 @@ def doc(*docstrings: str | Callable, **params) -> Callable:
 
     def decorator(decorated: Callable) -> Callable:
         # collecting docstring and docstring templates
-        docstring_components: list[str | Callable] = []
+        docstring_components: list[Union[str, Callable]] = []
         if decorated.__doc__:
             docstring_components.append(dedent(decorated.__doc__))
 
