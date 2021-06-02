@@ -196,7 +196,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, chunksize=None, **kwar
                 if rows is None:
                     chunk_filters = (
                         features.filter(
-                            n * chunksize, ((n + 1) * chunksize), None, bbox=bbox, mask=mask
+                            n * chunksize, ((n + 1) * chunksize), bbox=bbox, mask=mask
                         )
                         for n in range(0, math.ceil(len(features) / chunksize))
                     )
