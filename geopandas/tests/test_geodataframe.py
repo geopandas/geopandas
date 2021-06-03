@@ -360,11 +360,6 @@ class TestDataFrame:
         assert type(res2) == pd.DataFrame
         assert_frame_equal(res2, exp2_nogeom)
 
-    def test_apply_geom_col_name(self):
-        df = self.df.rename_geometry("geom")
-        result = df.apply(lambda col: col, axis=0)
-        assert result.geometry.name == "geom"
-
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)
