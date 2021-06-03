@@ -262,25 +262,25 @@ class TestSeries:
 
     def test_proj4strings(self):
         # As string
-        reprojected = self.g3.to_crs("+proj=utm +zone=30N")
+        reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # As dict
-        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
-        reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Conversions by different format
-        reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
-        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
+        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
     def test_from_wkb(self):

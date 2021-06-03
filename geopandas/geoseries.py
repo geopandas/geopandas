@@ -115,9 +115,9 @@ class GeoSeries(GeoPandasBase, Series):
     - Lat[north]: Geodetic latitude (degree)
     - Lon[east]: Geodetic longitude (degree)
     Area of Use:
-    - name: World
+    - name: World.
     - bounds: (-180.0, -90.0, 180.0, 90.0)
-    Datum: World Geodetic System 1984
+    Datum: World Geodetic System 1984 ensemble
     - Ellipsoid: WGS 84
     - Prime Meridian: Greenwich
 
@@ -561,7 +561,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
