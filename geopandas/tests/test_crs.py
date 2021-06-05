@@ -268,6 +268,7 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
+        arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
         df = df.set_geometry(s)
@@ -296,6 +297,7 @@ class TestGeometryArrayCRS:
 
         # new geometry with set CRS has priority over GDF CRS -
         #   using __setitem__ instead of set_geometry
+        arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
         df["geometry"] = s
