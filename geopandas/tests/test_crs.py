@@ -312,6 +312,13 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
+        df["geometry"] = df["geometry"].to_crs(27700)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
         # geometry column without geometry
         df = GeoDataFrame({"geometry": [0, 1]})
         df.crs = 27700
