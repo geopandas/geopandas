@@ -1,4 +1,5 @@
 from distutils.version import LooseVersion
+from typing import Sequence
 from geopandas.testing import assert_geodataframe_equal
 
 import numpy as np
@@ -512,52 +513,157 @@ class TestSpatialJoinNaturalEarth:
 )
 @pytest.mark.skipif(not compat.USE_PYGEOS, reason="PyGEOS is required for this test.")
 class TestNearest:
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("how", ["left", "inner", "right"])
-    def test_nearest(self, dfs, how):
-        _, df1, df2, _ = dfs
-        joined = sjoin_nearest(df1, df2, how=how)
-        if how == "right":
-            for df2_idx, geom in zip(joined["df2"], joined["geometry"]):
-                distances = df1.geometry.distance(geom)
-                actual_mins_idxs = np.where(distances == distances.min())[0]
-                expected_df1_idxs = df1.loc[actual_mins_idxs, "df1"]
-                got_df1_idxs = joined.loc[joined["df2"] == df2_idx, "df1"]
-                assert list(expected_df1_idxs) == list(got_df1_idxs)
+    def setup_method(self):
+        df1_geoms = pygeos.points(np.arange(2), np.arange(2))
+        self.df1 = geopandas.GeoDataFrame({"geometry": df1_geoms})
+
+    @pytest.mark.parametrize("how", ("left", "right", "inner"))
+    @pytest.mark.parametrize("max_distance", (None, 1))
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    def test_empty_right_df(self, how: str, max_distance: float, distance_col: str):
+        df2 = geopandas.GeoDataFrame({"geometry": []})
+        joined = sjoin_nearest(
+            self.df1, df2, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        if how != "left":
+            assert joined.empty
+            if distance_col is not None:
+                assert distance_col in joined
         else:
-            for df1_idx, geom in zip(joined["df1"], joined["geometry"]):
-                distances = df2.geometry.distance(geom)
-                actual_mins_idxs = np.where(distances == distances.min())[0]
-                expected_df2_idxs = df2.loc[actual_mins_idxs, "df2"]
-                got_df2_idxs = joined.loc[joined["df1"] == df1_idx, "df2"]
-                assert list(expected_df2_idxs) == list(got_df2_idxs)
+            assert (joined["geometry"] == self.df1["geometry"]).all()
+            assert joined["index_right"].isna().all()
+            if distance_col is not None:
+                assert joined[distance_col].isna().all()
 
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    def test_nearest_max_distance(self, dfs):
-        _, df1, df2, _ = dfs
-        joined_nearest = sjoin_nearest(df1, df2, how="inner", max_distance=0.0000001)
-        joined_intersection = sjoin(df1, df2, how="inner", op="intersects")
-        assert_geodataframe_equal(joined_nearest, joined_intersection)
+    @pytest.mark.parametrize("how", ("left", "right", "inner"))
+    @pytest.mark.parametrize("max_distance", (None, 1))
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    def test_empty_left_df(self, how: str, max_distance: float, distance_col: str):
+        df2 = geopandas.GeoDataFrame({"geometry": []})
+        joined = sjoin_nearest(
+            df2, self.df1, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        if how != "right":
+            assert joined.empty
+            if distance_col is not None:
+                assert distance_col in joined
+        else:
+            assert (joined["geometry"] == self.df1["geometry"]).all()
+            assert joined["index_left"].isna().all()
+            if distance_col is not None:
+                assert joined[distance_col].isna().all()
 
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("how", ["left", "inner", "right"])
-    def test_include_distances(self, dfs, how):
-        _, df1, df2, _ = dfs
-        df1_orig = df1.copy(deep=True)
-        df2_orig = df2.copy(deep=True)
-        joined = sjoin_nearest(df1, df2, how=how, distance_col="distances")
-        assert_geodataframe_equal(df1, df1_orig)
-        assert_geodataframe_equal(df2, df2_orig)
-        for df1_idx, df2_idx, distance in zip(
-            joined["df1"], joined["df2"], joined["distances"]
-        ):
-            df1_geom = df1.geometry[df1["df1"] == df1_idx].iloc[0]
-            df2_geom = df2.geometry[df2["df2"] == df2_idx].iloc[0]
-            assert distance == df1_geom.distance(df2_geom)
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    @pytest.mark.parametrize(
+        "geometry, expected_left, expected_right",
+        [
+            ([pygeos.points(1, 1)], [1], [0]),
+            ([pygeos.points(1, 1), pygeos.points(0, 0)], [0, 1], [1, 0]),
+            (
+                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(0, 0)],
+                [0, 0, 1],
+                [1, 2, 0],
+            ),
+            (
+                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(2, 2)],
+                [0, 1],
+                [1, 0],
+            ),
+            ([pygeos.points(1, 1), pygeos.points(0.25, 1)], [0, 1], [1, 0]),
+            ([pygeos.points(-10, -10), pygeos.points(100, 100)], [0, 1], [0, 0]),
+        ],
+    )
+    def test_join_inner(
+        self,
+        geometry,
+        expected_left: Sequence[int],
+        expected_right: Sequence[int],
+        distance_col: str,
+    ):
+        df2 = geopandas.GeoDataFrame({"geometry": geometry})
+        joined = sjoin_nearest(self.df1, df2, how="inner", distance_col=distance_col)
+        expected_gdf = self.df1.copy(deep=True).iloc[expected_left]
+        expected_gdf["index_right"] = expected_right
+        if distance_col is not None:
+            expected_gdf["distance"] = pygeos.distance(
+                self.df1.geometry.values.data[expected_left],
+                df2.geometry.values.data[expected_right],
+            )
+        assert_geodataframe_equal(expected_gdf, joined)
 
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("distance_col_name", ["dist_1", "dist_2"])
-    def test_include_distances_col_name(self, dfs, distance_col_name):
-        _, df1, df2, _ = dfs
-        joined = sjoin_nearest(df1, df2, how="inner", distance_col=distance_col_name)
-        assert distance_col_name in joined
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    @pytest.mark.parametrize(
+        "geometry, expected_left, expected_right",
+        [
+            ([pygeos.points(1, 1)], [0, 1], [0, 0]),
+            ([pygeos.points(1, 1), pygeos.points(0, 0)], [0, 1], [1, 0]),
+            (
+                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(0, 0)],
+                [0, 0, 1],
+                [1, 2, 0],
+            ),
+            (
+                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(2, 2)],
+                [0, 1],
+                [1, 0],
+            ),
+            ([pygeos.points(1, 1), pygeos.points(0.25, 1)], [0, 1], [1, 0]),
+            ([pygeos.points(-10, -10), pygeos.points(100, 100)], [0, 1], [0, 0]),
+        ],
+    )
+    def test_join_left(
+        self,
+        geometry,
+        expected_left: Sequence[int],
+        expected_right: Sequence[int],
+        distance_col: str,
+    ):
+        df2 = geopandas.GeoDataFrame({"geometry": geometry})
+        joined = sjoin_nearest(self.df1, df2, how="left", distance_col=distance_col)
+        expected_gdf = self.df1.copy(deep=True).iloc[expected_left]
+        expected_gdf["index_right"] = expected_right
+        if distance_col is not None:
+            expected_gdf["distance"] = pygeos.distance(
+                self.df1.geometry.values.data[expected_left],
+                df2.geometry.values.data[expected_right],
+            )
+        assert_geodataframe_equal(expected_gdf, joined)
+
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    @pytest.mark.parametrize(
+        "geometry, expected_left, expected_right",
+        [
+            ([pygeos.points(1, 1)], [1], [0]),
+            ([pygeos.points(1, 1), pygeos.points(0, 0)], [1, 0], [0, 1]),
+            (
+                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(0, 0)],
+                [1, 0, 0],
+                [0, 1, 2],
+            ),
+            (
+                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(2, 2)],
+                [1, 0, 1],
+                [0, 1, 2],
+            ),
+            ([pygeos.points(1, 1), pygeos.points(0.25, 1)], [1, 1], [0, 1]),
+            ([pygeos.points(-10, -10), pygeos.points(100, 100)], [0, 1], [0, 1]),
+        ],
+    )
+    def test_join_right(
+        self,
+        geometry,
+        expected_left: Sequence[int],
+        expected_right: Sequence[int],
+        distance_col: str,
+    ):
+        df2 = geopandas.GeoDataFrame({"geometry": geometry})
+        joined = sjoin_nearest(self.df1, df2, how="right", distance_col=distance_col)
+        expected_gdf = df2.copy(deep=True).iloc[expected_right]
+        expected_gdf["index_left"] = expected_left
+        expected_gdf = expected_gdf[["index_left", "geometry"]]
+        if distance_col is not None:
+            expected_gdf["distance"] = pygeos.distance(
+                df2.geometry.values.data[expected_right],
+                self.df1.geometry.values.data[expected_left],
+            )
+        assert_geodataframe_equal(expected_gdf, joined)

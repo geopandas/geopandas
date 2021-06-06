@@ -1,7 +1,7 @@
-from pandas.core.frame import DataFrame
-from geopandas.geoseries import GeoSeries
+import geopandas
 import warnings
 
+import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame
@@ -348,46 +348,16 @@ def _nearest_query(
             (input_idx, tree_idx), distances = res, None
         if use_left_as_sindex:
             l_idx, r_idx = tree_idx, input_idx
+            sort_order = np.argsort(l_idx, kind="stable")
+            l_idx, r_idx = l_idx[sort_order], r_idx[sort_order]
         else:
             l_idx, r_idx = input_idx, tree_idx
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
         indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-        distances = None
+        distances = pd.Series([], dtype=float) if return_distance else None
     return indices, distances
-
-
-def _add_nearest_distances(
-    left_df: DataFrame,
-    right_df: DataFrame,
-    distances: GeoSeries,
-    indices: DataFrame,
-    how: str,
-    distance_col: str,
-):
-    if distance_col in left_df:
-        distances_in = "left_df"
-    elif distance_col in right_df:
-        distances_in = "right_df"
-    else:
-        distances_in = None
-    if distances_in:
-        raise ValueError(
-            f"Unable to add distances because `{distances_in}`"
-            f" already has a column named {distance_col}"
-        )
-    if how == "right":
-        add_to_left = False
-    else:
-        add_to_left = True
-    if add_to_left:
-        left_df = left_df.assign(**{distance_col: None})
-        left_df[distance_col].iloc[indices["_key_left"]] = distances
-    else:
-        right_df = right_df.assign(**{distance_col: None})
-        right_df[distance_col].iloc[indices["_key_right"]] = distances
-    return left_df, right_df
 
 
 def sjoin_nearest(
@@ -398,7 +368,7 @@ def sjoin_nearest(
     lsuffix="left",
     rsuffix="right",
     distance_col=None,
-):
+) -> geopandas.GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
     See the User Guide page :doc:`../../user_guide/mergingdata` for details.
@@ -498,11 +468,17 @@ path("naturalearth_lowres"))
         left_df, right_df, max_distance, how, return_distance
     )
 
-    if return_distance:
-        left_df, right_df = _add_nearest_distances(
-            left_df, right_df, distances, indices, how, distance_col
-        )
-
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
+
+    if return_distance:
+        joined[distance_col] = distances
+        # if how == "inner":
+        #     joined[distance_col] = distances
+        # elif how == "left":
+        #     joined[distance_col] = np.nan
+        #     joined[distance_col].iloc[indices["_key_left"]] = distances
+        # else:  # how == "right"
+        #     joined[distance_col] = np.nan
+        #     joined[distance_col].iloc[indices["_key_right"]] = distances
 
     return joined
