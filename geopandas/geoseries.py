@@ -449,8 +449,8 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs):
         """
-        Alternate constructor to create a point ``GeoSeries``
-        from lists or arrays of coordinate numbers
+        Alternate constructor to create a :class:`~geopandas.GeoSeries` of Point
+        geometries from lists or arrays of x, y(, z) coordinates
 
         In case of geographic coordinates, it is assumed that longitude is captured
         by ``x`` coordinates and latitude by ``y``.
@@ -458,14 +458,14 @@ class GeoSeries(GeoPandasBase, Series):
         Parameters
         ----------
         x, y, z : iterable
-        index : array-like or Index
+        index : array-like or Index, optional
             The index for the GeoSeries.
         crs : value, optional
             Coordinate Reference System of the geometry objects. Can be anything
             accepted by
             :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
-        kwargs
+        **kwargs
             Additional arguments passed to the Series constructor,
             e.g. ``name``.
 
@@ -476,14 +476,14 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
         GeoSeries.from_wkt
-        geopandas.points_from_xy
+        points_from_xy
 
         Examples
         --------
 
         >>> x = [2.5, 5, -3.0]
         >>> y = [0.5, 1, 1.5]
-        >>> s = geopandas.GeoSeries.from_xy_points(x, y)
+        >>> s = geopandas.GeoSeries.from_xy(x, y, crs="EPSG:4326")
         >>> s
         0    POINT (2.50000 0.50000)
         1    POINT (5.00000 1.00000)
