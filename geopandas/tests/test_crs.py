@@ -295,8 +295,13 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
-        # new geometry with set CRS has priority over GDF CRS -
-        #   using __setitem__ instead of set_geometry
+        # geometry column without geometry
+        df = GeoDataFrame({"geometry": [0, 1]})
+        df.crs = 27700
+        assert df.crs == self.osgb
+
+    def test_dataframe_setitem(self):
+        # new geometry CRS has priority over GDF CRS
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
@@ -312,6 +317,7 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
+        # test to_crs case (GH1960)
         arr = from_shapely(self.geoms)
         df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
         df["geometry"] = df["geometry"].to_crs(27700)
@@ -319,10 +325,16 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
-        # geometry column without geometry
-        df = GeoDataFrame({"geometry": [0, 1]})
-        df.crs = 27700
-        assert df.crs == self.osgb
+        # test changing geometry crs not in the geometry column doesn't change the crs
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame(
+            {"col1": [1, 2], "geometry": arr, "other_geom": arr}, crs=4326
+        )
+        df["other_geom"] = arr.to_crs(27700)
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df["geometry"].crs == self.wgs
+        assert df["other_geom"].crs == self.osgb
 
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
