@@ -472,13 +472,5 @@ path("naturalearth_lowres"))
 
     if return_distance:
         joined[distance_col] = distances
-        # if how == "inner":
-        #     joined[distance_col] = distances
-        # elif how == "left":
-        #     joined[distance_col] = np.nan
-        #     joined[distance_col].iloc[indices["_key_left"]] = distances
-        # else:  # how == "right"
-        #     joined[distance_col] = np.nan
-        #     joined[distance_col].iloc[indices["_key_right"]] = distances
 
     return joined

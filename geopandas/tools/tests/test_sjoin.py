@@ -505,6 +505,22 @@ class TestSpatialJoinNaturalEarth:
 
 
 @pytest.mark.skipif(
+    PYGEOS_HAS_NEAREST,
+    reason=(
+        f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
+        " is required for nearest functionality"
+    ),
+)
+def test_no_nearest_all():
+    df1 = geopandas.GeoDataFrame({"geometry": []})
+    df2 = geopandas.GeoDataFrame({"geometry": []})
+    with pytest.raises(
+        AttributeError, match="Expected the spatial index to implement `nearest_all`"
+    ):
+        sjoin_nearest(df1, df2)
+
+
+@pytest.mark.skipif(
     not PYGEOS_HAS_NEAREST,
     reason=(
         f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
@@ -512,7 +528,7 @@ class TestSpatialJoinNaturalEarth:
     ),
 )
 @pytest.mark.skipif(not compat.USE_PYGEOS, reason="PyGEOS is required for this test.")
-class TestNearest:
+class TestNearestPYGEOS:
     def setup_method(self):
         df1_geoms = pygeos.points(np.arange(2), np.arange(2))
         self.df1 = geopandas.GeoDataFrame({"geometry": df1_geoms})
