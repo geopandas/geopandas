@@ -775,6 +775,13 @@ class GeoSeries(GeoPandasBase, Series):
         This is analogous to PostGIS's ST_Dump(). The 'path' index is the
         second level of the returned MultiIndex
 
+        Parameters
+        ----------
+        add_multiindex : boolean, default True
+            If True, the resulting index will be a multi-index
+            (original index with an additional level
+            indicating the multiple geometries: a new zero-based index for each
+            single part geometry per multi-part geometry).
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
