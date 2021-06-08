@@ -1615,16 +1615,18 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         df_copy = self.copy()
 
-        if "level_1" in df_copy.columns:  # GH1393
-            df_copy = df_copy.rename(columns={"level_1": "__level_1"})
+        level_str = f"level_{df_copy.index.nlevels}"
+
+        if level_str in df_copy.columns:  # GH1393
+            df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
 
         if add_multiindex:
             exploded_geom = df_copy.geometry.explode()
             exploded_index = exploded_geom.index
-            exploded_geom = exploded_geom.reset_index(level=-1).drop("level_1", axis=1)
+            exploded_geom = exploded_geom.reset_index(level=-1).drop(level_str, axis=1)
         else:
             exploded_geom = (
-                df_copy.geometry.explode().reset_index(level=-1).drop("level_1", axis=1)
+                df_copy.geometry.explode().reset_index(level=-1).drop(level_str, axis=1)
             )
             exploded_index = exploded_geom.index
 
@@ -1642,8 +1644,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             df.index.names = list(self.index.names) + [None]
         else:
             df.index.names = self.index.names
-        if "__level_1" in df.columns:
-            df = df.rename(columns={"__level_1": "level_1"})
+        if f"__{level_str}" in df.columns:
+            df = df.rename(columns={f"__{level_str}": level_str})
 
         geo_df = df.set_geometry(self._geometry_column_name)
 
