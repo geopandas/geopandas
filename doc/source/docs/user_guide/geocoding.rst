@@ -32,17 +32,17 @@ with the detailed borough boundary file included within ``geopandas``.
     boro_locations.plot(ax=ax, color="red");
 
 
-By default, the ``geocode`` function uses the
+By default, the :func:`~geopandas.tools.geocode` function uses the
 `GeoCode.Farm geocoding API <https://geocode.farm/>`__ with a rate limitation
 applied. But a different geocoding service can be specified with the
 ``provider`` keyword.
 
 The argument to ``provider`` can either be a string referencing geocoding
 services, such as ``'google'``, ``'bing'``, ``'yahoo'``, and
-``'openmapquest'``, or an instance of a ``Geocoder`` from ``geopy``. See
+``'openmapquest'``, or an instance of a :mod:`Geocoder <geopy.geocoders>` from :mod:`geopy`. See
 ``geopy.geocoders.SERVICE_TO_GEOCODER`` for the full list.
 For many providers, parameters such as API keys need to be passed as
-``**kwargs`` in the ``geocode`` call.
+``**kwargs`` in the :func:`~geopandas.tools.geocode` call.
 
 For example, to use the OpenStreetMap Nominatim geocoder, you need to specify
 a user agent:

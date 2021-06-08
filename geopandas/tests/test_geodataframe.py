@@ -457,6 +457,15 @@ class TestDataFrame:
         for f in data["features"]:
             assert "id" not in f.keys()
 
+    def test_to_json_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df.to_json()
+
     def test_copy(self):
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
@@ -484,6 +493,16 @@ class TestDataFrame:
         df2.to_file(tempfilename, crs=2263)
         df = GeoDataFrame.from_file(tempfilename)
         assert df.crs == "epsg:2263"
+
+    def test_to_file_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            tempfilename = os.path.join(self.tempdir, "crs.shp")
+            df.to_file(tempfilename)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
@@ -666,6 +685,14 @@ class TestDataFrame:
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
 
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df_with_duplicate_columns = df[
+                ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
+            ]
+            list(df_with_duplicate_columns.iterfeatures())
+
         # geometry not set
         df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
         with pytest.raises(AttributeError):
@@ -705,6 +732,44 @@ class TestDataFrame:
         else:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
             assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+
+    def test_to_wkb(self):
+        wkbs0 = [
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ),  # POINT (0 0)
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
+            ),  # POINT (1 1)
+        ]
+        wkbs1 = [
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
+            ),  # POINT (2 2)
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
+            ),  # POINT (3 3)
+        ]
+        gs0 = GeoSeries.from_wkb(wkbs0)
+        gs1 = GeoSeries.from_wkb(wkbs1)
+        gdf = GeoDataFrame({"geom_col0": gs0, "geom_col1": gs1})
+
+        expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
+        assert_frame_equal(expected_df, gdf.to_wkb())
+
+    def test_to_wkt(self):
+        wkts0 = ["POINT (0 0)", "POINT (1 1)"]
+        wkts1 = ["POINT (2 2)", "POINT (3 3)"]
+        gs0 = GeoSeries.from_wkt(wkts0)
+        gs1 = GeoSeries.from_wkt(wkts1)
+        gdf = GeoDataFrame({"gs0": gs0, "gs1": gs1})
+
+        expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
+        assert_frame_equal(expected_df, gdf.to_wkt())
 
 
 def check_geodataframe(df, geometry_column="geometry"):

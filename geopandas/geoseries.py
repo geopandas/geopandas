@@ -12,7 +12,14 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
-from .array import GeometryDtype, from_shapely
+from .array import (
+    GeometryDtype,
+    from_shapely,
+    from_wkb,
+    from_wkt,
+    to_wkb,
+    to_wkt,
+)
 from .base import is_geometry_type
 from . import _compat as compat
 
@@ -125,9 +132,9 @@ class GeoSeries(GeoPandasBase, Series):
     - Lat[north]: Geodetic latitude (degree)
     - Lon[east]: Geodetic longitude (degree)
     Area of Use:
-    - name: World
+    - name: World.
     - bounds: (-180.0, -90.0, 180.0, 90.0)
-    Datum: World Geodetic System 1984
+    Datum: World Geodetic System 1984 ensemble
     - Ellipsoid: WGS 84
     - Prime Meridian: Greenwich
 
@@ -360,6 +367,97 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoSeries(df.geometry, crs=df.crs)
 
+    @classmethod
+    def from_wkb(cls, data, index=None, crs=None, **kwargs):
+        """
+        Alternate constructor to create a ``GeoSeries``
+        from a list or array of WKB objects
+
+        Parameters
+        ----------
+        data : array-like or Series
+            Series, list or array of WKB objects
+        index : array-like or Index
+            The index for the GeoSeries.
+        crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        kwargs
+            Additional arguments passed to the Series constructor,
+            e.g. ``name``.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkt
+
+        """
+        return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
+
+    @classmethod
+    def from_wkt(cls, data, index=None, crs=None, **kwargs):
+        """
+        Alternate constructor to create a ``GeoSeries``
+        from a list or array of WKT objects
+
+        Parameters
+        ----------
+        data : array-like, Series
+            Series, list, or array of WKT objects
+        index : array-like or Index
+            The index for the GeoSeries.
+        crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        kwargs
+            Additional arguments passed to the Series constructor,
+            e.g. ``name``.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkb
+
+        Examples
+        --------
+
+        >>> wkts = [
+        ... 'POINT (1 1)',
+        ... 'POINT (2 2)',
+        ... 'POINT (3 3)',
+        ... ]
+        >>> s = geopandas.GeoSeries.from_wkt(wkts)
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+        """
+        return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
+
+    @classmethod
+    def _from_wkb_or_wkb(
+        cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
+    ):
+        """Create a GeoSeries from either WKT or WKB values"""
+        if isinstance(data, Series):
+            if index is not None:
+                data = data.reindex(index)
+            else:
+                index = data.index
+            data = data.values
+        return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
+
     @property
     def __geo_interface__(self):
         """Returns a ``GeoSeries`` as a python feature collection.
@@ -480,7 +578,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
@@ -732,9 +830,14 @@ class GeoSeries(GeoPandasBase, Series):
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
             if add_multiindex:
-                index = MultiIndex.from_arrays(
-                    [outer_index, inner_index], names=self.index.names + [None]
-                )
+                index = zip(outer_index, inner_index)
+
+                # if self.index is a MultiIndex then index is a list of nested tuples
+                if isinstance(self.index, MultiIndex):
+                    index = [tuple(outer) + (inner,) for outer, inner in index]
+
+                index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+
             else:
                 index = inner_index
 
@@ -755,6 +858,10 @@ class GeoSeries(GeoPandasBase, Series):
             geometries.extend(geoms)
 
         if add_multiindex:
+            # if self.index is a MultiIndex then index is a list of nested tuples
+            if isinstance(self.index, MultiIndex):
+                index = [tuple(outer) + (inner,) for outer, inner in index]
+
             index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         else:
             index = [idx for idx, _ in index]
@@ -1012,6 +1119,67 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         GeoSeries.to_file : write GeoSeries to file
         """
         return json.dumps(self.__geo_interface__, **kwargs)
+
+    def to_wkb(self, hex=False, **kwargs):
+        """
+        Convert GeoSeries geometries to WKB
+
+        Parameters
+        ----------
+        hex : bool
+            If true, export the WKB as a hexadecimal string.
+            The default is to return a binary bytes object.
+        kwargs
+            Additional keyword args will be passed to
+            :func:`pygeos.to_wkb` if pygeos is installed.
+
+        Returns
+        -------
+        Series
+            WKB representations of the geometries
+
+        See also
+        --------
+        GeoSeries.to_wkt
+        """
+        return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
+
+    def to_wkt(self, **kwargs):
+        """
+        Convert GeoSeries geometries to WKT
+
+        Parameters
+        ----------
+        kwargs
+            Keyword args will be passed to :func:`pygeos.to_wkt`
+            if pygeos is installed.
+
+        Returns
+        -------
+        Series
+            WKT representations of the geometries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        >>> s
+        0    POINT (1.00000 1.00000)
+        1    POINT (2.00000 2.00000)
+        2    POINT (3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.to_wkt()
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (3 3)
+        dtype: object
+
+        See also
+        --------
+        GeoSeries.to_wkb
+        """
+        return Series(to_wkt(self.array, **kwargs), index=self.index)
 
     #
     # Implement standard operators for GeoSeries

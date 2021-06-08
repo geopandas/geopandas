@@ -5,7 +5,7 @@ import warnings
 from pandas import DataFrame
 
 from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb, to_wkb
+from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
 import geopandas
 
@@ -74,28 +74,6 @@ def _encode_metadata(metadata):
     UTF-8 encoded JSON string
     """
     return json.dumps(metadata).encode("utf-8")
-
-
-def _encode_wkb(df):
-    """Encode all geometry columns in the GeoDataFrame to WKB.
-
-    Parameters
-    ----------
-    df : GeoDataFrame
-
-    Returns
-    -------
-    DataFrame
-        geometry columns are encoded to WKB
-    """
-
-    df = DataFrame(df.copy())
-
-    # Encode all geometry columns to WKB
-    for col in df.columns[df.dtypes == "geometry"]:
-        df[col] = to_wkb(df[col].values)
-
-    return df
 
 
 def _decode_metadata(metadata_str):
@@ -208,7 +186,7 @@ def _geopandas_to_arrow(df, index=None):
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(df)
 
-    df = _encode_wkb(df)
+    df = df.to_wkb()
 
     table = Table.from_pandas(df, preserve_index=index)
 

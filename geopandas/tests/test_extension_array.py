@@ -366,6 +366,10 @@ class TestMissing(extension_tests.BaseMissingTests):
     def test_fillna_series_method(self, data_missing, method):
         pass
 
+    @pytest.mark.skip("fillna method not supported")
+    def test_fillna_no_op_returns_copy(self, data):
+        pass
+
 
 class TestReduce(extension_tests.BaseNoReduceTests):
     @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
