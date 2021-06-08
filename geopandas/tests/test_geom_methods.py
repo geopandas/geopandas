@@ -1011,8 +1011,14 @@ class TestGeomMethods:
         )
         expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
         expected_index = MultiIndex.from_tuples(
-            [(outer_index, 1), (outer_index, 1), (outer_index, 2),
-             (outer_index, 2), (outer_index, 3), (outer_index, 3)],
+            [
+                (outer_index, 1),
+                (outer_index, 1),
+                (outer_index, 2),
+                (outer_index, 2),
+                (outer_index, 3),
+                (outer_index, 3),
+            ],
             names=["first", "second"],
         )
         expected_df = expected_df.set_index(expected_index)
