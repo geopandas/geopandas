@@ -2,6 +2,10 @@ from textwrap import dedent
 from typing import Callable, Union
 
 
+# doc decorator function ported with modifications from Pandas
+# https://github.com/pandas-dev/pandas/blob/master/pandas/util/_decorators.py
+
+
 def doc(*docstrings: Union[str, Callable], **params) -> Callable:
     """
     A decorator take docstring templates, concatenate them and perform string
