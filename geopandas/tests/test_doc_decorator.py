@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from geopandas.decorators import doc
+from geopandas._decorator import doc
 
 
 @doc(method="cumsum", operation="sum")

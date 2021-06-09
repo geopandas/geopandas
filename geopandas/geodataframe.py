@@ -17,7 +17,7 @@ import geopandas.io
 from geopandas.plotting import plot_dataframe
 
 from . import _compat as compat
-from .decorators import doc
+from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"

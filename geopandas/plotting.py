@@ -7,7 +7,7 @@ import geopandas
 
 from distutils.version import LooseVersion
 
-from .decorators import doc
+from ._decorator import doc
 
 
 def deprecated(new):

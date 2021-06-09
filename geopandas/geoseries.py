@@ -13,6 +13,7 @@ from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
 from . import _compat as compat
+from ._decorator import doc
 from .array import (
     GeometryDtype,
     from_shapely,
@@ -22,7 +23,6 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
-from .decorators import doc
 
 
 _SERIES_WARNING_MSG = """\

@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from . import _compat as compat
-from .decorators import doc
+from ._decorator import doc
 
 
 def _get_sindex_class():
