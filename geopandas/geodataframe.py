@@ -34,7 +34,9 @@ def _ensure_geometry(data, crs=None):
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
-            return GeoSeries(data)
+            data = GeoSeries(data)
+        if data.crs is None:
+            data.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -1321,6 +1323,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 value = [value] * self.shape[0]
             try:
                 value = _ensure_geometry(value, crs=self.crs)
+                self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super(GeoDataFrame, self).__setitem__(key, value)
