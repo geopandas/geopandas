@@ -17,13 +17,16 @@ import pytest
 
 MIN_PYGEOS_VERSION_FOR_NEAREST = "0.10"
 try:
-    import pygeos
+    from pygeos import __version__ as pygeos_version
 
-    PYGEOS_HAS_NEAREST = LooseVersion(pygeos.__version__) >= LooseVersion(
+    PYGEOS_HAS_NEAREST = LooseVersion(pygeos_version) >= LooseVersion(
         MIN_PYGEOS_VERSION_FOR_NEAREST
     )
 except ImportError:
     PYGEOS_HAS_NEAREST = False
+
+
+TEST_NEAREST = PYGEOS_HAS_NEAREST and compat.USE_PYGEOS
 
 
 pytestmark = pytest.mark.skip_no_sindex
@@ -505,10 +508,11 @@ class TestSpatialJoinNaturalEarth:
 
 
 @pytest.mark.skipif(
-    PYGEOS_HAS_NEAREST,
+    TEST_NEAREST,
     reason=(
         f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
-        " is required for nearest functionality"
+        " must be installed and activated via the geopandas.compat module to"
+        " test sjoin_nearest"
     ),
 )
 def test_no_nearest_all():
@@ -521,16 +525,17 @@ def test_no_nearest_all():
 
 
 @pytest.mark.skipif(
-    not PYGEOS_HAS_NEAREST,
+    not TEST_NEAREST,
     reason=(
         f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
-        " is required for nearest functionality"
+        " must be installed and activated via the geopandas.compat module to"
+        " test sjoin_nearest"
     ),
 )
-@pytest.mark.skipif(not compat.USE_PYGEOS, reason="PyGEOS is required for this test.")
-class TestNearestPYGEOS:
+class TestNearest:
+    @pytest.mark.skipif(TEST_NEAREST)
     def setup_method(self):
-        df1_geoms = pygeos.points(np.arange(2), np.arange(2))
+        df1_geoms = [Point(x, y) for x, y in zip(np.arange(2), np.arange(2))]
         self.df1 = geopandas.GeoDataFrame({"geometry": df1_geoms})
 
     @pytest.mark.parametrize("how", ("left", "right", "inner"))
@@ -573,20 +578,20 @@ class TestNearestPYGEOS:
     @pytest.mark.parametrize(
         "geometry, expected_left, expected_right",
         [
-            ([pygeos.points(1, 1)], [1], [0]),
-            ([pygeos.points(1, 1), pygeos.points(0, 0)], [0, 1], [1, 0]),
+            ([Point(1, 1)], [1], [0]),
+            ([Point(1, 1), Point(0, 0)], [0, 1], [1, 0]),
             (
-                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(0, 0)],
+                [Point(1, 1), Point(0, 0), Point(0, 0)],
                 [0, 0, 1],
                 [1, 2, 0],
             ),
             (
-                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(2, 2)],
+                [Point(1, 1), Point(0, 0), Point(2, 2)],
                 [0, 1],
                 [1, 0],
             ),
-            ([pygeos.points(1, 1), pygeos.points(0.25, 1)], [0, 1], [1, 0]),
-            ([pygeos.points(-10, -10), pygeos.points(100, 100)], [0, 1], [0, 0]),
+            ([Point(1, 1), Point(0.25, 1)], [0, 1], [1, 0]),
+            ([Point(-10, -10), Point(100, 100)], [0, 1], [0, 0]),
         ],
     )
     def test_join_inner(
@@ -601,30 +606,29 @@ class TestNearestPYGEOS:
         expected_gdf = self.df1.copy(deep=True).iloc[expected_left]
         expected_gdf["index_right"] = expected_right
         if distance_col is not None:
-            expected_gdf["distance"] = pygeos.distance(
-                self.df1.geometry.values.data[expected_left],
-                df2.geometry.values.data[expected_right],
-            )
+            geom_right = df2.geometry.iloc[expected_right].reset_index(drop=True)
+            geom_left = self.df1.geometry[expected_left].reset_index(drop=True)
+            expected_gdf["distance"] = geom_left.distance(geom_right).values
         assert_geodataframe_equal(expected_gdf, joined)
 
     @pytest.mark.parametrize("distance_col", (None, "distance"))
     @pytest.mark.parametrize(
         "geometry, expected_left, expected_right",
         [
-            ([pygeos.points(1, 1)], [0, 1], [0, 0]),
-            ([pygeos.points(1, 1), pygeos.points(0, 0)], [0, 1], [1, 0]),
+            ([Point(1, 1)], [0, 1], [0, 0]),
+            ([Point(1, 1), Point(0, 0)], [0, 1], [1, 0]),
             (
-                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(0, 0)],
+                [Point(1, 1), Point(0, 0), Point(0, 0)],
                 [0, 0, 1],
                 [1, 2, 0],
             ),
             (
-                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(2, 2)],
+                [Point(1, 1), Point(0, 0), Point(2, 2)],
                 [0, 1],
                 [1, 0],
             ),
-            ([pygeos.points(1, 1), pygeos.points(0.25, 1)], [0, 1], [1, 0]),
-            ([pygeos.points(-10, -10), pygeos.points(100, 100)], [0, 1], [0, 0]),
+            ([Point(1, 1), Point(0.25, 1)], [0, 1], [1, 0]),
+            ([Point(-10, -10), Point(100, 100)], [0, 1], [0, 0]),
         ],
     )
     def test_join_left(
@@ -639,30 +643,29 @@ class TestNearestPYGEOS:
         expected_gdf = self.df1.copy(deep=True).iloc[expected_left]
         expected_gdf["index_right"] = expected_right
         if distance_col is not None:
-            expected_gdf["distance"] = pygeos.distance(
-                self.df1.geometry.values.data[expected_left],
-                df2.geometry.values.data[expected_right],
-            )
+            geom_right = df2.geometry.iloc[expected_right].reset_index(drop=True)
+            geom_left = self.df1.geometry[expected_left].reset_index(drop=True)
+            expected_gdf["distance"] = geom_left.distance(geom_right).values
         assert_geodataframe_equal(expected_gdf, joined)
 
     @pytest.mark.parametrize("distance_col", (None, "distance"))
     @pytest.mark.parametrize(
         "geometry, expected_left, expected_right",
         [
-            ([pygeos.points(1, 1)], [1], [0]),
-            ([pygeos.points(1, 1), pygeos.points(0, 0)], [1, 0], [0, 1]),
+            ([Point(1, 1)], [1], [0]),
+            ([Point(1, 1), Point(0, 0)], [1, 0], [0, 1]),
             (
-                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(0, 0)],
+                [Point(1, 1), Point(0, 0), Point(0, 0)],
                 [1, 0, 0],
                 [0, 1, 2],
             ),
             (
-                [pygeos.points(1, 1), pygeos.points(0, 0), pygeos.points(2, 2)],
+                [Point(1, 1), Point(0, 0), Point(2, 2)],
                 [1, 0, 1],
                 [0, 1, 2],
             ),
-            ([pygeos.points(1, 1), pygeos.points(0.25, 1)], [1, 1], [0, 1]),
-            ([pygeos.points(-10, -10), pygeos.points(100, 100)], [0, 1], [0, 1]),
+            ([Point(1, 1), Point(0.25, 1)], [1, 1], [0, 1]),
+            ([Point(-10, -10), Point(100, 100)], [0, 1], [0, 1]),
         ],
     )
     def test_join_right(
@@ -678,8 +681,7 @@ class TestNearestPYGEOS:
         expected_gdf["index_left"] = expected_left
         expected_gdf = expected_gdf[["index_left", "geometry"]]
         if distance_col is not None:
-            expected_gdf["distance"] = pygeos.distance(
-                df2.geometry.values.data[expected_right],
-                self.df1.geometry.values.data[expected_left],
-            )
+            geom_right = df2.geometry.iloc[expected_right].reset_index(drop=True)
+            geom_left = self.df1.geometry[expected_left].reset_index(drop=True)
+            expected_gdf["distance"] = geom_right.distance(geom_left).values
         assert_geodataframe_equal(expected_gdf, joined)
