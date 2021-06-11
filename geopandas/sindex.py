@@ -543,6 +543,30 @@ if compat.HAS_PYGEOS:
 
             return matches
 
+        @staticmethod
+        def _as_geometry_array(geometry):
+            """Convert geometry into a numpy array of PyGEOS geometries.
+
+            Parameters
+            ----------
+            geometry : Union[np.ndarray, GoeSeries, GeometryArray, Sequence]
+                An array-like of PyGEOS geometries
+                or a GeoPandas GeoSeries/GeometryArray.
+
+            Returns
+            -------
+            np.ndarray
+                A numpy array of pygeos geometries.
+            """
+            if isinstance(geometry, np.ndarray):
+                return geometry
+            elif isinstance(geometry, geoseries.GeoSeries):
+                return geometry.values.data
+            elif isinstance(geometry, array.GeometryArray):
+                return geometry.data
+            else:
+                return np.asarray(geometry)
+
         @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
             if predicate not in self.valid_query_predicates:
@@ -551,12 +575,8 @@ if compat.HAS_PYGEOS:
                         predicate, self.valid_query_predicates
                     )
                 )
-            if isinstance(geometry, geoseries.GeoSeries):
-                geometry = geometry.values.data
-            elif isinstance(geometry, array.GeometryArray):
-                geometry = geometry.data
-            elif not isinstance(geometry, np.ndarray):
-                geometry = np.asarray(geometry)
+
+            geometry = self._as_geometry_array(geometry)
 
             res = super().query_bulk(geometry, predicate)
 
@@ -569,12 +589,7 @@ if compat.HAS_PYGEOS:
             return res
 
         def nearest_all(self, geometry, max_distance=None, return_distance=False):
-            if isinstance(geometry, geoseries.GeoSeries):
-                geometry = geometry.values.data
-            elif isinstance(geometry, array.GeometryArray):
-                geometry = geometry.data
-            elif not isinstance(geometry, np.ndarray):
-                geometry = np.asarray(geometry)
+            geometry = self._as_geometry_array(geometry)
             return super().nearest_all(
                 geometry, max_distance=max_distance, return_distance=return_distance
             )
