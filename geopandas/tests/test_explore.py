@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
+from distutils.version import LooseVersion
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -11,6 +12,8 @@ mapclassify = pytest.importorskip("mapclassify")
 import matplotlib.cm as cm  # noqa
 import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
+
+BRANCA_05 = str(branca.__version__) > LooseVersion("0.4.2")
 
 
 class TestExplore:
@@ -542,6 +545,32 @@ class TestExplore:
         assert out_str.count("fff2aeff") == 63
         assert out_str.count("f1e2ccff") == 62
         assert out_str.count("ccccccff") == 63
+
+    @pytest.mark.skipif(not BRANCA_05, reason="requires branca >= 0.5.0")
+    def test_colorbar_max_labels(self):
+        # linear
+        m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3))
+        out_str = self._fetch_map_string(m)
+
+        tick_values = [140.0, 465176713.5921569, 930353287.1843138]
+        for tick in tick_values:
+            assert str(tick) in out_str
+
+        # scheme
+        m = self.world.explore(
+            "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
+        )
+        out_str = self._fetch_map_string(m)
+
+        assert "tickValues([140,'',182567501.0,'',1330619341.0,''])" in out_str
+
+        # short cmap
+        m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
+        out_str = self._fetch_map_string(m)
+
+        tick_values = [140.0, 551721192.4, 1103442244.8]
+        for tick in tick_values:
+            assert str(tick) in out_str
 
     def test_providers(self):
         xyzservices = pytest.importorskip("xyzservices")

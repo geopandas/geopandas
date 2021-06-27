@@ -218,6 +218,8 @@ def _explore(
             An option to control brackets from mapclassify legend.
             If True, open/closed interval brackets are shown in the legend.
             Applies if ``colorbar=False``.
+        max_labels : int, default 10
+            Maximum number of colorbar tick labels (requires branca>=0.5.0)
 
     **kwargs : dict
         Additional options to be passed on to the folium :class:`~folium.folium.Map`
@@ -537,6 +539,9 @@ def _explore(
         elif column is not None:
 
             cbar = legend_kwds.pop("colorbar", True)
+            colormap_kwds = {}
+            if "max_labels" in legend_kwds:
+                colormap_kwds["max_labels"] = legend_kwds.pop("max_labels")
             if scheme:
                 cb_colors = np.apply_along_axis(
                     colors.to_hex, 1, cm.get_cmap(cmap, binning.k)(range(binning.k))
@@ -547,7 +552,12 @@ def _explore(
                     else:
                         index = None
                     colorbar = bc.colormap.StepColormap(
-                        cb_colors, vmin=vmin, vmax=vmax, caption=caption, index=index
+                        cb_colors,
+                        vmin=vmin,
+                        vmax=vmax,
+                        caption=caption,
+                        index=index,
+                        **colormap_kwds,
                     )
                 else:
                     fmt = legend_kwds.pop("fmt", "{:.2f}")
@@ -576,13 +586,21 @@ def _explore(
                     # linear legend
                     if mp_cmap.N > 20:
                         colorbar = bc.colormap.LinearColormap(
-                            cb_colors, vmin=vmin, vmax=vmax, caption=caption
+                            cb_colors,
+                            vmin=vmin,
+                            vmax=vmax,
+                            caption=caption,
+                            **colormap_kwds,
                         )
 
                     # steps
                     else:
                         colorbar = bc.colormap.StepColormap(
-                            cb_colors, vmin=vmin, vmax=vmax, caption=caption
+                            cb_colors,
+                            vmin=vmin,
+                            vmax=vmax,
+                            caption=caption,
+                            **colormap_kwds,
                         )
 
             if cbar:
