@@ -11,7 +11,7 @@ dependencies:
   - geopy
   - matplotlib
   - mapclassify
-  - sphinx
+  - sphinx>=4
   - pydata-sphinx-theme
   - numpydoc
   - ipython
