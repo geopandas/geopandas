@@ -503,8 +503,20 @@ def _explore(
                 "supported as marker values"
             )
 
+    # remove additional geometries
+    if isinstance(gdf, geopandas.GeoDataFrame):
+        non_active_geoms = [
+            name
+            for name, val in (gdf.dtypes == "geometry").items()
+            if val and name != gdf.geometry.name
+        ]
+        gdf = gdf.drop(columns=non_active_geoms)
+
     # preprare tooltip and popup
     if isinstance(gdf, geopandas.GeoDataFrame):
+        # add named index to the tooltip
+        if gdf.index.name is not None:
+            gdf = gdf.reset_index()
         # specify fields to show in the tooltip
         tooltip = _tooltip_popup("tooltip", tooltip, gdf, **tooltip_kwds)
         popup = _tooltip_popup("popup", popup, gdf, **popup_kwds)

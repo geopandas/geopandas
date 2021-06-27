@@ -408,6 +408,12 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         assert "<th>${aliases[i]" not in out_str
 
+        # named index
+        gdf = self.nybb.set_index("BoroName")
+        m = gdf.explore()
+        out_str = self._fetch_map_string(m)
+        assert "BoroName" in out_str
+
     def test_custom_markers(self):
         # Markers
         m = self.cities.explore(
@@ -746,3 +752,13 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         for s in strings:
             assert s in out_str
+
+    def test_multiple_geoseries(self):
+        """
+        Additional GeoSeries need to be removed as they cannot be converted to GeoJSON
+        """
+        gdf = self.nybb
+        gdf["boundary"] = gdf.boundary
+        gdf["centroid"] = gdf.centroid
+
+        gdf.explore()
