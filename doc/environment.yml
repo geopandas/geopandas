@@ -12,7 +12,7 @@ dependencies:
   - matplotlib=3.4.2
   - mapclassify=2.4.2
   - sphinx>=4.0.2
-  - pydata-sphinx-theme-0.6.3
+  - pydata-sphinx-theme=0.6.3
   - numpydoc=1.1.0
   - ipython=7.25.0
   - pillow=8.2.0
