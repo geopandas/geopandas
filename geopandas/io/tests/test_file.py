@@ -274,7 +274,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_gpkg_empty_crs(tmpdir, driver, ext):
+def test_empty_crs(tmpdir, driver, ext):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if driver == "GPKG":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
@@ -292,7 +292,7 @@ def test_gpkg_empty_crs(tmpdir, driver, ext):
 
     if driver == "GeoJSON":
         # geojson by default assumes epsg:4326
-        result.crs = None
+        df.crs = "EPSG:4326"
 
     assert_geodataframe_equal(result, df)
 
