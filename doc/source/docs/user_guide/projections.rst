@@ -86,7 +86,7 @@ Re-projecting is the process of changing the representation of locations from on
     world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 
     # Check original projection
-    # (it's Platte Carre! x-y are long and lat)
+    # (it's Plate Carrée! x-y are long and lat)
     world.crs
 
     # Visualize
