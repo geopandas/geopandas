@@ -273,10 +273,11 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert_geodataframe_equal(df, expected, check_less_precise=True)
 
 
-@pytest.mark.xfail
-def test_gpkg_empty_crs(tmpdir):
+@pytest.mark.xfail(strict=False)
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_gpkg_empty_crs(tmpdir, driver, ext):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
-    tempfilename = os.path.join(str(tmpdir), "temp.gpkg")
+    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
     df = GeoDataFrame(
         {
             "a": [1, 2, 3],
@@ -284,8 +285,13 @@ def test_gpkg_empty_crs(tmpdir):
         },
     )
 
-    df.to_file(tempfilename, driver="GPKG")
+    df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
+
+    if driver == "GeoJSON":
+        # geojson by default assumes epsg:4326
+        result.crs = None
+
     assert_geodataframe_equal(result, df)
 
 
