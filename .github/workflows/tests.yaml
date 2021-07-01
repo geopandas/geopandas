@@ -25,6 +25,7 @@ jobs:
       run:
         shell: bash -l {0}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         postgis: [false]
