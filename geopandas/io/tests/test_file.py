@@ -273,10 +273,12 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert_geodataframe_equal(df, expected, check_less_precise=True)
 
 
-@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_gpkg_empty_crs(tmpdir, driver, ext):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
+    if driver == "GPKG":
+        pytest.xfail("GPKG is read with Undefined geographic SRS.")
+
     tempfilename = os.path.join(str(tmpdir), "boros." + ext)
     df = GeoDataFrame(
         {
