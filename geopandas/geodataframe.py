@@ -8,15 +8,14 @@ from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-
 from pyproj import CRS
 
+import geopandas
+import geopandas.io
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries, inherit_doc
-import geopandas.io
 from geopandas.plotting import plot_dataframe
-from geopandas.tools.sjoin import sjoin
 
 from . import _compat as compat
 
@@ -1835,7 +1834,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
         """
-        return sjoin(left_df=self, right_df=df, *args, **kwargs)
+        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
