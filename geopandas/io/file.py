@@ -37,7 +37,7 @@ _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
 
-def _check_fiona(func):
+def _check_fiona(func) -> None:
     if fiona is None:
         raise ImportError(
             f"the {func} requires the 'fiona' package, but it is not installed or does "
@@ -45,7 +45,7 @@ def _check_fiona(func):
         )
 
 
-def _is_url(url):
+def _is_url(url: str) -> bool:
     """Check to see if *url* has a valid protocol."""
     try:
         return parse_url(url).scheme in _VALID_URLS
@@ -53,7 +53,7 @@ def _is_url(url):
         return False
 
 
-def _is_zip(path):
+def _is_zip(path: str) -> bool:
     """Check if a given path is a zipfile"""
     parsed = fiona.path.ParsedPath.from_uri(path)
     return (
@@ -63,7 +63,7 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs) -> GeoDataFrame:
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -206,7 +206,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             )
 
 
-def read_file(*args, **kwargs):
+def read_file(*args, **kwargs) -> GeoDataFrame:
     import warnings
 
     warnings.warn(
@@ -219,7 +219,7 @@ def read_file(*args, **kwargs):
     return _read_file(*args, **kwargs)
 
 
-def to_file(*args, **kwargs):
+def to_file(*args, **kwargs) -> None:
     import warnings
 
     warnings.warn(
@@ -234,15 +234,15 @@ def to_file(*args, **kwargs):
 
 
 def _to_file(
-    df,
-    filename,
-    driver="ESRI Shapefile",
-    schema=None,
-    index=None,
-    mode="w",
-    crs=None,
+    df: GeoDataFrame,
+    filename: str,
+    driver: str = "ESRI Shapefile",
+    schema: dict = None,
+    index: bool = None,
+    mode: str = "w",
+    crs: pyproj.CRS = None,
     **kwargs,
-):
+) -> None:
     """
     Write this GeoDataFrame to an OGR data source
 
@@ -331,13 +331,13 @@ def _to_file(
             colxn.writerecords(df.iterfeatures())
 
 
-def infer_schema(df):
+def infer_schema(df: GeoDataFrame) -> dict:
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
     types = {"Int64": "int", "string": "str", "boolean": "bool"}
 
-    def convert_type(column, in_type):
+    def convert_type(column, in_type) -> str:
         if in_type == object:
             return "str"
         if in_type.name.startswith("datetime64"):
@@ -371,7 +371,7 @@ def infer_schema(df):
     return schema
 
 
-def _geometry_types(df):
+def _geometry_types(df: GeoDataFrame) -> Union[str, list]:
     """
     Determine the geometry types in the GeoDataFrame for the schema.
     """

@@ -8,7 +8,7 @@ _available_zip = {"nybb": "nybb_16a.zip"}
 available = _available_dir + list(_available_zip.keys())
 
 
-def get_path(dataset):
+def get_path(dataset: str) -> str:
     """
     Get the path to the data file.
 
