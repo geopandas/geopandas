@@ -15,11 +15,6 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-<<<<<<< HEAD
-=======
-
-# from geopandas.geoseries import GeoSeries, inherit_doc
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
 import geopandas.io
 from geopandas.plotting import plot_dataframe
 from . import _compat as compat
@@ -209,11 +204,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def set_geometry(
         self, col, drop: bool = False, inplace: bool = False, crs: CRS = None
-<<<<<<< HEAD
     ) -> "GeoDataFrame":
-=======
-    ) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -443,11 +434,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_dict(
         cls, data: dict, geometry=None, crs: Union[str, dict] = None, **kwargs
-<<<<<<< HEAD
     ) -> "GeoDataFrame":
-=======
-    ) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Construct GeoDataFrame from dict of array-like or dicts by
         overiding DataFrame.from_dict method with geometry and crs
@@ -526,11 +513,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_features(
         cls, features, crs: Union[str, dict] = None, columns=None
-<<<<<<< HEAD
     ) -> "GeoDataFrame":
-=======
-    ) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -757,11 +740,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         )
 
     @property
-<<<<<<< HEAD
     def __geo_interface__(self) -> "GeoDataFrame":
-=======
-    def __geo_interface__(self) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoDataFrame`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
@@ -1219,11 +1198,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def to_crs(
         self, crs: CRS = None, epsg: int = None, inplace: bool = False
-<<<<<<< HEAD
     ) -> "GeoDataFrame":
-=======
-    ) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Transform geometries to a new coordinate reference system.
 
         Transform all geometries in an active geometry column to a different coordinate
@@ -1385,11 +1360,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     # Implement pandas methods
     #
 
-<<<<<<< HEAD
     def merge(self, *args, **kwargs) -> Union[pd.DataFrame, "GeoDataFrame"]:
-=======
-    def merge(self, *args, **kwargs) -> Union[pd.DataFrame, GeoDataFrame]:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
 
         Returns a ``GeoDataFrame`` if a geometry column is present; otherwise,
@@ -1470,11 +1441,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
-<<<<<<< HEAD
     ) -> "GeoDataFrame":
-=======
-    ) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Dissolve geometries within `groupby` into single observation.
         This is accomplished by applying the `unary_union` method
@@ -1589,11 +1556,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-<<<<<<< HEAD
     def explode(self, column=None, **kwargs) -> "GeoDataFrame":
-=======
-    def explode(self, column=None, **kwargs) -> GeoDataFrame:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1679,11 +1642,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     # overrides the pandas astype method to ensure the correct return type
     def astype(
         self, dtype, copy: bool = True, errors="raise", **kwargs
-<<<<<<< HEAD
     ) -> Union[pd.DataFrame, "GeoDataFrame"]:
-=======
-    ) -> Union[pd.DataFrame, GeoDataFrame]:
->>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Cast a pandas object to a specified dtype ``dtype``.
 
