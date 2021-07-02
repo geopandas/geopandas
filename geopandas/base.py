@@ -4,8 +4,6 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from geopandas.geodataframe import GeoDataFrame
-from geopandas.geoseries import GeoSeries
 
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
@@ -28,9 +26,9 @@ def is_geometry_type(data) -> bool:
 
 
 def _delegate_binary_method(
-    op: str, this: GeoSeries, other: GeoSeries, align: bool, *args, **kwargs
-) -> Union[GeoSeries, Series]:
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    op: str, this: "GeoSeries", other: "GeoSeries", align: bool, *args, **kwargs
+) -> Union["GeoSeries", Series]:
+    # type: (str, GeoSeries, GeoSeries) -> "GeoSeries"/Series
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
@@ -50,8 +48,10 @@ def _delegate_binary_method(
     return data, this.index
 
 
-def _binary_geo(op: str, this: GeoSeries, other: GeoSeries, align: bool) -> GeoSeries:
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries
+def _binary_geo(
+    op: str, this: "GeoSeries", other: "GeoSeries", align: bool
+) -> "GeoSeries":
+    # type: (str, GeoSeries, GeoSeries) -> "GeoSeries"
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
@@ -60,7 +60,7 @@ def _binary_geo(op: str, this: GeoSeries, other: GeoSeries, align: bool) -> GeoS
 
 
 def _binary_op(
-    op: str, this: GeoSeries, other: GeoSeries, align: bool, *args, **kwargs
+    op: str, this: "GeoSeries", other: "GeoSeries", align: bool, *args, **kwargs
 ) -> Series:
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
@@ -68,8 +68,8 @@ def _binary_op(
     return Series(data, index=index)
 
 
-def _delegate_property(op: str, this: GeoSeries) -> Union[GeoSeries, Series]:
-    # type: (str, GeoSeries) -> GeoSeries/Series
+def _delegate_property(op: str, this: "GeoSeries") -> Union["GeoSeries", Series]:
+    # type: (str, GeoSeries) -> "GeoSeries"/Series
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)
     if isinstance(data, GeometryArray):
@@ -80,8 +80,8 @@ def _delegate_property(op: str, this: GeoSeries) -> Union[GeoSeries, Series]:
         return Series(data, index=this.index)
 
 
-def _delegate_geo_method(op: str, this: GeoSeries, *args, **kwargs) -> GeoSeries:
-    # type: (str, GeoSeries) -> GeoSeries
+def _delegate_geo_method(op: str, this: "GeoSeries", *args, **kwargs) -> "GeoSeries":
+    # type: (str, GeoSeries) -> "GeoSeries"
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
@@ -430,7 +430,7 @@ GeometryCollection
     #
 
     @property
-    def boundary(self) -> GeoSeries:
+    def boundary(self) -> "GeoSeries":
         """Returns a ``GeoSeries`` of lower dimensional objects representing
         each geometries's set-theoretic `boundary`.
 
@@ -465,7 +465,7 @@ GeometryCollection
         return _delegate_property("boundary", self)
 
     @property
-    def centroid(self) -> GeoSeries:
+    def centroid(self) -> "GeoSeries":
         """Returns a ``GeoSeries`` of points representing the centroid of each
         geometry.
 
@@ -501,7 +501,7 @@ GeometryCollection
         return _delegate_property("centroid", self)
 
     @property
-    def convex_hull(self) -> GeoSeries:
+    def convex_hull(self) -> "GeoSeries":
         """Returns a ``GeoSeries`` of geometries representing the convex hull
         of each geometry.
 
@@ -547,7 +547,7 @@ GeometryCollection
         return _delegate_property("convex_hull", self)
 
     @property
-    def envelope(self) -> GeoSeries:
+    def envelope(self) -> "GeoSeries":
         """Returns a ``GeoSeries`` of geometries representing the envelope of
         each geometry.
 
@@ -588,7 +588,7 @@ GeometryCollection
         return _delegate_property("envelope", self)
 
     @property
-    def exterior(self) -> GeoSeries:
+    def exterior(self) -> "GeoSeries":
         """Returns a ``GeoSeries`` of LinearRings representing the outer
         boundary of each polygon in the GeoSeries.
 
@@ -667,7 +667,7 @@ GeometryCollection
         """
         return _delegate_property("interiors", self)
 
-    def representative_point(self) -> GeoSeries:
+    def representative_point(self) -> "GeoSeries":
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
 
@@ -2084,7 +2084,7 @@ GeometryCollection
     # Binary operations that return a GeoSeries
     #
 
-    def difference(self, other, align: bool = True) -> GeoSeries:
+    def difference(self, other, align: bool = True) -> "GeoSeries":
         """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
@@ -2195,7 +2195,7 @@ GeometryCollection
         """
         return _binary_geo("difference", self, other, align)
 
-    def symmetric_difference(self, other, align: bool = True) -> GeoSeries:
+    def symmetric_difference(self, other, align: bool = True) -> "GeoSeries":
         """Returns a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
@@ -2310,7 +2310,7 @@ GeometryCollection
         """
         return _binary_geo("symmetric_difference", self, other, align)
 
-    def union(self, other, align: bool = True) -> GeoSeries:
+    def union(self, other, align: bool = True) -> "GeoSeries":
         """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
@@ -2423,7 +2423,7 @@ GeometryCollection
         """
         return _binary_geo("union", self, other, align)
 
-    def intersection(self, other, align: bool = True) -> GeoSeries:
+    def intersection(self, other, align: bool = True) -> "GeoSeries":
         """Returns a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
@@ -2673,7 +2673,7 @@ GeometryCollection
         distance: Union[float, np.ndarray, pd.Series],
         resolution: int = 16,
         **kwargs
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Returns a ``GeoSeries`` of geometries representing all points within
         a given ``distance`` of each geometric object.
 
@@ -2729,7 +2729,7 @@ GeometryCollection
             "buffer", self, distance, resolution=resolution, **kwargs
         )
 
-    def simplify(self, *args, **kwargs) -> GeoSeries:
+    def simplify(self, *args, **kwargs) -> "GeoSeries":
         """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
@@ -2779,7 +2779,7 @@ GeometryCollection
         """
         return _delegate_geo_method("simplify", self, *args, **kwargs)
 
-    def relate(self, other: Union[BaseGeometry, GeoSeries], align: bool = True):
+    def relate(self, other: Union[BaseGeometry, "GeoSeries"], align: bool = True):
         """
         Returns the DE-9IM intersection matrices for the geometries
 
@@ -3006,7 +3006,7 @@ GeometryCollection
             "interpolate", self, distance, normalized=normalized
         )
 
-    def affine_transform(self, matrix: Union[list, tuple]) -> GeoSeries:
+    def affine_transform(self, matrix: Union[list, tuple]) -> "GeoSeries":
         """Return a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/stable/manual.html#shapely.affinity.affine_transform
@@ -3050,7 +3050,7 @@ GeometryCollection
 
     def translate(
         self, xoff: float = 0.0, yoff: float = 0.0, zoff: float = 0.0
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Returns a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate
@@ -3090,7 +3090,7 @@ GeometryCollection
 
     def rotate(
         self, angle: float, origin="center", use_radians: bool = False
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Returns a ``GeoSeries`` with rotated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate
@@ -3148,7 +3148,7 @@ GeometryCollection
         yfact: float = 1.0,
         zfact: float = 1.0,
         origin="center",
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Returns a ``GeoSeries`` with scaled geometries.
 
         The geometries can be scaled by different factors along each
@@ -3202,7 +3202,7 @@ GeometryCollection
         ys: float = 0.0,
         origin="center",
         use_radians: bool = False,
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Returns a ``GeoSeries`` with skewed geometries.
 
         The geometries are sheared by angles along the x and y dimensions.
@@ -3292,7 +3292,7 @@ GeometryCollection
         """
         return _CoordinateIndexer(self)
 
-    def equals(self, other: Union[GeoSeries, GeoDataFrame]) -> bool:
+    def equals(self, other: Union["GeoSeries", "GeoDataFrame"]) -> bool:
         """
         Test whether two objects contain the same elements.
 

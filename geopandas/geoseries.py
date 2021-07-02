@@ -9,7 +9,6 @@ from pandas.core.internals import SingleBlockManager
 from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
 
-from geopandas.geodataframe import GeoDataFrame
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
@@ -369,7 +368,7 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoSeries(df.geometry, crs=df.crs)
 
     @classmethod
-    def from_wkb(cls, data, index=None, crs=None, **kwargs) -> GeoSeries:
+    def from_wkb(cls, data, index=None, crs=None, **kwargs) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
@@ -401,7 +400,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
 
     @classmethod
-    def from_wkt(cls, data, index=None, crs=None, **kwargs) -> GeoSeries:
+    def from_wkt(cls, data, index=None, crs=None, **kwargs) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKT objects
@@ -460,7 +459,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 
     @property
-    def __geo_interface__(self) -> GeoDataFrame:
+    def __geo_interface__(self) -> "GeoDataFrame":
         """Returns a ``GeoSeries`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
@@ -769,7 +768,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     plot.__doc__ = plot_series.__doc__
 
-    def explode(self) -> GeoSeries:
+    def explode(self) -> "GeoSeries":
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -872,7 +871,7 @@ class GeoSeries(GeoPandasBase, Series):
         epsg: int = None,
         inplace: bool = False,
         allow_override: bool = False,
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
@@ -964,7 +963,7 @@ class GeoSeries(GeoPandasBase, Series):
         result.crs = crs
         return result
 
-    def to_crs(self, crs: CRS = None, epsg: int = None) -> GeoSeries:
+    def to_crs(self, crs: CRS = None, epsg: int = None) -> "GeoSeries":
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
 

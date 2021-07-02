@@ -1,4 +1,5 @@
 from distutils.version import LooseVersion
+from typing import Union
 
 import warnings
 import numpy as np

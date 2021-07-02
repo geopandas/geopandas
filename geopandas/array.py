@@ -133,7 +133,7 @@ def _is_scalar_geometry(geom):
         return isinstance(geom, BaseGeometry)
 
 
-def from_shapely(data: list, crs=None) -> GeometryArray:
+def from_shapely(data: list, crs=None) -> "GeometryArray":
     """
     Convert a list or array of shapely objects to a GeometryArray.
 
@@ -152,7 +152,7 @@ def from_shapely(data: list, crs=None) -> GeometryArray:
     return GeometryArray(vectorized.from_shapely(data), crs=crs)
 
 
-def to_shapely(geoms: GeometryArray) -> np.ndarray:
+def to_shapely(geoms: "GeometryArray") -> np.ndarray:
     """
     Convert GeometryArray to numpy object array of shapely objects.
     """
@@ -161,7 +161,7 @@ def to_shapely(geoms: GeometryArray) -> np.ndarray:
     return vectorized.to_shapely(geoms.data)
 
 
-def from_wkb(data: list, crs=None) -> GeometryArray:
+def from_wkb(data: list, crs=None) -> "GeometryArray":
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -178,7 +178,7 @@ def from_wkb(data: list, crs=None) -> GeometryArray:
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms: GeometryArray, hex: bool = False, **kwargs):
+def to_wkb(geoms: "GeometryArray", hex: bool = False, **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
@@ -187,7 +187,7 @@ def to_wkb(geoms: GeometryArray, hex: bool = False, **kwargs):
     return vectorized.to_wkb(geoms.data, hex=hex, **kwargs)
 
 
-def from_wkt(data: list, crs=None) -> GeometryArray:
+def from_wkt(data: list, crs=None) -> "GeometryArray":
     """
     Convert a list or array of WKT objects to a GeometryArray.
 
@@ -204,7 +204,7 @@ def from_wkt(data: list, crs=None) -> GeometryArray:
     return GeometryArray(vectorized.from_wkt(data), crs=crs)
 
 
-def to_wkt(geoms: GeometryArray, **kwargs):
+def to_wkt(geoms: "GeometryArray", **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKT objects.
     """
@@ -213,7 +213,7 @@ def to_wkt(geoms: GeometryArray, **kwargs):
     return vectorized.to_wkt(geoms.data, **kwargs)
 
 
-def points_from_xy(x, y, z=None, crs=None) -> GeometryArray:
+def points_from_xy(x, y, z=None, crs=None) -> "GeometryArray":
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
@@ -479,24 +479,24 @@ class GeometryArray(ExtensionArray):
     #
 
     @property
-    def boundary(self) -> GeometryArray:
+    def boundary(self) -> "GeometryArray":
         return GeometryArray(vectorized.boundary(self.data), crs=self.crs)
 
     @property
-    def centroid(self) -> GeometryArray:
+    def centroid(self) -> "GeometryArray":
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self.data), crs=self.crs)
 
     @property
-    def convex_hull(self) -> GeometryArray:
+    def convex_hull(self) -> "GeometryArray":
         return GeometryArray(vectorized.convex_hull(self.data), crs=self.crs)
 
     @property
-    def envelope(self) -> GeometryArray:
+    def envelope(self) -> "GeometryArray":
         return GeometryArray(vectorized.envelope(self.data), crs=self.crs)
 
     @property
-    def exterior(self) -> GeometryArray:
+    def exterior(self) -> "GeometryArray":
         return GeometryArray(vectorized.exterior(self.data), crs=self.crs)
 
     @property
@@ -504,7 +504,7 @@ class GeometryArray(ExtensionArray):
         # no GeometryArray as result
         return vectorized.interiors(self.data)
 
-    def representative_point(self) -> GeometryArray:
+    def representative_point(self) -> "GeometryArray":
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
     #
@@ -584,22 +584,22 @@ class GeometryArray(ExtensionArray):
     # Binary operations that return new geometries
     #
 
-    def difference(self, other) -> GeometryArray:
+    def difference(self, other) -> "GeometryArray":
         return GeometryArray(
             self._binary_method("difference", self, other), crs=self.crs
         )
 
-    def intersection(self, other) -> GeometryArray:
+    def intersection(self, other) -> "GeometryArray":
         return GeometryArray(
             self._binary_method("intersection", self, other), crs=self.crs
         )
 
-    def symmetric_difference(self, other) -> GeometryArray:
+    def symmetric_difference(self, other) -> "GeometryArray":
         return GeometryArray(
             self._binary_method("symmetric_difference", self, other), crs=self.crs
         )
 
-    def union(self, other) -> GeometryArray:
+    def union(self, other) -> "GeometryArray":
         return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
 
     #
@@ -610,7 +610,7 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
 
-    def buffer(self, distance, resolution=16, **kwargs) -> GeometryArray:
+    def buffer(self, distance, resolution=16, **kwargs) -> "GeometryArray":
         if not (isinstance(distance, (int, float)) and distance == 0):
             self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
@@ -618,14 +618,14 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def interpolate(self, distance, normalized: bool = False) -> GeometryArray:
+    def interpolate(self, distance, normalized: bool = False) -> "GeometryArray":
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
             crs=self.crs,
         )
 
-    def simplify(self, tolerance, preserve_topology: bool = True) -> GeometryArray:
+    def simplify(self, tolerance, preserve_topology: bool = True) -> "GeometryArray":
         return GeometryArray(
             vectorized.simplify(
                 self.data, tolerance, preserve_topology=preserve_topology
@@ -656,7 +656,7 @@ class GeometryArray(ExtensionArray):
     # Affinity operations
     #
 
-    def affine_transform(self, matrix) -> GeometryArray:
+    def affine_transform(self, matrix) -> "GeometryArray":
         return GeometryArray(
             vectorized._affinity_method("affine_transform", self.data, matrix),
             crs=self.crs,
@@ -664,7 +664,7 @@ class GeometryArray(ExtensionArray):
 
     def translate(
         self, xoff: float = 0.0, yoff: float = 0.0, zoff: float = 0.0
-    ) -> GeometryArray:
+    ) -> "GeometryArray":
         return GeometryArray(
             vectorized._affinity_method("translate", self.data, xoff, yoff, zoff),
             crs=self.crs,
@@ -672,7 +672,7 @@ class GeometryArray(ExtensionArray):
 
     def rotate(
         self, angle, origin="center", use_radians: bool = False
-    ) -> GeometryArray:
+    ) -> "GeometryArray":
         return GeometryArray(
             vectorized._affinity_method(
                 "rotate", self.data, angle, origin=origin, use_radians=use_radians
@@ -686,7 +686,7 @@ class GeometryArray(ExtensionArray):
         yfact: float = 1.0,
         zfact: float = 1.0,
         origin="center",
-    ) -> GeometryArray:
+    ) -> "GeometryArray":
         return GeometryArray(
             vectorized._affinity_method(
                 "scale", self.data, xfact, yfact, zfact, origin=origin
@@ -700,7 +700,7 @@ class GeometryArray(ExtensionArray):
         ys: float = 0.0,
         origin="center",
         use_radians: bool = False,
-    ) -> GeometryArray:
+    ) -> "GeometryArray":
         return GeometryArray(
             vectorized._affinity_method(
                 "skew", self.data, xs, ys, origin=origin, use_radians=use_radians
@@ -708,7 +708,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def to_crs(self, crs=None, epsg=None) -> GeometryArray:
+    def to_crs(self, crs=None, epsg=None) -> "GeometryArray":
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
 
@@ -937,11 +937,13 @@ class GeometryArray(ExtensionArray):
     def ndim(self) -> int:
         return len(self.shape)
 
-    def copy(self, *args, **kwargs) -> GeometryArray:
+    def copy(self, *args, **kwargs) -> "GeometryArray":
         # still taking args/kwargs for compat with pandas 0.24
         return GeometryArray(self.data.copy(), crs=self._crs)
 
-    def take(self, indices, allow_fill: bool = False, fill_value=None) -> GeometryArray:
+    def take(
+        self, indices, allow_fill: bool = False, fill_value=None
+    ) -> "GeometryArray":
         from pandas.api.extensions import take
 
         if allow_fill:
@@ -957,7 +959,7 @@ class GeometryArray(ExtensionArray):
             result[pd.isna(result)] = None
         return GeometryArray(result, crs=self.crs)
 
-    def _fill(self, idx, value: BaseGometry) -> GeometryArray:
+    def _fill(self, idx, value: "BaseGeometry") -> "GeometryArray":
         """Fill index locations with value
 
         Value should be a BaseGeometry
@@ -1079,7 +1081,7 @@ class GeometryArray(ExtensionArray):
     def nbytes(self):
         return self.data.nbytes
 
-    def shift(self, periods: int = 1, fill_value: object = None) -> GeometryArray:
+    def shift(self, periods: int = 1, fill_value: object = None) -> "GeometryArray":
         """
         Shift values by desired number.
 
@@ -1198,7 +1200,7 @@ class GeometryArray(ExtensionArray):
         # Note: this is used in `ExtensionArray.argsort`.
         raise TypeError("geometries are not orderable")
 
-    def _formatter(self, boxed: bool = False) -> Callabe[[Any], str]:
+    def _formatter(self, boxed: bool = False):
         """Formatting function for scalar values.
 
         This is used in the default '__repr__'. The returned formatting

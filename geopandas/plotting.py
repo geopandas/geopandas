@@ -1,4 +1,3 @@
-import matplotlib
 import warnings
 from typing import Union
 
@@ -6,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 import geopandas
-from geopandas.geodataframe import GeoDataFrame
 
+from matplotlib.pyplot import Artist
 from distutils.version import LooseVersion
 
 
@@ -317,7 +316,7 @@ def plot_series(
     s: pd.Series,
     cmap: str = None,
     color: str = None,
-    ax: matplotlib.pyplot.Artist = None,
+    ax: Artist = None,
     figsize=None,
     aspect: Union[str, float] = "auto",
     **style_kwds,
@@ -343,7 +342,7 @@ def plot_series(
 
     color : str (default None)
         If specified, all objects will be colored uniformly.
-    ax : matplotlib.pyplot.Artist (default None)
+    ax : Artist (default None)
         axes on which to draw the plot
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
@@ -478,12 +477,12 @@ def plot_series(
 
 
 def plot_dataframe(
-    df: GeoDataFrame,
+    df: "GeoDataFrame",
     column: Union[str, np.ndarray, pd.Series] = None,
     cmap: str = None,
     color: str = None,
-    ax: matplotlib.pyplot.Artist = None,
-    cax: matplotlib.pyplot.Artist = None,
+    ax: Artist = None,
+    cax: Artist = None,
     categorical: bool = False,
     legend: bool = False,
     scheme: str = None,
@@ -532,7 +531,7 @@ def plot_dataframe(
         The name of a colormap recognized by matplotlib.
     color : str (default None)
         If specified, all objects will be colored uniformly.
-    ax : matplotlib.pyplot.Artist (default None)
+    ax : Artist (default None)
         axes on which to draw the plot
     cax : matplotlib.pyplot Artist (default None)
         axes on which to draw the legend in case of color map.
