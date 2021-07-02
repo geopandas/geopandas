@@ -1,9 +1,12 @@
+import matplotlib
 import warnings
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
 import geopandas
+from geopandas.geodataframe import GeoDataFrame
 
 from distutils.version import LooseVersion
 
@@ -311,7 +314,13 @@ plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+    s: pd.Series,
+    cmap: str = None,
+    color: str = None,
+    ax: matplotlib.pyplot.Artist = None,
+    figsize=None,
+    aspect: Union[str, float] = "auto",
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -469,25 +478,25 @@ def plot_series(
 
 
 def plot_dataframe(
-    df,
-    column=None,
-    cmap=None,
-    color=None,
-    ax=None,
-    cax=None,
-    categorical=False,
-    legend=False,
-    scheme=None,
-    k=5,
-    vmin=None,
-    vmax=None,
+    df: GeoDataFrame,
+    column: Union[str, np.ndarray, pd.Series] = None,
+    cmap: str = None,
+    color: str = None,
+    ax: matplotlib.pyplot.Artist = None,
+    cax: matplotlib.pyplot.Artist = None,
+    categorical: bool = False,
+    legend: bool = False,
+    scheme: str = None,
+    k: int = 5,
+    vmin: float = None,
+    vmax: float = None,
     markersize=None,
-    figsize=None,
-    legend_kwds=None,
-    categories=None,
-    classification_kwds=None,
-    missing_kwds=None,
-    aspect="auto",
+    figsize: tuple = None,
+    legend_kwds: dict = None,
+    categories: list = None,
+    classification_kwds: dict = None,
+    missing_kwds: dict = None,
+    aspect: Union[str, float] = "auto",
     **style_kwds,
 ):
     """
@@ -934,7 +943,7 @@ if geopandas._compat.PANDAS_GE_025:
             return self(kind="geo", *args, **kwargs)
 
 
-def _mapclassify_choro(values, scheme, **classification_kwds):
+def _mapclassify_choro(values: pd.Series, scheme: str, **classification_kwds):
     """
     Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 

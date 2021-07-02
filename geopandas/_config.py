@@ -66,7 +66,7 @@ class Options(object):
         return "{}({}{})".format(cls, space, description)
 
 
-def indent(text, prefix, predicate=None):
+def indent(text, prefix, predicate=None) -> str:
     """
     This is the python 3 textwrap.indent function, which is not available in
     python 2.
@@ -83,7 +83,7 @@ def indent(text, prefix, predicate=None):
     return "".join(prefixed_lines())
 
 
-def _validate_display_precision(value):
+def _validate_display_precision(value) -> None:
     if value is not None:
         if not isinstance(value, int) or not (0 <= value <= 16):
             raise ValueError("Invalid value, needs to be an integer [0-16]")
@@ -103,7 +103,7 @@ display_precision = Option(
 )
 
 
-def _validate_bool(value):
+def _validate_bool(value) -> None:
     if not isinstance(value, bool):
         raise TypeError("Expected bool value, got {0}".format(type(value)))
 
@@ -114,7 +114,7 @@ def _default_use_pygeos():
     return compat.USE_PYGEOS
 
 
-def _callback_use_pygeos(key, value):
+def _callback_use_pygeos(key, value) -> None:
     assert key == "use_pygeos"
     import geopandas._compat as compat
 
