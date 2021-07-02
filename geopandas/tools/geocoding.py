@@ -4,11 +4,12 @@ import time
 import pandas as pd
 
 from shapely.geometry import Point
+from geopy.geocoders.base import Geocoder, GeocoderQueryError
 
 import geopandas
 
 
-def _get_throttle_time(provider):
+def _get_throttle_time(provider: Geocoder) -> int:
     """
     Amount of time to wait between requests to a geocoding API, for providers
     that specify rate limits in their terms of service.
@@ -22,7 +23,9 @@ def _get_throttle_time(provider):
         return 0
 
 
-def geocode(strings, provider=None, **kwargs):
+def geocode(
+    strings: list, provider: Geocoder = None, **kwargs
+) -> geopandas.GeoDataFrame:
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -71,7 +74,9 @@ def geocode(strings, provider=None, **kwargs):
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(points, provider=None, **kwargs):
+def reverse_geocode(
+    points: list, provider: Geocoder = None, **kwargs
+) -> geopandas.GeoDataFrame:
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -126,9 +131,10 @@ def reverse_geocode(points, provider=None, **kwargs):
     return _query(points, False, provider, throttle_time, **kwargs)
 
 
-def _query(data, forward, provider, throttle_time, **kwargs):
+def _query(
+    data: list, forward: bool, provider: Geocoder, throttle_time: float, **kwargs
+) -> geopandas.GeoDataFrame:
     # generic wrapper for calls over lists to geopy Geocoders
-    from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
 
     if not isinstance(data, pd.Series):
@@ -153,7 +159,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     return df
 
 
-def _prepare_geocode_result(results):
+def _prepare_geocode_result(results: dict) -> geopandas.GeoDataFrame:
     """
     Helper function for the geocode function
 

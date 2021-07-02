@@ -3,6 +3,7 @@ import numbers
 import operator
 import warnings
 import inspect
+from typing import Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -56,7 +57,7 @@ class GeometryDtype(ExtensionDtype):
 register_extension_dtype(GeometryDtype)
 
 
-def _check_crs(left, right, allow_none=False):
+def _check_crs(left, right, allow_none: bool = False) -> bool:
     """
     Check if the projection of both arrays is the same.
 
@@ -70,7 +71,7 @@ def _check_crs(left, right, allow_none=False):
     return True
 
 
-def _crs_mismatch_warn(left, right, stacklevel=3):
+def _crs_mismatch_warn(left, right, stacklevel: int = 3) -> None:
     """
     Raise a CRS mismatch warning with the information on the assigned CRS.
     """
@@ -132,7 +133,7 @@ def _is_scalar_geometry(geom):
         return isinstance(geom, BaseGeometry)
 
 
-def from_shapely(data, crs=None):
+def from_shapely(data: list, crs=None) -> GeometryArray:
     """
     Convert a list or array of shapely objects to a GeometryArray.
 
@@ -151,7 +152,7 @@ def from_shapely(data, crs=None):
     return GeometryArray(vectorized.from_shapely(data), crs=crs)
 
 
-def to_shapely(geoms):
+def to_shapely(geoms: GeometryArray) -> np.ndarray:
     """
     Convert GeometryArray to numpy object array of shapely objects.
     """
@@ -160,7 +161,7 @@ def to_shapely(geoms):
     return vectorized.to_shapely(geoms.data)
 
 
-def from_wkb(data, crs=None):
+def from_wkb(data: list, crs=None) -> GeometryArray:
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -177,7 +178,7 @@ def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms, hex=False, **kwargs):
+def to_wkb(geoms: GeometryArray, hex: bool = False, **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
@@ -186,7 +187,7 @@ def to_wkb(geoms, hex=False, **kwargs):
     return vectorized.to_wkb(geoms.data, hex=hex, **kwargs)
 
 
-def from_wkt(data, crs=None):
+def from_wkt(data: list, crs=None) -> GeometryArray:
     """
     Convert a list or array of WKT objects to a GeometryArray.
 
@@ -203,7 +204,7 @@ def from_wkt(data, crs=None):
     return GeometryArray(vectorized.from_wkt(data), crs=crs)
 
 
-def to_wkt(geoms, **kwargs):
+def to_wkt(geoms: GeometryArray, **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKT objects.
     """
@@ -212,7 +213,7 @@ def to_wkt(geoms, **kwargs):
     return vectorized.to_wkt(geoms.data, **kwargs)
 
 
-def points_from_xy(x, y, z=None, crs=None):
+def points_from_xy(x, y, z=None, crs=None) -> GeometryArray:
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
@@ -478,24 +479,24 @@ class GeometryArray(ExtensionArray):
     #
 
     @property
-    def boundary(self):
+    def boundary(self) -> GeometryArray:
         return GeometryArray(vectorized.boundary(self.data), crs=self.crs)
 
     @property
-    def centroid(self):
+    def centroid(self) -> GeometryArray:
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self.data), crs=self.crs)
 
     @property
-    def convex_hull(self):
+    def convex_hull(self) -> GeometryArray:
         return GeometryArray(vectorized.convex_hull(self.data), crs=self.crs)
 
     @property
-    def envelope(self):
+    def envelope(self) -> GeometryArray:
         return GeometryArray(vectorized.envelope(self.data), crs=self.crs)
 
     @property
-    def exterior(self):
+    def exterior(self) -> GeometryArray:
         return GeometryArray(vectorized.exterior(self.data), crs=self.crs)
 
     @property
@@ -503,7 +504,7 @@ class GeometryArray(ExtensionArray):
         # no GeometryArray as result
         return vectorized.interiors(self.data)
 
-    def representative_point(self):
+    def representative_point(self) -> GeometryArray:
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
     #
@@ -583,22 +584,22 @@ class GeometryArray(ExtensionArray):
     # Binary operations that return new geometries
     #
 
-    def difference(self, other):
+    def difference(self, other) -> GeometryArray:
         return GeometryArray(
             self._binary_method("difference", self, other), crs=self.crs
         )
 
-    def intersection(self, other):
+    def intersection(self, other) -> GeometryArray:
         return GeometryArray(
             self._binary_method("intersection", self, other), crs=self.crs
         )
 
-    def symmetric_difference(self, other):
+    def symmetric_difference(self, other) -> GeometryArray:
         return GeometryArray(
             self._binary_method("symmetric_difference", self, other), crs=self.crs
         )
 
-    def union(self, other):
+    def union(self, other) -> GeometryArray:
         return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
 
     #
@@ -609,7 +610,7 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
 
-    def buffer(self, distance, resolution=16, **kwargs):
+    def buffer(self, distance, resolution=16, **kwargs) -> GeometryArray:
         if not (isinstance(distance, (int, float)) and distance == 0):
             self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
@@ -617,14 +618,14 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def interpolate(self, distance, normalized=False):
+    def interpolate(self, distance, normalized: bool = False) -> GeometryArray:
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             vectorized.interpolate(self.data, distance, normalized=normalized),
             crs=self.crs,
         )
 
-    def simplify(self, tolerance, preserve_topology=True):
+    def simplify(self, tolerance, preserve_topology: bool = True) -> GeometryArray:
         return GeometryArray(
             vectorized.simplify(
                 self.data, tolerance, preserve_topology=preserve_topology
@@ -632,7 +633,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def project(self, other, normalized=False):
+    def project(self, other, normalized: bool = False):
         if isinstance(other, BaseGeometry):
             other = _shapely_to_geom(other)
         elif isinstance(other, GeometryArray):
@@ -655,19 +656,23 @@ class GeometryArray(ExtensionArray):
     # Affinity operations
     #
 
-    def affine_transform(self, matrix):
+    def affine_transform(self, matrix) -> GeometryArray:
         return GeometryArray(
             vectorized._affinity_method("affine_transform", self.data, matrix),
             crs=self.crs,
         )
 
-    def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
+    def translate(
+        self, xoff: float = 0.0, yoff: float = 0.0, zoff: float = 0.0
+    ) -> GeometryArray:
         return GeometryArray(
             vectorized._affinity_method("translate", self.data, xoff, yoff, zoff),
             crs=self.crs,
         )
 
-    def rotate(self, angle, origin="center", use_radians=False):
+    def rotate(
+        self, angle, origin="center", use_radians: bool = False
+    ) -> GeometryArray:
         return GeometryArray(
             vectorized._affinity_method(
                 "rotate", self.data, angle, origin=origin, use_radians=use_radians
@@ -675,7 +680,13 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
+    def scale(
+        self,
+        xfact: float = 1.0,
+        yfact: float = 1.0,
+        zfact: float = 1.0,
+        origin="center",
+    ) -> GeometryArray:
         return GeometryArray(
             vectorized._affinity_method(
                 "scale", self.data, xfact, yfact, zfact, origin=origin
@@ -683,7 +694,13 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
+    def skew(
+        self,
+        xs: float = 0.0,
+        ys: float = 0.0,
+        origin="center",
+        use_radians: bool = False,
+    ) -> GeometryArray:
         return GeometryArray(
             vectorized._affinity_method(
                 "skew", self.data, xs, ys, origin=origin, use_radians=use_radians
@@ -691,7 +708,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def to_crs(self, crs=None, epsg=None):
+    def to_crs(self, crs=None, epsg=None) -> GeometryArray:
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
 
@@ -780,7 +797,7 @@ class GeometryArray(ExtensionArray):
         new_data = vectorized.transform(self.data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
 
-    def estimate_utm_crs(self, datum_name="WGS 84"):
+    def estimate_utm_crs(self, datum_name: str = "WGS 84") -> CRS:
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
@@ -913,18 +930,18 @@ class GeometryArray(ExtensionArray):
         return self.data.size
 
     @property
-    def shape(self):
+    def shape(self) -> tuple:
         return (self.size,)
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         return len(self.shape)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args, **kwargs) -> GeometryArray:
         # still taking args/kwargs for compat with pandas 0.24
         return GeometryArray(self.data.copy(), crs=self._crs)
 
-    def take(self, indices, allow_fill=False, fill_value=None):
+    def take(self, indices, allow_fill: bool = False, fill_value=None) -> GeometryArray:
         from pandas.api.extensions import take
 
         if allow_fill:
@@ -940,7 +957,7 @@ class GeometryArray(ExtensionArray):
             result[pd.isna(result)] = None
         return GeometryArray(result, crs=self.crs)
 
-    def _fill(self, idx, value):
+    def _fill(self, idx, value: BaseGometry) -> GeometryArray:
         """Fill index locations with value
 
         Value should be a BaseGeometry
@@ -955,7 +972,9 @@ class GeometryArray(ExtensionArray):
         self.data[idx] = value_arr
         return self
 
-    def fillna(self, value=None, method=None, limit=None):
+    def fillna(
+        self, value=None, method: str = None, limit: int = None
+    ) -> ExtensionArray:
         """Fill NA/NaN values using the specified method.
 
         Parameters
@@ -999,7 +1018,7 @@ class GeometryArray(ExtensionArray):
 
         return new_values
 
-    def astype(self, dtype, copy=True):
+    def astype(self, dtype, copy: bool = True) -> np.ndarray:
         """
         Cast to a NumPy array with 'dtype'.
 
@@ -1035,7 +1054,7 @@ class GeometryArray(ExtensionArray):
         else:
             return np.array(self, dtype=dtype, copy=copy)
 
-    def isna(self):
+    def isna(self) -> np.ndarray:
         """
         Boolean NumPy array indicating if each value is missing
         """
@@ -1044,7 +1063,7 @@ class GeometryArray(ExtensionArray):
         else:
             return np.array([g is None for g in self.data], dtype="bool")
 
-    def unique(self):
+    def unique(self) -> ExtensionArray:
         """Compute the ExtensionArray of unique values.
 
         Returns
@@ -1060,7 +1079,7 @@ class GeometryArray(ExtensionArray):
     def nbytes(self):
         return self.data.nbytes
 
-    def shift(self, periods=1, fill_value=None):
+    def shift(self, periods: int = 1, fill_value: object = None) -> GeometryArray:
         """
         Shift values by desired number.
 
@@ -1100,7 +1119,7 @@ class GeometryArray(ExtensionArray):
     # -------------------------------------------------------------------------
 
     @classmethod
-    def _from_sequence(cls, scalars, dtype=None, copy=False):
+    def _from_sequence(cls, scalars, dtype=None, copy: bool = False) -> ExtensionArray:
         """
         Construct a new ExtensionArray from a sequence of scalars.
 
@@ -1124,7 +1143,7 @@ class GeometryArray(ExtensionArray):
             scalars = [scalars]
         return from_shapely(scalars)
 
-    def _values_for_factorize(self):
+    def _values_for_factorize(self) -> Tuple[np.ndarray, Any]:
         # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
 
@@ -1144,7 +1163,7 @@ class GeometryArray(ExtensionArray):
         return vals, None
 
     @classmethod
-    def _from_factorized(cls, values, original):
+    def _from_factorized(cls, values: np.ndarray, original: ExtensionArray):
         """
         Reconstruct an ExtensionArray after factorization.
 
@@ -1162,7 +1181,7 @@ class GeometryArray(ExtensionArray):
         """
         return from_wkb(values, crs=original.crs)
 
-    def _values_for_argsort(self):
+    def _values_for_argsort(self) -> np.ndarray:
         # type: () -> np.ndarray
         """Return values for sorting.
 
@@ -1179,7 +1198,7 @@ class GeometryArray(ExtensionArray):
         # Note: this is used in `ExtensionArray.argsort`.
         raise TypeError("geometries are not orderable")
 
-    def _formatter(self, boxed=False):
+    def _formatter(self, boxed: bool = False) -> Callabe[[Any], str]:
         """Formatting function for scalar values.
 
         This is used in the default '__repr__'. The returned formatting
@@ -1235,7 +1254,7 @@ class GeometryArray(ExtensionArray):
         return repr
 
     @classmethod
-    def _concat_same_type(cls, to_concat):
+    def _concat_same_type(cls, to_concat: ExtensionArray) -> ExtensionArray:
         """
         Concatenate multiple array
 
@@ -1250,7 +1269,7 @@ class GeometryArray(ExtensionArray):
         data = np.concatenate([ga.data for ga in to_concat])
         return GeometryArray(data, crs=to_concat[0].crs)
 
-    def _reduce(self, name, skipna=True, **kwargs):
+    def _reduce(self, name: str, skipna: bool = True, **kwargs):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name == "any" or name == "all":
@@ -1262,7 +1281,7 @@ class GeometryArray(ExtensionArray):
             )
         )
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None) -> np.ndarray:
         """
         The numpy array interface.
 
@@ -1305,7 +1324,7 @@ class GeometryArray(ExtensionArray):
     def __ne__(self, other):
         return self._binop(other, operator.ne)
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         """
         Return for `item in self`.
         """

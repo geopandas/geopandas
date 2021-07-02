@@ -7,8 +7,13 @@ from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def sjoin(
-    left_df, right_df, how="inner", op="intersects", lsuffix="left", rsuffix="right"
-):
+    left_df: GeoDataFrame,
+    right_df: GeoDataFrame,
+    how: str = "inner",
+    op: str = "intersects",
+    lsuffix: str = "left",
+    rsuffix: str = "right",
+) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames.
 
     See the User Guide page :doc:`../../user_guide/mergingdata` for details.
@@ -113,7 +118,9 @@ stria    AUT    416600.0
     return joined
 
 
-def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
+def _basic_checks(
+    left_df: GeoDataFrame, right_df: GeoDataFrame, how: str, lsuffix: str, rsuffix: str
+) -> None:
     """Checks the validity of join input parameters.
 
     `how` must be one of the valid options.
@@ -163,7 +170,9 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         )
 
 
-def _geom_predicate_query(left_df, right_df, op):
+def _geom_predicate_query(
+    left_df: GeoDataFrame, right_df: GeoDataFrame, op: str
+) -> pd.DataFrame:
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -215,7 +224,14 @@ def _geom_predicate_query(left_df, right_df, op):
     return indices
 
 
-def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
+def _frame_join(
+    indices: pd.DataFrame,
+    left_df: GeoDataFrame,
+    right_df: GeoDataFrame,
+    how: str,
+    lsuffix: str,
+    rsuffix: str,
+) -> GeoDataFrame:
     """Join the GeoDataFrames at the DataFrame level.
 
     Parameters
