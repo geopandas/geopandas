@@ -8,6 +8,7 @@ import geopandas
 
 from matplotlib.pyplot import Artist
 from distutils.version import LooseVersion
+from matplotlib.pyplot import Artist
 
 
 def deprecated(new):
@@ -477,7 +478,11 @@ def plot_series(
 
 
 def plot_dataframe(
+<<<<<<< HEAD
     df: "GeoDataFrame",
+=======
+    df,
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
     column: Union[str, np.ndarray, pd.Series] = None,
     cmap: str = None,
     color: str = None,

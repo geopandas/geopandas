@@ -871,7 +871,11 @@ class GeoSeries(GeoPandasBase, Series):
         epsg: int = None,
         inplace: bool = False,
         allow_override: bool = False,
+<<<<<<< HEAD
     ) -> "GeoSeries":
+=======
+    ):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
@@ -963,7 +967,11 @@ class GeoSeries(GeoPandasBase, Series):
         result.crs = crs
         return result
 
+<<<<<<< HEAD
     def to_crs(self, crs: CRS = None, epsg: int = None) -> "GeoSeries":
+=======
+    def to_crs(self, crs: CRS = None, epsg: int = None):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
 

@@ -25,10 +25,15 @@ def is_geometry_type(data) -> bool:
         return False
 
 
+<<<<<<< HEAD
 def _delegate_binary_method(
     op: str, this: "GeoSeries", other: "GeoSeries", align: bool, *args, **kwargs
 ) -> Union["GeoSeries", Series]:
     # type: (str, GeoSeries, GeoSeries) -> "GeoSeries"/Series
+=======
+def _delegate_binary_method(op: str, this, other, align: bool, *args, **kwargs):
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
@@ -48,10 +53,15 @@ def _delegate_binary_method(
     return data, this.index
 
 
+<<<<<<< HEAD
 def _binary_geo(
     op: str, this: "GeoSeries", other: "GeoSeries", align: bool
 ) -> "GeoSeries":
     # type: (str, GeoSeries, GeoSeries) -> "GeoSeries"
+=======
+def _binary_geo(op: str, this, other, align: bool):
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
@@ -59,17 +69,26 @@ def _binary_geo(
     return GeoSeries(geoms.data, index=index, crs=this.crs)
 
 
+<<<<<<< HEAD
 def _binary_op(
     op: str, this: "GeoSeries", other: "GeoSeries", align: bool, *args, **kwargs
 ) -> Series:
+=======
+def _binary_op(op: str, this, other, align: bool, *args, **kwargs) -> Series:
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
     """Binary operation on GeoSeries objects that returns a Series"""
     data, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return Series(data, index=index)
 
 
+<<<<<<< HEAD
 def _delegate_property(op: str, this: "GeoSeries") -> Union["GeoSeries", Series]:
     # type: (str, GeoSeries) -> "GeoSeries"/Series
+=======
+def _delegate_property(op: str, this):
+    # type: (str, GeoSeries) -> GeoSeries/Series
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)
     if isinstance(data, GeometryArray):
@@ -80,8 +99,13 @@ def _delegate_property(op: str, this: "GeoSeries") -> Union["GeoSeries", Series]
         return Series(data, index=this.index)
 
 
+<<<<<<< HEAD
 def _delegate_geo_method(op: str, this: "GeoSeries", *args, **kwargs) -> "GeoSeries":
     # type: (str, GeoSeries) -> "GeoSeries"
+=======
+def _delegate_geo_method(op: str, this, *args, **kwargs):
+    # type: (str, GeoSeries) -> GeoSeries
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
@@ -2084,7 +2108,11 @@ GeometryCollection
     # Binary operations that return a GeoSeries
     #
 
+<<<<<<< HEAD
     def difference(self, other, align: bool = True) -> "GeoSeries":
+=======
+    def difference(self, other, align: bool = True):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
@@ -2195,7 +2223,11 @@ GeometryCollection
         """
         return _binary_geo("difference", self, other, align)
 
+<<<<<<< HEAD
     def symmetric_difference(self, other, align: bool = True) -> "GeoSeries":
+=======
+    def symmetric_difference(self, other, align: bool = True):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
@@ -2310,7 +2342,11 @@ GeometryCollection
         """
         return _binary_geo("symmetric_difference", self, other, align)
 
+<<<<<<< HEAD
     def union(self, other, align: bool = True) -> "GeoSeries":
+=======
+    def union(self, other, align: bool = True):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
@@ -2423,7 +2459,11 @@ GeometryCollection
         """
         return _binary_geo("union", self, other, align)
 
+<<<<<<< HEAD
     def intersection(self, other, align: bool = True) -> "GeoSeries":
+=======
+    def intersection(self, other, align: bool = True):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
@@ -2673,7 +2713,11 @@ GeometryCollection
         distance: Union[float, np.ndarray, pd.Series],
         resolution: int = 16,
         **kwargs
+<<<<<<< HEAD
     ) -> "GeoSeries":
+=======
+    ):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` of geometries representing all points within
         a given ``distance`` of each geometric object.
 
@@ -2779,7 +2823,11 @@ GeometryCollection
         """
         return _delegate_geo_method("simplify", self, *args, **kwargs)
 
+<<<<<<< HEAD
     def relate(self, other: Union[BaseGeometry, "GeoSeries"], align: bool = True):
+=======
+    def relate(self, other, align: bool = True):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Returns the DE-9IM intersection matrices for the geometries
 
@@ -3006,7 +3054,11 @@ GeometryCollection
             "interpolate", self, distance, normalized=normalized
         )
 
+<<<<<<< HEAD
     def affine_transform(self, matrix: Union[list, tuple]) -> "GeoSeries":
+=======
+    def affine_transform(self, matrix: Union[list, tuple]):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Return a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/stable/manual.html#shapely.affinity.affine_transform
@@ -3048,9 +3100,13 @@ GeometryCollection
         """  # noqa (E501 link is longer than max line length)
         return _delegate_geo_method("affine_transform", self, matrix)
 
+<<<<<<< HEAD
     def translate(
         self, xoff: float = 0.0, yoff: float = 0.0, zoff: float = 0.0
     ) -> "GeoSeries":
+=======
+    def translate(self, xoff: float = 0.0, yoff: float = 0.0, zoff: float = 0.0):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate
@@ -3088,9 +3144,13 @@ GeometryCollection
         """  # noqa (E501 link is longer than max line length)
         return _delegate_geo_method("translate", self, xoff, yoff, zoff)
 
+<<<<<<< HEAD
     def rotate(
         self, angle: float, origin="center", use_radians: bool = False
     ) -> "GeoSeries":
+=======
+    def rotate(self, angle: float, origin="center", use_radians: bool = False):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` with rotated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate
@@ -3148,7 +3208,11 @@ GeometryCollection
         yfact: float = 1.0,
         zfact: float = 1.0,
         origin="center",
+<<<<<<< HEAD
     ) -> "GeoSeries":
+=======
+    ):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` with scaled geometries.
 
         The geometries can be scaled by different factors along each
@@ -3202,7 +3266,11 @@ GeometryCollection
         ys: float = 0.0,
         origin="center",
         use_radians: bool = False,
+<<<<<<< HEAD
     ) -> "GeoSeries":
+=======
+    ):
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """Returns a ``GeoSeries`` with skewed geometries.
 
         The geometries are sheared by angles along the x and y dimensions.
@@ -3292,7 +3360,11 @@ GeometryCollection
         """
         return _CoordinateIndexer(self)
 
+<<<<<<< HEAD
     def equals(self, other: Union["GeoSeries", "GeoDataFrame"]) -> bool:
+=======
+    def equals(self, other) -> bool:
+>>>>>>> f8d079ca5135e5806f05da7501a71bcb17fbddd8
         """
         Test whether two objects contain the same elements.
 
