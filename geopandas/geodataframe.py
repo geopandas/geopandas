@@ -1762,7 +1762,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         See the User Guide page :doc:`../../user_guide/mergingdata` for details.
 
-
         Parameters
         ----------
         df : GeoDataFrames
@@ -1785,10 +1784,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         Examples
         --------
-        >>> countries = geopandas.read_file(geopandas.datasets.get_\
-    path("naturalearth_lowres"))
-        >>> cities = geopandas.read_file(geopandas.datasets.get_\
-    path("naturalearth_cities"))
+        >>> countries = geopandas.read_file( \
+    geopandas.datasets.get_path("naturalearth_lowres"))
+        >>> cities = geopandas.read_file( \
+    geopandas.datasets.get_path("naturalearth_cities"))
         >>> countries.head()  # doctest: +SKIP
             pop_est      continent                      name \
     iso_a3  gdp_md_est                                           geometry
