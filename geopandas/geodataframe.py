@@ -34,7 +34,9 @@ def _ensure_geometry(data, crs=None):
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
-            return GeoSeries(data)
+            data = GeoSeries(data)
+        if data.crs is None:
+            data.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -811,6 +813,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ids = np.array(self.index, copy=False)
         geometries = np.array(self[self._geometry_column_name], copy=False)
 
+        if not self.columns.is_unique:
+            raise ValueError("GeoDataFrame cannot contain duplicated column names.")
+
         properties_cols = self.columns.difference([self._geometry_column_name])
 
         if len(properties_cols) > 0:
@@ -1318,6 +1323,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 value = [value] * self.shape[0]
             try:
                 value = _ensure_geometry(value, crs=self.crs)
+                self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super(GeoDataFrame, self).__setitem__(key, value)
@@ -1580,9 +1586,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = pd.concat(
-            [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
+        df = (
+            df_copy.drop(df_copy._geometry_column_name, axis=1)
+            .join(exploded_geom)
+            .__finalize__(self)
         )
+
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
