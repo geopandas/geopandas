@@ -549,7 +549,7 @@ if compat.HAS_PYGEOS:
 
             Parameters
             ----------
-            geometry : Union[np.ndarray, GoeSeries, GeometryArray, Sequence]
+            geometry : Union[np.ndarray, GeoSeries, GeometryArray, Sequence]
                 An array-like of PyGEOS geometries
                 or a GeoPandas GeoSeries/GeometryArray.
 
