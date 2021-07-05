@@ -330,7 +330,7 @@ class TestGeometryArrayCRS:
         df = GeoDataFrame(
             {"col1": [1, 2], "geometry": arr, "other_geom": arr}, crs=4326
         )
-        df["other_geom"] = df["other_geom"].set_crs(27700, allow_override=True)
+        df["other_geom"] = from_shapely(self.geoms, crs=27700)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df["geometry"].crs == self.wgs
