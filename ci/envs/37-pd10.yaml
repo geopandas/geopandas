@@ -1,0 +1,27 @@
+name: test
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  # required
+  - pandas=1.0
+  - shapely
+  - fiona
+  #- pyproj
+  - geos
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  # optional
+  - rtree
+  - matplotlib
+  #- geopy
+  - SQLalchemy
+  - libspatialite
+  - pyarrow
+  - pip:
+      - pyproj==2.3.1
+      - geopy
+      - mapclassify==2.2.0
