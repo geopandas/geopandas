@@ -512,7 +512,7 @@ class TestSpatialJoinNaturalEarth:
     TEST_NEAREST,
     reason=(
         f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
-        " must be installed and activated via the geopandas.compat module to"
+        " must be installed and activated via the geopandas.options module to"
         " test sjoin_nearest"
     ),
 )
