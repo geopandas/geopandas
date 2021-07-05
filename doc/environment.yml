@@ -25,6 +25,7 @@ dependencies:
   - sphinx-gallery=0.9.0
   - jinja2=3.0.1
   - doc2dash=2.3.0
+  - matplotlib-scalebar=0.7.0
   # specify additional dependencies to reduce solving for conda
   - gdal=3.2.1
   - libgdal=3.2.1
