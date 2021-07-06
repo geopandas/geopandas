@@ -875,7 +875,9 @@ class GeometryArray(ExtensionArray):
 
     @property
     def y(self):
-        """Return the y location of point geometries in a GeoSeries"""
+        """
+        Return the y location of point geometries in a GeoSeries
+        """
         if (self.geom_type[~self.isna()] == "Point").all():
             return vectorized.get_y(self.data)
         else:

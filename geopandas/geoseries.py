@@ -256,9 +256,10 @@ class GeoSeries(GeoPandasBase, Series):
         return _delegate_property("x", self)
 
     @property
-    def y(self):
-        """Return the y location of point geometries in a GeoSeries
-
+    @doc(
+        GeometryArray.y,
+        dedent(
+            """
         Returns
         -------
         pandas.Series
@@ -278,9 +279,10 @@ class GeoSeries(GeoPandasBase, Series):
         --------
 
         GeoSeries.x
-        GeoSeries.z
-
-        """
+        GeoSeries.z"""
+        ),
+    )
+    def y(self):
         return _delegate_property("y", self)
 
     @property
