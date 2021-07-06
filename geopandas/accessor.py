@@ -1,5 +1,6 @@
 from pandas.core.accessor import _register_accessor
-from pandas.util._decorators import doc
+
+from ._decorator import doc
 
 
 @doc(_register_accessor, klass="GeoDataFrame")
