@@ -192,10 +192,10 @@ def to_wkb(geoms, hex=False, **kwargs):
     return vectorized.to_wkb(geoms.data, hex=hex, **kwargs)
 
 
-def from_wkt(data, crs=None):
-    """
-    Convert a list or array of WKT objects to a GeometryArray.
-
+@doc(
+    vectorized.from_wkt,
+    dedent(
+        """
     Parameters
     ----------
     data : array-like
@@ -203,9 +203,11 @@ def from_wkt(data, crs=None):
     crs : value, optional
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
-    """
+        such as an authority string (eg "EPSG:4326") or a WKT string."""
+    ),
+    type="a GeometryArray",
+)
+def from_wkt(data, crs=None):
     return GeometryArray(vectorized.from_wkt(data), crs=crs)
 
 

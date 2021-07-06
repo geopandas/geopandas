@@ -194,9 +194,10 @@ def to_wkb(data, hex=False, **kwargs):
         return np.array(out, dtype=object)
 
 
+@doc(type="a np.ndarray[geoms]")
 def from_wkt(data):
     """
-    Convert a list or array of WKT objects to a np.ndarray[geoms].
+    Convert a list or array of WKT objects to {type}.
     """
     if compat.USE_PYGEOS:
         return pygeos.from_wkt(data)
