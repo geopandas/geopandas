@@ -1,3 +1,4 @@
+from textwrap import dedent
 from warnings import warn
 
 import numpy as np
@@ -8,6 +9,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
 
+from ._decorator import doc
 from .array import GeometryArray, GeometryDtype
 
 
@@ -2630,35 +2632,23 @@ GeometryCollection
         return self.geometry.values.sindex
 
     @property
-    def has_sindex(self):
-        """Check the existence of the spatial index without generating it.
-
-        Use the `.sindex` attribute on a GeoDataFrame or GeoSeries
-        to generate a spatial index if it does not yet exist,
-        which may take considerable time based on the underlying index
-        implementation.
-
-        Note that the underlying spatial index may not be fully
-        initialized until the first use.
-
+    @doc(
+        GeometryArray.has_sindex,
+        dedent(
+            """
         Examples
         --------
-
         >>> from shapely.geometry import Point
-        >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> d = "geometry": [Point(1, 2), Point(2, 1)]
         >>> gdf = geopandas.GeoDataFrame(d)
         >>> gdf.has_sindex
         False
         >>> index = gdf.sindex
         >>> gdf.has_sindex
-        True
-
-        Returns
-        -------
-        bool
-            `True` if the spatial index has been generated or
-            `False` if not.
-        """
+        True"""
+        ),
+    )
+    def has_sindex(self):
         return self.geometry.values.has_sindex
 
     def buffer(self, distance, resolution=16, **kwargs):
