@@ -7,22 +7,7 @@ import geopandas
 
 from distutils.version import LooseVersion
 
-from ._decorator import doc
-
-
-def deprecated(new):
-    """Helper to provide deprecation warning."""
-
-    def old(*args, **kwargs):
-        warnings.warn(
-            "{} is intended for internal ".format(new.__name__[1:])
-            + "use only, and will be deprecated.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        new(*args, **kwargs)
-
-    return old
+from ._decorator import deprecated, doc
 
 
 def _flatten_multi_geoms(geoms, prefix="Multi"):

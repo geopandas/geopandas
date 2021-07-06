@@ -1,3 +1,4 @@
+import warnings
 from textwrap import dedent
 from typing import Callable, Union
 
@@ -49,3 +50,18 @@ def doc(*docstrings: Union[str, Callable], **params) -> Callable:
         return decorated
 
     return decorator
+
+
+def deprecated(new):
+    """Helper to provide deprecation warning."""
+
+    def old(*args, **kwargs):
+        warnings.warn(
+            "{} is intended for internal ".format(new.__name__[1:])
+            + "use only, and will be deprecated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        new(*args, **kwargs)
+
+    return old
