@@ -941,35 +941,15 @@ class GeoSeries(GeoPandasBase, Series):
         result.crs = crs
         return result
 
-    def to_crs(self, crs=None, epsg=None):
-        """Returns a ``GeoSeries`` with all geometries transformed to a new
-        coordinate reference system.
-
-        Transform all geometries in a GeoSeries to a different coordinate
-        reference system.  The ``crs`` attribute on the current GeoSeries must
-        be set.  Either ``crs`` or ``epsg`` may be specified for output.
-
-        This method will transform all points in all objects.  It has no notion
-        or projecting entire geometries.  All segments joining points are
-        assumed to be lines in the current projection, not geodesics.  Objects
-        crossing the dateline (or other projection boundary) will have
-        undesirable behavior.
-
-        Parameters
-        ----------
-        crs : pyproj.CRS, optional if `epsg` is specified
-            The value can be anything accepted
-            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        epsg : int, optional if `crs` is specified
-            EPSG code specifying output projection.
-
-        Returns
-        -------
-        GeoSeries
-
-        Examples
-        --------
+    @doc(
+        GeometryArray.to_crs,
+        type="GeoSeries",
+        transform_data="GeoSeries",
+        crs_data="GeoSeries",
+        other_parameters="",
+        returns="GeoSeries",
+        examples=dedent(
+            """\
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)], crs=4326)
         >>> s
@@ -1010,13 +990,16 @@ class GeoSeries(GeoPandasBase, Series):
         - method: Popular Visualisation Pseudo Mercator
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
-        - Prime Meridian: Greenwich
-
+        - Prime Meridian: Greenwich"""
+        ),
+        see_also=dedent(
+            """
         See Also
         --------
-        GeoSeries.set_crs : assign CRS
-
-        """
+        GeoSeries.set_crs : assign CRS"""
+        ),
+    )
+    def to_crs(self, crs=None, epsg=None):
         return GeoSeries(
             self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )

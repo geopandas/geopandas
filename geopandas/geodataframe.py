@@ -1166,37 +1166,21 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return df
 
-    def to_crs(self, crs=None, epsg=None, inplace=False):
-        """Transform geometries to a new coordinate reference system.
-
-        Transform all geometries in an active geometry column to a different coordinate
-        reference system.  The ``crs`` attribute on the current GeoSeries must
-        be set.  Either ``crs`` or ``epsg`` may be specified for output.
-
-        This method will transform all points in all objects. It has no notion
-        or projecting entire geometries.  All segments joining points are
-        assumed to be lines in the current projection, not geodesics. Objects
-        crossing the dateline (or other projection boundary) will have
-        undesirable behavior.
-
-        Parameters
-        ----------
-        crs : pyproj.CRS, optional if `epsg` is specified
-            The value can be anything accepted by
-            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        epsg : int, optional if `crs` is specified
-            EPSG code specifying output projection.
+    @doc(
+        GeometryArray.to_crs,
+        type="GeoDataFrame",
+        transform_data="an active geometry column",
+        crs_data="GeoSesies",
+        other_parameters=dedent(
+            """\
         inplace : bool, optional, default: False
             Whether to return a new GeoDataFrame or do the transformation in
             place.
-
-        Returns
-        -------
-        GeoDataFrame
-
-        Examples
-        --------
+            """
+        ),
+        returns="GeoDataFrame",
+        examples=dedent(
+            """\
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
@@ -1236,12 +1220,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         - method: Popular Visualisation Pseudo Mercator
         Datum: World Geodetic System 1984
         - Ellipsoid: WGS 84
-        - Prime Meridian: Greenwich
-
+        - Prime Meridian: Greenwich"""
+        ),
+        see_also=dedent(
+            """
         See also
         --------
-        GeoDataFrame.set_crs : assign CRS without re-projection
-        """
+        GeoDataFrame.set_crs : assign CRS without re-projection"""
+        ),
+    )
+    def to_crs(self, crs=None, epsg=None, inplace=False):
         if inplace:
             df = self
         else:
@@ -1342,7 +1330,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
