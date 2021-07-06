@@ -1,6 +1,8 @@
 import json
 import warnings
 
+from textwrap import dedent
+
 import numpy as np
 import pandas as pd
 from pandas import Series, MultiIndex
@@ -225,9 +227,10 @@ class GeoSeries(GeoPandasBase, Series):
         return self
 
     @property
-    def x(self):
-        """Return the x location of point geometries in a GeoSeries
-
+    @doc(
+        GeometryArray.x,
+        dedent(
+            """
         Returns
         -------
         pandas.Series
@@ -245,11 +248,11 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-
         GeoSeries.y
-        GeoSeries.z
-
-        """
+        GeoSeries.z"""
+        ),
+    )
+    def x(self):
         return _delegate_property("x", self)
 
     @property
