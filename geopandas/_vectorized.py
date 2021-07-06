@@ -17,6 +17,7 @@ import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
+from ._decorator import doc
 
 try:
     import pygeos
@@ -93,11 +94,12 @@ def _shapely_to_pygeos(geom):
         return pygeos.from_wkb(geom.wkb)
 
 
+@doc(type="an object-dtype numpy array")
 def from_shapely(data):
     """
-    Convert a list or array of shapely objects to an object-dtype numpy
-    array of validated geometry elements.
+    Convert a list or array of shapely objects to {type}.
 
+    Validates the elements.
     """
     # First try a fast path for pygeos if possible, but do this in a try-except
     # block because pygeos.from_shapely only handles Shapely objects, while

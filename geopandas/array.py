@@ -1,8 +1,10 @@
-from collections.abc import Iterable
 import numbers
 import operator
 import warnings
 import inspect
+
+from collections.abc import Iterable
+from textwrap import dedent
 
 import numpy as np
 import pandas as pd
@@ -27,6 +29,7 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
+from ._decorator import doc
 from .sindex import _get_sindex_class
 
 
@@ -132,22 +135,23 @@ def _is_scalar_geometry(geom):
         return isinstance(geom, BaseGeometry)
 
 
-def from_shapely(data, crs=None):
-    """
-    Convert a list or array of shapely objects to a GeometryArray.
-
-    Validates the elements.
-
+@doc(
+    vectorized.from_shapely,
+    dedent(
+        """
     Parameters
     ----------
     data : array-like
         list or array of shapely objects
     crs : value, optional
-        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        Coordinate Reference System of the geometry objects.
+        Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
-    """
+        such as an authority string (eg "EPSG:4326") or a WKT string."""
+    ),
+    type="a GeometryArray",
+)
+def from_shapely(data, crs=None):
     return GeometryArray(vectorized.from_shapely(data), crs=crs)
 
 
