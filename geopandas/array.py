@@ -164,10 +164,10 @@ def to_shapely(geoms):
     return vectorized.to_shapely(geoms.data)
 
 
-def from_wkb(data, crs=None):
-    """
-    Convert a list or array of WKB objects to a GeometryArray.
-
+@doc(
+    vectorized.from_wkb,
+    dedent(
+        """
     Parameters
     ----------
     data : array-like
@@ -175,9 +175,11 @@ def from_wkb(data, crs=None):
     crs : value, optional
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
-    """
+        such as an authority string (eg "EPSG:4326") or a WKT string."""
+    ),
+    type="a GeometryArray",
+)
+def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 

@@ -158,9 +158,10 @@ def to_shapely(data):
         return data
 
 
+@doc(type="a np.ndarray[geoms]")
 def from_wkb(data):
     """
-    Convert a list or array of WKB objects to a np.ndarray[geoms].
+    Convert a list or array of WKB objects to {type}.
     """
     if compat.USE_PYGEOS:
         return pygeos.from_wkb(data)
