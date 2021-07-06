@@ -136,17 +136,10 @@ class GeoPandasBase(object):
         return _delegate_property("area", self)
 
     @property
-    def crs(self):
-        """
-        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
-        object.
-
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
+    @doc(
+        GeometryArray.crs,
+        dedent(
+            """
         Examples
         --------
 
@@ -166,8 +159,10 @@ class GeoPandasBase(object):
         See also
         --------
         GeoSeries.set_crs : assign CRS
-        GeoSeries.to_crs : re-project to another CRS
-        """
+        GeoSeries.to_crs : re-project to another CRS"""
+        ),
+    )
+    def crs(self):
         return self.geometry.values.crs
 
     @crs.setter

@@ -1,6 +1,8 @@
 import json
 import warnings
 
+from textwrap import dedent
+
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -352,17 +354,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(col, inplace=inplace)
 
     @property
-    def crs(self):
-        """
-        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
-        object.
-
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
-
+    @doc(
+        GeometryArray.crs,
+        dedent(
+            """
         Examples
         --------
 
@@ -382,9 +377,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         See also
         --------
         GeoDataFrame.set_crs : assign CRS
-        GeoDataFrame.to_crs : re-project to another CRS
-
-        """
+        GeoDataFrame.to_crs : re-project to another CRS"""
+        ),
+    )
+    def crs(self):
         return self._crs
 
     @crs.setter
