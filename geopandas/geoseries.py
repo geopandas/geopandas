@@ -746,6 +746,7 @@ class GeoSeries(GeoPandasBase, Series):
         return plot_series(self, *args, **kwargs)
 
     plot.__doc__ = plot_series.__doc__
+
     def explode(self) -> "GeoSeries":
         """
         Explode multi-part geometries into multiple single geometries.

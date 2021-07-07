@@ -9,7 +9,6 @@ from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-from sqlalchemy.engine.base import Connection, Engine
 
 from pyproj import CRS
 
@@ -1393,7 +1392,15 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return result
 
     @doc(pd.DataFrame)
-    def apply(self, func, axis: int = 0, raw: bool = False, result_type=None, args=(), **kwargs):
+    def apply(
+        self,
+        func,
+        axis: int = 0,
+        raw: bool = False,
+        result_type=None,
+        args=(),
+        **kwargs,
+    ):
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )

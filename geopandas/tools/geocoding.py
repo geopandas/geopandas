@@ -131,7 +131,11 @@ def reverse_geocode(
 
 
 def _query(
-    data: list, forward: bool, provider: geopy.geocoders.base.Geocoder, throttle_time: float, **kwargs
+    data: list,
+    forward: bool,
+    provider: geopy.geocoders.base.Geocoder,
+    throttle_time: float,
+    **kwargs
 ) -> geopandas.GeoDataFrame:
     # generic wrapper for calls over lists to geopy Geocoders
     from geopy.geocoders import get_geocoder_for_service

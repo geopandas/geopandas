@@ -14,8 +14,9 @@ from .. import _compat as compat
 
 @contextmanager
 def _get_conn(
-    conn_or_engine: Union[sqlalchemy.engine.base.Connection,
-                          sqlalchemy.engine.base.Engine]
+    conn_or_engine: Union[
+        sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine
+    ]
 ) -> sqlalchemy.engine.base.Connection:
     """
     Yield a connection within a transaction context.
