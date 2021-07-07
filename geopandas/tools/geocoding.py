@@ -9,7 +9,7 @@ from shapely.geometry import Point
 import geopandas
 
 if TYPE_CHECKING:
-    import geopy.geocoders.base.Geocoder
+    import geopy.geocoders.base
 
 
 def _get_throttle_time(provider: geopy.geocoders.base.Geocoder) -> int:
