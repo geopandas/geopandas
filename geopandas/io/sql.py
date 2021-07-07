@@ -10,11 +10,13 @@ import shapely.wkb
 from geopandas import GeoDataFrame
 
 from .. import _compat as compat
-from sqlalchemy.engine.base import Engine, Connection
 
 
 @contextmanager
-def _get_conn(conn_or_engine: Union[Connection, Engine]) -> Connection:
+def _get_conn(
+    conn_or_engine: Union[sqlalchemy.engine.base.Connection,
+                          sqlalchemy.engine.base.Engine]
+) -> sqlalchemy.engine.base.Connection:
     """
     Yield a connection within a transaction context.
 
@@ -31,10 +33,10 @@ def _get_conn(conn_or_engine: Union[Connection, Engine]) -> Connection:
     Connection
     """
 
-    if isinstance(conn_or_engine, Connection):
+    if isinstance(conn_or_engine, sqlalchemy.engine.base.Connection):
         with conn_or_engine.begin():
             yield conn_or_engine
-    elif isinstance(conn_or_engine, Engine):
+    elif isinstance(conn_or_engine, sqlalchemy.engine.base.Engine):
         with conn_or_engine.begin() as conn:
             yield conn
     else:
@@ -99,7 +101,7 @@ def _df_to_geodf(
 
 def _read_postgis(
     sql: str,
-    con: Union[Connection, Engine],
+    con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
     geom_col: str = "geom",
     crs: Union[dict, str] = None,
     index_col: Union[str, list] = None,
@@ -321,7 +323,7 @@ def _psql_insert_copy(tbl, conn, keys, data_iter) -> None:
 def _write_postgis(
     gdf: GeoDataFrame,
     name: str,
-    con: Union[Connection, Engine],
+    con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
     schema: str = None,
     if_exists: str = "fail",
     index: bool = False,

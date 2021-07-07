@@ -601,7 +601,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_postgis(
         cls,
         sql: str,
-        con: Union[Connection, Engine],
+        con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
         geom_col: str = "geom",
         crs=None,
         index_col: Union[str, list] = None,
@@ -1663,7 +1663,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def to_postgis(
         self,
         name: str,
-        con: Union[Connection, Engine],
+        con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
         schema: str = None,
         if_exists: str = "fail",
         index: bool = False,

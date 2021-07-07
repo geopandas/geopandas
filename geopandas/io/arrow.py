@@ -10,7 +10,6 @@ from geopandas import GeoDataFrame
 import geopandas
 
 import pyarrow
-from pyarrow import Table
 
 
 METADATA_VERSION = "0.1.0"
@@ -163,7 +162,7 @@ def _validate_metadata(metadata: dict) -> None:
             raise ValueError("Only WKB geometry encoding is supported")
 
 
-def _geopandas_to_arrow(df: GeoDataFrame, index: bool = None) -> Table:
+def _geopandas_to_arrow(df: GeoDataFrame, index: bool = None) -> pyarrow.Table:
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -190,7 +189,7 @@ def _geopandas_to_arrow(df: GeoDataFrame, index: bool = None) -> Table:
 
     df = df.to_wkb()
 
-    table = Table.from_pandas(df, preserve_index=index)
+    table = pyarrow.Table.from_pandas(df, preserve_index=index)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
@@ -296,7 +295,7 @@ def _to_feather(
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table: Table) -> GeoDataFrame:
+def _arrow_to_geopandas(table: pyarrow.Table) -> GeoDataFrame:
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """

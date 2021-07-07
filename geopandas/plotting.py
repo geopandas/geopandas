@@ -7,7 +7,6 @@ from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from matplotlib.pyplot import Artist
 from distutils.version import LooseVersion
 
 from ._decorator import doc
@@ -319,7 +318,7 @@ def plot_series(
     s: pd.Series,
     cmap: str = None,
     color: str = None,
-    ax: Artist = None,
+    ax: matplotlib.pyplot.Artist = None,
     figsize=None,
     aspect: Union[str, float] = "auto",
     **style_kwds,
@@ -345,7 +344,7 @@ def plot_series(
 
     color : str (default None)
         If specified, all objects will be colored uniformly.
-    ax : Artist (default None)
+    ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
@@ -484,8 +483,8 @@ def plot_dataframe(
     column: Union[str, np.ndarray, pd.Series] = None,
     cmap: str = None,
     color: str = None,
-    ax: Artist = None,
-    cax: Artist = None,
+    ax: matplotlib.pyplot.Artist = None,
+    cax: matplotlib.pyplot.Artist = None,
     categorical: bool = False,
     legend: bool = False,
     scheme: str = None,
@@ -534,7 +533,7 @@ def plot_dataframe(
         The name of a colormap recognized by matplotlib.
     color : str (default None)
         If specified, all objects will be colored uniformly.
-    ax : Artist (default None)
+    ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
     cax : matplotlib.pyplot Artist (default None)
         axes on which to draw the legend in case of color map.

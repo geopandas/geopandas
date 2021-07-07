@@ -260,14 +260,12 @@ def points_from_xy(x, y, z=None):
 
 
 def _binary_method(op, left, right, **kwargs):
-    # type: (str, np.array[geoms], [np.array[geoms]/BaseGeometry]) -> array-like
     if isinstance(right, BaseGeometry):
         right = from_shapely([right])[0]
     return getattr(pygeos, op)(left, right, **kwargs)
 
 
 def _binary_geo(op, left, right):
-    # type: (str, np.array[geoms], [np.array[geoms]/BaseGeometry]) -> np.array[geoms]
     """Apply geometry-valued operation
 
     Supports:
@@ -312,8 +310,6 @@ def _binary_geo(op, left, right):
 
 
 def _binary_predicate(op, left, right, *args, **kwargs):
-    # type: (str, np.array[geoms], np.array[geoms]/BaseGeometry, args/kwargs)
-    #        -> array[bool]
     """Binary operation on np.array[geoms] that returns a boolean ndarray
 
     Supports:
@@ -354,8 +350,6 @@ def _binary_predicate(op, left, right, *args, **kwargs):
 
 
 def _binary_op_float(op, left, right, *args, **kwargs):
-    # type: (str, np.array[geoms], np.array[geoms]/BaseGeometry, args/kwargs)
-    #        -> array
     """Binary operation on np.array[geoms] that returns a ndarray"""
     # used for distance -> check for empty as we want to return np.nan instead 0.0
     # as shapely does currently (https://github.com/Toblerity/Shapely/issues/498)
@@ -386,8 +380,6 @@ def _binary_op_float(op, left, right, *args, **kwargs):
 
 
 def _binary_op(op, left, right, *args, **kwargs):
-    # type: (str, np.array[geoms], np.array[geoms]/BaseGeometry, args/kwargs)
-    #        -> array
     """Binary operation on np.array[geoms] that returns a ndarray"""
     # pass empty to shapely (relate handles this correctly, project only
     # for linestrings and points)
@@ -424,8 +416,6 @@ def _binary_op(op, left, right, *args, **kwargs):
 
 
 def _affinity_method(op, left, *args, **kwargs):
-    # type: (str, np.array[geoms], ...) -> np.array[geoms]
-
     # not all shapely.affinity methods can handle empty geometries:
     # affine_transform itself works (as well as translate), but rotate, scale
     # and skew fail (they try to unpack the bounds).
@@ -455,7 +445,6 @@ def _affinity_method(op, left, *args, **kwargs):
 
 
 def _unary_op(op, left, null_value=False):
-    # type: (str, np.array[geoms], Any) -> np.array
     """Unary operation that returns a Series"""
     data = [getattr(geom, op, null_value) for geom in left]
     return np.array(data, dtype=np.dtype(type(null_value)))
@@ -549,7 +538,6 @@ def length(data):
 
 
 def _unary_geo(op, left, *args, **kwargs):
-    # type: (str, np.array[geoms]) -> np.array[geoms]
     """Unary operation that returns new geometries"""
     # ensure 1D output, see note above
     data = np.empty(len(left), dtype=object)

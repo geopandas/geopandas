@@ -625,7 +625,11 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def simplify(self, tolerance, preserve_topology=True):
         return GeometryArray(
+            vectorized.simplify(
+                self.data, tolerance, preserve_topology=preserve_topology
+            ),
             crs=self.crs,
         )
 
@@ -1142,7 +1146,6 @@ class GeometryArray(ExtensionArray):
         return from_shapely(scalars)
 
     def _values_for_factorize(self) -> Tuple[np.ndarray, Any]:
-        # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
 
         Returns
@@ -1180,7 +1183,6 @@ class GeometryArray(ExtensionArray):
         return from_wkb(values, crs=original.crs)
 
     def _values_for_argsort(self) -> np.ndarray:
-        # type: () -> np.ndarray
         """Return values for sorting.
 
         Returns

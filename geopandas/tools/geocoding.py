@@ -4,12 +4,11 @@ import time
 import pandas as pd
 
 from shapely.geometry import Point
-from geopy.geocoders.base import Geocoder, GeocoderQueryError
 
 import geopandas
 
 
-def _get_throttle_time(provider: Geocoder) -> int:
+def _get_throttle_time(provider: geopy.geocoders.base.Geocoder) -> int:
     """
     Amount of time to wait between requests to a geocoding API, for providers
     that specify rate limits in their terms of service.
@@ -24,7 +23,7 @@ def _get_throttle_time(provider: Geocoder) -> int:
 
 
 def geocode(
-    strings: list, provider: Geocoder = None, **kwargs
+    strings: list, provider: geopy.geocoders.base.Geocoder = None, **kwargs
 ) -> geopandas.GeoDataFrame:
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
@@ -75,7 +74,7 @@ def geocode(
 
 
 def reverse_geocode(
-    points: list, provider: Geocoder = None, **kwargs
+    points: list, provider: geopy.geocoders.base.Geocoder = None, **kwargs
 ) -> geopandas.GeoDataFrame:
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
@@ -132,7 +131,7 @@ def reverse_geocode(
 
 
 def _query(
-    data: list, forward: bool, provider: Geocoder, throttle_time: float, **kwargs
+    data: list, forward: bool, provider: geopy.geocoders.base.Geocoder, throttle_time: float, **kwargs
 ) -> geopandas.GeoDataFrame:
     # generic wrapper for calls over lists to geopy Geocoders
     from geopy.geocoders import get_geocoder_for_service
@@ -151,7 +150,7 @@ def _query(
                 results[i] = coder.geocode(s)
             else:
                 results[i] = coder.reverse((s.y, s.x), exactly_one=True)
-        except (GeocoderQueryError, ValueError):
+        except (geopy.geocoders.base.GeocoderQueryError, ValueError):
             results[i] = (None, None)
         time.sleep(throttle_time)
 
