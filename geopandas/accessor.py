@@ -38,6 +38,7 @@ _doc_register_accessor = dedent(
     ``AttributeError`` if the data passed to your accessor has an incorrect
     dtype.
 
+    >>> import geopandas as gpd
     >>> gpd.GeoSeries().dt
     Traceback (most recent call last):
     ...
