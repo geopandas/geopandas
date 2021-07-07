@@ -1,9 +1,9 @@
 import contextlib
+import warnings
 
 import pytest
 
 import geopandas as gpd
-import pandas._testing as tm
 
 
 my_wkts = [
@@ -73,7 +73,7 @@ def test_overwrite_warns():
     area = gpd.GeoSeries.area  # Need to restore
 
     try:
-        with tm.assert_produces_warning(UserWarning) as w:
+        with warnings.catch_warnings(record=True) as w:
             gpd.api.extensions.register_geoseries_accessor("area")(MyAccessor)
             s = gpd.GeoSeries.from_wkt(my_wkts)
             assert s.area.prop == "item"
