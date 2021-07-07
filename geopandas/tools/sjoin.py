@@ -1,4 +1,3 @@
-import geopandas
 import warnings
 
 import numpy as np
@@ -368,7 +367,7 @@ def sjoin_nearest(
     lsuffix="left",
     rsuffix="right",
     distance_col=None,
-) -> geopandas.GeoDataFrame:
+) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
     See the User Guide page :doc:`../../user_guide/mergingdata` for details.
