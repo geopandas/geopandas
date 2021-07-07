@@ -386,6 +386,9 @@ def sjoin_nearest(
     max_distance : float, default None
         Maximum distance within which to query for nearest geometry.
         Must be greater than 0.
+        The max_distance used to search for nearest items in the tree may have a
+        significant impact on performance by reducing the number of input
+        geometries that are evaluated for nearest items in the tree. 
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
