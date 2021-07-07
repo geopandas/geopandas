@@ -5,20 +5,21 @@ from typing import Union, Callable
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 from sqlalchemy.engine.base import Connection, Engine
 
-
 from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
+from geopandas.geoseries import GeoSeries
 import geopandas.io
-from geopandas.plotting import plot_dataframe
+
 from . import _compat as compat
-from geopandas.geoseries import inherit_doc
+from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -1391,16 +1392,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result.__class__ = DataFrame
         return result
 
-    @inherit_doc(pd.DataFrame)
-    def apply(
-        self,
-        func,
-        axis: int = 0,
-        raw: bool = False,
-        result_type=None,
-        args=(),
-        **kwargs,
-    ):
+    @doc(pd.DataFrame)
+    def apply(self, func, axis: int = 0, raw: bool = False, result_type=None, args=(), **kwargs):
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
@@ -1418,7 +1411,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1772,23 +1765,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return self.geometry.difference(other)
 
-    if compat.PANDAS_GE_025:
-        from pandas.core.accessor import CachedAccessor
-
-        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    else:
-
-        def plot(self, *args, **kwargs):
-            """Generate a plot of the geometries in the ``GeoDataFrame``.
-            If the ``column`` parameter is given, colors plot according to values
-            in that column, otherwise calls ``GeoSeries.plot()`` on the
-            ``geometry`` column.
-            Wraps the ``plot_dataframe()`` function, and documentation is copied
-            from there.
-            """
-            return plot_dataframe(self, *args, **kwargs)
-
-    plot.__doc__ = plot_dataframe.__doc__
+    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
