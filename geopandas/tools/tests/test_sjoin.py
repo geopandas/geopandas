@@ -11,6 +11,7 @@ from shapely.geometry import Point, Polygon, GeometryCollection
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
+from geopandas.testing import assert_geoseries_equal
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -534,7 +535,7 @@ def test_no_nearest_all():
     ),
 )
 class TestNearest:
-    @pytest.mark.skipif(TEST_NEAREST)
+
     def setup_method(self):
         df1_geoms = [Point(x, y) for x, y in zip(np.arange(2), np.arange(2))]
         self.df1 = geopandas.GeoDataFrame({"geometry": df1_geoms})
@@ -552,7 +553,7 @@ class TestNearest:
             if distance_col is not None:
                 assert distance_col in joined
         else:
-            assert (joined["geometry"] == self.df1["geometry"]).all()
+            assert_geoseries_equal(joined["geometry"], self.df1["geometry"])
             assert joined["index_right"].isna().all()
             if distance_col is not None:
                 assert joined[distance_col].isna().all()
@@ -570,7 +571,7 @@ class TestNearest:
             if distance_col is not None:
                 assert distance_col in joined
         else:
-            assert (joined["geometry"] == self.df1["geometry"]).all()
+            assert_geoseries_equal(joined["geometry"], self.df1["geometry"])
             assert joined["index_left"].isna().all()
             if distance_col is not None:
                 assert joined[distance_col].isna().all()
