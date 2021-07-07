@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Union, Callable
+from typing import Union, Callable, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,9 @@ import geopandas.io
 
 from . import _compat as compat
 from ._decorator import doc
+
+if TYPE_CHECKING:
+    import sqlalchemy.engine.base
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"

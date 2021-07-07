@@ -1,5 +1,5 @@
 import warnings
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,9 @@ import geopandas
 from distutils.version import LooseVersion
 
 from ._decorator import doc
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot
 
 
 def deprecated(new):

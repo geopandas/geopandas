@@ -1,5 +1,6 @@
 import warnings
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import pyproj
 from typing import Union
@@ -10,6 +11,9 @@ import shapely.wkb
 from geopandas import GeoDataFrame
 
 from .. import _compat as compat
+
+if TYPE_CHECKING:
+    import sqlalchemy.engine.base
 
 
 @contextmanager

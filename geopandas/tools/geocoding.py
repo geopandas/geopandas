@@ -1,11 +1,15 @@
 from collections import defaultdict
 import time
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from shapely.geometry import Point
 
 import geopandas
+
+if TYPE_CHECKING:
+    import geopy.geocoders.base.Geocoder
 
 
 def _get_throttle_time(provider: geopy.geocoders.base.Geocoder) -> int:
