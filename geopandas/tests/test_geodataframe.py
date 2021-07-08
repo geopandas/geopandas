@@ -628,13 +628,14 @@ class TestDataFrame:
             "name": ["a", "b", "c"],
             "lat": [45, 46, 47.5],
             "lon": [-120, -121.2, -122.9],
+            "id": ["0", "1", "2"],
         }
 
         df = pd.DataFrame(data)
         geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
         gdf = GeoDataFrame(df, geometry=geometry)
         # from_features returns sorted columns
-        expected = gdf[["geometry", "lat", "lon", "name"]]
+        expected = gdf[["geometry", "id", "lat", "lon", "name"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)

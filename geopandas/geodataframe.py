@@ -526,7 +526,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None, columns=None):
+    def from_features(cls, features, crs=None, columns=None, id_as_index=False):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -546,6 +546,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Optionally specify the column names to include in the output frame.
             This does not overwrite the property names of the input, but can
             ensure a consistent output format.
+        id_as_index: bool (optional)
+            Controls whether the 'id' column is used as index of the
+            GeoDataFrame
 
         Returns
         -------
@@ -606,8 +609,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             }
             # load properties
             row.update(feature["properties"])
+            if "id" in feature:
+                row.update({"id": feature["id"]})
             rows.append(row)
-        return GeoDataFrame(rows, columns=columns, crs=crs)
+
+        gdf = GeoDataFrame(rows, columns=columns, crs=crs)
+        if id_as_index:
+            gdf.set_index("id", inplace=True)
+        return gdf
 
     @classmethod
     def from_postgis(
