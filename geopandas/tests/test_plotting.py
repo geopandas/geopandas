@@ -1195,8 +1195,8 @@ class TestMapclassifyPlotting:
             ax2 = self.df.plot(
                 column="pop_est", cmap="OrRd", legend=True, cax=cax, ax=ax2
             )
-        plot_height = fig.axes[0].get_position().height
-        legend_height = fig.axes[1].get_position().height
+        plot_height = _get_ax(fig, "").get_position().height
+        legend_height = _get_ax(fig, "fixed_colorbar").get_position().height
         assert abs(plot_height - legend_height) < 1e-6
 
 
@@ -1683,10 +1683,4 @@ def _get_ax(fig, label):
 
 
 def _get_colorbar_ax(fig):
-    cax = _get_ax(fig, "<colorbar>")
-    if matplotlib.__version__ < LooseVersion("3.5.0"):
-        return cax
-    else:
-        # Get the inset axis actually containing the colorbar elements, see GH
-        # matplotlib#20054.
-        return cax.child_axes[0]
+    return _get_ax(fig, "<colorbar>")
