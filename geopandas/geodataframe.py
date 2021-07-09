@@ -20,9 +20,6 @@ from geopandas.geoseries import GeoSeries
 from . import _compat as compat
 from ._decorator import doc
 
-from . import _compat as compat
-from ._decorator import doc
-
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
