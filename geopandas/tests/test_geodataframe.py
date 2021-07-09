@@ -6,6 +6,7 @@ from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
 import pyproj
 from pyproj import CRS
@@ -13,12 +14,12 @@ from pyproj.exceptions import CRSError
 from shapely.geometry import Point
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
-from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+
 import pytest
 
 
@@ -772,35 +773,37 @@ class TestDataFrame:
         assert_frame_equal(expected_df, gdf.to_wkt())
 
     def test_sjoin(self):
-        zippath = geopandas.datasets.get_path("nybb")
-        polydf = read_file(zippath)
+        # sjoin need `rtree` or `pygeos` dependency
+        if compat.USE_PYGEOS or compat.HAS_RTREE:
+            zippath = geopandas.datasets.get_path("nybb")
+            polydf = read_file(zippath)
 
-        b = [int(x) for x in polydf.total_bounds]
-        N = 8
-        pointdf = GeoDataFrame(
-            [
-                {"geometry": Point(x, y), "value1": x + y, "value2": x - y}
-                for x, y in zip(
-                    range(b[0], b[2], int((b[2] - b[0]) / N)),
-                    range(b[1], b[3], int((b[3] - b[1]) / N)),
-                )
-            ],
-            crs=polydf.crs,
-        )
+            b = [int(x) for x in polydf.total_bounds]
+            N = 8
+            pointdf = GeoDataFrame(
+                [
+                    {"geometry": Point(x, y), "value1": x + y, "value2": x - y}
+                    for x, y in zip(
+                        range(b[0], b[2], int((b[2] - b[0]) / N)),
+                        range(b[1], b[3], int((b[3] - b[1]) / N)),
+                    )
+                ],
+                crs=polydf.crs,
+            )
 
-        join_df = pointdf.sjoin(polydf)
-        expected_df = GeoSeries(
-            [
-                Point(932450, 139211),
-                Point(951725, 158301),
-                Point(1009550, 215571),
-                Point(1028825, 234661),
-            ],
-            name="geometry",
-            index=[1, 2, 5, 6],
-        )
+            join_df = pointdf.sjoin(polydf)
+            expected_df = GeoSeries(
+                [
+                    Point(932450, 139211),
+                    Point(951725, 158301),
+                    Point(1009550, 215571),
+                    Point(1028825, 234661),
+                ],
+                name="geometry",
+                index=[1, 2, 5, 6],
+            )
 
-        assert_series_equal(join_df.geometry, expected_df)
+            assert_series_equal(join_df.geometry, expected_df)
 
 
 def check_geodataframe(df, geometry_column="geometry"):
