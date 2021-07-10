@@ -2634,7 +2634,7 @@ GeometryCollection
         Examples
         --------
         >>> from shapely.geometry import Point
-        >>> d = "geometry": [Point(1, 2), Point(2, 1)]
+        >>> d = {{"geometry": [Point(1, 2), Point(2, 1)]}}
         >>> gdf = geopandas.GeoDataFrame(d)
         >>> gdf.has_sindex
         False
