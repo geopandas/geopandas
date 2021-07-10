@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.plotting import PlotAccessor
 
 import geopandas
 
@@ -912,28 +913,25 @@ GON (((-122.84000 49.00000, -120.0000...
     return ax
 
 
-if geopandas._compat.PANDAS_GE_025:
-    from pandas.plotting import PlotAccessor
+@doc(plot_dataframe)
+class GeoplotAccessor(PlotAccessor):
 
-    @doc(plot_dataframe)
-    class GeoplotAccessor(PlotAccessor):
+    _pandas_kinds = PlotAccessor._all_kinds
 
-        _pandas_kinds = PlotAccessor._all_kinds
+    def __call__(self, *args, **kwargs):
+        data = self._parent.copy()
+        kind = kwargs.pop("kind", "geo")
+        if kind == "geo":
+            return plot_dataframe(data, *args, **kwargs)
+        if kind in self._pandas_kinds:
+            # Access pandas plots
+            return PlotAccessor(data)(kind=kind, **kwargs)
+        else:
+            # raise error
+            raise ValueError(f"{kind} is not a valid plot kind")
 
-        def __call__(self, *args, **kwargs):
-            data = self._parent.copy()
-            kind = kwargs.pop("kind", "geo")
-            if kind == "geo":
-                return plot_dataframe(data, *args, **kwargs)
-            if kind in self._pandas_kinds:
-                # Access pandas plots
-                return PlotAccessor(data)(kind=kind, **kwargs)
-            else:
-                # raise error
-                raise ValueError(f"{kind} is not a valid plot kind")
-
-        def geo(self, *args, **kwargs):
-            return self(kind="geo", *args, **kwargs)
+    def geo(self, *args, **kwargs):
+        return self(kind="geo", *args, **kwargs)
 
 
 def _mapclassify_choro(values, scheme, **classification_kwds):

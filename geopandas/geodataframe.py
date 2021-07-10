@@ -6,6 +6,7 @@ from textwrap import dedent
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -16,7 +17,6 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, 
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
-from geopandas.plotting import plot_dataframe
 
 from . import _compat as compat
 from ._decorator import doc
@@ -1682,15 +1682,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return self.geometry.difference(other)
 
-    if compat.PANDAS_GE_025:
-        from pandas.core.accessor import CachedAccessor
-
-        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    else:
-
-        @doc(plot_dataframe)
-        def plot(self, *args, **kwargs):
-            return plot_dataframe(self, *args, **kwargs)
+    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
