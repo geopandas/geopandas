@@ -641,6 +641,10 @@ class TestDataFrame:
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
         assert_frame_equal(res, expected)
 
+        # test id as index
+        res = GeoDataFrame.from_features(gdf.__geo_interface__, id_as_index=True)
+        assert_frame_equal(res, expected.set_index("id"))
+
         # test list of Features
         res = GeoDataFrame.from_features(gdf.__geo_interface__["features"])
         assert_frame_equal(res, expected)
