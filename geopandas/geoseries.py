@@ -760,7 +760,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     plot.__doc__ = plot_series.__doc__
 
-    def explode(self, add_multiindex=True):
+    def explode(self, ignore_index=False, add_multiindex=True):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -775,6 +775,9 @@ class GeoSeries(GeoPandasBase, Series):
             (original index with an additional level
             indicating the multiple geometries: a new zero-based index for each
             single part geometry per multi-part geometry).
+        ignore_index : bool, default False
+             If True, the resulting index will be labelled 0, 1, …, n - 1,
+              ignoring add_multiindex.
         Returns
         ------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
@@ -863,6 +866,8 @@ class GeoSeries(GeoPandasBase, Series):
                 index = [tuple(outer) + (inner,) for outer, inner in index]
 
             index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        elif ignore_index:
+            index = range(len(geometries))
         else:
             index = [idx for idx, _ in index]
 
