@@ -7,6 +7,7 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
+from pandas.util.testing import assert_index_equal
 
 from pyproj import CRS
 from shapely.geometry import (
@@ -455,3 +456,11 @@ class TestConstructor:
         s = s.explode()
         df = s.reset_index()
         assert type(df) == GeoDataFrame
+
+    def test_explode_without_multiindex(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(add_multiindex=False)
+        expected_index = pd.Index([0, 0, 1, 1, 1])
+        assert_index_equal(s.index, expected_index)
