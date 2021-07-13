@@ -1728,35 +1728,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             The keys should be the column names and the values
             should be the SQLAlchemy types.
 
-ç
-
-df
-   __level_1                 geometry
-0          1  POINT (1.00000 2.00000)
-0          1  POINT (2.00000 3.00000)
-1          2  POINT (5.00000 5.00000)
-df2 = df.copy()
-df3 = df.copy()
-df2.index = exploded_index
-df3.set_index(exploded_index, append=True, inplace=True)
-df2
-   __level_1                 geometry
-0          1  POINT (1.00000 2.00000)
-0          1  POINT (2.00000 3.00000)
-1          2  POINT (5.00000 5.00000)
-df3
-     __level_1                 geometry
-0 0          1  POINT (1.00000 2.00000)
-  0          1  POINT (2.00000 3.00000)
-1 1          2  POINT (5.00000 5.00000)
-df3.set_index(exploded_index,inplace=True)
-df3
-   __level_1                 geometry
-0          1  POINT (1.00000 2.00000)
-0          1  POINT (2.00000 3.00000)
-1          2  POINT (5.00000 5.00000)
-
-
         Examples
         --------
 
