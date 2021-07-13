@@ -1581,6 +1581,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         0  name1  POINT (3.00000 4.00000)
         1  name2  POINT (2.00000 1.00000)
         1  name2  POINT (0.00000 0.00000)
+
         >>> exploded = gdf.explode(ignore_index=True)
         >>> exploded
             col1                 geometry
