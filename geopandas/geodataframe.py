@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Union, Callable, TYPE_CHECKING
+from typing import Union, Callable
 
 import numpy as np
 import pandas as pd
@@ -19,9 +19,6 @@ import geopandas.io
 
 from . import _compat as compat
 from ._decorator import doc
-
-if TYPE_CHECKING:
-    import sqlalchemy.engine.base
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -603,7 +600,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_postgis(
         cls,
         sql: str,
-        con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
+        con,
         geom_col: str = "geom",
         crs=None,
         index_col: Union[str, list] = None,
@@ -1673,7 +1670,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def to_postgis(
         self,
         name: str,
-        con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
+        con,
         schema: str = None,
         if_exists: str = "fail",
         index: bool = False,

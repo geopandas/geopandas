@@ -1,9 +1,8 @@
 import warnings
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import Union
 
 import pyproj
-from typing import Union
 import pandas as pd
 
 import shapely.wkb
@@ -12,16 +11,9 @@ from geopandas import GeoDataFrame
 
 from .. import _compat as compat
 
-if TYPE_CHECKING:
-    import sqlalchemy.engine.base
-
 
 @contextmanager
-def _get_conn(
-    conn_or_engine: Union[
-        sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine
-    ]
-) -> sqlalchemy.engine.base.Connection:
+def _get_conn(conn_or_engine):
     """
     Yield a connection within a transaction context.
 
@@ -106,7 +98,7 @@ def _df_to_geodf(
 
 def _read_postgis(
     sql: str,
-    con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
+    con,
     geom_col: str = "geom",
     crs: Union[dict, str] = None,
     index_col: Union[str, list] = None,
@@ -328,7 +320,7 @@ def _psql_insert_copy(tbl, conn, keys, data_iter) -> None:
 def _write_postgis(
     gdf: GeoDataFrame,
     name: str,
-    con: Union[sqlalchemy.engine.base.Connection, sqlalchemy.engine.base.Engine],
+    con,
     schema: str = None,
     if_exists: str = "fail",
     index: bool = False,

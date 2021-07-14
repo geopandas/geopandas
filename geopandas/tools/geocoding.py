@@ -1,15 +1,11 @@
 from collections import defaultdict
 import time
-from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from shapely.geometry import Point
 
 import geopandas
-
-if TYPE_CHECKING:
-    import geopy.geocoders.base
 
 
 def _get_throttle_time(provider: geopy.geocoders.base.Geocoder) -> int:
@@ -26,9 +22,7 @@ def _get_throttle_time(provider: geopy.geocoders.base.Geocoder) -> int:
         return 0
 
 
-def geocode(
-    strings: list, provider: geopy.geocoders.base.Geocoder = None, **kwargs
-) -> geopandas.GeoDataFrame:
+def geocode(strings: list, provider=None, **kwargs) -> geopandas.GeoDataFrame:
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -77,9 +71,7 @@ def geocode(
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(
-    points: list, provider: geopy.geocoders.base.Geocoder = None, **kwargs
-) -> geopandas.GeoDataFrame:
+def reverse_geocode(points: list, provider=None, **kwargs) -> geopandas.GeoDataFrame:
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -135,11 +127,7 @@ def reverse_geocode(
 
 
 def _query(
-    data: list,
-    forward: bool,
-    provider: geopy.geocoders.base.Geocoder,
-    throttle_time: float,
-    **kwargs
+    data: list, forward: bool, provider, throttle_time: float, **kwargs
 ) -> geopandas.GeoDataFrame:
     # generic wrapper for calls over lists to geopy Geocoders
     from geopy.geocoders import get_geocoder_for_service
