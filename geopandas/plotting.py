@@ -12,7 +12,6 @@ from distutils.version import LooseVersion
 from ._decorator import doc
 
 if TYPE_CHECKING:
-    import matplotlib
     import matplotlib.pyplot
 
 

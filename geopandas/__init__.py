@@ -22,6 +22,7 @@ import geopandas.datasets  # noqa
 import geopandas as gpd  # noqa
 import pandas as pd  # noqa
 import numpy as np  # noqa
+import matplotlib
 
 from ._version import get_versions
 
