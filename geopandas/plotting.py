@@ -1,5 +1,5 @@
 import warnings
-from typing import Union, TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -10,9 +10,6 @@ import geopandas
 from distutils.version import LooseVersion
 
 from ._decorator import doc
-
-if TYPE_CHECKING:
-    import matplotlib.pyplot
 
 
 def deprecated(new):
@@ -321,7 +318,7 @@ def plot_series(
     s: pd.Series,
     cmap: str = None,
     color: str = None,
-    ax: matplotlib.pyplot.Artist = None,
+    ax=None,
     figsize=None,
     aspect: Union[str, float] = "auto",
     **style_kwds,
@@ -486,8 +483,8 @@ def plot_dataframe(
     column: Union[str, np.ndarray, pd.Series] = None,
     cmap: str = None,
     color: str = None,
-    ax: matplotlib.pyplot.Artist = None,
-    cax: matplotlib.pyplot.Artist = None,
+    ax=None,
+    cax=None,
     categorical: bool = False,
     legend: bool = False,
     scheme: str = None,
