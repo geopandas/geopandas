@@ -9,6 +9,7 @@ import geopandas
 
 from distutils.version import LooseVersion
 
+import matplotlib
 from ._decorator import doc
 
 if TYPE_CHECKING:
