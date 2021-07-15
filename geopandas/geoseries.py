@@ -832,7 +832,10 @@ class GeoSeries(GeoPandasBase, Series):
 
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
-            if add_multiindex:
+            if ignore_index:
+                index = range(len(geometries))
+
+            elif add_multiindex:
                 index = zip(outer_index, inner_index)
 
                 # if self.index is a MultiIndex then index is a list of nested tuples
@@ -860,14 +863,15 @@ class GeoSeries(GeoPandasBase, Series):
             index.extend(idxs)
             geometries.extend(geoms)
 
-        if add_multiindex:
+        if ignore_index:
+            index = range(len(geometries))
+
+        elif add_multiindex:
             # if self.index is a MultiIndex then index is a list of nested tuples
             if isinstance(self.index, MultiIndex):
                 index = [tuple(outer) + (inner,) for outer, inner in index]
-
             index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-        elif ignore_index:
-            index = range(len(geometries))
+
         else:
             index = [idx for idx, _ in index]
 
