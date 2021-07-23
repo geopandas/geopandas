@@ -962,7 +962,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         kwargs
-            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+            Additional keyword arguments passed to ``pyarrow.parquet.write_table``.
 
         Examples
         --------
