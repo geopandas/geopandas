@@ -5,6 +5,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 
 """
 import warnings
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -225,7 +226,7 @@ def to_wkt(data, **kwargs):
         return np.array(out, dtype=object)
 
 
-def _points_from_xy(x, y, z=None):
+def _points_from_xy(x, y, z: Optional = None):
     # helper method for shapely-based function
     if not len(x) == len(y):
         raise ValueError("x and y arrays must be equal length.")
@@ -238,7 +239,7 @@ def _points_from_xy(x, y, z=None):
     return geom
 
 
-def points_from_xy(x, y, z=None):
+def points_from_xy(x, y, z: Optional = None):
 
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")

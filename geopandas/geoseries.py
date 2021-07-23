@@ -1,5 +1,6 @@
 import json
 import warnings
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -31,7 +32,9 @@ _SERIES_WARNING_MSG = """\
     to raise a TypeError instead."""
 
 
-def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwargs):
+def _geoseries_constructor_with_fallback(
+    data: Optional = None, index: Optional = None, crs: Optional = None, **kwargs
+):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
     to fall back to a Series (if a certain operation does not produce
@@ -130,7 +133,13 @@ class GeoSeries(GeoPandasBase, Series):
 
     _metadata = ["name"]
 
-    def __new__(cls, data=None, index=None, crs=None, **kwargs):
+    def __new__(
+        cls,
+        data: Optional = None,
+        index: Optional = None,
+        crs: Optional = None,
+        **kwargs
+    ):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
 
@@ -351,7 +360,9 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoSeries(df.geometry, crs=df.crs)
 
     @classmethod
-    def from_wkb(cls, data, index=None, crs=None, **kwargs) -> "GeoSeries":
+    def from_wkb(
+        cls, data, index: Optional = None, crs: Optional = None, **kwargs
+    ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
@@ -383,7 +394,9 @@ class GeoSeries(GeoPandasBase, Series):
         return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
 
     @classmethod
-    def from_wkt(cls, data, index=None, crs=None, **kwargs) -> "GeoSeries":
+    def from_wkt(
+        cls, data, index: Optional = None, crs: Optional = None, **kwargs
+    ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKT objects
@@ -430,7 +443,12 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def _from_wkb_or_wkb(
-        cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
+        cls,
+        from_wkb_or_wkt_function,
+        data,
+        index: Optional = None,
+        crs: Optional = None,
+        **kwargs
     ):
         """Create a GeoSeries from either WKT or WKB values"""
         if isinstance(data, Series):
@@ -562,7 +580,7 @@ class GeoSeries(GeoPandasBase, Series):
                 result.set_crs(self.crs, inplace=True)
         return result
 
-    def __finalize__(self, other, method=None, **kwargs):
+    def __finalize__(self, other, method: Optional = None, **kwargs):
         """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
@@ -686,7 +704,13 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
+    def fillna(
+        self,
+        value: Optional = None,
+        method: Optional = None,
+        inplace: bool = False,
+        **kwargs
+    ):
         """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.

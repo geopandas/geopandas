@@ -5,6 +5,7 @@ Based on https://github.com/topper-123/optioneer, but simplified (don't deal
 with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
+from typing import Optional
 from collections import namedtuple
 import textwrap
 
@@ -66,7 +67,7 @@ class Options(object):
         return "{}({}{})".format(cls, space, description)
 
 
-def indent(text, prefix, predicate=None) -> str:
+def indent(text, prefix, predicate: Optional = None) -> str:
     """
     This is the python 3 textwrap.indent function, which is not available in
     python 2.

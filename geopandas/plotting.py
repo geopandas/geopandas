@@ -1,5 +1,5 @@
 import warnings
-from typing import Union
+from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -125,7 +125,14 @@ def _PolygonPatch(polygon, **kwargs):
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values: Optional = None,
+    color: Optional = None,
+    cmap: Optional = None,
+    vmin: Optional = None,
+    vmax: Optional = None,
+    **kwargs,
 ):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
@@ -191,7 +198,14 @@ plot_polygon_collection = deprecated(_plot_polygon_collection)
 
 
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values: Optional = None,
+    color: Optional = None,
+    cmap: Optional = None,
+    vmin: Optional = None,
+    vmax: Optional = None,
+    **kwargs,
 ):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
@@ -251,13 +265,13 @@ plot_linestring_collection = deprecated(_plot_linestring_collection)
 def _plot_point_collection(
     ax,
     geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
+    values: Optional = None,
+    color: Optional = None,
+    cmap: Optional = None,
+    vmin: Optional = None,
+    vmax: Optional = None,
     marker="o",
-    markersize=None,
+    markersize: Optional = None,
     **kwargs,
 ):
     """
@@ -318,8 +332,8 @@ def plot_series(
     s: pd.Series,
     cmap: str = None,
     color: str = None,
-    ax=None,
-    figsize=None,
+    ax: Optional = None,
+    figsize: Optional = None,
     aspect: Union[str, float] = "auto",
     **style_kwds,
 ):
@@ -483,15 +497,15 @@ def plot_dataframe(
     column: Union[str, np.ndarray, pd.Series] = None,
     cmap: str = None,
     color: str = None,
-    ax=None,
-    cax=None,
+    ax: Optional = None,
+    cax: Optional = None,
     categorical: bool = False,
     legend: bool = False,
     scheme: str = None,
     k: int = 5,
     vmin: float = None,
     vmax: float = None,
-    markersize=None,
+    markersize: Optional = None,
     figsize: tuple = None,
     legend_kwds: dict = None,
     categories: list = None,

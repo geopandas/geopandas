@@ -3,7 +3,7 @@ import numbers
 import operator
 import warnings
 import inspect
-from typing import Tuple, Any
+from typing import Tuple, Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -133,7 +133,7 @@ def _is_scalar_geometry(geom):
         return isinstance(geom, BaseGeometry)
 
 
-def from_shapely(data: list, crs=None) -> "GeometryArray":
+def from_shapely(data: list, crs: Optional = None) -> "GeometryArray":
     """
     Convert a list or array of shapely objects to a GeometryArray.
 
@@ -161,7 +161,7 @@ def to_shapely(geoms: "GeometryArray") -> np.ndarray:
     return vectorized.to_shapely(geoms.data)
 
 
-def from_wkb(data: list, crs=None) -> "GeometryArray":
+def from_wkb(data: list, crs: Optional = None) -> "GeometryArray":
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -187,7 +187,7 @@ def to_wkb(geoms: "GeometryArray", hex: bool = False, **kwargs):
     return vectorized.to_wkb(geoms.data, hex=hex, **kwargs)
 
 
-def from_wkt(data: list, crs=None) -> "GeometryArray":
+def from_wkt(data: list, crs: Optional = None) -> "GeometryArray":
     """
     Convert a list or array of WKT objects to a GeometryArray.
 
@@ -213,7 +213,7 @@ def to_wkt(geoms: "GeometryArray", **kwargs):
     return vectorized.to_wkt(geoms.data, **kwargs)
 
 
-def points_from_xy(x, y, z=None, crs=None) -> "GeometryArray":
+def points_from_xy(x, y, z: Optional = None, crs: Optional = None) -> "GeometryArray":
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
@@ -267,7 +267,7 @@ class GeometryArray(ExtensionArray):
 
     _dtype = GeometryDtype()
 
-    def __init__(self, data, crs=None):
+    def __init__(self, data, crs: Optional = None):
         if isinstance(data, self.__class__):
             if not crs:
                 crs = data.crs
@@ -708,7 +708,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def to_crs(self, crs=None, epsg=None) -> "GeometryArray":
+    def to_crs(self, crs: Optional = None, epsg: Optional = None) -> "GeometryArray":
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
 
@@ -942,7 +942,7 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(self.data.copy(), crs=self._crs)
 
     def take(
-        self, indices, allow_fill: bool = False, fill_value=None
+        self, indices, allow_fill: bool = False, fill_value: Optional = None
     ) -> "GeometryArray":
         from pandas.api.extensions import take
 
@@ -975,7 +975,7 @@ class GeometryArray(ExtensionArray):
         return self
 
     def fillna(
-        self, value=None, method: str = None, limit: int = None
+        self, value: Optional = None, method: str = None, limit: int = None
     ) -> ExtensionArray:
         """Fill NA/NaN values using the specified method.
 
@@ -1121,7 +1121,9 @@ class GeometryArray(ExtensionArray):
     # -------------------------------------------------------------------------
 
     @classmethod
-    def _from_sequence(cls, scalars, dtype=None, copy: bool = False) -> ExtensionArray:
+    def _from_sequence(
+        cls, scalars, dtype: Optional = None, copy: bool = False
+    ) -> ExtensionArray:
         """
         Construct a new ExtensionArray from a sequence of scalars.
 
@@ -1281,7 +1283,7 @@ class GeometryArray(ExtensionArray):
             )
         )
 
-    def __array__(self, dtype=None) -> np.ndarray:
+    def __array__(self, dtype: Optional = None) -> np.ndarray:
         """
         The numpy array interface.
 

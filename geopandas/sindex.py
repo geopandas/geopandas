@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 from shapely.geometry.base import BaseGeometry
 import pandas as pd
@@ -44,7 +45,7 @@ class BaseSpatialIndex:
         """
         raise NotImplementedError
 
-    def query(self, geometry, predicate=None, sort=False):
+    def query(self, geometry, predicate: Optional = None, sort=False):
         """Return the index of all geometries in the tree with extents that
         intersect the envelope of the input geometry.
 
@@ -97,7 +98,7 @@ class BaseSpatialIndex:
         """
         raise NotImplementedError
 
-    def query_bulk(self, geometry, predicate=None, sort=False):
+    def query_bulk(self, geometry, predicate: Optional = None, sort=False):
         """
         Returns all combinations of each input geometry and geometries in
         the tree where the envelope of each input geometry intersects with
@@ -347,7 +348,7 @@ if compat.HAS_RTREE:
             }
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
+        def query(self, geometry, predicate: Optional = None, sort=False):
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -427,7 +428,7 @@ if compat.HAS_RTREE:
             return np.array(tree_idx, dtype=np.intp)
 
         @doc(BaseSpatialIndex.query_bulk)
-        def query_bulk(self, geometry, predicate=None, sort=False):
+        def query_bulk(self, geometry, predicate: Optional = None, sort=False):
             # Iterates over geometry, applying func.
             tree_index = []
             input_geometry_index = []
@@ -512,7 +513,7 @@ if compat.HAS_PYGEOS:
             return {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
+        def query(self, geometry, predicate: Optional = None, sort=False):
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
                     "Got `predicate` = `{}`; ".format(predicate)
@@ -532,7 +533,7 @@ if compat.HAS_PYGEOS:
             return matches
 
         @doc(BaseSpatialIndex.query_bulk)
-        def query_bulk(self, geometry, predicate=None, sort=False):
+        def query_bulk(self, geometry, predicate: Optional = None, sort=False):
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
                     "Got `predicate` = `{}`, `predicate` must be one of {}".format(

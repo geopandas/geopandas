@@ -1,5 +1,6 @@
 from collections import defaultdict
 import time
+from typing import Optional
 
 import pandas as pd
 
@@ -22,7 +23,9 @@ def _get_throttle_time(provider) -> int:
         return 0
 
 
-def geocode(strings: list, provider=None, **kwargs) -> geopandas.GeoDataFrame:
+def geocode(
+    strings: list, provider: Optional = None, **kwargs
+) -> geopandas.GeoDataFrame:
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -71,7 +74,9 @@ def geocode(strings: list, provider=None, **kwargs) -> geopandas.GeoDataFrame:
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(points: list, provider=None, **kwargs) -> geopandas.GeoDataFrame:
+def reverse_geocode(
+    points: list, provider: Optional = None, **kwargs
+) -> geopandas.GeoDataFrame:
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.

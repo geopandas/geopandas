@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _ensure_geometry(data, crs=None):
+def _ensure_geometry(data, crs: Optional = None):
     """
     Ensure the data is of geometry dtype or converted to it.
 
@@ -104,7 +104,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, geometry=None, crs=None, **kwargs):
+    def __init__(
+        self, *args, geometry: Optional = None, crs: Optional = None, **kwargs
+    ):
         with compat.ignore_shapely2_warnings():
             super(GeoDataFrame, self).__init__(*args, **kwargs)
 
@@ -433,7 +435,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_dict(
-        cls, data: dict, geometry=None, crs: Union[str, dict] = None, **kwargs
+        cls,
+        data: dict,
+        geometry: Optional = None,
+        crs: Union[str, dict] = None,
+        **kwargs,
     ) -> "GeoDataFrame":
         """
         Construct GeoDataFrame from dict of array-like or dicts by
@@ -512,7 +518,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_features(
-        cls, features, crs: Union[str, dict] = None, columns=None
+        cls, features, crs: Union[str, dict] = None, columns: Optional = None
     ) -> "GeoDataFrame":
         """
         Alternate constructor to create GeoDataFrame from an iterable of
@@ -602,7 +608,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         sql: str,
         con,
         geom_col: str = "geom",
-        crs=None,
+        crs: Optional = None,
         index_col: Union[str, list] = None,
         coerce_float: bool = True,
         parse_dates: Union[list, dict] = None,
@@ -1397,7 +1403,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         func,
         axis: int = 0,
         raw: bool = False,
-        result_type=None,
+        result_type: Optional = None,
         args=(),
         **kwargs,
     ):
@@ -1417,7 +1423,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def _constructor(self):
         return GeoDataFrame
 
-    def __finalize__(self, other, method=None, **kwargs):
+    def __finalize__(self, other, method: Optional = None, **kwargs):
         """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
@@ -1437,7 +1443,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         by: str = None,
         aggfunc: Union[Callable, str] = "first",
         as_index: bool = True,
-        level=None,
+        level: Optional = None,
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
@@ -1556,7 +1562,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, **kwargs) -> "GeoDataFrame":
+    def explode(self, column: Optional = None, **kwargs) -> "GeoDataFrame":
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1674,9 +1680,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         schema: str = None,
         if_exists: str = "fail",
         index: bool = False,
-        index_label=None,
+        index_label: Optional = None,
         chunksize: int = None,
-        dtype=None,
+        dtype: Optional = None,
     ):
         """
         Upload GeoDataFrame into PostGIS database.
@@ -1775,7 +1781,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs: Optional = None):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"

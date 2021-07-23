@@ -3,6 +3,7 @@ from distutils.version import LooseVersion
 import importlib
 import os
 import warnings
+from typing import Optional
 
 import pandas as pd
 import pyproj
@@ -56,7 +57,7 @@ except ImportError:
     HAS_PYGEOS = False
 
 
-def set_use_pygeos(val=None):
+def set_use_pygeos(val: Optional = None):
     """
     Set the global configuration on whether to use PyGEOS or not.
 
