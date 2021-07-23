@@ -9,6 +9,9 @@ from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
 import geopandas
 
+pyarrow = import_optional_dependency(
+    "pyarrow", extra="pyarrow is required for versioning."
+)
 
 METADATA_VERSION = "0.1.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
@@ -164,6 +167,7 @@ def _geopandas_to_arrow(df: GeoDataFrame, index: bool = None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
+    from pyarrow import Table
 
     warnings.warn(
         "this is an initial implementation of Parquet/Feather file support and "
@@ -187,7 +191,7 @@ def _geopandas_to_arrow(df: GeoDataFrame, index: bool = None):
 
     df = df.to_wkb()
 
-    table = pyarrow.Table.from_pandas(df, preserve_index=index)
+    table = Table.from_pandas(df, preserve_index=index)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted

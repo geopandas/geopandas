@@ -342,7 +342,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-        read_file : read file to GeoDataFame
+        read_file : read file to GeoDataFrame
         """
         from geopandas import GeoDataFrame
 
@@ -464,6 +464,7 @@ class GeoSeries(GeoPandasBase, Series):
 {}, 'geometry': {'type': 'Point', 'coordinates': (3.0, 3.0)}, 'bbox': (3.0, \
 3.0, 3.0, 3.0)}], 'bbox': (1.0, 1.0, 3.0, 3.0)}
         """
+        from geopandas import GeoDataFrame
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
@@ -499,7 +500,7 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
         GeoDataFrame.to_file : write GeoDataFrame to file
-        read_file : read file to GeoDataFame
+        read_file : read file to GeoDataFrame
 
         Examples
         --------

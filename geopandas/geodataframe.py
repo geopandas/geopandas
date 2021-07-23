@@ -504,7 +504,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         See also
         --------
-        read_file : read file to GeoDataFame
+        read_file : read file to GeoDataFrame
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
