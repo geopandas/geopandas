@@ -962,7 +962,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         kwargs
-            Additional keyword arguments passed to ``pyarrow.parquet.write_table``.
+            Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
         Examples
         --------
@@ -1010,7 +1010,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
         kwargs
-            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+            Additional keyword arguments passed to to
+            :func:`pyarrow.feather.write_feather`.
 
         Examples
         --------
