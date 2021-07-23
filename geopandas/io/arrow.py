@@ -10,10 +10,6 @@ from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
 import geopandas
 
-pyarrow = import_optional_dependency(
-    "pyarrow", extra="pyarrow is required for versioning."
-)
-
 METADATA_VERSION = "0.1.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
 
@@ -452,7 +448,9 @@ def _read_feather(path: str, columns: Optional = None, **kwargs) -> GeoDataFrame
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
-
+    pyarrow = import_optional_dependency(
+        "pyarrow", extra="pyarrow is required for arrow support."
+    )
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )

@@ -29,11 +29,12 @@ def _get_conn(conn_or_engine):
     -------
     Connection
     """
+    from sqlalchemy.engine.base import Engine, Connection
 
-    if isinstance(conn_or_engine, sqlalchemy.engine.base.Connection):
+    if isinstance(conn_or_engine, Connection):
         with conn_or_engine.begin():
             yield conn_or_engine
-    elif isinstance(conn_or_engine, sqlalchemy.engine.base.Engine):
+    elif isinstance(conn_or_engine, Engine):
         with conn_or_engine.begin() as conn:
             yield conn
     else:
@@ -277,7 +278,7 @@ def _convert_linearring_to_linestring(
 
 
 def _convert_to_ewkb(gdf: GeoDataFrame, geom_name: str, srid: int) -> pd.DataFrame:
-    """Convert geometries to ewkb. """
+    """Convert geometries to ewkb."""
     if compat.USE_PYGEOS:
         from pygeos import set_srid, to_wkb
 
