@@ -33,8 +33,8 @@ with the detailed borough boundary file included within ``geopandas``.
 
 
 By default, the :func:`~geopandas.tools.geocode` function uses the
-`GeoCode.Farm geocoding API <https://geocode.farm/>`__ with a rate limitation
-applied. But a different geocoding service can be specified with the
+`Photon geocoding API <https://photon.komoot.io>`__.
+But a different geocoding service can be specified with the
 ``provider`` keyword.
 
 The argument to ``provider`` can either be a string referencing geocoding
@@ -54,6 +54,6 @@ a user agent:
 .. attention::
 
     Please consult the Terms of Service for the chosen provider. The example
-    above uses ``'geocodefarm'`` (the default), for which free users are
-    limited to 250 calls per day and 4 requests per second
-    (`geocodefarm ToS <https://geocode.farm/geocoding/free-api-documentation/>`_).
+    above uses ``'photon'`` (the default), which expects fair usage
+    - extensive usage will be throttled.
+    (`Photon's Terms of Use <https://photon.komoot.io>`_).
