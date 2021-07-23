@@ -726,6 +726,50 @@ GON (((-122.84000 49.00000, -120.0000...
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
+    if scheme is not None:
+        if classification_kwds is None:
+            classification_kwds = {}
+        if "k" not in classification_kwds:
+            classification_kwds["k"] = k
+
+        binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
+        # set categorical to True for creating the legend
+        categorical = True
+        if legend_kwds is not None and "labels" in legend_kwds:
+            if len(legend_kwds["labels"]) != binning.k:
+                raise ValueError(
+                    "Number of labels must match number of bins, "
+                    "received {} labels for {} bins".format(
+                        len(legend_kwds["labels"]), binning.k
+                    )
+                )
+            else:
+                labels = list(legend_kwds.pop("labels"))
+        else:
+            fmt = "{:.2f}"
+            if legend_kwds is not None and "fmt" in legend_kwds:
+                fmt = legend_kwds.pop("fmt")
+
+            labels = binning.get_legend_classes(fmt)
+            if legend_kwds is not None:
+                show_interval = legend_kwds.pop("interval", False)
+            else:
+                show_interval = False
+            if not show_interval:
+                labels = [c[1:-1] for c in labels]
+
+        lowest = values[~nan_idx].min()
+        if lowest > binning.bins[0]:
+            lowest = np.NINF
+        values = pd.cut(
+            values,
+            bins=np.insert(binning.bins, 0, lowest),
+            labels=labels,
+            include_lowest=True,
+        )
+        if cmap is None:
+            cmap = "viridis"
+
     # Define `values` as a Series
     if categorical:
         if cmap is None:
@@ -745,39 +789,6 @@ GON (((-122.84000 49.00000, -120.0000...
         values = cat.codes[~nan_idx]
         vmin = 0 if vmin is None else vmin
         vmax = len(categories) - 1 if vmax is None else vmax
-
-    if scheme is not None:
-        if classification_kwds is None:
-            classification_kwds = {}
-        if "k" not in classification_kwds:
-            classification_kwds["k"] = k
-
-        binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
-        # set categorical to True for creating the legend
-        categorical = True
-        if legend_kwds is not None and "labels" in legend_kwds:
-            if len(legend_kwds["labels"]) != binning.k:
-                raise ValueError(
-                    "Number of labels must match number of bins, "
-                    "received {} labels for {} bins".format(
-                        len(legend_kwds["labels"]), binning.k
-                    )
-                )
-            else:
-                categories = list(legend_kwds.pop("labels"))
-        else:
-            fmt = "{:.2f}"
-            if legend_kwds is not None and "fmt" in legend_kwds:
-                fmt = legend_kwds.pop("fmt")
-
-            categories = binning.get_legend_classes(fmt)
-            if legend_kwds is not None:
-                show_interval = legend_kwds.pop("interval", False)
-            else:
-                show_interval = False
-            if not show_interval:
-                categories = [c[1:-1] for c in categories]
-        values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
     # (after removing them in categorical or scheme)
