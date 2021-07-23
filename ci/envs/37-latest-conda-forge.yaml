@@ -17,8 +17,8 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   - mapclassify
+  - scipy
   - geopy
   - SQLalchemy
   - libspatialite

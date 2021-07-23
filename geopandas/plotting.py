@@ -2,10 +2,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.plotting import PlotAccessor
 
 import geopandas
 
 from distutils.version import LooseVersion
+
+from ._decorator import doc
 
 
 def deprecated(new):
@@ -45,7 +48,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom.type.startswith(prefix) and not geom.is_empty:
+        if geom is not None and geom.type.startswith(prefix) and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
@@ -94,6 +97,32 @@ def _expand_kwargs(kwargs, multiindex):
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
+def _PolygonPatch(polygon, **kwargs):
+    """Constructs a matplotlib patch from a Polygon geometry
+
+    The `kwargs` are those supported by the matplotlib.patches.PathPatch class
+    constructor. Returns an instance of matplotlib.patches.PathPatch.
+
+    Example (using Shapely Point and a matplotlib axes)::
+
+        b = shapely.geometry.Point(0, 0).buffer(1.0)
+        patch = _PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
+        ax.add_patch(patch)
+
+    GeoPandas originally relied on the descartes package by Sean Gillies
+    (BSD license, https://pypi.org/project/descartes) for PolygonPatch, but
+    this dependency was removed in favor of the below matplotlib code.
+    """
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path
+
+    path = Path.make_compound_path(
+        Path(np.asarray(polygon.exterior.coords)[:, :2]),
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
+    )
+    return PathPatch(path, **kwargs)
+
+
 def _plot_polygon_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -123,15 +152,6 @@ def _plot_polygon_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-
-    try:
-        from descartes.patch import PolygonPatch
-    except ImportError:
-        raise ImportError(
-            "The descartes package is required for plotting polygons in geopandas. "
-            "You can install it using 'conda install -c conda-forge descartes' or "
-            "'pip install descartes'."
-        )
     from matplotlib.collections import PatchCollection
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
@@ -152,7 +172,7 @@ def _plot_polygon_collection(
     _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection(
-        [PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
+        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
     )
 
     if values is not None:
@@ -237,7 +257,7 @@ def _plot_point_collection(
     vmax=None,
     marker="o",
     markersize=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -264,11 +284,10 @@ def _plot_point_collection(
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
+    # values are expanded below as kwargs["c"]
 
-    x = [p.x for p in geoms]
-    y = [p.y for p in geoms]
+    x = [p.x if not p.is_empty else None for p in geoms]
+    y = [p.y if not p.is_empty else None for p in geoms]
 
     # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:
@@ -472,7 +491,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
-    **style_kwds
+    **style_kwds,
 ):
     """
     Plot a GeoDataFrame.
@@ -483,15 +502,26 @@ def plot_dataframe(
 
     Parameters
     ----------
-    df : GeoDataFrame
-        The GeoDataFrame to be plotted.  Currently Polygon,
-        MultiPolygon, LineString, MultiLineString and Point
-        geometries can be plotted.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
         If np.array or pd.Series are used then it must have same length as
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
+    kind: str
+        The kind of plots to produce:
+         - 'geo': Map (default)
+         Pandas Kinds
+         - 'line' : line plot
+         - 'bar' : vertical bar plot
+         - 'barh' : horizontal bar plot
+         - 'hist' : histogram
+         - 'box' : BoxPlot
+         - 'kde' : Kernel Density Estimation plot
+         - 'density' : same as 'kde'
+         - 'area' : area plot
+         - 'pie' : pie plot
+         - 'scatter' : scatter plot
+         - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -544,6 +574,9 @@ def plot_dataframe(
             A list of legend labels to override the auto-generated labels.
             Needs to have the same number of elements as the number of
             classes (`k`).
+        interval : boolean (default False)
+            An option to control brackets from mapclassify legend.
+            If True, open/closed interval brackets are shown in the legend.
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
@@ -570,6 +603,27 @@ def plot_dataframe(
     Returns
     -------
     ax : matplotlib axes instance
+
+    Examples
+    --------
+    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> df.head()  # doctest: +SKIP
+        pop_est      continent                      name iso_a3  \
+gdp_md_est                                           geometry
+    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
+GON (((180.00000 -16.06713, 180.00000...
+    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
+(33.90371 -0.95000, 34.07262 -1.05982...
+    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
+(-8.66559 27.65643, -8.66512 27.58948...
+    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
+GON (((-122.84000 49.00000, -122.9742...
+    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
+GON (((-122.84000 49.00000, -120.0000...
+
+    >>> df.plot("pop_est", cmap="Blues")  # doctest: +SKIP
+
+    See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
     if "colormap" in style_kwds:
@@ -643,7 +697,7 @@ def plot_dataframe(
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
-            **style_kwds
+            **style_kwds,
         )
 
     # To accept pd.Series and np.arrays as column
@@ -727,7 +781,14 @@ def plot_dataframe(
             fmt = "{:.2f}"
             if legend_kwds is not None and "fmt" in legend_kwds:
                 fmt = legend_kwds.pop("fmt")
+
             categories = binning.get_legend_classes(fmt)
+            if legend_kwds is not None:
+                show_interval = legend_kwds.pop("interval", False)
+            else:
+                show_interval = False
+            if not show_interval:
+                categories = [c[1:-1] for c in categories]
         values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
@@ -785,7 +846,7 @@ def plot_dataframe(
             vmax=mx,
             markersize=markersize,
             cmap=cmap,
-            **style_kwds
+            **style_kwds,
         )
 
     if missing_kwds is not None and not expl_series[nan_idx].empty:
@@ -862,3 +923,24 @@ def plot_dataframe(
 
     plt.draw()
     return ax
+
+
+@doc(plot_dataframe)
+class GeoplotAccessor(PlotAccessor):
+
+    _pandas_kinds = PlotAccessor._all_kinds
+
+    def __call__(self, *args, **kwargs):
+        data = self._parent.copy()
+        kind = kwargs.pop("kind", "geo")
+        if kind == "geo":
+            return plot_dataframe(data, *args, **kwargs)
+        if kind in self._pandas_kinds:
+            # Access pandas plots
+            return PlotAccessor(data)(kind=kind, **kwargs)
+        else:
+            # raise error
+            raise ValueError(f"{kind} is not a valid plot kind")
+
+    def geo(self, *args, **kwargs):
+        return self(kind="geo", *args, **kwargs)

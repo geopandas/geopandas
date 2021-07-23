@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from shapely.geometry import Point, Polygon, LineString, GeometryCollection
+from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
 from fiona.errors import DriverError
 
 import geopandas
@@ -107,19 +107,23 @@ def test_overlay(dfs_index, how):
 def test_overlay_nybb(how):
     polydf = read_file(geopandas.datasets.get_path("nybb"))
 
-    # construct circles dataframe
-    N = 10
-    b = [int(x) for x in polydf.total_bounds]
-    polydf2 = GeoDataFrame(
-        [
-            {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
-            for x, y in zip(
-                range(b[0], b[2], int((b[2] - b[0]) / N)),
-                range(b[1], b[3], int((b[3] - b[1]) / N)),
-            )
-        ],
-        crs=polydf.crs,
-    )
+    # The circles have been constructed and saved at the time the expected
+    # results were created (exact output of buffer algorithm can slightly
+    # change over time -> use saved ones)
+    # # construct circles dataframe
+    # N = 10
+    # b = [int(x) for x in polydf.total_bounds]
+    # polydf2 = GeoDataFrame(
+    #     [
+    #         {"geometry": Point(x, y).buffer(10000), "value1": x + y, "value2": x - y}
+    #         for x, y in zip(
+    #             range(b[0], b[2], int((b[2] - b[0]) / N)),
+    #             range(b[1], b[3], int((b[3] - b[1]) / N)),
+    #         )
+    #     ],
+    #     crs=polydf.crs,
+    # )
+    polydf2 = read_file(os.path.join(DATA, "nybb_qgis", "polydf2.shp"))
 
     result = overlay(polydf, polydf2, how=how)
 
@@ -186,12 +190,23 @@ def test_overlay_nybb(how):
         result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
     )
 
-    # now drop multipolygons
-    result.geometry[result.geometry.geom_type == "MultiPolygon"] = None
-    expected.geometry[expected.geometry.geom_type == "MultiPolygon"] = None
+    # There are two cases where the multipolygon have a different number
+    # of sub-geometries -> not solved by normalize (and thus drop for now)
+    if how == "symmetric_difference":
+        expected.loc[9, "geometry"] = None
+        result.loc[9, "geometry"] = None
+
+    if how == "union":
+        expected.loc[24, "geometry"] = None
+        result.loc[24, "geometry"] = None
 
     assert_geodataframe_equal(
-        result, expected, check_crs=False, check_column_type=False
+        result,
+        expected,
+        normalize=True,
+        check_crs=False,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -244,7 +259,11 @@ def test_overlay_overlap(how):
         result = result.sort_values(["col1", "col2"]).reset_index(drop=True)
 
     assert_geodataframe_equal(
-        result, expected, check_column_type=False, check_less_precise=True
+        result,
+        expected,
+        normalize=True,
+        check_column_type=False,
+        check_less_precise=True,
     )
 
 
@@ -363,8 +382,24 @@ def test_correct_index(dfs):
     expected = GeoDataFrame(
         [[1, 1, i1], [3, 2, i2]], columns=["col3", "col2", "geometry"]
     )
-    result = overlay(df3, df2)
+    result = overlay(df3, df2, keep_geom_type=True)
     assert_geodataframe_equal(result, expected)
+
+
+def test_warn_on_keep_geom_type(dfs):
+
+    df1, df2 = dfs
+    polys3 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(-1, 1), (1, 1), (1, 3), (-1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df3 = GeoDataFrame({"geometry": polys3})
+
+    with pytest.warns(UserWarning, match="`keep_geom_type=True` in overlay"):
+        overlay(df2, df3, keep_geom_type=None)
 
 
 @pytest.mark.parametrize(
@@ -469,6 +504,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         assert_geodataframe_equal(
             result,
             expected,
+            normalize=True,
             check_column_type=False,
             check_less_precise=True,
             check_crs=False,
@@ -535,3 +571,36 @@ def test_keep_geom_type_geometry_collection():
     intersection = overlay(df1, df2, keep_geom_type=False)
     assert len(intersection) == 1
     assert (intersection.geom_type == "GeometryCollection").all()
+
+
+@pytest.mark.parametrize("make_valid", [True, False])
+def test_overlap_make_valid(make_valid):
+    bowtie = Polygon([(1, 1), (9, 9), (9, 1), (1, 9), (1, 1)])
+    assert not bowtie.is_valid
+    fixed_bowtie = bowtie.buffer(0)
+    assert fixed_bowtie.is_valid
+
+    df1 = GeoDataFrame({"col1": ["region"], "geometry": GeoSeries([box(0, 0, 10, 10)])})
+    df_bowtie = GeoDataFrame(
+        {"col1": ["invalid", "valid"], "geometry": GeoSeries([bowtie, fixed_bowtie])}
+    )
+
+    if make_valid:
+        df_overlay_bowtie = overlay(df1, df_bowtie, make_valid=make_valid)
+        assert df_overlay_bowtie.at[0, "geometry"].equals(fixed_bowtie)
+        assert df_overlay_bowtie.at[1, "geometry"].equals(fixed_bowtie)
+    else:
+        with pytest.raises(ValueError, match="1 invalid input geometries"):
+            overlay(df1, df_bowtie, make_valid=make_valid)
+
+
+def test_empty_overlay_return_non_duplicated_columns():
+
+    nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+    nybb2 = nybb.copy()
+    nybb2.geometry = nybb2.translate(20000000)
+
+    result = geopandas.overlay(nybb, nybb2)
+
+    assert all(result.columns.isin(nybb.columns))
+    assert len(result.columns) == len(nybb.columns)

@@ -162,7 +162,7 @@ class TestFrameSindex:
         assert geometry_col.sindex is original_index
 
     @pytest.mark.skipif(
-        not compat.PANDAS_GE_10, reason="Column selection returns a copy on pd<=1.0.0"
+        not compat.PANDAS_GE_11, reason="Column selection returns a copy on pd<=1.1.0"
     )
     def test_rebuild_on_multiple_col_selection(self):
         """Selecting a subset of columns preserves the index."""
@@ -412,10 +412,14 @@ class TestPygeosInterface:
 
         test_geo = test_df.geometry.values.data[0]
         res = tree_df.sindex.query(test_geo, sort=sort)
+
+        # asserting the same elements
+        assert sorted(res) == sorted(expected)
+        # asserting the exact array can fail if sort=False
         try:
             assert_array_equal(res, expected)
         except AssertionError as e:
-            if not compat.USE_PYGEOS and sort is False:
+            if sort is False:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
@@ -649,10 +653,15 @@ class TestPygeosInterface:
         test_df = geopandas.GeoDataFrame(geometry=test_polys)
 
         res = tree_df.sindex.query_bulk(test_df.geometry, sort=sort)
+
+        # asserting the same elements
+        assert sorted(res[0]) == sorted(expected[0])
+        assert sorted(res[1]) == sorted(expected[1])
+        # asserting the exact array can fail if sort=False
         try:
             assert_array_equal(res, expected)
         except AssertionError as e:
-            if not compat.USE_PYGEOS and sort is False:
+            if sort is False:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
@@ -709,3 +718,16 @@ class TestPygeosInterface:
 
         res = world.sindex.query_bulk(capitals.geometry, predicate)
         assert res.shape == expected_shape
+
+
+@pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
+def test_old_spatial_index_deprecated():
+    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
+    t2 = Polygon([(0, 0), (1, 1), (0, 1)])
+
+    stream = ((i, item.bounds, None) for i, item in enumerate([t1, t2]))
+
+    with pytest.warns(FutureWarning):
+        idx = geopandas.sindex.SpatialIndex(stream)
+
+    assert list(idx.intersection((0, 0, 1, 1))) == [0, 1]

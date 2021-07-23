@@ -2,7 +2,7 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7.3
+  - python=3.7
   # required
   - pandas
   - shapely
@@ -17,12 +17,10 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   #- geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow
   - pip:
       - geopy
       - mapclassify
-      - pygeos
+      - pyarrow

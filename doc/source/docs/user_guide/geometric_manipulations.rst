@@ -3,7 +3,7 @@
 Geometric Manipulations
 ========================
 
-*geopandas* makes available all the tools for geometric manipulations in the `*shapely* library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
+*geopandas* makes available all the tools for geometric manipulations in the `shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
 Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
 
@@ -12,39 +12,39 @@ Constructive Methods
 
 .. method:: GeoSeries.buffer(distance, resolution=16)
 
-  Returns a ``GeoSeries`` of geometries representing all points within a given `distance`
+  Returns a :class:`~geopandas.GeoSeries` of geometries representing all points within a given `distance`
   of each geometric object.
 
 .. attribute:: GeoSeries.boundary
 
-  Returns a ``GeoSeries`` of lower dimensional objects representing
+  Returns a :class:`~geopandas.GeoSeries` of lower dimensional objects representing
   each geometries's set-theoretic `boundary`.
 
 .. attribute:: GeoSeries.centroid
 
-  Returns a ``GeoSeries`` of points for each geometric centroid.
+  Returns a :class:`~geopandas.GeoSeries` of points for each geometric centroid.
 
 .. attribute:: GeoSeries.convex_hull
 
-  Returns a ``GeoSeries`` of geometries representing the smallest
+  Returns a :class:`~geopandas.GeoSeries` of geometries representing the smallest
   convex `Polygon` containing all the points in each object unless the
   number of points in the object is less than three. For two points,
   the convex hull collapses to a `LineString`; for 1, a `Point`.
 
 .. attribute:: GeoSeries.envelope
 
-  Returns a ``GeoSeries`` of geometries representing the point or
+  Returns a :class:`~geopandas.GeoSeries` of geometries representing the point or
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
-  Returns a ``GeoSeries`` containing a simplified representation of
+  Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of
   each object.
 
 .. attribute:: GeoSeries.unary_union
 
-  Return a geometry containing the union of all geometries in the ``GeoSeries``.
+  Return a geometry containing the union of all geometries in the :class:`~geopandas.GeoSeries`.
 
 
 Affine transformations
@@ -52,23 +52,23 @@ Affine transformations
 
 .. method:: GeoSeries.affine_transform(self, matrix)
 
-  Transform the geometries of the GeoSeries using an affine transformation matrix
+  Transform the geometries of the :class:`~geopandas.GeoSeries` using an affine transformation matrix
 
 .. method:: GeoSeries.rotate(self, angle, origin='center', use_radians=False)
 
-  Rotate the coordinates of the GeoSeries.
+  Rotate the coordinates of the :class:`~geopandas.GeoSeries`.
 
 .. method:: GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
 
- Scale the geometries of the GeoSeries along each (x, y, z) dimensio.
+ Scale the geometries of the :class:`~geopandas.GeoSeries` along each (x, y, z) dimensio.
 
 .. method:: GeoSeries.skew(self, angle, origin='center', use_radians=False)
 
-  Shear/Skew the geometries of the GeoSeries by angles along x and y dimensions.
+  Shear/Skew the geometries of the :class:`~geopandas.GeoSeries` by angles along x and y dimensions.
 
 .. method:: GeoSeries.translate(self, xoff=0.0, yoff=0.0, zoff=0.0)
 
-  Shift the coordinates of the GeoSeries.
+  Shift the coordinates of the :class:`~geopandas.GeoSeries`.
 
 
 
@@ -92,7 +92,7 @@ Examples of Geometric Manipulations
 
 .. image:: ../../_static/test.png
 
-Some geographic operations return normal pandas object.  The ``area`` property of a ``GeoSeries`` will return a ``pandas.Series`` containing the area of each item in the ``GeoSeries``:
+Some geographic operations return normal pandas object.  The :attr:`~geopandas.GeoSeries.area` property of a :class:`~geopandas.GeoSeries` will return a :class:`pandas.Series` containing the area of each item in the :class:`~geopandas.GeoSeries`:
 
 .. sourcecode:: python
 
@@ -114,7 +114,7 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses `descartes`_ to generate a `matplotlib`_ plot. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`_ for plotting. To generate a plot of our GeoSeries, use:
 
 .. sourcecode:: python
 
@@ -130,20 +130,20 @@ GeoPandas also implements alternate constructors that can read any data format r
     >>> boros.sort_index(inplace=True)
     >>> boros
                    BoroName     Shape_Leng    Shape_Area  \
-    BoroCode                                               
-    1             Manhattan  359299.096471  6.364715e+08   
-    2                 Bronx  464392.991824  1.186925e+09   
-    3              Brooklyn  741080.523166  1.937479e+09   
-    4                Queens  896344.047763  3.045213e+09   
-    5         Staten Island  330470.010332  1.623820e+09   
-    
-                                                       geometry  
-    BoroCode                                                     
-    1         MULTIPOLYGON (((981219.0557861328 188655.31579...  
-    2         MULTIPOLYGON (((1012821.805786133 229228.26458...  
-    3         MULTIPOLYGON (((1021176.479003906 151374.79699...  
-    4         MULTIPOLYGON (((1029606.076599121 156073.81420...  
-    5         MULTIPOLYGON (((970217.0223999023 145643.33221...  
+    BoroCode
+    1             Manhattan  359299.096471  6.364715e+08
+    2                 Bronx  464392.991824  1.186925e+09
+    3              Brooklyn  741080.523166  1.937479e+09
+    4                Queens  896344.047763  3.045213e+09
+    5         Staten Island  330470.010332  1.623820e+09
+
+                                                       geometry
+    BoroCode
+    1         MULTIPOLYGON (((981219.0557861328 188655.31579...
+    2         MULTIPOLYGON (((1012821.805786133 229228.26458...
+    3         MULTIPOLYGON (((1021176.479003906 151374.79699...
+    4         MULTIPOLYGON (((1029606.076599121 156073.81420...
+    5         MULTIPOLYGON (((970217.0223999023 145643.33221...
 
 .. image:: ../../_static/nyc.png
 
@@ -161,7 +161,7 @@ GeoPandas also implements alternate constructors that can read any data format r
 .. image:: ../../_static/nyc_hull.png
 
 To demonstrate a more complex operation, we'll generate a
-``GeoSeries`` containing 2000 random points:
+:class:`~geopandas.GeoSeries` containing 2000 random points:
 
 .. sourcecode:: python
 
@@ -178,7 +178,7 @@ Now draw a circle with fixed radius around each point:
 
     >>> circles = pts.buffer(2000)
 
-We can collapse these circles into a single shapely MultiPolygon
+We can collapse these circles into a single :class:`MultiPolygon`
 geometry with
 
 .. sourcecode:: python
@@ -203,8 +203,8 @@ and to get the area outside of the holes:
 .. image:: ../../_static/boros_with_holes.png
 
 Note that this can be simplified a bit, since ``geometry`` is
-available as an attribute on a ``GeoDataFrame``, and the
-``intersection`` and ``difference`` methods are implemented with the
+available as an attribute on a :class:`~geopandas.GeoDataFrame`, and the
+:meth:`~geopandas.GeoSeries.intersection` and :meth:`~geopandas.GeoSeries.difference` methods are implemented with the
 "&" and "-" operators, respectively.  For example, the latter could
 have been expressed simply as ``boros.geometry - mp``.
 
@@ -222,7 +222,6 @@ borough that are in the holes:
     5    0.558075
     dtype: float64
 
-.. _Descartes: https://pypi.python.org/pypi/descartes
 .. _matplotlib: http://matplotlib.org
 .. _fiona: http://fiona.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy

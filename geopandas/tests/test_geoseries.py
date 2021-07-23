@@ -1,4 +1,3 @@
-from distutils.version import LooseVersion
 import json
 import os
 import random
@@ -19,17 +18,15 @@ from shapely.geometry import (
     Polygon,
 )
 from shapely.geometry.base import BaseGeometry
-import pyproj
 
 from geopandas import GeoSeries, GeoDataFrame
+from geopandas._compat import PYPROJ_LT_3
 from geopandas.array import GeometryArray, GeometryDtype
+from geopandas.testing import assert_geoseries_equal
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
 import pytest
-
-
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 
 
 class TestSeries:
@@ -136,8 +133,12 @@ class TestSeries:
 
     def test_geom_equals_align(self):
         with pytest.warns(UserWarning, match="The indices .+ different"):
-            a = self.a1.geom_equals(self.a2)
+            a = self.a1.geom_equals(self.a2, align=True)
         exp = pd.Series([False, True, False], index=["A", "B", "C"])
+        assert_series_equal(a, exp)
+
+        a = self.a1.geom_equals(self.a2, align=False)
+        exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
     def test_geom_almost_equals(self):
@@ -145,10 +146,24 @@ class TestSeries:
         assert np.all(self.g1.geom_almost_equals(self.g1))
         assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
 
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+        )
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+        )
+
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
+
+        assert_array_equal(
+            self.a1.geom_equals_exact(self.a2, 0.001, align=True), [False, True, False]
+        )
+        assert_array_equal(
+            self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
+        )
 
     def test_equal_comp_op(self):
         s = GeoSeries([Point(x, x) for x in range(3)])
@@ -247,26 +262,65 @@ class TestSeries:
 
     def test_proj4strings(self):
         # As string
-        reprojected = self.g3.to_crs("+proj=utm +zone=30N")
+        reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # As dict
-        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
-        reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Conversions by different format
-        reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
-        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
+        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+
+    def test_from_wkb(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
+
+    def test_from_wkb_series(self):
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s))
+
+    def test_from_wkb_series_with_index(self):
+        index = [0]
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
+
+    def test_from_wkt(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
+
+    def test_from_wkt_series(self):
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s))
+
+    def test_from_wkt_series_with_index(self):
+        index = [0]
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
+
+    def test_to_wkb(self):
+        assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
+        assert_series_equal(
+            pd.Series([self.t1.wkb_hex, self.sq.wkb_hex]), self.g1.to_wkb(hex=True)
+        )
+
+    def test_to_wkt(self):
+        assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
 
 def test_missing_values_empty_warning():
@@ -374,6 +428,10 @@ class TestConstructor:
         check_geoseries(s)
 
         s = GeoSeries()
+        check_geoseries(s)
+
+    def test_data_is_none(self):
+        s = GeoSeries(index=range(3))
         check_geoseries(s)
 
     def test_from_series(self):

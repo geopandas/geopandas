@@ -1,6 +1,6 @@
 # required
 fiona>=1.8
-pandas>=0.24
+pandas>=0.25
 pyproj>=2.2.0
 shapely>=1.6
 
@@ -12,16 +12,15 @@ SQLAlchemy>=0.8.3
 geopy
 
 # plotting
-descartes>=1.0
 matplotlib>=2.2
 mapclassify
 
-# testing 
+# testing
 pytest>=3.1.0
 pytest-cov
 codecov
 
-# spatial access methods 
+# spatial access methods
 rtree>=0.8
 
 # styling

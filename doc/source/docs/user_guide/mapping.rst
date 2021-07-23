@@ -11,11 +11,13 @@
    plt.close('all')
 
 
-Mapping Tools
+Mapping and Plotting Tools
 =========================================
 
 
-*geopandas* provides a high-level interface to the ``matplotlib`` library for making maps. Mapping shapes is as easy as using the ``plot()`` method on a ``GeoSeries`` or ``GeoDataFrame``.
+*geopandas* provides a high-level interface to the matplotlib_ library for making maps. Mapping shapes is as easy as using the :meth:`~GeoDataFrame.plot()` method on a :class:`GeoSeries` or :class:`GeoDataFrame`.
+
+.. _matplotlib: https://matplotlib.org/stable/
 
 Loading some example data:
 
@@ -35,7 +37,7 @@ We can now plot those GeoDataFrames:
     @savefig world_randomcolors.png
     world.plot();
 
-Note that in general, any options one can pass to `pyplot <http://matplotlib.org/api/pyplot_api.html>`_ in ``matplotlib`` (or `style options that work for lines <http://matplotlib.org/api/lines_api.html>`_) can be passed to the ``plot()`` method.
+Note that in general, any options one can pass to `pyplot <http://matplotlib.org/api/pyplot_api.html>`_ in matplotlib_ (or `style options that work for lines <http://matplotlib.org/api/lines_api.html>`_) can be passed to the :meth:`~GeoDataFrame.plot` method.
 
 
 Choropleth Maps
@@ -45,7 +47,7 @@ Choropleth Maps
 
 .. ipython:: python
 
-    # Plot by GDP per capta
+    # Plot by GDP per capita
     world = world[(world.pop_est>0) & (world.name!="Antarctica")]
     world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
     @savefig world_gdp_per_cap.png
@@ -65,7 +67,7 @@ When plotting a map, one can enable a legend using the ``legend`` argument:
     @savefig world_pop_est.png
     world.plot(column='pop_est', ax=ax, legend=True)
 
-However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the ``plot`` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
+However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the :meth:`~GeoDataFrame.plot` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
 
 .. ipython:: python
 
@@ -96,7 +98,7 @@ And the following example plots the color bar below the map and adds its label u
 Choosing colors
 ~~~~~~~~~~~~~~~~
 
-One can also modify the colors used by ``plot`` with the ``cmap`` option (for a full list of colormaps, see the `matplotlib website <http://matplotlib.org/users/colormaps.html>`_):
+One can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cmap`` option (for a full list of colormaps, see the `matplotlib website <http://matplotlib.org/users/colormaps.html>`_):
 
 .. ipython:: python
 
@@ -153,6 +155,17 @@ However, passing ``missing_kwds`` one can specify the style and label of feature
             "label": "Missing values",
         },
     );
+
+Other map customizations
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Maps usually do not have to have axis labels. You can turn them off using ``set_axis_off()`` or ``axis("off")`` axis methods.
+
+.. ipython:: python
+
+    ax = world.plot()
+    @savefig set_axis_off.png
+    ax.set_axis_off();
 
 Maps with Layers
 -----------------
@@ -221,6 +234,41 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
     ax = cities.plot(color='k', zorder=2)
     @savefig zorder_set.png
     world.plot(ax=ax, zorder=1);
+
+
+Pandas Plots
+-----------------
+
+Plotting methods also allow for different plot styles from pandas
+along with the default ``geo`` plot. These methods can be accessed using
+the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
+
+* ``geo`` for mapping
+* ``line`` for line plots
+* ``bar`` or ``barh`` for bar plots
+* ``hist`` for histogram
+* ``box`` for boxplot
+* ``kde`` or ``density`` for density plots
+* ``area``  for area plots
+* ``scatter`` for scatter plots
+* ``hexbin`` for hexagonal bin plots
+* ``pie`` for pie plots
+
+.. ipython:: python
+
+    gdf = world.head(10)
+    @savefig pandas_line_plot.png
+    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est")
+
+You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
+
+.. ipython:: python
+
+    @savefig pandas_bar_plot.png
+    gdf.plot.bar()
+
+For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+
 
 Other Resources
 -----------------
