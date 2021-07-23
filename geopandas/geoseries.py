@@ -33,7 +33,7 @@ _SERIES_WARNING_MSG = """\
 
 
 def _geoseries_constructor_with_fallback(
-    data: Optional = None, index: Optional = None, crs: Optional = None, **kwargs
+    data=None, index=None, crs: Optional[CRS] = None, **kwargs
 ):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
@@ -133,13 +133,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     _metadata = ["name"]
 
-    def __new__(
-        cls,
-        data: Optional = None,
-        index: Optional = None,
-        crs: Optional = None,
-        **kwargs
-    ):
+    def __new__(cls, data=None, index=None, crs: Optional[CRS] = None, **kwargs):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
 
@@ -361,7 +355,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkb(
-        cls, data, index: Optional = None, crs: Optional = None, **kwargs
+        cls, data, index=None, crs: Optional[CRS] = None, **kwargs
     ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
@@ -395,7 +389,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkt(
-        cls, data, index: Optional = None, crs: Optional = None, **kwargs
+        cls, data, index=None, crs: Optional[CRS] = None, **kwargs
     ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
@@ -446,8 +440,8 @@ class GeoSeries(GeoPandasBase, Series):
         cls,
         from_wkb_or_wkt_function,
         data,
-        index: Optional = None,
-        crs: Optional = None,
+        index=None,
+        crs: Optional[CRS] = None,
         **kwargs
     ):
         """Create a GeoSeries from either WKT or WKB values"""
@@ -580,7 +574,7 @@ class GeoSeries(GeoPandasBase, Series):
                 result.set_crs(self.crs, inplace=True)
         return result
 
-    def __finalize__(self, other, method: Optional = None, **kwargs):
+    def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
@@ -704,13 +698,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(
-        self,
-        value: Optional = None,
-        method: Optional = None,
-        inplace: bool = False,
-        **kwargs
-    ):
+    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
         """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.

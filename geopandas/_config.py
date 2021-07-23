@@ -7,7 +7,7 @@ like holding the options and giving a nice repr.
 """
 from collections import namedtuple
 import textwrap
-from typing import Optional
+from typing import Optional, Callable
 
 
 Option = namedtuple("Option", "key default_value doc validator callback")
@@ -67,7 +67,7 @@ class Options(object):
         return "{}({}{})".format(cls, space, description)
 
 
-def indent(text, prefix, predicate: Optional = None) -> str:
+def indent(text, prefix, predicate: Optional[Callable] = None) -> str:
     """
     This is the python 3 textwrap.indent function, which is not available in
     python 2.

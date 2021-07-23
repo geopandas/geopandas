@@ -1,6 +1,5 @@
 from distutils.version import LooseVersion
 import json
-from typing import Optional
 import warnings
 
 from pandas import DataFrame
@@ -403,7 +402,7 @@ def _read_parquet(path: str, columns: list = None, **kwargs) -> GeoDataFrame:
     return _arrow_to_geopandas(table)
 
 
-def _read_feather(path: str, columns: Optional = None, **kwargs) -> GeoDataFrame:
+def _read_feather(path: str, columns=None, **kwargs) -> GeoDataFrame:
     """
     Load a Feather object from the file path, returning a GeoDataFrame.
 

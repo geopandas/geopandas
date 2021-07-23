@@ -226,7 +226,7 @@ def to_wkt(data, **kwargs):
         return np.array(out, dtype=object)
 
 
-def _points_from_xy(x, y, z: Optional = None):
+def _points_from_xy(x: np.ndarray, y: np.ndarray, z: Optional[np.ndarray] = None):
     # helper method for shapely-based function
     if not len(x) == len(y):
         raise ValueError("x and y arrays must be equal length.")
@@ -239,7 +239,7 @@ def _points_from_xy(x, y, z: Optional = None):
     return geom
 
 
-def points_from_xy(x, y, z: Optional = None):
+def points_from_xy(x: object, y: object, z: Optional[object] = None):
 
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")

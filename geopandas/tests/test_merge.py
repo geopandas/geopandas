@@ -1,5 +1,4 @@
 import pandas as pd
-from typing import Optional
 
 from shapely.geometry import Point
 
@@ -14,9 +13,7 @@ class TestMerging:
         self.gdf = GeoDataFrame({"geometry": self.gseries, "values": range(3)})
         self.df = pd.DataFrame({"col1": [1, 2, 3], "col2": [0.1, 0.2, 0.3]})
 
-    def _check_metadata(
-        self, gdf, geometry_column_name="geometry", crs: Optional = None
-    ):
+    def _check_metadata(self, gdf, geometry_column_name="geometry", crs=None):
 
         assert gdf._geometry_column_name == geometry_column_name
         assert gdf.crs == crs

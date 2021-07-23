@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union
 import warnings
 
 import numpy as np
@@ -127,11 +127,11 @@ def _PolygonPatch(polygon, **kwargs):
 def _plot_polygon_collection(
     ax,
     geoms,
-    values: Optional = None,
-    color: Optional = None,
-    cmap: Optional = None,
-    vmin: Optional = None,
-    vmax: Optional = None,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
     **kwargs,
 ):
     """
@@ -200,11 +200,11 @@ plot_polygon_collection = deprecated(_plot_polygon_collection)
 def _plot_linestring_collection(
     ax,
     geoms,
-    values: Optional = None,
-    color: Optional = None,
-    cmap: Optional = None,
-    vmin: Optional = None,
-    vmax: Optional = None,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
     **kwargs,
 ):
     """
@@ -265,13 +265,13 @@ plot_linestring_collection = deprecated(_plot_linestring_collection)
 def _plot_point_collection(
     ax,
     geoms,
-    values: Optional = None,
-    color: Optional = None,
-    cmap: Optional = None,
-    vmin: Optional = None,
-    vmax: Optional = None,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
     marker="o",
-    markersize: Optional = None,
+    markersize=None,
     **kwargs,
 ):
     """
@@ -332,8 +332,8 @@ def plot_series(
     s: pd.Series,
     cmap: str = None,
     color: str = None,
-    ax: Optional = None,
-    figsize: Optional = None,
+    ax=None,
+    figsize=None,
     aspect: Union[str, float] = "auto",
     **style_kwds,
 ):
@@ -497,15 +497,15 @@ def plot_dataframe(
     column: Union[str, np.ndarray, pd.Series] = None,
     cmap: str = None,
     color: str = None,
-    ax: Optional = None,
-    cax: Optional = None,
+    ax=None,
+    cax=None,
     categorical: bool = False,
     legend: bool = False,
     scheme: str = None,
     k: int = 5,
     vmin: float = None,
     vmax: float = None,
-    markersize: Optional = None,
+    markersize=None,
     figsize: tuple = None,
     legend_kwds: dict = None,
     categories: list = None,

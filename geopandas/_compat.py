@@ -2,7 +2,6 @@ import contextlib
 from distutils.version import LooseVersion
 import importlib
 import os
-from typing import Optional
 import warnings
 
 import pandas as pd
@@ -57,7 +56,7 @@ except ImportError:
     HAS_PYGEOS = False
 
 
-def set_use_pygeos(val: Optional = None):
+def set_use_pygeos(val=None):
     """
     Set the global configuration on whether to use PyGEOS or not.
 

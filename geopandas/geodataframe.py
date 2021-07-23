@@ -24,7 +24,7 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _ensure_geometry(data, crs: Optional = None):
+def _ensure_geometry(data, crs: Optional[CRS] = None):
     """
     Ensure the data is of geometry dtype or converted to it.
 
@@ -104,9 +104,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(
-        self, *args, geometry: Optional = None, crs: Optional = None, **kwargs
-    ):
+    def __init__(self, *args, geometry=None, crs: Optional[CRS] = None, **kwargs):
         with compat.ignore_shapely2_warnings():
             super(GeoDataFrame, self).__init__(*args, **kwargs)
 
@@ -437,7 +435,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(
         cls,
         data: dict,
-        geometry: Optional = None,
+        geometry=None,
         crs: Union[str, dict] = None,
         **kwargs,
     ) -> "GeoDataFrame":
@@ -518,7 +516,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_features(
-        cls, features, crs: Union[str, dict] = None, columns: Optional = None
+        cls, features, crs: Union[str, dict] = None, columns=None
     ) -> "GeoDataFrame":
         """
         Alternate constructor to create GeoDataFrame from an iterable of
@@ -608,7 +606,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         sql: str,
         con,
         geom_col: str = "geom",
-        crs: Optional = None,
+        crs: Optional[CRS] = None,
         index_col: Union[str, list] = None,
         coerce_float: bool = True,
         parse_dates: Union[list, dict] = None,
@@ -1403,7 +1401,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         func,
         axis: int = 0,
         raw: bool = False,
-        result_type: Optional = None,
+        result_type=None,
         args=(),
         **kwargs,
     ):
@@ -1423,7 +1421,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def _constructor(self):
         return GeoDataFrame
 
-    def __finalize__(self, other, method: Optional = None, **kwargs):
+    def __finalize__(self, other, method: Optional[str] = None, **kwargs):
         """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
@@ -1443,7 +1441,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         by: str = None,
         aggfunc: Union[Callable, str] = "first",
         as_index: bool = True,
-        level: Optional = None,
+        level=None,
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
@@ -1562,7 +1560,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column: Optional = None, **kwargs) -> "GeoDataFrame":
+    def explode(self, column=None, **kwargs) -> "GeoDataFrame":
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1680,9 +1678,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         schema: str = None,
         if_exists: str = "fail",
         index: bool = False,
-        index_label: Optional = None,
+        index_label=None,
         chunksize: int = None,
-        dtype: Optional = None,
+        dtype=None,
     ):
         """
         Upload GeoDataFrame into PostGIS database.
@@ -1781,7 +1779,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs: Optional = None):
+def _dataframe_set_geometry(
+    self, col, drop=False, inplace=False, crs: Optional[CRS] = None
+):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"

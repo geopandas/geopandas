@@ -1,5 +1,5 @@
 from distutils.version import LooseVersion
-from typing import Union, Optional
+from typing import Union
 
 import warnings
 import numpy as np
@@ -66,9 +66,9 @@ def _is_zip(path: str) -> bool:
 
 def _read_file(
     filename,
-    bbox: Optional = None,
-    mask: Optional = None,
-    rows: Optional = None,
+    bbox=None,
+    mask=None,
+    rows=None,
     **kwargs,
 ) -> GeoDataFrame:
     """
