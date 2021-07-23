@@ -138,10 +138,10 @@ def test_bad_provider_reverse():
 
 
 def test_forward(locations, points):
-    from geopy.geocoders import GeocodeFarm
+    from geopy.geocoders import Photon
 
-    for provider in ["geocodefarm", GeocodeFarm]:
-        with mock.patch("geopy.geocoders.GeocodeFarm.geocode", ForwardMock()) as m:
+    for provider in ["photon", Photon]:
+        with mock.patch("geopy.geocoders.Photon.geocode", ForwardMock()) as m:
             g = geocode(locations, provider=provider, timeout=2)
             assert len(locations) == m.call_count
 
@@ -155,10 +155,10 @@ def test_forward(locations, points):
 
 
 def test_reverse(locations, points):
-    from geopy.geocoders import GeocodeFarm
+    from geopy.geocoders import Photon
 
-    for provider in ["geocodefarm", GeocodeFarm]:
-        with mock.patch("geopy.geocoders.GeocodeFarm.reverse", ReverseMock()) as m:
+    for provider in ["photon", Photon]:
+        with mock.patch("geopy.geocoders.Photon.reverse", ReverseMock()) as m:
             g = reverse_geocode(points, provider=provider, timeout=2)
             assert len(points) == m.call_count
 
