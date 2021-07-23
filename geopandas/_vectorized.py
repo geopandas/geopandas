@@ -4,8 +4,8 @@ Compatibility shim for the vectorized geometry operations.
 Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 
 """
-import warnings
 from typing import Optional
+import warnings
 
 import numpy as np
 import pandas as pd

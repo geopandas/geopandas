@@ -1,7 +1,7 @@
 from distutils.version import LooseVersion
 import json
-import warnings
 from typing import Optional
+import warnings
 
 from pandas import DataFrame
 

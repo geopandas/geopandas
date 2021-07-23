@@ -1,7 +1,7 @@
 from distutils.version import LooseVersion
 import itertools
-import warnings
 from typing import Optional
+import warnings
 
 import numpy as np
 import pandas as pd

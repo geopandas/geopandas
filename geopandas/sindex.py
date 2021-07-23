@@ -1,5 +1,5 @@
-import warnings
 from typing import Optional
+import warnings
 
 from shapely.geometry.base import BaseGeometry
 import pandas as pd

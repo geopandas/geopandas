@@ -1,5 +1,5 @@
-from warnings import warn
 from typing import Union
+from warnings import warn
 
 import numpy as np
 import pandas as pd

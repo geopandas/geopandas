@@ -1,6 +1,6 @@
 import json
-import warnings
 from typing import Union, Callable, Optional
+import warnings
 
 import numpy as np
 import pandas as pd

@@ -1,5 +1,5 @@
-import warnings
 from functools import reduce
+import warnings
 
 import numpy as np
 import pandas as pd

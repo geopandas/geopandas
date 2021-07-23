@@ -1,9 +1,9 @@
 from collections.abc import Iterable
+import inspect
 import numbers
 import operator
-import warnings
-import inspect
 from typing import Tuple, Any, Optional
+import warnings
 
 import numpy as np
 import pandas as pd

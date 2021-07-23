@@ -2,8 +2,8 @@ import contextlib
 from distutils.version import LooseVersion
 import importlib
 import os
-import warnings
 from typing import Optional
+import warnings
 
 import pandas as pd
 import pyproj
