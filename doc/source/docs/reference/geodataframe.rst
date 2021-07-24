@@ -13,8 +13,8 @@ Constructor
 
    GeoDataFrame
 
-Reading and writing files
--------------------------
+Serialization / IO / conversion
+-------------------------------
 
 .. autosummary::
    :toctree: api/
@@ -27,6 +27,8 @@ Reading and writing files
    GeoDataFrame.to_parquet
    GeoDataFrame.to_feather
    GeoDataFrame.to_postgis
+   GeoDataFrame.to_wkb
+   GeoDataFrame.to_wkt
 
 Projection handling
 -------------------

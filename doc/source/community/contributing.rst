@@ -44,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.6+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.7+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 
@@ -258,16 +258,21 @@ and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
 Once you have made your changes, you may try if they render correctly by
-building the docs using sphinx. To do so, you can navigate to the `doc` folder
+building the docs using sphinx. To do so, you can navigate to the `doc` folder::
+
+    cd doc
+
 and type::
 
     make html
 
-The resulting html pages will be located in ``doc/build/html``. In case of any errors, you
-can try to use ``make html`` within a new environment based on environment.yml
-specification in the ``doc`` folder. You may need to register Jupyter kernel as
+The resulting html pages will be located in ``doc/build/html``.
+
+In case of any errors, you can try to use ``make html`` within a new environment based on
+environment.yml specification in the ``doc`` folder. You may need to register Jupyter kernel as
 ``geopandas_docs``. Using conda::
 
+    cd doc
     conda env create -f environment.yml
     conda activate geopandas_docs
     python -m ipykernel install --user --name geopandas_docs

@@ -12,6 +12,8 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 
+from . import _compat as compat
+from ._decorator import doc
 from .array import (
     GeometryDtype,
     from_shapely,
@@ -21,7 +23,6 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
-from . import _compat as compat
 
 
 _SERIES_WARNING_MSG = """\
@@ -47,24 +48,6 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
-
-
-def inherit_doc(cls):
-    """
-    A decorator adding a docstring from an existing method.
-    """
-
-    def decorator(decorated):
-        original_method = getattr(cls, decorated.__name__, None)
-        if original_method:
-            doc = original_method.__doc__ or ""
-        else:
-            doc = ""
-
-        decorated.__doc__ = doc
-        return decorated
-
-    return decorator
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -132,9 +115,9 @@ class GeoSeries(GeoPandasBase, Series):
     - Lat[north]: Geodetic latitude (degree)
     - Lon[east]: Geodetic longitude (degree)
     Area of Use:
-    - name: World
+    - name: World.
     - bounds: (-180.0, -90.0, 180.0, 90.0)
-    Datum: World Geodetic System 1984
+    Datum: World Geodetic System 1984 ensemble
     - Ellipsoid: WGS 84
     - Prime Meridian: Greenwich
 
@@ -557,19 +540,19 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method("__getitem__", key)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def apply(self, func, convert_dtype=True, args=(), **kwargs):
         result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
@@ -578,7 +561,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
@@ -755,15 +738,9 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
+    @doc(plot_series)
     def plot(self, *args, **kwargs):
-        """Generate a plot of the geometries in the ``GeoSeries``.
-
-        Wraps the ``plot_series()`` function, and documentation is copied from
-        there.
-        """
         return plot_series(self, *args, **kwargs)
-
-    plot.__doc__ = plot_series.__doc__
 
     def explode(self):
         """
@@ -828,10 +805,13 @@ class GeoSeries(GeoPandasBase, Series):
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
 
-            index = MultiIndex.from_arrays(
-                [outer_index, inner_index], names=self.index.names + [None]
-            )
+            index = zip(outer_index, inner_index)
 
+            # if self.index is a MultiIndex then index is a list of nested tuples
+            if isinstance(self.index, MultiIndex):
+                index = [tuple(outer) + (inner,) for outer, inner in index]
+
+            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
@@ -847,6 +827,11 @@ class GeoSeries(GeoPandasBase, Series):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
+
+        # if self.index is a MultiIndex then index is a list of nested tuples
+        if isinstance(self.index, MultiIndex):
+            index = [tuple(outer) + (inner,) for outer, inner in index]
+
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 

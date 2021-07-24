@@ -4,19 +4,20 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-
 
 from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, inherit_doc
+from geopandas.geoseries import GeoSeries
 import geopandas.io
-from geopandas.plotting import plot_dataframe
+
 from . import _compat as compat
+from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -33,7 +34,9 @@ def _ensure_geometry(data, crs=None):
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
-            return GeoSeries(data)
+            data = GeoSeries(data)
+        if data.crs is None:
+            data.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -810,6 +813,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ids = np.array(self.index, copy=False)
         geometries = np.array(self[self._geometry_column_name], copy=False)
 
+        if not self.columns.is_unique:
+            raise ValueError("GeoDataFrame cannot contain duplicated column names.")
+
         properties_cols = self.columns.difference([self._geometry_column_name])
 
         if len(properties_cols) > 0:
@@ -956,7 +962,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         kwargs
-            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+            Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
         Examples
         --------
@@ -1004,7 +1010,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
         kwargs
-            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+            Additional keyword arguments passed to to
+            :func:`pyarrow.feather.write_feather`.
 
         Examples
         --------
@@ -1317,6 +1324,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 value = [value] * self.shape[0]
             try:
                 value = _ensure_geometry(value, crs=self.crs)
+                self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
@@ -1356,7 +1364,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result.__class__ = DataFrame
         return result
 
-    @inherit_doc(pd.DataFrame)
+    @doc(pd.DataFrame)
     def apply(self, func, axis=0, raw=False, result_type=None, args=(), **kwargs):
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
@@ -1375,7 +1383,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1579,9 +1587,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = pd.concat(
-            [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
+        df = (
+            df_copy.drop(df_copy._geometry_column_name, axis=1)
+            .join(exploded_geom)
+            .__finalize__(self)
         )
+
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
@@ -1630,7 +1641,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         chunksize=None,
         dtype=None,
     ):
-
         """
         Upload GeoDataFrame into PostGIS database.
 
@@ -1725,23 +1735,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return self.geometry.difference(other)
 
-    if compat.PANDAS_GE_025:
-        from pandas.core.accessor import CachedAccessor
-
-        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    else:
-
-        def plot(self, *args, **kwargs):
-            """Generate a plot of the geometries in the ``GeoDataFrame``.
-            If the ``column`` parameter is given, colors plot according to values
-            in that column, otherwise calls ``GeoSeries.plot()`` on the
-            ``geometry`` column.
-            Wraps the ``plot_dataframe()`` function, and documentation is copied
-            from there.
-            """
-            return plot_dataframe(self, *args, **kwargs)
-
-    plot.__doc__ = plot_dataframe.__doc__
+    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

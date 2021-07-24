@@ -139,15 +139,16 @@ def test_from_wkb():
     assert all(v.equals(t) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # TODO(pygeos) does not support empty strings
-    if compat.USE_PYGEOS:
-        L_wkb.extend([None])
-    else:
-        L_wkb.extend([b"", None])
-    res = from_wkb(L_wkb)
-    assert res[-1] is None
+    # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
+    missing_values = [None]
     if not compat.USE_PYGEOS:
-        assert res[-2] is None
+        missing_values.extend([b"", np.nan])
+
+        if compat.PANDAS_GE_10:
+            missing_values.append(pd.NA)
+
+    res = from_wkb(missing_values)
+    np.testing.assert_array_equal(res, np.full(len(missing_values), None))
 
     # single MultiPolygon
     multi_poly = shapely.geometry.MultiPolygon(
@@ -202,15 +203,16 @@ def test_from_wkt(string_type):
     assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # TODO(pygeos) does not support empty strings
-    if compat.USE_PYGEOS:
-        L_wkt.extend([None])
-    else:
-        L_wkt.extend([f(""), None])
-    res = from_wkt(L_wkt)
-    assert res[-1] is None
+    # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
+    missing_values = [None]
     if not compat.USE_PYGEOS:
-        assert res[-2] is None
+        missing_values.extend([f(""), np.nan])
+
+        if compat.PANDAS_GE_10:
+            missing_values.append(pd.NA)
+
+    res = from_wkb(missing_values)
+    np.testing.assert_array_equal(res, np.full(len(missing_values), None))
 
     # single MultiPolygon
     multi_poly = shapely.geometry.MultiPolygon(
