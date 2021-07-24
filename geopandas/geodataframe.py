@@ -4,19 +4,20 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-
 from pyproj import CRS
 
-from geopandas.array import GeometryArray, from_shapely, GeometryDtype
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, inherit_doc
+from geopandas.geoseries import GeoSeries
 import geopandas.io
-from geopandas.plotting import plot_dataframe
+
 from . import _compat as compat
+from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -33,7 +34,9 @@ def _ensure_geometry(data, crs=None):
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
-            return GeoSeries(data)
+            data = GeoSeries(data)
+        if data.crs is None:
+            data.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -79,6 +82,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     geometry    geometry
     dtype: object
 
+    Constructing GeoDataFrame from a pandas DataFrame with a column of WKT geometries:
+
+    >>> import pandas as pd
+    >>> d = {'col1': ['name1', 'name2'], 'wkt': ['POINT (1 2)', 'POINT (2 1)']}
+    >>> df = pd.DataFrame(d)
+    >>> gs = geopandas.GeoSeries.from_wkt(df['wkt'])
+    >>> gdf = geopandas.GeoDataFrame(df, geometry=gs, crs="EPSG:4326")
+    >>> gdf
+        col1          wkt                 geometry
+    0  name1  POINT (1 2)  POINT (1.00000 2.00000)
+    1  name2  POINT (2 1)  POINT (2.00000 1.00000)
+
     See also
     --------
     GeoSeries : Series object designed to store shapely geometry objects
@@ -90,7 +105,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __init__(self, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            super(GeoDataFrame, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -167,7 +182,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if attr == "geometry":
             object.__setattr__(self, attr, val)
         else:
-            super(GeoDataFrame, self).__setattr__(attr, val)
+            super().__setattr__(attr, val)
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
@@ -798,6 +813,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ids = np.array(self.index, copy=False)
         geometries = np.array(self[self._geometry_column_name], copy=False)
 
+        if not self.columns.is_unique:
+            raise ValueError("GeoDataFrame cannot contain duplicated column names.")
+
         properties_cols = self.columns.difference([self._geometry_column_name])
 
         if len(properties_cols) > 0:
@@ -863,6 +881,57 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return geo
 
+    def to_wkb(self, hex=False, **kwargs):
+        """
+        Encode all geometry columns in the GeoDataFrame to WKB.
+
+        Parameters
+        ----------
+        hex : bool
+            If true, export the WKB as a hexadecimal string.
+            The default is to return a binary bytes object.
+        kwargs
+            Additional keyword args will be passed to
+            :func:`pygeos.to_wkb` if pygeos is installed.
+
+        Returns
+        -------
+        DataFrame
+            geometry columns are encoded to WKB
+        """
+
+        df = DataFrame(self.copy())
+
+        # Encode all geometry columns to WKB
+        for col in df.columns[df.dtypes == "geometry"]:
+            df[col] = to_wkb(df[col].values, hex=hex, **kwargs)
+
+        return df
+
+    def to_wkt(self, **kwargs):
+        """
+        Encode all geometry columns in the GeoDataFrame to WKT.
+
+        Parameters
+        ----------
+        kwargs
+            Keyword args will be passed to :func:`pygeos.to_wkt`
+            if pygeos is installed.
+
+        Returns
+        -------
+        DataFrame
+            geometry columns are encoded to WKT
+        """
+
+        df = DataFrame(self.copy())
+
+        # Encode all geometry columns to WKT
+        for col in df.columns[df.dtypes == "geometry"]:
+            df[col] = to_wkt(df[col].values, **kwargs)
+
+        return df
+
     def to_parquet(self, path, index=None, compression="snappy", **kwargs):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -893,7 +962,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         kwargs
-            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+            Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
         Examples
         --------
@@ -941,7 +1010,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
         kwargs
-            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+            Additional keyword arguments passed to to
+            :func:`pyarrow.feather.write_feather`.
 
         Examples
         --------
@@ -1233,7 +1303,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
         GeoDataFrame.
         """
-        result = super(GeoDataFrame, self).__getitem__(key)
+        result = super().__getitem__(key)
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
@@ -1254,9 +1324,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 value = [value] * self.shape[0]
             try:
                 value = _ensure_geometry(value, crs=self.crs)
+                self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
-        super(GeoDataFrame, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
     #
     # Implement pandas methods
@@ -1293,12 +1364,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result.__class__ = DataFrame
         return result
 
-    @inherit_doc(pd.DataFrame)
+    @doc(pd.DataFrame)
     def apply(self, func, axis=0, raw=False, result_type=None, args=(), **kwargs):
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        if isinstance(result, GeoDataFrame):
+        if (
+            isinstance(result, GeoDataFrame)
+            and self._geometry_column_name in result.columns
+            and any(isinstance(t, GeometryDtype) for t in result.dtypes)
+        ):
             if self.crs is not None and result.crs is None:
                 result.set_crs(self.crs, inplace=True)
         return result
@@ -1308,7 +1383,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1322,7 +1397,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return self
 
-    def dissolve(self, by=None, aggfunc="first", as_index=True):
+    def dissolve(
+        self,
+        by=None,
+        aggfunc="first",
+        as_index=True,
+        level=None,
+        sort=True,
+        observed=False,
+        dropna=True,
+    ):
         """
         Dissolve geometries within `groupby` into single observation.
         This is accomplished by applying the `unary_union` method
@@ -1341,6 +1425,33 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             with each group. Passed to pandas `groupby.agg` method.
         as_index : boolean, default True
             If true, groupby columns become index of result.
+        level : int or str or sequence of int or sequence of str, default None
+            If the axis is a MultiIndex (hierarchical), group by a
+            particular level or levels.
+
+            .. versionadded:: 0.9.0
+        sort : bool, default True
+            Sort group keys. Get better performance by turning this off.
+            Note this does not influence the order of observations within
+            each group. Groupby preserves the order of rows within each group.
+
+            .. versionadded:: 0.9.0
+        observed : bool, default False
+            This only applies if any of the groupers are Categoricals.
+            If True: only show observed values for categorical groupers.
+            If False: show all values for categorical groupers.
+
+            .. versionadded:: 0.9.0
+        dropna : bool, default True
+            If True, and if group keys contain NA values, NA values
+            together with row/column will be dropped. If False, NA
+            values will also be treated as the key in groups.
+
+            This parameter is not supported for pandas < 1.1.0.
+            A warning will be emitted for earlier pandas versions
+            if a non-default value is given for this parameter.
+
+            .. versionadded:: 0.9.0
 
         Returns
         -------
@@ -1373,19 +1484,28 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         """
 
-        if by is None:
+        if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
+
+        groupby_kwargs = dict(
+            by=by, level=level, sort=sort, observed=observed, dropna=dropna
+        )
+        if not compat.PANDAS_GE_11:
+            groupby_kwargs.pop("dropna")
+
+            if not dropna:  # If they passed a non-default dropna value
+                warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(by=by).agg(aggfunc)
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
 
         # Process spatial component
         def merge_geometries(block):
             merged_geom = block.unary_union
             return merged_geom
 
-        g = self.groupby(by=by, group_keys=False)[self.geometry.name].agg(
+        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
             merge_geometries
         )
 
@@ -1456,7 +1576,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super(GeoDataFrame, self).explode(column, **kwargs)
+            return super().explode(column, **kwargs)
             # TODO: make sure index behaviour is consistent
 
         df_copy = self.copy()
@@ -1467,9 +1587,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = pd.concat(
-            [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
+        df = (
+            df_copy.drop(df_copy._geometry_column_name, axis=1)
+            .join(exploded_geom)
+            .__finalize__(self)
         )
+
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
@@ -1495,7 +1618,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         -------
         GeoDataFrame or DataFrame
         """
-        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -1518,7 +1641,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         chunksize=None,
         dtype=None,
     ):
-
         """
         Upload GeoDataFrame into PostGIS database.
 
@@ -1613,23 +1735,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return self.geometry.difference(other)
 
-    if compat.PANDAS_GE_025:
-        from pandas.core.accessor import CachedAccessor
-
-        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    else:
-
-        def plot(self, *args, **kwargs):
-            """Generate a plot of the geometries in the ``GeoDataFrame``.
-            If the ``column`` parameter is given, colors plot according to values
-            in that column, otherwise calls ``GeoSeries.plot()`` on the
-            ``geometry`` column.
-            Wraps the ``plot_dataframe()`` function, and documentation is copied
-            from there.
-            """
-            return plot_dataframe(self, *args, **kwargs)
-
-    plot.__doc__ = plot_dataframe.__doc__
+    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

@@ -22,6 +22,7 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas._compat import PYPROJ_LT_3
 from geopandas.array import GeometryArray, GeometryDtype
+from geopandas.testing import assert_geoseries_equal
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
@@ -261,26 +262,65 @@ class TestSeries:
 
     def test_proj4strings(self):
         # As string
-        reprojected = self.g3.to_crs("+proj=utm +zone=30N")
+        reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # As dict
-        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
-        reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Conversions by different format
-        reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
-        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
+        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+
+    def test_from_wkb(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
+
+    def test_from_wkb_series(self):
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s))
+
+    def test_from_wkb_series_with_index(self):
+        index = [0]
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
+
+    def test_from_wkt(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
+
+    def test_from_wkt_series(self):
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s))
+
+    def test_from_wkt_series_with_index(self):
+        index = [0]
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
+
+    def test_to_wkb(self):
+        assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
+        assert_series_equal(
+            pd.Series([self.t1.wkb_hex, self.sq.wkb_hex]), self.g1.to_wkb(hex=True)
+        )
+
+    def test_to_wkt(self):
+        assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
 
 def test_missing_values_empty_warning():

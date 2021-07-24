@@ -129,3 +129,11 @@ def test_ignore_crs_mismatch():
         assert_geodataframe_equal(df1, df2, check_crs=False)
 
     assert len(record) == 0
+
+
+def test_almost_equal_but_not_equal():
+    s_origin = GeoSeries([Point(0, 0)])
+    s_almost_origin = GeoSeries([Point(0.0000001, 0)])
+    assert_geoseries_equal(s_origin, s_almost_origin, check_less_precise=True)
+    with pytest.raises(AssertionError):
+        assert_geoseries_equal(s_origin, s_almost_origin)

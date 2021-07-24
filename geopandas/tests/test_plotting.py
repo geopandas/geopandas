@@ -22,6 +22,7 @@ from shapely.geometry import (
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
 import geopandas._compat as compat
+from geopandas.plotting import GeoplotAccessor
 
 import pytest
 
@@ -32,7 +33,11 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    MPL_DECORATORS = True
+    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+
+        MPL_DECORATORS = True
+    else:
+        MPL_DECORATORS = False
 except ImportError:
     MPL_DECORATORS = False
 
@@ -1475,13 +1480,14 @@ class TestPlotCollections:
         ax.cla()
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
 class TestGeoplotAccessor:
     def setup_method(self):
         geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
         x = [1, 2]
         y = [10, 20]
-        self.gdf = GeoDataFrame({"geometry": geometries, "x": x, "y": y})
+        self.gdf = GeoDataFrame(
+            {"geometry": geometries, "x": x, "y": y}, crs="EPSG:4326"
+        )
         self.df = pd.DataFrame({"x": x, "y": y})
 
     def compare_figures(self, kind, fig_test, fig_ref, kwargs):
@@ -1497,10 +1503,8 @@ class TestGeoplotAccessor:
         getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
 
     _pandas_kinds = []
-    if compat.PANDAS_GE_025:
-        from geopandas.plotting import GeoplotAccessor
 
-        _pandas_kinds = GeoplotAccessor._pandas_kinds
+    _pandas_kinds = GeoplotAccessor._pandas_kinds
 
     if MPL_DECORATORS:
 

@@ -56,23 +56,6 @@ class GeometryDtype(ExtensionDtype):
 register_extension_dtype(GeometryDtype)
 
 
-def _isna(value):
-    """
-    Check if scalar value is NA-like (None, np.nan or pd.NA).
-
-    Custom version that only works for scalars (returning True or False),
-    as `pd.isna` also works for array-like input returning a boolean array.
-    """
-    if value is None:
-        return True
-    elif isinstance(value, float) and np.isnan(value):
-        return True
-    elif compat.PANDAS_GE_10 and value is pd.NA:
-        return True
-    else:
-        return False
-
-
 def _check_crs(left, right, allow_none=False):
     """
     Check if the projection of both arrays is the same.
@@ -194,13 +177,13 @@ def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms, hex=False):
+def to_wkb(geoms, hex=False, **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms.data, hex=hex)
+    return vectorized.to_wkb(geoms.data, hex=hex, **kwargs)
 
 
 def from_wkt(data, crs=None):
@@ -398,8 +381,8 @@ class GeometryArray(ExtensionArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
-        elif isinstance(value, BaseGeometry) or _isna(value):
-            if _isna(value):
+        elif isinstance(value, BaseGeometry) or vectorized.isna(value):
+            if vectorized.isna(value):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
@@ -1005,7 +988,7 @@ class GeometryArray(ExtensionArray):
 
         if mask.any():
             # fill with value
-            if _isna(value):
+            if vectorized.isna(value):
                 value = None
             elif not isinstance(value, BaseGeometry):
                 raise NotImplementedError(
@@ -1047,7 +1030,7 @@ class GeometryArray(ExtensionArray):
                 pd_dtype = pd.api.types.pandas_dtype(dtype)
                 if isinstance(pd_dtype, pd.StringDtype):
                     # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype="string")
+                    return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)
@@ -1108,7 +1091,7 @@ class GeometryArray(ExtensionArray):
         len(self) is returned, with all values filled with
         ``self.dtype.na_value``.
         """
-        shifted = super(GeometryArray, self).shift(periods, fill_value)
+        shifted = super().shift(periods, fill_value)
         shifted.crs = self.crs
         return shifted
 
@@ -1224,23 +1207,30 @@ class GeometryArray(ExtensionArray):
 
             precision = geopandas.options.display_precision
             if precision is None:
-                # dummy heuristic based on 10 first geometries that should
-                # work in most cases
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
-                if (
-                    (-180 <= xmin <= 180)
-                    and (-180 <= xmax <= 180)
-                    and (-90 <= ymin <= 90)
-                    and (-90 <= ymax <= 90)
-                ):
-                    # geographic coordinates
-                    precision = 5
+                if self.crs:
+                    if self.crs.is_projected:
+                        precision = 3
+                    else:
+                        precision = 5
                 else:
-                    # typically projected coordinates
-                    # (in case of unit meter: mm precision)
-                    precision = 3
+                    # fallback
+                    # dummy heuristic based on 10 first geometries that should
+                    # work in most cases
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
+                        xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                    if (
+                        (-180 <= xmin <= 180)
+                        and (-180 <= xmax <= 180)
+                        and (-90 <= ymin <= 90)
+                        and (-90 <= ymax <= 90)
+                    ):
+                        # geographic coordinates
+                        precision = 5
+                    else:
+                        # typically projected coordinates
+                        # (in case of unit meter: mm precision)
+                        precision = 3
             return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
         return repr
 
@@ -1319,7 +1309,7 @@ class GeometryArray(ExtensionArray):
         """
         Return for `item in self`.
         """
-        if _isna(item):
+        if vectorized.isna(item):
             if (
                 item is self.dtype.na_value
                 or isinstance(item, self.dtype.type)
