@@ -501,7 +501,7 @@ def test_write_read_parquet():
     test_file = "~/test_file.parquet"
     gdf.to_parquet(test_file)
     pq_df = geopandas.read_parquet(test_file)
-    assert_geodataframe_equal(df, pq_df, check_crs=True)
+    assert_geodataframe_equal(gdf, pq_df, check_crs=True)
     os.remove(os.path.expanduser(test_file))
 
 
@@ -509,5 +509,6 @@ def test_write_read_feather():
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
     test_file = "~/test_file.feather"
     gdf.to_feather(test_file)
-    geopandas.read_feather(test_file)
+    f_df = geopandas.read_feather(test_file)
+    assert_geodataframe_equal(gdf, f_df, check_crs=True)
     os.remove(os.path.expanduser(test_file))
