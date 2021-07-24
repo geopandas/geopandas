@@ -19,7 +19,7 @@ In particular, when submitting a pull request:
 - Install the requirements for the development environment (one can do this
   with either conda, and the environment.yml file, or pip, and the
   requirements-dev.txt file, and can use the pandas contributing guidelines
-  as a guide). 
+  as a guide).
 - All existing tests should pass. Please make sure that the test
   suite passes, both locally and on
   [GitHub Actions](https://github.com/geopandas/geopandas/actions). Status on
@@ -39,7 +39,7 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
-- GeoPandas supports Python 3.6+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.7+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 - GeoPandas follows [the PEP 8

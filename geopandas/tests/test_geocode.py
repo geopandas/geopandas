@@ -23,13 +23,13 @@ class ForwardMock(mock.MagicMock):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ForwardMock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._n = 0.0
 
     def __call__(self, *args, **kwargs):
         self.return_value = args[0], (self._n, self._n + 0.5)
         self._n += 1
-        return super(ForwardMock, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 class ReverseMock(mock.MagicMock):
@@ -41,13 +41,13 @@ class ReverseMock(mock.MagicMock):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ReverseMock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._n = 0
 
     def __call__(self, *args, **kwargs):
         self.return_value = "address{0}".format(self._n), args[0]
         self._n += 1
-        return super(ReverseMock, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 @pytest.fixture
@@ -138,10 +138,10 @@ def test_bad_provider_reverse():
 
 
 def test_forward(locations, points):
-    from geopy.geocoders import GeocodeFarm
+    from geopy.geocoders import Photon
 
-    for provider in ["geocodefarm", GeocodeFarm]:
-        with mock.patch("geopy.geocoders.GeocodeFarm.geocode", ForwardMock()) as m:
+    for provider in ["photon", Photon]:
+        with mock.patch("geopy.geocoders.Photon.geocode", ForwardMock()) as m:
             g = geocode(locations, provider=provider, timeout=2)
             assert len(locations) == m.call_count
 
@@ -155,10 +155,10 @@ def test_forward(locations, points):
 
 
 def test_reverse(locations, points):
-    from geopy.geocoders import GeocodeFarm
+    from geopy.geocoders import Photon
 
-    for provider in ["geocodefarm", GeocodeFarm]:
-        with mock.patch("geopy.geocoders.GeocodeFarm.reverse", ReverseMock()) as m:
+    for provider in ["photon", Photon]:
+        with mock.patch("geopy.geocoders.Photon.reverse", ReverseMock()) as m:
             g = reverse_geocode(points, provider=provider, timeout=2)
             assert len(points) == m.call_count
 
