@@ -645,6 +645,22 @@ class TestDataFrame:
         res = GeoDataFrame.from_features(gdf.__geo_interface__, id_as_index=True)
         assert_frame_equal(res, expected.set_index("id"))
 
+        # test id field not present in FeatureCollection
+        feature_coll1 = gdf.__geo_interface__.copy()
+        for feat in feature_coll1["features"]:
+            del feat["id"]
+            del feat["properties"]["id"]
+        with pytest.warns(UserWarning, match=r".* field in the given features."):
+            GeoDataFrame.from_features(feature_coll1, id_as_index=True)
+
+        # test id field with missing data in FeatureCollection
+        feature_coll2 = gdf.__geo_interface__.copy()
+        feat = feature_coll2["features"][0]
+        del feat["id"]
+        del feat["properties"]["id"]
+        with pytest.warns(UserWarning, match=r".* features contains missing data."):
+            GeoDataFrame.from_features(feature_coll2, id_as_index=True)
+
         # test list of Features
         res = GeoDataFrame.from_features(gdf.__geo_interface__["features"])
         assert_frame_equal(res, expected)

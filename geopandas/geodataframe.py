@@ -615,7 +615,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         gdf = GeoDataFrame(rows, columns=columns, crs=crs)
         if id_as_index:
+            if "id" not in gdf:
+                warnings.warn(
+                    "id_as_index=True is ignored since there is"
+                    " no `id` field in the given features."
+                )
+                return gdf
+            if gdf.id.isna().any():
+                warnings.warn(
+                    "id_as_index=True is ignored since "
+                    "the `id` field of the given features contains missing data."
+                )
+                return gdf
             gdf.set_index("id", inplace=True)
+
         return gdf
 
     @classmethod
