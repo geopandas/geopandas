@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 import warnings
 
 import numpy as np
@@ -31,7 +32,9 @@ _SERIES_WARNING_MSG = """\
     to raise a TypeError instead."""
 
 
-def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwargs):
+def _geoseries_constructor_with_fallback(
+    data=None, index=None, crs: Optional[CRS] = None, **kwargs
+):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
     to fall back to a Series (if a certain operation does not produce
@@ -130,7 +133,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     _metadata = ["name"]
 
-    def __new__(cls, data=None, index=None, crs=None, **kwargs):
+    def __new__(cls, data=None, index=None, crs: Optional[CRS] = None, **kwargs):
         # we need to use __new__ because we want to return Series instance
         # instead of GeoSeries instance in case of non-geometry data
 
@@ -342,7 +345,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-        read_file : read file to GeoDataFame
+        read_file : read file to GeoDataFrame
         """
         from geopandas import GeoDataFrame
 
@@ -351,7 +354,9 @@ class GeoSeries(GeoPandasBase, Series):
         return GeoSeries(df.geometry, crs=df.crs)
 
     @classmethod
-    def from_wkb(cls, data, index=None, crs=None, **kwargs):
+    def from_wkb(
+        cls, data, index=None, crs: Optional[CRS] = None, **kwargs
+    ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
@@ -383,7 +388,9 @@ class GeoSeries(GeoPandasBase, Series):
         return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
 
     @classmethod
-    def from_wkt(cls, data, index=None, crs=None, **kwargs):
+    def from_wkt(
+        cls, data, index=None, crs: Optional[CRS] = None, **kwargs
+    ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKT objects
@@ -430,7 +437,12 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def _from_wkb_or_wkb(
-        cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
+        cls,
+        from_wkb_or_wkt_function,
+        data,
+        index=None,
+        crs: Optional[CRS] = None,
+        **kwargs
     ):
         """Create a GeoSeries from either WKT or WKB values"""
         if isinstance(data, Series):
@@ -442,7 +454,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 
     @property
-    def __geo_interface__(self):
+    def __geo_interface__(self) -> "GeoDataFrame":
         """Returns a ``GeoSeries`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
@@ -468,7 +480,9 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
-    def to_file(self, filename, driver="ESRI Shapefile", index=None, **kwargs):
+    def to_file(
+        self, filename, driver: str = "ESRI Shapefile", index: bool = None, **kwargs
+    ) -> None:
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -498,7 +512,7 @@ class GeoSeries(GeoPandasBase, Series):
         See Also
         --------
         GeoDataFrame.to_file : write GeoDataFrame to file
-        read_file : read file to GeoDataFame
+        read_file : read file to GeoDataFrame
 
         Examples
         --------
@@ -531,7 +545,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
-        val = getattr(super(), mtd)(*args, **kwargs)
+        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
@@ -553,7 +567,7 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @doc(pd.Series)
-    def apply(self, func, convert_dtype=True, args=(), **kwargs):
+    def apply(self, func, convert_dtype: bool = True, args=(), **kwargs):
         result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
             if self.crs is not None:
@@ -567,7 +581,7 @@ class GeoSeries(GeoPandasBase, Series):
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
-    def isna(self):
+    def isna(self) -> Series:
         """
         Detect missing values.
 
@@ -620,13 +634,13 @@ class GeoSeries(GeoPandasBase, Series):
                 stacklevel=2,
             )
 
-        return super().isna()
+        return super(GeoSeries, self).isna()
 
-    def isnull(self):
+    def isnull(self) -> Series:
         """Alias for `isna` method. See `isna` for more detail."""
         return self.isna()
 
-    def notna(self):
+    def notna(self) -> Series:
         """
         Detect non-missing values.
 
@@ -678,13 +692,13 @@ class GeoSeries(GeoPandasBase, Series):
                 UserWarning,
                 stacklevel=2,
             )
-        return super().notna()
+        return super(GeoSeries, self).notna()
 
-    def notnull(self):
+    def notnull(self) -> Series:
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False, **kwargs):
+    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
         """Fill NA values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
@@ -724,9 +738,11 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = BaseGeometry()
-        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
+        return super(GeoSeries, self).fillna(
+            value=value, method=method, inplace=inplace, **kwargs
+        )
 
-    def __contains__(self, other):
+    def __contains__(self, other) -> bool:
         """Allow tests of the form "geom in s"
 
         Tests whether a GeoSeries contains a geometry.
@@ -742,7 +758,9 @@ class GeoSeries(GeoPandasBase, Series):
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
 
-    def explode(self):
+    plot.__doc__ = plot_series.__doc__
+
+    def explode(self) -> "GeoSeries":
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -839,7 +857,13 @@ class GeoSeries(GeoPandasBase, Series):
     # Additional methods
     #
 
-    def set_crs(self, crs=None, epsg=None, inplace=False, allow_override=False):
+    def set_crs(
+        self,
+        crs: CRS = None,
+        epsg: int = None,
+        inplace: bool = False,
+        allow_override: bool = False,
+    ) -> "GeoSeries":
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
@@ -931,7 +955,7 @@ class GeoSeries(GeoPandasBase, Series):
         result.crs = crs
         return result
 
-    def to_crs(self, crs=None, epsg=None):
+    def to_crs(self, crs: CRS = None, epsg: int = None) -> "GeoSeries":
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
 
@@ -1011,7 +1035,7 @@ class GeoSeries(GeoPandasBase, Series):
             self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )
 
-    def estimate_utm_crs(self, datum_name="WGS 84"):
+    def estimate_utm_crs(self, datum_name: str = "WGS 84") -> CRS:
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
@@ -1051,7 +1075,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return self.values.estimate_utm_crs(datum_name)
 
-    def to_json(self, **kwargs):
+    def to_json(self, **kwargs) -> dict:
         """
         Returns a GeoJSON string representation of the GeoSeries.
 
@@ -1087,7 +1111,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 
-    def to_wkb(self, hex=False, **kwargs):
+    def to_wkb(self, hex: bool = False, **kwargs):
         """
         Convert GeoSeries geometries to WKB
 
