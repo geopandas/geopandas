@@ -5,6 +5,7 @@ geopandas.clip
 A module to clip vector data using GeoPandas.
 
 """
+from typing import Union
 import warnings
 
 import numpy as np
@@ -16,7 +17,9 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
-def _clip_points(gdf, poly):
+def _clip_points(
+    gdf: Union[GeoDataFrame, GeoSeries], poly: Union[Polygon, MultiPolygon]
+) -> GeoDataFrame:
     """Clip point geometry to the polygon extent.
 
     Clip an input point GeoDataFrame to the polygon extent of the poly
@@ -40,7 +43,9 @@ def _clip_points(gdf, poly):
     return gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
 
 
-def _clip_line_poly(gdf, poly):
+def _clip_line_poly(
+    gdf: Union[GeoDataFrame, GeoSeries], poly: Union[Polygon, MultiPolygon]
+) -> GeoDataFrame:
     """Clip line and polygon geometry to the polygon extent.
 
     Clip an input line or polygon to the polygon extent of the poly
@@ -74,7 +79,11 @@ def _clip_line_poly(gdf, poly):
     return clipped
 
 
-def clip(gdf, mask, keep_geom_type=False):
+def clip(
+    gdf: Union[GeoDataFrame, GeoSeries],
+    mask: Union[GeoDataFrame, GeoSeries, Polygon, MultiPolygon],
+    keep_geom_type: bool = False,
+) -> Union[GeoDataFrame, GeoSeries]:
     """Clip points, lines, or polygon geometries to the mask extent.
 
     Both layers must be in the same Coordinate Reference System (CRS).
