@@ -1,9 +1,9 @@
-from pyproj import CRS
-from typing import Union
 import warnings
 
+from pyproj import CRS
 
-def explicit_crs_from_epsg(crs: CRS = None, epsg: Union[str, int] = None) -> CRS:
+
+def explicit_crs_from_epsg(crs=None, epsg=None):
     """
     Gets full/explicit CRS from EPSG code provided.
 
@@ -27,7 +27,7 @@ def explicit_crs_from_epsg(crs: CRS = None, epsg: Union[str, int] = None) -> CRS
     raise ValueError("Must pass either crs or epsg.")
 
 
-def epsg_from_crs(crs: Union[dict, str]) -> int:
+def epsg_from_crs(crs):
     """
     Returns an epsg code from a crs dict or Proj string.
 
@@ -52,6 +52,6 @@ def epsg_from_crs(crs: Union[dict, str]) -> int:
     return epsg_code
 
 
-def get_epsg_file_contents() -> str:
+def get_epsg_file_contents():
     warnings.warn("get_epsg_file_contents is deprecated.", FutureWarning, stacklevel=2)
     return ""
