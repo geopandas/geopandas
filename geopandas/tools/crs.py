@@ -1,7 +1,7 @@
 import warnings
+from typing import Union
 
 from pyproj import CRS
-from typing import Union
 
 
 def explicit_crs_from_epsg(crs: CRS = None, epsg: Union[str, int] = None) -> CRS:
