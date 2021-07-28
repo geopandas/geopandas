@@ -288,7 +288,7 @@ def test_empty_crs(tmpdir, driver, ext):
     if driver == "GPKG":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
 
-    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     df = GeoDataFrame(
         {
             "a": [1, 2, 3],
@@ -299,7 +299,7 @@ def test_empty_crs(tmpdir, driver, ext):
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
 
-    if driver == "GeoJSON":
+    if ext == ".geojson":
         # geojson by default assumes epsg:4326
         df.crs = "EPSG:4326"
 
