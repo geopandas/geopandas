@@ -16,13 +16,13 @@ class Options(object):
     """Provide attribute-style access to configuration dict."""
 
     def __init__(self, options):
-        super(Options, self).__setattr__("_options", options)
+        super().__setattr__("_options", options)
         # populate with default values
         config = {}
         for key, option in options.items():
             config[key] = option.default_value
 
-        super(Options, self).__setattr__("_config", config)
+        super().__setattr__("_config", config)
 
     def __setattr__(self, key, value):
         # you can't set new keys
