@@ -37,30 +37,27 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
-try:
-    from fiona.drvsupport import extension_to_driver as _EXTENSION_TO_DRIVER
-except ImportError:
-    _EXTENSION_TO_DRIVER = {
-        "bna": "BNA",
-        "dxf": "DXF",
-        "csv": "CSV",
-        "shp": "ESRI Shapefile",
-        "dbf": "ESRI Shapefile",
-        "json": "GeoJSON",
-        "geojson": "GeoJSON",
-        "geojsonl": "GeoJSONSeq",
-        "geojsons": "GeoJSONSeq",
-        "gpkg": "GPKG",
-        "gml": "GML",
-        "xml": "GML",
-        "gpx": "GPX",
-        "gtm": "GPSTrackMaker",
-        "gtz": "GPSTrackMaker",
-        "tab": "MapInfo File",
-        "mif": "MapInfo File",
-        "mid": "MapInfo File",
-        "dgn": "DGN",
-    }
+_EXTENSION_TO_DRIVER = {
+    ".bna": "BNA",
+    ".dxf": "DXF",
+    ".csv": "CSV",
+    ".shp": "ESRI Shapefile",
+    ".dbf": "ESRI Shapefile",
+    ".json": "GeoJSON",
+    ".geojson": "GeoJSON",
+    ".geojsonl": "GeoJSONSeq",
+    ".geojsons": "GeoJSONSeq",
+    ".gpkg": "GPKG",
+    ".gml": "GML",
+    ".xml": "GML",
+    ".gpx": "GPX",
+    ".gtm": "GPSTrackMaker",
+    ".gtz": "GPSTrackMaker",
+    ".tab": "MapInfo File",
+    ".mif": "MapInfo File",
+    ".mid": "MapInfo File",
+    ".dgn": "DGN",
+}
 
 
 def _check_fiona(func):
@@ -271,7 +268,10 @@ def _detect_driver(path):
     try:
         return _EXTENSION_TO_DRIVER[Path(path).suffix.lower()]
     except KeyError:
-        return "ESRI Shapefile"  # assume it is a shapefile folder
+        # Assume it is a shapefile folder for now. In the future,
+        # will likely raise an exception when the expected
+        # folder writing behavior is more clearly defined.
+        return "ESRI Shapefile"
 
 
 def _to_file(
