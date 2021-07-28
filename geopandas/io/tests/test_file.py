@@ -120,9 +120,6 @@ def test_to_file_bool(tmpdir, driver, ext):
 
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
-    if ext.endswith("json"):
-        # geojson by default assumes epsg:4326
-        result.crs = None
     if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
         df["b"] = df["b"].astype("int64")
