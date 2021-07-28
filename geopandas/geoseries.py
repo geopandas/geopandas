@@ -760,7 +760,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     plot.__doc__ = plot_series.__doc__
 
-    def explode(self, ignore_index=False, add_multiindex=True):
+    def explode(self, ignore_index=False, add_multiindex=None):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -808,6 +808,16 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
+        if add_multiindex is None:
+            warnings.warn(
+                "add_multiindex defaults to True to be consistent with old behaviour. "
+                "In GeoPandas 1.0 will default to False to be consistent with Pandas. "
+                "Use add_multiindex=True to keep the current behaviour and silent "
+                "the warning.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            add_multiindex = True
 
         if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa

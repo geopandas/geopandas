@@ -1516,7 +1516,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, add_multiindex=True, **kwargs):
+    def explode(self, column=None, ignore_index=False, add_multiindex=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1597,12 +1597,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         """
 
-        warnings.warn(
-            "add_multiindex defaults to True to be consistent with old behaviour. "
-            "In GeoPandas 1.0 will default to False to be consistent with Pandas.",
-            FutureWarning,
-            stacklevel=2,
-        )
+        if add_multiindex is None:
+            warnings.warn(
+                "add_multiindex defaults to True to be consistent with old behaviour. "
+                "In GeoPandas 1.0 will default to False to be consistent with Pandas. "
+                "Use add_multiindex=True to keep the current behaviour and silent "
+                "the warning.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            add_multiindex = True
 
         # If no column is specified then default to the active geometry column
         if column is None:
