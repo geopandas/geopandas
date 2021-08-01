@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pyproj
 from numpy.testing import assert_array_equal
 import pandas as pd
 
@@ -585,8 +586,9 @@ def test_preserve_flags(df):
 
 
 def test_concat(df):
-    df_rows = pd.concat([pd.DataFrame(df), pd.DataFrame(df)], axis=0)
-    assert_frame_equal(pd.concat([df, df], axis=0), df_rows)
+    df_rows = GeoDataFrame(pd.concat([pd.DataFrame(df), pd.DataFrame(df)], axis=0))
+    res1 = pd.concat([df, df], axis=0)
+    assert_geodataframe_equal(res1, df_rows)
 
     # https://github.com/geopandas/geopandas/issues/1230
     # Expect that concat should fail gracefully if duplicate column names belonging to
@@ -601,4 +603,14 @@ def test_concat(df):
         pd.concat([df2, df2], axis=1)
 
     # Check that legal case without repeated geometry column is fine
-    pd.concat([df, df2], axis=1)
+    res3 = pd.concat([df.set_crs("EPSG:4326"), df2], axis=1)
+
+    # check that metadata is propagated from the first gdf by __finalise__
+    assert df.crs is None
+    assert res3.geometry.name == df.geometry.name
+    assert res3.crs == pyproj.CRS(4326)
+
+    res4 = pd.concat([df.set_crs("EPSG:4326"), df], axis=0)
+    assert res4.geometry.name == df.geometry.name
+    # TODO expect this to fail (at the very least warn), not desirable
+    assert res4.crs == pyproj.CRS(4326)
