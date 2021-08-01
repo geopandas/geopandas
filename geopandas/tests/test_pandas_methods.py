@@ -582,3 +582,23 @@ def test_preserve_flags(df):
 
     with pytest.raises(ValueError):
         pd.concat([df, df])
+
+
+def test_concat(df):
+    df_rows = pd.concat([pd.DataFrame(df), pd.DataFrame(df)], axis=0)
+    assert_frame_equal(pd.concat([df, df], axis=0), df_rows)
+
+    # https://github.com/geopandas/geopandas/issues/1230
+    # Expect that concat should fail gracefully if duplicate column names belonging to
+    # geometry columns are introduced.
+    with pytest.raises(ValueError):
+        pd.concat([df, df], axis=1)
+
+    df2 = df.rename_geometry("geom")
+
+    # Check case is handled if custom geometry column name is used
+    with pytest.raises(ValueError):
+        pd.concat([df2, df2], axis=1)
+
+    # Check that legal case without repeated geometry column is fine
+    pd.concat([df, df2], axis=1)
