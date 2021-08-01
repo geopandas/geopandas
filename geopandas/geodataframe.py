@@ -118,6 +118,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
         if geometry is None and "geometry" in self.columns:
+            # Check for multiple columns with name "geometry". If there are,
+            # self["geometry"] is a gdf and constructor gets recursively recalled
+            # by pandas internals trying to access this
+            if len(self.columns[self.columns == "geometry"]) > 1:
+                raise ValueError(
+                    "GeoDataFrame does not support multiple columns "
+                    "using the geometry column name 'geometry'."
+                )
+
             # only if we have actual geometry values -> call set_geometry
             index = self.index
             try:
