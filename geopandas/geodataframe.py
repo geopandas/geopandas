@@ -1404,6 +1404,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
+            if len(self.columns[self.columns == self._geometry_column_name]) > 1:
+                raise ValueError(
+                    "Concat operation has resulted multiple columns using "
+                    f"the geometry column name "
+                    f"'{self._geometry_column_name}'.\nPlease ensure this "
+                    f"column from the first Frame is not repeated."
+                )
         return self
 
     def dissolve(
