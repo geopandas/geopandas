@@ -54,11 +54,12 @@ class TestDataFrame:
     def test_df_init_repeat_geo_col(self):
         df3 = pd.DataFrame(self.df2)
         df3["geom"] = df3["geometry"]
-        df3 = df3.rename(columns={"geom": "geometry"})
         # explicitly prevent construction of gdf with repeat geometry column names
+        # two columns called "geometry", geom col inferred
         with pytest.raises(ValueError):
-            GeoDataFrame(df3)
+            GeoDataFrame(df3.rename(columns={"geom": "geometry"}))
         # ensure case is caught when custom geom column name is used
+        # two columns called "geom", geom col explicit
         with pytest.raises(ValueError):
             GeoDataFrame(df3.rename(columns={"geometry": "geom"}), geometry="geom")
 
