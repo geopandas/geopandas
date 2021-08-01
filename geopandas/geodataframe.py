@@ -285,6 +285,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 raise ValueError("Unknown column %s" % col)
             except Exception:
                 raise
+            # specially check shape of level for consistency (shapely raises a
+            # TypeError but pygeos raises a ValueError)
+            if hasattr(level, "ndim") and level.ndim != 1:
+                raise ValueError("Must pass array with one dimension only.")
+
             if drop:
                 to_remove = col
                 geo_column_name = self._geometry_column_name
