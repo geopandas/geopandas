@@ -4,20 +4,20 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-
 
 from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, inherit_doc
+from geopandas.geoseries import GeoSeries
 import geopandas.io
-from geopandas.plotting import plot_dataframe
 from geopandas.explore import _explore
 from . import _compat as compat
+from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -105,7 +105,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __init__(self, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            super(GeoDataFrame, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -182,7 +182,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if attr == "geometry":
             object.__setattr__(self, attr, val)
         else:
-            super(GeoDataFrame, self).__setattr__(attr, val)
+            super().__setattr__(attr, val)
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
@@ -962,7 +962,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         kwargs
-            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+            Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
         Examples
         --------
@@ -1010,7 +1010,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
         kwargs
-            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+            Additional keyword arguments passed to to
+            :func:`pyarrow.feather.write_feather`.
 
         Examples
         --------
@@ -1302,7 +1303,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
         GeoDataFrame.
         """
-        result = super(GeoDataFrame, self).__getitem__(key)
+        result = super().__getitem__(key)
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
@@ -1326,7 +1327,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
-        super(GeoDataFrame, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
     #
     # Implement pandas methods
@@ -1363,7 +1364,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result.__class__ = DataFrame
         return result
 
-    @inherit_doc(pd.DataFrame)
+    @doc(pd.DataFrame)
     def apply(self, func, axis=0, raw=False, result_type=None, args=(), **kwargs):
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
@@ -1575,7 +1576,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super(GeoDataFrame, self).explode(column, **kwargs)
+            return super().explode(column, **kwargs)
             # TODO: make sure index behaviour is consistent
 
         df_copy = self.copy()
@@ -1617,7 +1618,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         -------
         GeoDataFrame or DataFrame
         """
-        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -1640,7 +1641,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         chunksize=None,
         dtype=None,
     ):
-
         """
         Upload GeoDataFrame into PostGIS database.
 
@@ -1735,23 +1735,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return self.geometry.difference(other)
 
-    if compat.PANDAS_GE_025:
-        from pandas.core.accessor import CachedAccessor
-
-        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    else:
-
-        def plot(self, *args, **kwargs):
-            """Generate a plot of the geometries in the ``GeoDataFrame``.
-            If the ``column`` parameter is given, colors plot according to values
-            in that column, otherwise calls ``GeoSeries.plot()`` on the
-            ``geometry`` column.
-            Wraps the ``plot_dataframe()`` function, and documentation is copied
-            from there.
-            """
-            return plot_dataframe(self, *args, **kwargs)
-
-    plot.__doc__ = plot_dataframe.__doc__
+    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
     def explore(self, *args, **kwargs):
         """Interactive map based on folium/leaflet.js"""

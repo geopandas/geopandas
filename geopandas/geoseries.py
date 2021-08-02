@@ -13,6 +13,8 @@ from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 from geopandas.explore import _explore_geoseries
 
+from . import _compat as compat
+from ._decorator import doc
 from .array import (
     GeometryDtype,
     from_shapely,
@@ -22,7 +24,6 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
-from . import _compat as compat
 
 
 _SERIES_WARNING_MSG = """\
@@ -48,24 +49,6 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
-
-
-def inherit_doc(cls):
-    """
-    A decorator adding a docstring from an existing method.
-    """
-
-    def decorator(decorated):
-        original_method = getattr(cls, decorated.__name__, None)
-        if original_method:
-            doc = original_method.__doc__ or ""
-        else:
-            doc = ""
-
-        decorated.__doc__ = doc
-        return decorated
-
-    return decorator
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -549,7 +532,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
-        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
+        val = getattr(super(), mtd)(*args, **kwargs)
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
@@ -558,19 +541,19 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method("__getitem__", key)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def apply(self, func, convert_dtype=True, args=(), **kwargs):
         result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
@@ -638,7 +621,7 @@ class GeoSeries(GeoPandasBase, Series):
                 stacklevel=2,
             )
 
-        return super(GeoSeries, self).isna()
+        return super().isna()
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -696,7 +679,7 @@ class GeoSeries(GeoPandasBase, Series):
                 UserWarning,
                 stacklevel=2,
             )
-        return super(GeoSeries, self).notna()
+        return super().notna()
 
     def notnull(self):
         """Alias for `notna` method. See `notna` for more detail."""
@@ -742,9 +725,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(
-            value=value, method=method, inplace=inplace, **kwargs
-        )
+        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -758,21 +739,14 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
+    @doc(plot_series)
     def plot(self, *args, **kwargs):
-        """Generate a plot of the geometries in the ``GeoSeries``.
-
-        Wraps the ``plot_series()`` function, and documentation is copied from
-        there.
-        """
         return plot_series(self, *args, **kwargs)
 
-    plot.__doc__ = plot_series.__doc__
-
+    @doc(_explore_geoseries)
     def explore(self, *args, **kwargs):
         """Interactive map based on folium/leaflet.js"""
         return _explore_geoseries(self, *args, **kwargs)
-
-    explore.__doc__ = _explore_geoseries.__doc__
 
     def explode(self):
         """
