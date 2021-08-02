@@ -85,9 +85,9 @@ def _explore(
         Named color or a list-like of colors (named or hex).
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
-    tiles : str, contextily.providers.TileProvider (default 'OpenStreetMap')
+    tiles : str, xyzservices.TileProvider (default 'OpenStreetMap')
         Map tileset to use. Can choose from this list of built-in tiles or pass
-        :class:`contextily.providers.TileProvider`:
+        :class:`xyzservices.TileProvider`:
 
         ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
         "CartoDB positron", “CartoDB dark_matter"]``
@@ -298,14 +298,12 @@ GON (((-122.84000 49.00000, -120.0000...
         # get a subset of kwargs to be passed to folium.Map
         map_kwds = {i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS}
 
-        # contextily.providers object
-        if hasattr(tiles, "url") and hasattr(tiles, "attribution"):
-            attr = attr if attr else tiles["attribution"]
+        # xyzservices.providers object
+        if hasattr(tiles, "build_url"):
+            attr = attr if attr else tiles.attribution
             map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
             map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
-            tiles = tiles["url"].format(
-                x="{x}", y="{y}", z="{z}", s="{s}", r=tiles.get("r", ""), **tiles
-            )
+            tiles = tiles.build_url()
 
         m = folium.Map(
             location=location,
@@ -812,9 +810,9 @@ def _explore_geoseries(
         Named color or a list-like of colors (named or hex).
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
-    tiles : str, contextily.providers.TileProvider (default 'OpenStreetMap')
+    tiles : str, xyzservices.TileProvider (default 'OpenStreetMap')
         Map tileset to use. Can choose from this list of built-in tiles or pass
-        :class:`contextily.providers.TileProvider`:
+        :class:`xyzservices.TileProvider`:
 
         ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
         "CartoDB positron", “CartoDB dark_matter"]``

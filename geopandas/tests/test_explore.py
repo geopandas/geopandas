@@ -585,7 +585,7 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         assert (
-            '"https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"'
+            '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"'
             in out_str
         )
         assert '"attribution":"(C)OpenStreetMapcontributors(C)CARTO"' in out_str

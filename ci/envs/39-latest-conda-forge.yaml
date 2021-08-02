@@ -19,6 +19,7 @@ dependencies:
   - matplotlib
   - mapclassify
   - folium
+  - xyzservices
   - scipy
   - geopy
   # installed in tests.yaml, because not available on windows
@@ -30,5 +31,4 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
-  - pip:
-    - git+https://github.com/geopandas/xyzservices.git@main
+

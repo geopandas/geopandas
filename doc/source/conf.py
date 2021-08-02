@@ -402,5 +402,9 @@ intersphinx_mapping = {
         "https://python-visualization.github.io/branca/",
         "https://python-visualization.github.io/branca/objects.inv",
     ),
+    "xyzservices": (
+        "https://xyzservices.readthedocs.io/en/stable/",
+        "https://xyzservices.readthedocs.io/en/stable/objects.inv",
+    ),
     "python": ("https://docs.python.org/3", "https://docs.python.org/3/objects.inv"),
 }

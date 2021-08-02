@@ -19,6 +19,7 @@ dependencies:
   - matplotlib
   - mapclassify
   - folium
+  - xyzservices
   - scipy
   - geopy
   - SQLalchemy
