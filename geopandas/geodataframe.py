@@ -1737,11 +1737,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
+    @doc(_explore)
     def explore(self, *args, **kwargs):
         """Interactive map based on folium/leaflet.js"""
         return _explore(self, *args, **kwargs)
-
-    explore.__doc__ = _explore.__doc__
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
