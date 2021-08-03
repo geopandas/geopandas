@@ -426,13 +426,7 @@ def test_value_counts():
     assert_series_equal(res3, exp3)
 
     # check None is handled
-    s4 = GeoSeries(
-        [
-            Point(0, 0),
-            None,
-            Point(0, 0),
-        ]
-    )
+    s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
     exp4_dropna = pd.Series([2], index=[Point(0, 0)])
     assert_series_equal(res4, exp4_dropna)
