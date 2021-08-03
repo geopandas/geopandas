@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 
 import shapely
-from shapely.geometry import Point, GeometryCollection
+from shapely.geometry import Point, GeometryCollection, LineString
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
@@ -408,13 +408,37 @@ def test_unique():
     assert_array_equal(s.unique(), exp)
 
 
-@pytest.mark.xfail
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
     exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
     assert_series_equal(res, exp)
+    # Check crs doesn't make a difference - note it is not kept in output index anyway
+    s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
+    res2 = s2.value_counts()
+    assert_series_equal(res2, exp)
+
+    # check mixed geometry
+    s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
+    res3 = s3.value_counts()
+    exp3 = pd.Series([2, 1], index=[Point(0, 0), LineString([[1, 1], [2, 2]])])
+    assert_series_equal(res3, exp3)
+
+    # check None is handled
+    s4 = GeoSeries(
+        [
+            Point(0, 0),
+            None,
+            Point(0, 0),
+        ]
+    )
+    res4 = s4.value_counts(dropna=True)
+    exp4_dropna = pd.Series([2], index=[Point(0, 0)])
+    assert_series_equal(res4, exp4_dropna)
+    exp4_keepna = pd.Series([2, 1], index=[Point(0, 0), None])
+    res4_keepna = s4.value_counts(dropna=False)
+    assert_series_equal(res4_keepna, exp4_keepna)
 
 
 @pytest.mark.xfail(strict=False)
