@@ -828,14 +828,27 @@ class GeometryArray(ExtensionArray):
             raise RuntimeError("crs must be set to estimate UTM CRS.")
 
         minx, miny, maxx, maxy = self.total_bounds
+        x_center = None
+        y_center = None
         # ensure using geographic coordinates
         if not self.crs.is_geographic:
-            lon, lat = Transformer.from_crs(
-                self.crs, "EPSG:4326", always_xy=True
-            ).transform((minx, maxx, minx, maxx), (miny, miny, maxy, maxy))
-            x_center = np.mean(lon)
-            y_center = np.mean(lat)
-        else:
+            transformer = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
+            if compat.PYPROJ_GE_31:
+                minx, miny, maxx, maxy = transformer.transform_bounds(
+                    minx, miny, maxx, maxy
+                )
+                if minx > maxx:
+                    # crossed the antimeridian
+                    minx = -180
+                    maxx = -180
+            else:
+                lon, lat = transformer.transform(
+                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
+                )
+                x_center = np.mean(lon)
+                y_center = np.mean(lat)
+
+        if x_center is None and y_center is None:
             x_center = np.mean([minx, maxx])
             y_center = np.mean([miny, maxy])
 

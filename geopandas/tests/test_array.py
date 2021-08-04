@@ -938,6 +938,17 @@ class TestEstimateUtmCrs:
             "EPSG:32618"
         )
 
+    @pytest.mark.skipif(not compat.PYPROJ_GE_31, reason="requires pyproj 3.1 or higher")
+    def test_estimate_utm_crs__antimeridian(self):
+        antimeridian = from_shapely(
+            [
+                shapely.geometry.Point(1722483.900174921, 5228058.6143420935),
+                shapely.geometry.Point(4624385.494808555, 8692574.544944234),
+            ],
+            crs="EPSG:3851",
+        )
+        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32701")
+
     @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):

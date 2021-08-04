@@ -223,3 +223,4 @@ except ImportError:
 # -----------------------------------------------------------------------------
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+PYPROJ_GE_31 = LooseVersion(pyproj.__version__) >= LooseVersion("3.1")
