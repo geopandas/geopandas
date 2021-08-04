@@ -121,7 +121,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # Check for multiple columns with name "geometry". If there are,
             # self["geometry"] is a gdf and constructor gets recursively recalled
             # by pandas internals trying to access this
-            if len(self.columns[self.columns == "geometry"]) > 1:
+            if (self.columns == "geometry").sum() > 1:
                 raise ValueError(
                     "GeoDataFrame does not support multiple columns "
                     "using the geometry column name 'geometry'."
@@ -280,15 +280,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
-                level = frame[col].values
+                level = frame[col]
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
             except Exception:
                 raise
-            # specially check shape of level for consistency (shapely raises a
-            # TypeError but pygeos raises a ValueError)
-            if hasattr(level, "ndim") and level.ndim != 1:
-                raise ValueError("Must pass array with one dimension only.")
+            if isinstance(level, DataFrame):
+                raise ValueError(
+                    "GeoDataFrame does not support setting the geometry column where "
+                    "the column name shared by multiple columns."
+                )
 
             if drop:
                 to_remove = col

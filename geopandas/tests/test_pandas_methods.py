@@ -593,7 +593,11 @@ def test_concat(df):
     # https://github.com/geopandas/geopandas/issues/1230
     # Expect that concat should fail gracefully if duplicate column names belonging to
     # geometry columns are introduced.
-    with pytest.raises(ValueError):
+    expected_err = (
+        "GeoDataFrame does not support multiple columns using the geometry"
+        " column name 'geometry'"
+    )
+    with pytest.raises(ValueError, match=expected_err):
         pd.concat([df, df], axis=1)
 
     df2 = df.rename_geometry("geom")
