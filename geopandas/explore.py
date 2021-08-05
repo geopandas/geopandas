@@ -100,14 +100,14 @@ def _explore(
         Map tile attribution; only required if passing custom tile URL.
     tooltip : bool, str, int, list (default True)
         Display GeoDataFrame attributes when hovering over the object.
-        Integer specifies first n columns to be included, ``True`` includes all
-        columns. ``False`` removes tooltip. Pass string or list of strings to specify a
-        column(s). Defaults to ``True``.
+        ``True`` includes all columns. ``False`` removes tooltip. Pass string or list of
+        strings to specify a column(s). Integer specifies first n columns to be
+        included. Defaults to ``True``.
     popup : bool, str, int, list (default False)
         Input GeoDataFrame attributes for object displayed when clicking.
-        Integer specifies first n columns to be included, ``True`` includes all
-        columns. ``False`` removes tooltip. Pass string or list of strings to specify a
-        column(s). Defaults to ``False``.
+        ``True`` includes all columns. ``False`` removes popup. Pass string or list of
+        strings to specify a column(s). Integer specifies first n columns to be
+        included. Defaults to ``False``.
     highlight : bool (default True)
         Enable highlight functionality when hovering over a geometry.
     categorical : bool (default False)
@@ -147,7 +147,8 @@ def _explore(
     control_scale : bool, (default True)
         Whether to add a control scale on the map.
     marker_type : str, folium.Circle, folium.CircleMarker, folium.Marker (default None)
-        Allowed string options are ('marker', 'circle', 'circle_marker')
+        Allowed string options are ('marker', 'circle', 'circle_marker'). Defaults to
+        folium.Marker.
     marker_kwds: dict (default {})
         Additional keywords to be passed to the selected ``marker_type``, e.g.:
 
@@ -179,7 +180,8 @@ def _explore(
         fillOpacity : float (default 0.5)
             Fill opacity.
 
-        Plus all supported by :func:`folium.vector_layers.path_options`.
+        Plus all supported by :func:`folium.vector_layers.path_options`. See the
+        documentation of :class:`folium.features.GeoJson` for details.
 
     highlight_kwds : dict (default {})
         Style to be passed to folium highlight_function. Uses the same keywords
@@ -222,8 +224,7 @@ def _explore(
             Maximum number of colorbar tick labels (requires branca>=0.5.0)
 
     **kwargs : dict
-        Additional options to be passed on to the folium :class:`~folium.folium.Map`
-        or :class:`folium.features.GeoJson`.
+        Additional options to be passed on to the folium.
 
     Returns
     -------
@@ -233,19 +234,13 @@ def _explore(
     Examples
     --------
     >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-    >>> df.head()  # doctest: +SKIP
+    >>> df.head(2)  # doctest: +SKIP
         pop_est      continent                      name iso_a3  \
 gdp_md_est                                           geometry
     0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
 GON (((180.00000 -16.06713, 180.00000...
     1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
 (33.90371 -0.95000, 34.07262 -1.05982...
-    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
-(-8.66559 27.65643, -8.66512 27.58948...
-    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -122.9742...
-    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -120.0000...
 
     >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
     """
@@ -834,7 +829,8 @@ def _explore_geoseries(
     control_scale : bool, (default True)
         Whether to add a control scale on the map.
     marker_type : str, folium.Circle, folium.CircleMarker, folium.Marker (default None)
-        Allowed string options are ('marker', 'circle', 'circle_marker')
+        Allowed string options are ('marker', 'circle', 'circle_marker'). Defaults to
+        folium.Marker.
     marker_kwds: dict (default {})
         Additional keywords to be passed to the selected ``marker_type``, e.g.:
 
@@ -866,15 +862,15 @@ def _explore_geoseries(
         fillOpacity : float (default 0.5)
             Fill opacity.
 
-        Plus all supported by :func:`folium.vector_layers.path_options`.
+        Plus all supported by :func:`folium.vector_layers.path_options`. See the
+        documentation of :class:`folium.features.GeoJson` for details.
 
     highlight_kwds : dict (default {})
         Style to be passed to folium highlight_function. Uses the same keywords
         as ``style_kwds``. When empty, defaults to ``{"fillOpacity": 0.75}``.
 
     **kwargs : dict
-        Additional options to be passed on to the folium :class:`~folium.folium.Map`
-        or :class:`folium.features.GeoJson`.
+        Additional options to be passed on to the folium.
 
     Returns
     -------
