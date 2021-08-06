@@ -168,6 +168,25 @@ class BaseSpatialIndex:
         """
         raise NotImplementedError
 
+    def nearest(self, geometry):
+        """
+        Returns the nearest geometry to the input geometries.
+
+        Parameters
+        ----------
+        geometry : {shapely geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS
+            geometries}
+            A single shapely geometry, one of the GeoPandas geometry iterables
+            (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
+            against the spatial index.
+
+        Returns
+        -------
+        matches : ndarray of shape (n_input_geometries, )
+            Integer indices for matching geometries from the spatial index.
+        """
+        raise NotImplementedError
+
     def intersection(self, coordinates):
         """Compatibility wrapper for rtree.index.Index.intersection,
         use ``query`` instead.
@@ -555,6 +574,30 @@ if compat.HAS_PYGEOS:
                 return np.vstack((geo_res[indexing], tree_res[indexing]))
 
             return res
+
+        @doc(BaseSpatialIndex.nearest)
+        def nearest(self, geometry):
+            # note - could use _as_geometry_array helper here after #1865
+            if isinstance(geometry, np.ndarray):
+                # we have a numpy array, that's okay
+                pass
+            elif isinstance(geometry, BaseGeometry):
+                # convert from shapely geometry
+                geometry = array._shapely_to_geom(geometry)
+            elif isinstance(geometry, list):
+                # convert from a list of shapely geometries, or pass through
+                geometry = [
+                    array._shapely_to_geom(el) if isinstance(el, BaseGeometry) else el
+                    for el in geometry
+                ]
+            elif isinstance(geometry, geoseries.GeoSeries):
+                geometry = geometry.values.data
+            elif isinstance(geometry, array.GeometryArray):
+                geometry = geometry.data
+            else:
+                geometry = np.asarray(geometry)
+
+            return super().nearest(geometry)
 
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):

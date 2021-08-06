@@ -17,6 +17,20 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 import pytest
 import numpy as np
 
+try:
+    import pygeos
+    from pygeos import __version__ as pygeos_version
+    from distutils.version import LooseVersion
+
+    MIN_PYGEOS_VERSION_FOR_NEAREST = "0.10"
+    PYGEOS_HAS_NEAREST = LooseVersion(pygeos_version) >= LooseVersion(
+        MIN_PYGEOS_VERSION_FOR_NEAREST
+    )
+except ImportError:
+    PYGEOS_HAS_NEAREST = False
+
+TEST_NEAREST = PYGEOS_HAS_NEAREST and compat.USE_PYGEOS
+
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
@@ -669,6 +683,47 @@ class TestPygeosInterface:
                     + "Got:\n {}\n".format(res.tolist())
                 )
             raise e
+
+    # ------------------------- `nearest` tests ------------------------- #
+    @pytest.mark.skipif(
+        TEST_NEAREST,
+        reason=(
+            f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
+            " must be installed and activated via the geopandas.options module to"
+            " test sjoin_nearest"
+        ),
+    )
+    def test_no_nearest(self):
+        df = geopandas.GeoDataFrame({"geometry": []})
+        with pytest.raises(
+            AttributeError, match="Expected the spatial index to implement `nearest`"
+        ):
+            df.sindex.nearest(Point(0, 0))
+
+    @pytest.mark.skipif(
+        not TEST_NEAREST,
+        reason=(
+            f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
+            " must be installed and activated via the geopandas.compat module to"
+            " test sjoin_nearest"
+        ),
+    )
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            (pygeos.points(0.25, 0.25), [[0], [0]]),
+            (Point(0.75, 0.75), [[0], [1]]),
+            ([pygeos.points(1, 1), pygeos.points(0, 0)], [[0, 1], [1, 0]]),
+            ([Point(1, 1), Point(0.25, 1)], [[0, 1], [1, 1]]),
+            (None, [[], []]),
+            ([None], [[], []]),
+        ],
+    )
+    def test_nearest(self, geometry, expected):
+        geoms = pygeos.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+        res = df.sindex.nearest(geometry)
+        assert_array_equal(res, expected)
 
     # --------------------------- misc tests ---------------------------- #
 
