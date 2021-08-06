@@ -65,7 +65,7 @@ autosummary_generate = True
 
 nbsphinx_execute = "always"
 nbsphinx_allow_errors = True
-nbsphinx_kernel_name = 'python3'
+nbsphinx_kernel_name = "python3"
 
 # suppress matplotlib warning in examples
 warnings.filterwarnings(
@@ -388,7 +388,10 @@ intersphinx_mapping = {
         "https://pyproj4.github.io/pyproj/stable/",
         "https://pyproj4.github.io/pyproj/stable/objects.inv",
     ),
-    "python": ("https://docs.python.org/3", "https://docs.python.org/3/objects.inv"),
+    "python": (
+        "https://docs.python.org/3",
+        "https://docs.python.org/3/objects.inv",
+    ),
     "rtree": (
         "https://rtree.readthedocs.io/en/stable/",
         "https://rtree.readthedocs.io/en/stable/objects.inv",
