@@ -379,10 +379,6 @@ intersphinx_mapping = {
     "pyepsg": (
         "https://pyepsg.readthedocs.io/en/stable/",
         "https://pyepsg.readthedocs.io/en/stable/objects.inv",
-    ),   
-    "pyepsg": (
-        "https://pyepsg.readthedocs.io/en/stable/",
-        "https://pyepsg.readthedocs.io/en/stable/objects.inv",
     ),
     "pygeos": (
         "https://pygeos.readthedocs.io/en/latest/",
