@@ -375,7 +375,10 @@ intersphinx_mapping = {
         "https://pandas.pydata.org/pandas-docs/stable/",
         "https://pandas.pydata.org/pandas-docs/stable/objects.inv",
     ),
-    "pyarrow": ("https://arrow.apache.org/docs/", None),
+    "pyarrow": (
+        "https://arrow.apache.org/docs/",
+        "https://arrow.apache.org/docs/objects.inv",
+    ),
     "pyepsg": (
         "https://pyepsg.readthedocs.io/en/stable/",
         "https://pyepsg.readthedocs.io/en/stable/objects.inv",
