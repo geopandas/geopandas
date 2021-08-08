@@ -49,8 +49,12 @@ class TestDataFrame:
         self._check_metadata(self.df.loc[:, ["geometry2"]], "geometry2")
 
     def test_squeeze(self):
-        assert type(self.df[["geometry"]].squeeze()) is GeoSeries
-        assert type(self.df[["geometry2"]].squeeze()) is GeoSeries
+        res1 = self.df[["geometry"]].squeeze()
+        assert type(res1) is GeoSeries
+        assert res1.crs == self.crs
+        res2 = self.df[["geometry2"]].squeeze()
+        assert type(res2) is GeoSeries
+        assert res2.crs == self.crs
 
     def test_to_frame(self):
         res1 = self.df["geometry"].to_frame()
