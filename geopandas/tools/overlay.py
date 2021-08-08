@@ -302,7 +302,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     df1 = _make_valid(df1)
     df2 = _make_valid(df2)
 
-    with warnings.catch_warnings():  # CRS checked above, supress array-level warning
+    with warnings.catch_warnings():  # CRS checked above, suppress array-level warning
         warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
         if how == "difference":
             return _overlay_difference(df1, df2)
