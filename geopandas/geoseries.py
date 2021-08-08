@@ -356,7 +356,7 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_wkb(
         cls, data, index=None, crs: Optional[Any] = None, **kwargs
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
@@ -390,7 +390,7 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_wkt(
         cls, data, index=None, crs: Optional[Any] = None, **kwargs
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKT objects
@@ -443,7 +443,7 @@ class GeoSeries(GeoPandasBase, Series):
         index=None,
         crs: Optional[Any] = None,
         **kwargs
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Create a GeoSeries from either WKT or WKB values"""
         if isinstance(data, Series):
             if index is not None:
@@ -760,7 +760,7 @@ class GeoSeries(GeoPandasBase, Series):
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
 
-    def explode(self) -> GeoSeries:
+    def explode(self) -> "GeoSeries":
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -863,7 +863,7 @@ class GeoSeries(GeoPandasBase, Series):
         epsg: Optional[int] = None,
         inplace: bool = False,
         allow_override: bool = False,
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
@@ -957,7 +957,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def to_crs(
         self, crs: Optional[Any] = None, epsg: Optional[int] = None
-    ) -> GeoSeries:
+    ) -> "GeoSeries":
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
 
