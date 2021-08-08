@@ -1345,7 +1345,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         result = super().__getitem__(key)
         return result
 
-    # __getitem__ = class_dispatch_decorator(DataFrame.__getitem__)
+    # Squeeze should always return a GeoSeries (since if the parent we a DataFrame,
+    # DataFrame.squeeze would be called directly - so this could be done explicitly
+    squeeze = class_dispatch_decorator(DataFrame.squeeze)
+    drop = class_dispatch_decorator(DataFrame.drop)
+    reindex = class_dispatch_decorator(DataFrame.reindex)  # this one could use finalize
 
     def __setitem__(self, key, value):
         """
