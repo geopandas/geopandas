@@ -1309,36 +1309,40 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result.__class__ = DataFrame
         return result
 
+    @staticmethod
+    def _class_dispatch(
+        result: Union["GeoDataFrame", DataFrame, GeoSeries, Series], geo_col: str
+    ):
+        if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
+            result.__class__ = GeoSeries
+        elif isinstance(result, DataFrame):
+            if geo_col in result:
+                result.__class__ = GeoDataFrame
+                result._geometry_column_name = geo_col
+            # seems unfortunate to have to construct df, couldn't get
+            # result.dtypes==GeometryDType to work correctly though
+            elif len(result.select_dtypes(include=GeometryDtype).columns) > 0:
+                result.__class__ = GeoDataFrame
+                if len(result.columns) == 1:
+                    result._geometry_column_name = result.columns[0]
+                # TODO unclear what to do if >1 column. geometry_col is None
+                # with warning?, first of geom cols with warning?
+                # TODO else behaviour is untested
+                else:
+                    result._geometry_column_name = None
+            else:
+                result.__class__ = DataFrame
+        # TODO should this just be else?
+        elif isinstance(result, DataFrame) and geo_col not in result:
+            result.__class__ = DataFrame
+        return result
+
     def class_dispatch_decorator(method):
         def inner(
             self: Union["GeoDataFrame", DataFrame], *method_args, **method_kwargs
         ):
             result = method(self, *method_args, **method_kwargs)
-            geo_col = self._geometry_column_name
-            # print(result)
-            if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
-                result.__class__ = GeoSeries
-            elif isinstance(result, DataFrame):
-                if geo_col in result:
-                    result.__class__ = GeoDataFrame
-                    result._geometry_column_name = geo_col
-                # seems unfortunate to have to construct df, couldn't get
-                # result.dtypes==GeometryDType to work correctly though
-                elif len(result.select_dtypes(include=GeometryDtype).columns) > 0:
-                    result.__class__ = GeoDataFrame
-                    if len(result.columns) == 1:
-                        result._geometry_column_name = result.columns[0]
-                    # TODO unclear what to do if >1 column. geometry_col is None
-                    # with warning?, first of geom cols with warning?
-                    # TODO else behaviour is untested
-                    else:
-                        result._geometry_column_name = None
-                else:
-                    result.__class__ = DataFrame
-            # TODO should this just be else?
-            elif isinstance(result, DataFrame) and geo_col not in result:
-                result.__class__ = DataFrame
-            return result
+            return self._class_dispatch(result, geo_col=self._geometry_column_name)
 
         return inner
 
