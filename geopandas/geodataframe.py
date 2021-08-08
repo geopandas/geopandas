@@ -1408,11 +1408,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     # Implement pandas methods
     #
 
-    # Squeeze should always return a GeoSeries (since if the parent we a DataFrame,
-    # DataFrame.squeeze would be called directly - so this could be done explicitly
-    # TODO do these inherit docstrings? probably not...
-    squeeze = _class_dispatch_decorator(DataFrame.squeeze)
-
     @property
     def loc(self):
         return _GeoLocIndexer("loc", self)
