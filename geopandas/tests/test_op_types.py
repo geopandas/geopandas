@@ -1,26 +1,15 @@
-import os
-import shutil
-import tempfile
-
 import pandas as pd
 
 from shapely.geometry import Point
 
-import geopandas
-from geopandas import GeoDataFrame, read_file, GeoSeries
-
-from geopandas.tests.util import PACKAGE_DIR
+from geopandas import GeoDataFrame, GeoSeries
 
 
 class TestDataFrame:
     def setup_method(self):
         N = 10
-
-        nybb_filename = geopandas.datasets.get_path("nybb")
-        self.df = read_file(nybb_filename)
-        self.tempdir = tempfile.mkdtemp()
         self.crs = "epsg:4326"
-        self.df2 = GeoDataFrame(
+        self.df = GeoDataFrame(
             [
                 {
                     "geometry": Point(x, y),
@@ -31,72 +20,92 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df2["geometry2"] = self.df2["geometry"]  # want geometry2 to be a geoseries
-        self.df3 = read_file(
-            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
-        )
+        self.df["geometry2"] = self.df["geometry"]  # want geometry2 to be a geoseries
 
-    def teardown_method(self):
-        shutil.rmtree(self.tempdir)
+    @staticmethod
+    def _check_metadata(gdf, geometry_column_name="geometry", crs=None):
 
-    def test_df_init(self):
-        assert type(self.df2) is GeoDataFrame
-        assert self.df2.crs == self.crs
-        print(type(self.df2["geometry2"]))
-        print(type(self.df2["geometry"]))
-
-    def test_getitem_passing(self):
-        assert type(self.df2[["value1", "value2"]]) is pd.DataFrame
-        assert type(self.df2["geometry"]) is GeoSeries
-        assert type(self.df2["value1"]) is pd.Series
-        assert type(self.df2[["geometry"]]) is GeoDataFrame
-        assert type(self.df2[["value1"]]) is pd.DataFrame
+        assert gdf._geometry_column_name == geometry_column_name
+        assert gdf.crs == crs
 
     def test_getitem(self):
-        assert type(self.df2["geometry2"]) is GeoSeries
-        assert type(self.df2[["geometry2"]]) is GeoDataFrame
+        assert type(self.df[["value1", "value2"]]) is pd.DataFrame
+        assert type(self.df["geometry"]) is GeoSeries
+        assert type(self.df["geometry2"]) is GeoSeries
+        assert type(self.df["value1"]) is pd.Series
+        assert type(self.df[["geometry"]]) is GeoDataFrame
+        assert type(self.df[["value1"]]) is pd.DataFrame
+        assert type(self.df[["geometry2"]]) is GeoDataFrame
+        self._check_metadata(
+            self.df[["geometry2"]], geometry_column_name="geometry2", crs=self.crs
+        )
 
     def test_loc(self):
-        assert type(self.df2.loc[:, ["value1", "value2"]]) is pd.DataFrame
-        assert type(self.df2.loc[:, "geometry"]) is GeoSeries
-        assert type(self.df2.loc[:, "geometry2"]) is GeoSeries
-        assert type(self.df2["value1"]) is pd.Series
-        assert type(self.df2.loc[:, ["geometry"]]) is GeoDataFrame
-        assert type(self.df2.loc[:, ["value1"]]) is pd.DataFrame
-        assert type(self.df2.loc[:, ["geometry2"]]) is GeoDataFrame
+        assert type(self.df.loc[:, ["value1", "value2"]]) is pd.DataFrame
+        assert type(self.df.loc[:, "geometry"]) is GeoSeries
+        assert type(self.df.loc[:, "geometry2"]) is GeoSeries
+        assert type(self.df["value1"]) is pd.Series
+        assert type(self.df.loc[:, ["geometry"]]) is GeoDataFrame
+        assert type(self.df.loc[:, ["value1"]]) is pd.DataFrame
+        assert type(self.df.loc[:, ["geometry2"]]) is GeoDataFrame
+        self._check_metadata(
+            self.df.loc[:, ["geometry2"]],
+            geometry_column_name="geometry2",
+            crs=self.crs,
+        )
 
     def test_squeeze(self):
-        assert type(self.df2[["geometry"]].squeeze()) is GeoSeries
-        assert type(self.df2[["geometry2"]].squeeze()) is GeoSeries
+        assert type(self.df[["geometry"]].squeeze()) is GeoSeries
+        assert type(self.df[["geometry2"]].squeeze()) is GeoSeries
 
     def test_to_frame(self):
-        assert type(self.df2["geometry"].to_frame()) is GeoDataFrame
-        assert type(self.df2["geometry2"].to_frame()) is GeoDataFrame
+        res1 = self.df["geometry"].to_frame()
+        assert type(res1) is GeoDataFrame
+        assert res1._geometry_column_name == "geometry"
+        self._check_metadata(res1, crs=self.crs)
+
+        assert res1.crs == self.crs
+        res2 = self.df["geometry2"].to_frame()
+        assert type(res2) is GeoDataFrame
+        self._check_metadata(res2, geometry_column_name="geometry2", crs=self.crs)
+        assert res2.crs == self.crs
 
     def test_iloc(self):
-        assert type(self.df2.iloc[:, 1:3]) is pd.DataFrame
-        assert type(self.df2.iloc[:, 0]) is GeoSeries
-        assert type(self.df2.iloc[:, 3]) is GeoSeries
-        assert type(self.df2.iloc[:, 1]) is pd.Series
-        assert type(self.df2.iloc[:, [0]]) is GeoDataFrame
-        assert type(self.df2.iloc[:, [1]]) is pd.DataFrame
-        assert type(self.df2.iloc[:, [3]]) is GeoDataFrame
+        assert type(self.df.iloc[:, 1:3]) is pd.DataFrame
+        assert type(self.df.iloc[:, 0]) is GeoSeries
+        assert type(self.df.iloc[:, 3]) is GeoSeries
+        assert type(self.df.iloc[:, 1]) is pd.Series
+        res1 = self.df.iloc[:, [0]]
+        assert type(res1) is GeoDataFrame
+        self._check_metadata(res1, crs=self.crs)
+        assert type(self.df.iloc[:, [1]]) is pd.DataFrame
+        res2 = self.df.iloc[:, [3]]
+        assert type(res2) is GeoDataFrame
+        self._check_metadata(res2, geometry_column_name="geometry2", crs=self.crs)
 
     def test_reindex(self):
-        df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
-
-        df_reindex = df.reindex(columns=["name"])
-        print(df)
-        print(df_reindex)
-        assert type(df_reindex) is pd.DataFrame
+        res1 = self.df.reindex(columns=["value1"])
+        assert type(res1) is pd.DataFrame
+        res2 = self.df.reindex(columns=["geometry"])
+        assert type(res2) is GeoDataFrame
+        self._check_metadata(res2, crs=self.crs)
+        res3 = self.df.reindex(columns=["geometry2"])
+        assert type(res3) is GeoDataFrame
+        self._check_metadata(res3, geometry_column_name="geometry2", crs=self.crs)
 
     def test_drop(self):
-        assert type(self.df.drop(columns="geometry")) is pd.DataFrame
+        assert type(self.df.drop(columns=["geometry", "geometry2"])) is pd.DataFrame
+        res1 = self.df.drop(columns=["value1", "value2", "geometry2"])
+        assert type(res1) is GeoDataFrame
+        self._check_metadata(res1, geometry_column_name="geometry", crs=self.crs)
+        res2 = self.df.drop(columns=["value1", "value2", "geometry"])
+        assert type(res2) is GeoDataFrame
+        self._check_metadata(res2, geometry_column_name="geometry2", crs=self.crs)
 
     def test_apply(self):
-        assert type(self.df2["geometry"].apply(lambda x: x)) is GeoSeries
-        assert type(self.df2["geometry2"].apply(lambda x: x)) is GeoSeries
-        assert type(self.df2["value1"].apply(lambda x: x)) is pd.Series
+        assert type(self.df["geometry"].apply(lambda x: x)) is GeoSeries
+        assert type(self.df["geometry2"].apply(lambda x: x)) is GeoSeries
+        assert type(self.df["value1"].apply(lambda x: x)) is pd.Series
 
-        assert type(self.df2.apply(lambda x: x)) is GeoDataFrame
-        assert type(self.df2[["value1", "value2"]].apply(lambda x: x)) is pd.DataFrame
+        assert type(self.df.apply(lambda x: x)) is GeoDataFrame
+        assert type(self.df[["value1", "value2"]].apply(lambda x: x)) is pd.DataFrame
