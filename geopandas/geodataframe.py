@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
-from pandas.core.indexing import _LocIndexer
+from pandas.core.indexing import _LocIndexer, _iLocIndexer
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -40,6 +40,18 @@ class _GeoLocIndexer(_LocIndexer):
 
     def __getitem__(self, item):
         result = super(_LocIndexer, self.df.loc).__getitem__(item)
+        return GeoDataFrame._class_dispatch(result, geo_col=self._geo_col)
+
+
+class _GeoiLocIndexer(_iLocIndexer):
+    def __init__(self, name: str, df: "GeoDataFrame", geo_col: str):
+        self.df = df
+        self._geo_col = geo_col
+        super().__init__(name=name, obj=df)
+
+    def __getitem__(self, item):
+        result = super(_iLocIndexer, self.df.iloc).__getitem__(item)
+        # result = self.df.loc.__getitem__(item)
         return GeoDataFrame._class_dispatch(result, geo_col=self._geo_col)
 
 
@@ -1329,7 +1341,18 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 result._geometry_column_name = geo_col
             # seems unfortunate to have to construct df, couldn't get
             # result.dtypes==GeometryDType to work correctly though
-            elif len(result.select_dtypes(include=GeometryDtype).columns) > 0:
+            # This is awkward, was using select dtypes but it uses iloc, and this
+            # function is used to cast the output of iloc, so can't do that
+            elif (
+                len(
+                    [
+                        i
+                        for i in result.columns
+                        if isinstance(result[i].dtype, GeometryDtype)
+                    ]
+                )
+                > 0
+            ):
                 result.__class__ = GeoDataFrame
                 if len(result.columns) == 1:
                     result._geometry_column_name = result.columns[0]
@@ -1388,9 +1411,14 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     #
     # Implement pandas methods
     #
+    # @DataFrame.loc.getter
     @property
     def loc(self):
         return _GeoLocIndexer("loc", self, self._geometry_column_name)
+
+    @property
+    def iloc(self):
+        return _GeoiLocIndexer("iloc", self, self._geometry_column_name)
 
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
