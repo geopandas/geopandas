@@ -1412,9 +1412,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     # DataFrame.squeeze would be called directly - so this could be done explicitly
     # TODO do these inherit docstrings? probably not...
     squeeze = _class_dispatch_decorator(DataFrame.squeeze)
-    drop = _class_dispatch_decorator(DataFrame.drop)
-    # reindex also could use finalize instead of this
-    reindex = _class_dispatch_decorator(DataFrame.reindex)
 
     @property
     def loc(self):
@@ -1485,7 +1482,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         elif method == "concat":
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
-
+        elif method == "reindex":
+            self = _class_dispatch(
+                self, geo_col=getattr(other, "_geometry_column_name", None)
+            )
         return self
 
     def dissolve(
