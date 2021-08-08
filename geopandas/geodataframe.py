@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
+from pandas.core.indexing import _LocIndexer
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -22,6 +23,24 @@ from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
+
+
+class _GeoLocIndexer(_LocIndexer):
+    """
+    We can't wrap loc or iloc directly as they return objects.
+
+    We need to wrap (loc[:, ...]) or loc.__getitem__ directly to forward the geometry
+    info.
+    """
+
+    def __init__(self, name: str, df: "GeoDataFrame", geo_col: str):
+        self.df = df
+        self._geo_col = geo_col
+        super().__init__(name=name, obj=df)
+
+    def __getitem__(self, item):
+        result = super(_LocIndexer, self.df.loc).__getitem__(item)
+        return GeoDataFrame._class_dispatch(result, geo_col=self._geo_col)
 
 
 def _ensure_geometry(data, crs=None):
@@ -1369,6 +1388,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     #
     # Implement pandas methods
     #
+    @property
+    def loc(self):
+        return _GeoLocIndexer("loc", self, self._geometry_column_name)
 
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
