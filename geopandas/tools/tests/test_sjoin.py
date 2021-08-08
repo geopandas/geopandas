@@ -2,13 +2,13 @@ from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
+from geopandas.testing import assert_geodataframe_equal
 
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin
 
-from pandas.testing import assert_frame_equal
 import pytest
 
 
@@ -140,7 +140,7 @@ class TestSpatialJoin:
                 columns={"df2_ix1": "index_right0", "df2_ix2": "index_right1"}
             )
             exp.index.names = df1.index.names
-        assert_frame_equal(res, GeoDataFrame(exp))
+        assert_geodataframe_equal(res, GeoDataFrame(exp))
 
     @pytest.mark.parametrize(
         "dfs",
@@ -190,7 +190,7 @@ class TestSpatialJoin:
             )
             exp.index.names = df1.index.names
 
-        assert_frame_equal(res, GeoDataFrame(exp))
+        assert_geodataframe_equal(res, GeoDataFrame(exp))
 
     def test_empty_join(self):
         # Check joins resulting in empty gdfs.
@@ -299,7 +299,9 @@ class TestSpatialJoin:
         if op == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
             exp = exp.sort_index()
 
-        assert_frame_equal(res, exp, check_index_type=False)
+        assert_geodataframe_equal(
+            res, GeoDataFrame(exp, geometry="geometry"), check_index_type=False
+        )
 
 
 class TestSpatialJoinNYBB:
