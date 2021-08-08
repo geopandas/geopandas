@@ -1,5 +1,6 @@
 import json
 import warnings
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -1297,13 +1298,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
         return self.geometry.estimate_utm_crs(datum_name=datum_name)
 
-    def __getitem__(self, key):
-        """
-        If the result is a column containing only 'geometry', return a
-        GeoSeries. If it's a DataFrame with a 'geometry' column, return a
-        GeoDataFrame.
-        """
-        result = super().__getitem__(key)
+    def cast_class(self, result):
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
@@ -1313,6 +1308,36 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
+
+    def class_dispatch_decorator(method):
+        def inner(
+            self: Union["GeoDataFrame", DataFrame], *method_args, **method_kwargs
+        ):
+            result = method(self, *method_args, **method_kwargs)
+            geo_col = self._geometry_column_name
+            print(result)
+            if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
+                result.__class__ = GeoSeries
+            elif isinstance(result, DataFrame) and geo_col in result:
+                result.__class__ = GeoDataFrame
+                result._geometry_column_name = geo_col
+            elif isinstance(result, DataFrame) and geo_col not in result:
+                result.__class__ = DataFrame
+            return result
+
+        return inner
+
+    @class_dispatch_decorator
+    def __getitem__(self, key):
+        """
+        If the result is a column containing only 'geometry', return a
+        GeoSeries. If it's a DataFrame with a 'geometry' column, return a
+        GeoDataFrame.
+        """
+        result = super().__getitem__(key)
+        return result
+
+    # __getitem__ = class_dispatch_decorator(DataFrame.__getitem__)
 
     def __setitem__(self, key, value):
         """
