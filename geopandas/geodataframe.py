@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import Union, Callable, Optional
+from typing import Union, Any, Callable, Optional
 import warnings
 
 import numpy as np
@@ -24,7 +26,7 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _ensure_geometry(data, crs: Optional[CRS] = None):
+def _ensure_geometry(data, crs: Optional[Any] = None):
     """
     Ensure the data is of geometry dtype or converted to it.
 
@@ -104,9 +106,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, geometry=None, crs: Optional[CRS] = None, **kwargs):
+    def __init__(self, *args, geometry=None, crs: Optional[Any] = None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            super(GeoDataFrame, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -183,7 +185,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if attr == "geometry":
             object.__setattr__(self, attr, val)
         else:
-            super(GeoDataFrame, self).__setattr__(attr, val)
+            super().__setattr__(attr, val)
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
@@ -203,8 +205,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     )
 
     def set_geometry(
-        self, col, drop: bool = False, inplace: bool = False, crs: CRS = None
-    ) -> "GeoDataFrame":
+        self, col, drop: bool = False, inplace: bool = False, crs: Optional[Any] = None
+    ) -> GeoDataFrame:
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -436,9 +438,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         cls,
         data: dict,
         geometry=None,
-        crs: Union[str, dict] = None,
+        crs: Optional[Union[str, dict]] = None,
         **kwargs,
-    ) -> "GeoDataFrame":
+    ) -> GeoDataFrame:
         """
         Construct GeoDataFrame from dict of array-like or dicts by
         overriding DataFrame.from_dict method with geometry and crs
@@ -516,8 +518,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_features(
-        cls, features, crs: Union[str, dict] = None, columns=None
-    ) -> "GeoDataFrame":
+        cls, features, crs: Optional[Union[str, dict]] = None, columns=None
+    ) -> GeoDataFrame:
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -606,12 +608,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         sql: str,
         con,
         geom_col: str = "geom",
-        crs: Optional[CRS] = None,
-        index_col: Union[str, list] = None,
+        crs: Optional[Any] = None,
+        index_col: Optional[Union[str, list]] = None,
         coerce_float: bool = True,
-        parse_dates: Union[list, dict] = None,
-        params: Union[list, tuple, dict] = None,
-        chunksize: int = None,
+        parse_dates: Optional[Union[list, dict]] = None,
+        params: Optional[Union[list, tuple, dict]] = None,
+        chunksize: Optional[int] = None,
     ):
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -686,7 +688,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def to_json(
         self, na: str = "null", show_bbox: bool = False, drop_id: bool = False, **kwargs
-    ) -> dict:
+    ) -> str:
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -744,7 +746,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         )
 
     @property
-    def __geo_interface__(self) -> "GeoDataFrame":
+    def __geo_interface__(self) -> GeoDataFrame:
         """Returns a ``GeoDataFrame`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
@@ -948,7 +950,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return df
 
     def to_parquet(
-        self, path, index: bool = None, compression: str = "snappy", **kwargs
+        self, path, index: Optional[bool] = None, compression: str = "snappy", **kwargs
     ) -> None:
         """Write a GeoDataFrame to the Parquet format.
 
@@ -997,7 +999,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         _to_parquet(self, path, compression=compression, index=index, **kwargs)
 
     def to_feather(
-        self, path, index: bool = None, compression: str = None, **kwargs
+        self,
+        path,
+        index: Optional[bool] = None,
+        compression: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """Write a GeoDataFrame to the Feather format.
 
@@ -1050,8 +1056,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         self,
         filename,
         driver: str = "ESRI Shapefile",
-        schema: dict = None,
-        index: bool = None,
+        schema: Optional[dict] = None,
+        index: Optional[bool] = None,
         **kwargs,
     ):
         """Write the ``GeoDataFrame`` to a file.
@@ -1117,8 +1123,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def set_crs(
         self,
-        crs: CRS = None,
-        epsg: int = None,
+        crs: Optional[Any] = None,
+        epsg: Optional[int] = None,
         inplace: bool = False,
         allow_override: bool = False,
     ):
@@ -1201,8 +1207,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return df
 
     def to_crs(
-        self, crs: CRS = None, epsg: int = None, inplace: bool = False
-    ) -> "GeoDataFrame":
+        self,
+        crs: Optional[Any] = None,
+        epsg: Optional[int] = None,
+        inplace: bool = False,
+    ) -> GeoDataFrame:
         """Transform geometries to a new coordinate reference system.
 
         Transform all geometries in an active geometry column to a different coordinate
@@ -1334,7 +1343,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
         GeoDataFrame.
         """
-        result = super(GeoDataFrame, self).__getitem__(key)
+        result = super().__getitem__(key)
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
@@ -1358,13 +1367,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
-        super(GeoDataFrame, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
     #
     # Implement pandas methods
     #
 
-    def merge(self, *args, **kwargs) -> Union[pd.DataFrame, "GeoDataFrame"]:
+    def merge(self, *args, **kwargs) -> Union[pd.DataFrame, GeoDataFrame]:
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
 
         Returns a ``GeoDataFrame`` if a geometry column is present; otherwise,
@@ -1438,14 +1447,14 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def dissolve(
         self,
-        by: str = None,
+        by: Optional[str] = None,
         aggfunc: Union[Callable, str] = "first",
         as_index: bool = True,
         level=None,
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
-    ) -> "GeoDataFrame":
+    ) -> GeoDataFrame:
         """
         Dissolve geometries within `groupby` into single observation.
         This is accomplished by applying the `unary_union` method
@@ -1560,7 +1569,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, **kwargs) -> "GeoDataFrame":
+    def explode(self, column=None, **kwargs) -> GeoDataFrame:
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1615,7 +1624,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super(GeoDataFrame, self).explode(column, **kwargs)
+            return super().explode(column, **kwargs)
             # TODO: make sure index behaviour is consistent
 
         df_copy = self.copy()
@@ -1646,7 +1655,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     # overrides the pandas astype method to ensure the correct return type
     def astype(
         self, dtype, copy: bool = True, errors="raise", **kwargs
-    ) -> Union[pd.DataFrame, "GeoDataFrame"]:
+    ) -> Union[pd.DataFrame, GeoDataFrame]:
         """
         Cast a pandas object to a specified dtype ``dtype``.
 
@@ -1659,7 +1668,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         -------
         GeoDataFrame or DataFrame
         """
-        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -1675,11 +1684,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         self,
         name: str,
         con,
-        schema: str = None,
+        schema: Optional[str] = None,
         if_exists: str = "fail",
         index: bool = False,
         index_label=None,
-        chunksize: int = None,
+        chunksize: Optional[int] = None,
         dtype=None,
     ):
         """
@@ -1780,7 +1789,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
 
 def _dataframe_set_geometry(
-    self, col, drop=False, inplace=False, crs: Optional[CRS] = None
+    self, col, drop=False, inplace=False, crs: Optional[Any] = None
 ):
     if inplace:
         raise ValueError(
