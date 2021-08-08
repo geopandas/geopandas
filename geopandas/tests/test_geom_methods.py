@@ -229,7 +229,7 @@ class TestGeomMethods:
         result = getattr(gdf, op)
         fcmp(result, expected)
 
-    # TODO reenable for all operations once we use pyproj > 2
+    # TODO re-enable for all operations once we use pyproj > 2
     # def test_crs_warning(self):
     #     # operations on geometries should warn for different CRS
     #     no_crs_g3 = self.g3.copy()
@@ -290,7 +290,7 @@ class TestGeomMethods:
         # binary geo empty result with right GeoSeries
         result = GeoSeries([l1]).intersection(GeoSeries([l2]))
         assert_geoseries_equal(result, expected)
-        # unary geo resulting in emtpy geometry
+        # unary geo resulting in empty geometry
         result = GeoSeries([GeometryCollection()]).convex_hull
         assert_geoseries_equal(result, expected)
 

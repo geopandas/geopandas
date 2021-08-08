@@ -649,7 +649,7 @@ class TestDataFrame:
         df = self.df.iloc[:1].copy()
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
-        # null: ouput the missing entries as JSON null
+        # null: output the missing entries as JSON null
         result = list(df.iterfeatures(na="null"))[0]["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
