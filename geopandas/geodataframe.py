@@ -1298,17 +1298,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
         return self.geometry.estimate_utm_crs(datum_name=datum_name)
 
-    def cast_class(self, result):
-        geo_col = self._geometry_column_name
-        if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
-            result.__class__ = GeoSeries
-        elif isinstance(result, DataFrame) and geo_col in result:
-            result.__class__ = GeoDataFrame
-            result._geometry_column_name = geo_col
-        elif isinstance(result, DataFrame) and geo_col not in result:
-            result.__class__ = DataFrame
-        return result
-
     @staticmethod
     def _class_dispatch(
         result: Union["GeoDataFrame", DataFrame, GeoSeries, Series], geo_col: str
