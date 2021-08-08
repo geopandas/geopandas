@@ -583,9 +583,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ... }
         >>> df = geopandas.GeoDataFrame.from_features(feature_coll)
         >>> df
-                          geometry   col1
-        0  POINT (1.00000 2.00000)  name1
-        1  POINT (2.00000 1.00000)  name2
+                          geometry   col1  id
+        0  POINT (1.00000 2.00000)  name1   0
+        1  POINT (2.00000 1.00000)  name2   1
 
         """
         # Handle feature collections
