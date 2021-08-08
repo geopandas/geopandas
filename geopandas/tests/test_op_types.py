@@ -107,3 +107,13 @@ class TestDataFrame:
 
         assert type(self.df.apply(lambda x: x)) is GeoDataFrame
         assert type(self.df[["value1", "value2"]].apply(lambda x: x)) is pd.DataFrame
+
+    def test_convert_dtypes(self):
+        assert type(self.df[["value1", "value2"]].convert_dtypes()) is pd.DataFrame
+        res1 = self.df[["geometry"]].convert_dtypes()
+        assert type(res1) is GeoDataFrame
+        self._check_metadata(res1)
+        assert type(self.df[["value1"]].convert_dtypes()) is pd.DataFrame
+        res2 = self.df[["geometry2"]].convert_dtypes()
+        assert type(res2) is GeoDataFrame
+        self._check_metadata(res2, geometry_column_name="geometry2")

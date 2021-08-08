@@ -59,8 +59,13 @@ class _GeoiLocIndexer(_iLocIndexer):
         return _class_dispatch(result, geo_col=self._geo_col)
 
 
+NO_CRS_INFO = object()
+
+
 def _class_dispatch(
-    result: Union["GeoDataFrame", DataFrame, GeoSeries, Series], geo_col: str
+    result: Union["GeoDataFrame", DataFrame, GeoSeries, Series],
+    geo_col: str,
+    geo_col_crs=NO_CRS_INFO,
 ):
     """
     Ensure result is a Geo object if it has geometry, else is a pure pandas object.
@@ -77,6 +82,8 @@ def _class_dispatch(
         if geo_col in result:
             result.__class__ = GeoDataFrame
             result._geometry_column_name = geo_col
+            if geo_col_crs != NO_CRS_INFO:
+                result.crs = geo_col_crs
         # This is awkward, was using select dtypes but it uses iloc, and this
         # function is used to cast the output of iloc, so can't do that
         # Perhaps alternative with result.dtypes==GeometryDType? didn't work though
@@ -1376,7 +1383,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             self: Union["GeoDataFrame", DataFrame], *method_args, **method_kwargs
         ):
             result = method(self, *method_args, **method_kwargs)
-            return _class_dispatch(result, geo_col=self._geometry_column_name)
+            return _class_dispatch(
+                result, geo_col=self._geometry_column_name, geo_col_crs=self.crs
+            )
 
         return inner
 
@@ -1407,6 +1416,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     #
     # Implement pandas methods
     #
+
+    convert_dtypes = _class_dispatch_decorator(DataFrame.convert_dtypes)
 
     @property
     def loc(self):
