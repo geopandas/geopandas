@@ -40,7 +40,7 @@ class _GeoLocIndexer(_LocIndexer):
 
     def __getitem__(self, item):
         result = super(_LocIndexer, self.df.loc).__getitem__(item)
-        return GeoDataFrame._class_dispatch(result, geo_col=self._geo_col)
+        return _class_dispatch(result, geo_col=self._geo_col)
 
 
 class _GeoiLocIndexer(_iLocIndexer):
@@ -51,8 +51,45 @@ class _GeoiLocIndexer(_iLocIndexer):
 
     def __getitem__(self, item):
         result = super(_iLocIndexer, self.df.iloc).__getitem__(item)
-        # result = self.df.loc.__getitem__(item)
-        return GeoDataFrame._class_dispatch(result, geo_col=self._geo_col)
+        return _class_dispatch(result, geo_col=self._geo_col)
+
+
+def _class_dispatch(
+    result: Union["GeoDataFrame", DataFrame, GeoSeries, Series], geo_col: str
+):
+    """
+    Ensure result is a Geo object if it has geometry, else is a pure pandas object.
+
+    This is based upon:
+    * GeoDataFrame._geometry_column_name is/ isn't in the result
+    * Series containing geometry -> GeoSeries
+    * DataFrame containing a single geometry column -> GeoDataFrame
+    * DataFrame with geometry columns (plural) GeoDataFrame with no geom col set
+    """
+    if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
+        result.__class__ = GeoSeries
+    elif isinstance(result, DataFrame):
+        if geo_col in result:
+            result.__class__ = GeoDataFrame
+            result._geometry_column_name = geo_col
+        # This is awkward, was using select dtypes but it uses iloc, and this
+        # function is used to cast the output of iloc, so can't do that
+        # Perhaps alternative with result.dtypes==GeometryDType? didn't work though
+        elif len([i for i in result.columns if is_geometry_type(result[i])]) > 0:
+            result.__class__ = GeoDataFrame
+            if len(result.columns) == 1:
+                result._geometry_column_name = result.columns[0]
+            # TODO unclear what to do if >1 column. geometry_col is None
+            # with warning?, first of geom cols with warning?
+            # TODO else behaviour is untested
+            else:
+                result._geometry_column_name = None
+        else:
+            result.__class__ = DataFrame
+    # TODO should this just be else?
+    elif isinstance(result, DataFrame) and geo_col not in result:
+        result.__class__ = DataFrame
+    return result
 
 
 def _ensure_geometry(data, crs=None):
@@ -1329,69 +1366,23 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
         return self.geometry.estimate_utm_crs(datum_name=datum_name)
 
-    @staticmethod
-    def _class_dispatch(
-        result: Union["GeoDataFrame", DataFrame, GeoSeries, Series], geo_col: str
-    ):
-        if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
-            result.__class__ = GeoSeries
-        elif isinstance(result, DataFrame):
-            if geo_col in result:
-                result.__class__ = GeoDataFrame
-                result._geometry_column_name = geo_col
-            # seems unfortunate to have to construct df, couldn't get
-            # result.dtypes==GeometryDType to work correctly though
-            # This is awkward, was using select dtypes but it uses iloc, and this
-            # function is used to cast the output of iloc, so can't do that
-            elif (
-                len(
-                    [
-                        i
-                        for i in result.columns
-                        if isinstance(result[i].dtype, GeometryDtype)
-                    ]
-                )
-                > 0
-            ):
-                result.__class__ = GeoDataFrame
-                if len(result.columns) == 1:
-                    result._geometry_column_name = result.columns[0]
-                # TODO unclear what to do if >1 column. geometry_col is None
-                # with warning?, first of geom cols with warning?
-                # TODO else behaviour is untested
-                else:
-                    result._geometry_column_name = None
-            else:
-                result.__class__ = DataFrame
-        # TODO should this just be else?
-        elif isinstance(result, DataFrame) and geo_col not in result:
-            result.__class__ = DataFrame
-        return result
-
-    def class_dispatch_decorator(method):
+    def _class_dispatch_decorator(method):
         def inner(
             self: Union["GeoDataFrame", DataFrame], *method_args, **method_kwargs
         ):
             result = method(self, *method_args, **method_kwargs)
-            return self._class_dispatch(result, geo_col=self._geometry_column_name)
+            return _class_dispatch(result, geo_col=self._geometry_column_name)
 
         return inner
 
-    @class_dispatch_decorator
+    @_class_dispatch_decorator
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
         GeoDataFrame.
         """
-        result = super().__getitem__(key)
-        return result
-
-    # Squeeze should always return a GeoSeries (since if the parent we a DataFrame,
-    # DataFrame.squeeze would be called directly - so this could be done explicitly
-    squeeze = class_dispatch_decorator(DataFrame.squeeze)
-    drop = class_dispatch_decorator(DataFrame.drop)
-    reindex = class_dispatch_decorator(DataFrame.reindex)  # this one could use finalize
+        return super().__getitem__(key)
 
     def __setitem__(self, key, value):
         """
@@ -1411,7 +1402,15 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     #
     # Implement pandas methods
     #
-    # @DataFrame.loc.getter
+
+    # Squeeze should always return a GeoSeries (since if the parent we a DataFrame,
+    # DataFrame.squeeze would be called directly - so this could be done explicitly
+    # TODO do these inherit docstrings? probably not...
+    squeeze = _class_dispatch_decorator(DataFrame.squeeze)
+    drop = _class_dispatch_decorator(DataFrame.drop)
+    # reindex also could use finalize instead of this
+    reindex = _class_dispatch_decorator(DataFrame.reindex)
+
     @property
     def loc(self):
         return _GeoLocIndexer("loc", self, self._geometry_column_name)
