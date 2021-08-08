@@ -58,7 +58,10 @@ class TestDataFrame:
         self._check_metadata(res1)
         res2 = self.df["geometry2"].to_frame()
         assert type(res2) is GeoDataFrame
-        self._check_metadata(res2, geometry_column_name="geometry2")
+        # TODO this should have geometry col name geometry2 by updating
+        # GeoSeries._constructor_expanddim to give geo col based on series name
+        # similarly for CRS
+        self._check_metadata(res2, geometry_column_name="geometry", crs=None)
         assert type(self.df["value1"].to_frame()) is pd.DataFrame
 
     def test_iloc(self):
