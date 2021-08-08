@@ -310,8 +310,9 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
             joined.index.name = left_index_name
 
     else:  # how == 'right':
+        left_geo_col_name = left_df.geometry.name
         joined = (
-            left_df.drop(left_df.geometry.name, axis=1)
+            left_df.drop(left_geo_col_name, axis=1)
             .merge(
                 indices.merge(
                     right_df, left_on="_key_right", right_index=True, how="right"
@@ -323,6 +324,7 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
         )
+        joined = GeoDataFrame(joined, geometry=left_geo_col_name)
         if isinstance(index_right, list):
             joined.index.names = right_index_name
         else:

@@ -33,24 +33,29 @@ class _GeoLocIndexer(_LocIndexer):
     info.
     """
 
-    def __init__(self, name: str, df: "GeoDataFrame", geo_col: str):
+    def __init__(self, name: str, df: "GeoDataFrame"):
         self.df = df
-        self._geo_col = geo_col
+        self._geo_col = df._geometry_column_name
         super().__init__(name=name, obj=df)
 
     def __getitem__(self, item):
         result = super(_LocIndexer, self.df.loc).__getitem__(item)
-        return _class_dispatch(result, geo_col=self._geo_col)
+        if self._geo_col is not None:
+            return _class_dispatch(result, geo_col=self._geo_col)
+        else:
+            return result
 
 
 class _GeoiLocIndexer(_iLocIndexer):
-    def __init__(self, name: str, df: "GeoDataFrame", geo_col: str):
+    def __init__(self, name: str, df: "GeoDataFrame"):
         self.df = df
-        self._geo_col = geo_col
+        self._geo_col = df._geometry_column_name
         super().__init__(name=name, obj=df)
 
     def __getitem__(self, item):
         result = super(_iLocIndexer, self.df.iloc).__getitem__(item)
+        # still run this even if geo_col is None as we could
+        # have Series -> GeoSeries promotion
         return _class_dispatch(result, geo_col=self._geo_col)
 
 
@@ -1413,11 +1418,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     @property
     def loc(self):
-        return _GeoLocIndexer("loc", self, self._geometry_column_name)
+        return _GeoLocIndexer("loc", self)
 
     @property
     def iloc(self):
-        return _GeoiLocIndexer("iloc", self, self._geometry_column_name)
+        return _GeoiLocIndexer("iloc", self)
 
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.

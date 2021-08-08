@@ -70,6 +70,10 @@ def dfs(request):
     )
     part1["_merge"] = [0, 1, 2]
     part2["_merge"] = [0, 0, 1, 3]
+    # TODO this replaces geometry -> (geometry_x, geometry_y) and so the active
+    #   geometry column "geometry" no longer exists
+    #   Under new behaviour, drop will then drop the knowledge of the active geometry
+    #   geometry col
     exp = pd.merge(part1, part2, on="_merge", how="outer")
     expected["intersects"] = exp.drop("_merge", axis=1).copy()
 
@@ -136,8 +140,7 @@ class TestSpatialJoin:
                 columns={"df2_ix1": "index_right0", "df2_ix2": "index_right1"}
             )
             exp.index.names = df1.index.names
-
-        assert_frame_equal(res, exp)
+        assert_frame_equal(res, GeoDataFrame(exp))
 
     @pytest.mark.parametrize(
         "dfs",
@@ -187,7 +190,7 @@ class TestSpatialJoin:
             )
             exp.index.names = df1.index.names
 
-        assert_frame_equal(res, exp)
+        assert_frame_equal(res, GeoDataFrame(exp))
 
     def test_empty_join(self):
         # Check joins resulting in empty gdfs.
