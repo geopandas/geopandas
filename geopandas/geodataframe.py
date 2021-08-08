@@ -1673,11 +1673,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = (
-            df_copy.drop(df_copy._geometry_column_name, axis=1)
-            .join(exploded_geom)
-            .__finalize__(self)
-        )
+        df = df_copy.drop(df_copy._geometry_column_name, axis=1).join(exploded_geom)
 
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
@@ -1686,8 +1682,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         if "__level_1" in df.columns:
             df = df.rename(columns={"__level_1": "level_1"})
-
-        geo_df = df.set_geometry(self._geometry_column_name)
+        # df is a DataFrame, monkey patched DataFrame.set_geometry does not propagate
+        # .attrs, need to call finalize to fix
+        geo_df = df.set_geometry(self._geometry_column_name).__finalize__(self)
         return geo_df
 
     # overrides the pandas astype method to ensure the correct return type
