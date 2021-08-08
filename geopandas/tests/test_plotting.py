@@ -1,6 +1,5 @@
 from distutils.version import LooseVersion
 import itertools
-from typing import Optional
 import warnings
 
 import numpy as np
@@ -1608,7 +1607,7 @@ def test_polygon_patch():
         assert len(path.vertices) == len(path.codes) == 198
 
 
-def _check_colors(N, actual_colors, expected_colors, alpha: Optional[float] = None):
+def _check_colors(N, actual_colors, expected_colors, alpha=None):
     """
     Asserts that the members of `collection` match the `expected_colors`
     (in order)
