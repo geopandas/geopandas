@@ -303,7 +303,7 @@ class TestInterface(extension_tests.BaseInterfaceTests):
         assert_array_equal(result, expected)
 
     def test_contains(self, data, data_missing):
-        # overrided due to the inconsistency between
+        # overridden due to the inconsistency between
         # GeometryDtype.na_value = np.nan
         # and None being used as NA in array
 
@@ -399,7 +399,7 @@ def all_arithmetic_operators(request):
     """
     Fixture for dunder names for common arithmetic operations
 
-    Adapted to excluse __sub__, as this is implemented as "difference".
+    Adapted to exclude __sub__, as this is implemented as "difference".
     """
     return request.param
 

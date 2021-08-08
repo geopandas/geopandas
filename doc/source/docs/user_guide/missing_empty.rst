@@ -67,7 +67,7 @@ you can use the :attr:`GeoSeries.is_empty` attribute:
 
     s.is_empty
 
-To get only the actual geometry objects that are neiter missing nor empty,
+To get only the actual geometry objects that are neither missing nor empty,
 you can use a combination of both:
 
 .. ipython:: python

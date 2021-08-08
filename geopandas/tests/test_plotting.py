@@ -1,5 +1,6 @@
 from distutils.version import LooseVersion
 import itertools
+from typing import Optional
 import warnings
 
 import numpy as np
@@ -1563,7 +1564,7 @@ def test_column_values():
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
 
-    # Test with continous values
+    # Test with continuous values
     ax = df.plot(column="values")
     colors = ax.collections[0].get_facecolors()
     ax = df.plot(column=df["values"])
@@ -1583,7 +1584,7 @@ def test_column_values():
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 
-    # Check raised error: is df rows number equal to column legth?
+    # Check raised error: is df rows number equal to column length?
     with pytest.raises(ValueError, match="different number of rows"):
         ax = df.plot(column=np.array([1, 2, 3]))
 
@@ -1607,7 +1608,7 @@ def test_polygon_patch():
         assert len(path.vertices) == len(path.codes) == 198
 
 
-def _check_colors(N, actual_colors, expected_colors, alpha=None):
+def _check_colors(N, actual_colors, expected_colors, alpha: Optional[float] = None):
     """
     Asserts that the members of `collection` match the `expected_colors`
     (in order)
