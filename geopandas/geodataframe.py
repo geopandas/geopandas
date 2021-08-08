@@ -98,9 +98,6 @@ def _class_dispatch(
                 result._geometry_column_name = None
         else:
             result.__class__ = DataFrame
-    # TODO should this just be else?
-    elif isinstance(result, DataFrame) and geo_col not in result:
-        result.__class__ = DataFrame
     return result
 
 
