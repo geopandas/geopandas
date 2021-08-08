@@ -26,12 +26,12 @@ class TestDataFrame:
                     "geometry": Point(x, y),
                     "value1": x + y,
                     "value2": x * y,
-                    "geometry2": Point(x, y),
                 }
                 for x, y in zip(range(N), range(N))
             ],
             crs=self.crs,
         )
+        self.df2["geometry2"] = self.df2["geometry"]  # want geometry2 to be a geoseries
         self.df3 = read_file(
             os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
         )
@@ -42,14 +42,18 @@ class TestDataFrame:
     def test_df_init(self):
         assert type(self.df2) is GeoDataFrame
         assert self.df2.crs == self.crs
+        print(type(self.df2["geometry2"]))
+        print(type(self.df2["geometry"]))
 
-    def test_getitem(self):
+    def test_getitem_passing(self):
         assert type(self.df2[["value1", "value2"]]) is pd.DataFrame
         assert type(self.df2["geometry"]) is GeoSeries
-        assert type(self.df2["geometry2"]) is GeoSeries
         assert type(self.df2["value1"]) is pd.Series
         assert type(self.df2[["geometry"]]) is GeoDataFrame
         assert type(self.df2[["value1"]]) is pd.DataFrame
+
+    def test_getitem(self):
+        assert type(self.df2["geometry2"]) is GeoSeries
         assert type(self.df2[["geometry2"]]) is GeoDataFrame
 
     def test_loc(self):
