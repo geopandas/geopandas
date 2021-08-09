@@ -172,6 +172,8 @@ class BaseSpatialIndex:
         """
         Returns the nearest geometry to the input geometries.
 
+        Requires pygeos >= 0.10
+
         Parameters
         ----------
         geometry : {shapely geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS
