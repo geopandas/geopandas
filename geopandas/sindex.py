@@ -209,7 +209,7 @@ class BaseSpatialIndex:
         [[0], [1]]
         >>> s.sindex.nearest([box(4.9, 4.9, 5.1, 5.1)]).tolist()
         [[0], [5]]
-        >>> s2 = geopandas.GeoSeries(geopandas.points_from_xy([7.6, 10], [7.6, 10])
+        >>> s2 = geopandas.GeoSeries(geopandas.points_from_xy([7.6, 10], [7.6, 10]))
         >>> s2
         0    POINT (7.60000 7.60000)
         1    POINT (10.00000 10.00000)
