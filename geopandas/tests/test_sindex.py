@@ -686,7 +686,7 @@ class TestPygeosInterface:
             df.sindex.nearest(Point(0, 0))
 
     @pytest.mark.skipif(
-        not compat.PYGEOS_GE_010,
+        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize(
