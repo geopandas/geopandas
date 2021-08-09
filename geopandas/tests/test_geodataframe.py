@@ -649,7 +649,7 @@ class TestDataFrame:
         df = self.df.iloc[:1].copy()
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
-        # null: ouput the missing entries as JSON null
+        # null: output the missing entries as JSON null
         result = list(df.iterfeatures(na="null"))[0]["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
@@ -1007,6 +1007,24 @@ class TestConstructor:
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
+
+    def test_repeat_geo_col(self):
+        df = pd.DataFrame(
+            [
+                {"geometry": Point(x, y), "geom": Point(x, y)}
+                for x, y in zip(range(3), range(3))
+            ],
+        )
+        # explicitly prevent construction of gdf with repeat geometry column names
+        # two columns called "geometry", geom col inferred
+        df2 = df.rename(columns={"geom": "geometry"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df2)
+        # ensure case is caught when custom geom column name is used
+        # two columns called "geom", geom col explicit
+        df3 = df.rename(columns={"geometry": "geom"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df3, geometry="geom")
 
 
 def test_geodataframe_crs():

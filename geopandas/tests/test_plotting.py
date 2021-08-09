@@ -22,6 +22,7 @@ from shapely.geometry import (
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
 import geopandas._compat as compat
+from geopandas.plotting import GeoplotAccessor
 
 import pytest
 
@@ -32,7 +33,11 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    MPL_DECORATORS = True
+    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+
+        MPL_DECORATORS = True
+    else:
+        MPL_DECORATORS = False
 except ImportError:
     MPL_DECORATORS = False
 
@@ -1475,7 +1480,6 @@ class TestPlotCollections:
         ax.cla()
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_025, reason="requires pandas > 0.24")
 class TestGeoplotAccessor:
     def setup_method(self):
         geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
@@ -1499,10 +1503,8 @@ class TestGeoplotAccessor:
         getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
 
     _pandas_kinds = []
-    if compat.PANDAS_GE_025:
-        from geopandas.plotting import GeoplotAccessor
 
-        _pandas_kinds = GeoplotAccessor._pandas_kinds
+    _pandas_kinds = GeoplotAccessor._pandas_kinds
 
     if MPL_DECORATORS:
 
@@ -1561,7 +1563,7 @@ def test_column_values():
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
 
-    # Test with continous values
+    # Test with continuous values
     ax = df.plot(column="values")
     colors = ax.collections[0].get_facecolors()
     ax = df.plot(column=df["values"])
@@ -1581,7 +1583,7 @@ def test_column_values():
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 
-    # Check raised error: is df rows number equal to column legth?
+    # Check raised error: is df rows number equal to column length?
     with pytest.raises(ValueError, match="different number of rows"):
         ax = df.plot(column=np.array([1, 2, 3]))
 

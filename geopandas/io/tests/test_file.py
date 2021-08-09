@@ -66,7 +66,7 @@ driver_ext_pairs = [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson"), ("GPKG", 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
-    """ Test to_file and from_file """
+    """Test to_file and from_file"""
     tempfilename = os.path.join(str(tmpdir), "boros." + ext)
     df_nybb.to_file(tempfilename, driver=driver)
     # Read layer back in
@@ -87,7 +87,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
-    """ Test to_file and from_file """
+    """Test to_file and from_file"""
     temppath = pathlib.Path(os.path.join(str(tmpdir), "boros." + ext))
     df_nybb.to_file(temppath, driver=driver)
     # Read layer back in
@@ -106,14 +106,12 @@ def test_to_file_bool(tmpdir, driver, ext):
             "a": [1, 2, 3],
             "b": [True, False, True],
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
-        }
+        },
+        crs=4326,
     )
 
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
-    if driver == "GeoJSON":
-        # geojson by default assumes epsg:4326
-        result.crs = None
     if driver == "ESRI Shapefile":
         # Shapefile does not support boolean, so is read back as int
         df["b"] = df["b"].astype("int64")
@@ -125,7 +123,7 @@ def test_to_file_datetime(tmpdir):
     tempfilename = os.path.join(str(tmpdir), "test_datetime.gpkg")
     point = Point(0, 0)
     now = datetime.datetime.now()
-    df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs={})
+    df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs=4326)
     df.to_file(tempfilename, driver="GPKG")
     df_read = read_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
@@ -158,7 +156,7 @@ def test_to_file_with_poly_z(tmpdir, ext, driver):
 
 
 def test_to_file_types(tmpdir, df_points):
-    """ Test various integer type columns (GH#93) """
+    """Test various integer type columns (GH#93)"""
     tempfilename = os.path.join(str(tmpdir), "int.shp")
     int_types = [
         np.int8,
@@ -247,7 +245,7 @@ def test_to_file_column_len(tmpdir, df_points):
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
-    """ Test to_file with append mode and from_file """
+    """Test to_file with append mode and from_file"""
     from fiona import supported_drivers
 
     if "a" not in supported_drivers[driver]:
@@ -273,6 +271,30 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert len(df) == (2 * 2)
     expected = pd.concat([df_null] * 2, ignore_index=True)
     assert_geodataframe_equal(df, expected, check_less_precise=True)
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_empty_crs(tmpdir, driver, ext):
+    """Test handling of undefined CRS with GPKG driver (GH #1975)."""
+    if driver == "GPKG":
+        pytest.xfail("GPKG is read with Undefined geographic SRS.")
+
+    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    df = GeoDataFrame(
+        {
+            "a": [1, 2, 3],
+            "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
+        },
+    )
+
+    df.to_file(tempfilename, driver=driver)
+    result = read_file(tempfilename)
+
+    if driver == "GeoJSON":
+        # geojson by default assumes epsg:4326
+        df.crs = "EPSG:4326"
+
+    assert_geodataframe_equal(result, df)
 
 
 # -----------------------------------------------------------------------------
@@ -390,7 +412,8 @@ def test_infer_zipped_file():
     gdf = read_file(path)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
-    # Check that it can sucessfully add a zip scheme to a path that already has a scheme
+    # Check that it can successfully add a zip scheme to a path that already has a
+    # scheme
     gdf = read_file("file+file://" + path)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 

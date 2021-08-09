@@ -797,7 +797,10 @@ def buffer(data, distance, resolution=16, **kwargs):
 
 def interpolate(data, distance, normalized=False):
     if compat.USE_PYGEOS:
-        return pygeos.line_interpolate_point(data, distance, normalize=normalized)
+        try:
+            return pygeos.line_interpolate_point(data, distance, normalized=normalized)
+        except TypeError:  # support for pygeos<0.9
+            return pygeos.line_interpolate_point(data, distance, normalize=normalized)
     else:
         out = np.empty(len(data), dtype=object)
         if isinstance(distance, np.ndarray):
@@ -861,7 +864,10 @@ def normalize(data):
 
 def project(data, other, normalized=False):
     if compat.USE_PYGEOS:
-        return pygeos.line_locate_point(data, other, normalize=normalized)
+        try:
+            return pygeos.line_locate_point(data, other, normalized=normalized)
+        except TypeError:  # support for pygeos<0.9
+            return pygeos.line_locate_point(data, other, normalize=normalized)
     else:
         return _binary_op("project", data, other, normalized=normalized)
 
