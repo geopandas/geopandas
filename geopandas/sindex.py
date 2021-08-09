@@ -184,8 +184,39 @@ class BaseSpatialIndex:
 
         Returns
         -------
-        matches : ndarray of shape (n_input_geometries, )
-            Integer indices for matching geometries from the spatial index.
+        matches : ndarray with shape (2, n)
+            The first subarray contains input geometry integer indexes.
+            The second subarray contains spatial index geometry integer indexes.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.nearest(Point(1, 1)).tolist()
+        [[0], [1]]
+        >>> s.sindex.nearest([box(4.9, 4.9, 5.1, 5.1)]).tolist()
+        [[0], [5]]
+        >>> s2 = geopandas.GeoSeries(geopandas.points_from_xy([7.6, 10], [7.6, 10])
+        >>> s2
+        0    POINT (7.60000 7.60000)
+        1    POINT (10.00000 10.00000)
+        dtype: geometry
+
+        >>> s.sindex.nearest(s2).tolist()
+        [[0, 1], [8, 9]]
         """
         raise NotImplementedError
 
