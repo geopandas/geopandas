@@ -490,9 +490,41 @@ if compat.HAS_RTREE:
                 input_geometry_index.extend([i] * len(res))
             return np.vstack([input_geometry_index, tree_index])
 
-        @doc(BaseSpatialIndex.nearest)
-        def nearest(self, geometry):
-            raise NotImplementedError("sindex.nearest requires pygeos >= 0.10")
+        def nearest(self, coordinates, num_results=1, objects=False):
+            """
+            Returns the nearest object or objects to the given coordinates.
+
+            Requires rtree, and passes parameters directly to
+            rtree.index.Index.nearest.
+
+            Parameters
+            ----------
+            coordinates : sequence or array
+                This may be an object that satisfies the numpy array protocol,
+                providing the index’s dimension * 2 coordinate pairs
+                representing the mink and maxk coordinates in each dimension
+                defining the bounds of the query window. For a TPR-Tree, this
+                must be a 3-element sequence including not only the positional
+                coordinate pairs but also the velocity pairs minvk and maxvk
+                and a time pair for the time range as a float.
+            num_results : integer
+                The number of results to return nearest to the given
+                coordinates. If two index entries are equidistant, both are
+                returned. This property means that num_results may return more
+                items than specified
+            objects : True / False / ‘raw’
+                If True, the nearest method will return index objects that were
+                pickled when they were stored with each index entry, as well as
+                the id and bounds of the index entries. If ‘raw’, it will
+                return the object as entered into the database without the
+            rtree.index.Item wrapper.
+            """
+            warnings.warn(
+                "Directly using sindex.nearest was previously undocumented."
+                " Calling into rtree.index.Index.nearest, with different"
+                " behaviour from the pygeos implementation."
+            )
+            return super().nearest(coordinates, num_results=1, objects=False)
 
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
