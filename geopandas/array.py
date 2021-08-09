@@ -837,10 +837,15 @@ class GeometryArray(ExtensionArray):
                 minx, miny, maxx, maxy = transformer.transform_bounds(
                     minx, miny, maxx, maxy
                 )
+                # crossed the antimeridian
                 if minx > maxx:
-                    # crossed the antimeridian
-                    minx = -180
-                    maxx = -180
+                    # shift maxx from [-180,180] to [0,360]
+                    # so both numbers are positive for center calculation
+                    # Example: -175 to 185
+                    maxx += 360
+                    x_center = np.mean([minx, maxx])
+                    # shift back to [-180,180]
+                    x_center = ((x_center + 180) % 360) - 180
             else:
                 lon, lat = transformer.transform(
                     (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
@@ -848,8 +853,9 @@ class GeometryArray(ExtensionArray):
                 x_center = np.mean(lon)
                 y_center = np.mean(lat)
 
-        if x_center is None and y_center is None:
+        if x_center is None:
             x_center = np.mean([minx, maxx])
+        if y_center is None:
             y_center = np.mean([miny, maxy])
 
         utm_crs_list = query_utm_crs_info(

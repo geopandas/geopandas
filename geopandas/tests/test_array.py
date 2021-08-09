@@ -947,7 +947,7 @@ class TestEstimateUtmCrs:
             ],
             crs="EPSG:3851",
         )
-        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32701")
+        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32760")
 
     @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):
