@@ -610,15 +610,11 @@ if compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(self, geometry):
-            # note - could use _as_geometry_array helper here after #1865
             if isinstance(geometry, np.ndarray):
-                # we have a numpy array, that's okay
                 pass
             elif isinstance(geometry, BaseGeometry):
-                # convert from shapely geometry
                 geometry = array._shapely_to_geom(geometry)
             elif isinstance(geometry, list):
-                # convert from a list of shapely geometries, or pass through
                 geometry = [
                     array._shapely_to_geom(el) if isinstance(el, BaseGeometry) else el
                     for el in geometry
