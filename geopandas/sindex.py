@@ -490,6 +490,10 @@ if compat.HAS_RTREE:
                 input_geometry_index.extend([i] * len(res))
             return np.vstack([input_geometry_index, tree_index])
 
+        @doc(BaseSpatialIndex.nearest)
+        def nearest(self, geometry):
+            raise NotImplementedError("sindex.nearest requires pygeos >= 0.10")
+
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
             return super().intersection(coordinates, objects=False)
@@ -610,6 +614,9 @@ if compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(self, geometry):
+            if not compat.PYGEOS_GE_010:
+                raise NotImplementedError("sindex.nearest requires pygeos >= 0.10")
+
             if isinstance(geometry, np.ndarray):
                 pass
             elif isinstance(geometry, BaseGeometry):

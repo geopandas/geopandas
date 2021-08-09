@@ -676,12 +676,12 @@ class TestPygeosInterface:
     # ------------------------- `nearest` tests ------------------------- #
     @pytest.mark.skipif(
         compat.PYGEOS_GE_010,
-        reason=("Test expected error if without PyGEOS >= 0.10"),
+        reason=("PyGEOS >= 0.10 supports sindex.nearest"),
     )
     def test_no_nearest(self):
         df = geopandas.GeoDataFrame({"geometry": []})
         with pytest.raises(
-            AttributeError, match="Expected the spatial index to implement `nearest`"
+            NotImplementedError, match="sindex.nearest requires pygeos >= 0.10"
         ):
             df.sindex.nearest(Point(0, 0))
 
