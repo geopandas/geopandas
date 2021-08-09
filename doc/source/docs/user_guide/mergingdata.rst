@@ -11,11 +11,11 @@ Merging Data
 
 There are two ways to combine datasets in *geopandas* -- attribute joins and spatial joins.
 
-In an attribute join, a :py:class:`GeoSeries` or :py:class:`GeoDataFrame` is
-combined with a regular :py:class:`pandas.Series` or :py:class:`pandas.DataFrame` based on a
+In an attribute join, a :class:`GeoSeries` or :class:`GeoDataFrame` is
+combined with a regular :class:`pandas.Series` or :class:`pandas.DataFrame` based on a
 common variable. This is analogous to normal merging or joining in *pandas*.
 
-In a Spatial Join, observations from two :py:class:`GeoSeries` or :py:class:`GeoDataFrame`
+In a Spatial Join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
 are combined based on their spatial relationship to one another.
 
 In the following examples, we use these datasets:
@@ -37,7 +37,7 @@ In the following examples, we use these datasets:
 Appending
 ---------
 
-Appending :py:class:`GeoDataFrame` and :py:class:`GeoSeries` uses pandas ``append`` methods.
+Appending :class:`GeoDataFrame` and :class:`GeoSeries` uses pandas :meth:`~pandas.DataFrame.append` methods.
 Keep in mind, that appended geometry columns needs to have the same CRS.
 
 .. ipython:: python
@@ -54,14 +54,14 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
 Attribute Joins
 ----------------
 
-Attribute joins are accomplished using the ``merge`` method. In general, it is recommended
-to use the ``merge`` method called from the spatial dataset. With that said, the stand-alone
-``merge`` function will work if the :py:class:`GeoDataFrame` is in the ``left`` argument;
-if a :py:class:`pandas.DataFrame` is in the ``left`` argument and a :py:class:`GeoDataFrame`
-is in the ``right`` position, the result will no longer be a :py:class:`GeoDataFrame`.
+Attribute joins are accomplished using the :meth:`~pandas.DataFrame.merge` method. In general, it is recommended
+to use the ``merge()`` method called from the spatial dataset. With that said, the stand-alone
+:func:`pandas.merge` function will work if the :class:`GeoDataFrame` is in the ``left`` argument;
+if a :class:`~pandas.DataFrame` is in the ``left`` argument and a :class:`GeoDataFrame`
+is in the ``right`` position, the result will no longer be a :class:`GeoDataFrame`.
 
-For example, consider the following merge that adds full names to a :py:class:`GeoDataFrame`
-that initially has only ISO codes for each country by merging it with a :py:class:`pandas.DataFrame`.
+For example, consider the following merge that adds full names to a :class:`GeoDataFrame`
+that initially has only ISO codes for each country by merging it with a :class:`~pandas.DataFrame`.
 
 .. ipython:: python
 
@@ -105,7 +105,7 @@ Binary Predicate Joins
 
 Binary predicte joins are available via ``sjoin()``.
 
-:py:class:`sjoin` has two core arguments: ``how`` and ``op``.
+:func:`sjoin` has two core arguments: ``how`` and ``op``.
 
 **op**
 
@@ -129,15 +129,15 @@ defined in the
 **how**
 
 The `how` argument specifies the type of join that will occur and which geometry is retained in the resultant
-:py:class:`GeoDataFrame`. It accepts the following options:
+:class:`GeoDataFrame`. It accepts the following options:
 
-* ``left``: use the index from the first (or `left_df`) :py:class:`GeoDataFrame` that you provide
-  to ``sjoin``; retain only the `left_df` geometry column
+* ``left``: use the index from the first (or `left_df`) :class:`GeoDataFrame` that you provide
+  to :func:`sjoin`; retain only the `left_df` geometry column
 * ``right``: use index from second (or `right_df`); retain only the `right_df` geometry column
-* ``inner``: use intersection of index values from both :py:class:`GeoDataFrame`; retain only the `left_df` geometry column
+* ``inner``: use intersection of index values from both :class:`GeoDataFrame`; retain only the `left_df` geometry column
 
 Note more complicated spatial relationships can be studied by combining geometric operations with spatial join.
-To find all polygons within a given distance of a point, for example, one can first use the ``buffer`` method to expand each
+To find all polygons within a given distance of a point, for example, one can first use the :meth:`~geopandas.GeoSeries.buffer` method to expand each
 point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.
 
 Nearest Joins

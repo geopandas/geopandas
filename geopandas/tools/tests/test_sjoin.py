@@ -491,6 +491,17 @@ class TestSpatialJoinNYBB:
         assert sjoin(empty, self.pointdf, how="inner", op=op).empty
         assert sjoin(empty, self.pointdf, how="left", op=op).empty
 
+    def test_empty_sjoin_return_duplicated_columns(self):
+
+        nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+        nybb2 = nybb.copy()
+        nybb2.geometry = nybb2.translate(200000)  # to get non-overlapping
+
+        result = geopandas.sjoin(nybb, nybb2)
+
+        assert "BoroCode_right" in result.columns
+        assert "BoroCode_left" in result.columns
+
 
 class TestSpatialJoinNaturalEarth:
     def setup_method(self):

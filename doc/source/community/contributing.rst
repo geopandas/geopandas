@@ -44,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.6+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.7+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 
@@ -108,7 +108,7 @@ This creates the directory `geopandas-yourname` and connects your repository to
 the upstream (main project) *GeoPandas* repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
-submitted. The test suite will also autmatically run on your branch so you can
+submitted. The test suite will also automatically run on your branch so you can
 check it prior to submitting the pull request.
 
 Creating a branch

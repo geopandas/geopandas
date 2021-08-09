@@ -365,7 +365,7 @@ def test_clip_no_box_overlap(pointsoutside_nooverlap_gdf, single_rectangle_gdf):
 
 
 def test_clip_box_overlap(pointsoutside_overlap_gdf, single_rectangle_gdf):
-    """Test clip when intersection is emtpy and boxes do overlap."""
+    """Test clip when intersection is empty and boxes do overlap."""
     clipped = clip(pointsoutside_overlap_gdf, single_rectangle_gdf)
     assert len(clipped) == 0
 

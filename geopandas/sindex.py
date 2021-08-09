@@ -1,4 +1,3 @@
-from textwrap import dedent
 import warnings
 
 from shapely.geometry.base import BaseGeometry
@@ -6,6 +5,7 @@ import pandas as pd
 import numpy as np
 
 from . import _compat as compat
+from ._decorator import doc
 
 
 def _get_sindex_class():
@@ -170,7 +170,7 @@ class BaseSpatialIndex:
 
     def intersection(self, coordinates):
         """Compatibility wrapper for rtree.index.Index.intersection,
-        use ``query`` intead.
+        use ``query`` instead.
 
         Parameters
         ----------
@@ -265,18 +265,6 @@ class BaseSpatialIndex:
         raise NotImplementedError
 
 
-def doc(docstring):
-    """
-    A decorator take docstring from passed object and it to decorated one.
-    """
-
-    def decorator(decorated):
-        decorated.__doc__ = dedent(docstring.__doc__ or "")
-        return decorated
-
-    return decorator
-
-
 if compat.HAS_RTREE:
 
     import rtree.index  # noqa
@@ -300,13 +288,13 @@ if compat.HAS_RTREE:
         def intersection(self, coordinates, *args, **kwargs):
             return super().intersection(coordinates, *args, **kwargs)
 
-        @doc(BaseSpatialIndex.size)
         @property
+        @doc(BaseSpatialIndex.size)
         def size(self):
             return len(self.leaves()[0][1])
 
-        @doc(BaseSpatialIndex.is_empty)
         @property
+        @doc(BaseSpatialIndex.is_empty)
         def is_empty(self):
             if len(self.leaves()) > 1:
                 return False
@@ -343,8 +331,8 @@ if compat.HAS_RTREE:
                 [None] * self.geometries.size, dtype=object
             )
 
-        @doc(BaseSpatialIndex.valid_query_predicates)
         @property
+        @doc(BaseSpatialIndex.valid_query_predicates)
         def valid_query_predicates(self):
             return {
                 None,
@@ -454,8 +442,8 @@ if compat.HAS_RTREE:
         def intersection(self, coordinates):
             return super().intersection(coordinates, objects=False)
 
-        @doc(BaseSpatialIndex.size)
         @property
+        @doc(BaseSpatialIndex.size)
         def size(self):
             if hasattr(self, "_size"):
                 size = self._size
@@ -467,8 +455,8 @@ if compat.HAS_RTREE:
                 self._size = size
             return size
 
-        @doc(BaseSpatialIndex.is_empty)
         @property
+        @doc(BaseSpatialIndex.is_empty)
         def is_empty(self):
             return self.geometries.size == 0 or self.size == 0
 
@@ -499,7 +487,7 @@ if compat.HAS_PYGEOS:
             # https://github.com/pygeos/pygeos/issues/147
             non_empty = geometry.copy()
             non_empty[pygeos.is_empty(non_empty)] = None
-            # set empty geometries to None to mantain indexing
+            # set empty geometries to None to maintain indexing
             super().__init__(non_empty)
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
@@ -658,12 +646,12 @@ if compat.HAS_PYGEOS:
 
             return indexes
 
-        @doc(BaseSpatialIndex.size)
         @property
+        @doc(BaseSpatialIndex.size)
         def size(self):
             return len(self)
 
-        @doc(BaseSpatialIndex.is_empty)
         @property
+        @doc(BaseSpatialIndex.is_empty)
         def is_empty(self):
             return len(self) == 0

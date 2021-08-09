@@ -719,7 +719,7 @@ GeometryCollection
 
         >>> union = s.unary_union
         >>> print(union)
-        POLYGON ((0 0, 0 1, 0 2, 2 2, 2 0, 1 0, 0 0))
+        POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
         """
         return self.geometry.values.unary_union()
 
@@ -731,9 +731,11 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that contains `other`.
 
-        An object is said to contain `other` if its `interior` contains the
-        `boundary` and `interior` of the other object and their boundaries do
-        not touch at all.
+        An object is said to contain `other` if at least one point of `other` lies in
+        the interior and no points of `other` lie in the exterior of the object.
+        (Therefore, any given polygon does not contain its own boundary – there is not
+        any point that lies in the interior.)
+        If either object is empty, this operation returns ``False``.
 
         This is the inverse of :meth:`within` in the sense that the expression
         ``a.contains(b) == b.within(a)`` always evaluates to ``True``.
@@ -746,8 +748,8 @@ GeometryCollection
         Parameters
         ----------
         other : GeoSeries or geometric object
-            The GeoSeries (elementwise) or geometric object to test if is
-            contained.
+            The GeoSeries (elementwise) or geometric object to test if it
+            is contained.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
@@ -1641,9 +1643,9 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within `other`.
 
-        An object is said to be within `other` if its `boundary` and `interior`
-        intersects only with the `interior` of the other (not its `boundary` or
-        `exterior`).
+        An object is said to be within `other` if at least one of its points is located
+        in the `interior` and no points are located in the `exterior` of the other.
+        If either object is empty, this operation returns ``False``.
 
         This is the inverse of :meth:`contains` in the sense that the
         expression ``a.within(b) == b.contains(a)`` always evaluates to
@@ -1758,6 +1760,7 @@ GeometryCollection
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
+        If either object is empty, this operation returns ``False``.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2148,8 +2151,8 @@ GeometryCollection
            :align: center
 
         >>> s.difference(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        0    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
+        1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2        LINESTRING (1.00000 1.00000, 2.00000 2.00000)
         3    MULTILINESTRING ((2.00000 0.00000, 1.00000 1.0...
         4                                          POINT EMPTY
@@ -2165,7 +2168,7 @@ GeometryCollection
 
         >>> s.difference(s2, align=True)
         0                                                 None
-        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3                                     LINESTRING EMPTY
         4                              POINT (0.00000 1.00000)
@@ -2173,8 +2176,8 @@ GeometryCollection
         dtype: geometry
 
         >>> s.difference(s2, align=False)
-        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        0    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
+        1    POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4                                          POINT EMPTY
@@ -2263,11 +2266,11 @@ GeometryCollection
            :align: center
 
         >>> s.symmetric_difference(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
-        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
-        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        0    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
+        1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
+        2    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
+        3    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
+        4    POLYGON ((0.00000 1.00000, 1.00000 1.00000, 0....
         dtype: geometry
 
         We can also check two GeoSeries against each other, row by row.
@@ -2280,7 +2283,7 @@ GeometryCollection
 
         >>> s.symmetric_difference(s2, align=True)
         0                                                 None
-        1    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
+        1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3                                     LINESTRING EMPTY
         4        MULTIPOINT (0.00000 1.00000, 1.00000 1.00000)
@@ -2288,8 +2291,8 @@ GeometryCollection
         dtype: geometry
 
         >>> s.symmetric_difference(s2, align=False)
-        0    POLYGON ((0.00000 1.00000, 0.00000 2.00000, 2....
-        1    GEOMETRYCOLLECTION (LINESTRING (1.00000 0.0000...
+        0    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
+        1    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4                                          POINT EMPTY
@@ -2375,11 +2378,11 @@ GeometryCollection
            :align: center
 
         >>> s.union(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        2    GEOMETRYCOLLECTION (LINESTRING (1.00000 1.0000...
-        3    GEOMETRYCOLLECTION (LINESTRING (2.00000 0.0000...
-        4    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 0....
+        2    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
+        3    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
+        4    POLYGON ((0.00000 1.00000, 1.00000 1.00000, 0....
         dtype: geometry
 
         We can also check two GeoSeries against each other, row by row.
@@ -2392,7 +2395,7 @@ GeometryCollection
 
         >>> s.union(s2, align=True)
         0                                                 None
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 0....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4        MULTIPOINT (0.00000 1.00000, 1.00000 1.00000)
@@ -2400,8 +2403,8 @@ GeometryCollection
         dtype: geometry
 
         >>> s.union(s2, align=False)
-        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        1    GEOMETRYCOLLECTION (LINESTRING (1.00000 0.0000...
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 0....
+        1    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4                              POINT (0.00000 1.00000)
@@ -2488,8 +2491,8 @@ GeometryCollection
            :align: center
 
         >>> s.intersection(Polygon([(0, 0), (1, 1), (0, 1)]))
-        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        1    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
         2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
         3                              POINT (1.00000 1.00000)
         4                              POINT (0.00000 1.00000)
@@ -2505,7 +2508,7 @@ GeometryCollection
 
         >>> s.intersection(s2, align=True)
         0                                                 None
-        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
         2                              POINT (1.00000 1.00000)
         3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         4                                          POINT EMPTY
@@ -2513,7 +2516,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.intersection(s2, align=False)
-        0    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
         1        LINESTRING (1.00000 1.00000, 1.00000 2.00000)
         2                              POINT (1.00000 1.00000)
         3                              POINT (1.00000 1.00000)
@@ -2721,14 +2724,23 @@ GeometryCollection
         """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
+        The algorithm (Douglas-Peucker) recursively splits the original line
+        into smaller parts and connects these parts’ endpoints
+        by a straight line. Then, it removes all points whose distance
+        to the straight line is smaller than `tolerance`. It does not
+        move any points and it always preserves endpoints of
+        the original line or polygon.
         See http://shapely.readthedocs.io/en/latest/manual.html#object.simplify
         for details
 
         Parameters
         ----------
         tolerance : float
-            All points in a simplified geometry will be no more than
-            `tolerance` distance from the original.
+            All parts of a simplified geometry will be no more than
+            `tolerance` distance from the original. It has the same units
+            as the coordinate reference system of the GeoSeries.
+            For example, using `tolerance=100` in a projected CRS with meters
+            as units means a distance of 100 meters in reality.
         preserve_topology: bool (default True)
             False uses a quicker algorithm, but may produce self-intersecting
             or otherwise invalid geometries.
@@ -2892,10 +2904,10 @@ GeometryCollection
 
         Examples
         --------
-        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> from shapely.geometry import LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 0), (0, 2)]),
         ...         LineString([(0, 0), (2, 2)]),
         ...         LineString([(2, 0), (0, 2)]),
         ...     ],
@@ -2910,7 +2922,7 @@ GeometryCollection
         ... )
 
         >>> s
-        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        0    LINESTRING (0.00000 0.00000, 2.00000 0.00000, ...
         1        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
         2        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
         dtype: geometry
@@ -2928,7 +2940,7 @@ GeometryCollection
            :align: center
 
         >>> s.project(Point(1, 0))
-        0   -1.000000
+        0    1.000000
         1    0.707107
         2    0.707107
         dtype: float64
@@ -2949,7 +2961,7 @@ GeometryCollection
         dtype: float64
 
         >>> s.project(s2, align=False)
-        0   -1.000000
+        0    1.000000
         1    0.707107
         2    0.707107
         dtype: float64
@@ -3301,7 +3313,8 @@ class _CoordinateIndexer(object):
         # don't know how to handle step; should this raise?
         if xs.step is not None or ys.step is not None:
             warn("Ignoring step - full interval is used.")
-        xmin, ymin, xmax, ymax = obj.total_bounds
+        if xs.start is None or xs.stop is None or ys.start is None or ys.stop is None:
+            xmin, ymin, xmax, ymax = obj.total_bounds
         bbox = box(
             xs.start if xs.start is not None else xmin,
             ys.start if ys.start is not None else ymin,

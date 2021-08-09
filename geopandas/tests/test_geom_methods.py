@@ -229,7 +229,7 @@ class TestGeomMethods:
         result = getattr(gdf, op)
         fcmp(result, expected)
 
-    # TODO reenable for all operations once we use pyproj > 2
+    # TODO re-enable for all operations once we use pyproj > 2
     # def test_crs_warning(self):
     #     # operations on geometries should warn for different CRS
     #     no_crs_g3 = self.g3.copy()
@@ -290,7 +290,7 @@ class TestGeomMethods:
         # binary geo empty result with right GeoSeries
         result = GeoSeries([l1]).intersection(GeoSeries([l2]))
         assert_geoseries_equal(result, expected)
-        # unary geo resulting in emtpy geometry
+        # unary geo resulting in empty geometry
         result = GeoSeries([GeometryCollection()]).convex_hull
         assert_geoseries_equal(result, expected)
 
@@ -872,10 +872,6 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_025,
-        reason="pandas explode introduced in pandas 0.25",
-    )
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
@@ -940,6 +936,41 @@ class TestGeomMethods:
         # Test with column provided as kwarg
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode()
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = MultiIndex.from_tuples(
+            [
+                (outer_index, *pair)
+                for pair in [(1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+            ],
+            names=["first", "second", None],
+        )
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'
