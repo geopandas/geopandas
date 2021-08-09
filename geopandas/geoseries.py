@@ -840,7 +840,7 @@ class GeoSeries(GeoPandasBase, Series):
                 index = MultiIndex.from_tuples(index, names=self.index.names + [None])
 
             else:
-                index = inner_index
+                index = outer_index
 
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
