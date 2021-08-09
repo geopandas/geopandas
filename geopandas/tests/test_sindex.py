@@ -17,19 +17,8 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 import pytest
 import numpy as np
 
-try:
+if compat.USE_PYGEOS:
     import pygeos
-    from pygeos import __version__ as pygeos_version
-    from distutils.version import LooseVersion
-
-    MIN_PYGEOS_VERSION_FOR_NEAREST = "0.10"
-    PYGEOS_HAS_NEAREST = LooseVersion(pygeos_version) >= LooseVersion(
-        MIN_PYGEOS_VERSION_FOR_NEAREST
-    )
-except ImportError:
-    PYGEOS_HAS_NEAREST = False
-
-TEST_NEAREST = PYGEOS_HAS_NEAREST and compat.USE_PYGEOS
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
@@ -686,12 +675,8 @@ class TestPygeosInterface:
 
     # ------------------------- `nearest` tests ------------------------- #
     @pytest.mark.skipif(
-        TEST_NEAREST,
-        reason=(
-            f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
-            " must be installed and activated via the geopandas.options module to"
-            " test sjoin_nearest"
-        ),
+        compat.PYGEOS_GE_010,
+        reason=("Test expected error if without PyGEOS >= 0.10"),
     )
     def test_no_nearest(self):
         df = geopandas.GeoDataFrame({"geometry": []})
@@ -701,12 +686,8 @@ class TestPygeosInterface:
             df.sindex.nearest(Point(0, 0))
 
     @pytest.mark.skipif(
-        not TEST_NEAREST,
-        reason=(
-            f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
-            " must be installed and activated via the geopandas.compat module to"
-            " test sjoin_nearest"
-        ),
+        not compat.PYGEOS_GE_010,
+        reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize(
         "geometry,expected",
