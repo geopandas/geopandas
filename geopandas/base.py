@@ -731,9 +731,11 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that contains `other`.
 
-        An object is said to contain `other` if its `interior` contains the
-        `boundary` and `interior` of the other object and their boundaries do
-        not touch at all.
+        An object is said to contain `other` if at least one point of `other` lies in
+        the interior and no points of `other` lie in the exterior of the object.
+        (Therefore, any given polygon does not contain its own boundary – there is not
+        any point that lies in the interior.)
+        If either object is empty, this operation returns ``False``.
 
         This is the inverse of :meth:`within` in the sense that the expression
         ``a.contains(b) == b.within(a)`` always evaluates to ``True``.
@@ -746,8 +748,8 @@ GeometryCollection
         Parameters
         ----------
         other : GeoSeries or geometric object
-            The GeoSeries (elementwise) or geometric object to test if is
-            contained.
+            The GeoSeries (elementwise) or geometric object to test if it
+            is contained.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
@@ -1641,9 +1643,9 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within `other`.
 
-        An object is said to be within `other` if its `boundary` and `interior`
-        intersects only with the `interior` of the other (not its `boundary` or
-        `exterior`).
+        An object is said to be within `other` if at least one of its points is located
+        in the `interior` and no points are located in the `exterior` of the other.
+        If either object is empty, this operation returns ``False``.
 
         This is the inverse of :meth:`contains` in the sense that the
         expression ``a.within(b) == b.contains(a)`` always evaluates to
@@ -1758,6 +1760,7 @@ GeometryCollection
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
+        If either object is empty, this operation returns ``False``.
 
         The operation works on a 1-to-1 row-wise manner:
 

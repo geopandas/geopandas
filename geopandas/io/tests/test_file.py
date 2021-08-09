@@ -412,7 +412,8 @@ def test_infer_zipped_file():
     gdf = read_file(path)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
-    # Check that it can sucessfully add a zip scheme to a path that already has a scheme
+    # Check that it can successfully add a zip scheme to a path that already has a
+    # scheme
     gdf = read_file("file+file://" + path)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 

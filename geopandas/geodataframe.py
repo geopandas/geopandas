@@ -447,7 +447,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(cls, data, geometry=None, crs=None, **kwargs):
         """
         Construct GeoDataFrame from dict of array-like or dicts by
-        overiding DataFrame.from_dict method with geometry and crs
+        overriding DataFrame.from_dict method with geometry and crs
 
         Parameters
         ----------
@@ -788,7 +788,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         na : str, optional
             Options are {'null', 'drop', 'keep'}, default 'null'.
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: ouput the missing entries as JSON null
+            * null: output the missing entries as JSON null
             * drop: remove the property from the feature. This applies to
                     each feature individually so that features may have
                     different properties
