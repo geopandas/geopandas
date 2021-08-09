@@ -54,8 +54,8 @@ class TestMerging:
         assert_geodataframe_equal(exp, res)
         # check metadata comes from first gdf
         res4 = pd.concat([self.gdf.set_crs("epsg:4326"), self.gdf], axis=0)
-        # Note: this behaviour does not make sense - geom cols combined into one
-        # but they have different CRS and that is lost. We should raise instead.
+        # Note: this behaviour potentially does not make sense. If geom cols are
+        # concatenated but have different CRS, then the CRS will be overridden.
         self._check_metadata(res4, crs="epsg:4326")
 
         # series
@@ -73,6 +73,7 @@ class TestMerging:
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
 
+    def test_concat_axis1_multiple_geodataframes(self):
         # https://github.com/geopandas/geopandas/issues/1230
         # Expect that concat should fail gracefully if duplicate column names belonging
         # to geometry columns are introduced.
@@ -85,7 +86,11 @@ class TestMerging:
 
         # Check case is handled if custom geometry column name is used
         df2 = self.gdf.rename_geometry("geom")
-        with pytest.raises(ValueError):
+        expected_err2 = (
+            "Concat operation has resulted in multiple columns using the geometry "
+            "column name 'geom'."
+        )
+        with pytest.raises(ValueError, match=expected_err2):
             pd.concat([df2, df2], axis=1)
 
         # Check that two geometry columns is fine, if they have different names
