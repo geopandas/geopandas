@@ -9,7 +9,6 @@ from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
 import geopandas
 
-
 METADATA_VERSION = "0.1.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
 
@@ -32,7 +31,7 @@ METADATA_VERSION = "0.1.0"
 # }
 
 
-def _create_metadata(df):
+def _create_metadata(df: GeoDataFrame) -> dict:
     """Create and encode geo metadata dict.
 
     Parameters
@@ -62,7 +61,7 @@ def _create_metadata(df):
     }
 
 
-def _encode_metadata(metadata):
+def _encode_metadata(metadata: dict) -> str:
     """Encode metadata dict to UTF-8 JSON string
 
     Parameters
@@ -76,7 +75,7 @@ def _encode_metadata(metadata):
     return json.dumps(metadata).encode("utf-8")
 
 
-def _decode_metadata(metadata_str):
+def _decode_metadata(metadata_str: str) -> dict:
     """Decode a UTF-8 encoded JSON string to dict
 
     Parameters
@@ -93,7 +92,7 @@ def _decode_metadata(metadata_str):
     return json.loads(metadata_str.decode("utf-8"))
 
 
-def _validate_dataframe(df):
+def _validate_dataframe(df: GeoDataFrame) -> None:
     """Validate that the GeoDataFrame conforms to requirements for writing
     to Parquet format.
 
@@ -121,7 +120,7 @@ def _validate_dataframe(df):
         raise ValueError("Index level names must be strings")
 
 
-def _validate_metadata(metadata):
+def _validate_metadata(metadata: dict) -> None:
     """Validate geo metadata.
     Must not be empty, and must contain the structure specified above.
 
@@ -160,7 +159,7 @@ def _validate_metadata(metadata):
             raise ValueError("Only WKB geometry encoding is supported")
 
 
-def _geopandas_to_arrow(df, index=None):
+def _geopandas_to_arrow(df: GeoDataFrame, index: bool = None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -197,7 +196,13 @@ def _geopandas_to_arrow(df, index=None):
     return table.replace_schema_metadata(metadata)
 
 
-def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
+def _to_parquet(
+    df: GeoDataFrame,
+    path: str,
+    index: bool = None,
+    compression: str = "snappy",
+    **kwargs
+) -> None:
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -239,7 +244,9 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _to_feather(df, path, index=None, compression=None, **kwargs):
+def _to_feather(
+    df: GeoDataFrame, path: str, index: bool = None, compression: str = None, **kwargs
+) -> None:
     """
     Write a GeoDataFrame to the Feather format.
 
@@ -286,7 +293,7 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table):
+def _arrow_to_geopandas(table) -> GeoDataFrame:
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
@@ -339,7 +346,7 @@ def _arrow_to_geopandas(table):
     return GeoDataFrame(df, geometry=geometry)
 
 
-def _read_parquet(path, columns=None, **kwargs):
+def _read_parquet(path: str, columns: list = None, **kwargs) -> GeoDataFrame:
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -395,7 +402,7 @@ def _read_parquet(path, columns=None, **kwargs):
     return _arrow_to_geopandas(table)
 
 
-def _read_feather(path, columns=None, **kwargs):
+def _read_feather(path: str, columns=None, **kwargs) -> GeoDataFrame:
     """
     Load a Feather object from the file path, returning a GeoDataFrame.
 
@@ -440,12 +447,12 @@ def _read_feather(path, columns=None, **kwargs):
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
-
+    pyarrow = import_optional_dependency(
+        "pyarrow", extra="pyarrow is required for arrow support."
+    )
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    # TODO move this into `import_optional_dependency`
-    import pyarrow
 
     if pyarrow.__version__ < LooseVersion("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
