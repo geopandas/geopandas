@@ -30,6 +30,7 @@ methods:
 
     intersection
     is_empty
+    nearest
     query
     query_bulk
     size
