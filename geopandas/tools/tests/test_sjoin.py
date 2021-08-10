@@ -546,7 +546,6 @@ def test_no_nearest_all():
     ),
 )
 class TestNearest:
-
     @pytest.mark.parametrize("how", ("left", "right", "inner"))
     @pytest.mark.parametrize("max_distance", (None, 1))
     @pytest.mark.parametrize("distance_col", (None, "distance"))
@@ -589,9 +588,27 @@ class TestNearest:
         "geo_left, geo_right, expected_left, expected_right, distances",
         [
             ([Point(0, 0), Point(1, 1)], [Point(1, 1)], [1], [0], [0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0)], [0, 1], [1, 0], [0, 0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0), Point(0, 0)], [0, 0, 1], [1, 2, 0], [0, 0, 0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0), Point(2, 2)], [0, 1], [1, 0], [0, 0]),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0)],
+                [0, 1],
+                [1, 0],
+                [0, 0],
+            ),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0), Point(0, 0)],
+                [0, 0, 1],
+                [1, 2, 0],
+                [0, 0, 0],
+            ),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0), Point(2, 2)],
+                [0, 1],
+                [1, 0],
+                [0, 0],
+            ),
             (
                 [Point(0, 0), Point(1, 1)],
                 [Point(1, 1), Point(0.25, 1)],
@@ -611,8 +628,8 @@ class TestNearest:
                 [Point(1.1, 1.1), Point(0, 0)],
                 [0, 2, 1],
                 [1, 1, 0],
-                [0, 0, np.sqrt(0.1**2+0.1**2)]
-            )
+                [0, 0, np.sqrt(0.1 ** 2 + 0.1 ** 2)],
+            ),
         ],
     )
     def test_join_inner(
@@ -638,10 +655,34 @@ class TestNearest:
     @pytest.mark.parametrize(
         "geo_left, geo_right, expected_left, expected_right, distances",
         [
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1)], [0, 1], [0, 0], [math.sqrt(2), 0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0)], [0, 1], [1, 0], [0, 0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0), Point(0, 0)], [0, 0, 1], [1, 2, 0], [0, 0, 0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0), Point(2, 2)], [0, 1], [1, 0], [0, 0]),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1)],
+                [0, 1],
+                [0, 0],
+                [math.sqrt(2), 0],
+            ),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0)],
+                [0, 1],
+                [1, 0],
+                [0, 0],
+            ),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0), Point(0, 0)],
+                [0, 0, 1],
+                [1, 2, 0],
+                [0, 0, 0],
+            ),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0), Point(2, 2)],
+                [0, 1],
+                [1, 0],
+                [0, 0],
+            ),
             (
                 [Point(0, 0), Point(1, 1)],
                 [Point(1, 1), Point(0.25, 1)],
@@ -661,14 +702,14 @@ class TestNearest:
                 [Point(x, y) for x, y in zip(np.arange(10), np.arange(10))],
                 [0, 1],
                 [0, 1],
-                [0, 0]
+                [0, 0],
             ),
             (
                 [Point(0, 0), Point(1, 1), Point(0, 0)],
                 [Point(1.1, 1.1), Point(0, 0)],
                 [0, 1, 2],
                 [1, 0, 1],
-                [0, np.sqrt(0.1**2+0.1**2), 0]
+                [0, np.sqrt(0.1 ** 2 + 0.1 ** 2), 0],
             ),
         ],
     )
@@ -696,8 +737,20 @@ class TestNearest:
         "geo_left, geo_right, expected_left, expected_right, distances",
         [
             ([Point(0, 0), Point(1, 1)], [Point(1, 1)], [1], [0], [0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0)], [1, 0], [0, 1], [0, 0]),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0, 0), Point(0, 0)], [1, 0, 0], [0, 1, 2], [0, 0, 0]),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0)],
+                [1, 0],
+                [0, 1],
+                [0, 0],
+            ),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0, 0), Point(0, 0)],
+                [1, 0, 0],
+                [0, 1, 2],
+                [0, 0, 0],
+            ),
             (
                 [Point(0, 0), Point(1, 1)],
                 [Point(1, 1), Point(0, 0), Point(2, 2)],
@@ -705,7 +758,13 @@ class TestNearest:
                 [0, 1, 2],
                 [0, 0, math.sqrt(2)],
             ),
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1), Point(0.25, 1)], [1, 1], [0, 1], [0, 0.75]),
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1), Point(0.25, 1)],
+                [1, 1],
+                [0, 1],
+                [0, 0.75],
+            ),
             (
                 [Point(0, 0), Point(1, 1)],
                 [Point(-10, -10), Point(100, 100)],
@@ -718,14 +777,14 @@ class TestNearest:
                 [Point(x, y) for x, y in zip(np.arange(10), np.arange(10))],
                 [0, 1] + [1] * 8,
                 list(range(10)),
-                [0, 0] + [np.sqrt(x**2 + x**2) for x in np.arange(1, 9)]
+                [0, 0] + [np.sqrt(x ** 2 + x ** 2) for x in np.arange(1, 9)],
             ),
             (
                 [Point(0, 0), Point(1, 1), Point(0, 0)],
                 [Point(1.1, 1.1), Point(0, 0)],
                 [1, 0, 2],
                 [0, 1, 1],
-                [np.sqrt(0.1**2+0.1**2), 0, 0]
+                [np.sqrt(0.1 ** 2 + 0.1 ** 2), 0, 0],
             ),
         ],
     )
