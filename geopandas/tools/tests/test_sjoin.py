@@ -606,6 +606,13 @@ class TestNearest:
                 [0, 0],
                 [math.sqrt(10 ** 2 + 10 ** 2), math.sqrt(11 ** 2 + 11 ** 2)],
             ),
+            (
+                [Point(0, 0), Point(1, 1), Point(0, 0)],
+                [Point(1.1, 1.1), Point(0, 0)],
+                [0, 2, 1],
+                [1, 1, 0],
+                [0, 0, np.sqrt(0.1**2+0.1**2)]
+            )
         ],
     )
     def test_join_inner(
@@ -656,6 +663,13 @@ class TestNearest:
                 [0, 1],
                 [0, 0]
             ),
+            (
+                [Point(0, 0), Point(1, 1), Point(0, 0)],
+                [Point(1.1, 1.1), Point(0, 0)],
+                [0, 1, 2],
+                [1, 0, 1],
+                [0, np.sqrt(0.1**2+0.1**2), 0]
+            ),
         ],
     )
     def test_join_left(
@@ -705,7 +719,14 @@ class TestNearest:
                 [0, 1] + [1] * 8,
                 list(range(10)),
                 [0, 0] + [np.sqrt(x**2 + x**2) for x in np.arange(1, 9)]
-            )
+            ),
+            (
+                [Point(0, 0), Point(1, 1), Point(0, 0)],
+                [Point(1.1, 1.1), Point(0, 0)],
+                [1, 0, 2],
+                [0, 1, 1],
+                [np.sqrt(0.1**2+0.1**2), 0, 0]
+            ),
         ],
     )
     def test_join_right(
