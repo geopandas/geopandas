@@ -1,3 +1,4 @@
+from typing import Union
 import warnings
 
 import numpy as np
@@ -124,7 +125,14 @@ def _PolygonPatch(polygon, **kwargs):
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    **kwargs,
 ):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
@@ -190,7 +198,14 @@ plot_polygon_collection = deprecated(_plot_polygon_collection)
 
 
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    **kwargs,
 ):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
@@ -314,7 +329,13 @@ plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+    s: pd.Series,
+    cmap: str = None,
+    color: str = None,
+    ax=None,
+    figsize=None,
+    aspect: Union[str, float] = "auto",
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -472,25 +493,25 @@ def plot_series(
 
 
 def plot_dataframe(
-    df,
-    column=None,
-    cmap=None,
-    color=None,
+    df: "GeoDataFrame",
+    column: Union[str, np.ndarray, pd.Series] = None,
+    cmap: str = None,
+    color: str = None,
     ax=None,
     cax=None,
-    categorical=False,
-    legend=False,
-    scheme=None,
-    k=5,
-    vmin=None,
-    vmax=None,
+    categorical: bool = False,
+    legend: bool = False,
+    scheme: str = None,
+    k: int = 5,
+    vmin: float = None,
+    vmax: float = None,
     markersize=None,
-    figsize=None,
-    legend_kwds=None,
-    categories=None,
-    classification_kwds=None,
-    missing_kwds=None,
-    aspect="auto",
+    figsize: tuple = None,
+    legend_kwds: dict = None,
+    categories: list = None,
+    classification_kwds: dict = None,
+    missing_kwds: dict = None,
+    aspect: Union[str, float] = "auto",
     **style_kwds,
 ):
     """
@@ -934,7 +955,7 @@ class GeoplotAccessor(PlotAccessor):
         return self(kind="geo", *args, **kwargs)
 
 
-def _mapclassify_choro(values, scheme, **classification_kwds):
+def _mapclassify_choro(values: pd.Series, scheme: str, **classification_kwds):
     """
     Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
 
