@@ -648,8 +648,8 @@ class TestNearest:
         joined = sjoin_nearest(left, right, how="inner")
         assert_geodataframe_equal(expected_gdf, joined)
         # with distance col
-        expected_gdf["distance"] = np.array(distances, dtype=float)
-        joined = sjoin_nearest(left, right, how="inner", distance_col="distance")
+        expected_gdf["distance_col"] = np.array(distances, dtype=float)
+        joined = sjoin_nearest(left, right, how="inner", distance_col="distance_col")
         assert_geodataframe_equal(expected_gdf, joined)
 
     @pytest.mark.parametrize(
@@ -729,8 +729,8 @@ class TestNearest:
         joined = sjoin_nearest(left, right, how="left")
         assert_geodataframe_equal(expected_gdf, joined)
         # with distance col
-        expected_gdf["distance"] = np.array(distances, dtype=float)
-        joined = sjoin_nearest(left, right, how="left", distance_col="distance")
+        expected_gdf["distance_col"] = np.array(distances, dtype=float)
+        joined = sjoin_nearest(left, right, how="left", distance_col="distance_col")
         assert_geodataframe_equal(expected_gdf, joined)
 
     @pytest.mark.parametrize(
@@ -805,6 +805,6 @@ class TestNearest:
         joined = sjoin_nearest(left, right, how="right")
         assert_geodataframe_equal(expected_gdf, joined)
         # with distance col
-        expected_gdf["distance"] = np.array(distances, dtype=float)
-        joined = sjoin_nearest(left, right, how="right", distance_col="distance")
+        expected_gdf["distance_col"] = np.array(distances, dtype=float)
+        joined = sjoin_nearest(left, right, how="right", distance_col="distance_col")
         assert_geodataframe_equal(expected_gdf, joined)

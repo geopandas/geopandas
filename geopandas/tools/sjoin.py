@@ -369,14 +369,19 @@ def _nearest_query(
             l_idx, r_idx = tree_idx, input_idx
             sort_order = np.argsort(l_idx, kind="stable")
             l_idx, r_idx = l_idx[sort_order], r_idx[sort_order]
+            if distances is not None:
+                distances = distances[sort_order]
         else:
             l_idx, r_idx = input_idx, tree_idx
-        indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
+        indices = pd.DataFrame(
+            {"_key_left": l_idx, "_key_right": r_idx, "distances": distances}
+        )
     else:
         # when sindex is empty / has no valid geometries
-        indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-        distances = pd.Series([], dtype=float) if return_distance else None
-    return indices, distances
+        indices = pd.DataFrame(
+            columns=["_key_left", "_key_right", "distances"], dtype=float
+        )
+    return indices
 
 
 def sjoin_nearest(
@@ -486,13 +491,17 @@ path("naturalearth_lowres"))
 
     return_distance = distance_col is not None
 
-    indices, distances = _nearest_query(
-        left_df, right_df, max_distance, how, return_distance
-    )
-
-    joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
+    join_data = _nearest_query(left_df, right_df, max_distance, how, return_distance)
 
     if return_distance:
-        joined[distance_col] = distances
+        join_data = join_data.rename(columns={"distances": distance_col})
+    else:
+        join_data.pop("distances")
+
+    joined = _frame_join(join_data, left_df, right_df, how, lsuffix, rsuffix)
+
+    if return_distance:
+        columns = [c for c in joined.columns if c != distance_col] + [distance_col]
+        joined = joined[columns]
 
     return joined
