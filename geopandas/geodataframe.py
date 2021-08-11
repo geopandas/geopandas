@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries
+from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
 import geopandas.io
 
 from . import _compat as compat
@@ -1395,7 +1395,19 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     @property
     def _constructor(self):
-        return GeoDataFrame
+        def _geodataframe_constructor_with_fallback(data=None, index=None, crs=None, geometry=None, **kwargs):
+            df = GeoDataFrame(data=data, index=index, crs=crs, geometry=geometry, **kwargs)
+            geometry_cols_mask = (df.dtypes == "geometry")
+            if geometry_cols_mask.sum() == 0:
+                df = pd.DataFrame(df)
+            elif geometry_cols_mask.sum() == 1:
+                geo_col_name = df.dtypes[geometry_cols_mask].index[0]
+                df.set_geometry(geo_col_name, inplace=True)
+            return df
+
+        return _geodataframe_constructor_with_fallback
+
+    _constructor_sliced = GeoSeries  # TODO get geoseries fallback constructor to work
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
