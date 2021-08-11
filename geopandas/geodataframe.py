@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
+from geopandas.geoseries import GeoSeries
 import geopandas.io
 
 from . import _compat as compat
@@ -1395,9 +1395,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     @property
     def _constructor(self):
-        def _geodataframe_constructor_with_fallback(data=None, index=None, crs=None, geometry=None, **kwargs):
-            df = GeoDataFrame(data=data, index=index, crs=crs, geometry=geometry, **kwargs)
-            geometry_cols_mask = (df.dtypes == "geometry")
+        def _geodataframe_constructor_with_fallback(
+            data=None, index=None, crs=None, geometry=None, **kwargs
+        ):
+            df = GeoDataFrame(
+                data=data, index=index, crs=crs, geometry=geometry, **kwargs
+            )
+            geometry_cols_mask = df.dtypes == "geometry"
             if geometry_cols_mask.sum() == 0:
                 df = pd.DataFrame(df)
             elif geometry_cols_mask.sum() == 1:
@@ -1407,7 +1411,23 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         return _geodataframe_constructor_with_fallback
 
-    _constructor_sliced = GeoSeries  # TODO get geoseries fallback constructor to work
+    # def _constructor_sliced(self):
+    #     def _fallback(data, index=None, crs=None, **kwargs):
+    #         try:
+    #             with warnings.catch_warnings():
+    #                 warnings.filterwarnings(
+    #                     "ignore",
+    #                     message=_SERIES_WARNING_MSG,
+    #                     category=FutureWarning,
+    #                     module="geopandas[.*]",
+    #                 )
+    #                 return GeoSeries(data, index=index, crs=crs, **kwargs)
+    #         except TypeError:
+    #             return Series(data=data, index=index, **kwargs)
+    #     return _fallback
+    #     return GeoSeries
+    # _constructor_sliced = _geoseries_constructor_with_fallback
+    # _constructor_sliced = GeoSeries
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
