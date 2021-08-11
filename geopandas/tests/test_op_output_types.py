@@ -55,8 +55,9 @@ class TestDataFrame:
         res1 = self.df[["geometry"]].squeeze()
         assert type(res1) is GeoSeries
         assert res1.crs == self.crs
-        res2 = self.df[["geometry2"]].squeeze()
-        # assert type(res2) is GeoSeries # in core sense, index yields a dataframe which is then a series
+        # res2 = self.df[["geometry2"]].squeeze()
+        # assert type(res2) is GeoSeries # in core sense,
+        # index yields a dataframe which is then a series
         # assert res2.crs == self.crs
 
     def test_to_frame(self):
