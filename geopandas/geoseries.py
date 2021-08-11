@@ -1188,3 +1188,20 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             stacklevel=2,
         )
         return self.difference(other)
+
+
+class MaybeGeoSeries(GeoSeries):
+    _metadata = ["name"]
+
+    def __new__(cls, data=None, index=None, crs=None, **kwargs):
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message=_SERIES_WARNING_MSG,
+                    category=FutureWarning,
+                    module="geopandas[.*]",
+                )
+                return GeoSeries(data=data, index=index, crs=crs, **kwargs)
+        except TypeError:
+            return Series(data=data, index=index, **kwargs)
