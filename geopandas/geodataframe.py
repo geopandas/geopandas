@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, MaybeGeoSeries
+from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
 import geopandas.io
 
 from . import _compat as compat
@@ -147,7 +147,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                         stacklevel=2,
                     )
                     # TODO: raise error in 0.9 or 0.10.
-                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
+                a = _ensure_geometry(self["geometry"].values, crs)
+                self["geometry"] = a
             except TypeError:
                 pass
             else:
@@ -1426,8 +1427,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     #             return Series(data=data, index=index, **kwargs)
     #     return _fallback
     #     return GeoSeries
-    # _constructor_sliced = _geoseries_constructor_with_fallback
-    _constructor_sliced = MaybeGeoSeries
+    @property
+    def _constructor_sliced(self):
+        return _geoseries_constructor_with_fallback
+
     # _constructor_sliced = GeoSeries
 
     def __finalize__(self, other, method=None, **kwargs):
