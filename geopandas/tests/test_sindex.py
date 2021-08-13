@@ -742,6 +742,11 @@ class TestPygeosInterface:
         res = df.sindex.nearest(s)
         assert_array_equal(res, expected)
 
+        x, y = zip(*geometry)
+        ga = geopandas.points_from_xy(x, y)
+        res = df.sindex.nearest(ga)
+        assert_array_equal(res, expected)
+
     @pytest.mark.skipif(
         not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
