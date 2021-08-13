@@ -684,7 +684,16 @@ class TestPygeosInterface:
             df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
+        reason=("PyGEOS < 0.10 does not support sindex.nearest"),
+    )
+    def test_pygeos_error(self):
+        df = geopandas.GeoDataFrame({"geometry": []})
+        with pytest.raises(NotImplementedError, match="requires pygeos >= 0.10"):
+            df.sindex.nearest(None)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and compat.PYGEOS_GE_010),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize(
