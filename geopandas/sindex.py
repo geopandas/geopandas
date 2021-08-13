@@ -515,16 +515,17 @@ if compat.HAS_RTREE:
             2    POINT (2.00000 2.00000)
             dtype: geometry
 
-            >>> list(s.sindex.nearest((0, 0)))
+            >>> list(s.sindex.nearest((0, 0)))  # doctest: +SKIP
             [0]
 
-            >>> list(s.sindex.nearest((0.5, 0.5)))
+            >>> list(s.sindex.nearest((0.5, 0.5)))  # doctest: +SKIP
             [0, 1]
 
-            >>> list(s.sindex.nearest((3, 3), num_results=2))
+            >>> list(s.sindex.nearest((3, 3), num_results=2))  # doctest: +SKIP
             [2, 1]
 
-            >>> list(super(type(s.sindex), s.sindex).nearest((0, 0), num_results=2))
+            >>> list(super(type(s.sindex), s.sindex).nearest((0, 0),
+            ... num_results=2))  # doctest: +SKIP
             [0, 1]
 
             Parameters
