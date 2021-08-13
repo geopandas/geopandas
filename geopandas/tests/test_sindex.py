@@ -675,13 +675,13 @@ class TestPygeosInterface:
 
     # ------------------------- `nearest` tests ------------------------- #
     @pytest.mark.skipif(
-        compat.PYGEOS_GE_010,
-        reason=("PyGEOS >= 0.10 supports sindex.nearest"),
+        compat.USE_PYGEOS,
+        reason=("RTree supports sindex.nearest with different behaviour"),
     )
-    def test_no_nearest(self):
+    def test_rtree_nearest_warns(self):
         df = geopandas.GeoDataFrame({"geometry": []})
-        with pytest.warns(Warning):
-            df.sindex.nearest((0, 0, 1, 1))
+        with pytest.warns(FutureWarning, match="Directly using sindex.nearest"):
+            df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(
         not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
