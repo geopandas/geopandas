@@ -172,7 +172,9 @@ class BaseSpatialIndex:
         """
         Returns the nearest geometry to the input geometries.
 
-        Requires pygeos >= 0.10
+        Requires pygeos >= 0.10. Note that if pygeos is not available, geopandas
+        will use rtree for the spatial index, where nearest works as documented
+        below.
 
         Parameters
         ----------
@@ -497,6 +499,34 @@ if compat.HAS_RTREE:
             Requires rtree, and passes parameters directly to
             rtree.index.Index.nearest.
 
+            This behaviour is deprecated and will be updated to be consistent
+            with the pygeos PyGEOSSTRTreeIndex in a future release.
+
+            If longer-term compatibility is required, use rtree.index.Index.nearest
+            instead - this could be accessed by calling
+            super(type(s.sindex), s.index).nearest()
+
+            Examples
+            --------
+            >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(3), range(3)))
+            >>> s
+            0    POINT (0.00000 0.00000)
+            1    POINT (1.00000 1.00000)
+            2    POINT (2.00000 2.00000)
+            dtype: geometry
+
+            >>> list(s.sindex.nearest((0, 0)))
+            [0]
+
+            >>> list(s.sindex.nearest((0.5, 0.5)))
+            [0, 1]
+
+            >>> list(s.sindex.nearest((3, 3), num_results=2))
+            [2, 1]
+
+            >>> list(super(type(s.sindex), s.sindex).nearest((0, 0), num_results=2))
+            [0, 1]
+
             Parameters
             ----------
             coordinates : sequence or array
@@ -521,10 +551,13 @@ if compat.HAS_RTREE:
             """
             warnings.warn(
                 "Directly using sindex.nearest was previously undocumented."
-                " Calling into rtree.index.Index.nearest, with different"
-                " behaviour from the pygeos implementation."
+                " Calling into rtree.index.Index.nearest, with deprecated"
+                " behaviour that will change in a future release.",
+                FutureWarning,
             )
-            return super().nearest(coordinates, num_results=1, objects=False)
+            return super().nearest(
+                coordinates, num_results=num_results, objects=objects
+            )
 
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
