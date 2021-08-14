@@ -280,7 +280,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
-        elif hasattr(col, "ndim") and col.ndim != 1:
+        elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
@@ -1388,6 +1388,20 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
+        # Reconstruct gdf if it was lost by apply
+        if (
+            not isinstance(result, GeoDataFrame)
+            and self._geometry_column_name in result.columns
+        ):
+            # axis=1 apply will split GeometryDType to object, try and cast back
+            try:
+                _ensure_geometry(result[self._geometry_column_name], crs=self.crs)
+            except TypeError:
+                pass
+            else:
+                result = GeoDataFrame(result, geometry=self._geometry_column_name)
+
+        # TODO this should probably be consolidated with above, perhaps pending GH1849
         if (
             isinstance(result, GeoDataFrame)
             and self._geometry_column_name in result.columns

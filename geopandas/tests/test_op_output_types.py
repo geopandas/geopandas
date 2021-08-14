@@ -111,6 +111,7 @@ class TestDataFrame:
         assert type(self.df["value1"].apply(lambda x: x)) is pd.Series
 
         assert type(self.df.apply(lambda x: x)) is GeoDataFrame
+        assert type(self.df.apply(lambda x: x, axis=1)) is GeoDataFrame
         assert type(self.df[["value1", "value2"]].apply(lambda x: x)) is pd.DataFrame
 
     def test_convert_dtypes(self):
