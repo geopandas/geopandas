@@ -1420,14 +1420,15 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 data=data, index=index, crs=crs, geometry=geometry, **kwargs
             )
             geometry_cols_mask = df.dtypes == "geometry"
-            if len(geometry_cols_mask) == 1 and geometry_cols_mask.sum() == 1:
-                # Single column GeoSeries should be promoted to GeoDataFrame
-                # regardless of the column name (so to_frame() works)
-                # TODO should this logic be in GeoDataFrame.init
-                geo_col_name = df.dtypes[geometry_cols_mask].index[0]
-                df.set_geometry(geo_col_name, inplace=True)
-            else:
+            if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
                 df = pd.DataFrame(df)
+            elif geometry_cols_mask.sum() == 1:
+                if len(geometry_cols_mask) == 1:
+                    # If there is a single geometry column, we set it regardless of
+                    # name. If there are multiple, the correct geom col should be set
+                    # by finalize - we don't have enough info here
+                    geo_col_name = df.dtypes[geometry_cols_mask].index[0]
+                    df.set_geometry(geo_col_name, inplace=True)
             return df
 
         return _geodataframe_constructor_with_fallback
