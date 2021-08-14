@@ -1665,12 +1665,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
-
-        df = (
-            df_copy.drop(df_copy._geometry_column_name, axis=1)
-            .join(exploded_geom)
-            .__finalize__(self)
-        )
+        # TODO change this, this is not the place to fix this, need to fix join, so
+        #   that if L or R is gdf result is gdf, not type of left wins
+        df = GeoDataFrame(
+            df_copy.drop(df_copy._geometry_column_name, axis=1).join(exploded_geom)
+        ).__finalize__(self)
 
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
