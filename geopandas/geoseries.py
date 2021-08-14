@@ -560,13 +560,6 @@ class GeoSeries(GeoPandasBase, Series):
                 result.set_crs(self.crs, inplace=True)
         return result
 
-    def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self"""
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
-        return self
-
     def isna(self):
         """
         Detect missing values.

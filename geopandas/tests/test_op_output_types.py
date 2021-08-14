@@ -63,7 +63,7 @@ class TestDataFrame:
     def test_to_frame(self):
         res1 = self.df["geometry"].to_frame()
         assert type(res1) is GeoDataFrame
-        self._check_metadata(res1, geometry_column_name="geometry", crs=None)
+        self._check_metadata(res1, geometry_column_name="geometry", crs=self.crs)
         res2 = self.df["geometry2"].to_frame()
         assert type(res2) is GeoDataFrame
         # TODO this should have geometry col name geometry2 by updating
