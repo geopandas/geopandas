@@ -272,6 +272,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
+            # if there is no previous self.geometry, self.copy() will downcast
+            if type(frame) == DataFrame:
+                frame = GeoDataFrame(frame)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -1403,9 +1406,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 data=data, index=index, crs=crs, geometry=geometry, **kwargs
             )
             geometry_cols_mask = df.dtypes == "geometry"
-            if geometry_cols_mask.sum() == 0:
+            if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
                 df = pd.DataFrame(df)
             elif geometry_cols_mask.sum() == 1:
+                # TODO I should change this to reflect core expected behaviour
+                # No auto transmuting of geometry col, only handled edge case
+                # is df with one column and it's geometry.
                 geo_col_name = df.dtypes[geometry_cols_mask].index[0]
                 df.set_geometry(geo_col_name, inplace=True)
             return df
