@@ -1406,14 +1406,14 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 data=data, index=index, crs=crs, geometry=geometry, **kwargs
             )
             geometry_cols_mask = df.dtypes == "geometry"
-            if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-                df = pd.DataFrame(df)
-            elif geometry_cols_mask.sum() == 1:
-                # TODO I should change this to reflect core expected behaviour
-                # No auto transmuting of geometry col, only handled edge case
-                # is df with one column and it's geometry.
+            if len(geometry_cols_mask) == 1 and geometry_cols_mask.sum() == 1:
+                # Single column GeoSeries should be promoted to GeoDataFrame
+                # regardless of the column name (so to_frame() works)
+                # TODO should this logic be in GeoDataFrame.init
                 geo_col_name = df.dtypes[geometry_cols_mask].index[0]
                 df.set_geometry(geo_col_name, inplace=True)
+            else:
+                df = pd.DataFrame(df)
             return df
 
         return _geodataframe_constructor_with_fallback
