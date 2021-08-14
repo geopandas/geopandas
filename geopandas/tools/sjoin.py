@@ -323,6 +323,7 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
         )
+        joined = GeoDataFrame(joined, geometry=right_df.geometry.name)
         if isinstance(index_right, list):
             joined.index.names = right_index_name
         else:
