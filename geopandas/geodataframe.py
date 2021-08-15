@@ -30,13 +30,24 @@ def _geodataframe_constructor_with_fallback(
     geometry_cols_mask = df.dtypes == "geometry"
     if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
         df = pd.DataFrame(df)
-    elif geometry_cols_mask.sum() == 1:
-        if len(geometry_cols_mask) == 1:
-            # If there is a single geometry column, we set it regardless of
-            # name. If there are multiple, the correct geom col should be set
-            # by finalize - we don't have enough info here
-            geo_col_name = df.dtypes[geometry_cols_mask].index[0]
-            df.set_geometry(geo_col_name, inplace=True)
+
+    # else:  # -> doing this breaks copy, rename amongst other things
+    #     if df._geometry_column_name not in df.columns:
+    #         df = pd.DataFrame(df)
+
+    # If we can't downcast GeoDataFrames with incorrect columns
+    # if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+    #     df = pd.DataFrame(df)
+    # elif geometry_cols_mask.sum() == 1:
+    # if there is one geom col, this could be a (Geo)DataFrame or not,
+    # depending on what the geom col is set to.
+    # if len(geometry_cols_mask) == 1:
+    #     # If there is a single geometry column, we set it regardless of
+    #     # name. If there are multiple, the correct geom col should be set
+    #     # by finalize - we don't have enough info here
+    #     geo_col_name = df.dtypes[geometry_cols_mask].index[0]
+    #     df.set_geometry(geo_col_name, inplace=True)
+
     return df
 
 
