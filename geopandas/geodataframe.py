@@ -23,6 +23,23 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
+def _geodataframe_constructor_with_fallback(
+    data=None, index=None, crs=None, geometry=None, **kwargs
+):
+    df = GeoDataFrame(data=data, index=index, crs=crs, geometry=geometry, **kwargs)
+    geometry_cols_mask = df.dtypes == "geometry"
+    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+        df = pd.DataFrame(df)
+    elif geometry_cols_mask.sum() == 1:
+        if len(geometry_cols_mask) == 1:
+            # If there is a single geometry column, we set it regardless of
+            # name. If there are multiple, the correct geom col should be set
+            # by finalize - we don't have enough info here
+            geo_col_name = df.dtypes[geometry_cols_mask].index[0]
+            df.set_geometry(geo_col_name, inplace=True)
+    return df
+
+
 def _ensure_geometry(data, crs=None):
     """
     Ensure the data is of geometry dtype or converted to it.
@@ -147,8 +164,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                         stacklevel=2,
                     )
                     # TODO: raise error in 0.9 or 0.10.
-                a = _ensure_geometry(self["geometry"].values, crs)
-                self["geometry"] = a
+                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
                 pass
             else:
@@ -280,7 +296,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
-        elif hasattr(col, "ndim") and col.ndim > 1:
+        elif hasattr(col, "ndim") and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
@@ -1413,46 +1429,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     @property
     def _constructor(self):
-        def _geodataframe_constructor_with_fallback(
-            data=None, index=None, crs=None, geometry=None, **kwargs
-        ):
-            df = GeoDataFrame(
-                data=data, index=index, crs=crs, geometry=geometry, **kwargs
-            )
-            geometry_cols_mask = df.dtypes == "geometry"
-            if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-                df = pd.DataFrame(df)
-            elif geometry_cols_mask.sum() == 1:
-                if len(geometry_cols_mask) == 1:
-                    # If there is a single geometry column, we set it regardless of
-                    # name. If there are multiple, the correct geom col should be set
-                    # by finalize - we don't have enough info here
-                    geo_col_name = df.dtypes[geometry_cols_mask].index[0]
-                    df.set_geometry(geo_col_name, inplace=True)
-            return df
-
         return _geodataframe_constructor_with_fallback
 
-    # def _constructor_sliced(self):
-    #     def _fallback(data, index=None, crs=None, **kwargs):
-    #         try:
-    #             with warnings.catch_warnings():
-    #                 warnings.filterwarnings(
-    #                     "ignore",
-    #                     message=_SERIES_WARNING_MSG,
-    #                     category=FutureWarning,
-    #                     module="geopandas[.*]",
-    #                 )
-    #                 return GeoSeries(data, index=index, crs=crs, **kwargs)
-    #         except TypeError:
-    #             return Series(data=data, index=index, **kwargs)
-    #     return _fallback
-    #     return GeoSeries
     @property
     def _constructor_sliced(self):
         return _geoseries_constructor_with_fallback
-
-    # _constructor_sliced = GeoSeries
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
@@ -1665,10 +1646,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
-        # TODO change this, this is not the place to fix this, need to fix join, so
-        #   that if L or R is gdf result is gdf, not type of left wins
         df = GeoDataFrame(
-            df_copy.drop(df_copy._geometry_column_name, axis=1).join(exploded_geom)
+            df_copy.drop(df_copy._geometry_column_name, axis=1).join(exploded_geom),
+            geometry=self._geometry_column_name,
         ).__finalize__(self)
 
         # reset to MultiIndex, otherwise df index is only first level of
@@ -1679,8 +1659,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if "__level_1" in df.columns:
             df = df.rename(columns={"__level_1": "level_1"})
 
-        geo_df = df.set_geometry(self._geometry_column_name)
-        return geo_df
+        return df
 
     # overrides the pandas astype method to ensure the correct return type
     def astype(self, dtype, copy=True, errors="raise", **kwargs):
