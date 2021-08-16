@@ -388,7 +388,7 @@ def _nearest_query(
 def sjoin_nearest(
     left_df,
     right_df,
-    how="inner",
+    how="left",
     max_distance=None,
     lsuffix="left",
     rsuffix="right",

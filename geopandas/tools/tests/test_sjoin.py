@@ -546,11 +546,11 @@ def test_no_nearest_all():
     ),
 )
 class TestNearest:
-    @pytest.mark.parametrize("how", ("left", "right"))
-    def test_allowed_hows(self, how: str):
+    @pytest.mark.parametrize("how_kwargs", ({}, {"how": "left"}, {"how": "right"}))
+    def test_allowed_hows(self, how_kwargs):
         left = geopandas.GeoDataFrame({"geometry": []})
         right = geopandas.GeoDataFrame({"geometry": []})
-        sjoin_nearest(left, right, how=how)  # no error
+        sjoin_nearest(left, right, **how_kwargs)  # no error
 
     @pytest.mark.parametrize("how", ("inner", "abcde"))
     def test_invalid_hows(self, how: str):
