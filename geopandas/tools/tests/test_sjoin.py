@@ -104,8 +104,7 @@ class TestSpatialJoin:
         left = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
         right = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
         joined = sjoin(left, right, how=how, lsuffix=lsuffix, rsuffix=rsuffix)
-        expected_cols = expected_cols | set(("geometry",))
-        assert set(joined.columns) == expected_cols
+        assert set(joined.columns) == expected_cols | set(("geometry",))
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
