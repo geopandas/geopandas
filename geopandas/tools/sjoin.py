@@ -483,7 +483,7 @@ path("naturalearth_lowres"))
     sjoin : binary predicate joins
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
