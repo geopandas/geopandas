@@ -217,16 +217,18 @@ def _geom_predicate_query(left_df, right_df, op):
     return indices
 
 
-def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
+def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     """Join the GeoDataFrames at the DataFrame level.
 
     Parameters
     ----------
-    indices : DataFrame
-        Indexes returned by the geometric join.
+    join_df : DataFrame
+        Indices and joint data returned by the geometric join.
         Must have columns `_key_left` and `_key_right`
         with integer indices representing the matches
         from `left_df` and `right_df` respectively.
+        Additional columns may be included and will be copied to
+        the resultant GeoDataFrame.
     left_df : GeoDataFrame
     right_df : GeoDataFrame
     lsuffix : string
@@ -275,9 +277,9 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
 
     # perform join on the dataframes
     if how == "inner":
-        indices = indices.set_index("_key_left")
+        join_df = join_df.set_index("_key_left")
         joined = (
-            left_df.merge(indices, left_index=True, right_index=True)
+            left_df.merge(join_df, left_index=True, right_index=True)
             .merge(
                 right_df.drop(right_df.geometry.name, axis=1),
                 left_on="_key_right",
@@ -293,9 +295,9 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
             joined.index.name = left_index_name
 
     elif how == "left":
-        indices = indices.set_index("_key_left")
+        join_df = join_df.set_index("_key_left")
         joined = (
-            left_df.merge(indices, left_index=True, right_index=True, how="left")
+            left_df.merge(join_df, left_index=True, right_index=True, how="left")
             .merge(
                 right_df.drop(right_df.geometry.name, axis=1),
                 how="left",
@@ -315,7 +317,7 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
         joined = (
             left_df.drop(left_df.geometry.name, axis=1)
             .merge(
-                indices.merge(
+                join_df.merge(
                     right_df, left_on="_key_right", right_index=True, how="right"
                 ),
                 left_index=True,
@@ -374,15 +376,15 @@ def _nearest_query(
                 distances = distances[sort_order]
         else:
             l_idx, r_idx = input_idx, tree_idx
-        indices = pd.DataFrame(
+        join_df = pd.DataFrame(
             {"_key_left": l_idx, "_key_right": r_idx, "distances": distances}
         )
     else:
         # when sindex is empty / has no valid geometries
-        indices = pd.DataFrame(
+        join_df = pd.DataFrame(
             columns=["_key_left", "_key_right", "distances"], dtype=float
         )
-    return indices
+    return join_df
 
 
 def sjoin_nearest(
@@ -475,14 +477,14 @@ path("naturalearth_lowres"))
 
     return_distance = distance_col is not None
 
-    join_data = _nearest_query(left_df, right_df, max_distance, how, return_distance)
+    join_df = _nearest_query(left_df, right_df, max_distance, how, return_distance)
 
     if return_distance:
-        join_data = join_data.rename(columns={"distances": distance_col})
+        join_df = join_df.rename(columns={"distances": distance_col})
     else:
-        join_data.pop("distances")
+        join_df.pop("distances")
 
-    joined = _frame_join(join_data, left_df, right_df, how, lsuffix, rsuffix)
+    joined = _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix)
 
     if return_distance:
         columns = [c for c in joined.columns if c != distance_col] + [distance_col]
