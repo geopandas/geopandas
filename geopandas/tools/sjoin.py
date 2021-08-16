@@ -319,6 +319,7 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
                 left_index=True,
                 right_on="_key_left",
                 how="right",
+                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix))
             )
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
