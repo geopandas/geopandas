@@ -89,6 +89,28 @@ def dfs(request):
 
 
 class TestSpatialJoin:
+    @pytest.mark.parametrize(
+        "how, lsuffix, rsuffix, expected_cols",
+        [
+            ("left", "left", "right", {"col_left", "col_right", "index_right"}),
+            ("inner", "left", "right", {"col_left", "col_right", "index_right"}),
+            ("right", "left", "right", {"col_left", "col_right", "index_left"}),
+            ("left", "lft", "rgt", {"col_lft", "col_rgt", "index_rgt"}),
+            ("inner", "lft", "rgt", {"col_lft", "col_rgt", "index_rgt"}),
+            ("right", "lft", "rgt", {"col_lft", "col_rgt", "index_lft"}),
+        ],
+    )
+    def test_suffixes(self, how: str, lsuffix: str, rsuffix: str, expected_cols):
+        left = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
+        right = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
+        joined = sjoin(left, right, how=how, lsuffix=lsuffix, rsuffix=rsuffix)
+        assert set(joined.columns) == (
+            expected_cols
+            | {
+                "geometry",
+            }
+        )
+
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs
