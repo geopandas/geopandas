@@ -114,7 +114,9 @@ stria    AUT    416600.0
     return joined
 
 
-def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
+def _basic_checks(
+    left_df, right_df, how, lsuffix, rsuffix, allowed_hows=("left", "right", "inner")
+):
     """Checks the validity of join input parameters.
 
     `how` must be one of the valid options.
@@ -142,7 +144,6 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
             "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
         )
 
-    allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
         raise ValueError(
             '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
@@ -487,7 +488,9 @@ path("naturalearth_lowres"))
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+    _basic_checks(
+        left_df, right_df, how, lsuffix, rsuffix, allowed_hows=("left", "right")
+    )
 
     return_distance = distance_col is not None
 

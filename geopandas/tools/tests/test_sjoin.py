@@ -546,7 +546,20 @@ def test_no_nearest_all():
     ),
 )
 class TestNearest:
-    @pytest.mark.parametrize("how", ("left", "right", "inner"))
+    @pytest.mark.parametrize("how", ("left", "right"))
+    def test_allowed_hows(self, how: str):
+        left = geopandas.GeoDataFrame({"geometry": []})
+        right = geopandas.GeoDataFrame({"geometry": []})
+        sjoin_nearest(left, right, how=how)  # no error
+
+    @pytest.mark.parametrize("how", ("inner", "abcde"))
+    def test_invalid_hows(self, how: str):
+        left = geopandas.GeoDataFrame({"geometry": []})
+        right = geopandas.GeoDataFrame({"geometry": []})
+        with pytest.raises(ValueError, match="`how` was"):
+            sjoin_nearest(left, right, how=how)
+
+    @pytest.mark.parametrize("how", ("left", "right"))
     @pytest.mark.parametrize("max_distance", (None, 1))
     @pytest.mark.parametrize("distance_col", (None, "distance"))
     def test_empty_right_df(self, how: str, max_distance: float, distance_col: str):
@@ -565,7 +578,7 @@ class TestNearest:
             if distance_col is not None:
                 assert joined[distance_col].isna().all()
 
-    @pytest.mark.parametrize("how", ("left", "right", "inner"))
+    @pytest.mark.parametrize("how", ("left", "right"))
     @pytest.mark.parametrize("max_distance", (None, 1))
     @pytest.mark.parametrize("distance_col", (None, "distance"))
     def test_empty_left_df(self, how: str, max_distance: float, distance_col: str):
@@ -583,74 +596,6 @@ class TestNearest:
             assert joined["index_left"].isna().all()
             if distance_col is not None:
                 assert joined[distance_col].isna().all()
-
-    @pytest.mark.parametrize(
-        "geo_left, geo_right, expected_left, expected_right, distances",
-        [
-            ([Point(0, 0), Point(1, 1)], [Point(1, 1)], [1], [0], [0]),
-            (
-                [Point(0, 0), Point(1, 1)],
-                [Point(1, 1), Point(0, 0)],
-                [0, 1],
-                [1, 0],
-                [0, 0],
-            ),
-            (
-                [Point(0, 0), Point(1, 1)],
-                [Point(1, 1), Point(0, 0), Point(0, 0)],
-                [0, 0, 1],
-                [1, 2, 0],
-                [0, 0, 0],
-            ),
-            (
-                [Point(0, 0), Point(1, 1)],
-                [Point(1, 1), Point(0, 0), Point(2, 2)],
-                [0, 1],
-                [1, 0],
-                [0, 0],
-            ),
-            (
-                [Point(0, 0), Point(1, 1)],
-                [Point(1, 1), Point(0.25, 1)],
-                [0, 1],
-                [1, 0],
-                [math.sqrt(0.25 ** 2 + 1), 0],
-            ),
-            (
-                [Point(0, 0), Point(1, 1)],
-                [Point(-10, -10), Point(100, 100)],
-                [0, 1],
-                [0, 0],
-                [math.sqrt(10 ** 2 + 10 ** 2), math.sqrt(11 ** 2 + 11 ** 2)],
-            ),
-            (
-                [Point(0, 0), Point(1, 1), Point(0, 0)],
-                [Point(1.1, 1.1), Point(0, 0)],
-                [0, 2, 1],
-                [1, 1, 0],
-                [0, 0, np.sqrt(0.1 ** 2 + 0.1 ** 2)],
-            ),
-        ],
-    )
-    def test_join_inner(
-        self,
-        geo_left,
-        geo_right,
-        expected_left: Sequence[int],
-        expected_right: Sequence[int],
-        distances: Sequence[float],
-    ):
-        left = geopandas.GeoDataFrame({"geometry": geo_left})
-        right = geopandas.GeoDataFrame({"geometry": geo_right})
-        expected_gdf = left.iloc[expected_left]
-        expected_gdf["index_right"] = expected_right
-        # without distance col
-        joined = sjoin_nearest(left, right, how="inner")
-        assert_geodataframe_equal(expected_gdf, joined)
-        # with distance col
-        expected_gdf["distance_col"] = np.array(distances, dtype=float)
-        joined = sjoin_nearest(left, right, how="inner", distance_col="distance_col")
-        assert_geodataframe_equal(expected_gdf, joined)
 
     @pytest.mark.parametrize(
         "geo_left, geo_right, expected_left, expected_right, distances",
