@@ -1248,7 +1248,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         data = np.concatenate([ga.data for ga in to_concat])
-        return GeometryArray(data, crs=to_concat[0].crs)
+        return GeometryArray(data, crs=_get_common_crs(to_concat))
 
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
@@ -1319,3 +1319,24 @@ class GeometryArray(ExtensionArray):
             else:
                 return False
         return (self == item).any()
+
+
+def _get_common_crs(elements):
+
+    crss = set(el.crs for el in elements)
+    crss_not_none = [c for c in crss if c is not None]
+    names = [c.name for c in crss_not_none]
+
+    if len(crss_not_none) == 0:
+        return None
+    if len(crss_not_none) == 1:
+        if len(crss) != 1:
+            warnings.warn(
+                f"CRS not set for some of the concatenation inputs. "
+                f"Setting output's CRS as {names[0]}"
+            )
+        return crss_not_none[0]
+
+    raise ValueError(
+        f"Can not determine common CRS for concatenation inputs among {names}"
+    )

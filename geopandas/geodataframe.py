@@ -1399,6 +1399,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
+
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1408,6 +1409,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # concat operation: using metadata of the first object
         elif method == "concat":
             for name in self._metadata:
+                #  if name == '_crs':
+                #  continue
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
             if (self.columns == self._geometry_column_name).sum() > 1:
