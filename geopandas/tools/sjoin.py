@@ -105,7 +105,7 @@ stria    AUT    416600.0
             override_message = (
                 "A non-default value for `predicate` was passed"
                 f' (got `predicate="{predicate}"`'
-                f' in combination with `op` (got `op="{op}"`).'
+                f' in combination with `op="{op}"`).'
                 " The value of `predicate` will be overriden by the value of `op`,"
                 " , which may result in unexpected behavior."
                 f"\n{deprectation_message}"
