@@ -96,7 +96,7 @@ stria    AUT    416600.0
     """
     if "op" in kwargs:
         op = kwargs.pop("op")
-        deprectation_message = (
+        deprecation_message = (
             "The `op` parameter is deprecated and will be removed"
             " in a future release. Please use the `predicate` parameter"
             " instead."
