@@ -457,6 +457,15 @@ class TestDataFrame:
         for f in data["features"]:
             assert "id" not in f.keys()
 
+    def test_to_json_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df.to_json()
+
     def test_copy(self):
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
@@ -484,6 +493,16 @@ class TestDataFrame:
         df2.to_file(tempfilename, crs=2263)
         df = GeoDataFrame.from_file(tempfilename)
         assert df.crs == "epsg:2263"
+
+    def test_to_file_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            tempfilename = os.path.join(self.tempdir, "crs.shp")
+            df.to_file(tempfilename)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
@@ -630,7 +649,7 @@ class TestDataFrame:
         df = self.df.iloc[:1].copy()
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
-        # null: ouput the missing entries as JSON null
+        # null: output the missing entries as JSON null
         result = list(df.iterfeatures(na="null"))[0]["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
@@ -665,6 +684,14 @@ class TestDataFrame:
         # keep
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
+
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df_with_duplicate_columns = df[
+                ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
+            ]
+            list(df_with_duplicate_columns.iterfeatures())
 
         # geometry not set
         df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
@@ -980,6 +1007,24 @@ class TestConstructor:
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
+
+    def test_repeat_geo_col(self):
+        df = pd.DataFrame(
+            [
+                {"geometry": Point(x, y), "geom": Point(x, y)}
+                for x, y in zip(range(3), range(3))
+            ],
+        )
+        # explicitly prevent construction of gdf with repeat geometry column names
+        # two columns called "geometry", geom col inferred
+        df2 = df.rename(columns={"geom": "geometry"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df2)
+        # ensure case is caught when custom geom column name is used
+        # two columns called "geom", geom col explicit
+        df3 = df.rename(columns={"geometry": "geom"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df3, geometry="geom")
 
 
 def test_geodataframe_crs():

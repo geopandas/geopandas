@@ -31,13 +31,12 @@ def geocode(strings, provider=None, **kwargs):
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
         Specifies geocoding service to use. If none is provided,
-        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
-        terms of service at:
-        https://geocode.farm/geocoding/free-api-documentation/ ).
+        will use 'photon' (see the Photon's terms of service at:
+        https://photon.komoot.io).
 
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GeocodeFarm) may be used.
+        (e.g., geopy.geocoders.Photon) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -62,11 +61,8 @@ def geocode(strings, provider=None, **kwargs):
     """
 
     if provider is None:
-        # https://geocode.farm/geocoding/free-api-documentation/
-        provider = "geocodefarm"
-        throttle_time = 0.25
-    else:
-        throttle_time = _get_throttle_time(provider)
+        provider = "photon"
+    throttle_time = _get_throttle_time(provider)
 
     return _query(strings, True, provider, throttle_time, **kwargs)
 
@@ -85,13 +81,12 @@ def reverse_geocode(points, provider=None, **kwargs):
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
         Specifies geocoding service to use. If none is provided,
-        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
-        terms of service at:
-        https://geocode.farm/geocoding/free-api-documentation/ ).
+        will use 'photon' (see the Photon's terms of service at:
+        https://photon.komoot.io).
 
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GeocodeFarm) may be used.
+        (e.g., geopy.geocoders.Photon) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -117,11 +112,8 @@ def reverse_geocode(points, provider=None, **kwargs):
     """
 
     if provider is None:
-        # https://geocode.farm/geocoding/free-api-documentation/
-        provider = "geocodefarm"
-        throttle_time = 0.25
-    else:
-        throttle_time = _get_throttle_time(provider)
+        provider = "photon"
+    throttle_time = _get_throttle_time(provider)
 
     return _query(points, False, provider, throttle_time, **kwargs)
 

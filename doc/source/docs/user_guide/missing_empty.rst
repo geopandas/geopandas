@@ -22,7 +22,7 @@ empty geometries:
   a Shapely geometry object.
 - **Missing geometries** are unknown values in a GeoSeries. They will typically
   be propagated in operations (for example in calculations of the area or of
-  the intersection), or ignored in reductions such as ``unary_union``.
+  the intersection), or ignored in reductions such as :attr:`~GeoSeries.unary_union`.
   The scalar object (when accessing a single element of a GeoSeries) is the
   Python ``None`` object.
 
@@ -67,7 +67,7 @@ you can use the :attr:`GeoSeries.is_empty` attribute:
 
     s.is_empty
 
-To get only the actual geometry objects that are neiter missing nor empty,
+To get only the actual geometry objects that are neither missing nor empty,
 you can use a combination of both:
 
 .. ipython:: python

@@ -46,11 +46,19 @@ def test_repr_boxed_display_precision():
     s1 = GeoSeries([p1, p2, None])
     assert "POINT (10.12346 50.12346)" in repr(s1)
 
+    # geographic coordinates 4326
+    s3 = GeoSeries([p1, p2], crs=4326)
+    assert "POINT (10.12346 50.12346)" in repr(s3)
+
     # projected coordinates
     p1 = Point(3000.123456789, 3000.123456789)
     p2 = Point(4000.123456789, 4000.123456789)
     s2 = GeoSeries([p1, p2, None])
     assert "POINT (3000.123 3000.123)" in repr(s2)
+
+    # projected geographic coordinate
+    s4 = GeoSeries([p1, p2], crs=3857)
+    assert "POINT (3000.123 3000.123)" in repr(s4)
 
     geopandas.options.display_precision = 1
     assert "POINT (10.1 50.1)" in repr(s1)
@@ -71,11 +79,7 @@ def test_repr_all_missing():
 def test_repr_empty():
     # https://github.com/geopandas/geopandas/issues/1195
     s = GeoSeries([])
-    if compat.PANDAS_GE_025:
-        # repr with correct name fixed in pandas 0.25
-        assert repr(s) == "GeoSeries([], dtype: geometry)"
-    else:
-        assert repr(s) == "Series([], dtype: geometry)"
+    assert repr(s) == "GeoSeries([], dtype: geometry)"
     df = GeoDataFrame({"a": [], "geometry": s})
     assert "Empty GeoDataFrame" in repr(df)
     # https://github.com/geopandas/geopandas/issues/1184
@@ -549,6 +553,10 @@ def test_preserve_attrs(df):
     # preserve attrs in methods
     df2 = df.reset_index()
     assert df2.attrs == attrs
+
+    # https://github.com/geopandas/geopandas/issues/1875
+    df3 = df2.explode()
+    assert df3.attrs == attrs
 
 
 @pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")
