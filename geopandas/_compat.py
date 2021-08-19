@@ -37,6 +37,7 @@ USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
 
 PYGEOS_GE_09 = None
+PYGEOS_GE_010 = None
 
 try:
     import pygeos  # noqa
@@ -45,6 +46,7 @@ try:
     if str(pygeos.__version__) >= LooseVersion("0.8"):
         HAS_PYGEOS = True
         PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
+        PYGEOS_GE_010 = str(pygeos.__version__) >= LooseVersion("0.10")
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"

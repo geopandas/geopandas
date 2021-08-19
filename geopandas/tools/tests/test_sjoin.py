@@ -17,18 +17,7 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 
-MIN_PYGEOS_VERSION_FOR_NEAREST = "0.10"
-try:
-    from pygeos import __version__ as pygeos_version
-
-    PYGEOS_HAS_NEAREST = LooseVersion(pygeos_version) >= LooseVersion(
-        MIN_PYGEOS_VERSION_FOR_NEAREST
-    )
-except ImportError:
-    PYGEOS_HAS_NEAREST = False
-
-
-TEST_NEAREST = PYGEOS_HAS_NEAREST and compat.USE_PYGEOS
+TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
 
 
 pytestmark = pytest.mark.skip_no_sindex
@@ -523,7 +512,7 @@ class TestSpatialJoinNaturalEarth:
 @pytest.mark.skipif(
     TEST_NEAREST,
     reason=(
-        f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
+        "PyGEOS >= 0.10.0"
         " must be installed and activated via the geopandas.options module to"
         " test sjoin_nearest"
     ),
@@ -540,7 +529,7 @@ def test_no_nearest_all():
 @pytest.mark.skipif(
     not TEST_NEAREST,
     reason=(
-        f"PyGEOS >= {MIN_PYGEOS_VERSION_FOR_NEAREST}"
+        "PyGEOS >= 0.10.0"
         " must be installed and activated via the geopandas.compat module to"
         " test sjoin_nearest"
     ),
