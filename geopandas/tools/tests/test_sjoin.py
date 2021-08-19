@@ -100,8 +100,7 @@ class TestSpatialJoin:
     @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
     def test_deprecated_op_param(self, dfs, op):
         _, df1, df2, _ = dfs
-        match = "`op` parameter is deprecated"
-        with pytest.warns(FutureWarning, match=match):
+        with pytest.warns(FutureWarning, match="`op` parameter is deprecated"):
             sjoin(df1, df2, op=op)
 
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
@@ -125,12 +124,11 @@ class TestSpatialJoin:
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
     def test_unknown_kwargs(self, dfs):
         _, df1, df2, _ = dfs
-        match = (
-            "keyword arguments were passed but are not recognized by `sjoin`:"
-            ' {"extra_param", "other_extra"}'
-        )
-        with pytest.raises(ValueError, match=match):
-            sjoin(df1, df2, extra_param="test", other_extra="test2")
+        with pytest.raises(
+            TypeError,
+            match=r"sjoin\(\) got an unexpected keyword argument 'extra_param'",
+        ):
+            sjoin(df1, df2, extra_param="test")
 
     @pytest.mark.parametrize(
         "dfs",
@@ -144,10 +142,11 @@ class TestSpatialJoin:
         indirect=True,
     )
     @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
-    def test_inner(self, predicate, dfs):
+    @pytest.mark.parametrize("predicate_kw", ["predicate", "op"])
+    def test_inner(self, predicate, predicate_kw, dfs):
         index, df1, df2, expected = dfs
 
-        res = sjoin(df1, df2, how="inner", predicate=predicate)
+        res = sjoin(df1, df2, how="inner", **{predicate_kw: predicate})
 
         exp = expected[predicate].dropna().copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})

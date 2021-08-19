@@ -40,9 +40,6 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
-    **kwargs: dict
-        For handling of deprecated `op` param, which will be replaced by
-        `predicate`.
 
     Examples
     --------
@@ -113,13 +110,10 @@ stria    AUT    416600.0
             warnings.warn(override_message, UserWarning, stacklevel=4)
         else:
             warnings.warn(deprectation_message, FutureWarning, stacklevel=4)
+        predicate = op
     if kwargs:
-        msg = (
-            "The following keyword arguments were passed"
-            " but are not recognized by `sjoin`:"
-            " {" + ", ".join([f'"{k}"' for k in kwargs.keys()]) + "}"
-        )
-        raise ValueError(msg)
+        first = next(iter(kwargs.keys()))
+        raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
 
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
