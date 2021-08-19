@@ -156,4 +156,4 @@ If you can, it is highly recommended that you use this parameter.
 
 **distance_col**
 
-If set, a column containing the computed distances for matching geometries will be inserted into the resultant joined GeoDataFrame under the given name.
+If set, the resultant GeoDataFrame will include a column with this name containing the computed distances between an input geometry and the nearest geometry.
