@@ -105,11 +105,11 @@ stria    AUT    416600.0
                 f' in combination with `op="{op}"`).'
                 " The value of `predicate` will be overriden by the value of `op`,"
                 " , which may result in unexpected behavior."
-                f"\n{deprectation_message}"
+                f"\n{deprecation_message}"
             )
             warnings.warn(override_message, UserWarning, stacklevel=4)
         else:
-            warnings.warn(deprectation_message, FutureWarning, stacklevel=4)
+            warnings.warn(deprecation_message, FutureWarning, stacklevel=4)
         predicate = op
     if kwargs:
         first = next(iter(kwargs.keys()))
