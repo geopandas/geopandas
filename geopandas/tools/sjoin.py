@@ -398,7 +398,10 @@ def sjoin_nearest(
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
-    See the User Guide page :doc:`../../user_guide/mergingdata` for details.
+    Results results will include multiple output records for a single input record
+    where there are multiple equidistant nearest or intersected neighbors.
+
+    See the User Guide page :doc:`../../user_guide/mergingdata` for more details.
 
 
     Parameters
