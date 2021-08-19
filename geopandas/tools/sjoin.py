@@ -223,7 +223,7 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     Parameters
     ----------
     join_df : DataFrame
-        Indices and joint data returned by the geometric join.
+        Indices and join data returned by the geometric join.
         Must have columns `_key_left` and `_key_right`
         with integer indices representing the matches
         from `left_df` and `right_df` respectively.
