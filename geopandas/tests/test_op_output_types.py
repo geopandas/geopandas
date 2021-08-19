@@ -1,5 +1,6 @@
 import pandas as pd
 import pyproj
+import pytest
 
 from shapely.geometry import Point
 
@@ -31,10 +32,10 @@ class TestDataFrameMethodReturnTypes:
         )
 
     @staticmethod
-    def _check_metadata_gdf(gdf, geometry_column_name="geometry", crs=crs_wgs):
+    def _check_metadata_gdf(gdf, geo_col_name="geometry", crs=crs_wgs):
 
-        assert gdf._geometry_column_name == geometry_column_name
-        assert gdf.geometry.name == geometry_column_name
+        assert gdf._geometry_column_name == geo_col_name
+        assert gdf.geometry.name == geo_col_name
         assert gdf.crs == crs
 
     @staticmethod
@@ -42,15 +43,15 @@ class TestDataFrameMethodReturnTypes:
         assert gs.name == name
         assert gs.crs == crs
 
-    def _check_standard_df(self, results, method=None):
+    def _check_standard_df(self, results, geo_col_name, method=None):
         for i in results:
             print(i.columns if isinstance(i, pd.DataFrame) else i.name)
 
         assert type(results[0]) is pd.DataFrame
         assert type(results[1]) is GeoDataFrame
-        self._check_metadata_gdf(results[1])
+        self._check_metadata_gdf(results[1], geo_col_name=geo_col_name)
         assert type(results[2]) is GeoDataFrame
-        self._check_metadata_gdf(results[2])
+        self._check_metadata_gdf(results[2], geo_col_name=geo_col_name)
         # Non geometry column is not treated specially, we get a DataFrame
         # Not sure this is the most desirable behaviour, but it is at least consistent
         # If there is only one geometry column left, returning a gdf is not ambiguous,
@@ -72,78 +73,100 @@ class TestDataFrameMethodReturnTypes:
             assert type(results[3]) is GeoDataFrame
 
         if method in exceptions_for_now:
-            assert type(results[3]) is pd.DataFrame
+            assert type(results[4]) is pd.DataFrame
         else:
-            assert type(results[3]) is GeoDataFrame
+            assert type(results[4]) is GeoDataFrame
         # self._check_metadata_gs(results[4], crsgs_osgb)
         assert type(results[5]) is pd.DataFrame
 
-    def _check_standard_srs(self, results):
+    def _check_standard_srs(self, results, geo_col_name):
         assert type(results[0]) is GeoSeries
-        self._check_metadata_gs(results[0])
+        self._check_metadata_gs(results[0], geo_col_name)
         assert type(results[1]) is GeoSeries
         self._check_metadata_gs(results[1], name="geometry2")
         assert type(results[2]) is pd.Series
         assert results[2].name == "value1"
 
-    def test_getitem(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_getitem(self, set_geom_col_name):
+        if self.df.geometry.name != set_geom_col_name:
+            df = self.df.rename_geometry(set_geom_col_name)
+        else:
+            df = self.df.copy()
         self._check_standard_df(
             [
-                self.df[["value1", "value2"]],
-                self.df[["geometry", "geometry2"]],
-                self.df[["geometry"]],
-                self.df[["geometry2", "value1"]],
-                self.df[["geometry2"]],
-                self.df[["value1"]],
+                df[["value1", "value2"]],
+                df[[set_geom_col_name, "geometry2"]],
+                df[[set_geom_col_name]],
+                df[["geometry2", "value1"]],
+                df[["geometry2"]],
+                df[["value1"]],
             ],
+            geo_col_name=set_geom_col_name,
             method="getitem",
         )
         self._check_standard_srs(
-            [self.df["geometry"], self.df["geometry2"], self.df["value1"]]
+            [df[set_geom_col_name], df["geometry2"], df["value1"]],
+            geo_col_name=set_geom_col_name,
         )
 
-    def test_loc(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_loc(self, set_geom_col_name):
+        if self.df.geometry.name != set_geom_col_name:
+            df = self.df.rename_geometry(set_geom_col_name)
+        else:
+            df = self.df.copy()
         self._check_standard_df(
             [
-                self.df.loc[:, ["value1", "value2"]],
-                self.df.loc[:, ["geometry", "geometry2"]],
-                self.df.loc[:, ["geometry"]],
-                self.df.loc[:, ["geometry2", "value1"]],
-                self.df.loc[:, ["geometry2"]],
-                self.df.loc[:, ["value1"]],
-            ]
+                df.loc[:, ["value1", "value2"]],
+                df.loc[:, [set_geom_col_name, "geometry2"]],
+                df.loc[:, [set_geom_col_name]],
+                df.loc[:, ["geometry2", "value1"]],
+                df.loc[:, ["geometry2"]],
+                df.loc[:, ["value1"]],
+            ],
+            geo_col_name=set_geom_col_name,
         )
         self._check_standard_df(
             [
-                self.df.loc[1:5, ["value1", "value2"]],
-                self.df.loc[1:5, ["geometry", "geometry2"]],
-                self.df.loc[1:5, ["geometry"]],
-                self.df.loc[1:5, ["geometry2", "value1"]],
-                self.df.loc[1:5, ["geometry2"]],
-                self.df.loc[1:5, ["value1"]],
-            ]
+                df.loc[1:5, ["value1", "value2"]],
+                df.loc[1:5, [set_geom_col_name, "geometry2"]],
+                df.loc[1:5, [set_geom_col_name]],
+                df.loc[1:5, ["geometry2", "value1"]],
+                df.loc[1:5, ["geometry2"]],
+                df.loc[1:5, ["value1"]],
+            ],
+            geo_col_name=set_geom_col_name,
         )
         self._check_standard_srs(
             [
-                self.df.loc[:, "geometry"],
-                self.df.loc[:, "geometry2"],
-                self.df.loc[:, "value1"],
-            ]
+                df.loc[:, set_geom_col_name],
+                df.loc[:, "geometry2"],
+                df.loc[:, "value1"],
+            ],
+            geo_col_name=set_geom_col_name,
         )
 
-    def test_iloc(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_iloc(self, set_geom_col_name):
+        if self.df.geometry.name != set_geom_col_name:
+            df = self.df.rename_geometry(set_geom_col_name)
+        else:
+            df = self.df.copy()
         self._check_standard_df(
             [
-                self.df.iloc[:, 0:2],
-                self.df.iloc[:, 2:4],
-                self.df.iloc[:, [2]],
-                self.df.iloc[:, [3, 0]],
-                self.df.iloc[:, [3]],
-                self.df.iloc[:, [0]],
-            ]
+                df.iloc[:, 0:2],
+                df.iloc[:, 2:4],
+                df.iloc[:, [2]],
+                df.iloc[:, [3, 0]],
+                df.iloc[:, [3]],
+                df.iloc[:, [0]],
+            ],
+            geo_col_name=set_geom_col_name,
         )
         self._check_standard_srs(
-            [self.df.iloc[:, 2], self.df.iloc[:, 3], self.df.iloc[:, 0]]
+            [df.iloc[:, 2], df.iloc[:, 3], df.iloc[:, 0]],
+            geo_col_name=set_geom_col_name,
         )
 
     def test_squeeze(self):
@@ -161,7 +184,7 @@ class TestDataFrameMethodReturnTypes:
     def test_to_frame(self):
         res1 = self.df["geometry"].to_frame()
         assert type(res1) is GeoDataFrame
-        self._check_metadata_gdf(res1, geometry_column_name="geometry")
+        self._check_metadata_gdf(res1, geo_col_name="geometry")
         res2 = self.df["geometry2"].to_frame()
         assert type(res2) is GeoDataFrame
         # TODO this reflects current behaviour, but we should fix
@@ -171,62 +194,82 @@ class TestDataFrameMethodReturnTypes:
         # also res2.geometry should not crash because geometry isn't set
         assert type(self.df["value1"].to_frame()) is pd.DataFrame
 
-    def test_reindex(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_reindex(self, set_geom_col_name):
+        if self.df.geometry.name != set_geom_col_name:
+            df = self.df.rename_geometry(set_geom_col_name)
+        else:
+            df = self.df.copy()
         self._check_standard_df(
             [
-                self.df.reindex(columns=["value1", "value2"]),
-                self.df.reindex(columns=["geometry", "geometry2"]),
-                self.df.reindex(columns=["geometry"]),
-                self.df.reindex(columns=["geometry2", "value1"]),
-                self.df.reindex(columns=["geometry2"]),
-                self.df.reindex(columns=["value1"]),
-            ]
+                df.reindex(columns=["value1", "value2"]),
+                df.reindex(columns=[set_geom_col_name, "geometry2"]),
+                df.reindex(columns=[set_geom_col_name]),
+                df.reindex(columns=["geometry2", "value1"]),
+                df.reindex(columns=["geometry2"]),
+                df.reindex(columns=["value1"]),
+            ],
+            geo_col_name=set_geom_col_name,
         )
 
-    def test_drop(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_drop(self, set_geom_col_name):
+        if self.df.geometry.name != set_geom_col_name:
+            df = self.df.rename_geometry(set_geom_col_name)
+        else:
+            df = self.df.copy()
         self._check_standard_df(
             [
-                self.df.drop(columns=["geometry", "geometry2"]),
-                self.df.drop(columns=["value1", "value2"]),
-                self.df.drop(columns=["value1", "value2", "geometry2"]),
-                self.df.drop(columns=["geometry", "value2"]),
-                self.df.drop(columns=["value1", "value2", "geometry"]),
-                self.df.drop(columns=["geometry2", "value2", "geometry"]),
-            ]
+                df.drop(columns=[set_geom_col_name, "geometry2"]),
+                df.drop(columns=["value1", "value2"]),
+                df.drop(columns=["value1", "value2", "geometry2"]),
+                df.drop(columns=[set_geom_col_name, "value2"]),
+                df.drop(columns=["value1", "value2", set_geom_col_name]),
+                df.drop(columns=["geometry2", "value2", set_geom_col_name]),
+            ],
+            geo_col_name=set_geom_col_name,
         )
 
-    def test_apply(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_apply(self, set_geom_col_name):
+        if self.df.geometry.name != set_geom_col_name:
+            df = self.df.rename_geometry(set_geom_col_name)
+        else:
+            df = self.df.copy()
         self._check_standard_srs(
             [
-                self.df["geometry"].apply(lambda x: x),
-                self.df["geometry2"].apply(lambda x: x),
-                self.df["value1"].apply(lambda x: x),
+                df[set_geom_col_name].apply(lambda x: x),
+                df["geometry2"].apply(lambda x: x),
+                df["value1"].apply(lambda x: x),
             ],
+            geo_col_name=set_geom_col_name,
         )
 
-        assert type(self.df["geometry"].apply(lambda x: str(x))) is pd.Series
-        assert type(self.df["geometry2"].apply(lambda x: str(x))) is pd.Series
+        assert type(df[set_geom_col_name].apply(lambda x: str(x))) is pd.Series
+        assert type(df["geometry2"].apply(lambda x: str(x))) is pd.Series
 
         self._check_standard_df(
             [
-                self.df[["value1", "value2"]].apply(lambda x: x),
-                self.df[["geometry", "geometry2"]].apply(lambda x: x),
-                self.df[["geometry"]].apply(lambda x: x),
-                self.df[["geometry2", "value1"]].apply(lambda x: x),
-                self.df[["geometry2"]].apply(lambda x: x),
-                self.df[["value1"]].apply(lambda x: x),
+                df[["value1", "value2"]].apply(lambda x: x),
+                df[[set_geom_col_name, "geometry2"]].apply(lambda x: x),
+                df[[set_geom_col_name]].apply(lambda x: x),
+                df[["geometry2", "value1"]].apply(lambda x: x),
+                df[["geometry2"]].apply(lambda x: x),
+                df[["value1"]].apply(lambda x: x),
             ],
+            geo_col_name=set_geom_col_name,
             method="apply",
         )
         self._check_standard_df(
             [
-                self.df[["value1", "value2"]].apply(lambda x: x, axis=1),
-                self.df[["geometry", "geometry2"]].apply(lambda x: x, axis=1),
-                self.df[["geometry"]].apply(lambda x: x, axis=1),
-                self.df[["geometry2", "value1"]].apply(lambda x: x, axis=1),
-                self.df[["geometry2"]].apply(lambda x: x, axis=1),
-                self.df[["value1"]].apply(lambda x: x, axis=1),
+                df[["value1", "value2"]].apply(lambda x: x, axis=1),
+                df[[set_geom_col_name, "geometry2"]].apply(lambda x: x, axis=1),
+                df[[set_geom_col_name]].apply(lambda x: x, axis=1),
+                df[["geometry2", "value1"]].apply(lambda x: x, axis=1),
+                df[["geometry2"]].apply(lambda x: x, axis=1),
+                df[["value1"]].apply(lambda x: x, axis=1),
             ],
+            geo_col_name=set_geom_col_name,
             method="apply",
         )
 
