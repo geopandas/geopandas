@@ -1415,27 +1415,25 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        # Reconstruct gdf if it was lost by apply
-        if (
-            not isinstance(result, GeoDataFrame)
-            and self._geometry_column_name in result.columns
-        ):
-            # axis=1 apply will split GeometryDType to object, try and cast back
-            try:
-                _ensure_geometry(result[self._geometry_column_name], crs=self.crs)
-            except TypeError:
-                pass
-            else:
-                result = GeoDataFrame(result, geometry=self._geometry_column_name)
 
-        # TODO this should probably be consolidated with above, perhaps pending GH1849
-        if (
-            isinstance(result, GeoDataFrame)
-            and self._geometry_column_name in result.columns
-            and any(isinstance(t, GeometryDtype) for t in result.dtypes)
-        ):
-            if self.crs is not None and result.crs is None:
-                result.set_crs(self.crs, inplace=True)
+        if self._geometry_column_name in result.columns:
+            # Reconstruct gdf if it was lost by apply
+            if isinstance(result, GeoDataFrame) is False:
+                # axis=1 apply will split GeometryDType to object, try and cast back
+                try:
+                    _ensure_geometry(result[self._geometry_column_name], crs=self.crs)
+                except TypeError:
+                    pass
+                else:
+                    result = GeoDataFrame(
+                        result, geometry=self._geometry_column_name, crs=self.crs
+                    )
+            else:
+                # this type check seems broad, already raised in GH1849
+                if any(isinstance(t, GeometryDtype) for t in result.dtypes):
+                    result = result.set_geometry(self._geometry_column_name)
+                    if self.crs is not None and result.crs is None:
+                        result.set_crs(self.crs, inplace=True)
         return result
 
     @property
