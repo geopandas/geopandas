@@ -20,14 +20,15 @@ class TestDataFrameMethodReturnTypes:
                 {
                     "value1": x + y,
                     "value2": x * y,
-                    "geometry": Point(x, y),
+                    "geometry_temp": Point(x, y),  # rename this col in tests
                 }
                 for x, y in zip(range(N), range(N))
             ],
             crs=crs_wgs,
+            geometry="geometry_temp",
         )
         # want geometry2 to be a GeoSeries not Series, test behaviour of non geom col
-        self.df["geometry2"] = self.df["geometry"].set_crs(
+        self.df["geometry2"] = self.df["geometry_temp"].set_crs(
             crsgs_osgb, allow_override=True
         )
 
@@ -89,10 +90,7 @@ class TestDataFrameMethodReturnTypes:
 
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_getitem(self, set_geom_col_name):
-        if self.df.geometry.name != set_geom_col_name:
-            df = self.df.rename_geometry(set_geom_col_name)
-        else:
-            df = self.df.copy()
+        df = self.df.rename_geometry(set_geom_col_name)
         self._check_standard_df(
             [
                 df[["value1", "value2"]],
@@ -112,10 +110,7 @@ class TestDataFrameMethodReturnTypes:
 
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_loc(self, set_geom_col_name):
-        if self.df.geometry.name != set_geom_col_name:
-            df = self.df.rename_geometry(set_geom_col_name)
-        else:
-            df = self.df.copy()
+        df = self.df.rename_geometry(set_geom_col_name)
         self._check_standard_df(
             [
                 df.loc[:, ["value1", "value2"]],
@@ -149,10 +144,7 @@ class TestDataFrameMethodReturnTypes:
 
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_iloc(self, set_geom_col_name):
-        if self.df.geometry.name != set_geom_col_name:
-            df = self.df.rename_geometry(set_geom_col_name)
-        else:
-            df = self.df.copy()
+        df = self.df.rename_geometry(set_geom_col_name)
         self._check_standard_df(
             [
                 df.iloc[:, 0:2],
@@ -169,37 +161,38 @@ class TestDataFrameMethodReturnTypes:
             geo_col_name=set_geom_col_name,
         )
 
-    def test_squeeze(self):
-        res1 = self.df[["geometry"]].squeeze()
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_squeeze(self, set_geom_col_name):
+        df = self.df.rename_geometry(set_geom_col_name)
+        res1 = df[[set_geom_col_name]].squeeze()
         assert type(res1) is GeoSeries
-        self._check_metadata_gs(res1)
-        res2 = self.df.rename_geometry("points")[["points"]].squeeze()
-        assert type(res2) is GeoSeries
-        self._check_metadata_gs(res2, name="points")
+        self._check_metadata_gs(res1, name=set_geom_col_name)
 
         res2 = self.df[["geometry2"]].squeeze()
         # Not ideal behaviour, but to change this need to agree to change __getitem__
         assert type(res2) is pd.Series
 
-    def test_to_frame(self):
-        res1 = self.df["geometry"].to_frame()
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_to_frame(self, set_geom_col_name):
+        df = self.df.rename_geometry(set_geom_col_name)
+        res1 = df[set_geom_col_name].to_frame()
         assert type(res1) is GeoDataFrame
-        self._check_metadata_gdf(res1, geo_col_name="geometry")
-        res2 = self.df["geometry2"].to_frame()
+        if set_geom_col_name == "geometry":  # -> should be set_geom_col_name always
+            self._check_metadata_gdf(res1, geo_col_name=set_geom_col_name)
+        res2 = df["geometry2"].to_frame()
         assert type(res2) is GeoDataFrame
         # TODO this reflects current behaviour, but we should fix
         #  GeoSeries._constructor_expanddim so this doesn't happen
-        assert res2._geometry_column_name == "geometry"  # -> should be geometry2
+        assert (
+            res2._geometry_column_name == "geometry"
+        )  # -> should be set_geom_col_name
         assert res2.crs is None  # -> should be self.osgb
         # also res2.geometry should not crash because geometry isn't set
         assert type(self.df["value1"].to_frame()) is pd.DataFrame
 
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_reindex(self, set_geom_col_name):
-        if self.df.geometry.name != set_geom_col_name:
-            df = self.df.rename_geometry(set_geom_col_name)
-        else:
-            df = self.df.copy()
+        df = self.df.rename_geometry(set_geom_col_name)
         self._check_standard_df(
             [
                 df.reindex(columns=["value1", "value2"]),
@@ -214,10 +207,7 @@ class TestDataFrameMethodReturnTypes:
 
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_drop(self, set_geom_col_name):
-        if self.df.geometry.name != set_geom_col_name:
-            df = self.df.rename_geometry(set_geom_col_name)
-        else:
-            df = self.df.copy()
+        df = self.df.rename_geometry(set_geom_col_name)
         self._check_standard_df(
             [
                 df.drop(columns=[set_geom_col_name, "geometry2"]),
@@ -232,10 +222,7 @@ class TestDataFrameMethodReturnTypes:
 
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_apply(self, set_geom_col_name):
-        if self.df.geometry.name != set_geom_col_name:
-            df = self.df.rename_geometry(set_geom_col_name)
-        else:
-            df = self.df.copy()
+        df = self.df.rename_geometry(set_geom_col_name)
         self._check_standard_srs(
             [
                 df[set_geom_col_name].apply(lambda x: x),
@@ -273,23 +260,17 @@ class TestDataFrameMethodReturnTypes:
             method="apply",
         )
 
-    def test_convert_dtypes(self):
+    @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
+    def test_convert_dtypes(self, set_geom_col_name):
+        df = self.df.rename_geometry(set_geom_col_name)
+
         # convert_dtypes also relies on constructor_expanddim, so crs and geom col
         # are lost right now. #TODO fix this
-        assert type(self.df[["value1", "value2"]].convert_dtypes()) is pd.DataFrame
-        assert type(self.df[["geometry", "geometry2"]].convert_dtypes()) is GeoDataFrame
-        assert type(self.df[["geometry"]].convert_dtypes()) is GeoDataFrame
-        assert type(self.df[["geometry2", "value1"]].convert_dtypes()) is pd.DataFrame
-        assert type(self.df[["geometry2"]].convert_dtypes()) is pd.DataFrame
-        assert type(self.df[["value1"]].convert_dtypes()) is pd.DataFrame
-
-        # self._check_standard_df(
-        #     [
-        #         self.df[["value1", "value2"]].convert_dtypes(),
-        #         self.df[["geometry", "geometry2"]].convert_dtypes(),
-        #         self.df[["geometry"]].convert_dtypes(),
-        #         self.df[["geometry2", 'value1']].convert_dtypes(),
-        #         self.df[["geometry2"]].convert_dtypes(),
-        #         self.df[["value1"]].convert_dtypes()
-        #     ]
-        # )
+        assert type(df[["value1", "value2"]].convert_dtypes()) is pd.DataFrame
+        assert (
+            type(df[[set_geom_col_name, "geometry2"]].convert_dtypes()) is GeoDataFrame
+        )
+        assert type(df[[set_geom_col_name]].convert_dtypes()) is GeoDataFrame
+        assert type(df[["geometry2", "value1"]].convert_dtypes()) is pd.DataFrame
+        assert type(df[["geometry2"]].convert_dtypes()) is pd.DataFrame
+        assert type(df[["value1"]].convert_dtypes()) is pd.DataFrame
