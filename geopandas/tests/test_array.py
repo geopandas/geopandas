@@ -447,7 +447,18 @@ def test_binary_geo_scalar(attr):
 
 
 @pytest.mark.parametrize(
-    "attr", ["is_closed", "is_valid", "is_empty", "is_simple", "has_z", "is_ring"]
+    "attr",
+    [
+        "is_closed",
+        "is_valid",
+        "is_empty",
+        "is_simple",
+        "has_z",
+        # for is_ring we raise a warning about the value for Polygon changing
+        pytest.param(
+            "is_ring", marks=pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+        ),
+    ],
 )
 def test_unary_predicates(attr):
     na_value = False
@@ -484,6 +495,8 @@ def test_unary_predicates(attr):
     assert result.tolist() == expected
 
 
+# for is_ring we raise a warning about the value for Polygon changing
+@pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
