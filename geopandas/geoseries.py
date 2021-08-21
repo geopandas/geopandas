@@ -190,7 +190,8 @@ class GeoSeries(GeoPandasBase, Series):
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty or data is None:
+                if (s.empty and s.dtype == "float64") or data is None:
+                    # pd.Series with empty data gives float64 for older pandas versions
                     s = s.astype(object)
                 else:
                     warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)

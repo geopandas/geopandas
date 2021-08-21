@@ -355,6 +355,13 @@ def test_missing_values():
     assert len(s.dropna()) == 3
 
 
+def test_isna_empty_geoseries():
+    # ensure that isna() result for emtpy GeoSeries has the correct bool dtype
+    s = GeoSeries([])
+    result = s.isna()
+    assert_series_equal(result, pd.Series([], dtype="bool"))
+
+
 def test_geoseries_crs():
     gs = GeoSeries()
     gs.crs = "IGNF:ETRS89UTM28"
@@ -433,6 +440,35 @@ class TestConstructor:
     def test_data_is_none(self):
         s = GeoSeries(index=range(3))
         check_geoseries(s)
+
+    def test_empty_array(self):
+        # with empty data that have an explicit dtype, we use the fallback or
+        # not depending on the dtype
+        arr = np.array([], dtype="bool")
+
+        # dtypes that can never hold geometry-like data
+        for arr in [
+            np.array([], dtype="bool"),
+            np.array([], dtype="int64"),
+            np.array([], dtype="float32"),
+            # this gets converted to object dtype by pandas
+            # np.array([], dtype="str"),
+        ]:
+            with pytest.warns(FutureWarning):
+                s = GeoSeries(arr)
+            assert not isinstance(s, GeoSeries)
+            assert type(s) == pd.Series
+
+        # dtypes that can potentially hold geometry-like data (object) or
+        # can come from emtpy data (float64)
+        for arr in [
+            np.array([], dtype="object"),
+            np.array([], dtype="float64"),
+            np.array([], dtype="str"),
+        ]:
+            with pytest.warns(None):
+                s = GeoSeries(arr)
+            assert isinstance(s, GeoSeries)
 
     def test_from_series(self):
         shapes = [
