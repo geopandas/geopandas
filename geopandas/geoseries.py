@@ -527,7 +527,24 @@ class GeoSeries(GeoPandasBase, Series):
     def _constructor_expanddim(self):
         from geopandas import GeoDataFrame
 
-        return GeoDataFrame
+        geometry_default = self.name
+        crs_default = self.crs
+        print("crs of self is", self.crs)
+
+        def expanddim(
+            data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
+        ):
+            print(type(data))
+            print(data.name)
+            if isinstance(data, GeoSeries) and data.name is None:
+                # if GeoSeries has no name, we make the geometry name geometry
+                # (instead of 0)
+                data = {"geometry": data}
+            return GeoDataFrame(
+                data=data, index=index, crs=crs, geometry=geometry, **kwargs
+            )
+
+        return expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""

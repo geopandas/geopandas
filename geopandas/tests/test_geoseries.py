@@ -455,3 +455,13 @@ class TestConstructor:
         s = s.explode()
         df = s.reset_index()
         assert type(df) == GeoDataFrame
+        assert df.geometry.name == "geometry"  # default name
+        assert df.crs == s.crs
+
+        s.name = "points"
+        s.crs = "epsg:4326"
+        print(s.crs)
+        df2 = s.reset_index()
+        assert type(df2) == GeoDataFrame
+        assert df2.geometry.name == "points"  # default name
+        assert df2.crs == s.crs
