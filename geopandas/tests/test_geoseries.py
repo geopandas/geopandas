@@ -20,7 +20,7 @@ from shapely.geometry import (
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame
-from geopandas._compat import PYPROJ_LT_3
+from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal
 
@@ -439,7 +439,10 @@ class TestConstructor:
             Polygon([(random.random(), random.random()) for _ in range(3)])
             for _ in range(10)
         ]
-        s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
+        with ignore_shapely2_warnings():
+            # the warning here is not suppressed by GeoPandas, as this is a pure
+            # pandas construction call
+            s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
         g = GeoSeries(s)
         check_geoseries(g)
 
