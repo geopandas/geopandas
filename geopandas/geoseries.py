@@ -529,20 +529,38 @@ class GeoSeries(GeoPandasBase, Series):
 
         geometry_default = self.name
         crs_default = self.crs
-        print("crs of self is", self.crs)
 
         def expanddim(
             data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
         ):
-            print(type(data))
-            print(data.name)
             if isinstance(data, GeoSeries) and data.name is None:
                 # if GeoSeries has no name, we make the geometry name geometry
                 # (instead of 0)
                 data = {"geometry": data}
-            return GeoDataFrame(
-                data=data, index=index, crs=crs, geometry=geometry, **kwargs
-            )
+            # elif isinstance(data, dict):
+            #     # TODO this might break legitimate cases, need to check where
+            #     #  _constructor_expanddim is used
+            #     (Opted for the try catch below instead, this could be flakey
+            #     if {0,1,2...} are the actual keys?
+            #     # pandas can construct a dict with keys {0,1,2...} where
+            #     # we actually have column names
+            #     data = {k if v.name is None else v.name:v for (k,v) in data.items()}
+            try:
+                df = GeoDataFrame(
+                    data=data, index=index, crs=crs, geometry=geometry, **kwargs
+                )
+            except ValueError as e:
+                print(str(e))
+                if "Unknown column" in str(e):
+                    # Hope stuff is fixed by finalize in whatever context
+                    df = GeoDataFrame(
+                        data=data, index=index, crs=crs, geometry=None, **kwargs
+                    )
+                else:
+                    raise e
+            return df
+
+        expanddim._get_axis_number = GeoDataFrame._get_axis_number
 
         return expanddim
 
