@@ -5,6 +5,7 @@ import pytest
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+import geopandas._compat as compat
 
 crsgs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(27700)
@@ -260,6 +261,9 @@ class TestDataFrameMethodReturnTypes:
             method="apply",
         )
 
+    @pytest.mark.skipif(
+        not compat.PANDAS_GE_10, reason="Convert dtypes new in pandas 1.0"
+    )
     @pytest.mark.parametrize("set_geom_col_name", ["geometry", "points"])
     def test_convert_dtypes(self, set_geom_col_name):
         df = self.df.rename_geometry(set_geom_col_name)
