@@ -537,6 +537,9 @@ class GeoSeries(GeoPandasBase, Series):
                 # if GeoSeries has no name, we make the geometry name geometry
                 # (instead of 0)
                 data = {"geometry": data}
+            elif isinstance(data, dict):
+                # if dict is given, then the sole key is the geometry
+                geometry = list(data.keys())[0]
             # elif isinstance(data, dict):
             #     # TODO this might break legitimate cases, need to check where
             #     #  _constructor_expanddim is used

@@ -472,8 +472,15 @@ class TestConstructor:
         s = s.explode()
         s.name = name
         s.crs = crs
-        df = s.reset_index()
+        df = s.to_frame()
         assert type(df) == GeoDataFrame
         # name none -> geometry, otherwise name preserved
         assert df.geometry.name == name if name is not None else "geometry"
         assert df.crs == s.crs
+
+        # if name is provided to to_frame, it should override
+        df2 = s.to_frame(name="geom")
+        assert type(df) == GeoDataFrame
+        # name none -> geometry, otherwise name preserved
+        assert df2.geometry.name == "geom"
+        assert df2.crs == s.crs
