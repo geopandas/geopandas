@@ -906,7 +906,7 @@ GON (((-122.84000 49.00000, -120.0000...
             else:
                 legend_kwds.setdefault("ax", ax)
 
-            n_cmap.set_array([])
+            n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
     plt.draw()
