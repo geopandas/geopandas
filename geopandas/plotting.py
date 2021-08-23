@@ -747,7 +747,10 @@ GON (((-122.84000 49.00000, -120.0000...
         vmax = len(categories) - 1 if vmax is None else vmax
 
     if scheme is not None:
-        mc_err = "The 'mapclassify' package (>= 2.4.0) is required to use the 'scheme' keyword."
+        mc_err = (
+            "The 'mapclassify' package (>= 2.4.0) is "
+            "required to use the 'scheme' keyword."
+        )
         try:
             import mapclassify
 
