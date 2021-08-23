@@ -112,7 +112,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Reading only geometries intersecting ``bbox``:
 
-    >>> df = geopandas.read_file("nybb.shp", bbox=(0, 10, 0, 20))  # doctest: +SKIP
+    >>> df = geopandas.read_file("nybb.shp", bbox=(0, 0, 10, 20))  # doctest: +SKIP
 
     Returns
     -------

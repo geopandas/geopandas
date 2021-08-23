@@ -434,12 +434,12 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @not_yet_implemented
+    @no_sorting
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @not_yet_implemented
+    @no_sorting
     def test_value_counts_with_normalize(self, data):
         pass
 
