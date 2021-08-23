@@ -7,6 +7,7 @@ from geopandas import GeoDataFrame, GeoSeries
 
 crsgs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(27700)
+# TODO need to check that behaviour works with non default geom col name
 
 
 class TestDataFrameMethodReturnTypes:
@@ -41,7 +42,7 @@ class TestDataFrameMethodReturnTypes:
         assert gs.name == name
         assert gs.crs == crs
 
-    def _check_standard_df(self, results):
+    def _check_standard_df(self, results, method=None):
         for i in results:
             print(i.columns if isinstance(i, pd.DataFrame) else i.name)
 
@@ -55,13 +56,25 @@ class TestDataFrameMethodReturnTypes:
         # If there is only one geometry column left, returning a gdf is not ambiguous,
         # but if there are 2 geom cols, and non are the set geom col, behaviour is
         # unclear. Therefore opting to return dataframes.
-        print(results[3])
-        assert type(results[3]) is pd.DataFrame
-        # Exception is if there is only one column in the dataframe, then seems
-        # wrong to return a dataframe. Not implemented as inconsistent with old
-        # __getitem__ behaviour.
-        assert type(results[4]) is pd.DataFrame
-        # assert type(results[4]) is GeoDataFrame
+        # assert type(results[3]) is pd.DataFrame
+        # # Exception is if there is only one column in the dataframe, then seems
+        # # wrong to return a dataframe. Not implemented as inconsistent with old
+        # # __getitem__ behaviour.
+        # assert type(results[4]) is pd.DataFrame
+        # losing geom col still returns gdf - TODO different from logic in text above
+
+        # End goal is to mimic getitem completely, that's not happening right now
+        exceptions_for_now = ["getitem", "apply"]
+
+        if method in exceptions_for_now:
+            assert type(results[3]) is pd.DataFrame
+        else:
+            assert type(results[3]) is GeoDataFrame
+
+        if method in exceptions_for_now:
+            assert type(results[3]) is pd.DataFrame
+        else:
+            assert type(results[3]) is GeoDataFrame
         # self._check_metadata_gs(results[4], crsgs_osgb)
         assert type(results[5]) is pd.DataFrame
 
@@ -82,7 +95,8 @@ class TestDataFrameMethodReturnTypes:
                 self.df[["geometry2", "value1"]],
                 self.df[["geometry2"]],
                 self.df[["value1"]],
-            ]
+            ],
+            method="getitem",
         )
         self._check_standard_srs(
             [self.df["geometry"], self.df["geometry2"], self.df["value1"]]
@@ -97,6 +111,16 @@ class TestDataFrameMethodReturnTypes:
                 self.df.loc[:, ["geometry2", "value1"]],
                 self.df.loc[:, ["geometry2"]],
                 self.df.loc[:, ["value1"]],
+            ]
+        )
+        self._check_standard_df(
+            [
+                self.df.loc[1:5, ["value1", "value2"]],
+                self.df.loc[1:5, ["geometry", "geometry2"]],
+                self.df.loc[1:5, ["geometry"]],
+                self.df.loc[1:5, ["geometry2", "value1"]],
+                self.df.loc[1:5, ["geometry2"]],
+                self.df.loc[1:5, ["value1"]],
             ]
         )
         self._check_standard_srs(
@@ -177,7 +201,7 @@ class TestDataFrameMethodReturnTypes:
                 self.df["geometry"].apply(lambda x: x),
                 self.df["geometry2"].apply(lambda x: x),
                 self.df["value1"].apply(lambda x: x),
-            ]
+            ],
         )
 
         assert type(self.df["geometry"].apply(lambda x: str(x))) is pd.Series
@@ -191,7 +215,8 @@ class TestDataFrameMethodReturnTypes:
                 self.df[["geometry2", "value1"]].apply(lambda x: x),
                 self.df[["geometry2"]].apply(lambda x: x),
                 self.df[["value1"]].apply(lambda x: x),
-            ]
+            ],
+            method="apply",
         )
         self._check_standard_df(
             [
@@ -201,7 +226,8 @@ class TestDataFrameMethodReturnTypes:
                 self.df[["geometry2", "value1"]].apply(lambda x: x, axis=1),
                 self.df[["geometry2"]].apply(lambda x: x, axis=1),
                 self.df[["value1"]].apply(lambda x: x, axis=1),
-            ]
+            ],
+            method="apply",
         )
 
     def test_convert_dtypes(self):
