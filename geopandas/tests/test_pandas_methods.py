@@ -476,7 +476,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.cascaded_union)
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
     if compat.PANDAS_GE_11:
         exp = GeoSeries(
             [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],

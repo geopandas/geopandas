@@ -350,6 +350,16 @@ class TestGeomMethods:
 
         self._test_unary_topological("unary_union", expected, g)
 
+    def test_cascaded_union_deprecated(self):
+        p1 = self.t1
+        p2 = Polygon([(2, 0), (3, 0), (3, 1)])
+        g = GeoSeries([p1, p2])
+        with pytest.warns(
+            FutureWarning, match="The 'cascaded_union' attribute is deprecated"
+        ):
+            result = g.cascaded_union
+        assert result == g.unary_union
+
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
