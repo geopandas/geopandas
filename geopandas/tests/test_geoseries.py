@@ -448,20 +448,32 @@ class TestConstructor:
         assert s.index is g.index
 
     # GH 1216
-    def test_expanddim(self):
+    @pytest.mark.parametrize("name", [None, "geometry", "Points"])
+    @pytest.mark.parametrize("crs", [None, "epsg:4326"])
+    def test_reset_index(self, name, crs):
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
         s = s.explode()
+        s.name = name
+        s.crs = crs
         df = s.reset_index()
         assert type(df) == GeoDataFrame
-        assert df.geometry.name == "geometry"  # default name
+        # name None -> geometry, otherwise name preserved
+        assert df.geometry.name == name if name is not None else "geometry"
         assert df.crs == s.crs
 
-        s.name = "points"
-        s.crs = "epsg:4326"
-        print(s.crs)
-        df2 = s.reset_index()
-        assert type(df2) == GeoDataFrame
-        assert df2.geometry.name == "points"  # default name
-        assert df2.crs == s.crs
+    @pytest.mark.parametrize("name", [None, "geometry", "Points"])
+    @pytest.mark.parametrize("crs", [None, "epsg:4326"])
+    def test_to_frame(self, name, crs):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode()
+        s.name = name
+        s.crs = crs
+        df = s.reset_index()
+        assert type(df) == GeoDataFrame
+        # name none -> geometry, otherwise name preserved
+        assert df.geometry.name == name if name is not None else "geometry"
+        assert df.crs == s.crs

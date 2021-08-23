@@ -540,7 +540,7 @@ class GeoSeries(GeoPandasBase, Series):
             # elif isinstance(data, dict):
             #     # TODO this might break legitimate cases, need to check where
             #     #  _constructor_expanddim is used
-            #     (Opted for the try catch below instead, this could be flakey
+            #     (Opted for the try catch below instead, this could be flaky
             #     if {0,1,2...} are the actual keys?
             #     # pandas can construct a dict with keys {0,1,2...} where
             #     # we actually have column names
@@ -550,7 +550,6 @@ class GeoSeries(GeoPandasBase, Series):
                     data=data, index=index, crs=crs, geometry=geometry, **kwargs
                 )
             except ValueError as e:
-                print(str(e))
                 if "Unknown column" in str(e):
                     # Hope stuff is fixed by finalize in whatever context
                     df = GeoDataFrame(
