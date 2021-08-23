@@ -19,7 +19,7 @@ dependencies:
   - rtree
   - matplotlib
   - matplotlib=3.1
-  - mapclassify>=2.4.0
+  - mapclassify=2.4.0
   - geopy
   - SQLalchemy
   - libspatialite
