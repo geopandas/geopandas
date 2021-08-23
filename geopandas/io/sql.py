@@ -138,7 +138,7 @@ def _read_postgis(
     PostGIS
 
     >>> from sqlalchemy import create_engine  # doctest: +SKIP
-    >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydatabase"
+    >>> db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydatabase"
     >>> con = create_engine(db_connection_url)  # doctest: +SKIP
     >>> sql = "SELECT geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
@@ -362,7 +362,7 @@ def _write_postgis(
     --------
 
     >>> from sqlalchemy import create_engine  # doctest: +SKIP
-    >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+    >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase";)  # doctest: +SKIP
     >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
     """
