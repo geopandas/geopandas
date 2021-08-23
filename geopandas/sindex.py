@@ -170,7 +170,7 @@ class BaseSpatialIndex:
 
     def intersection(self, coordinates):
         """Compatibility wrapper for rtree.index.Index.intersection,
-        use ``query`` intead.
+        use ``query`` instead.
 
         Parameters
         ----------
@@ -487,7 +487,7 @@ if compat.HAS_PYGEOS:
             # https://github.com/pygeos/pygeos/issues/147
             non_empty = geometry.copy()
             non_empty[pygeos.is_empty(non_empty)] = None
-            # set empty geometries to None to mantain indexing
+            # set empty geometries to None to maintain indexing
             super().__init__(non_empty)
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
