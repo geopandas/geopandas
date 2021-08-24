@@ -529,12 +529,12 @@ def test_apply_no_geometry_result(df, crs):
     if crs:
         df = df.set_crs(crs)
     result = df.apply(lambda col: col.astype(str), axis=0)
-    assert isinstance(result, pd.DataFrame)
+    assert type(result) is pd.DataFrame
     expected = df.astype(str)
     assert_frame_equal(result, expected)
 
     result = df.apply(lambda col: col.astype(str), axis=1)
-    assert isinstance(result, pd.DataFrame)
+    assert type(result) is pd.DataFrame
     assert_frame_equal(result, expected)
 
 
