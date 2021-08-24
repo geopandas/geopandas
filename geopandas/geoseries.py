@@ -527,39 +527,26 @@ class GeoSeries(GeoPandasBase, Series):
     def _constructor_expanddim(self):
         from geopandas import GeoDataFrame
 
-        geometry_default = self.name
-        crs_default = self.crs
-
-        def expanddim(
-            data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
-        ):
-            if isinstance(data, GeoSeries) and data.name is None:
-                # if GeoSeries has no name, we make the geometry name geometry
-                # (instead of 0)
-                data = {"geometry": data}
-            elif isinstance(data, dict):
-                # if dict is given, then the sole key is the geometry
-                geometry = list(data.keys())[0]
-            # elif isinstance(data, dict):
-            #     # TODO this might break legitimate cases, need to check where
-            #     #  _constructor_expanddim is used
-            #     (Opted for the try catch below instead, this could be flaky
-            #     if {0,1,2...} are the actual keys?
-            #     # pandas can construct a dict with keys {0,1,2...} where
-            #     # we actually have column names
-            #     data = {k if v.name is None else v.name:v for (k,v) in data.items()}
-            try:
-                df = GeoDataFrame(
-                    data=data, index=index, crs=crs, geometry=geometry, **kwargs
-                )
-            except ValueError as e:
-                if "Unknown column" in str(e):
-                    # Hope stuff is fixed by finalize in whatever context
-                    df = GeoDataFrame(
-                        data=data, index=index, crs=crs, geometry=None, **kwargs
-                    )
+        def expanddim(data=None, index=None, crs=None, **kwargs):
+            # if geometry is somehow supplied, ignore it because we don't need it
+            kwargs.pop("geometry", None)
+            if isinstance(data, GeoSeries):
+                #  if GeoSeries has no name, we make the geometry name geometry
+                #  (instead of 0)
+                if data.name is None:
+                    data = {"geometry": data}
+                    geo_col_name = "geometry"
                 else:
-                    raise e
+                    geo_col_name = data.name
+            else:  # Dict of {name : (Geo)Series pairs}
+                # if only one key, this is not ambiguous, if more than one
+                # i.e. from pd.concat([GeoSeries, GeoSeries]) the geom col comes
+                # from the left (same as for multiple gdfs in concat)
+                geo_col_name = list(data.keys())[0]
+
+            df = GeoDataFrame(
+                data=data, index=index, crs=crs, geometry=geo_col_name, **kwargs
+            )
             return df
 
         expanddim._get_axis_number = GeoDataFrame._get_axis_number
