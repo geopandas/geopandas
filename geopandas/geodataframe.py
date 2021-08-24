@@ -1407,8 +1407,16 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 object.__setattr__(self, name, getattr(other.left, name, None))
         # concat operation: using metadata of the first object
         elif method == "concat":
+            # TODO would be we be better off binding these as properties
+            #  on GeoSeries for this purpose?
+            gseries_keymapping = {"_crs": "crs", "_geometry_column_name": "name"}
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                reference_obj = other.objs[0]
+                if isinstance(reference_obj, GeoSeries):
+                    other_key = gseries_keymapping.get(name, name)
+                else:
+                    other_key = name
+                object.__setattr__(self, name, getattr(reference_obj, other_key, None))
 
             if (self.columns == self._geometry_column_name).sum() > 1:
                 raise ValueError(
