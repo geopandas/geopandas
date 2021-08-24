@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 from pandas.plotting import PlotAccessor
 
-import geopandas
-
 from distutils.version import LooseVersion
 
 from ._decorator import doc
@@ -34,7 +32,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     `component_index` still refers to the original position in `geoms`. This way
     the corresponding values can be extracted.
 
-    Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and
+    Prefix specifies type of geometry to be flatten. "Multi" for MultiPoint and
     similar, "Geom" for GeometryCollection.
 
     Returns
@@ -44,23 +42,22 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     component_index : index array indices are repeated for all components in the
         same Multi geometry
     """
-    components, component_index = [], []
+    has_multi_geom = geoms.geom_type.str.startswith(prefix).any()
 
-    if not (geoms.geom_type.str.startswith(prefix).any() or geoms.is_empty.any()):
-        return geoms, np.arange(len(geoms))
+    if has_multi_geom:
+        exploded_geoms = geoms.explode()
+        not_empty = ~exploded_geoms.is_empty.values
+        geo_series = exploded_geoms
+        component_index = exploded_geoms.index.codes[1]
+        component_index = (component_index == 0).cumsum() - 1
 
-    for ix, geom in enumerate(geoms):
-        if geom is not None and not geom.is_empty:
-            if geom.type.startswith(prefix):
-                for poly in geom.geoms:
-                    components.append(poly)
-                    component_index.append(ix)
             else:
-                components.append(geom)
-                component_index.append(ix)
+        not_empty = ~geoms.is_empty
+        geo_series = geoms
+        component_index = np.arange(len(geoms))
 
-    component_index = np.asarray(component_index)
-    geo_series = geopandas.GeoSeries(components)
+    geo_series = geo_series.loc[not_empty].reset_index(drop=True)
+    component_index = component_index[not_empty]
     return geo_series, component_index
 
 
