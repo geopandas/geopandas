@@ -951,7 +951,8 @@ class GeometryArray(ExtensionArray):
             )
         # self.data[idx] = value
         value_arr = np.empty(1, dtype=object)
-        value_arr[:] = [value]
+        with compat.ignore_shapely2_warnings():
+            value_arr[:] = [value]
         self.data[idx] = value_arr
         return self
 
