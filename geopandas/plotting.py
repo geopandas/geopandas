@@ -289,6 +289,7 @@ def _plot_point_collection(
     # We exclude 'edgecolor' to suppress the warning about the
     # facecolor-edgecolor ambiguity for scatter plots.
     kwargs.pop("edgecolor", None)
+    # matplotlib < 2.0 does not support s=None.
     if kwargs.get("markersize") is not None:
         # We square to match the units.
         kwargs["s"] = kwargs.pop("markersize") ** 2
@@ -318,8 +319,7 @@ def _plot_point_collection(
         if color is not None:
             kwargs["color"] = color
 
-        # matplotlib 1.4 does not support c=None, and < 2.0 does not support
-        # s=None.
+        # matplotlib 1.4 does not support c=None.
         if values is not None:
             kwargs["c"] = np.take(values, multiindex, axis=0)
 
