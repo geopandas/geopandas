@@ -460,7 +460,7 @@ class TestConstructor:
             assert type(s) == pd.Series
 
         # dtypes that can potentially hold geometry-like data (object) or
-        # can come from emtpy data (float64)
+        # can come from empty data (float64)
         for arr in [
             np.array([], dtype="object"),
             np.array([], dtype="float64"),
