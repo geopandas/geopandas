@@ -516,7 +516,7 @@ class TestLineStringPlotting:
             self.df.plot(linestyle=ls, linewidth=1),
             self.df.plot(column="values", linestyle=ls, linewidth=1),
         ]:
-            exp_ls == ax.collections[0].get_linestyle()
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_style_kwargs_linewidth(self):
         # single
