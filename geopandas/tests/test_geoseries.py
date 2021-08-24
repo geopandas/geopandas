@@ -466,8 +466,9 @@ class TestConstructor:
             np.array([], dtype="float64"),
             np.array([], dtype="str"),
         ]:
-            with pytest.warns(None):
+            with pytest.warns(None) as record:
                 s = GeoSeries(arr)
+            assert not record
             assert isinstance(s, GeoSeries)
 
     def test_from_series(self):
