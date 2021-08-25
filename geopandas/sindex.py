@@ -206,6 +206,45 @@ class BaseSpatialIndex:
         """
         raise NotImplementedError
 
+    def nearest_all(self, geometry, max_distance=None, return_distance=False):
+        """Return the nearest geometry in the tree for each input geometry in
+        ``geometry``.
+
+        Note: ``nearest_all`` currently only works with PyGEOS.
+
+        In the context of a spatial join, input geometries are the “left”
+        geometries that determine the order of the results, and tree geometries
+        are “right” geometries that are joined against the left geometries.
+        If max_distance is not set, this will effectively be a left-join
+        because every geometry in ``geometry`` will have a nearest geometry in
+        the tree. However, if ``max_distance`` is used, this becomes an
+        inner-join, since some geometries in ``geometry`` may not have a match
+        in the tree.
+
+        For performance reasons, it is highly recommended that you utilize
+        the ``max_distance`` parameter.
+
+        Parameters
+        ----------
+        geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
+            Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
+            or a numpy array of PyGEOS geometries.
+        max_distance : float, optional
+            Maximum distance within which to query for nearest items in tree.
+            Must be greater than 0. By default None, indicating no distance limit.
+        return_distance : bool, optional
+            If True, will return distances in addition to indexes. By default False
+
+        Returns
+        -------
+        Indices or tuple of (indices, distances)
+            Indices is an ndarray of shape (2,n) and distances (if present) an
+            ndarray of shape (n).
+            The first subarray of indices contains input geometry indices.
+            The second subarray of indices contains tree geometry indices.
+        """
+        raise NotImplementedError
+
     @property
     def size(self):
         """Size of the spatial index
@@ -576,43 +615,8 @@ if compat.HAS_PYGEOS:
 
             return res
 
+        @doc(BaseSpatialIndex.nearest_all)
         def nearest_all(self, geometry, max_distance=None, return_distance=False):
-            """Return the nearest geometry in the tree for each input geometry in
-            ``geometry``.
-
-            Note: ``nearest_all`` currently only works with PyGEOS.
-
-            In the context of a spatial join, input geometries are the “left”
-            geometries that determine the order of the results, and tree geometries
-            are “right” geometries that are joined against the left geometries.
-            If max_distance is not set, this will effectively be a left-join
-            because every geometry in ``geometry`` will have a nearest geometry in
-            the tree. However, if ``max_distance`` is used, this becomes an
-            inner-join, since some geometries in ``geometry`` may not have a match
-            in the tree.
-
-            For performance reasons, it is highly recommended that you utilize
-            the ``max_distance`` parameter.
-
-            Parameters
-            ----------
-            geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
-                Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-                or a numpy array of PyGEOS geometries.
-            max_distance : float, optional
-                Maximum distance within which to query for nearest items in tree.
-                Must be greater than 0. By default None, indicating no distance limit.
-            return_distance : bool, optional
-                If True, will return distances in addition to indexes. By default False
-
-            Returns
-            -------
-            Indices or tuple of (indices, distances)
-                Indices is an ndarray of shape (2,n) and distances (if present) an
-                ndarray of shape (n).
-                The first subarray of indices contains input geometry indices.
-                The second subarray of indices contains tree geometry indices.
-            """
             geometry = self._as_geometry_array(geometry)
             return super().nearest_all(
                 geometry, max_distance=max_distance, return_distance=return_distance
