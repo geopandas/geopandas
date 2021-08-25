@@ -468,8 +468,8 @@ path("naturalearth_lowres"))
     >>> countries_w_city_data = geopandas.sjoin_nearest\
 (cities, countries, distance_col="distances", how="right")
     >>> italy_results = \
-countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]  # doctest: +SKIP
-    >>> italy_results
+countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
+    >>> italy_results  # doctest: +SKIP
          name_x        name_y
     141  Vatican City  Italy
     141    San Marino  Italy
