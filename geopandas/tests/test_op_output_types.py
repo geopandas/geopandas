@@ -144,8 +144,8 @@ class TestDataFrameMethodReturnTypes:
         self._assert_object(df.iloc[:, [3, 0]], GeoDataFrame, None)
         self._assert_object(df.iloc[:, [3]], GeoDataFrame, None)
         # Ideally this would mirror __getitem__ and below would be true
-        # self._assert_object(df[["geometry2", "value1"]], pd.DataFrame)
-        # self._assert_object(df[["geometry2"]], pd.DataFrame)
+        # self._assert_object(df.iloc[:, [3, 0]], pd.DataFrame)
+        # self._assert_object(df.iloc[:, [3]], pd.DataFrame)
         self._assert_object(df.iloc[:, [0]], pd.DataFrame)
         # Series
         self._assert_object(df.iloc[:, 2], GeoSeries, geo_name)
@@ -178,70 +178,65 @@ class TestDataFrameMethodReturnTypes:
 
     def test_reindex(self, df):
         geo_name = df.geometry.name
-        self._check_standard_df(
-            [
-                df.reindex(columns=["value1", "value2"]),
-                df.reindex(columns=[geo_name, "geometry2"]),
-                df.reindex(columns=[geo_name]),
-                df.reindex(columns=["geometry2", "value1"]),
-                df.reindex(columns=["geometry2"]),
-                df.reindex(columns=["value1"]),
-            ],
-            geo_name=geo_name,
-        )
+
+        test_func = self._assert_object  # easier to read without black line wraps
+        test_func(df.reindex(columns=["value1", "value2"]), pd.DataFrame)
+        test_func(df.reindex(columns=[geo_name, "geometry2"]), GeoDataFrame, geo_name)
+        test_func(df.reindex(columns=[geo_name]), GeoDataFrame, geo_name)
+        test_func(df.reindex(columns=["geometry2", "value1"]), GeoDataFrame, None)
+        test_func(df.reindex(columns=["geometry2"]), GeoDataFrame, None)
+        # Ideally this would mirror __getitem__ and below would be true
+        # test_func(df.reindex(columns=["geometry2", "value1"]), pd.DataFrame)
+        # test_func(df.reindex(columns=["geometry2"]), pd.DataFrame)
+        test_func(df.reindex(columns=["value1"]), pd.DataFrame)
 
     def test_drop(self, df):
         geo_name = df.geometry.name
-        self._check_standard_df(
-            [
-                df.drop(columns=[geo_name, "geometry2"]),
-                df.drop(columns=["value1", "value2"]),
-                df.drop(columns=["value1", "value2", "geometry2"]),
-                df.drop(columns=[geo_name, "value2"]),
-                df.drop(columns=["value1", "value2", geo_name]),
-                df.drop(columns=["geometry2", "value2", geo_name]),
-            ],
-            geo_name=geo_name,
-        )
+        test_func = self._assert_object  # easier to read without black line wraps
+        test_func(df.drop(columns=[geo_name, "geometry2"]), pd.DataFrame)
+        test_func(df.drop(columns=["value1", "value2"]), GeoDataFrame, geo_name)
+        cols = ["value1", "value2", "geometry2"]
+        test_func(df.drop(columns=cols), GeoDataFrame, geo_name)
+        test_func(df.drop(columns=[geo_name, "value2"]), GeoDataFrame, None)
+        test_func(df.drop(columns=["value1", "value2", geo_name]), GeoDataFrame, None)
+        # Ideally this would mirror __getitem__ and below would be true
+        # test_func(df.drop(columns=[geo_name, "value2"]), pd.DataFrame)
+        # test_func(df.drop(columns=["value1", "value2", geo_name]), pd.DataFrame)
+        test_func(df.drop(columns=["geometry2", "value2", geo_name]), pd.DataFrame)
 
     def test_apply(self, df):
         geo_name = df.geometry.name
-        self._check_standard_srs(
-            [
-                df[geo_name].apply(lambda x: x),
-                df["geometry2"].apply(lambda x: x),
-                df["value1"].apply(lambda x: x),
-            ],
-            geo_name=geo_name,
-        )
+        test_func = self._assert_object  # easier to read without black line wraps
 
-        assert type(df[geo_name].apply(lambda x: str(x))) is pd.Series
-        assert type(df["geometry2"].apply(lambda x: str(x))) is pd.Series
+        def identity(x):
+            return x
 
-        self._check_standard_df(
-            [
-                df[["value1", "value2"]].apply(lambda x: x),
-                df[[geo_name, "geometry2"]].apply(lambda x: x),
-                df[[geo_name]].apply(lambda x: x),
-                df[["geometry2", "value1"]].apply(lambda x: x),
-                df[["geometry2"]].apply(lambda x: x),
-                df[["value1"]].apply(lambda x: x),
-            ],
-            geo_name=geo_name,
-            method="apply",
+        # axis = 0
+        test_func(df[["value1", "value2"]].apply(identity), pd.DataFrame)
+        test_func(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
+        test_func(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
+        test_func(df[["geometry2", "value1"]].apply(identity), pd.DataFrame)
+        test_func(df[["geometry2"]].apply(identity), pd.DataFrame)
+        test_func(df[["value1"]].apply(identity), pd.DataFrame)
+
+        # axis = 0, Series
+        test_func(df[geo_name].apply(identity), GeoSeries, geo_name)
+        test_func(df["geometry2"].apply(identity), GeoSeries, "geometry2")
+        test_func(df["value1"].apply(identity), pd.Series)
+
+        # axis =0, Series, no longer geometry
+        test_func(df[geo_name].apply(lambda x: str(x)), pd.Series)
+        test_func(df["geometry2"].apply(lambda x: str(x)), pd.Series)
+
+        # axis = 1
+        test_func(df[["value1", "value2"]].apply(identity, axis=1), pd.DataFrame)
+        test_func(
+            df[[geo_name, "geometry2"]].apply(identity, axis=1), GeoDataFrame, geo_name
         )
-        self._check_standard_df(
-            [
-                df[["value1", "value2"]].apply(lambda x: x, axis=1),
-                df[[geo_name, "geometry2"]].apply(lambda x: x, axis=1),
-                df[[geo_name]].apply(lambda x: x, axis=1),
-                df[["geometry2", "value1"]].apply(lambda x: x, axis=1),
-                df[["geometry2"]].apply(lambda x: x, axis=1),
-                df[["value1"]].apply(lambda x: x, axis=1),
-            ],
-            geo_name=geo_name,
-            method="apply",
-        )
+        test_func(df[[geo_name]].apply(identity, axis=1), GeoDataFrame, geo_name)
+        test_func(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
+        test_func(df[["geometry2"]].apply(identity, axis=1), pd.DataFrame)
+        test_func(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
 
     @pytest.mark.skipif(
         not compat.PANDAS_GE_10, reason="Convert dtypes new in pandas 1.0"
