@@ -183,8 +183,12 @@ def test_overlay_nybb(how):
 
     # first, check that all bounds and areas are approx equal
     # this is a very rough check for multipolygon equality
-    pd.testing.assert_series_equal(result.geometry.area, expected.geometry.area)
-    pd.testing.assert_frame_equal(result.geometry.bounds, expected.geometry.bounds)
+    pd.testing.assert_series_equal(
+        result.geometry.area, expected.geometry.area, check_less_precise=True
+    )
+    pd.testing.assert_frame_equal(
+        result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
+    )
 
     # There are two cases where the multipolygon have a different number
     # of sub-geometries -> not solved by normalize (and thus drop for now)
