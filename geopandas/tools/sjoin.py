@@ -400,7 +400,7 @@ def sjoin_nearest(
     where there are multiple equidistant nearest or intersected neighbors.
 
     See the User Guide page
-    :doc:`https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html`
+    https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html
     for more details.
 
 
