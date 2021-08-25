@@ -40,6 +40,9 @@ PYGEOS_SHAPELY_COMPAT = None
 PYGEOS_GE_09 = None
 PYGEOS_GE_010 = None
 
+INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
+    'conda install pygeos' or 'pip install pygeos'"
+
 try:
     import pygeos  # noqa
 
@@ -117,10 +120,7 @@ def set_use_pygeos(val=None):
                 PYGEOS_SHAPELY_COMPAT = True
 
         except ImportError:
-            raise ImportError(
-                "To use the PyGEOS speed-ups within GeoPandas, you need to install "
-                "PyGEOS: 'conda install pygeos' or 'pip install pygeos'"
-            )
+            raise ImportError(INSTALL_PYGEOS_ERROR)
 
 
 set_use_pygeos()

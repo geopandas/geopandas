@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame
+from geopandas import _compat as compat
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
@@ -355,11 +356,10 @@ def _nearest_query(
     else:
         sindex = right_df.sindex
         query = left_df.geometry
-    if not hasattr(sindex, "nearest_all"):
-        raise AttributeError(
-            f"Expected the spatial index to implement `nearest_all`,"
-            f" but {type(sindex)} does not implement this method."
-            " Currently, only PyGEOS supports `nearest_all`."
+    if not compat.PYGEOS_GE_010:
+        raise NotImplementedError(
+            "Currently, only PyGEOS >= 0.10.0 supports `nearest_all`. "
+            + compat.INSTALL_PYGEOS_ERROR
         )
     if sindex:
         res = sindex.nearest_all(
