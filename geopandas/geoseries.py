@@ -187,6 +187,12 @@ class GeoSeries(GeoPandasBase, Series):
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
             with compat.ignore_shapely2_warnings():
+                # suppress additional warning from pandas for empty data
+                # (will always give object dtype instead of float dtype in the future,
+                # making the `if s.empty: s = s.astype(object)` below unnecessary)
+                warnings.filterwarnings(
+                    "ignore", "The default dtype for empty Series", FutureWarning
+                )
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
