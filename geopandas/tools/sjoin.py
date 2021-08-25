@@ -480,6 +480,9 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
     Notes
     -----
+    Since this join relies on distances, results will be innaccurate
+    if your geometries are in a geographic CRS.
+
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
