@@ -41,7 +41,7 @@ PYGEOS_GE_09 = None
 PYGEOS_GE_010 = None
 
 INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
-    'conda install pygeos' or 'pip install pygeos'"
+'conda install pygeos' or 'pip install pygeos'"
 
 try:
     import pygeos  # noqa
