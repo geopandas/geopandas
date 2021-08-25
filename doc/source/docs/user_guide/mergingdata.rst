@@ -145,7 +145,7 @@ Nearest Joins
 
 Proximity based joins can be done via ``sjoin_nearest()``.
 
-``sjoin_nearest()`` shares the ``how`` argument with ``sjoin()``.
+``sjoin_nearest()`` shares the ``how`` argument with ``sjoin()`` but does not support the ``"inner"`` option.
 
 ``sjoin_nearest()`` includes two additional arguments: ``max_distance`` and ``distance_col``.
 
