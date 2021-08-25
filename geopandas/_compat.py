@@ -4,6 +4,7 @@ import importlib
 import os
 import warnings
 
+import numpy as np
 import pandas as pd
 import pyproj
 import shapely
@@ -145,6 +146,19 @@ if shapely_warning is not None and not SHAPELY_GE_20:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "Iteration|The array interface|__len__", shapely_warning
+            )
+            yield
+
+
+elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        with warnings.catch_warnings():
+            # warning from numpy for existing Shapely releases (this is fixed
+            # with Shapely 1.8)
+            warnings.filterwarnings(
+                "ignore", "An exception was ignored while fetching", DeprecationWarning
             )
             yield
 

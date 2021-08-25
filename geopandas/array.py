@@ -951,7 +951,8 @@ class GeometryArray(ExtensionArray):
             )
         # self.data[idx] = value
         value_arr = np.empty(1, dtype=object)
-        value_arr[:] = [value]
+        with compat.ignore_shapely2_warnings():
+            value_arr[:] = [value]
         self.data[idx] = value_arr
         return self
 
@@ -1043,6 +1044,38 @@ class GeometryArray(ExtensionArray):
             return pygeos.is_missing(self.data)
         else:
             return np.array([g is None for g in self.data], dtype="bool")
+
+    def value_counts(
+        self,
+        dropna: bool = True,
+    ):
+        """
+        Compute a histogram of the counts of non-null values.
+
+        Parameters
+        ----------
+        dropna : bool, default True
+            Don't include counts of NaN
+
+        Returns
+        -------
+        pd.Series
+        """
+
+        # note ExtensionArray usage of value_counts only specifies dropna,
+        # so sort, normalize and bins are not arguments
+        values = to_wkb(self)
+        from pandas import Series, Index
+
+        result = Series(values).value_counts(dropna=dropna)
+        # value_counts converts None to nan, need to convert back for from_wkb to work
+        # note result.index already has object dtype, not geometry
+        # Can't use fillna(None) or Index.putmask, as this gets converted back to nan
+        # for object dtypes
+        result.index = Index(
+            from_wkb(np.where(result.index.isna(), None, result.index))
+        )
+        return result
 
     def unique(self):
         """Compute the ExtensionArray of unique values.
