@@ -580,6 +580,8 @@ if compat.HAS_PYGEOS:
             """Return the nearest geometry in the tree for each input geometry in
             ``geometry``.
 
+            Note: ``nearest_all`` currently only works with PyGEOS.
+
             In the context of a spatial join, input geometries are the “left”
             geometries that determine the order of the results, and tree geometries
             are “right” geometries that are joined against the left geometries.
