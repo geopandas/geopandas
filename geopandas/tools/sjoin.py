@@ -344,12 +344,8 @@ def _nearest_query(
     how: str,
     return_distance: bool,
 ):
-    if how == "inner":
-        # use whichever input is largest for the index, and the smallest for querying
-        use_left_as_sindex = len(left_df) > len(right_df)
-    else:
-        # otherwise, use the opposite of the join direction for the index
-        use_left_as_sindex = how == "right"
+    # use the opposite of the join direction for the index
+    use_left_as_sindex = how == "right"
     if use_left_as_sindex:
         sindex = left_df.sindex
         query = right_df.geometry
