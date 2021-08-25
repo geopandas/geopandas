@@ -629,7 +629,7 @@ class TestNearest:
         # after applying max_distance the join comes back empty
         # (as in NaN in the joined columns)
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0)]})
-        right = geopandas.GeoDataFrame({"geometry": [Point(2, 2)]})
+        right = geopandas.GeoDataFrame({"geometry": [Point(1, 1), Point(2, 2)]})
         joined = sjoin_nearest(
             left,
             right,
@@ -645,7 +645,7 @@ class TestNearest:
     def test_empty_join_due_to_max_distance_how_right(self):
         # after applying max_distance the join comes back empty
         # (as in NaN in the joined columns)
-        left = geopandas.GeoDataFrame({"geometry": [Point(0, 0)]})
+        left = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         right = geopandas.GeoDataFrame({"geometry": [Point(2, 2)]})
         joined = sjoin_nearest(
             left,
@@ -662,7 +662,7 @@ class TestNearest:
 
     def test_max_distance_how_left(self):
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
-        right = geopandas.GeoDataFrame({"geometry": [Point(1, 1)]})
+        right = geopandas.GeoDataFrame({"geometry": [Point(1, 1), Point(2, 2)]})
         joined = sjoin_nearest(
             left,
             right,
@@ -676,7 +676,7 @@ class TestNearest:
         assert_geodataframe_equal(joined, expected)
 
     def test_max_distance_how_right(self):
-        left = geopandas.GeoDataFrame({"geometry": [Point(1, 1)]})
+        left = geopandas.GeoDataFrame({"geometry": [Point(1, 1), Point(2, 2)]})
         right = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         joined = sjoin_nearest(
             left,
