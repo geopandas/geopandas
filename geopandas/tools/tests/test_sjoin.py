@@ -1,4 +1,4 @@
-from packaging.version import parse
+from packaging import version
 
 import numpy as np
 import pandas as pd
@@ -310,7 +310,7 @@ class TestSpatialJoin:
             exp.index.names = df2.index.names
 
         # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if op == "within" and parse(pd.__version__) >= parse("1.1.0"):
+        if op == "within" and version.parse(pd.__version__) >= version.parse("1.1.0"):
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)

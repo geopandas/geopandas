@@ -1,4 +1,4 @@
-from packaging.version import parse
+from packaging import version
 import json
 import warnings
 
@@ -279,7 +279,7 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if parse(pyarrow.__version__) < parse("0.17.0"):
+    if version.parse(pyarrow.__version__) < version.parse("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     table = _geopandas_to_arrow(df, index=index)
@@ -447,7 +447,7 @@ def _read_feather(path, columns=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if parse(pyarrow.__version__) < parse("0.17.0"):
+    if version.parse(pyarrow.__version__) < version.parse("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     table = feather.read_table(path, columns=columns, **kwargs)

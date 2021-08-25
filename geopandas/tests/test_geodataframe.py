@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import tempfile
-from packaging.version import parse
+from packaging import version
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,7 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-PYPROJ_LT_3 = parse(pyproj.__version__) < parse("3")
+PYPROJ_LT_3 = version.parse(pyproj.__version__) < version.parse("3")
 
 
 class TestDataFrame:
