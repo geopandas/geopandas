@@ -6,7 +6,6 @@ from pandas import DataFrame, Series
 
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union
 
 from .array import GeometryArray, GeometryDtype
 
@@ -699,8 +698,13 @@ GeometryCollection
 
     @property
     def cascaded_union(self):
-        """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(np.asarray(self.geometry.values))
+        """Deprecated: use `unary_union` instead"""
+        warn(
+            "The 'cascaded_union' attribute is deprecated, use 'unary_union' instead",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.geometry.values.unary_union()
 
     @property
     def unary_union(self):
