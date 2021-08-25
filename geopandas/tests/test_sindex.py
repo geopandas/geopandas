@@ -680,7 +680,9 @@ class TestPygeosInterface:
     )
     def test_rtree_nearest_warns(self):
         df = geopandas.GeoDataFrame({"geometry": []})
-        with pytest.warns(FutureWarning, match="Directly using sindex.nearest"):
+        with pytest.warns(
+            FutureWarning, match="sindex.nearest using the rtree backend"
+        ):
             df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(

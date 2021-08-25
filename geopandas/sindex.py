@@ -173,8 +173,8 @@ class BaseSpatialIndex:
         Returns the nearest geometry to the input geometries.
 
         Requires pygeos >= 0.10. Note that if pygeos is not available, geopandas
-        will use rtree for the spatial index, where nearest works as documented
-        below.
+        will use rtree for the spatial index, where nearest temporarily has a different
+        function signature to preserve existing functionality for one release.
 
         Parameters
         ----------
@@ -534,10 +534,7 @@ if compat.HAS_RTREE:
                 This may be an object that satisfies the numpy array protocol,
                 providing the index’s dimension * 2 coordinate pairs
                 representing the mink and maxk coordinates in each dimension
-                defining the bounds of the query window. For a TPR-Tree, this
-                must be a 3-element sequence including not only the positional
-                coordinate pairs but also the velocity pairs minvk and maxvk
-                and a time pair for the time range as a float.
+                defining the bounds of the query window.
             num_results : integer
                 The number of results to return nearest to the given
                 coordinates. If two index entries are equidistant, both are
@@ -548,12 +545,14 @@ if compat.HAS_RTREE:
                 pickled when they were stored with each index entry, as well as
                 the id and bounds of the index entries. If ‘raw’, it will
                 return the object as entered into the database without the
-            rtree.index.Item wrapper.
+                rtree.index.Item wrapper.
             """
             warnings.warn(
-                "Directly using sindex.nearest was previously undocumented."
-                " Calling into rtree.index.Index.nearest, with deprecated"
-                " behaviour that will change in a future release.",
+                "sindex.nearest using the rtree backend was not previously documented "
+                "and this behavior is deprecated in favor of matching the function "
+                "signature provided by the pygeos backend (see "
+                "PyGEOSSTRTreeIndex.nearest for details). This behavior will be "
+                "updated in a future release.",
                 FutureWarning,
             )
             return super().nearest(
