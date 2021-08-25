@@ -142,6 +142,7 @@ Required dependencies:
 - `shapely`_ (interface to `GEOS`_)
 - `fiona`_ (interface to `GDAL`_)
 - `pyproj`_ (interface to `PROJ`_; version 2.2.0 or later)
+- `packaging`_
 
 Further, optional dependencies are:
 
@@ -242,3 +243,5 @@ More specifically, whether the speedups are used or not is determined by:
 .. _PROJ: https://proj.org/
 
 .. _PyGEOS: https://github.com/pygeos/pygeos/
+
+.. _packaging: https://packaging.pypa.io/en/latest/
