@@ -148,7 +148,7 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             yield
 
 
-elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
+elif (parse(np.__version__) >= parse("1.21")) and not SHAPELY_GE_20:
 
     @contextlib.contextmanager
     def ignore_shapely2_warnings():
