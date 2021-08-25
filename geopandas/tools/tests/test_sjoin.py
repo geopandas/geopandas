@@ -565,43 +565,73 @@ class TestNearest:
         with pytest.raises(ValueError, match="`how` was"):
             sjoin_nearest(left, right, how=how)
 
-    @pytest.mark.parametrize("how", ("left", "right"))
     @pytest.mark.parametrize("max_distance", (None, 1))
     @pytest.mark.parametrize("distance_col", (None, "distance"))
-    def test_empty_right_df(self, how: str, max_distance: float, distance_col: str):
+    def test_empty_right_df_how_left(self, max_distance: float, distance_col: str):
+        # all records from left and no results from right
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         right = geopandas.GeoDataFrame({"geometry": []})
         joined = sjoin_nearest(
-            left, right, how=how, max_distance=max_distance, distance_col=distance_col
+            left,
+            right,
+            how="left",
+            max_distance=max_distance,
+            distance_col=distance_col,
         )
-        if how != "left":
-            assert joined.empty
-            if distance_col is not None:
-                assert distance_col in joined
-        else:
-            assert_geoseries_equal(joined["geometry"], left["geometry"])
-            assert joined["index_right"].isna().all()
-            if distance_col is not None:
-                assert joined[distance_col].isna().all()
+        assert_geoseries_equal(joined["geometry"], left["geometry"])
+        assert joined["index_right"].isna().all()
+        if distance_col is not None:
+            assert joined[distance_col].isna().all()
 
-    @pytest.mark.parametrize("how", ("left", "right"))
     @pytest.mark.parametrize("max_distance", (None, 1))
     @pytest.mark.parametrize("distance_col", (None, "distance"))
-    def test_empty_left_df(self, how: str, max_distance: float, distance_col: str):
+    def test_empty_right_df_how_right(self, max_distance: float, distance_col: str):
+        # no records in joined
+        left = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
+        right = geopandas.GeoDataFrame({"geometry": []})
+        joined = sjoin_nearest(
+            left,
+            right,
+            how="right",
+            max_distance=max_distance,
+            distance_col=distance_col,
+        )
+        assert joined.empty
+        if distance_col is not None:
+            assert distance_col in joined
+
+    @pytest.mark.parametrize("max_distance", (None, 1))
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    def test_empty_left_df_how_left(self, max_distance: float, distance_col: str):
         right = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         left = geopandas.GeoDataFrame({"geometry": []})
         joined = sjoin_nearest(
-            left, right, how=how, max_distance=max_distance, distance_col=distance_col
+            left,
+            right,
+            how="left",
+            max_distance=max_distance,
+            distance_col=distance_col,
         )
-        if how != "right":
-            assert joined.empty
-            if distance_col is not None:
-                assert distance_col in joined
-        else:
-            assert_geoseries_equal(joined["geometry"], right["geometry"])
-            assert joined["index_left"].isna().all()
-            if distance_col is not None:
-                assert joined[distance_col].isna().all()
+        assert joined.empty
+        if distance_col is not None:
+            assert distance_col in joined
+
+    @pytest.mark.parametrize("max_distance", (None, 1))
+    @pytest.mark.parametrize("distance_col", (None, "distance"))
+    def test_empty_left_df_how_right(self, max_distance: float, distance_col: str):
+        right = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
+        left = geopandas.GeoDataFrame({"geometry": []})
+        joined = sjoin_nearest(
+            left,
+            right,
+            how="right",
+            max_distance=max_distance,
+            distance_col=distance_col,
+        )
+        assert_geoseries_equal(joined["geometry"], right["geometry"])
+        assert joined["index_left"].isna().all()
+        if distance_col is not None:
+            assert joined[distance_col].isna().all()
 
     @pytest.mark.parametrize(
         "geo_left, geo_right, expected_left, expected_right, distances",
