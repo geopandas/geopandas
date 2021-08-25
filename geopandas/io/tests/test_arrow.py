@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from distutils.version import LooseVersion
+from packaging.version import parse
 import os
 
 import pytest
@@ -36,7 +36,7 @@ pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parq
         pytest.param(
             "feather",
             marks=pytest.mark.skipif(
-                pyarrow.__version__ < LooseVersion("0.17.0"),
+                parse(pyarrow.__version__) < parse("0.17.0"),
                 reason="needs pyarrow >= 0.17",
             ),
         ),
@@ -269,7 +269,7 @@ def test_parquet_compression(compression, tmpdir):
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ < LooseVersion("0.17.0"),
+    parse(pyarrow.__version__) < parse("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
@@ -467,7 +467,7 @@ def test_missing_crs(tmpdir, file_format):
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ >= LooseVersion("0.17.0"),
+    parse(pyarrow.__version__) >= parse("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
 def test_feather_arrow_version(tmpdir):

@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import parse
 import os
 
 import random
@@ -18,7 +18,7 @@ import pytest
 
 # pyproj 2.3.1 fixed a segfault for the case working in an environment with
 # 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
-PYPROJ_LT_231 = LooseVersion(pyproj.__version__) < LooseVersion("2.3.1")
+PYPROJ_LT_231 = parse(pyproj.__version__) < parse("2.3.1")
 
 
 def _create_df(x, y=None, crs=None):

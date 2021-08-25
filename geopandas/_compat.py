@@ -1,5 +1,5 @@
 import contextlib
-from distutils.version import LooseVersion
+from packaging.version import parse
 import importlib
 import os
 import warnings
@@ -14,10 +14,10 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
-PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
-PANDAS_GE_115 = str(pd.__version__) >= LooseVersion("1.1.5")
-PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
+PANDAS_GE_10 = parse(pd.__version__) >= parse("1.0.0")
+PANDAS_GE_11 = parse(pd.__version__) >= parse("1.1.0")
+PANDAS_GE_115 = parse(pd.__version__) >= parse("1.1.5")
+PANDAS_GE_12 = parse(pd.__version__) >= parse("1.2.0")
 
 
 # -----------------------------------------------------------------------------
@@ -25,9 +25,9 @@ PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 # -----------------------------------------------------------------------------
 
 
-SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
-SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
-SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
+SHAPELY_GE_17 = parse(shapely.__version__) >= parse("1.7.0")
+SHAPELY_GE_18 = parse(shapely.__version__) >= parse("1.8")
+SHAPELY_GE_20 = parse(shapely.__version__) >= parse("2.0")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
 
@@ -42,9 +42,9 @@ try:
     import pygeos  # noqa
 
     # only automatically use pygeos if version is high enough
-    if str(pygeos.__version__) >= LooseVersion("0.8"):
+    if parse(pygeos.__version__) >= parse("0.8"):
         HAS_PYGEOS = True
-        PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
+        PYGEOS_GE_09 = parse(pygeos.__version__) >= parse("0.9")
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
@@ -86,7 +86,7 @@ def set_use_pygeos(val=None):
             import pygeos  # noqa
 
             # validate the pygeos version
-            if not str(pygeos.__version__) >= LooseVersion("0.8"):
+            if not parse(pygeos.__version__) >= parse("0.8"):
                 raise ImportError(
                     "PyGEOS >= 0.6 is required, version {0} is installed".format(
                         pygeos.__version__
@@ -208,4 +208,4 @@ except ImportError:
 # pyproj compat
 # -----------------------------------------------------------------------------
 
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+PYPROJ_LT_3 = parse(pyproj.__version__) < parse("3")

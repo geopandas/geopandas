@@ -2,7 +2,7 @@
 See generate_legacy_storage_files.py for the creation of the legacy files.
 
 """
-from distutils.version import LooseVersion
+from packaging.version import parse
 import glob
 import os
 import pathlib
@@ -45,7 +45,7 @@ def with_use_pygeos_false():
 
 
 @pytest.mark.skipif(
-    compat.USE_PYGEOS or (str(pyproj.__version__) < LooseVersion("2.4")),
+    compat.USE_PYGEOS or (parse(pyproj.__version__) < parse("2.4")),
     reason=(
         "pygeos-based unpickling currently only works for pygeos-written files; "
         "old pyproj versions can't read pickles from newer pyproj versions"

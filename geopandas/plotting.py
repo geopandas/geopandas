@@ -6,7 +6,7 @@ from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from distutils.version import LooseVersion
+from packaging.version import parse
 
 from ._decorator import doc
 
@@ -70,8 +70,8 @@ def _expand_kwargs(kwargs, multiindex):
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = matplotlib.__version__
-    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
+    mpl = parse(matplotlib.__version__)
+    if mpl >= parse("3.4") or (mpl > parse("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker"]
     else:
@@ -970,7 +970,7 @@ def _mapclassify_choro(values, scheme, **classification_kwds):
         )
     from mapclassify import __version__ as mc_version
 
-    if mc_version < LooseVersion("2.2.0"):
+    if parse(mc_version) < parse("2.2.0"):
         raise ImportError(
             "The 'mapclassify' >= 2.2.0 package is required to "
             "use the 'scheme' keyword"
