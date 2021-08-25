@@ -504,7 +504,7 @@ if compat.HAS_RTREE:
 
             If longer-term compatibility is required, use rtree.index.Index.nearest
             instead - this could be accessed by calling
-            super(type(s.sindex), s.index).nearest()
+            super(type(s.sindex), s.sindex).nearest()
 
             Examples
             --------
