@@ -1,3 +1,4 @@
+from typing import Optional
 import warnings
 
 import numpy as np
@@ -385,20 +386,22 @@ def _nearest_query(
 
 
 def sjoin_nearest(
-    left_df,
-    right_df,
-    how="left",
-    max_distance=None,
-    lsuffix="left",
-    rsuffix="right",
-    distance_col=None,
+    left_df: GeoDataFrame,
+    right_df: GeoDataFrame,
+    how: str = "left",
+    max_distance: Optional[float] = None,
+    lsuffix: str = "left",
+    rsuffix: str = "right",
+    distance_col: Optional[str] = None,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
     Results results will include multiple output records for a single input record
     where there are multiple equidistant nearest or intersected neighbors.
 
-    See the User Guide page :doc:`../../user_guide/mergingdata` for more details.
+    See the User Guide page
+    :doc:`https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html`
+    for more details.
 
 
     Parameters
@@ -483,6 +486,9 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
     _basic_checks(
         left_df, right_df, how, lsuffix, rsuffix, allowed_hows=("left", "right")
     )
+
+    left_df.geometry.values.check_geographic_crs(stacklevel=1)
+    right_df.geometry.values.check_geographic_crs(stacklevel=1)
 
     return_distance = distance_col is not None
 
