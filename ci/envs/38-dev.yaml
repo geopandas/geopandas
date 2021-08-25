@@ -8,6 +8,7 @@ dependencies:
   - fiona
   - pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov
@@ -20,11 +21,11 @@ dependencies:
   - libspatialite
   - pyarrow
   - pip:
-    - geopy
-    - mapclassify>=2.4.0
-    # dev versions of packages
-    - git+https://github.com/numpy/numpy.git@main
-    - git+https://github.com/pydata/pandas.git@master
-    - git+https://github.com/matplotlib/matplotlib.git@master
-    - git+https://github.com/Toblerity/Shapely.git@master
-    - git+https://github.com/pygeos/pygeos.git@master
+      - geopy
+      - mapclassify>=2.4.0
+      # dev versions of packages
+      - git+https://github.com/numpy/numpy.git@main
+      - git+https://github.com/pydata/pandas.git@master
+      - git+https://github.com/matplotlib/matplotlib.git@master
+      - git+https://github.com/Toblerity/Shapely.git@master
+      - git+https://github.com/pygeos/pygeos.git@master

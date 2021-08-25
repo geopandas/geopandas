@@ -9,6 +9,7 @@ dependencies:
   - fiona
   - pyproj
   - pygeos
+  - packaging
   # testing
   - pytest
   - pytest-cov
@@ -23,4 +24,3 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
- 
