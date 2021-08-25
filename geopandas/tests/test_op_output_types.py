@@ -242,6 +242,11 @@ class TestDataFrameMethodReturnTypes:
         not compat.PANDAS_GE_10, reason="Convert dtypes new in pandas 1.0"
     )
     def test_convert_dtypes(self, df):
+        if not compat.PANDAS_GE_11:
+            pytest.xfail(
+                "pandas 1.0 hard codes types, "
+                "concat([GeoSeries, GeoSeries]) -> DataFrame"
+            )
         geo_name = df.geometry.name
 
         # convert_dtypes also relies on constructor_expanddim, so crs and geom col
