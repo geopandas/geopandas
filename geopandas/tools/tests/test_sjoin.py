@@ -538,7 +538,8 @@ def test_no_nearest_all():
     df1 = geopandas.GeoDataFrame({"geometry": []})
     df2 = geopandas.GeoDataFrame({"geometry": []})
     with pytest.raises(
-        AttributeError, match="Expected the spatial index to implement `nearest_all`"
+        NotImplementedError,
+        match="Currently, only PyGEOS >= 0.10.0 supports `nearest_all`",
     ):
         sjoin_nearest(df1, df2)
 
