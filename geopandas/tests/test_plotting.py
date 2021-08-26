@@ -236,7 +236,6 @@ class TestPointPlotting:
             )
 
     def test_legend(self):
-        # TODO: check if solved by other matplotlib-related PR
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # legend ignored if color is given.
             ax = self.df.plot(column="values", color="green", legend=True)
@@ -259,12 +258,14 @@ class TestPointPlotting:
         # # Categorical legend
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", categorical=True, legend=True)
-        point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_legend().axes.collections[-1].get_facecolors()
+        first_point_color = ax.collections[0].get_facecolors()
+        first_handle_color = ax.get_legend().axes.collections[0].get_facecolors()
         # first point == bottom of colorbar
-        np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
+        np.testing.assert_array_equal(first_point_color, first_handle_color)
+        last_point_color = ax.collections[-1].get_facecolors()
+        last_handle_color = ax.get_legend().axes.collections[-1].get_facecolors()
         # last point == top of colorbar
-        np.testing.assert_array_equal(point_colors[-1], cbar_colors[-1])
+        np.testing.assert_array_equal(last_point_color, last_handle_color)
 
         # # Normalized legend
         # the colorbar matches the Point colors
@@ -760,7 +761,6 @@ class TestPolygonPlotting:
 
     def test_colorbar_kwargs(self):
         # Test if kwargs are passed to colorbar
-        # TODO: check if solved by other matplotlib-related PR
         label_txt = "colorbar test"
 
         ax = self.df.plot(
