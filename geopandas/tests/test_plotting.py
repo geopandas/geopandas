@@ -116,9 +116,9 @@ class TestPointPlotting:
         ax2 = self.df.plot("colors_ord")
 
         # Confirm out-of-order index re-sorted
-        point_colors1 = ax1.collections[0].get_facecolors()
-        point_colors2 = ax2.collections[0].get_facecolors()
-        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+        point_colors1 = _get_facecolors(ax1.collections)
+        point_colors2 = _get_facecolors(ax2.collections)
+        np.testing.assert_array_equal(point_colors1, point_colors2)
 
     def test_series_color_index(self):
 
@@ -136,9 +136,9 @@ class TestPointPlotting:
         ax2 = self.df.plot("colors_ord")
 
         # Confirm out-of-order index re-sorted
-        point_colors1 = ax1.collections[0].get_facecolors()
-        point_colors2 = ax2.collections[0].get_facecolors()
-        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+        point_colors1 = _get_facecolors(ax1.collections)
+        point_colors2 = _get_facecolors(ax2.collections)
+        np.testing.assert_array_equal(point_colors1, point_colors2)
 
     def test_colormap(self):
 
@@ -196,19 +196,19 @@ class TestPointPlotting:
     def test_markersize(self):
 
         ax = self.points.plot(markersize=10)
-        assert ax.collections[0].get_sizes() == [10]
+        assert ax.collections[0].get_sizes() == [100]
 
         ax = self.df.plot(markersize=10)
-        assert ax.collections[0].get_sizes() == [10]
+        assert ax.collections[0].get_sizes() == [100]
 
         ax = self.df.plot(column="values", markersize=10)
-        assert ax.collections[0].get_sizes() == [10]
+        assert ax.collections[0].get_sizes() == [100]
 
-        ax = self.df.plot(markersize="values")
-        assert (ax.collections[0].get_sizes() == self.df["values"]).all()
+        ax = self.df.plot(markersize=self.df["values"])
+        assert (ax.collections[0].get_sizes() == self.df["values"] ** 2).all()
 
-        ax = self.df.plot(column="values", markersize="values")
-        assert (ax.collections[0].get_sizes() == self.df["values"]).all()
+        ax = self.df.plot(column="values", markersize=self.df["values"])
+        assert (ax.collections[0].get_sizes() == self.df["values"] ** 2).all()
 
     def test_markerstyle(self):
         ax = self.df2.plot(marker="+")
@@ -236,6 +236,7 @@ class TestPointPlotting:
             )
 
     def test_legend(self):
+        # TODO: check if solved by other matplotlib-related PR
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # legend ignored if color is given.
             ax = self.df.plot(column="values", color="green", legend=True)
@@ -381,15 +382,37 @@ class TestPointPlotting:
         ax5 = self.df.plot("cats_ordered", legend=True)
         ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
 
-        point_colors1 = ax1.collections[0].get_facecolors()
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
-            point_colors2 = ax.collections[0].get_facecolors()
-            np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+        # TODO: shorten?
+        point_colors1 = _get_facecolors(ax1.collections)
+        handles1, labels1 = ax1.get_legend_handles_labels()
+        labels_nr1 = [lbl[-1] for lbl in labels1]
+        legend1 = _get_facecolors(handles1)
 
-        legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
-            legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
+        for ax in [ax2, ax6]:
+            point_colors2 = _get_facecolors(ax.collections)
+            np.testing.assert_array_equal(point_colors1, point_colors2)
+            handles2, labels2 = ax.get_legend_handles_labels()
+            labels_nr2 = [lbl[-1] for lbl in labels2]
+            assert labels_nr1 == labels_nr2
+            legend2 = _get_facecolors(handles2)
             np.testing.assert_array_equal(legend1, legend2)
+
+        for ax in [ax3, ax4]:
+            point_colors2 = _get_facecolors(ax.collections)
+            np.testing.assert_array_equal(point_colors1[1], point_colors2[0])
+            handles2, labels2 = ax.get_legend_handles_labels()
+            labels_nr2 = [lbl[-1] for lbl in labels2]
+            assert labels_nr1[1] == labels_nr2[0]
+            legend2 = _get_facecolors(handles2)
+            np.testing.assert_array_equal(legend1[1], legend2[0])
+
+        point_colors2 = _get_facecolors(ax5.collections)
+        np.testing.assert_array_equal(point_colors1, point_colors2)
+        handles2, labels2 = ax5.get_legend_handles_labels()
+        labels_nr2 = [lbl[-1] for lbl in labels2]
+        assert labels_nr1 == labels_nr2[::-1]
+        legend2 = _get_facecolors(handles2)
+        np.testing.assert_array_equal(legend1, legend2)
 
         with pytest.raises(TypeError):
             self.df.plot(column="cats_object", categories="non_list")
@@ -420,11 +443,11 @@ class TestPointPlotting:
         ax = self.df.plot(
             "values", missing_kwds={"color": "r"}, categorical=True, legend=True
         )
-        _check_colors(1, ax.collections[1].get_facecolors(), ["r"])
+        _check_colors(1, ax.collections[-1].get_facecolors(), ["r"])
         point_colors = ax.collections[0].get_facecolors()
-        nan_color = ax.collections[1].get_facecolors()
+        nan_color = ax.collections[-1].get_facecolors()
         leg_colors = ax.get_legend().axes.collections[0].get_facecolors()
-        leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
+        leg_colors1 = ax.get_legend().axes.collections[-1].get_facecolors()
         np.testing.assert_array_equal(point_colors[0], leg_colors[0])
         np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
 
@@ -639,17 +662,17 @@ class TestPolygonPlotting:
         # non-categorical
         ax = self.df.plot(column="values", categorical=False, vmin=0, vmax=0)
         actual_colors = ax.collections[0].get_facecolors()
-        np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+        np.testing.assert_array_equal(actual_colors[0], actual_colors[-1])
 
         # categorical
         ax = self.df.plot(column="values", categorical=True, vmin=0, vmax=0)
         actual_colors = ax.collections[0].get_facecolors()
-        np.testing.assert_array_equal(actual_colors[0], actual_colors[1])
+        np.testing.assert_array_equal(actual_colors[0], actual_colors[-1])
 
         # vmin vmax set correctly for array with NaN (GitHub issue 877)
         ax = self.df3.plot(column="values")
         actual_colors = ax.collections[0].get_facecolors()
-        assert np.any(np.not_equal(actual_colors[0], actual_colors[1]))
+        assert np.any(np.not_equal(actual_colors[0], actual_colors[-1]))
 
     def test_style_kwargs_color(self):
 
@@ -659,8 +682,7 @@ class TestPolygonPlotting:
 
         # facecolor overrides more general-purpose color when both are set
         ax = self.polys.plot(color="red", facecolor="k")
-        # TODO with new implementation, color overrides facecolor
-        # _check_colors(2, ax.collections[0], ['k']*2, alpha=0.5)
+        _check_colors(2, ax.collections[0].get_facecolors(), ["k"] * 2)
 
         # edgecolor
         ax = self.polys.plot(edgecolor="red")
@@ -738,7 +760,7 @@ class TestPolygonPlotting:
 
     def test_colorbar_kwargs(self):
         # Test if kwargs are passed to colorbar
-
+        # TODO: check if solved by other matplotlib-related PR
         label_txt = "colorbar test"
 
         ax = self.df.plot(
@@ -929,9 +951,9 @@ class TestNonuniformGeometryPlotting:
 
     def test_style_kwargs(self):
         ax = self.series.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [10]
+        assert ax.collections[2].get_sizes() == [100]
         ax = self.df.plot(markersize=10)
-        assert ax.collections[2].get_sizes() == [10]
+        assert ax.collections[2].get_sizes() == [100]
 
     def test_style_kwargs_linestyle(self):
         # single
@@ -980,18 +1002,18 @@ class TestNonuniformGeometryPlotting:
 
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
-        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        # TODO splitting array-like arguments for the different plot types
-        # is not yet supported - https://github.com/geopandas/geopandas/issues/1379
-        # try:
-        #     ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
-        # except TypeError:
-        #     # no list allowed for alpha up to matplotlib 3.3
-        #     pass
-        # else:
-        #     np.testing.assert_array_equal(
-        #         [0.7, 0.2, 0.9], ax.collections[0].get_alpha()
-        #     )
+        assert ax.collections[0].get_alpha() == 0.7
+        expected_alpha = [0.7, 0.2, 0.9]
+        ax = self.df.plot(alpha=expected_alpha)
+        actual_alpha = [coll.get_alpha() for coll in ax.collections]
+        assert actual_alpha == expected_alpha
+
+    def test_color_listlike(self):
+        # ref https://github.com/geopandas/geopandas/issues/1379
+        expected_colors = ["red", "green", "blue"]
+        ax = self.df.plot(color=expected_colors)
+        actual_colors = _get_facecolors(ax.collections)
+        _check_colors(len(expected_colors), actual_colors, expected_colors)
 
 
 class TestGeographicAspect:
@@ -1367,14 +1389,14 @@ class TestPlotCollections:
 
         # specify single other color
         coll = _plot_point_collection(ax, self.points, color="g")
-        _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
-        _check_colors(self.N, coll.get_edgecolors(), ["g"] * self.N)
+        _check_colors(1, coll.get_facecolors(), ["g"])
+        _check_colors(1, coll.get_edgecolors(), ["g"])
         ax.cla()
 
         # specify edgecolor/facecolor
         coll = _plot_point_collection(ax, self.points, facecolor="g", edgecolor="r")
-        _check_colors(self.N, coll.get_facecolors(), ["g"] * self.N)
-        _check_colors(self.N, coll.get_edgecolors(), ["r"] * self.N)
+        _check_colors(1, coll.get_facecolors(), ["g"])
+        _check_colors(1, coll.get_edgecolors(), ["r"])
         ax.cla()
 
         # list of colors
@@ -1503,6 +1525,8 @@ class TestPlotCollections:
         ax.cla()
 
         # specify vmin/vmax
+        # TODO: remove test? or try to get back possibility to
+        # specify vmin and vmax?
         coll = _plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
@@ -1597,6 +1621,8 @@ class TestPlotCollections:
         ax.cla()
 
         # specify vmin/vmax
+        # TODO: remove test? or try to get back possibility to
+        # specify vmin and vmax?
         coll = _plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
@@ -1820,3 +1846,17 @@ def _get_ax(fig, label):
 
 def _get_colorbar_ax(fig):
     return _get_ax(fig, "<colorbar>")
+
+
+def _get_facecolors(collections):
+    from matplotlib.collections import LineCollection
+
+    facecolors = np.vstack(
+        [
+            coll.get_edgecolor()
+            if isinstance(coll, LineCollection)
+            else coll.get_facecolor()
+            for coll in collections
+        ]
+    )
+    return facecolors

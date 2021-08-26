@@ -42,7 +42,11 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     component_index : index array indices are repeated for all components in the
         same Multi geometry
     """
-    has_multi_geom = geoms.geom_type.str.startswith(prefix).any()
+    from shapely.geometry import Point
+
+    geoms = geoms.fillna(Point())
+    # TODO meh
+    has_multi_geom = (geoms.geom_type.str.startswith(prefix) & ~geoms.is_empty).any()
 
     if has_multi_geom:
         exploded_geoms = geoms.explode()
@@ -70,6 +74,7 @@ def _expand_kwargs(kwargs, multiindex):
     `multiindex` should be list_like
     """
     import matplotlib
+    from matplotlib.colors import is_color_like
     from typing import Iterable
 
     single_value_kwargs = ["hatch", "marker"]
@@ -81,7 +86,10 @@ def _expand_kwargs(kwargs, multiindex):
         scalar_kwargs = ["marker", "alpha", "path_effects"]
 
     for att, value in kwargs.items():
-        if "linestyle" in att:  # linestyle(s)
+        if "color" in att:  # color(s), edgecolor(s), facecolor(s)
+            if is_color_like(value):
+                continue
+        elif "linestyle" in att:  # linestyle(s)
             # A single linestyle can be 2-tuple of a number and an iterable.
             if (
                 isinstance(value, tuple)
@@ -171,7 +179,7 @@ def _plot_polygon_collection(
             cat_patches = np.take(poly_patches, cat_idx, axis=0)
             collection = PatchCollection(cat_patches, label=cat, **cat_kwargs)
             collection.set_facecolor(color.get(cat, "none"))
-            _ = ax.add_collection(collection, autolim=True)
+            ax.add_collection(collection, autolim=True)
 
     else:
         # Add to kwargs for easier checking below.
@@ -190,6 +198,7 @@ def _plot_polygon_collection(
         ax.add_collection(collection, autolim=True)
 
     ax.autoscale_view()
+    return collection
 
 
 plot_polygon_collection = deprecated(_plot_polygon_collection)
@@ -240,7 +249,7 @@ def _plot_linestring_collection(
             cat_segments = np.take(segments, cat_idx, axis=0)
             collection = LineCollection(cat_segments, label=cat, **cat_kwargs)
             collection.set_color(color.get(cat, "none"))
-            _ = ax.add_collection(collection, autolim=True)
+            ax.add_collection(collection, autolim=True)
 
     else:
         # Add to kwargs for easier checking below.
@@ -256,9 +265,10 @@ def _plot_linestring_collection(
             collection.set_cmap(cmap)
             collection.set_norm(norm)
 
-        _ = ax.add_collection(collection, autolim=True)
+        ax.add_collection(collection, autolim=True)
 
     ax.autoscale_view()
+    return collection
 
 
 plot_linestring_collection = deprecated(_plot_linestring_collection)
@@ -286,9 +296,6 @@ def _plot_point_collection(
         Values mapped to colors using vmin, vmax, and cmap.
         Cannot be specified together with `color`.
     """
-    # We exclude 'edgecolor' to suppress the warning about the
-    # facecolor-edgecolor ambiguity for scatter plots.
-    kwargs.pop("edgecolor", None)
     # matplotlib < 2.0 does not support s=None.
     if kwargs.get("markersize") is not None:
         # We square to match the units.
@@ -318,14 +325,16 @@ def _plot_point_collection(
         # Add to kwargs for easier checking below.
         if color is not None:
             kwargs["color"] = color
+        _expand_kwargs(kwargs, multiindex)
 
-        # matplotlib 1.4 does not support c=None.
+        # matplotlib 1.4 does not support c=None. `values` has not been expanded
+        # by the multiindex so _expand_kwargs should not be called for "c".
         if values is not None:
             kwargs["c"] = np.take(values, multiindex, axis=0)
 
-        _expand_kwargs(kwargs, multiindex)
+        collection = ax.scatter(x, y, cmap=cmap, norm=norm, **kwargs)
 
-        _ = ax.scatter(x, y, cmap=cmap, norm=norm, **kwargs)
+    return collection
 
 
 plot_point_collection = deprecated(_plot_point_collection)
@@ -742,13 +751,13 @@ GON (((-122.84000 49.00000, -120.0000...
                 "The dataframe and given column have different number of rows."
             )
         else:
-            values = column
+            values = np.asarray(column)
 
-            # Make sure index of a Series matches index of df
-            if isinstance(values, pd.Series):
-                values = values.reindex(df.index)
+            # # Make sure index of a Series matches index of df
+            # if isinstance(values, pd.Series):
+            # values = values.reindex(df.index)
     else:
-        values = df[column]
+        values = df[column].values
 
     if pd.api.types.is_categorical_dtype(values.dtype):
         if categories is not None:
@@ -820,12 +829,12 @@ GON (((-122.84000 49.00000, -120.0000...
 
     # Define `values` as a Series
     if categorical:
-        if cmap is None:
-            cmap = "tab10"
-
-        cat = pd.Categorical(values, categories=categories)
+        # We order to avoid raising an error when taking the min
+        cat = pd.Categorical(values, categories=categories).as_ordered()
+        # TODO: Tests implied the categories should be reordered even if
+        # specified, desirable? certainly not for scheme
+        # cat = cat.reorder_categories(sorted(cat.categories), ordered=True)
         categories = list(cat.categories)
-
         # values missing in the Categorical but not in original values
         missing = list(np.unique(values[~nan_idx & cat.isna()]))
         if missing:
@@ -873,10 +882,8 @@ GON (((-122.84000 49.00000, -120.0000...
             from matplotlib import cm
 
             n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
-            cat_colors = n_cmap.to_rgba(np.unique(values.codes))
-            color = {
-                cat: cat_color for cat, cat_color in zip(values.categories, cat_colors)
-            }
+            cat_colors = n_cmap.to_rgba(np.arange(len(categories)))
+            color = {cat: cat_color for cat, cat_color in zip(categories, cat_colors)}
 
     geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
     values = values[multiindex]
