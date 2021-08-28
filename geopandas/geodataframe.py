@@ -274,6 +274,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
+        if isinstance(self.columns, pd.MultiIndex) and isinstance(geo_column_name, str):
+            geo_column_name = (geo_column_name, "")
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, "ndim") and col.ndim != 1:
