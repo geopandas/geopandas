@@ -100,9 +100,14 @@ def _expand_kwargs(kwargs, multiindex):
 
         if pd.api.types.is_list_like(value):
             if att in single_value_kwargs:
-                kwargs[att] = np.take(value, multiindex[0], axis=0)
+                value = np.take(value, multiindex[0], axis=0)
             else:
-                kwargs[att] = np.take(value, multiindex, axis=0)
+                value = np.take(value, multiindex, axis=0)
+                # For plain text styles, a single-value array cannot be passed
+                # as a linestyle to a Collection.
+                if "linestyle" in att and isinstance(value, np.ndarray):
+                    value = value.tolist()
+            kwargs[att] = value
 
 
 def _PolygonPatch(polygon, **kwargs):
@@ -256,7 +261,7 @@ def _plot_linestring_collection(
         if color is not None:
             kwargs["color"] = color
         _expand_kwargs(kwargs, multiindex)
-
+        print(kwargs)
         collection = LineCollection(segments, **kwargs)
 
         if values is not None:
