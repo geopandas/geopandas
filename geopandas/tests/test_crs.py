@@ -336,6 +336,26 @@ class TestGeometryArrayCRS:
         assert df["geometry"].crs == self.wgs
         assert df["other_geom"].crs == self.osgb
 
+    def test_dataframe_multiindex_cols(self):
+        # GH1763 https://github.com/geopandas/geopandas/issues/1763
+        df = pd.DataFrame(
+            [[1, 0], [0, 1]], columns=[["location", "location"], ["x", "y"]]
+        )
+        gdf = GeoDataFrame(
+            df,
+            crs=self.wgs,
+            geometry=points_from_xy(df["location", "x"], df["location", "y"]),
+        )
+        assert gdf.crs == self.wgs
+
+        gdf = GeoDataFrame(
+            df,
+            geometry=points_from_xy(
+                df["location", "x"], df["location", "y"], crs=self.wgs
+            ),
+        )
+        assert gdf.crs == self.wgs
+
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
     )
