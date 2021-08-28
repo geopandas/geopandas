@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, MultiIndex
 from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
@@ -125,6 +125,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support multiple columns "
                     "using the geometry column name 'geometry'."
+                )
+            elif (
+                isinstance(self.columns, MultiIndex)
+                and (self.columns.get_level_values(0) == "geometry").sum() > 1
+            ):
+                raise ValueError(
+                    "GeoDataFrame does not support inferring geometry column name "
+                    "with MultiIndex columns containing more than one level 0 "
+                    "entry using the geometry column name 'geometry'. Please "
+                    "provide the geometry column name explicitly."
                 )
 
             # only if we have actual geometry values -> call set_geometry
