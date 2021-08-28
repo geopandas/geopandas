@@ -931,6 +931,7 @@ class TestNonuniformGeometryPlotting:
         poly = Polygon([(1, 0), (2, 0), (2, 1)])
         line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])
         point = Point(0.75, 0.25)
+        # Some tests are designed to work for this specific geometries' order.
         self.series = GeoSeries([poly, line, point])
         self.df = GeoDataFrame({"geometry": self.series, "values": [1, 2, 3]})
 
@@ -956,7 +957,6 @@ class TestNonuniformGeometryPlotting:
         assert ax.collections[2].get_sizes() == [100]
 
     def test_style_kwargs_linestyle(self):
-        # single
         for ax in [
             self.series.plot(linestyle=":", linewidth=1),
             self.df.plot(linestyle=":", linewidth=1),
@@ -990,6 +990,22 @@ class TestNonuniformGeometryPlotting:
             actual_lw = [coll.get_linewidths()[0] for coll in ax.collections]
             assert actual_lw == expected_lw
 
+    def test_style_kwargs_linewidth_mapping(self):
+        expected_lw = [2, 4, 5.5]
+        lw_mapping = dict(zip(self.df["values"], expected_lw))
+        ax = self.df.plot(
+            "values",
+            categorical=True,
+            legend=True,
+            linewidths=lw_mapping,
+        )
+        actual_geoms_lw = [coll.get_linewidths()[0] for coll in ax.collections]
+        assert actual_geoms_lw == expected_lw
+
+        lgd_colls, _ = ax.get_legend_handles_labels()
+        actual_lgd_lw = [coll.get_linewidths()[0] for coll in lgd_colls]
+        assert actual_lgd_lw == expected_lw
+
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
         assert ax.collections[0].get_alpha() == 0.7
@@ -1005,8 +1021,62 @@ class TestNonuniformGeometryPlotting:
         actual_colors = _get_facecolors(ax.collections)
         _check_colors(len(expected_colors), actual_colors, expected_colors)
 
+    def test_color_mapping(self):
+        expected_colors = ["red", "green", "blue"]
+        nr_colors = len(expected_colors)
+        color_mapping = dict(zip(self.df["values"], expected_colors))
+        ax = self.df.plot(
+            "values",
+            categorical=True,
+            legend=True,
+            color=color_mapping,
+        )
 
-# TODO: test color mapping, marker, linewidth, hatch
+        actual_geoms_colors = _get_facecolors(ax.collections)
+        _check_colors(nr_colors, actual_geoms_colors, expected_colors)
+
+        lgd_colls, _ = ax.get_legend_handles_labels()
+        actual_lgd_colors = _get_facecolors(lgd_colls)
+        _check_colors(nr_colors, actual_lgd_colors, expected_colors)
+
+    def test_style_kwargs_hatch_listlike(self):
+        expected_hatch = ["//", "x", "+"]
+        ax = self.series.plot(hatch=expected_hatch)
+        actual_hatch = [coll.get_hatch() for coll in ax.collections]
+        assert actual_hatch == expected_hatch
+
+    def test_style_kwargs_hatch_mapping(self):
+        expected_hatch = ["//", "x", "+"]
+        hatch_mapping = dict(zip(self.df["values"], expected_hatch))
+        ax = self.df.plot(
+            "values",
+            categorical=True,
+            legend=True,
+            hatch=hatch_mapping,
+        )
+        actual_geoms_hatch = [coll.get_hatch() for coll in ax.collections]
+        assert actual_geoms_hatch == expected_hatch
+
+        lgd_colls, _ = ax.get_legend_handles_labels()
+        actual_lgd_hatch = [coll.get_hatch() for coll in lgd_colls]
+        assert actual_lgd_hatch == expected_hatch
+
+    def test_style_kwargs_markerstyle_mapping(self):
+        plot_ms = ["o", "x", "+"]
+        expected_ms = _style_to_vertices(plot_ms[2])
+        ms_mapping = dict(zip(self.df["values"], plot_ms))
+        ax = self.df.plot(
+            "values",
+            categorical=True,
+            legend=True,
+            marker=ms_mapping,
+        )
+        np.testing.assert_array_equal(
+            expected_ms, ax.collections[2].get_paths()[0].vertices
+        )
+
+        lgd_colls, _ = ax.get_legend_handles_labels()
+        np.testing.assert_array_equal(expected_ms, lgd_colls[2].get_paths()[0].vertices)
 
 
 class TestGeographicAspect:

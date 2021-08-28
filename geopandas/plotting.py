@@ -233,7 +233,7 @@ def _plot_linestring_collection(
     kwargs = {
         att: value
         for att, value in kwargs.items()
-        if att not in ["markersize", "marker", "s", "hatch"]
+        if att not in ["markersize", "marker", "s"]
     }
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
@@ -261,7 +261,7 @@ def _plot_linestring_collection(
         if color is not None:
             kwargs["color"] = color
         _expand_kwargs(kwargs, multiindex)
-        print(kwargs)
+
         collection = LineCollection(segments, **kwargs)
 
         if values is not None:
@@ -915,6 +915,10 @@ GON (((-122.84000 49.00000, -120.0000...
         )
         if categorical:
             ax.legend = _legend_with_poly_wrapper(ax.legend)
+            ax.get_legend_handles_labels = _legend_with_poly_wrapper(
+                ax.get_legend_handles_labels,
+                handler_map_kwarg_name="legend_handler_map",
+            )
 
     # plot all LineStrings and MultiLineString components in same collection
     lines_mask = line_idx & np.invert(nan_idx)
@@ -993,7 +997,7 @@ class GeoplotAccessor(PlotAccessor):
         return self(kind="geo", *args, **kwargs)
 
 
-def _legend_with_poly_wrapper(fun):
+def _legend_with_poly_wrapper(fun, handler_map_kwarg_name="handler_map"):
     """
     Decorator for ax.legend that enables `PatchCollection` objects plotted by
     `_plot_polygon_collection` to be rendered correctly in the legend.
@@ -1002,7 +1006,7 @@ def _legend_with_poly_wrapper(fun):
     from matplotlib.collections import PatchCollection
 
     def legend(*args, **kwargs):
-        kwargs["handler_map"] = {PatchCollection: HandlerPolyCollection()}
+        kwargs[handler_map_kwarg_name] = {PatchCollection: HandlerPolyCollection()}
         return fun(*args, **kwargs)
 
     return legend
