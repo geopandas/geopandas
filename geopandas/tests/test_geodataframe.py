@@ -1034,6 +1034,45 @@ class TestConstructor:
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
 
+    def test_repeat_geo_col_multiindex(self):
+        df = pd.DataFrame(
+            [
+                {"geometry": Point(x, y), "geom": Point(x, y)}
+                for x, y in zip(range(3), range(3))
+            ],
+        )
+        # cannot have two level zero columns containing geometry
+        df.columns = pd.MultiIndex.from_tuples(
+            [("geometry", "foo"), ("geometry", "bar")]
+        )
+        exception_msg = (
+            "GeoDataFrame does not support inferring geometry column name "
+            "with MultiIndex columns containing more than one level 0 "
+            "entry using the geometry column name 'geometry'. Please "
+            "provide the geometry column name explicitly"
+        )
+        with pytest.raises(ValueError, match=exception_msg):
+            GeoDataFrame(df)
+        # but if geometry is supplied explicitly its fine
+        gdf = GeoDataFrame(df, geometry=("geometry", "bar"))
+        assert gdf.geometry.name == ("geometry", "bar")
+
+        # if duplicate geometry in the second level then its fine
+        df.columns = pd.MultiIndex.from_tuples(
+            [("foo", "geometry"), ("bar", "geometry")]
+        )
+        gdf = GeoDataFrame(df)
+        # result is an invalid geodataframe because geometry can't be inferred
+        assert gdf._geometry_column_name == "geometry"
+
+        # duplicate geometry in a mix of levels is fine
+        df.columns = pd.MultiIndex.from_tuples(
+            [("geometry", "foo"), ("bar", "geometry")]
+        )
+        gdf = GeoDataFrame(df)
+        # result is an invalid geodataframe because geometry can't be inferred
+        assert gdf._geometry_column_name == "geometry"
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
