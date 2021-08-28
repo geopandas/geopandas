@@ -654,7 +654,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         PostGIS
 
         >>> from sqlalchemy import create_engine  # doctest: +SKIP
-        >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydb"
+        >>> db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydb"
         >>> con = create_engine(db_connection_url)  # doctest: +SKIP
         >>> sql = "SELECT geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
@@ -1710,7 +1710,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         --------
 
         >>> from sqlalchemy import create_engine
-        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+        >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase")  # doctest: +SKIP
         >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
 
