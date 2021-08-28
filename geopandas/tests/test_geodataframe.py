@@ -1036,10 +1036,7 @@ class TestConstructor:
 
     def test_repeat_geo_col_multiindex(self):
         df = pd.DataFrame(
-            [
-                {"geometry": Point(x, y), "geom": Point(x, y)}
-                for x, y in zip(range(3), range(3))
-            ],
+            [{"geometry": Point(x, y), "col1": x} for x, y in zip(range(3), range(3))],
         )
         # cannot have two level zero columns containing geometry
         df.columns = pd.MultiIndex.from_tuples(
@@ -1065,7 +1062,15 @@ class TestConstructor:
         # result is an invalid geodataframe because geometry can't be inferred
         assert gdf._geometry_column_name == "geometry"
 
-        # duplicate geometry in a mix of levels is fine
+        # duplicate geometry in a mix of levels is fine - with geom
+        df.columns = pd.MultiIndex.from_tuples(
+            [("geometry", "foo"), ("bar", "geometry")]
+        )
+        gdf = GeoDataFrame(df)
+        # result is an invalid geodataframe because geometry can't be inferred
+        assert gdf._geometry_column_name == "geometry"
+
+        # duplicate geometry in a mix of levels is fine - with non geom
         df.columns = pd.MultiIndex.from_tuples(
             [("geometry", "foo"), ("bar", "geometry")]
         )
