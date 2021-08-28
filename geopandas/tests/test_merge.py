@@ -5,6 +5,7 @@ from geopandas.testing import assert_geodataframe_equal
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas import _compat as compat
 
 
 class TestMerging:
@@ -98,6 +99,11 @@ class TestMerging:
         # check metadata comes from first df
         self._check_metadata(res3, geometry_column_name="geom", crs="epsg:4326")
 
+    @pytest.mark.xfail(
+        not compat.PANDAS_GE_11,
+        reason="pandas <=1.0 hard codes concat([GeoSeries, GeoSeries]) -> "
+        "DataFrame or Union[DataFrame, SparseDataFrame] in 0.25",
+    )
     def test_concat_axis1_geoseries(self):
         gseries2 = GeoSeries([Point(i, i) for i in range(3, 6)], crs="epsg:4326")
         result = pd.concat([gseries2, self.gseries], axis=1)
