@@ -556,8 +556,6 @@ class GeoSeries(GeoPandasBase, Series):
             )
             return df
 
-        expanddim._get_axis_number = GeoDataFrame._get_axis_number
-
         return expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
