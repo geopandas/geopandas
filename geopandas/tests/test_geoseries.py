@@ -492,11 +492,11 @@ class TestConstructor:
     @pytest.mark.parametrize("crs", [None, "epsg:4326"])
     def test_reset_index(self, name, crs):
         s = GeoSeries(
-            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
+            name=name,
+            crs=crs,
         )
         s = s.explode()
-        s.name = name
-        s.crs = crs
         df = s.reset_index()
         assert type(df) == GeoDataFrame
         # name None -> geometry, otherwise name preserved
@@ -507,11 +507,10 @@ class TestConstructor:
     @pytest.mark.parametrize("crs", [None, "epsg:4326"])
     def test_to_frame(self, name, crs):
         s = GeoSeries(
-            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
+            name=name,
+            crs=crs,
         )
-        s = s.explode()
-        s.name = name
-        s.crs = crs
         df = s.to_frame()
         assert type(df) == GeoDataFrame
         # name none -> geometry, otherwise name preserved
