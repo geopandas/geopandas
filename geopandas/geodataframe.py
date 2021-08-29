@@ -1414,9 +1414,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 reference_obj = other.objs[0]
                 if isinstance(reference_obj, GeoSeries):
                     other_key = gseries_keymapping.get(name, name)
+                    value = getattr(reference_obj, other_key, None)
+                    if value is None:
+                        value = getattr(self, name)
                 else:
                     other_key = name
-                object.__setattr__(self, name, getattr(reference_obj, other_key, None))
+                    value = getattr(reference_obj, other_key, None)
+                object.__setattr__(self, name, value)
 
             if (self.columns == self._geometry_column_name).sum() > 1:
                 raise ValueError(

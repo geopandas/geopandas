@@ -111,7 +111,7 @@ class TestMerging:
         # leave geometry column as None and user to sort out.
         # This could happen in a less contrived way via DataFrame.convert_dtypes
         assert type(result) is GeoDataFrame
-        assert result._geometry_column_name is None
+        self._check_metadata(result, geometry_column_name=0, crs="epsg:4326")
 
         gseries2.name = "foo"
         result2 = pd.concat([gseries2, self.gseries], axis=1)
