@@ -556,6 +556,11 @@ class GeoSeries(GeoPandasBase, Series):
             )
             return df
 
+        # pd.concat (pandas/core/reshape/concat.py) requires this for the
+        # concatenation of series since pandas 1.1
+        # (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+        expanddim._get_axis_number = GeoDataFrame._get_axis_number
+
         return expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
