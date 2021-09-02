@@ -367,7 +367,7 @@ def _write_postgis(
     >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
     """
     try:
-        from geoalchemy2 import Geometry
+        from geoalchemy2 import Geography, Geometry
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package. ")
 
@@ -388,11 +388,6 @@ def _write_postgis(
     # Get geometry type and info whether data contains LinearRing.
     geometry_type, has_curve = _get_geometry_type(gdf)
 
-    # Build dtype with Geometry
-    if dtype is not None:
-        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
-    else:
-        dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
 
     # Convert LinearRing geometries to LineString
     if has_curve:
@@ -401,30 +396,45 @@ def _write_postgis(
     # Convert geometries to EWKB
     gdf = _convert_to_ewkb(gdf, geom_name, srid)
 
+    # Infer schema
     if schema is not None:
         schema_name = schema
     else:
         schema_name = "public"
 
-    if if_exists == "append":
-        # Check that the geometry srid matches with the current GeoDataFrame
-        with _get_conn(con) as connection:
-            # Only check SRID if table exists
-            if connection.dialect.has_table(connection, name, schema):
-                target_srid = connection.execute(
-                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                        schema=schema_name, table=name, geom_col=geom_name
-                    )
-                ).fetchone()[0]
+    # Infer dtype for the `geom_name` column
+    if dtype is None:
+        dtype = {}
+    with _get_conn(con) as connection:
+        # Check if table exists and infer Geography/Geometry dtype
+        (target_srid,) = connection.execute(
+            f"SELECT SRID FROM GEOMETRY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
+            f"AND F_TABLE_NAME = '{name}'"
+        ).first()
+        if target_srid is not None:
+            if geom_name not in dtype:
+                dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+        else:
+            (target_srid,) = connection.execute(
+                f"SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
+                f"AND F_TABLE_NAME = '{name}'"
+            ).first()
+            if geom_name not in dtype:
+                dtype[geom_name] = Geography(geometry_type=geometry_type, srid=srid)
 
-                if target_srid != srid:
-                    msg = (
-                        "The CRS of the target table (EPSG:{epsg_t}) differs from the "
-                        "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                            epsg_t=target_srid, epsg_src=srid
-                        )
+        if target_srid is None:
+            # Table doesn't exist - use Geometry by default
+            dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+        else:
+            # Table exists - check if GeoDataFrame's SRID is compatible with it
+            if target_srid != srid:
+                msg = (
+                    "The CRS of the target table (EPSG:{epsg_t}) differs from the "
+                    "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                        epsg_t=target_srid, epsg_src=srid
                     )
-                    raise ValueError(msg)
+                )
+                raise ValueError(msg)
 
     with _get_conn(con) as connection:
 
