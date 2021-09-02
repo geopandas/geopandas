@@ -407,7 +407,7 @@ def _write_postgis(
         dtype = {}
     with _get_conn(con) as connection:
         # Check if table exists and infer Geography/Geometry dtype
-        (target_srid,) = connection.execute(
+        target_srid = connection.execute(
             f"SELECT SRID FROM GEOMETRY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
             f"AND F_TABLE_NAME = '{name}'"
         ).first()
@@ -415,7 +415,7 @@ def _write_postgis(
             if geom_name not in dtype:
                 dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
         else:
-            (target_srid,) = connection.execute(
+            target_srid = connection.execute(
                 f"SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
                 f"AND F_TABLE_NAME = '{name}'"
             ).first()
@@ -427,11 +427,11 @@ def _write_postgis(
             dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
         else:
             # Table exists - check if GeoDataFrame's SRID is compatible with it
-            if target_srid != srid:
+            if target_srid[0] != srid:
                 msg = (
                     "The CRS of the target table (EPSG:{epsg_t}) differs from the "
                     "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                        epsg_t=target_srid, epsg_src=srid
+                        epsg_t=target_srid[0], epsg_src=srid
                     )
                 )
                 raise ValueError(msg)
