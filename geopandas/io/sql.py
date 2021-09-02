@@ -388,7 +388,6 @@ def _write_postgis(
     # Get geometry type and info whether data contains LinearRing.
     geometry_type, has_curve = _get_geometry_type(gdf)
 
-
     # Convert LinearRing geometries to LineString
     if has_curve:
         gdf = _convert_linearring_to_linestring(gdf, geom_name)
