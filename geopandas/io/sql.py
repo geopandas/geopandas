@@ -396,10 +396,8 @@ def _write_postgis(
     gdf = _convert_to_ewkb(gdf, geom_name, srid)
 
     # Infer schema
-    if schema is not None:
-        schema_name = schema
-    else:
-        schema_name = "public"
+    if schema is None:
+        schema = "public"
 
     # Infer dtype for the `geom_name` column
     if dtype is None:
@@ -469,7 +467,7 @@ def _write_postgis(
         gdf.to_sql(
             name,
             connection,
-            schema=schema_name,
+            schema=schema,
             if_exists=if_exists,
             index=index,
             index_label=index_label,
