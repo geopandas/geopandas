@@ -405,7 +405,7 @@ def _write_postgis(
     if dtype is None:
         dtype = {}
     with _get_conn(con) as connection:
-        # Check if table exists and infer Geography/Geometry dtype
+        # Check if table exists and whether `geom_name` column is Geometry or Geography
         target_srid = connection.execute(
             f"SELECT SRID FROM GEOMETRY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
             f"AND F_TABLE_NAME = '{name}' AND F_GEOMETRY_COLUMN = '{geom_name}'"
@@ -414,11 +414,12 @@ def _write_postgis(
             if geom_name not in dtype:
                 dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
         else:
+            # `geom_name` column is not Geometry - check if it is Geography
             target_srid = connection.execute(
                 f"SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
                 f"AND F_TABLE_NAME = '{name}' AND F_GEOMETRY_COLUMN = '{geom_name}'"
             ).first()
-            if geom_name not in dtype:
+            if target_srid is not None and geom_name not in dtype:
                 dtype[geom_name] = Geography(geometry_type=geometry_type, srid=srid)
 
         if target_srid is None:
