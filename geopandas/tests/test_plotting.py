@@ -1528,11 +1528,7 @@ class TestGeoplotAccessor:
                 kwargs = {"y": "y"}
             elif kind in _xy_kinds:
                 kwargs = {"x": "x", "y": "y"}
-                # For the hexbin plot, increase the gridsize to a value
-                # reasonable relatively to the spacing between the data points,
-                # in order to draw fewer hex cells and reduce the duration of
-                # the test, especiallly the comparison in pdf format.
-                if kind == "hexbin":
+                if kind == "hexbin":  # increase gridsize to reduce duration
                     kwargs["gridsize"] = 10
 
             self.compare_figures(kind, fig_test, fig_ref, kwargs)
