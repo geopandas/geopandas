@@ -417,7 +417,7 @@ def _write_postgis(
             # `geom_name` column is not Geometry - check if it is Geography
             target_srid = connection.execute(
                 f"SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE F_TABLE_SCHEMA = '{schema}' "
-                f"AND F_TABLE_NAME = '{name}' AND F_GEOMETRY_COLUMN = '{geom_name}'"
+                f"AND F_TABLE_NAME = '{name}' AND F_GEOGRAPHY_COLUMN = '{geom_name}'"
             ).first()
             if target_srid is not None and geom_name not in dtype:
                 dtype[geom_name] = Geography(geometry_type=geometry_type, srid=srid)
