@@ -65,7 +65,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     return geo_series, component_index
 
 
-def _expand_kwargs(kwargs, multiindex):
+def _expand_kwargs(kwargs, multiindex, is_final_expansion=False):
     """
     Most arguments to the plot functions must be a (single) value, or a sequence
     of values. This function checks each key-value pair in 'kwargs' and expands
@@ -99,14 +99,17 @@ def _expand_kwargs(kwargs, multiindex):
                 continue
 
         if pd.api.types.is_list_like(value):
-            if att in single_value_kwargs:
-                value = np.take(value, multiindex[0], axis=0)
-            else:
-                value = np.take(value, multiindex, axis=0)
-                # For plain text styles, a single-value array cannot be passed
-                # as a linestyle to a Collection.
-                if "linestyle" in att and isinstance(value, np.ndarray):
-                    value = value.tolist()
+            value = np.take(value, multiindex, axis=0)
+            if (
+                att in single_value_kwargs
+                and is_final_expansion
+                and np.all(value == value[0])
+            ):
+                value = value[0]
+            # For plain text styles, a single-value array cannot be passed
+            # as a linestyle to a Collection.
+            if "linestyle" in att and isinstance(value, np.ndarray):
+                value = value.tolist()
             kwargs[att] = value
 
 
@@ -180,7 +183,7 @@ def _plot_polygon_collection(
             cat_kwargs = kwargs.copy()
             cat_idx = np.where(codes == cat_code)[0]
             # some properties like hatch can only be a single value, so:
-            _expand_kwargs(cat_kwargs, cat_idx[[0]])
+            _expand_kwargs(cat_kwargs, cat_idx[[0]], is_final_expansion=True)
             cat_patches = np.take(poly_patches, cat_idx, axis=0)
             collection = PatchCollection(cat_patches, label=cat, **cat_kwargs)
             collection.set_facecolor(color.get(cat, "none"))
@@ -190,7 +193,7 @@ def _plot_polygon_collection(
         # Add to kwargs for easier checking below.
         if color is not None:
             kwargs["color"] = color
-        _expand_kwargs(kwargs, multiindex)
+        _expand_kwargs(kwargs, multiindex, is_final_expansion=True)
 
         collection = PatchCollection(poly_patches, **kwargs)
 
@@ -250,7 +253,7 @@ def _plot_linestring_collection(
         for cat, cat_code in zip(categories, ucodes):
             cat_kwargs = kwargs.copy()
             cat_idx = np.where(codes == cat_code)[0]
-            _expand_kwargs(cat_kwargs, cat_idx[[0]])
+            _expand_kwargs(cat_kwargs, cat_idx[[0]], is_final_expansion=True)
             cat_segments = np.take(segments, cat_idx, axis=0)
             collection = LineCollection(cat_segments, label=cat, **cat_kwargs)
             collection.set_color(color.get(cat, "none"))
@@ -260,7 +263,7 @@ def _plot_linestring_collection(
         # Add to kwargs for easier checking below.
         if color is not None:
             kwargs["color"] = color
-        _expand_kwargs(kwargs, multiindex)
+        _expand_kwargs(kwargs, multiindex, is_final_expansion=True)
 
         collection = LineCollection(segments, **kwargs)
 
@@ -320,7 +323,7 @@ def _plot_point_collection(
         for cat, cat_code in zip(categories, ucodes):
             cat_kwargs = kwargs.copy()
             cat_idx = np.where(codes == cat_code)[0]
-            _expand_kwargs(cat_kwargs, cat_idx[[0]])
+            _expand_kwargs(cat_kwargs, cat_idx[[0]], is_final_expansion=True)
             cat_x = np.take(x, cat_idx, axis=0)
             cat_y = np.take(y, cat_idx, axis=0)
             collection = ax.scatter(cat_x, cat_y, label=cat, **cat_kwargs)
@@ -330,7 +333,7 @@ def _plot_point_collection(
         # Add to kwargs for easier checking below.
         if color is not None:
             kwargs["color"] = color
-        _expand_kwargs(kwargs, multiindex)
+        _expand_kwargs(kwargs, multiindex, is_final_expansion=True)
 
         # matplotlib 1.4 does not support c=None. `values` has not been expanded
         # by the multiindex so _expand_kwargs should not be called for "c".
