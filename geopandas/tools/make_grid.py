@@ -15,18 +15,51 @@ import matplotlib.pyplot as plt
 
 
 def make_grid(
-    polygon,
-    cell_size,
-    offset=(0, 0),
-    crs=None,
-    what="polygons",
-    cell_type="square",
+    polygon, cell_size, offset=(0, 0), crs=None, what="polygons", cell_type="square",
 ):
     # TODO Consider adding `n` as a parameter to stick with R implementation.
     # However, n introduces redundancy.
 
     # Run basic checks
     _basic_checks(polygon, cell_size, offset, what, cell_type)
+
+    bounds = np.array(polygon.bounds)
+
+    if cell_type == "square":
+
+        x_coords_corn = np.arange(bounds[0], bounds[2] + cell_size, cell_size)
+        y_coords_corn = np.arange(bounds[1], bounds[3] + cell_size, cell_size)
+        xv, yv = np.meshgrid(x_coords_corn, y_coords_corn)
+        sq_corners_np = np.array([xv, yv]).T.reshape(-1, 2)
+
+        if what == "corners":
+            sq_corners = points_from_xy(sq_corners_np[:, 0], sq_corners_np[:, 1])
+
+            return GeoSeries(sq_corners[sq_corners.intersects(polygon)])
+
+        elif what == "centers":
+            sq_centers_np = sq_corners_np + cell_size / 2
+            sq_centers = points_from_xy(sq_centers_np[:, 0], sq_centers_np[:, 1])
+
+            return GeoSeries(sq_centers[sq_centers.intersects(polygon)])
+
+        else:
+            sq_coords = np.concatenate(
+                (
+                    np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 1, 2),
+                    np.array([xv[1:, 1:], yv[:-1, :-1]]).T.reshape(-1, 1, 2),
+                    np.array([xv[1:, 1:], yv[1:, 1:]]).T.reshape(-1, 1, 2),
+                    np.array([xv[:-1, :-1], yv[1:, 1:]]).T.reshape(-1, 1, 2),
+                ),
+                axis=1,
+            )
+
+            sq_polygons = [geometry.Polygon(sq_set) for sq_set in sq_coords]
+
+            sq_polygons_np = np.array(sq_polygons)
+            sq_polygons = from_shapely(sq_polygons_np)
+
+            return GeoSeries(sq_polygons[sq_polygons.intersects(polygon)])
 
 
 def _basic_checks(polygon, cell_size, offset, what, cell_type):
