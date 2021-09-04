@@ -742,8 +742,6 @@ class TestIO:
         """
         Tests writing to an existing PostGIS table with Geography column.
         """
-        import numpy as np
-
         table_name = create_postgis_geography_table
         write_postgis(
             df_geog,
