@@ -759,8 +759,15 @@ class TestIO:
             sql=f"SELECT * FROM {table_name}",
             con=engine_postgis,
             geom_col=df_geog.geometry.name,
-        )
+        ).astype(df_geog.dtypes)
 
-        assert df_geog.equals(df_geog_read)
+        # Sort both dataframes by "id" prior to comparison
+        df_geog = df_geog.sort_values(by="id", ascending=True)
+        df_geog_read = df_geog_read.sort_values(by="id", ascending=True)
+
+        # Compare geometries
         assert df_geog.crs.equals(df_geog_read.crs)
-        assert df_geog.geom_equals(df_geog_read)
+        assert all(df_geog.geom_equals(df_geog_read))
+
+        # Compare values
+        assert df_geog.equals(df_geog_read)
