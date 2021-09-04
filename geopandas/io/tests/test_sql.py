@@ -11,7 +11,11 @@ import pandas as pd
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
-from geopandas.io.sql import _get_conn as get_conn, _write_postgis as write_postgis
+from geopandas.io.sql import (
+    _get_conn as get_conn,
+    _get_srid_from_crs as get_srid_from_crs,
+    _write_postgis as write_postgis,
+)
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
@@ -759,14 +763,15 @@ class TestIO:
             sql=f"SELECT * FROM {table_name}",
             con=engine_postgis,
             geom_col=df_geog.geometry.name,
-        ).astype(df_geog.dtypes)
+            crs=df_geog.crs,
+        )
 
         # Sort both dataframes by "id" prior to comparison
         df_geog = df_geog.sort_values(by="id", ascending=True)
         df_geog_read = df_geog_read.sort_values(by="id", ascending=True)
 
         # Compare geometries
-        assert df_geog.crs.equals(df_geog_read.crs)
+        assert get_srid_from_crs(df_geog) == get_srid_from_crs(df_geog_read)
         assert all(df_geog.geom_equals(df_geog_read))
 
         # Compare values
