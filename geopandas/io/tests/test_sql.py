@@ -187,7 +187,7 @@ def df_3D_geoms():
     return df
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def df_geog():
     """
     Dummy GeoDataFrame with lon/lat geometry to be used for PostGIS Geography tests.
@@ -204,8 +204,12 @@ def df_geog():
     ).rename_geometry("geog")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def create_postgis_geography_table(engine_postgis):
+    """
+    Creates dummy table with Geography column in the PostGIS database.
+    Removes it on fixture scope exit.
+    """
     table_name = "TEST_GEOG_POINTS"
     with get_conn(engine_postgis) as connection:
         connection.execute(
@@ -756,12 +760,6 @@ class TestIO:
             geom_col=df_geog.geometry.name,
         )
 
-        for column in df_geog.columns:
-            if column != df_geog.geometry.name:
-                assert all(
-                    df_geog.loc[:, column].values == df_geog_read.loc[:, column].values
-                )
-        for attr in ["x", "y"]:
-            assert all(
-                getattr(df_geog.geometry, attr) == getattr(df_geog_read.geometry, attr)
-            )
+        assert df_geog.equals(df_geog_read)
+        assert df_geog.crs.equals(df_geog_read.crs)
+        assert df_geog.geom_equals(df_geog_read)
