@@ -187,6 +187,41 @@ def df_3D_geoms():
     return df
 
 
+@pytest.fixture()
+def df_geog():
+    """
+    Dummy GeoDataFrame with lon/lat geometry to be used for PostGIS Geography tests.
+    """
+    from shapely.geometry import Point
+
+    return GeoDataFrame(
+        data={
+            "name": ["bar", "baz"],
+            "size": [12, 7],
+        },
+        geometry=[Point(-40, 75), Point(63, -30)],
+        crs="EPSG:4326",
+    ).rename_geometry("geog")
+
+
+@pytest.fixture()
+def create_postgis_geography_table(engine_postgis):
+    table_name = "TEST_GEOG_POINTS"
+    with get_conn(engine_postgis) as connection:
+        connection.execute(
+            f"CREATE TABLE {table_name} "
+            f"("
+            f"id SERIAL PRIMARY KEY, "
+            f"name VARCHAR, "
+            f"size INTEGER, "
+            f"geog GEOGRAPHY(POINT,4326)"
+            f")"
+        )
+    yield table_name
+    with get_conn(engine_postgis) as connection:
+        connection.execute(f"DROP TABLE {table_name}")
+
+
 class TestIO:
     def test_get_conn(self, engine_postgis):
         Connection = pytest.importorskip("sqlalchemy.engine.base").Connection
@@ -677,3 +712,60 @@ class TestIO:
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    def test_write_postgis_wrong_geometry_column(
+        self,
+        engine_postgis,
+        df_nybb: GeoDataFrame,
+    ):
+        """
+        Tests that an exception is raised when attempting to append to an existing
+        PostGIS table with wrong geometry column name.
+        """
+        with pytest.raises(
+            ValueError,
+            match="Cannot find Geometry of Geography column",
+        ):
+            write_postgis(
+                df_nybb.rename_geometry("_wrong_column_name_"),
+                name="nybb",
+                con=engine_postgis,
+                if_exists="append",
+            )
+
+    def test_write_postgis_with_geography_column(
+        self,
+        engine_postgis,
+        df_geog: GeoDataFrame,
+        create_postgis_geography_table: str,
+    ):
+        """
+        Tests writing to an existing PostGIS table with Geography column.
+        """
+        import numpy as np
+
+        table_name = create_postgis_geography_table
+        write_postgis(
+            df_geog,
+            name=table_name,
+            con=engine_postgis,
+            if_exists="append",
+        )
+
+        df_geog_read = read_postgis(
+            sql=f"SELECT * FROM {table_name}",
+            con=engine_postgis,
+            geom_col=df_geog.geometry.name,
+        )
+
+        for column in df_geog.columns:
+            if column != df_geog.geometry.name:
+                assert np.allclose(
+                    df_geog.loc[:, column].values,
+                    df_geog_read.loc[:, column].values,
+                )
+        for attr in ["x", "y"]:
+            assert np.allclose(
+                getattr(df_geog.geometry, attr),
+                getattr(df_geog_read.geometry, attr),
+            )
