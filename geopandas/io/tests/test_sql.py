@@ -724,7 +724,7 @@ class TestIO:
         """
         with pytest.raises(
             ValueError,
-            match="Cannot find Geometry of Geography column",
+            match="Cannot find Geometry or Geography column",
         ):
             write_postgis(
                 df_nybb.rename_geometry("_wrong_column_name_"),
@@ -760,12 +760,6 @@ class TestIO:
 
         for column in df_geog.columns:
             if column != df_geog.geometry.name:
-                assert np.allclose(
-                    df_geog.loc[:, column].values,
-                    df_geog_read.loc[:, column].values,
-                )
+                assert all(df_geog.loc[:, column].values == df_geog_read.loc[:, column].values)
         for attr in ["x", "y"]:
-            assert np.allclose(
-                getattr(df_geog.geometry, attr),
-                getattr(df_geog_read.geometry, attr),
-            )
+            assert all(getattr(df_geog.geometry, attr) == getattr(df_geog_read.geometry, attr))
