@@ -196,6 +196,7 @@ def df_geog():
 
     return GeoDataFrame(
         data={
+            "id": [1, 2],
             "name": ["bar", "baz"],
             "size": [12, 7],
         },
@@ -215,7 +216,7 @@ def create_postgis_geography_table(engine_postgis):
         connection.execute(
             f"CREATE TABLE {table_name} "
             f"("
-            f"id SERIAL PRIMARY KEY, "
+            f"id INTEGER PRIMARY KEY, "
             f"name VARCHAR, "
             f"size INTEGER, "
             f"geog GEOGRAPHY(POINT,4326)"
